@@ -1,0 +1,33 @@
+{
+  "display": {
+    "icon": {
+      "id": "echoorbitalremnants:echo_terminal"
+    },
+    "title": {
+      "text": "ECHO: Orbital Remnants"
+    },
+    "description": {
+      "text": "Earth is dead below. Orbit is haunted above."
+    },
+    "background": "minecraft:gui/advancements/backgrounds/stone",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "terminal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "echoorbitalremnants:echo_terminal"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "terminal"
+    ]
+  ]
+}

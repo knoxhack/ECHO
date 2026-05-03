@@ -1,0 +1,73 @@
+{
+  "processors": [
+    {
+      "processor_type": "minecraft:rule",
+      "rules": [
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:oak_planks" },
+          "output_state": { "Name": "minecraft:gray_concrete" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:spruce_planks" },
+          "output_state": { "Name": "minecraft:stone_bricks" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:oak_log" },
+          "output_state": { "Name": "minecraft:deepslate" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:stripped_oak_log" },
+          "output_state": { "Name": "minecraft:polished_deepslate" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:oak_stairs" },
+          "output_state": { "Name": "minecraft:stone_brick_stairs" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:grass_block" },
+          "output_state": { "Name": "minecraft:coarse_dirt" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:dirt" },
+          "output_state": { "Name": "minecraft:gravel" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:cobblestone" },
+          "output_state": { "Name": "minecraft:mossy_stone_bricks" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:glass_pane" },
+          "output_state": { "Name": "minecraft:iron_bars" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:random_block_match", "block": "minecraft:chest", "probability": 0.3 },
+          "output_state": { "Name": "echoashfallprotocol:weapon_rack" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:random_block_match", "block": "minecraft:crafting_table", "probability": 0.5 },
+          "output_state": { "Name": "echoashfallprotocol:supply_crate" }
+        }
+      ]
+    },
+    {
+      "processor_type": "minecraft:block_rot",
+      "integrity": 0.85
+    },
+    {
+      "processor_type": "minecraft:gravity",
+      "heightmap": "WORLD_SURFACE_WG",
+      "offset": 0
+    }
+  ]
+}

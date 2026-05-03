@@ -1,0 +1,56 @@
+license="${mod_license}"
+issueTrackerURL="https://github.com/knoxhack/Echo/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="https://github.com/knoxhack/Echo"
+credits="Built with NeoForge"
+authors="KnoxHack"
+description='''
+ECHO: Ashfall Protocol is a post-Gridfall survival overhaul.
+Guided by ECHO-7, rebuild from a ruined drop pod through factions,
+hazards, machines, biome guardian nodes, and the Nexus choice.
+'''
+
+[[mixins]]
+config="echoashfallprotocol.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="echocore"
+    type="required"
+    reason="Provides shared ECHO service APIs used by Ashfall and ECHO addons."
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="echoterminal"
+    type="optional"
+    reason="Provides the modular ECHO Terminal UI and terminal block."
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="jei"
+    type="optional"
+    reason="Shows ECHO: Ashfall Protocol machine/process recipes in Just Enough Items when installed."
+    versionRange="[29.5.0.26,)"
+    ordering="AFTER"
+    side="CLIENT"

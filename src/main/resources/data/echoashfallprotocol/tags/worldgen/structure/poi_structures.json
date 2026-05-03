@@ -1,0 +1,32 @@
+{
+  "values": [
+    "echoashfallprotocol:bio_lab",
+    "echoashfallprotocol:crash_zone_landmarks",
+    "echoashfallprotocol:crash_zone_wasteland",
+    "echoashfallprotocol:cryogenic_ruins_landmarks",
+    "echoashfallprotocol:cryogenic_ruins",
+    "echoashfallprotocol:data_center_ruin",
+    "echoashfallprotocol:drop_pod",
+    "echoashfallprotocol:global",
+    "echoashfallprotocol:industrial_factory",
+    "echoashfallprotocol:industrial_ruins_landmarks",
+    "echoashfallprotocol:industrial_ruins",
+    "echoashfallprotocol:military_vault",
+    "echoashfallprotocol:mutant_village",
+    "echoashfallprotocol:nexus_scar_landmarks",
+    "echoashfallprotocol:nexus_scar",
+    "echoashfallprotocol:radiation_zone_landmarks",
+    "echoashfallprotocol:radiation_zone",
+    "echoashfallprotocol:reactor_ruin",
+    "echoashfallprotocol:remnant_village",
+    "echoashfallprotocol:ruined_city_landmarks",
+    "echoashfallprotocol:ruined_cityscape",
+    "echoashfallprotocol:ruined_plains",
+    "echoashfallprotocol:salvager_village",
+    "echoashfallprotocol:scavenger_camp",
+    "echoashfallprotocol:subway_station",
+    "echoashfallprotocol:toxic_swamp_landmarks",
+    "echoashfallprotocol:wasteland_landmarks",
+    "echoashfallprotocol:toxic_swamp"
+  ]
+}

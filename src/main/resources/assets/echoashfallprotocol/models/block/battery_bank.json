@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/battery_bank_front",
+    "north": "echoashfallprotocol:block/battery_bank_front",
+    "south": "echoashfallprotocol:block/battery_bank_side",
+    "east": "echoashfallprotocol:block/battery_bank_side",
+    "west": "echoashfallprotocol:block/battery_bank_side",
+    "up": "echoashfallprotocol:block/battery_bank_top",
+    "down": "echoashfallprotocol:block/battery_bank_bottom"
+  }
+}

@@ -1,0 +1,33 @@
+# ECHO-7: Orbital Remnants Release Status
+
+## v1.4.0 Full Endgame Scope
+
+ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth recovery through route repair chains, explorable Low Earth Orbit, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, ECHO-0, post-ECHO surveys, faction contracts, and the final survey network seal.
+
+## Implemented Systems
+
+- Terminal-led progression with mission objectives, route locks, scan requirements, saved scan reports, faction state, ECHO memory, and final completion state.
+- Launch readiness, Rocket Assembly Frame checklist, Emergency Rocket launch/return, orbital staging, route vessels, and saved return vectors.
+- Menu-driven orbital machines with input/output slots, progress, charge, status text, and data-driven `orbital_processing` recipes.
+- Suit survival with oxygen, pressure, helmet seal, leaks, radiation, gravity, station power, recovery items, modules, and orbital HUD.
+- Generated Earth recovery sites and generated route arrival sites with readable landmarks and fixed survival caches.
+- Deterministic route terrain for all five existing dimensions, including debris belts, cratered lunar ground, Martian ash/basalt, Europa cryo shelves, and Nexus anomaly islands.
+- Terminal-led route surveys for Orbit, Moon, Mars, Europa, and post-ECHO Nexus stabilization.
+- Route repair chains with compatibility-safe gates, repair resources, visible terminal counts, and old-save bypass handling.
+- Hostile orbital/deep-space mobs, boss-tier encounters with boss bars, route-relevant rewards, and ECHO-0 final protocol completion.
+- Final network completion after ECHO-0, all route surveys, Nexus stabilization, and one faction contract.
+- Faction pledge items, reward bundles, custom weapons, loot tables, advancements, docs, CI, and GameTests.
+
+## Release Checks
+
+- `./gradlew :echoorbitalremnants:build`
+- `./gradlew :echoorbitalremnants:runGameTestServer`
+- Confirm the release jar appears in `addons/echoorbitalremnants/build/libs/`.
+- Optional manual pass: new survival world, terminal calibration, launch, every route, every machine menu, ECHO-0 completion.
+
+## Known Boundaries
+
+- No external energy API is required.
+- No dependency on another space or quest mod is required.
+- Existing save ids and progression keys are preserved for v1.
+- Future expansions can add new dimensions or tech tiers after the current-dimensions survey network is stable in play.

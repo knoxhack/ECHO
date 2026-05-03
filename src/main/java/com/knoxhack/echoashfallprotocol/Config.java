@@ -1,0 +1,402 @@
+package com.knoxhack.echoashfallprotocol;
+
+import com.knoxhack.echoashfallprotocol.gameplay.DifficultyProfile;
+import com.knoxhack.echoashfallprotocol.worldgen.StructureType;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * Configuration for ECHO: Ashfall Protocol.
+ * All gameplay-affecting values are configurable here.
+ */
+public class Config {
+    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    private static final Map<StructureType, ModConfigSpec.BooleanValue> STRUCTURE_ENABLED = new EnumMap<>(StructureType.class);
+    private static final Map<StructureType, ModConfigSpec.IntValue> STRUCTURE_SPACING = new EnumMap<>(StructureType.class);
+    private static final Map<StructureType, ModConfigSpec.IntValue> STRUCTURE_SEPARATION = new EnumMap<>(StructureType.class);
+    private static final Map<String, ModConfigSpec.BooleanValue> BIOME_CONTENT_ENABLED = new HashMap<>();
+
+    // === SURVIVAL ===
+    static {
+        BUILDER.push("survival");
+    }
+
+    public static final ModConfigSpec.IntValue AIR_FILTER_DECAY_RATE = BUILDER
+            .comment("Base filter decay rate per second while inside toxic-air hazards (default: 1)")
+            .defineInRange("airFilterDecayRate", 1, 0, 10);
+
+    public static final ModConfigSpec.BooleanValue GLOBAL_TOXIC_AIR = BUILDER
+            .comment("If true, toxic air is active everywhere after grace. If false, toxic air is limited to tagged hazard sources (default: false)")
+            .define("globalToxicAir", false);
+
+    public static final ModConfigSpec.BooleanValue ENABLE_BIOME_HAZARDS = BUILDER
+            .comment("Enable biome-profile hazard zones for toxic, radiation, cryogenic, and Nexus biomes (default: true)")
+            .define("enableBiomeHazards", true);
+
+    public static final ModConfigSpec.BooleanValue ENABLE_RADIATION_STORMS = BUILDER
+            .comment("Enable radiation storm exposure during environmental RADIATION_STORM events (default: true)")
+            .define("enableRadiationStorms", true);
+
+    public static final ModConfigSpec.DoubleValue TOXIC_HAZARD_FILTER_MULTIPLIER = BUILDER
+            .comment("Multiplier for filter drain while inside toxic hazard zones (default: 1.0)")
+            .defineInRange("toxicHazardFilterMultiplier", 1.0, 0.0, 5.0);
+
+    public static final ModConfigSpec.DoubleValue RADIATION_ACCUMULATION_RATE = BUILDER
+            .comment("Radiation gained per second near radiation blocks (default: 1.0)")
+            .defineInRange("radiationAccumulationRate", 1.0, 0.0, 10.0);
+
+    public static final ModConfigSpec.DoubleValue RADIATION_HAZARD_MULTIPLIER = BUILDER
+            .comment("Multiplier for radiation gained from biome/source/storm hazard intensity (default: 1.0)")
+            .defineInRange("radiationHazardMultiplier", 1.0, 0.0, 5.0);
+
+    public static final ModConfigSpec.DoubleValue RADIATION_DECAY_RATE = BUILDER
+            .comment("Radiation lost per second away from radiation sources (default: 0.2)")
+            .defineInRange("radiationDecayRate", 0.2, 0.0, 5.0);
+
+    public static final ModConfigSpec.DoubleValue CRYO_COLD_LOSS_MULTIPLIER = BUILDER
+            .comment("Multiplier for body-temperature loss in cryogenic hazard zones (default: 1.0)")
+            .defineInRange("cryoColdLossMultiplier", 1.0, 0.0, 5.0);
+
+    public static final ModConfigSpec.DoubleValue NEXUS_HAZARD_MULTIPLIER = BUILDER
+            .comment("Multiplier for Nexus Scar anomaly pressure (default: 1.25)")
+            .defineInRange("nexusHazardMultiplier", 1.25, 0.0, 5.0);
+
+    public static final ModConfigSpec.IntValue SCRUBBER_SAFE_ZONE_RADIUS = BUILDER
+            .comment("Atmospheric Scrubber safe-zone radius in blocks (default: 16)")
+            .defineInRange("scrubberSafeZoneRadius", 16, 4, 64);
+
+    public static final ModConfigSpec.IntValue HYDRATION_DECAY_RATE = BUILDER
+            .comment("Hydration lost each decay interval (default: 1)")
+            .defineInRange("hydrationDecayRate", 1, 0, 5);
+
+    public static final ModConfigSpec.IntValue HYDRATION_DECAY_INTERVAL_TICKS = BUILDER
+            .comment("Ticks between hydration decay pulses (default: 600 = 30 seconds)")
+            .defineInRange("hydrationDecayIntervalTicks", 600, 20, 72000);
+
+    public static final ModConfigSpec.IntValue HYDRATION_WARNING_LEVEL = BUILDER
+            .comment("Hydration level where HUD/ECHO warnings begin (default: 40)")
+            .defineInRange("hydrationWarningLevel", 40, 0, 100);
+
+    public static final ModConfigSpec.IntValue HYDRATION_PENALTY_LEVEL = BUILDER
+            .comment("Hydration level where movement/mining penalties begin (default: 15)")
+            .defineInRange("hydrationPenaltyLevel", 15, 0, 100);
+
+    public static final ModConfigSpec.IntValue TOXIC_AIR_WARNING_TICKS = BUILDER
+            .comment("Ticks of unprotected toxic-air warning before damage starts (default: 100 = 5 seconds)")
+            .defineInRange("toxicAirWarningTicks", 100, 0, 1200);
+
+    public static final ModConfigSpec.IntValue HAZARD_WARNING_COOLDOWN_TICKS = BUILDER
+            .comment("Ticks between repeated ECHO hazard warning messages (default: 240 = 12 seconds)")
+            .defineInRange("hazardWarningCooldownTicks", 240, 40, 6000);
+
+    public static final ModConfigSpec.IntValue NEW_PLAYER_GRACE_TICKS = BUILDER
+            .comment("Ticks of new-player protection from survival-system hazards (default: 12000 = 10 minutes)")
+            .defineInRange("newPlayerGraceTicks", 12000, 0, 72000);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === MACHINES ===
+    static {
+        BUILDER.push("machines");
+    }
+
+    public static final ModConfigSpec.IntValue RECYCLER_PROCESS_TIME = BUILDER
+            .comment("Ticks to process one item in Hand Recycler (default: 80)")
+            .defineInRange("recyclerProcessTime", 80, 20, 600);
+
+    public static final ModConfigSpec.DoubleValue GENERATOR_FAILURE_CHANCE = BUILDER
+            .comment("Chance per tick of generator failure when running (default: 0.0005)")
+            .defineInRange("generatorFailureChance", 0.0005, 0.0, 0.1);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === SURVIVAL MUTATIONS ===
+    static {
+        BUILDER.push("mutations");
+    }
+
+    public static final ModConfigSpec.DoubleValue MUTATION_THRESHOLD = BUILDER
+            .comment("Radiation level above which mutations can occur (default: 50.0)")
+            .defineInRange("mutationThreshold", 50.0, 10.0, 100.0);
+
+    public static final ModConfigSpec.DoubleValue MUTATION_SEVERE_THRESHOLD = BUILDER
+            .comment("Radiation level required for expedition mutation rolls (default: 80.0)")
+            .defineInRange("mutationSevereThreshold", 80.0, 10.0, 100.0);
+
+    public static final ModConfigSpec.IntValue MUTATION_ROLL_COOLDOWN_TICKS = BUILDER
+            .comment("Minimum ticks between radiation mutation rolls (default: 12000 = 10 minutes)")
+            .defineInRange("mutationRollCooldownTicks", 12000, 200, 72000);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === SMART EVENTS ===
+    static {
+        BUILDER.push("events");
+    }
+
+    public static final ModConfigSpec.DoubleValue EVENT_REACTIVITY_MULTIPLIER = BUILDER
+            .comment("Multiplier for smart event trigger chances (default: 1.0)")
+            .defineInRange("eventReactivityMultiplier", 1.0, 0.0, 5.0);
+
+    public static final ModConfigSpec.BooleanValue ENABLE_ASH_STORMS = BUILDER
+            .comment("Enable environmental ASH_STORM events (default: true)")
+            .define("enableAshStorms", true);
+
+    public static final ModConfigSpec.BooleanValue ENABLE_CRYO_FRONTS = BUILDER
+            .comment("Enable environmental CRYO_FRONT events (default: true)")
+            .define("enableCryoFronts", true);
+
+    public static final ModConfigSpec.BooleanValue ENABLE_NEXUS_SURGES = BUILDER
+            .comment("Enable environmental NEXUS_SURGE events once Nexus instability is present (default: true)")
+            .define("enableNexusSurges", true);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === ECHO-7 ===
+    static {
+        BUILDER.push("echo");
+    }
+
+    public static final ModConfigSpec.BooleanValue ECHO_ENABLED = BUILDER
+            .comment("Enable ECHO-7 AI guide messages")
+            .define("echoEnabled", true);
+
+    public static final ModConfigSpec.IntValue ECHO_MESSAGE_COOLDOWN = BUILDER
+            .comment("Minimum ticks between ECHO-7 context messages (default: 600)")
+            .defineInRange("echoMessageCooldown", 600, 100, 6000);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === CLIENT PRESENTATION ===
+    static {
+        BUILDER.push("clientPresentation");
+    }
+
+    public static final ModConfigSpec.BooleanValue ENABLE_ECHO_MAIN_MENU = BUILDER
+            .comment("Replace the vanilla title screen and skin pre-game screens with the ECHO terminal shell.")
+            .define("enableEchoMainMenu", true);
+
+    public static final ModConfigSpec.BooleanValue ECHO_SCANLINE_ANIMATION = BUILDER
+            .comment("Animate ECHO terminal and title-screen scanline drift.")
+            .define("echoScanlineAnimation", true);
+
+    public static final ModConfigSpec.DoubleValue ECHO_SCANLINE_INTENSITY = BUILDER
+            .comment("Visual intensity multiplier for ECHO scanlines. 0 disables scanlines; 1 keeps the default.")
+            .defineInRange("echoScanlineIntensity", 1.0, 0.0, 2.0);
+
+    public static final ModConfigSpec.DoubleValue HUD_WARNING_INTENSITY = BUILDER
+            .comment("Visual intensity multiplier for HUD warning flashes and mutation glitch overlays.")
+            .defineInRange("hudWarningIntensity", 1.0, 0.0, 2.0);
+
+    public static final ModConfigSpec.DoubleValue WEATHER_VISUAL_INTENSITY = BUILDER
+            .comment("Visual intensity multiplier for ECHO environmental weather overlays. 0 disables the overlay.")
+            .defineInRange("weatherVisualIntensity", 1.0, 0.0, 2.0);
+
+    public static final ModConfigSpec.DoubleValue WEATHER_PARTICLE_DENSITY = BUILDER
+            .comment("Client-side density multiplier for ECHO environmental weather particles. 0 disables extra particles.")
+            .defineInRange("weatherParticleDensity", 1.0, 0.0, 3.0);
+
+    public static final ModConfigSpec.BooleanValue ORBITAL_EVENT_VISUALS = BUILDER
+            .comment("Show ECHO-7 visual feedback for Orbital Remnants route events when the addon is loaded.")
+            .define("orbitalEventVisuals", true);
+
+    public static final ModConfigSpec.BooleanValue TERMINAL_ANIMATION = BUILDER
+            .comment("Enable animated terminal flicker, glow, and refresh-line effects.")
+            .define("terminalAnimation", true);
+
+    public static final ModConfigSpec.BooleanValue VERBOSE_TOOLTIPS = BUILDER
+            .comment("Show extra survival and progression guidance in ECHO tooltips.")
+            .define("verboseTooltips", true);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === FAST TRAVEL ===
+    static {
+        BUILDER.push("fastTravel");
+    }
+
+    public static final ModConfigSpec.BooleanValue ENABLE_FAST_TRAVEL = BUILDER
+            .comment("Enable Radio Network fast-travel system (default: true)")
+            .define("enableFastTravel", true);
+
+    public static final ModConfigSpec.IntValue FAST_TRAVEL_COOLDOWN_TICKS = BUILDER
+            .comment("Ticks between fast-travel uses (default: 6000 = 5 minutes)")
+            .defineInRange("fastTravelCooldownTicks", 6000, 200, 72000);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === LOOT AND PROGRESSION ===
+    static {
+        BUILDER.push("loot");
+    }
+
+    public static final ModConfigSpec.DoubleValue SCHEMATIC_DROP_RATE = BUILDER
+            .comment("Base chance for schematic fragment drops (default: 0.05 = 5%)")
+            .defineInRange("schematicDropRate", 0.05, 0.0, 0.5);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === STRUCTURES ===
+    static {
+        BUILDER.push("structures");
+    }
+
+    public static final ModConfigSpec.BooleanValue ENABLE_PROCEDURAL_STRUCTURES = BUILDER
+            .comment("Enable Java-driven procedural structure generation. Datapack jigsaw POIs are controlled by worldgen JSON, not this value.")
+            .define("enableProceduralStructures", true);
+
+    public static final ModConfigSpec.DoubleValue STRUCTURE_GLOBAL_DENSITY_MULTIPLIER = BUILDER
+            .comment("Multiplier for Java-driven procedural structure density. 1.0 keeps default spacing; 2.0 is roughly twice as dense; 0.5 is roughly half as dense.")
+            .defineInRange("globalDensityMultiplier", 1.0, 0.05, 10.0);
+
+    static {
+        defineStructureConfig(StructureType.DROP_POD, 20, 5);
+        defineStructureConfig(StructureType.BIO_LAB, 28, 7);
+        defineStructureConfig(StructureType.DATA_CENTER, 36, 9);
+        defineStructureConfig(StructureType.MILITARY_VAULT, 56, 14);
+        defineStructureConfig(StructureType.REACTOR_RUIN, 72, 18);
+        defineStructureConfig(StructureType.SUBWAY_STATION, 32, 8);
+        defineStructureConfig(StructureType.SEWER_JUNCTION, 26, 6);
+        defineStructureConfig(StructureType.TRAIN_YARD, 40, 10);
+        defineStructureConfig(StructureType.SATELLITE_ARRAY, 48, 12);
+        defineStructureConfig(StructureType.RADIO_TOWER, 44, 11);
+        defineStructureConfig(StructureType.RELAY_STATION, 48, 12);
+        defineStructureConfig(StructureType.OBSERVATION_POST, 60, 15);
+        defineStructureConfig(StructureType.REMNANT_OUTPOST, 50, 12);
+        defineStructureConfig(StructureType.SALVAGER_TRADING_POST, 42, 10);
+        defineStructureConfig(StructureType.MUTANT_SANCTUARY, 46, 11);
+        defineStructureConfig(StructureType.CRYOGENIC_RUINS, 54, 13);
+        defineStructureConfig(StructureType.DERELICT_WORKSHOP, 38, 9);
+        defineStructureConfig(StructureType.ABANDONED_MINE, 58, 14);
+        BUILDER.pop();
+    }
+
+    // === BIOMES ===
+    static {
+        BUILDER.push("biomes");
+        BUILDER.comment(
+                "These toggles control Java-driven biome content checks only.",
+                "They do not remove biomes from datapack terrain generation or existing worlds."
+        );
+        defineBiomeContentToggle("the_wasteland", "theWasteland");
+        defineBiomeContentToggle("ruined_plains", "ruinedPlains");
+        defineBiomeContentToggle("crash_zone_wasteland", "crashZoneWasteland");
+        defineBiomeContentToggle("industrial_ruins", "industrialRuins");
+        defineBiomeContentToggle("toxic_swamp", "toxicSwamp");
+        defineBiomeContentToggle("ruined_cityscape", "ruinedCityscape");
+        defineBiomeContentToggle("radiation_zone", "radiationZone");
+        defineBiomeContentToggle("cryogenic_ruins", "cryogenicRuins");
+        defineBiomeContentToggle("nexus_scar", "nexusScar");
+        BUILDER.pop();
+    }
+
+    // === EXPLORATION 1.1: LEGACY POI SPAWN RATES ===
+    static {
+        BUILDER.push("legacyPoi");
+    }
+
+    public static final ModConfigSpec.IntValue FACTION_HUB_SPACING = BUILDER
+            .comment("Legacy Java POI spacing reference. Active jigsaw POI density is controlled by data/echoashfallprotocol/worldgen/structure_set JSON.")
+            .defineInRange("factionHubSpacing", 40, 20, 100);
+
+    public static final ModConfigSpec.IntValue WORLD_POI_SPACING = BUILDER
+            .comment("Legacy Java POI spacing reference. Active jigsaw POI density is controlled by data/echoashfallprotocol/worldgen/structure_set JSON.")
+            .defineInRange("worldPoiSpacing", 25, 10, 60);
+
+    public static final ModConfigSpec.BooleanValue ENABLE_CRYOGENIC_RUINS = BUILDER
+            .comment("Legacy compatibility toggle. Use biomes.cryogenicRuins for Java-driven biome content; datapack terrain generation is not removed by this value.")
+            .define("enableCryogenicRuins", true);
+
+    static {
+        BUILDER.pop();
+    }
+
+    // === DIFFICULTY PROFILE ===
+    static {
+        BUILDER.push("difficulty");
+    }
+
+    public static final ModConfigSpec.EnumValue<DifficultyProfile> DEFAULT_DIFFICULTY = BUILDER
+            .comment("Default difficulty profile for new worlds (gamerule can override per-world)")
+            .defineEnum("defaultDifficulty", DifficultyProfile.NORMAL);
+
+    static {
+        BUILDER.pop();
+    }
+
+    static final ModConfigSpec SPEC = BUILDER.build();
+
+    private static void defineStructureConfig(StructureType type, int defaultSpacing, int defaultSeparation) {
+        String sectionName = type.getName();
+        BUILDER.push(sectionName);
+        STRUCTURE_ENABLED.put(type, BUILDER
+                .comment("Enable Java-driven procedural generation for " + sectionName + ".")
+                .define("enabled", true));
+        STRUCTURE_SPACING.put(type, BUILDER
+                .comment("Chunks between generation attempts for " + sectionName + ". Must be greater than separation.")
+                .defineInRange("spacing", defaultSpacing, defaultSeparation + 1, 256));
+        STRUCTURE_SEPARATION.put(type, BUILDER
+                .comment("Minimum chunk separation for " + sectionName + ". Kept below spacing by range and runtime clamping.")
+                .defineInRange("separation", defaultSeparation, 1, defaultSpacing - 1));
+        BUILDER.pop();
+    }
+
+    private static void defineBiomeContentToggle(String biomePath, String configKey) {
+        BIOME_CONTENT_ENABLED.put(biomePath, BUILDER
+                .comment("Enable Java-driven structures and events that target echoashfallprotocol:" + biomePath + ".")
+                .define(configKey, true));
+    }
+
+    public static boolean isStructureEnabled(StructureType type) {
+        if (!ENABLE_PROCEDURAL_STRUCTURES.get()) {
+            return false;
+        }
+        ModConfigSpec.BooleanValue value = STRUCTURE_ENABLED.get(type);
+        return value == null || value.get();
+    }
+
+    public static int getStructureSpacing(StructureType type) {
+        ModConfigSpec.IntValue value = STRUCTURE_SPACING.get(type);
+        int configuredSpacing = value != null ? value.get() : 32;
+        int densityAdjustedSpacing = Math.max(2, (int) Math.round(configuredSpacing / STRUCTURE_GLOBAL_DENSITY_MULTIPLIER.get()));
+        return Math.max(densityAdjustedSpacing, getRawStructureSeparation(type) + 1);
+    }
+
+    public static int getStructureSeparation(StructureType type) {
+        return Math.min(getRawStructureSeparation(type), getStructureSpacing(type) - 1);
+    }
+
+    public static boolean isBiomeContentEnabled(String biomePath) {
+        if (biomePath == null || biomePath.isBlank()) {
+            return false;
+        }
+        String normalizedPath = biomePath.toLowerCase(Locale.ROOT);
+        ModConfigSpec.BooleanValue value = BIOME_CONTENT_ENABLED.get(normalizedPath);
+        return value == null || value.get();
+    }
+
+    private static int getRawStructureSeparation(StructureType type) {
+        ModConfigSpec.IntValue value = STRUCTURE_SEPARATION.get(type);
+        return value != null ? value.get() : 1;
+    }
+}

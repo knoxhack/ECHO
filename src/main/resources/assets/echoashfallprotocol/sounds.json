@@ -1,0 +1,168 @@
+{
+  "block.debris_break": {
+    "sounds": [
+      {
+        "name": "minecraft:block.gravel.break",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.debris_place": {
+    "sounds": [
+      {
+        "name": "minecraft:block.gravel.place",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.metal_break": {
+    "sounds": [
+      {
+        "name": "minecraft:block.metal.break",
+        "pitch": 1.0,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.metal_place": {
+    "sounds": [
+      {
+        "name": "minecraft:block.metal.place",
+        "pitch": 1.0,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "machine.recycler_active": {
+    "sounds": [
+      {
+        "name": "minecraft:block.stonecutter.use",
+        "pitch": 0.9,
+        "volume": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.machine.recycler"
+  },
+  "machine.burner_fire": {
+    "sounds": [
+      {
+        "name": "minecraft:block.furnace.fire_crackle",
+        "pitch": 1.0,
+        "volume": 0.6,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.machine.burner"
+  },
+  "machine.jam_alert": {
+    "sounds": [
+      {
+        "name": "minecraft:block.anvil.land",
+        "pitch": 0.5,
+        "volume": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.machine.jam"
+  },
+  "ui.echo_message": {
+    "sounds": [
+      {
+        "name": "minecraft:block.note_block.hat",
+        "pitch": 1.5,
+        "volume": 0.4,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.echo.message"
+  },
+  "ui.echo_complete": {
+    "sounds": [
+      {
+        "name": "minecraft:block.note_block.chime",
+        "pitch": 1.2,
+        "volume": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.echo.complete"
+  },
+  "event.toxic_storm": {
+    "sounds": [
+      {
+        "name": "minecraft:ambient.underwater.loop",
+        "pitch": 0.7,
+        "volume": 0.5,
+        "stream": true,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.event.toxic_storm"
+  },
+  "event.radiation_storm": {
+    "sounds": [
+      {
+        "name": "minecraft:ambient.basalt_deltas.loop",
+        "pitch": 0.75,
+        "volume": 0.45,
+        "stream": true,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.event.radiation_storm"
+  },
+  "event.ash_storm": {
+    "sounds": [
+      {
+        "name": "minecraft:weather.rain",
+        "pitch": 0.55,
+        "volume": 0.45,
+        "stream": true,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.event.ash_storm"
+  },
+  "event.cryo_front": {
+    "sounds": [
+      {
+        "name": "minecraft:ambient.soul_sand_valley.loop",
+        "pitch": 1.35,
+        "volume": 0.35,
+        "stream": true,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.event.cryo_front"
+  },
+  "event.nexus_surge": {
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.ambient",
+        "pitch": 0.65,
+        "volume": 0.45,
+        "stream": true,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.event.nexus_surge"
+  },
+  "event.blackout": {
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.deplete",
+        "pitch": 0.55,
+        "volume": 0.55,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.EchoAshfallProtocol.event.blackout"
+  }
+}

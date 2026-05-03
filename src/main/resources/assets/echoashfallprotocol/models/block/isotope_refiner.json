@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/isotope_refiner_front",
+    "north": "echoashfallprotocol:block/isotope_refiner_front",
+    "south": "echoashfallprotocol:block/isotope_refiner_side",
+    "east": "echoashfallprotocol:block/isotope_refiner_side",
+    "west": "echoashfallprotocol:block/isotope_refiner_side",
+    "up": "echoashfallprotocol:block/isotope_refiner_top",
+    "down": "echoashfallprotocol:block/isotope_refiner_bottom"
+  }
+}

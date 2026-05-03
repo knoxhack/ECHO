@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "echoashfallprotocol:industrial_factory",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 738291,
+    "spacing": 48,
+    "separation": 18,
+    "spread_type": "linear"
+  }
+}

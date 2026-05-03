@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/filter_workbench_front",
+    "north": "echoashfallprotocol:block/filter_workbench_front",
+    "south": "echoashfallprotocol:block/filter_workbench_side",
+    "east": "echoashfallprotocol:block/filter_workbench_side",
+    "west": "echoashfallprotocol:block/filter_workbench_side",
+    "up": "echoashfallprotocol:block/filter_workbench_top",
+    "down": "echoashfallprotocol:block/filter_workbench_bottom"
+  }
+}

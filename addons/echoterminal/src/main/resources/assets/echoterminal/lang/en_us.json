@@ -1,0 +1,6 @@
+{
+  "block.echoterminal.echo_terminal": "ECHO Terminal",
+  "container.echoterminal.echo_terminal": "ECHO-7 Terminal",
+  "itemGroup.echoterminal": "ECHO: Terminal",
+  "key.echoterminal.open": "Open ECHO Terminal"
+}

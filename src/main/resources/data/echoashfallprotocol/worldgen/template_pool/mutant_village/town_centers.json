@@ -1,0 +1,33 @@
+{
+  "name": "echoashfallprotocol:mutant_village/town_centers",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 2,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "minecraft:village/taiga/town_centers/taiga_meeting_point_1",
+        "processors": "echoashfallprotocol:mutant_village_theme"
+      }
+    },
+    {
+      "weight": 2,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "minecraft:village/taiga/town_centers/taiga_meeting_point_2",
+        "processors": "echoashfallprotocol:mutant_village_theme"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "echoashfallprotocol:faction/mutant_sanctuary/biodome_hub",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

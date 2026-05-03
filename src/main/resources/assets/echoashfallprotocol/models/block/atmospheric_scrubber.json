@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/atmospheric_scrubber_front",
+    "north": "echoashfallprotocol:block/atmospheric_scrubber_front",
+    "south": "echoashfallprotocol:block/atmospheric_scrubber_side",
+    "east": "echoashfallprotocol:block/atmospheric_scrubber_side",
+    "west": "echoashfallprotocol:block/atmospheric_scrubber_side",
+    "up": "echoashfallprotocol:block/atmospheric_scrubber_top",
+    "down": "echoashfallprotocol:block/atmospheric_scrubber_bottom"
+  }
+}

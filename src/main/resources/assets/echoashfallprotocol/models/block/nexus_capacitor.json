@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/nexus_capacitor_front",
+    "north": "echoashfallprotocol:block/nexus_capacitor_front",
+    "south": "echoashfallprotocol:block/nexus_capacitor_side",
+    "east": "echoashfallprotocol:block/nexus_capacitor_side",
+    "west": "echoashfallprotocol:block/nexus_capacitor_side",
+    "up": "echoashfallprotocol:block/nexus_capacitor_top",
+    "down": "echoashfallprotocol:block/nexus_capacitor_bottom"
+  }
+}

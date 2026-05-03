@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/micro_generator_front",
+    "north": "echoashfallprotocol:block/micro_generator_front",
+    "south": "echoashfallprotocol:block/micro_generator_side",
+    "east": "echoashfallprotocol:block/micro_generator_side",
+    "west": "echoashfallprotocol:block/micro_generator_side",
+    "up": "echoashfallprotocol:block/micro_generator_top",
+    "down": "echoashfallprotocol:block/micro_generator_bottom"
+  }
+}

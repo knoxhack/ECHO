@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/contaminant_condenser_front",
+    "north": "echoashfallprotocol:block/contaminant_condenser_front",
+    "south": "echoashfallprotocol:block/contaminant_condenser_side",
+    "east": "echoashfallprotocol:block/contaminant_condenser_side",
+    "west": "echoashfallprotocol:block/contaminant_condenser_side",
+    "up": "echoashfallprotocol:block/contaminant_condenser_top",
+    "down": "echoashfallprotocol:block/contaminant_condenser_bottom"
+  }
+}

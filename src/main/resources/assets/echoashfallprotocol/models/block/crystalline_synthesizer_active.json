@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/crystalline_synthesizer_active_front",
+    "north": "echoashfallprotocol:block/crystalline_synthesizer_active_front",
+    "south": "echoashfallprotocol:block/crystalline_synthesizer_active_side",
+    "east": "echoashfallprotocol:block/crystalline_synthesizer_active_side",
+    "west": "echoashfallprotocol:block/crystalline_synthesizer_active_side",
+    "up": "echoashfallprotocol:block/crystalline_synthesizer_active_top",
+    "down": "echoashfallprotocol:block/crystalline_synthesizer_active_bottom"
+  }
+}

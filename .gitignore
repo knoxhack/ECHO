@@ -1,0 +1,60 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+
+.run/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Minecraft Modding ###
+run/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### Ad-hoc dev/debug artifacts ###
+runclient_output*.txt
+runclient_*.txt
+mc_log*.txt
+build_errors*.txt
+build_output*.txt
+tmp_*
+*.log
+.local/
+.claude/settings.local.json
+__pycache__/
+*.py[cod]
+
+### Generated NeoForge/Minecraft artifact dumps ###
+/META-INF/
+/assets/
+/data/
+/net/
+/reports/

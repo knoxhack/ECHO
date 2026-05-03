@@ -1,0 +1,23 @@
+{
+  "structures": [
+    {
+      "structure": "echoashfallprotocol:remnant_village",
+      "weight": 3
+    },
+    {
+      "structure": "echoashfallprotocol:salvager_village",
+      "weight": 3
+    },
+    {
+      "structure": "echoashfallprotocol:mutant_village",
+      "weight": 2
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 888889,
+    "spacing": 56,
+    "separation": 22,
+    "spread_type": "triangular"
+  }
+}

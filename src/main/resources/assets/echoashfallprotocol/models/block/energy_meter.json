@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/energy_meter_front",
+    "north": "echoashfallprotocol:block/energy_meter_front",
+    "south": "echoashfallprotocol:block/energy_meter_side",
+    "east": "echoashfallprotocol:block/energy_meter_side",
+    "west": "echoashfallprotocol:block/energy_meter_side",
+    "up": "echoashfallprotocol:block/energy_meter_top",
+    "down": "echoashfallprotocol:block/energy_meter_bottom"
+  }
+}

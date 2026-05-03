@@ -1,0 +1,31 @@
+{
+  "replace": false,
+  "values": [
+    "echoashfallprotocol:wasteland_stone",
+    "echoashfallprotocol:wasteland_trace_rubble",
+    "echoashfallprotocol:industrial_aggregate",
+    "echoashfallprotocol:concrete_rubble",
+    "echoashfallprotocol:cracked_asphalt",
+    "echoashfallprotocol:concrete_chunk",
+    "echoashfallprotocol:oil_stained_concrete",
+    "echoashfallprotocol:toxic_slagstone",
+    "echoashfallprotocol:irradiated_shale",
+    "echoashfallprotocol:cryogenic_fractured_stone",
+    "echoashfallprotocol:crash_slag",
+    "echoashfallprotocol:riftstone",
+    "echoashfallprotocol:echo_crystal",
+    "echoashfallprotocol:energized_fissure",
+    "echoashfallprotocol:twisted_metal",
+    "echoashfallprotocol:cable_bundle",
+    "echoashfallprotocol:ash_stone",
+    "echoashfallprotocol:scrap_ore",
+    "echoashfallprotocol:ooze_crystal",
+    "echoashfallprotocol:corroded_pipe",
+    "echoashfallprotocol:rebar_block",
+    "echoashfallprotocol:shattered_glass",
+    "echoashfallprotocol:uranium_crystal",
+    "echoashfallprotocol:permafrost",
+    "echoashfallprotocol:blue_ice_crystal",
+    "echoashfallprotocol:frozen_conduit"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/hand_recycler_front",
+    "north": "echoashfallprotocol:block/hand_recycler_front",
+    "south": "echoashfallprotocol:block/hand_recycler_side",
+    "east": "echoashfallprotocol:block/hand_recycler_side",
+    "west": "echoashfallprotocol:block/hand_recycler_side",
+    "up": "echoashfallprotocol:block/hand_recycler_top",
+    "down": "echoashfallprotocol:block/hand_recycler_bottom"
+  }
+}

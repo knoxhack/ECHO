@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "echoashfallprotocol:subway_station",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 923847,
+    "spacing": 44,
+    "separation": 18,
+    "spread_type": "linear"
+  }
+}

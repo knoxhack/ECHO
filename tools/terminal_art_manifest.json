@@ -1,0 +1,206 @@
+{
+  "style_bible": "Near-future survival command terminal, cyan tactical holography, dark glass, subtle amber alerts, grounded post-apocalyptic sci-fi, Xbox AAA UI, readable, premium, no fake text.",
+  "generator": "Codex terminal polish pass",
+  "source_atlas": "Existing ECHO menu/loading backgrounds for plates; original code-generated transparent mission badges for mission icons.",
+  "mockup_parity_pass": "2026-05-02 terminal command hub polish; 2026-05-03 original per-mission icon pass",
+  "assets": [
+    {
+      "id": "terminal_frame_backdrop",
+      "file": "terminal_frame_backdrop.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "shell",
+      "prompt_summary": "Mockup-parity dark app-shell backdrop with cyan tactical frame",
+      "fallback_category": "terminal_frame_backdrop"
+    },
+    {
+      "id": "overview_protocol_dashboard",
+      "file": "overview_protocol_dashboard.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "overview",
+      "prompt_summary": "Crash-site command dashboard hero, smoke plume and outpost silhouette",
+      "fallback_category": "overview_protocol_dashboard"
+    },
+    {
+      "id": "missions_visual_hero",
+      "file": "missions_visual_hero.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "missions",
+      "prompt_summary": "Mission hub field-operation hero with salvage route staging",
+      "fallback_category": "missions_visual_hero"
+    },
+    {
+      "id": "mission_survival",
+      "file": "mission_survival.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Storm-lit outpost survival shelter mission card",
+      "fallback_category": "survival"
+    },
+    {
+      "id": "mission_crafting",
+      "file": "mission_crafting.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Workbench salvage and tool crafting mission card",
+      "fallback_category": "crafting"
+    },
+    {
+      "id": "mission_tech",
+      "file": "mission_tech.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Technical blueprint dossier and machinery mission card",
+      "fallback_category": "tech"
+    },
+    {
+      "id": "mission_exploration",
+      "file": "mission_exploration.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Scanner route map exploration mission card",
+      "fallback_category": "exploration"
+    },
+    {
+      "id": "mission_combat",
+      "file": "mission_combat.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Guardian threat silhouette combat mission card",
+      "fallback_category": "combat"
+    },
+    {
+      "id": "mission_story",
+      "file": "mission_story.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Recovered archive wall story mission card",
+      "fallback_category": "story"
+    },
+    {
+      "id": "mission_side_ops",
+      "file": "mission_side_ops.png",
+      "size": [
+        256,
+        128
+      ],
+      "tab": "mission",
+      "prompt_summary": "Side operation staging vehicle and field cache mission card",
+      "fallback_category": "side_ops"
+    },
+    {
+      "id": "status_hazard_scan",
+      "file": "status_hazard_scan.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "status",
+      "prompt_summary": "Hazard scan telemetry over dark wasteland signal traces",
+      "fallback_category": "status_hazard_scan"
+    },
+    {
+      "id": "drone_command_link",
+      "file": "drone_command_link.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "drone",
+      "prompt_summary": "Companion drone command-link blueprint and telemetry schematic",
+      "fallback_category": "drone_command_link"
+    },
+    {
+      "id": "archives_dossier_wall",
+      "file": "archives_dossier_wall.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "archives",
+      "prompt_summary": "Recovered dossier wall with pinned archive evidence",
+      "fallback_category": "archives_dossier_wall"
+    },
+    {
+      "id": "codex_field_manual",
+      "file": "codex_field_manual.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "codex",
+      "prompt_summary": "Field manual holographic pages and technical record panels",
+      "fallback_category": "codex_field_manual"
+    },
+    {
+      "id": "world_route_map",
+      "file": "world_route_map.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "world",
+      "prompt_summary": "World route map with signal arcs and network nodes",
+      "fallback_category": "world_route_map"
+    },
+    {
+      "id": "nexus_core_interface",
+      "file": "nexus_core_interface.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "nexus",
+      "prompt_summary": "Purple Nexus core command chamber and final path interface",
+      "fallback_category": "nexus_core_interface"
+    },
+    {
+      "id": "orbital_route_telemetry",
+      "file": "orbital_route_telemetry.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "orbital",
+      "prompt_summary": "Orbital route telemetry over Earth and station silhouette",
+      "fallback_category": "orbital_route_telemetry"
+    },
+    {
+      "id": "addons_module_grid",
+      "file": "addons_module_grid.png",
+      "size": [
+        512,
+        256
+      ],
+      "tab": "addons",
+      "prompt_summary": "Addon module grid with modular hardware tiles",
+      "fallback_category": "addons_module_grid"
+    }
+  ]
+}

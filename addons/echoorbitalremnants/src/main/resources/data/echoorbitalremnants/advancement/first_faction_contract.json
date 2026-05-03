@@ -1,0 +1,25 @@
+{
+  "parent": "echoorbitalremnants:root",
+  "display": {
+    "icon": {
+      "id": "echoorbitalremnants:orbital_remnant_badge"
+    },
+    "title": {
+      "text": "Faction Contract Complete"
+    },
+    "description": {
+      "text": "Complete a terminal-issued faction contract."
+    },
+    "frame": "goal"
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ]
+}

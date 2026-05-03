@@ -1,0 +1,30 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 48,
+    "separation": 18,
+    "salt": 999999
+  },
+  "structures": [
+    {
+      "structure": "echoashfallprotocol:industrial_factory",
+      "weight": 1
+    },
+    {
+      "structure": "echoashfallprotocol:subway_station",
+      "weight": 1
+    },
+    {
+      "structure": "echoashfallprotocol:remnant_village",
+      "weight": 1
+    },
+    {
+      "structure": "echoashfallprotocol:salvager_village",
+      "weight": 1
+    },
+    {
+      "structure": "echoashfallprotocol:mutant_village",
+      "weight": 1
+    }
+  ]
+}

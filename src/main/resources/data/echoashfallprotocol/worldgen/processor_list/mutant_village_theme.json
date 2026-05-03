@@ -1,0 +1,83 @@
+{
+  "processors": [
+    {
+      "processor_type": "minecraft:rule",
+      "rules": [
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:oak_planks" },
+          "output_state": { "Name": "minecraft:mangrove_planks" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:spruce_planks" },
+          "output_state": { "Name": "minecraft:dark_oak_planks" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:birch_planks" },
+          "output_state": { "Name": "minecraft:mangrove_planks" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:oak_log" },
+          "output_state": { "Name": "minecraft:muddy_mangrove_roots" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:grass_block" },
+          "output_state": { "Name": "minecraft:mycelium" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:dirt" },
+          "output_state": { "Name": "minecraft:podzol" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:cobblestone" },
+          "output_state": { "Name": "minecraft:moss_block" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:stone_bricks" },
+          "output_state": { "Name": "minecraft:mossy_stone_bricks" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:glass_pane" },
+          "output_state": { "Name": "minecraft:vine" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:block_match", "block": "minecraft:white_wool" },
+          "output_state": { "Name": "minecraft:lime_wool" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:random_block_match", "block": "minecraft:chest", "probability": 0.35 },
+          "output_state": { "Name": "echoashfallprotocol:bio_processing_station" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:random_block_match", "block": "minecraft:composter", "probability": 0.6 },
+          "output_state": { "Name": "echoashfallprotocol:spore_garden" }
+        },
+        {
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "input_predicate": { "predicate_type": "minecraft:random_block_match", "block": "minecraft:cauldron", "probability": 0.5 },
+          "output_state": { "Name": "echoashfallprotocol:toxic_puddle" }
+        }
+      ]
+    },
+    {
+      "processor_type": "minecraft:block_rot",
+      "integrity": 0.78
+    },
+    {
+      "processor_type": "minecraft:gravity",
+      "heightmap": "WORLD_SURFACE_WG",
+      "offset": 0
+    }
+  ]
+}

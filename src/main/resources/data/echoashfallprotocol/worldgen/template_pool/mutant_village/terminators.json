@@ -1,0 +1,42 @@
+{
+  "name": "echoashfallprotocol:mutant_village/terminators",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 3,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "terrain_matching",
+        "location": "minecraft:village/plains/terminators/terminator_01",
+        "processors": "echoashfallprotocol:mutant_village_theme"
+      }
+    },
+    {
+      "weight": 3,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "terrain_matching",
+        "location": "minecraft:village/plains/terminators/terminator_02",
+        "processors": "echoashfallprotocol:mutant_village_theme"
+      }
+    },
+    {
+      "weight": 2,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "terrain_matching",
+        "location": "minecraft:village/plains/terminators/terminator_03",
+        "processors": "echoashfallprotocol:mutant_village_theme"
+      }
+    },
+    {
+      "weight": 2,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "terrain_matching",
+        "location": "minecraft:village/plains/terminators/terminator_04",
+        "processors": "echoashfallprotocol:mutant_village_theme"
+      }
+    }
+  ]
+}

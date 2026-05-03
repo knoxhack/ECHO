@@ -1,0 +1,53 @@
+license="${mod_license}"
+issueTrackerURL="https://github.com/knoxhack/echoorbitalremnants/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="https://github.com/knoxhack/echoorbitalremnants"
+authors="KnoxHack"
+credits="Built as an ECHO addon chapter for post-Nexus space survival."
+description='''
+Earth is dead below. Orbit is haunted above.
+
+ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol with terminal-led missions, launch prep, pressure suit hazards, menu-driven orbital machines, Living Route Worlds exploration, route repair chains, survey objectives, faction contracts, hostile remnants, and ECHO-0.
+'''
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echocore"
+type="required"
+reason="Provides shared ECHO addon and service APIs."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echoterminal"
+type="optional"
+reason="Allows Orbital records and actions to appear inside the modular ECHO Terminal."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echoashfallprotocol"
+type="optional"
+reason="Enables Nexus-choice gating and intel mirroring through ECHO Core services when Ashfall is installed."
+versionRange="[1.2.0,)"
+ordering="AFTER"
+side="BOTH"

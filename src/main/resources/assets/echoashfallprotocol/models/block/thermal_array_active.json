@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/thermal_array_active_front",
+    "north": "echoashfallprotocol:block/thermal_array_active_front",
+    "south": "echoashfallprotocol:block/thermal_array_active_side",
+    "east": "echoashfallprotocol:block/thermal_array_active_side",
+    "west": "echoashfallprotocol:block/thermal_array_active_side",
+    "up": "echoashfallprotocol:block/thermal_array_active_top",
+    "down": "echoashfallprotocol:block/thermal_array_active_bottom"
+  }
+}

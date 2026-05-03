@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/bio_processing_station_front",
+    "north": "echoashfallprotocol:block/bio_processing_station_front",
+    "south": "echoashfallprotocol:block/bio_processing_station_side",
+    "east": "echoashfallprotocol:block/bio_processing_station_side",
+    "west": "echoashfallprotocol:block/bio_processing_station_side",
+    "up": "echoashfallprotocol:block/bio_processing_station_top",
+    "down": "echoashfallprotocol:block/bio_processing_station_bottom"
+  }
+}

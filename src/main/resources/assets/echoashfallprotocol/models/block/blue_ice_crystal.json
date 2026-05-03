@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "echoashfallprotocol:block/blue_ice_crystal"
+  }
+}

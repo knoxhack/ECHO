@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/moss_carpet",
+  "textures": {
+    "texture": "minecraft:block/moss_block"
+  }
+}

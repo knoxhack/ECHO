@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/factory_controller_front",
+    "north": "echoashfallprotocol:block/factory_controller_front",
+    "south": "echoashfallprotocol:block/factory_controller_side",
+    "east": "echoashfallprotocol:block/factory_controller_side",
+    "west": "echoashfallprotocol:block/factory_controller_side",
+    "up": "echoashfallprotocol:block/factory_controller_top",
+    "down": "echoashfallprotocol:block/factory_controller_bottom"
+  }
+}

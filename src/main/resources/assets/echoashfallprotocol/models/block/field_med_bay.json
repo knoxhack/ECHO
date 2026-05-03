@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/field_med_bay_front",
+    "north": "echoashfallprotocol:block/field_med_bay_front",
+    "south": "echoashfallprotocol:block/field_med_bay_side",
+    "east": "echoashfallprotocol:block/field_med_bay_side",
+    "west": "echoashfallprotocol:block/field_med_bay_side",
+    "up": "echoashfallprotocol:block/field_med_bay_top",
+    "down": "echoashfallprotocol:block/field_med_bay_bottom"
+  }
+}

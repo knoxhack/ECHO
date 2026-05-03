@@ -1,0 +1,1026 @@
+{
+  "note": "Original code-generated transparent mission icon badges. No user reference sheet artwork is used.",
+  "count": 169,
+  "sources": {
+    "ashfall": 110,
+    "side_ops": 8,
+    "vanilla": 39,
+    "orbital": 12
+  },
+  "icons": [
+    {
+      "mission": "echoashfallprotocol:drink_clean_water",
+      "title": "Confirm Clean Water + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/drink_clean_water.png"
+    },
+    {
+      "mission": "echoashfallprotocol:secure_crash_outpost",
+      "title": "Anchor Pod Outpost",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/secure_crash_outpost.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_scrap_knife",
+      "title": "Craft Scrap Knife + Turn In",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_scrap_knife.png"
+    },
+    {
+      "mission": "echoashfallprotocol:get_dirty_water",
+      "title": "Collect Dirty Water + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/get_dirty_water.png"
+    },
+    {
+      "mission": "echoashfallprotocol:emergency_filter_water",
+      "title": "Make Clean Water + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/emergency_filter_water.png"
+    },
+    {
+      "mission": "echoashfallprotocol:forage_wasteland_food",
+      "title": "Confirm Food Buffer + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/forage_wasteland_food.png"
+    },
+    {
+      "mission": "echoashfallprotocol:plant_mutated_sapling",
+      "title": "Plant Mutated Sapling",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/plant_mutated_sapling.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_rain_collector",
+      "title": "Build Rain Collector",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_rain_collector.png"
+    },
+    {
+      "mission": "echoashfallprotocol:stockpile_rations",
+      "title": "Confirm Ration Buffer + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/stockpile_rations.png"
+    },
+    {
+      "mission": "echoashfallprotocol:secure_sleep_shelter",
+      "title": "Secure Sleep Shelter",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/secure_sleep_shelter.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_bone_knife",
+      "title": "Craft Bone Knife + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_bone_knife.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_crude_spear",
+      "title": "Craft Crude Spear + Turn In",
+      "category": "combat",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_crude_spear.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_hide_wrap",
+      "title": "Craft Hide Wrap + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_hide_wrap.png"
+    },
+    {
+      "mission": "echoashfallprotocol:find_schematic_fragment",
+      "title": "Authenticate Schematic Fragment + Turn In",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/find_schematic_fragment.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_hand_recycler",
+      "title": "Build a Hand Recycler",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_hand_recycler.png"
+    },
+    {
+      "mission": "echoashfallprotocol:make_machine_casing",
+      "title": "Make a Machine Casing",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/make_machine_casing.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_micro_generator",
+      "title": "Build a Micro Generator",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_micro_generator.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_water_purifier",
+      "title": "Build a Water Purifier",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_water_purifier.png"
+    },
+    {
+      "mission": "echoashfallprotocol:stockpile_clean_water",
+      "title": "Stockpile 3 Clean Water",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/stockpile_clean_water.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_battery_bank",
+      "title": "Build a Battery Bank",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_battery_bank.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_scrap_dynamo",
+      "title": "Build a Scrap Dynamo",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_scrap_dynamo.png"
+    },
+    {
+      "mission": "echoashfallprotocol:charge_basic_battery",
+      "title": "Charge Basic Battery + Turn In",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/charge_basic_battery.png"
+    },
+    {
+      "mission": "echoashfallprotocol:route_power_cable",
+      "title": "Route Power Cable",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/route_power_cable.png"
+    },
+    {
+      "mission": "echoashfallprotocol:upgrade_power_cable",
+      "title": "Upgrade Power Cable",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/upgrade_power_cable.png"
+    },
+    {
+      "mission": "echoashfallprotocol:install_energy_meter",
+      "title": "Install Energy Meter",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/install_energy_meter.png"
+    },
+    {
+      "mission": "echoashfallprotocol:set_power_priority",
+      "title": "Set Power Priority",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/set_power_priority.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_scrap_press",
+      "title": "Build a Scrap Press",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_scrap_press.png"
+    },
+    {
+      "mission": "echoashfallprotocol:overclock_machine",
+      "title": "Craft Overclock Module",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/overclock_machine.png"
+    },
+    {
+      "mission": "echoashfallprotocol:install_item_pipe",
+      "title": "Install Item Pipe",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/install_item_pipe.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_thermal_burner",
+      "title": "Build a Thermal Burner",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_thermal_burner.png"
+    },
+    {
+      "mission": "echoashfallprotocol:base_stability_check",
+      "title": "Run Base Stability Check",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/base_stability_check.png"
+    },
+    {
+      "mission": "echoashfallprotocol:equip_gas_mask",
+      "title": "Equip Gas Mask + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/equip_gas_mask.png"
+    },
+    {
+      "mission": "echoashfallprotocol:fix_mask_filter",
+      "title": "Secure Filter Cartridge + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/fix_mask_filter.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_filter_workbench",
+      "title": "Build a Filter Workbench",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_filter_workbench.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_advanced_filter",
+      "title": "Craft Advanced Filter + Turn In",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_advanced_filter.png"
+    },
+    {
+      "mission": "echoashfallprotocol:first_faction_contact",
+      "title": "Contact Any Faction Job Site",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/first_faction_contact.png"
+    },
+    {
+      "mission": "echoashfallprotocol:contact_remnants",
+      "title": "Contact Remnants",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_remnants.png"
+    },
+    {
+      "mission": "echoashfallprotocol:contact_salvagers",
+      "title": "Contact Salvagers",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_salvagers.png"
+    },
+    {
+      "mission": "echoashfallprotocol:contact_mutants",
+      "title": "Contact Mutants",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_mutants.png"
+    },
+    {
+      "mission": "echoashfallprotocol:complete_first_faction_task",
+      "title": "Complete First Faction Task",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/complete_first_faction_task.png"
+    },
+    {
+      "mission": "echoashfallprotocol:earn_remnant_trust",
+      "title": "Complete Remnant Task",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/earn_remnant_trust.png"
+    },
+    {
+      "mission": "echoashfallprotocol:make_salvager_trade",
+      "title": "Complete Salvager Task",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/make_salvager_trade.png"
+    },
+    {
+      "mission": "echoashfallprotocol:recover_mutant_sample",
+      "title": "Complete Mutant Task",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/recover_mutant_sample.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_research_lab",
+      "title": "Build a Research Lab",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_research_lab.png"
+    },
+    {
+      "mission": "echoashfallprotocol:first_schematic",
+      "title": "Unlock Your First Schematic",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/first_schematic.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_factory_controller",
+      "title": "Build a Factory Controller",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_factory_controller.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_portable_scanner",
+      "title": "Craft a Portable Signal Scanner",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_portable_scanner.png"
+    },
+    {
+      "mission": "echoashfallprotocol:expedition_readiness",
+      "title": "Pack Expedition Supplies",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/expedition_readiness.png"
+    },
+    {
+      "mission": "echoashfallprotocol:scan_first_poi",
+      "title": "Scan First POI",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/scan_first_poi.png"
+    },
+    {
+      "mission": "echoashfallprotocol:loot_survivor_cache",
+      "title": "Loot Survivor Cache",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/loot_survivor_cache.png"
+    },
+    {
+      "mission": "echoashfallprotocol:enter_bio_lab",
+      "title": "Enter Bio Lab",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/enter_bio_lab.png"
+    },
+    {
+      "mission": "echoashfallprotocol:recover_data_log",
+      "title": "Recover Data Log + Turn In",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/recover_data_log.png"
+    },
+    {
+      "mission": "echoashfallprotocol:clear_military_vault",
+      "title": "Survey Military Vault",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/clear_military_vault.png"
+    },
+    {
+      "mission": "echoashfallprotocol:survey_reactor_ruin",
+      "title": "Survey Reactor Ruin",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/survey_reactor_ruin.png"
+    },
+    {
+      "mission": "echoashfallprotocol:find_dense_alloy",
+      "title": "Find Dense Alloy",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/find_dense_alloy.png"
+    },
+    {
+      "mission": "echoashfallprotocol:repair_echo_drone",
+      "title": "Restore Drone Recon Support",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/repair_echo_drone.png"
+    },
+    {
+      "mission": "echoashfallprotocol:upgrade_drone_support",
+      "title": "Upgrade Drone Support",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/upgrade_drone_support.png"
+    },
+    {
+      "mission": "echoashfallprotocol:set_drone_scout_mode",
+      "title": "Set Drone Scout Mode",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/set_drone_scout_mode.png"
+    },
+    {
+      "mission": "echoashfallprotocol:recover_drone_intel",
+      "title": "Recover Drone Intel",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/recover_drone_intel.png"
+    },
+    {
+      "mission": "echoashfallprotocol:deploy_scout_drone",
+      "title": "Deploy Scout Drone",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/deploy_scout_drone.png"
+    },
+    {
+      "mission": "echoashfallprotocol:faction_reputation",
+      "title": "Earn Faction Trust",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/faction_reputation.png"
+    },
+    {
+      "mission": "echoashfallprotocol:first_perk",
+      "title": "Unlock Your First Perk",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/first_perk.png"
+    },
+    {
+      "mission": "echoashfallprotocol:poi_explorer",
+      "title": "Discover 3 POIs",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/poi_explorer.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_field_med_bay",
+      "title": "Build a Field Med Bay",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_field_med_bay.png"
+    },
+    {
+      "mission": "echoashfallprotocol:scan_mutation_status",
+      "title": "Scan Mutation Status",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/scan_mutation_status.png"
+    },
+    {
+      "mission": "echoashfallprotocol:use_field_med_bay",
+      "title": "Use Field Med Bay",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/use_field_med_bay.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_radaway",
+      "title": "Craft RadAway + Turn In",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_radaway.png"
+    },
+    {
+      "mission": "echoashfallprotocol:stabilize_mutation_effects",
+      "title": "Stabilize Mutation Effects",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/stabilize_mutation_effects.png"
+    },
+    {
+      "mission": "echoashfallprotocol:scout_radiation_zone",
+      "title": "Scout Radiation Zone + Turn In",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/scout_radiation_zone.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_atmospheric_scrubber",
+      "title": "Build Atmospheric Scrubber",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_atmospheric_scrubber.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_radiation_cleanser",
+      "title": "Build Radiation Cleanser",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_radiation_cleanser.png"
+    },
+    {
+      "mission": "echoashfallprotocol:collect_mutated_tissue",
+      "title": "Collect Mutated Tissue + Turn In",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/collect_mutated_tissue.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_mutagen_vial",
+      "title": "Craft Mutagen Vial + Turn In",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_mutagen_vial.png"
+    },
+    {
+      "mission": "echoashfallprotocol:acquire_mutagen",
+      "title": "Confirm Mutagen Handling",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/acquire_mutagen.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_thermal_array",
+      "title": "Build a Thermal Array",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_thermal_array.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_ore_grinder",
+      "title": "Build a Substrate Grinder",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_ore_grinder.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_isotope_refiner",
+      "title": "Build an Isotope Refiner",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_isotope_refiner.png"
+    },
+    {
+      "mission": "echoashfallprotocol:forge_alloy_weapon",
+      "title": "Forge an Alloy Weapon",
+      "category": "combat",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/forge_alloy_weapon.png"
+    },
+    {
+      "mission": "echoashfallprotocol:equip_alloy_kit",
+      "title": "Equip Alloy Route Kit",
+      "category": "combat",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/equip_alloy_kit.png"
+    },
+    {
+      "mission": "echoashfallprotocol:stockpile_route_supplies",
+      "title": "Stockpile Route Supplies",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/stockpile_route_supplies.png"
+    },
+    {
+      "mission": "echoashfallprotocol:calibrate_midgame_grid",
+      "title": "Calibrate Midgame Grid",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/calibrate_midgame_grid.png"
+    },
+    {
+      "mission": "echoashfallprotocol:deploy_stationary_scanner",
+      "title": "Deploy a Stationary Signal Scanner",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/deploy_stationary_scanner.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_scout_drone",
+      "title": "Build a Scout Drone",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_scout_drone.png"
+    },
+    {
+      "mission": "echoashfallprotocol:activate_power_node",
+      "title": "Place a Power Node",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/activate_power_node.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_nexus_capacitor",
+      "title": "Build a Nexus Capacitor",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_nexus_capacitor.png"
+    },
+    {
+      "mission": "echoashfallprotocol:build_workshop",
+      "title": "Build a Workshop",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/build_workshop.png"
+    },
+    {
+      "mission": "echoashfallprotocol:activate_relay_station",
+      "title": "Activate a Relay Station",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/activate_relay_station.png"
+    },
+    {
+      "mission": "echoashfallprotocol:enter_cryogenic_ruins",
+      "title": "Enter Cryogenic Ruins",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/enter_cryogenic_ruins.png"
+    },
+    {
+      "mission": "echoashfallprotocol:recover_cryo_sample",
+      "title": "Recover Cryo Sample + Turn In",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/recover_cryo_sample.png"
+    },
+    {
+      "mission": "echoashfallprotocol:warm_up_after_exposure",
+      "title": "Warm Up After Exposure",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/warm_up_after_exposure.png"
+    },
+    {
+      "mission": "echoashfallprotocol:craft_cold_route_supplies",
+      "title": "Prepare Cold Supplies + Turn In",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/craft_cold_route_supplies.png"
+    },
+    {
+      "mission": "echoashfallprotocol:find_nexus_core",
+      "title": "Locate the Nexus Core",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/find_nexus_core.png"
+    },
+    {
+      "mission": "echoashfallprotocol:stabilize_nexus_grid",
+      "title": "Stabilize the Nexus Grid",
+      "category": "tech",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/stabilize_nexus_grid.png"
+    },
+    {
+      "mission": "echoashfallprotocol:reach_decision",
+      "title": "Reach the Final Decision Point",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/reach_decision.png"
+    },
+    {
+      "mission": "echoashfallprotocol:restore_repair_nodes",
+      "title": "Activate 3 Power Nodes",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/restore_repair_nodes.png"
+    },
+    {
+      "mission": "echoashfallprotocol:restore_purge_corruption",
+      "title": "Defeat 20 Corrupted Mobs",
+      "category": "combat",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/restore_purge_corruption.png"
+    },
+    {
+      "mission": "echoashfallprotocol:restore_enter_archives",
+      "title": "Enter the Pre-Fall Archives",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/restore_enter_archives.png"
+    },
+    {
+      "mission": "echoashfallprotocol:restore_guardian",
+      "title": "Defeat The Warden in Pre-Fall Archives",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/restore_guardian.png"
+    },
+    {
+      "mission": "echoashfallprotocol:restore_epilogue",
+      "title": "Complete Restore Epilogue",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/restore_epilogue.png"
+    },
+    {
+      "mission": "echoashfallprotocol:destroy_scorched_earth",
+      "title": "Destroy 5 Power Nodes",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/destroy_scorched_earth.png"
+    },
+    {
+      "mission": "echoashfallprotocol:destroy_survive_storms",
+      "title": "Survive a Severe Storm",
+      "category": "survival",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/destroy_survive_storms.png"
+    },
+    {
+      "mission": "echoashfallprotocol:destroy_enter_archives",
+      "title": "Enter the Pre-Fall Archives",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/destroy_enter_archives.png"
+    },
+    {
+      "mission": "echoashfallprotocol:destroy_guardian",
+      "title": "Defeat The Warden in Pre-Fall Archives",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/destroy_guardian.png"
+    },
+    {
+      "mission": "echoashfallprotocol:destroy_epilogue",
+      "title": "Complete Destroy Epilogue",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/destroy_epilogue.png"
+    },
+    {
+      "mission": "echoashfallprotocol:control_signal_expansion",
+      "title": "Place 3 Signal Beacons",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/control_signal_expansion.png"
+    },
+    {
+      "mission": "echoashfallprotocol:control_resource_dominance",
+      "title": "Collect 50 of Each Rare Resource",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/control_resource_dominance.png"
+    },
+    {
+      "mission": "echoashfallprotocol:control_enter_archives",
+      "title": "Enter the Pre-Fall Archives",
+      "category": "exploration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/control_enter_archives.png"
+    },
+    {
+      "mission": "echoashfallprotocol:control_guardian",
+      "title": "Defeat The Warden in Pre-Fall Archives",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/control_guardian.png"
+    },
+    {
+      "mission": "echoashfallprotocol:control_epilogue",
+      "title": "Complete Control Epilogue",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/control_epilogue.png"
+    },
+    {
+      "mission": "echoashfallprotocol:[ECHO-7] Guardian signal locked below ",
+      "title": " entrance, descend into the buried node, archive the site, then neutralize ",
+      "category": "combat",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/[ECHO-7] Guardian signal locked below .png"
+    },
+    {
+      "mission": "echoashfallprotocol:crash_blackbox_signal",
+      "title": "Crash Blackbox Signal",
+      "category": "field_recon",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/crash_blackbox_signal.png"
+    },
+    {
+      "mission": "echoashfallprotocol:wasteland_surface_report",
+      "title": "Wasteland Surface Report",
+      "category": "field_recon",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/wasteland_surface_report.png"
+    },
+    {
+      "mission": "echoashfallprotocol:first_ruin_signature",
+      "title": "First Ruin Signature",
+      "category": "route_records",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/first_ruin_signature.png"
+    },
+    {
+      "mission": "echoashfallprotocol:faction_crossband",
+      "title": "Faction Crossband",
+      "category": "human_signals",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/faction_crossband.png"
+    },
+    {
+      "mission": "echoashfallprotocol:drone_memory_sweep",
+      "title": "Drone Memory Sweep",
+      "category": "machine_echoes",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/drone_memory_sweep.png"
+    },
+    {
+      "mission": "echoashfallprotocol:guardian_signal_lattice",
+      "title": "Guardian Signal Lattice",
+      "category": "anomaly_chain",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/guardian_signal_lattice.png"
+    },
+    {
+      "mission": "echoashfallprotocol:nexus_choice_record",
+      "title": "Nexus Choice Record",
+      "category": "nexus",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/nexus_choice_record.png"
+    },
+    {
+      "mission": "echoashfallprotocol:orbital_quarantine_echo",
+      "title": "Orbital Quarantine Echo",
+      "category": "orbital",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/orbital_quarantine_echo.png"
+    },
+    {
+      "mission": "minecraft:story/root",
+      "title": "Minecraft",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/root.png"
+    },
+    {
+      "mission": "minecraft:story/mine_stone",
+      "title": "Stone Age",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/mine_stone.png"
+    },
+    {
+      "mission": "minecraft:story/upgrade_tools",
+      "title": "Getting an Upgrade",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/upgrade_tools.png"
+    },
+    {
+      "mission": "minecraft:story/smelt_iron",
+      "title": "Acquire Hardware",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/smelt_iron.png"
+    },
+    {
+      "mission": "minecraft:story/iron_tools",
+      "title": "Isn't It Iron Pick",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/iron_tools.png"
+    },
+    {
+      "mission": "minecraft:story/lava_bucket",
+      "title": "Hot Stuff",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/lava_bucket.png"
+    },
+    {
+      "mission": "minecraft:story/enter_the_nether",
+      "title": "We Need to Go Deeper",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/enter_the_nether.png"
+    },
+    {
+      "mission": "minecraft:story/mine_diamond",
+      "title": "Diamonds!",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/mine_diamond.png"
+    },
+    {
+      "mission": "minecraft:story/enchant_item",
+      "title": "Enchanter",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/enchant_item.png"
+    },
+    {
+      "mission": "minecraft:story/follow_ender_eye",
+      "title": "Eye Spy",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/follow_ender_eye.png"
+    },
+    {
+      "mission": "minecraft:story/enter_the_end",
+      "title": "The End?",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/story/enter_the_end.png"
+    },
+    {
+      "mission": "minecraft:nether/root",
+      "title": "Nether",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/root.png"
+    },
+    {
+      "mission": "minecraft:nether/return_to_sender",
+      "title": "Return to Sender",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/return_to_sender.png"
+    },
+    {
+      "mission": "minecraft:nether/find_bastion",
+      "title": "Those Were the Days",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/find_bastion.png"
+    },
+    {
+      "mission": "minecraft:nether/obtain_ancient_debris",
+      "title": "Hidden in the Depths",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/obtain_ancient_debris.png"
+    },
+    {
+      "mission": "minecraft:nether/obtain_blaze_rod",
+      "title": "Into Fire",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/obtain_blaze_rod.png"
+    },
+    {
+      "mission": "minecraft:nether/brew_potion",
+      "title": "Local Brewery",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/brew_potion.png"
+    },
+    {
+      "mission": "minecraft:nether/summon_wither",
+      "title": "Withering Heights",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/summon_wither.png"
+    },
+    {
+      "mission": "minecraft:nether/create_beacon",
+      "title": "Bring Home the Beacon",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/create_beacon.png"
+    },
+    {
+      "mission": "minecraft:nether/all_potions",
+      "title": "A Furious Cocktail",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/all_potions.png"
+    },
+    {
+      "mission": "minecraft:nether/all_effects",
+      "title": "How Did We Get Here?",
+      "category": "nether",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/nether/all_effects.png"
+    },
+    {
+      "mission": "minecraft:end/root",
+      "title": "The End",
+      "category": "end",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/end/root.png"
+    },
+    {
+      "mission": "minecraft:end/kill_dragon",
+      "title": "Free the End",
+      "category": "end",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/end/kill_dragon.png"
+    },
+    {
+      "mission": "minecraft:end/dragon_egg",
+      "title": "The Next Generation",
+      "category": "end",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/end/dragon_egg.png"
+    },
+    {
+      "mission": "minecraft:end/enter_end_gateway",
+      "title": "Remote Getaway",
+      "category": "end",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/end/enter_end_gateway.png"
+    },
+    {
+      "mission": "minecraft:end/elytra",
+      "title": "Sky's the Limit",
+      "category": "end",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/end/elytra.png"
+    },
+    {
+      "mission": "minecraft:adventure/root",
+      "title": "Adventure",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/root.png"
+    },
+    {
+      "mission": "minecraft:adventure/kill_a_mob",
+      "title": "Monster Hunter",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/kill_a_mob.png"
+    },
+    {
+      "mission": "minecraft:adventure/trade",
+      "title": "What a Deal!",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/trade.png"
+    },
+    {
+      "mission": "minecraft:adventure/shoot_arrow",
+      "title": "Take Aim",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/shoot_arrow.png"
+    },
+    {
+      "mission": "minecraft:adventure/sleep_in_bed",
+      "title": "Sweet Dreams",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/sleep_in_bed.png"
+    },
+    {
+      "mission": "minecraft:adventure/hero_of_the_village",
+      "title": "Hero of the Village",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/hero_of_the_village.png"
+    },
+    {
+      "mission": "minecraft:adventure/kill_all_mobs",
+      "title": "Monsters Hunted",
+      "category": "adventure",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/adventure/kill_all_mobs.png"
+    },
+    {
+      "mission": "minecraft:husbandry/root",
+      "title": "Husbandry",
+      "category": "husbandry",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/husbandry/root.png"
+    },
+    {
+      "mission": "minecraft:husbandry/plant_seed",
+      "title": "A Seedy Place",
+      "category": "husbandry",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/husbandry/plant_seed.png"
+    },
+    {
+      "mission": "minecraft:husbandry/breed_an_animal",
+      "title": "The Parrots and the Bats",
+      "category": "husbandry",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/husbandry/breed_an_animal.png"
+    },
+    {
+      "mission": "minecraft:husbandry/tame_an_animal",
+      "title": "Best Friends Forever",
+      "category": "husbandry",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/husbandry/tame_an_animal.png"
+    },
+    {
+      "mission": "minecraft:husbandry/safely_harvest_honey",
+      "title": "Bee Our Guest",
+      "category": "husbandry",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/husbandry/safely_harvest_honey.png"
+    },
+    {
+      "mission": "minecraft:husbandry/balanced_diet",
+      "title": "A Balanced Diet",
+      "category": "husbandry",
+      "file": "assets/echoterminal/textures/gui/mission_icons/minecraft/husbandry/balanced_diet.png"
+    },
+    {
+      "mission": "echoorbitalremnants:earth_calibration",
+      "title": "Earth Calibration",
+      "category": "calibration",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/earth_calibration.png"
+    },
+    {
+      "mission": "echoorbitalremnants:launch_chain",
+      "title": "Launch Chain",
+      "category": "crafting",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/launch_chain.png"
+    },
+    {
+      "mission": "echoorbitalremnants:low_orbit",
+      "title": "Low Earth Orbit",
+      "category": "route",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/low_orbit.png"
+    },
+    {
+      "mission": "echoorbitalremnants:station_network",
+      "title": "Station Network",
+      "category": "repair",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/station_network.png"
+    },
+    {
+      "mission": "echoorbitalremnants:lunar_signal",
+      "title": "Lunar Signal",
+      "category": "route",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/lunar_signal.png"
+    },
+    {
+      "mission": "echoorbitalremnants:mars_route",
+      "title": "Mars Route",
+      "category": "route",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/mars_route.png"
+    },
+    {
+      "mission": "echoorbitalremnants:europa_route",
+      "title": "Europa Route",
+      "category": "route",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/europa_route.png"
+    },
+    {
+      "mission": "echoorbitalremnants:deep_space_protocol",
+      "title": "Deep Space Protocol",
+      "category": "route",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/deep_space_protocol.png"
+    },
+    {
+      "mission": "echoorbitalremnants:echo_zero",
+      "title": "ECHO-0",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/echo_zero.png"
+    },
+    {
+      "mission": "echoorbitalremnants:survey_network",
+      "title": "Survey Network",
+      "category": "survey",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/survey_network.png"
+    },
+    {
+      "mission": "echoorbitalremnants:faction_contract",
+      "title": "Faction Contract",
+      "category": "faction",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/faction_contract.png"
+    },
+    {
+      "mission": "echoorbitalremnants:final_seal",
+      "title": "Final Network Seal",
+      "category": "story",
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoorbitalremnants/final_seal.png"
+    }
+  ]
+}

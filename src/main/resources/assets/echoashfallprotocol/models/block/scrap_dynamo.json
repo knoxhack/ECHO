@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/scrap_dynamo_front",
+    "north": "echoashfallprotocol:block/scrap_dynamo_front",
+    "south": "echoashfallprotocol:block/scrap_dynamo_side",
+    "east": "echoashfallprotocol:block/scrap_dynamo_side",
+    "west": "echoashfallprotocol:block/scrap_dynamo_side",
+    "up": "echoashfallprotocol:block/scrap_dynamo_top",
+    "down": "echoashfallprotocol:block/scrap_dynamo_bottom"
+  }
+}

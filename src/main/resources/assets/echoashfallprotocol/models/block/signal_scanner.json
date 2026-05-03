@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/signal_scanner_front",
+    "north": "echoashfallprotocol:block/signal_scanner_front",
+    "south": "echoashfallprotocol:block/signal_scanner_side",
+    "east": "echoashfallprotocol:block/signal_scanner_side",
+    "west": "echoashfallprotocol:block/signal_scanner_side",
+    "up": "echoashfallprotocol:block/signal_scanner_top",
+    "down": "echoashfallprotocol:block/signal_scanner_bottom"
+  }
+}

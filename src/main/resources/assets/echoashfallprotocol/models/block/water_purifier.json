@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/water_purifier_front",
+    "north": "echoashfallprotocol:block/water_purifier_front",
+    "south": "echoashfallprotocol:block/water_purifier_side",
+    "east": "echoashfallprotocol:block/water_purifier_side",
+    "west": "echoashfallprotocol:block/water_purifier_side",
+    "up": "echoashfallprotocol:block/water_purifier_top",
+    "down": "echoashfallprotocol:block/water_purifier_bottom"
+  }
+}

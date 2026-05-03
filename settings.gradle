@@ -1,0 +1,18 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+include 'echocore'
+project(':echocore').projectDir = file('core/echocore')
+
+include 'echoterminal'
+project(':echoterminal').projectDir = file('addons/echoterminal')
+
+include 'echoorbitalremnants'
+project(':echoorbitalremnants').projectDir = file('addons/echoorbitalremnants')
