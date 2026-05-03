@@ -76,6 +76,7 @@ Release artifacts:
 Verification commands:
 
 ```powershell
+python -m pip install -r tools\requirements.txt
 python tools\validate_resources.py
 python tools\validate_gameplay_data.py
 .\gradlew.bat verifyEchoRelease --warning-mode all
