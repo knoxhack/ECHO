@@ -19,14 +19,14 @@ Use this checklist for a clean first report:
 3. Build the first powered loop: Hand Recycler, Micro Generator, Filter Workbench, Water Purifier, and Battery Bank.
 4. Use JEI to inspect ECHO custom machine categories and confirm locked recipes explain their schematic requirements.
 5. Deploy a Scout Drone or repair the ECHO companion drone, then test Drone tab commands.
-6. Scan at least one POI and confirm the readout names the actual site, route, hazard profile, prep kit, objective, distance, direction, and likely supplies.
+6. Scan at least one POI and confirm the readout names the actual site, route, hazard profile, prep kit, objective, distance, direction, and likely supplies; then check Route Map -> POI Atlas for the grouped template signals behind that scanner profile.
 7. Push toward biome guardian entrances, Power Nodes, the Nexus choice, the Pre-Fall Archives, The Warden, and the final epilogue; then test optional Orbital Remnants unlock if ECHO-7 is installed.
 
 Report bugs with mod list, seed, coordinates, biome/POI, expected behavior, actual behavior, reproduction steps, and screenshots or crash reports.
 
 Known notes:
 
-- Existing worlds need new chunks for the newest POI and resource recovery distribution. Old discovered POI ids are migrated through aliases when scanned or loaded.
+- Existing worlds need new chunks for the newest POI and resource recovery distribution. Old discovered POI ids are migrated through aliases when scanned or loaded, and the POI Field Atlas remains profile-level rather than per-template save state.
 - Healthy vanilla saplings are intentionally rare restoration rewards; use ruined trees first.
 - Drone control is intentionally terminal/direct-interaction based. The old standalone drone inventory menu is not part of the current player flow.
 - Some audio cues intentionally reuse vanilla sound events in this release.
@@ -124,7 +124,7 @@ Goal: turn exploration into planned routes.
 
 - Contact faction job sites and complete starter tasks.
 - Build the Research Lab and Factory Controller.
-- Craft the Portable Signal Scanner, pack expedition supplies, scan POIs, follow the hazard-specific prep readout, recover logs/caches, and repair drone scouting support.
+- Craft the Portable Signal Scanner, pack expedition supplies, scan POIs, use the Route Map POI Atlas to recognize template variants, follow the hazard-specific prep readout, recover logs/caches, and repair drone scouting support.
 
 ### Phase 4: Biological Adaptation
 
@@ -213,12 +213,12 @@ If ECHO: Orbital Remnants is installed, the same terminal also displays the post
 After choosing Restore, Destroy, or Control at the Nexus Core:
 
 1. Craft or use the ECHO-7 Orbital Remnants terminal.
-2. Sneak-use it on Earth to calibrate orbital contact.
-3. Recover launch-site salvage.
+2. Sneak-use it on Earth to calibrate orbital contact and answer the old quarantine lock.
+3. Recover launch-site salvage and Station ECHO fall-path evidence.
 4. Build pressure suit gear, oxygen support, launch infrastructure, and rocket parts.
 5. Assemble the Emergency Rocket and reach Low Earth Orbit.
 
-The ECHO terminal will show Orbital Remnants progress, but the addon keeps its own mission authority and scan actions.
+The ECHO terminal will show Orbital Remnants progress, but the addon keeps its own route authority and scan actions.
 
 ## Practical Tips
 

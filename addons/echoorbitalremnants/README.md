@@ -1,19 +1,19 @@
 # ECHO: Orbital Remnants
 
-Earth is dead below. Orbit is haunted above.
+Earth made its choice below. Orbit still calls it quarantine.
 
-ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol built on the bundled 26.1.2 NeoForge setup. It adds a terminal-led progression arc from Earth recovery sites to explorable Low Earth Orbit, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, and the ECHO-0 final protocol.
+ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol built on the bundled 26.1.2 NeoForge setup. It adds a terminal-led progression arc from Earth recovery sites to explorable Low Earth Orbit, Station ECHO debris, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, and the ECHO-0 quarantine protocol.
 
 ## Chapter Flow
 
-After any ECHO: Ashfall Protocol Nexus choice, ECHO-7 controls orbital progression through the ECHO-7 Terminal and contributes status back into the main ECHO terminal.
+After any ECHO: Ashfall Protocol Nexus choice, ECHO-7 controls orbital progression through the ECHO-7 Terminal and contributes status back into the main ECHO terminal. Restore, Destroy, or Control all tell orbit the same thing: Earth is no longer only a containment field.
 
 - Craft the ECHO-7 Terminal.
 - Sneak-use it on Earth to calibrate orbital contact.
-- Recover starter salvage from generated launch pads, satellite debris, and comms arrays.
+- Recover starter salvage from launch pads, satellite debris, comms arrays, cryo bunkers, and fallen pod evidence.
 - Build suit gear, oxygen support, launch infrastructure, and rocket parts.
 - Assemble the Emergency Rocket and reach orbit.
-- Restore station systems, repair mid-game route networks, unlock later route vessels, survive hostile anomalies, and resolve ECHO-0.
+- Restore Station ECHO systems, repair route networks, unlock later route vessels, survive hostile anomalies, and resolve ECHO-0.
 - Continue into the Living Route Worlds loop: explore deep route sites, map landmarks, stabilize hazards, finish post-ECHO Nexus anchors, complete one faction contract, and seal the final survey network.
 - Use the terminal's Next Step, SCAN, SURVEY, and faction contract reports whenever progression is blocked; ECHO guidance names missing hooks directly.
 
@@ -21,7 +21,7 @@ After any ECHO: Ashfall Protocol Nexus choice, ECHO-7 controls orbital progressi
 
 ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO stack. It runs with `echocore`, can surface its route state in `echoterminal`, and uses shared core services to react to Ashfall's Nexus choice when Ashfall is installed.
 
-- Before an ECHO: Ashfall Protocol Nexus choice, Earth orbital calibration is locked.
+- Before an ECHO: Ashfall Protocol Nexus choice, Earth orbital calibration is locked by the quarantine handoff.
 - After any Nexus choice, the normal ECHO-7 launch-site scan path opens.
 - The main ECHO terminal shows Orbital Command, Survey, and ECHO mission records with route flags, suit telemetry, station power, faction standings, and optional utility support caches.
 - Without the shared ECHO Terminal, Orbital Remnants keeps its standalone terminal item flow as the fallback command surface.

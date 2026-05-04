@@ -9,9 +9,9 @@ displayURL="https://github.com/knoxhack/echoorbitalremnants"
 authors="KnoxHack"
 credits="Built as an ECHO addon chapter for post-Nexus space survival."
 description='''
-Earth is dead below. Orbit is haunted above.
+Earth made its choice below. Orbit still calls it quarantine.
 
-ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol with terminal-led missions, launch prep, pressure suit hazards, menu-driven orbital machines, Living Route Worlds exploration, route repair chains, survey objectives, faction contracts, hostile remnants, and ECHO-0.
+ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol with terminal-led missions, launch prep, pressure suit hazards, menu-driven orbital machines, Living Route Worlds exploration, route repair chains, survey objectives, faction contracts, hostile remnants, and ECHO-0 quarantine resolution.
 '''
 
 [[dependencies.${mod_id}]]

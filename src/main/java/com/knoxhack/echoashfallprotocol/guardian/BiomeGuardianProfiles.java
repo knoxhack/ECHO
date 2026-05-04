@@ -35,7 +35,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.DROP_POD, StructureType.RADIO_TOWER, StructureType.SALVAGER_TRADING_POST),
                 "half-buried rescue hatch",
                 "Buried Rescue-Control Lab",
-                "A first-response control node still classifies every survivor as a containment risk.",
+                "A first-response control node still classifies every survivor as a containment risk and every rescue as unfinished.",
                 ModEntities.WASTELAND_SENTINEL::get,
                 ModEntities.ECHO_DRONE::get,
                 0xFF61C7FF,
@@ -56,11 +56,11 @@ public final class BiomeGuardianProfiles {
                 ),
                 visual("textures/entity/wasteland_sentinel.png", 0xFFFFFFFF, 0xFF9FEFFF, 0.95f, 0.82f,
                         BossEvent.BossBarColor.WHITE, false, BiomeGuardianProfile.VisualVariant.SENTINEL),
-                "Shield pulse throws attackers back, then opens a short recovery window.",
-                "Bring an alloy weapon, food, one RadAway, and room to retreat.",
-                "Rescue protocol rerouted. Ash response teams waking.",
+                "Shield pulse throws attackers back, then exposes a short recovery window around the old beacon rhythm.",
+                "Bring an alloy weapon, food, one RadAway, and room to retreat when the beacon flares.",
+                "Rescue protocol rerouted. Ash response teams waking without patients.",
                 "Containment lock failed. Sentinel authorizing lethal recovery.",
-                "Wasteland rescue-control node severed."
+                "Wasteland rescue-control node severed. First route pressure falling."
         ));
         register(profile(
                 "ruined_plains",
@@ -71,7 +71,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.BIO_LAB, StructureType.RADIO_TOWER, StructureType.SALVAGER_TRADING_POST, StructureType.DROP_POD),
                 "reinforced bunker door",
                 "Underground Remnant Command Bunker",
-                "A survivor commander turned emergency order into territory law below the plains.",
+                "A survivor commander turned emergency order into territory law below the plains and never stood down.",
                 ModEntities.PLAINS_WARLORD::get,
                 ModEntities.SCAVENGER_BANDIT::get,
                 0xFFFFA94D,
@@ -92,11 +92,11 @@ public final class BiomeGuardianProfiles {
                 ),
                 visual("textures/entity/plains_warlord.png", 0xFFFFB35A, 0xFFFFB35A, 1.02f, 0.88f,
                         BossEvent.BossBarColor.YELLOW, false, BiomeGuardianProfile.VisualVariant.WARLORD),
-                "Command rally marks the bunker and calls more bandits if lanes are left uncleared.",
-                "Clear side rooms first and carry spare weapon durability.",
-                "Bunker channel active. Warlord calling reserves.",
+                "Command rally marks the bunker and calls reserves through any side lane left unsecured.",
+                "Clear side rooms first and carry spare weapon durability; this fight punishes tunnel vision.",
+                "Bunker channel active. Warlord calling reserves from dead doctrine.",
                 "Command chain collapsing. All guns to the breach.",
-                "Ruined Plains command bunker neutralized."
+                "Ruined Plains command bunker neutralized. Local patrol signal quiet."
         ));
         register(profile(
                 "ruined_cityscape",
@@ -107,7 +107,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.SUBWAY_STATION, StructureType.SEWER_JUNCTION, StructureType.TRAIN_YARD, StructureType.ABANDONED_MINE),
                 "subway service stair",
                 "Subway Data-Vault Ambush Site",
-                "A dead-city predator nests where transit cameras and data vaults still share power.",
+                "A dead-city predator nests where transit cameras and data vaults still share power and blind spots breed hunger.",
                 ModEntities.CITY_RUIN_STALKER::get,
                 ModEntities.CITY_STALKER::get,
                 0xFFC8A4FF,
@@ -129,10 +129,10 @@ public final class BiomeGuardianProfiles {
                 visual("textures/entity/city_ruin_stalker.png", 0xFFD0A8FF, 0xFFE0B6FF, 0.92f, 0.68f,
                         BossEvent.BossBarColor.PURPLE, false, BiomeGuardianProfile.VisualVariant.STALKER),
                 "Shadow ambush blinds players and repositions the stalker through broken sightlines.",
-                "Bring blocks or lights, and do not fight with your back to dark corridors.",
+                "Bring blocks or lights, and never let the arena choose what is behind you.",
                 "Urban blackout routine active. Sightlines compromised.",
                 "Vault shadows moving. Do not trust open corridors.",
-                "City ambush signal collapsed."
+                "City ambush signal collapsed. Data-vault lanes readable again."
         ));
         register(profile(
                 "industrial_ruins",
@@ -143,7 +143,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.TRAIN_YARD, StructureType.ABANDONED_MINE, StructureType.DERELICT_WORKSHOP, StructureType.SUBWAY_STATION),
                 "ruined freight lift",
                 "Factory Sublevel Maintenance Core",
-                "An industrial exoshell still enforces production quotas in a sealed machine sublevel.",
+                "An industrial exoshell still enforces production quotas in a sealed machine sublevel with no workers left to spare.",
                 ModEntities.INDUSTRIAL_JUGGERNAUT::get,
                 ModEntities.RUST_WALKER::get,
                 0xFFFF8C42,
@@ -164,11 +164,11 @@ public final class BiomeGuardianProfiles {
                 ),
                 visual("textures/entity/industrial_juggernaut.png", 0xFFFF8E45, 0xFFFF9A3D, 1.16f, 1.04f,
                         BossEvent.BossBarColor.YELLOW, false, BiomeGuardianProfile.VisualVariant.JUGGERNAUT),
-                "Overheat slam punishes close-range tunneling but leaves long windups around vent cycles.",
-                "Bring sustained healing and keep a clear path around machinery lanes.",
+                "Overheat slam punishes close-range tunneling but leaves readable windups around vent cycles.",
+                "Bring sustained healing and keep a clear path around machinery lanes before the floor becomes instructions.",
                 "Maintenance core pressurizing. Armor plating engaged.",
                 "Factory failsafe active. Heavy machinery entering kill cycle.",
-                "Industrial maintenance core disabled."
+                "Industrial maintenance core disabled. Production order void."
         ));
         register(profile(
                 "toxic_swamp",
@@ -179,7 +179,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.BIO_LAB, StructureType.SEWER_JUNCTION, StructureType.REACTOR_RUIN),
                 "toxic sinkhole",
                 "Sunken Bio-Hive",
-                "A bio-command growth learned to route swamp toxins through living carriers.",
+                "A bio-command growth learned to route swamp toxins through living carriers and call it adaptation.",
                 ModEntities.TOXIC_HIVE_MATRIARCH::get,
                 ModEntities.MUTATED_CRAWLER::get,
                 0xFF42D67E,
@@ -201,10 +201,10 @@ public final class BiomeGuardianProfiles {
                 visual("textures/entity/toxic_hive_matriarch.png", 0xFF5DDE7C, 0xFF7DFF9B, 1.05f, 0.92f,
                         BossEvent.BossBarColor.GREEN, false, BiomeGuardianProfile.VisualVariant.MATRIARCH),
                 "Toxic brood fills the arena with crawlers and poison pressure if pods are ignored.",
-                "Carry elite filtration, clean water, and a plan to clear adds quickly.",
+                "Carry elite filtration, clean water, and a fast add-clear plan.",
                 "Hive sacs rupturing. Filter load rising.",
                 "Matriarch broadcasting brood panic. Keep moving.",
-                "Toxic bio-hive command severed."
+                "Toxic bio-hive command severed. Swamp pressure losing coordination."
         ));
         register(profile(
                 "crash_zone_wasteland",
@@ -215,7 +215,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.DROP_POD, StructureType.TRAIN_YARD, StructureType.SATELLITE_ARRAY),
                 "impact vault breach",
                 "Buried Military Crash Vault",
-                "A fused wreckage mass guards the vault where crash telemetry and weapons stockpiles crossed.",
+                "A fused wreckage mass guards the vault where crash telemetry, weapons stockpiles, and failed rescue orders crossed.",
                 ModEntities.CRASH_ZONE_COLOSSUS::get,
                 ModEntities.SCAVENGER_BANDIT::get,
                 0xFFE25959,
@@ -240,7 +240,7 @@ public final class BiomeGuardianProfiles {
                 "Repair armor first and keep escape space open around the vault core.",
                 "Impact servos cycling. Brace for debris shock.",
                 "Colossus core unstable. Wreckage field entering overload.",
-                "Crash-zone vault control broken."
+                "Crash-zone vault control broken. Rescue telemetry released."
         ));
         register(profile(
                 "radiation_zone",
@@ -251,7 +251,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.MILITARY_VAULT, StructureType.RADIO_TOWER, StructureType.SATELLITE_ARRAY),
                 "reactor access hatch",
                 "Reactor Containment Basement",
-                "A reactor containment failure condensed into a moving radiation sink.",
+                "A reactor containment failure condensed into a moving radiation sink with a heartbeat of bad light.",
                 ModEntities.RADIATION_BEHEMOTH::get,
                 ModEntities.GLOWING_GHOUL::get,
                 0xFFFF3333,
@@ -276,7 +276,7 @@ public final class BiomeGuardianProfiles {
                 "Carry RadAway, hazmat gear, and a scrubber fallback if available.",
                 "Containment rods exposed. Radiation climbing.",
                 "Behemoth heat bloom detected. Treat exposure after the fight.",
-                "Reactor containment behemoth neutralized."
+                "Reactor containment behemoth neutralized. Hot-zone signal dropping."
         ));
         register(profile(
                 "cryogenic_ruins",
@@ -287,7 +287,7 @@ public final class BiomeGuardianProfiles {
                 Set.of(StructureType.OBSERVATION_POST, StructureType.RELAY_STATION),
                 "frozen service shaft",
                 "Frozen Cryo-Storage Facility",
-                "A preserved control intelligence still believes thawing survivors is a breach.",
+                "A preserved control intelligence still believes thawing survivors is a breach and cold is consent.",
                 ModEntities.CRYOGENIC_OVERSEER::get,
                 ModEntities.STEAM_WRAITH::get,
                 0xFF8CD7FF,
@@ -312,7 +312,7 @@ public final class BiomeGuardianProfiles {
                 "Bring thermal liners, hand warmers, food, and a fast weapon.",
                 "Cryo-lock disengaged. Temperature dropping fast.",
                 "Overseer venting storage lines. Warmth is now ammunition.",
-                "Cryogenic storage command shut down."
+                "Cryogenic storage command shut down. Thaw authority returned to the living."
         ));
         register(profile(
                 "nexus_scar",
@@ -345,7 +345,7 @@ public final class BiomeGuardianProfiles {
                 visual("textures/entity/nexus_scar_avatar.png", 0xFFFF67F8, 0xFFFF67F8, 1.18f, 1.08f,
                         BossEvent.BossBarColor.PURPLE, true, BiomeGuardianProfile.VisualVariant.NEXUS),
                 "Nexus recursion teleports, clones pressure through drones, and stacks weakness near the end.",
-                "Bring your best filtration, medicine, alloy or Nexus-tier weapons, and an exit route.",
+                "Bring your best filtration, medicine, alloy or Nexus-tier weapons, and an exit route you trust more than the floor.",
                 "Nexus recursion detected. Reality anchors slipping.",
                 "Avatar entering final loop. The Core is listening.",
                 "Nexus Scar avatar dissolved. Core route exposed."
@@ -461,39 +461,39 @@ public final class BiomeGuardianProfiles {
                                                             String title) {
         return switch (ability) {
             case SHIELD_PULSE -> new BiomeGuardianProfile.PolishData(
-                    "Recovery beacon ring", "Shield pulse opens a recovery window.",
+                    "Recovery beacon ring", "Shield pulse opens a recovery window after each forced retreat.",
                     "Lit recovery beacons", "Rescue drone defender waves",
-                    "Intro guardian datacore", "A readable first guardian built around safe pockets and obvious shield pulses.",
+                    "Intro guardian datacore", "A readable first guardian built around safe pockets, failed rescue logic, and obvious shield pulses.",
                     title + " Entrance");
             case COMMAND_RALLY -> new BiomeGuardianProfile.PolishData(
                     "Command bunker lanes", "Command rally routes reserves through side lanes.",
                     "Rally banners and bunker cover", "Reserve squad pressure",
-                    "Combat logistics datacore", "A command fight that rewards lane control before the bunker floods with squads.",
+                    "Combat logistics datacore", "A command fight that rewards lane control before old authority floods the bunker with squads.",
                     title + " Bunker");
             case SHADOW_AMBUSH -> new BiomeGuardianProfile.PolishData(
                     "Broken sightline corridors", "Blackout ambush breaks line of sight.",
                     "Lit sightline pockets", "Shadow reposition pressure",
-                    "Ambush telemetry datacore", "A city ambush that turns lighting and corridor discipline into counterplay.",
+                    "Ambush telemetry datacore", "A city ambush that turns lighting, corner checks, and corridor discipline into counterplay.",
                     title + " Vault");
             case OVERHEAT_SLAM -> new BiomeGuardianProfile.PolishData(
                     "Overheated machinery lanes", "Armor slam leaves vent windows.",
                     "Vents and maintenance pockets", "Heavy slam pressure",
-                    "Alloy foundry datacore", "A plated machine fight where baiting slams matters more than standing still.",
+                    "Alloy foundry datacore", "A plated machine fight where baiting slams matters more than obeying the old factory floor.",
                     title + " Core");
             case TOXIC_BROOD -> new BiomeGuardianProfile.PolishData(
                     "Hive pod cluster", "Hive bloom punishes ignored pods.",
                     "Clearable hive pods", "Brood add pressure",
-                    "Filtration datacore", "An attrition fight about filters, poison cleanup, and add control.",
+                    "Filtration datacore", "An attrition fight about filters, poison cleanup, add control, and staying ahead of the air.",
                     title + " Hive");
             case DEBRIS_ARTILLERY -> new BiomeGuardianProfile.PolishData(
                     "Marked wreckage lanes", "Debris impact marks shock lanes.",
                     "Wreckage cover and salvage shield", "Artillery lane pressure",
-                    "Crash armor datacore", "A wreckage fight that teaches players to read impact lanes before shockwaves.",
+                    "Crash armor datacore", "A wreckage fight that teaches players to read impact lanes before rescue metal turns hostile.",
                     title + " Breach");
             case RADIATION_MELTDOWN -> new BiomeGuardianProfile.PolishData(
                     "Reactor scrubber pockets", "Meltdown pulse spikes exposure.",
                     "Scrubber pockets", "Exposure cleanup pressure",
-                    "Reactor cleanup datacore", "An exposure-control fight that rewards planned RadAway and scrubber windows.",
+                    "Reactor cleanup datacore", "An exposure-control fight that rewards planned RadAway, scrubber windows, and disciplined retreat.",
                     title + " Reactor");
             case CRYO_LOCK -> new BiomeGuardianProfile.PolishData(
                     "Warm-pocket thermal arrays", "Cryo lockdown stacks freeze pressure.",
@@ -503,7 +503,7 @@ public final class BiomeGuardianProfiles {
             case NEXUS_RECURSION -> new BiomeGuardianProfile.PolishData(
                     "Anomaly rift anchors", "Nexus recursion escalates clones and weakness loops.",
                     "Rift anchors", "Anomaly clone pressure",
-                    "Nexus-route datacore", "A capstone guardian with escalating rifts, teleport pressure, and Core-route payoff.",
+                    "Nexus-route datacore", "A capstone guardian with escalating rifts, teleport pressure, and a clean Core-route handoff.",
                     title + " Rift");
         };
     }

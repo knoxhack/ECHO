@@ -1,1 +1,6 @@
-{"parent": "minecraft:block/cube_all", "textures": {"all": "echoashfallprotocol:block/mutated_bush"}}
+{
+  "parent": "echoashfallprotocol:block/bushy_cutout",
+  "textures": {
+    "plant": "echoashfallprotocol:block/mutated_bush"
+  }
+}

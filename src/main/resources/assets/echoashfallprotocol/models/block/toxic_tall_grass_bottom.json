@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cross",
   "textures": {
-    "cross": "echoashfallprotocol:block/toxic_grass"
+    "cross": "echoashfallprotocol:block/toxic_tall_grass"
   }
 }

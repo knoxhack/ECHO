@@ -74,10 +74,10 @@ public final class OrbitalTerminalIntegration {
             int rightY = wide ? y : y + mainH + gap;
             int rightW = wide ? Math.max(260, w - leftW - gap) : w;
 
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.ORBITAL_ROUTE_TELEMETRY,
-                    x, y, leftW, mainH, descriptor.accentColor(), 0.72F, false);
-            TerminalUi.cinematicPanel(graphics, x, y, leftW, mainH, descriptor.accentColor());
-            TerminalUi.iconBadge(graphics, TerminalIcon.ORBITAL, x + 18, y + 22, 44, descriptor.accentColor(), true);
+            TerminalUi.hdBackplatePanel(graphics, TerminalVisualAssets.CARD_PANEL_ORBITAL_COMMAND,
+                    x, y, leftW, mainH, descriptor.accentColor(), 0.78F, TerminalUi.ImageFit.COVER);
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_ORBITAL_COMMAND, TerminalIcon.ORBITAL,
+                    x + 18, y + 32, 44, descriptor.accentColor(), true);
             TerminalUi.line(context, graphics, "ORBITAL COMMAND", x + 74, y + 24, leftW - 100, descriptor.accentColor());
             TerminalUi.line(context, graphics, snapshot.missionStep(), x + 74, y + 41, leftW - 100, TerminalUi.MUTED);
             int cy = TerminalUi.wrap(context, graphics, snapshot.nextObjective(), x + 18, y + 72, leftW - 36, TerminalUi.TEXT) + 6;
@@ -88,7 +88,7 @@ public final class OrbitalTerminalIntegration {
             lastScanW = Math.min(210, Math.max(150, leftW / 3));
             boolean scanHover = TerminalUi.inside(mouseX, mouseY, lastScanX, lastScanY, lastScanW, 24);
             TerminalUi.primaryCommandButton(context, graphics, lastScanX, lastScanY, lastScanW, 24,
-                    "SCAN ORBITAL ROUTE", descriptor.accentColor(), scanHover);
+                    "SCAN ORBITAL ROUTE", TerminalVisualAssets.ICON_ACTION_SCAN, descriptor.accentColor(), scanHover);
             TerminalUi.line(context, graphics, scanReport(snapshot),
                     lastScanX + lastScanW + 14, lastScanY + 8, Math.max(80, leftW - lastScanW - 44), TerminalUi.MUTED);
 
@@ -107,18 +107,20 @@ public final class OrbitalTerminalIntegration {
             int sitesH = Math.min(108, Math.max(82, (mainH - gap * 2) / 3));
             int factionH = Math.max(92, mainH - readinessH - sitesH - gap * 2);
 
-            TerminalUi.cinematicPanel(graphics, rightX, rightY, rightW, readinessH, descriptor.accentColor());
-            TerminalUi.line(context, graphics, "READINESS", rightX + 16, rightY + 14, rightW - 32, descriptor.accentColor());
-            int ry = rightY + 42;
+            int ry = TerminalUi.flatDataPanel(context, graphics,
+                    rightX, rightY, rightW, readinessH, "READINESS", "",
+                    descriptor.accentColor());
+            ry += 4;
             ry = readiness(context, graphics, rightX + 20, ry, rightW - 40,
                     "LAUNCH SYSTEMS", snapshot.launchReady(), snapshot.launchMissing());
             readiness(context, graphics, rightX + 20, ry, rightW - 40,
                     "ASSEMBLY SYSTEMS", snapshot.assemblyReady(), snapshot.assemblyMissing());
 
             int sitesY = rightY + readinessH + gap;
-            TerminalUi.cinematicPanel(graphics, rightX, sitesY, rightW, sitesH, descriptor.accentColor());
-            TerminalUi.line(context, graphics, "GROUND SITES", rightX + 16, sitesY + 14, rightW - 32, descriptor.accentColor());
-            ry = sitesY + 42;
+            ry = TerminalUi.flatDataPanel(context, graphics,
+                    rightX, sitesY, rightW, sitesH, "GROUND SITES", "",
+                    descriptor.accentColor());
+            ry += 4;
             if (snapshot.groundSiteLines().isEmpty()) {
                 TerminalUi.line(context, graphics, "No ground site records found.", rightX + 20, ry, rightW - 40, TerminalUi.MUTED);
                 TerminalUi.line(context, graphics, "Recovery sites seed from calibration scan.", rightX + 20, ry + 16, rightW - 40, TerminalUi.MUTED);
@@ -129,9 +131,10 @@ public final class OrbitalTerminalIntegration {
             }
 
             int factionY = sitesY + sitesH + gap;
-            TerminalUi.cinematicPanel(graphics, rightX, factionY, rightW, factionH, descriptor.accentColor());
-            TerminalUi.line(context, graphics, "FACTION CONTRACT", rightX + 16, factionY + 14, rightW - 32, descriptor.accentColor());
-            ry = TerminalUi.wrap(context, graphics, snapshot.factionContract(), rightX + 20, factionY + 42, rightW - 40, TerminalUi.TEXT) + 8;
+            ry = TerminalUi.flatDataPanel(context, graphics,
+                    rightX, factionY, rightW, factionH, "FACTION CONTRACT", "",
+                    descriptor.accentColor());
+            ry = TerminalUi.wrap(context, graphics, snapshot.factionContract(), rightX + 20, ry + 4, rightW - 40, TerminalUi.TEXT) + 8;
             TerminalUi.wrap(context, graphics, snapshot.missionHelp(), rightX + 20, ry, rightW - 40, TerminalUi.MUTED);
 
             int telemetryY = wide ? y + mainH + gap : factionY + factionH + gap;
@@ -194,10 +197,10 @@ public final class OrbitalTerminalIntegration {
             int rightW = wide ? Math.max(260, w - leftW - gap) : w;
             int panelH = wide ? h : 360;
 
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.ORBITAL_ROUTE_TELEMETRY,
-                    x, y, leftW, panelH, descriptor.accentColor(), 0.68F, false);
-            TerminalUi.cinematicPanel(graphics, x, y, leftW, panelH, descriptor.accentColor());
-            TerminalUi.iconBadge(graphics, TerminalIcon.STATUS, x + 18, y + 22, 42, descriptor.accentColor(), true);
+            TerminalUi.hdBackplatePanel(graphics, TerminalVisualAssets.CARD_PANEL_ROUTE_MAP,
+                    x, y, leftW, panelH, descriptor.accentColor(), 0.78F, TerminalUi.ImageFit.COVER);
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_ROUTE_SURVEY, TerminalIcon.STATUS,
+                    x + 18, y + 22, 42, descriptor.accentColor(), true);
             TerminalUi.line(context, graphics, "ROUTE SURVEY NETWORK", x + 72, y + 23, leftW - 92, descriptor.accentColor());
             int cy = TerminalUi.wrap(context, graphics, snapshot.surveyStatus(), x + 18, y + 70, leftW - 36, TerminalUi.TEXT) + 5;
             cy = TerminalUi.wrap(context, graphics, snapshot.localHazard(), x + 18, cy, leftW - 36, TerminalUi.AMBER) + 12;
@@ -207,7 +210,7 @@ public final class OrbitalTerminalIntegration {
             lastScanW = Math.min(188, Math.max(138, leftW / 3));
             boolean scanHover = TerminalUi.inside(mouseX, mouseY, lastScanX, lastScanY, lastScanW, 24);
             TerminalUi.primaryCommandButton(context, graphics, lastScanX, lastScanY, lastScanW, 24,
-                    "SCAN SURVEY", descriptor.accentColor(), scanHover);
+                    "SCAN SURVEY", TerminalVisualAssets.ICON_ACTION_SCAN, descriptor.accentColor(), scanHover);
             TerminalUi.line(context, graphics, scanReport(snapshot),
                     lastScanX + lastScanW + 12, lastScanY + 8, Math.max(90, leftW - lastScanW - 42), TerminalUi.MUTED);
 
@@ -227,18 +230,43 @@ public final class OrbitalTerminalIntegration {
             }
 
             int rightH = wide ? h : 268;
-            TerminalUi.cinematicPanel(graphics, rightX, rightY, rightW, rightH, descriptor.accentColor());
-            TerminalUi.line(context, graphics, "ECHO HELP", rightX + 16, rightY + 14, rightW - 32, descriptor.accentColor());
-            int ry = TerminalUi.wrap(context, graphics, snapshot.missionHelp(), rightX + 18, rightY + 40,
+            int ry = TerminalUi.flatDataPanel(context, graphics,
+                    rightX, rightY, rightW, rightH, "ECHO HELP", "",
+                    descriptor.accentColor());
+            ry = TerminalUi.wrap(context, graphics, snapshot.missionHelp(), rightX + 18, ry + 4,
                     rightW - 36, TerminalUi.TEXT) + 12;
             TerminalUi.line(context, graphics, "GROUND RECOVERY", rightX + 16, ry, rightW - 32, descriptor.accentColor());
             ry += 22;
             if (snapshot.groundSiteLines().isEmpty()) {
-                TerminalUi.wrap(context, graphics, "No Earth recovery sites are currently tracked.",
-                        rightX + 18, ry, rightW - 36, TerminalUi.MUTED);
+                ry = TerminalUi.wrap(context, graphics, "No Earth recovery sites are currently tracked.",
+                        rightX + 18, ry, rightW - 36, TerminalUi.MUTED) + 10;
             } else {
                 for (String line : snapshot.groundSiteLines()) {
                     ry = TerminalUi.wrap(context, graphics, "- " + line, rightX + 18, ry, rightW - 36, TerminalUi.TEXT) + 3;
+                }
+                ry += 7;
+            }
+            if (wide && ry + 98 < rightY + rightH) {
+                TerminalUi.divider(graphics, rightX + 16, ry, rightW - 32, descriptor.accentColor());
+                ry += 12;
+                TerminalUi.line(context, graphics, "SURVEY READINESS", rightX + 16, ry, rightW - 32,
+                        descriptor.accentColor());
+                ry += 18;
+                int cardGap = 8;
+                int cardW = Math.max(108, (rightW - 40 - cardGap) / 2);
+                TerminalUi.denseDataCard(context, graphics, rightX + 18, ry, cardW,
+                        "ROUTE CHAINS", String.valueOf(repairLines(snapshot.surveyLines()).size()),
+                        "repair chain records", descriptor.accentColor());
+                TerminalUi.denseDataCard(context, graphics, rightX + 18 + cardW + cardGap, ry, cardW,
+                        "LOCAL SURVEYS", String.valueOf(routeSurveyLines(snapshot.surveyLines()).size()),
+                        "tracked route sectors", descriptor.accentColor());
+                ry += 56;
+                if (ry + 44 < rightY + rightH) {
+                    TerminalUi.denseDataCard(context, graphics, rightX + 18, ry, cardW,
+                            "GROUND SITES", String.valueOf(snapshot.groundSiteLines().size()),
+                            "Earth recovery candidates", descriptor.accentColor());
+                    TerminalUi.denseDataCard(context, graphics, rightX + 18 + cardW + cardGap, ry, cardW,
+                            "SCAN LINK", scanReport(snapshot), "terminal link state", descriptor.accentColor());
                 }
             }
         }
@@ -319,13 +347,10 @@ public final class OrbitalTerminalIntegration {
 
     private static int routeWorldRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int width, String label, boolean open) {
-        graphics.fill(x, y, x + width, y + 20, 0x88071117);
-        graphics.outline(x, y, width, 20, 0x33244352);
-        TerminalIcon.ORBITAL.draw(graphics, x + 8, y + 4, 12, open ? TerminalUi.GREEN : TerminalUi.MUTED, open);
-        TerminalUi.line(context, graphics, label, x + 28, y + 6, width - 108, open ? TerminalUi.TEXT : TerminalUi.MUTED);
-        TerminalUi.line(context, graphics, open ? "OPEN" : "LOCKED", x + width - 84, y + 6, 74,
-                open ? TerminalUi.GREEN : TerminalUi.RED);
-        return y + 22;
+        TerminalUi.iconDataListRow(context, graphics, TerminalVisualAssets.ICON_STATE_OPEN, TerminalIcon.ORBITAL,
+                x, y, width, 22, label, "", open ? "OPEN" : "LOCKED", false, false,
+                ACCENT, open ? TerminalUi.GREEN : TerminalUi.RED, open);
+        return y + 24;
     }
 
     private static int readiness(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -343,10 +368,9 @@ public final class OrbitalTerminalIntegration {
             int x, int y, int width, String line) {
         boolean complete = line.contains("3/3") || line.contains("BYPASS");
         int color = complete ? TerminalUi.GREEN : TerminalUi.TEXT;
-        graphics.fill(x, y, x + width, y + 23, 0x88071117);
-        graphics.outline(x, y, width, 23, 0x33244352);
-        TerminalIcon.STATUS.draw(graphics, x + 8, y + 5, 12, color, complete);
-        TerminalUi.line(context, graphics, line, x + 28, y + 7, width - 36, color);
+        TerminalUi.iconDataListRow(context, graphics, TerminalVisualAssets.ICON_ACTION_SCAN, TerminalIcon.STATUS,
+                x, y, width, 23, line, "", complete ? "DONE" : "", false, false,
+                0xFF92F7A6, color, complete);
         return y + 26;
     }
 
@@ -360,8 +384,9 @@ public final class OrbitalTerminalIntegration {
 
     private static void drawSuitTelemetry(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             EchoTerminalSnapshot snapshot, int x, int y, int w, int h, int mouseX, int mouseY) {
-        TerminalUi.cinematicPanel(graphics, x, y, w, h, ACCENT);
-            TerminalUi.iconBadge(graphics, TerminalIcon.STATUS, x + 18, y + 15, 34, ACCENT, true);
+        TerminalUi.flatHudPanel(graphics, x, y, w, h, ACCENT);
+        TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_ORBITAL_COMMAND, TerminalIcon.STATUS,
+                x + 18, y + 15, 34, ACCENT, true);
             TerminalUi.line(context, graphics, "SUIT TELEMETRY", x + 62, y + 15, 120, ACCENT);
             if (w >= 680) {
                 int meterX = x + 198;

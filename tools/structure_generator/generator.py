@@ -2,7 +2,7 @@
 """
 ECHO: Ashfall Protocol - Advanced POI Structure NBT Generator
 
-Generates 34 unique procedural structure templates as NBT files for the
+Generates the canonical POI structure templates as NBT files for the
 target structure-template format using nbtlib.
 
 Usage:
@@ -173,6 +173,78 @@ FORBIDDEN_GENERATED_BLOCKS = {
     "echoashfallprotocol:ash_campfire",
 }
 
+CATEGORY_SIGNATURE_BLOCKS = {
+    "crash_zone_wasteland": {
+        "echoashfallprotocol:cable_bundle",
+        "echoashfallprotocol:drop_pod_hull",
+        "echoashfallprotocol:power_cable",
+        "echoashfallprotocol:rusted_metal_debris",
+    },
+    "cryogenic_ruins": {
+        "echoashfallprotocol:blue_ice_crystal",
+        "echoashfallprotocol:frozen_conduit",
+        "echoashfallprotocol:thermal_array",
+        "minecraft:blue_ice",
+        "minecraft:packed_ice",
+    },
+    "faction": {
+        "echoashfallprotocol:bio_processing_station",
+        "echoashfallprotocol:map_table",
+        "echoashfallprotocol:power_node",
+        "echoashfallprotocol:spore_garden",
+        "echoashfallprotocol:supply_crate",
+        "echoashfallprotocol:trade_counter",
+        "echoashfallprotocol:weapon_rack",
+    },
+    "global": {
+        "echoashfallprotocol:rain_collector",
+        "echoashfallprotocol:rusted_metal_debris",
+        "echoashfallprotocol:supply_crate",
+        "minecraft:campfire",
+    },
+    "industrial_ruins": {
+        "echoashfallprotocol:battery_bank",
+        "echoashfallprotocol:factory_controller",
+        "echoashfallprotocol:item_pipe",
+        "echoashfallprotocol:power_cable",
+        "echoashfallprotocol:scrap_press",
+    },
+    "nexus_scar": {
+        "echoashfallprotocol:echo_crystal",
+        "echoashfallprotocol:energized_fissure",
+        "echoashfallprotocol:riftstone",
+        "minecraft:crying_obsidian",
+    },
+    "radiation_zone": {
+        "echoashfallprotocol:fallout_dust",
+        "echoashfallprotocol:radiation_block",
+        "echoashfallprotocol:toxic_waste_barrel",
+        "echoashfallprotocol:uranium_crystal",
+        "minecraft:redstone_torch",
+    },
+    "ruined_cityscape": {
+        "echoashfallprotocol:concrete_rubble",
+        "echoashfallprotocol:oil_stained_concrete",
+        "echoashfallprotocol:power_cable",
+        "echoashfallprotocol:rebar_block",
+        "echoashfallprotocol:signal_scanner",
+    },
+    "ruined_plains": {
+        "echoashfallprotocol:charred_wood_log",
+        "echoashfallprotocol:rain_collector",
+        "echoashfallprotocol:supply_crate",
+        "echoashfallprotocol:wild_berry_bush",
+        "minecraft:campfire",
+    },
+    "toxic_swamp": {
+        "echoashfallprotocol:acidic_sludge",
+        "echoashfallprotocol:bio_processing_station",
+        "echoashfallprotocol:corroded_pipe",
+        "echoashfallprotocol:toxic_puddle",
+        "echoashfallprotocol:toxic_waste_barrel",
+    },
+}
+
 
 def stable_seed(name: str) -> int:
     digest = hashlib.sha256(name.encode("utf-8")).digest()
@@ -258,7 +330,14 @@ def _palette_names(nbt) -> list[str]:
     return names
 
 
-def validate_visual_nbt(path: Path, nbt, errors: list[str], warnings: list[str]) -> None:
+def validate_visual_nbt(
+    path: Path,
+    nbt,
+    errors: list[str],
+    warnings: list[str],
+    category: str | None = None,
+    name: str | None = None,
+) -> None:
     palette = _palette_names(nbt)
     blocks = nbt["blocks"]
     names: list[str] = []
@@ -275,6 +354,23 @@ def validate_visual_nbt(path: Path, nbt, errors: list[str], warnings: list[str])
     if forbidden:
         errors.append(f"VISUAL_FORBIDDEN_BLOCK {path}: {', '.join(forbidden)}")
 
+    if name not in CURATED_TEMPLATE_NAMES:
+        unique_blocks = set(names)
+        if len(names) < 24:
+            errors.append(f"VISUAL_UNDER_DETAILED {path}: only {len(names)} blocks")
+        if len(names) >= 64 and len(unique_blocks) < 4:
+            errors.append(f"VISUAL_LOW_VARIETY {path}: only {len(unique_blocks)} block types")
+
+        signature_blocks = CATEGORY_SIGNATURE_BLOCKS.get(category or "")
+        if signature_blocks:
+            signature_count = sum(1 for block_name in names if block_name in signature_blocks)
+            required = 1 if category == "global" else 2
+            if signature_count < required:
+                errors.append(
+                    f"VISUAL_LOW_SIGNATURE {path}: {signature_count}/{required} "
+                    f"{category} signature blocks"
+                )
+
     is_cryo = "cryogenic" in str(path).replace("\\", "/")
     if not is_cryo:
         bright_count = sum(1 for name in names if name in VISUAL_PLACEHOLDER_BLOCKS)
@@ -290,14 +386,26 @@ def validate_visual_nbt(path: Path, nbt, errors: list[str], warnings: list[str])
             dominant, count = counts.most_common(1)[0]
             coverage = len(bottom) / area
             dominance = count / max(1, len(bottom))
-            if coverage > 0.88 and dominance > 0.82:
+            if coverage > 0.96 and dominance > 0.90:
+                errors.append(
+                    f"VISUAL_RECTANGULAR_FOOTPRINT {path}: {dominant} covers {dominance:.0%} "
+                    f"of a {len(bottom)}/{area} bottom layer"
+                )
+            elif coverage > 0.88 and dominance > 0.82:
                 warnings.append(
                     f"VISUAL_RECTANGULAR_FOOTPRINT {path}: {dominant} covers {dominance:.0%} "
                     f"of a {len(bottom)}/{area} bottom layer"
                 )
 
 
-def validate_nbt_file(path: Path, errors: list[str], warnings: list[str], landmark: bool) -> None:
+def validate_nbt_file(
+    path: Path,
+    errors: list[str],
+    warnings: list[str],
+    landmark: bool,
+    category: str | None = None,
+    name: str | None = None,
+) -> None:
     try:
         import nbtlib
 
@@ -321,7 +429,7 @@ def validate_nbt_file(path: Path, errors: list[str], warnings: list[str], landma
     elif landmark and (size[0] > 80 or size[1] > 80 or size[2] > 80):
         errors.append(f"LANDMARK_TOO_LARGE {path}: {size[0]}x{size[1]}x{size[2]}")
 
-    validate_visual_nbt(path, nbt, errors, warnings)
+    validate_visual_nbt(path, nbt, errors, warnings, category, name)
 
 
 def check_outputs(project_root: Path, selected_names: list[str], output_roots: list[Path]) -> int:
@@ -340,7 +448,7 @@ def check_outputs(project_root: Path, selected_names: list[str], output_roots: l
         category = CATEGORY_MAP[name]
         for path in iter_output_files(output_roots, category, name):
             if path.exists():
-                validate_nbt_file(path, errors, warnings, name in LANDMARK_NAMES)
+                validate_nbt_file(path, errors, warnings, name in LANDMARK_NAMES, category, name)
             else:
                 errors.append(f"MISSING_GENERATED {path}")
 
@@ -424,7 +532,7 @@ def main() -> int:
 
         # Apply detail pass for enhanced structures (skip drop_pod)
         if name != "drop_pod":
-            blocks = apply_detail_pass(blocks, category, category, seed, structure_size=size)
+            blocks = apply_detail_pass(blocks, category, category, seed, structure_size=size, name=name)
 
         if not blocks:
             print(f"  SKIP (empty): {name}")

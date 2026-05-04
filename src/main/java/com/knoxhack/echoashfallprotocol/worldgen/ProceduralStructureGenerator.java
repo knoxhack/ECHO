@@ -55,9 +55,9 @@ public class ProceduralStructureGenerator {
     private static final int MIN_ROOM_SIZE = 5;
     private static final int MAX_SPLIT_DEPTH = 4;
     private static final int WALL_THICKNESS = 1;
-    private static final int STARTING_POD_SPAWN_X = 16;
+    private static final int STARTING_POD_SPAWN_X = 9;
     private static final int STARTING_POD_SPAWN_Y = 3;
-    private static final int STARTING_POD_SPAWN_Z = 19;
+    private static final int STARTING_POD_SPAWN_Z = 12;
     private static final int STARTING_POD_CLEAR_MARGIN_XZ = 2;
     private static final int STARTING_POD_CLEAR_MARGIN_Y = 2;
     private static final int GUARDIAN_MIN_BOSS_ROOM_SIZE = 17;
@@ -316,7 +316,7 @@ public class ProceduralStructureGenerator {
         for (int dx = -12; dx <= 12; dx++) {
             for (int dz = -12; dz <= 12; dz++) {
                 BlockPos sample = origin.offset(dx, 0, dz);
-                int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
+                int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                         sample.getX(), sample.getZ());
                 BlockPos surface = sample.atY(y);
                 if (!level.getFluidState(surface).isEmpty()) {
@@ -332,7 +332,7 @@ public class ProceduralStructureGenerator {
                 }
             }
         }
-        int fallbackY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
+        int fallbackY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 origin.getX(), origin.getZ());
         return best != null ? best : origin.atY(fallbackY);
     }
@@ -348,7 +348,7 @@ public class ProceduralStructureGenerator {
         int y = surface.getY();
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos side = surface.relative(direction, 3);
-            int sideY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
+            int sideY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     side.getX(), side.getZ());
             score -= Math.abs(sideY - y) * 35;
         }
@@ -1507,7 +1507,7 @@ public class ProceduralStructureGenerator {
                 continue;
             }
             BlockPos roomEntry = arenaOrigin.offset(localX, entranceRoom.getY() + 1, localZ);
-            int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
+            int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     roomEntry.getX(), roomEntry.getZ());
             BlockPos entrance = new BlockPos(roomEntry.getX(), surfaceY, roomEntry.getZ());
             int score = scoreGuardianSurfaceCandidate(level, entrance, preferredSurface)
@@ -1516,7 +1516,7 @@ public class ProceduralStructureGenerator {
         }
         if (candidates.isEmpty()) {
             BlockPos roomEntry = arenaOrigin.offset(entranceRoom.getCenterX(), entranceRoom.getY() + 1, entranceRoom.getCenterZ());
-            int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
+            int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     roomEntry.getX(), roomEntry.getZ());
             candidates.add(new GuardianAccessCandidate(new BlockPos(roomEntry.getX(), surfaceY, roomEntry.getZ()), roomEntry, 0));
         }

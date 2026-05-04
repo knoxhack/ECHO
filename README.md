@@ -18,9 +18,9 @@ The world is not just hostile. It reacts. Radiation mutates after sustained seve
 
 ## Optional Endgame Expansion
 
-If `echoorbitalremnants` is installed, ECHO: Orbital Remnants unlocks after any ECHO: Ashfall Protocol Nexus choice. Before that choice, orbital calibration is locked. After the choice, the ECHO terminal opens the ORBITAL channels: Orbital Command, Route Survey, and ECHO-0 Records.
+If `echoorbitalremnants` is installed, ECHO: Orbital Remnants unlocks after any ECHO: Ashfall Protocol Nexus choice. Before that choice, orbital calibration is locked by the post-Nexus quarantine handoff. After the choice, the ECHO terminal opens the ORBITAL channels: Orbital Command, Route Survey, and ECHO-0 Records.
 
-The addon is optional. ECHO: Ashfall Protocol can run without Orbital Remnants installed.
+The addon is optional. ECHO: Ashfall Protocol can run without Orbital Remnants installed; with it, ECHO-7 follows the pod's broken fall path back toward Station ECHO and ECHO-0.
 
 ## Quick Start
 
@@ -28,10 +28,10 @@ The addon is optional. ECHO: Ashfall Protocol can run without Orbital Remnants i
 2. Scavenge debris for scrap metal, wire, circuits, and plastic.
 3. Craft an early weapon, shelter before night, and follow ECHO-7 mission prompts.
 4. Build the Hand Recycler, Micro Generator, Filter Workbench, Water Purifier, and Battery Bank.
-5. Use the Portable Signal Scanner to find a POI, read its route/hazard/prep report, then push into that site for schematic fragments, faction contact, substrate resources, and power-node clues.
+5. Use the Portable Signal Scanner to find a POI, read its route/hazard/prep report, then open Route Map -> POI Atlas to compare that scanner profile against the concrete template signals it can represent.
 6. Clear the nine biome guardians by scanning surface entrances and descending into their buried Gridfall nodes.
 7. Restore enough grid infrastructure to reach the Nexus Core and choose Restore, Destroy, or Control.
-8. If Orbital Remnants is installed, use ORBITAL / Orbital Command to begin the post-Nexus expansion.
+8. If Orbital Remnants is installed, use ORBITAL / Orbital Command to begin the post-Nexus quarantine expansion.
 
 ## Requirements
 

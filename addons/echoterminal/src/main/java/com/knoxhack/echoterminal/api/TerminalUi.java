@@ -2,6 +2,7 @@ package com.knoxhack.echoterminal.api;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +19,14 @@ public final class TerminalUi {
     public static final int PANEL_DARK = 0xB6050D14;
     public static final int ROW = 0xFF0D171F;
     public static final int ROW_SELECTED = 0xFF123241;
+    private static final float TERMINAL_PANEL_ASPECT = 2.0F;
+    private static final float TERMINAL_BACKDROP_ASPECT = 16.0F / 9.0F;
+
+    public enum ImageFit {
+        STRETCH,
+        COVER,
+        CONTAIN
+    }
 
     private TerminalUi() {
     }
@@ -50,9 +59,21 @@ public final class TerminalUi {
         graphics.fill(x, y, x + Math.max(18, Math.min(w, w / 5)), y + 1, opaque(color));
     }
 
+    public static void flatHudPanel(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
+        graphics.fill(x, y, x + w, y + h, 0xF2071017);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 22), 0x1A66E8FF);
+        graphics.outline(x, y, w, h, 0x7A2E8E9D);
+        graphics.fill(x, y, x + Math.max(28, Math.min(w, w / 5)), y + 2, opaque(color));
+        graphics.fill(x, y + h - 2, x + Math.max(24, Math.min(w, w / 7)), y + h, opaque(color));
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 26), 0x8855DDEF);
+        if (w > 56 && h > 26) {
+            graphics.fill(x + 8, y + 8, x + w - 8, y + 9, 0x2638DFF4);
+        }
+    }
+
     public static void cinematicPanel(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
         graphics.fill(x, y, x + w, y + h, 0xE0050C13);
-        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(y + h - 1, y + 26), 0x22163843);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 26), 0x22163843);
         graphics.outline(x, y, w, h, 0x7A2E8E9D);
         graphics.fill(x, y, x + Math.min(w, Math.max(42, w / 5)), y + 2, opaque(color));
         graphics.fill(x, y + h - 2, x + Math.min(w, Math.max(36, w / 6)), y + h, opaque(color));
@@ -66,7 +87,7 @@ public final class TerminalUi {
 
     public static void cinematicHeroPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, String title, String detail, int color) {
-        imagePanel(context, graphics, texture, x, y, w, h, color, 0.76F, false);
+        imagePanel(context, graphics, texture, x, y, w, h, color, 0.76F, false, ImageFit.COVER);
         cinematicPanel(graphics, x, y, w, h, color);
         line(context, graphics, title, x + 10, y + 10, Math.max(40, w - 20), color);
         if (detail != null && !detail.isBlank()) {
@@ -79,12 +100,34 @@ public final class TerminalUi {
         imagePanel(graphics, texture, x, y, w, h, color, darken, frame);
     }
 
+    public static void imagePanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame, ImageFit fit) {
+        imagePanel(graphics, texture, x, y, w, h, color, darken, frame, fit);
+    }
+
+    public static void imagePanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame,
+            ImageFit fit, float sourceAspect) {
+        imagePanel(graphics, texture, x, y, w, h, color, darken, frame, fit, sourceAspect);
+    }
+
     public static void imagePanel(GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame) {
-        if (texture == null) {
+        imagePanel(graphics, texture, x, y, w, h, color, darken, frame, ImageFit.STRETCH);
+    }
+
+    public static void imagePanel(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame, ImageFit fit) {
+        imagePanel(graphics, texture, x, y, w, h, color, darken, frame, fit, TERMINAL_PANEL_ASPECT);
+    }
+
+    public static void imagePanel(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame,
+            ImageFit fit, float sourceAspect) {
+        if (!textureAvailable(texture)) {
             fallbackVisualPanel(graphics, x, y, w, h, color);
         } else {
-            graphics.blit(texture, x, y, x + w, y + h, 0.0F, 1.0F, 0.0F, 1.0F);
+            blitFitted(graphics, texture, x, y, w, h, fit, sourceAspect);
         }
         int alpha = Math.max(0, Math.min(230, Math.round(darken * 255.0F)));
         graphics.fill(x, y, x + w, y + h, (alpha << 24) | 0x071017);
@@ -92,6 +135,128 @@ public final class TerminalUi {
             graphics.outline(x, y, w, h, 0x5538DFF4);
             graphics.fill(x, y, x + Math.max(22, Math.min(w, w / 4)), y + 2, opaque(color));
             graphics.fill(x, y + h - 2, x + Math.max(22, Math.min(w, w / 5)), y + h, opaque(color));
+        }
+    }
+
+    public static void cardPlate(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken) {
+        cardPlate(graphics, texture, x, y, w, h, color, darken, ImageFit.STRETCH);
+    }
+
+    public static void cardPlate(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, ImageFit fit) {
+        imagePanel(graphics, texture, x, y, w, h, color, darken, false, fit);
+        graphics.outline(x, y, w, h, 0x7738DFF4);
+        graphics.fill(x, y, x + Math.max(34, Math.min(w, w / 5)), y + 2, opaque(color));
+        graphics.fill(x, y + h - 2, x + Math.max(28, Math.min(w, w / 7)), y + h, opaque(color));
+    }
+
+    public static void hdBackplatePanel(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, ImageFit fit) {
+        imagePanel(graphics, texture, x, y, w, h, color, darken, false, fit);
+        graphics.outline(x, y, w, h, 0x6638DFF4);
+        graphics.fill(x, y, x + Math.max(42, Math.min(w, w / 6)), y + 2, opaque(color));
+        graphics.fill(x, y + h - 2, x + Math.max(34, Math.min(w, w / 8)), y + h, opaque(color));
+        if (w > 72 && h > 34) {
+            graphics.fill(x + 10, y + 10, x + w - 10, y + 11, 0x1838DFF4);
+        }
+    }
+
+    public static void texturedPanel(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken) {
+        cardPlate(graphics, texture, x, y, w, h, color, darken);
+    }
+
+    public static void texturedPanel(GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, int color, float darken, ImageFit fit) {
+        cardPlate(graphics, texture, x, y, w, h, color, darken, fit);
+    }
+
+    public static int dataPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, String title, String detail, int color, float darken) {
+        cardPlate(graphics, texture, x, y, w, h, color, darken);
+        return sectionHeader(context, graphics, title, detail, x + 14, y + 14, Math.max(24, w - 28), color);
+    }
+
+    public static int dataPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Identifier texture, int x, int y, int w, int h, String title, String detail,
+            int color, float darken, ImageFit fit) {
+        cardPlate(graphics, texture, x, y, w, h, color, darken, fit);
+        return sectionHeader(context, graphics, title, detail, x + 14, y + 14, Math.max(24, w - 28), color);
+    }
+
+    public static int flatDataPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String title, String detail, int color) {
+        flatHudPanel(graphics, x, y, w, h, color);
+        return sectionHeader(context, graphics, title, detail, x + 14, y + 14, Math.max(24, w - 28), color);
+    }
+
+    public static int iconTitleHeader(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Identifier texture, TerminalIcon fallback, int x, int y, int w, int h,
+            String title, String detail, String status, int color, int statusColor) {
+        cardPlate(graphics, TerminalVisualAssets.CARD_PANEL_DETAIL_STANDARD, x, y, w, h, color, 0.50F);
+        int iconSize = Math.min(56, Math.max(34, h - 36));
+        hybridIconBadge(graphics, texture, fallback, x + 14, y + Math.max(12, (h - iconSize) / 2), iconSize,
+                color, true);
+        int textX = x + iconSize + 28;
+        int pillW = status == null || status.isBlank() ? 0 : Math.max(70, Math.min(112, w / 5));
+        line(context, graphics, title, textX, y + 18, Math.max(40, w - (textX - x) - pillW - 22), TEXT);
+        if (detail != null && !detail.isBlank()) {
+            wrap(context, graphics, detail, textX, y + 36, Math.max(40, w - (textX - x) - 18), MUTED);
+        }
+        if (pillW > 0) {
+            miniStatusPill(context, graphics, status, x + w - pillW - 14, y + 18, pillW,
+                    statusColor, true);
+        }
+        return y + h;
+    }
+
+    public static void dataListRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String title, String detail, String status,
+            boolean selected, boolean hovered, int color, int statusColor) {
+        int bg = selected ? 0xE5123241 : hovered ? 0xAA102630 : 0x74071117;
+        graphics.fill(x, y, x + w, y + h, bg);
+        graphics.outline(x, y, w, h, selected ? opaque(color) : 0x2638DFF4);
+        graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : 0x552E8E9D);
+        if (selected) {
+            graphics.fill(x + Math.max(28, w / 3), y + h - 3, x + w - 8, y + h - 1, 0x88E9FBFF);
+        }
+        int pillW = status == null || status.isBlank() ? 0 : Math.max(68, Math.min(112, w / 3));
+        line(context, graphics, title, x + 10, y + Math.max(5, h >= 30 ? 7 : (h - 8) / 2),
+                Math.max(40, w - pillW - 24), selected ? TEXT : MUTED);
+        if (detail != null && !detail.isBlank() && h >= 30) {
+            line(context, graphics, detail, x + 10, y + 20, Math.max(40, w - 20), MUTED);
+        }
+        if (pillW > 0) {
+            miniStatusPill(context, graphics, status, x + w - pillW - 10, y + Math.max(3, (h - 14) / 2),
+                    pillW, statusColor, selected);
+        }
+    }
+
+    public static void iconDataListRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Identifier texture, TerminalIcon fallback, int x, int y, int w, int h,
+            String title, String detail, String status, boolean selected, boolean hovered,
+            int color, int statusColor, boolean iconActive) {
+        int bg = selected ? 0xE5123241 : hovered ? 0xAA102630 : 0x74071117;
+        graphics.fill(x, y, x + w, y + h, bg);
+        graphics.outline(x, y, w, h, selected ? opaque(color) : 0x2638DFF4);
+        graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : 0x552E8E9D);
+        if (selected) {
+            graphics.fill(x + Math.max(34, w / 3), y + h - 3, x + w - 8, y + h - 1, 0x88E9FBFF);
+        }
+        int iconSize = Math.min(18, Math.max(12, h - 8));
+        hybridIcon(graphics, texture, fallback, x + 8, y + Math.max(4, (h - iconSize) / 2),
+                iconSize, statusColor, iconActive);
+        int pillW = status == null || status.isBlank() ? 0 : Math.max(68, Math.min(112, w / 3));
+        int textX = x + iconSize + 22;
+        line(context, graphics, title, textX, y + Math.max(5, h >= 30 ? 7 : (h - 8) / 2),
+                Math.max(40, w - (textX - x) - pillW - 16), selected ? TEXT : MUTED);
+        if (detail != null && !detail.isBlank() && h >= 30) {
+            line(context, graphics, detail, textX, y + 20, Math.max(40, w - (textX - x) - 10), MUTED);
+        }
+        if (pillW > 0) {
+            miniStatusPill(context, graphics, status, x + w - pillW - 10, y + Math.max(3, (h - 14) / 2),
+                    pillW, statusColor, selected);
         }
     }
 
@@ -122,6 +287,51 @@ public final class TerminalUi {
         graphics.fill(x, y, x + Math.max(22, w / 5), y + 2, opaque(color));
     }
 
+    private static void blitFitted(GuiGraphicsExtractor graphics, Identifier texture,
+            int x, int y, int w, int h, ImageFit fit, float sourceAspect) {
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        ImageFit mode = fit == null ? ImageFit.STRETCH : fit;
+        float safeSourceAspect = sourceAspect <= 0.0F ? TERMINAL_PANEL_ASPECT : sourceAspect;
+        if (mode == ImageFit.CONTAIN) {
+            float destAspect = w / (float) h;
+            int drawW = w;
+            int drawH = h;
+            int drawX = x;
+            int drawY = y;
+            if (destAspect > safeSourceAspect) {
+                drawW = Math.max(1, Math.round(h * safeSourceAspect));
+                drawX = x + (w - drawW) / 2;
+            } else if (destAspect < safeSourceAspect) {
+                drawH = Math.max(1, Math.round(w / safeSourceAspect));
+                drawY = y + (h - drawH) / 2;
+            }
+            graphics.fill(x, y, x + w, y + h, 0xFF071017);
+            graphics.blit(texture, drawX, drawY, drawX + drawW, drawY + drawH,
+                    0.0F, 1.0F, 0.0F, 1.0F);
+            return;
+        }
+
+        float u0 = 0.0F;
+        float u1 = 1.0F;
+        float v0 = 0.0F;
+        float v1 = 1.0F;
+        if (mode == ImageFit.COVER) {
+            float destAspect = w / (float) h;
+            if (destAspect > safeSourceAspect) {
+                float visibleV = Math.max(0.0F, Math.min(1.0F, safeSourceAspect / destAspect));
+                v0 = (1.0F - visibleV) * 0.5F;
+                v1 = 1.0F - v0;
+            } else if (destAspect < safeSourceAspect) {
+                float visibleU = Math.max(0.0F, Math.min(1.0F, destAspect / safeSourceAspect));
+                u0 = (1.0F - visibleU) * 0.5F;
+                u1 = 1.0F - u0;
+            }
+        }
+        graphics.blit(texture, x, y, x + w, y + h, u0, u1, v0, v1);
+    }
+
     public static void divider(GuiGraphicsExtractor graphics, int x, int y, int w, int color) {
         graphics.fill(x, y, x + w, y + 1, 0x55244352);
         graphics.fill(x, y, x + Math.max(12, w / 5), y + 1, opaque(color));
@@ -145,6 +355,10 @@ public final class TerminalUi {
 
     public static void statusPill(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             String label, int x, int y, int width, int color, boolean selected) {
+        if (isSemanticStatus(label)) {
+            drawSemanticStatusPill(context, graphics, label, x, y, width, 14);
+            return;
+        }
         int bg = selected ? ROW_SELECTED : 0xFF10232C;
         graphics.fill(x, y, x + width, y + 14, bg);
         graphics.outline(x, y, width, 14, selected ? opaque(color) : 0x5538DFF4);
@@ -155,12 +369,73 @@ public final class TerminalUi {
 
     public static void miniStatusPill(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             String label, int x, int y, int width, int color, boolean filled) {
+        if (isSemanticStatus(label)) {
+            drawSemanticStatusPill(context, graphics, label, x, y, width, 14);
+            return;
+        }
         int bg = filled ? opaque(color) : 0xFF0D171F;
         int text = filled ? 0xFF061016 : opaque(color);
-        graphics.fill(x, y, x + width, y + 12, bg);
-        graphics.outline(x, y, width, 12, filled ? opaque(color) : 0x5538DFF4);
-        graphics.fill(x, y + 10, x + width, y + 12, opaque(color));
-        graphics.centeredText(font(context), trim(context, label, width - 6), x + width / 2, y + 3, text);
+        graphics.fill(x, y, x + width, y + 14, bg);
+        graphics.outline(x, y, width, 14, filled ? opaque(color) : 0x5538DFF4);
+        graphics.fill(x, y + 12, x + width, y + 14, opaque(color));
+        graphics.centeredText(font(context), trim(context, label, width - 8), x + width / 2, y + 4, text);
+    }
+
+    public static void missionStatusPill(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            String label, int x, int y, int width) {
+        drawSemanticStatusPill(context, graphics, label, x, y, width, 14);
+    }
+
+    private static boolean isSemanticStatus(String label) {
+        if (label == null || label.isBlank()) {
+            return false;
+        }
+        return switch (label.toUpperCase()) {
+            case "READY", "DONE", "OPEN", "AVAILABLE", "ACTIVE", "NEEDED", "NEED", "LOCKED", "VIEW" -> true;
+            default -> false;
+        };
+    }
+
+    private static void drawSemanticStatusPill(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            String label, int x, int y, int width, int height) {
+        String value = label == null ? "" : label.toUpperCase();
+        int bg;
+        int border;
+        int rail;
+        int text;
+        switch (value) {
+            case "READY", "DONE", "OPEN", "AVAILABLE" -> {
+                bg = GREEN;
+                border = GREEN;
+                rail = 0xFFE9FBFF;
+                text = 0xFF04140B;
+            }
+            case "ACTIVE", "NEEDED", "NEED" -> {
+                bg = AMBER;
+                border = AMBER;
+                rail = 0xFFFFF1B8;
+                text = 0xFF171105;
+            }
+            case "LOCKED", "VIEW" -> {
+                bg = 0xFF111A21;
+                border = 0xFF7F98A6;
+                rail = 0xFF3E5663;
+                text = 0xFFD3E5EC;
+            }
+            default -> {
+                bg = 0xFF10232C;
+                border = opaque(CYAN);
+                rail = opaque(CYAN_DIM);
+                text = TEXT;
+            }
+        }
+        int safeHeight = Math.max(14, height);
+        graphics.fill(x, y, x + width, y + safeHeight, bg);
+        graphics.outline(x, y, width, safeHeight, border);
+        graphics.fill(x + 2, y + 2, x + width - 2, y + 3, 0x55E9FBFF);
+        graphics.fill(x, y + safeHeight - 2, x + width, y + safeHeight, rail);
+        graphics.centeredText(font(context), trim(context, value, width - 14), x + width / 2,
+                y + Math.max(2, (safeHeight - 8) / 2), text);
     }
 
     public static void tabChip(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, int height,
@@ -190,10 +465,13 @@ public final class TerminalUi {
         graphics.fill(x, y, x + width, y + height, bg);
         graphics.outline(x, y, width, height, selected ? opaque(color) : 0x2F2E8E9D);
         if (selected) {
-            graphics.fill(x + 1, y + 1, x + width - 1, y + Math.max(y + 2, y + height / 2), 0x3020024A);
+            graphics.fill(x + 1, y + 1, x + width - 1, y + Math.max(2, height / 2), 0x3020024A);
             graphics.fill(x, y + height - 2, x + width, y + height, opaque(color));
             graphics.fill(x + width / 4, y + height - 4, x + width - width / 4, y + height - 2, 0xAAE9FBFF);
-            graphics.fill(x, y + height, x + width, y + Math.min(y + height + 14, y + 48), 0x3300E5FF);
+            int glowHeight = Math.min(14, Math.max(0, 48 - height));
+            if (glowHeight > 0) {
+                graphics.fill(x, y + height, x + width, y + height + glowHeight, 0x3300E5FF);
+            }
         }
         graphics.centeredText(font, trim(font, label, width - 10), x + width / 2,
                 y + Math.max(4, (height - 8) / 2), selected ? TEXT : MUTED);
@@ -436,26 +714,34 @@ public final class TerminalUi {
 
     public static void primaryCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, String label, int color, boolean hovered) {
-        int bg = hovered ? 0xEE15394A : 0xDD0B2530;
+        primaryCommandButton(context, graphics, x, y, w, h, label, null, color, hovered);
+    }
+
+    public static void primaryCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String label, Identifier texture, int color, boolean hovered) {
+        int bg = hovered ? 0xFF1C6074 : 0xF20D3442;
         graphics.fill(x, y, x + w, y + h, bg);
-        graphics.outline(x, y, w, h, opaque(color));
+        graphics.outline(x, y, w, h, opaque(CYAN));
         graphics.fill(x, y + h - 3, x + w, y + h, opaque(color));
         graphics.fill(x + 4, y + 4, x + 7, y + h - 4, opaque(color));
         if (hovered && h > 18) {
             graphics.fill(x + 8, y + 3, x + w - 8, y + 4, 0x8866E8FF);
         }
-        graphics.centeredText(font(context), trim(context, label, w - 18), x + w / 2,
-                y + Math.max(5, (h - 8) / 2), TEXT);
+        drawCommandLabel(context, graphics, x, y, w, h, label, texture, color, 0xFFE9FBFF, true);
     }
 
     public static void disabledCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, String label) {
-        graphics.fill(x, y, x + w, y + h, 0x9A070D12);
-        graphics.outline(x, y, w, h, 0x332E8E9D);
-        graphics.fill(x + 4, y + 4, x + 7, y + h - 4, 0x55244352);
-        graphics.fill(x, y + h - 2, x + w, y + h, 0x55244352);
-        graphics.centeredText(font(context), trim(context, label, w - 18), x + w / 2,
-                y + Math.max(5, (h - 8) / 2), MUTED);
+        disabledCommandButton(context, graphics, x, y, w, h, label, null);
+    }
+
+    public static void disabledCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String label, Identifier texture) {
+        graphics.fill(x, y, x + w, y + h, 0xE30A1117);
+        graphics.outline(x, y, w, h, 0x887F98A6);
+        graphics.fill(x + 4, y + 4, x + 7, y + h - 4, 0x997F98A6);
+        graphics.fill(x, y + h - 2, x + w, y + h, 0x887F98A6);
+        drawCommandLabel(context, graphics, x, y, w, h, label, texture, CYAN_DIM, 0xFFD8E8EE, false);
     }
 
     public static void iconBadge(GuiGraphicsExtractor graphics, TerminalIcon icon,
@@ -473,16 +759,35 @@ public final class TerminalUi {
         graphics.fill(x + 2, y + 2, x + size - 2, y + 4, active ? 0x5538DFF4 : 0x332E8E9D);
         graphics.fill(x + 2, y + size - 4, x + size - 2, y + size - 2,
                 active ? opaque(color) : 0x552E8E9D);
-        if (texture != null && size > 12) {
+        if (textureAvailable(texture) && size > 12) {
             int pad = Math.max(3, size / 10);
             graphics.blit(texture, x + pad, y + pad, x + size - pad, y + size - pad,
                     0.0F, 1.0F, 0.0F, 1.0F);
         }
     }
 
+    public static void hybridIconBadge(GuiGraphicsExtractor graphics, Identifier texture, TerminalIcon fallback,
+            int x, int y, int size, int color, boolean active) {
+        if (textureAvailable(texture)) {
+            iconTextureBadge(graphics, texture, x, y, size, color, active);
+        } else {
+            iconBadge(graphics, fallback == null ? TerminalIcon.DEFAULT : fallback, x, y, size, color, active);
+        }
+    }
+
+    public static void hybridIcon(GuiGraphicsExtractor graphics, Identifier texture, TerminalIcon fallback,
+            int x, int y, int size, int color, boolean active) {
+        drawHybridIcon(graphics, texture, fallback, x, y, size, color, active);
+    }
+
     public static int statusLineRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int width, TerminalIcon icon, String label, String value, int color) {
-        icon.draw(graphics, x, y - 2, 14, color, false);
+        return statusLineRow(context, graphics, x, y, width, icon, null, label, value, color);
+    }
+
+    public static int statusLineRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int width, TerminalIcon icon, Identifier texture, String label, String value, int color) {
+        drawHybridIcon(graphics, texture, icon, x, y - 2, 14, color, false);
         line(context, graphics, label, x + 20, y, Math.max(24, width - 92), MUTED);
         line(context, graphics, value, x + Math.max(80, width - 84), y, Math.min(84, width / 3), color);
         return y + 18;
@@ -569,7 +874,9 @@ public final class TerminalUi {
         int screenH = graphics.guiHeight();
         graphics.fill(0, 0, screenW, screenH, 0xFF02070C);
         if (visuals) {
-            graphics.blit(texture, 0, 0, screenW, screenH, 0.0F, 1.0F, 0.0F, 1.0F);
+            if (textureAvailable(texture)) {
+                blitFitted(graphics, texture, 0, 0, screenW, screenH, ImageFit.COVER, TERMINAL_BACKDROP_ASPECT);
+            }
             graphics.fill(0, 0, screenW, screenH, reducedMotion ? 0xDD02070C : 0xC902070C);
             graphics.fill(0, 0, screenW, Math.max(80, screenH / 5), 0x55100528);
             graphics.fill(0, screenH - Math.max(70, screenH / 6), screenW, screenH, 0x6602070C);
@@ -605,13 +912,16 @@ public final class TerminalUi {
         graphics.fill(x, y, x + w, y + 52, 0xE2020A10);
         graphics.fill(x + 12, y + 44, x + w - 12, y + 45, 0x5538DFF4);
         graphics.fill(x + 1, y + 1, x + w - 1, y + 14, 0x26163843);
-        TerminalIcon.CORE.draw(graphics, x + 20, y + 10, 30, color, true);
+        hybridIconBadge(graphics, TerminalVisualAssets.ICON_BRAND_ECHO, TerminalIcon.CORE, x + 18, y + 8, 34, color, true);
         graphics.text(font, trim(font, title, Math.max(120, w / 2)), x + 58, y + 10, opaque(color), false);
         graphics.text(font, trim(font, subtitle, Math.max(120, w / 2)), x + 58, y + 27, MUTED, false);
         String online = meta == null || meta.isBlank() ? "LINK: STANDBY  |  USER: OPERATOR  |  ONLINE" : meta;
         String right = trim(font, online, Math.max(120, w / 3));
         int rightColor = right.toUpperCase().contains("OFFLINE") ? RED : MUTED;
-        graphics.text(font, right, x + w - 18 - font.width(right), y + 22, rightColor, false);
+        int rightX = x + w - 26 - font.width(right);
+        graphics.text(font, right, rightX, y + 22, rightColor, false);
+        int dotColor = right.toUpperCase().contains("OFFLINE") ? RED : GREEN;
+        graphics.fill(x + w - 18, y + 23, x + w - 12, y + 29, opaque(dotColor));
     }
 
     public static void bottomShortcutBar(GuiGraphicsExtractor graphics, Font font,
@@ -646,13 +956,19 @@ public final class TerminalUi {
 
     public static void iconRailButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, String label, boolean selected, boolean hovered, int color) {
+        iconRailButton(graphics, font, x, y, w, h, icon, null, label, selected, hovered, color);
+    }
+
+    public static void iconRailButton(GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label,
+            boolean selected, boolean hovered, int color) {
         int bg = selected ? 0xEE0B3440 : hovered ? 0xAA0D2530 : 0x66071117;
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, selected ? opaque(color) : 0x334DBAF4);
         if (selected) {
             graphics.fill(x, y, x + 3, y + h, opaque(color));
         }
-        icon.draw(graphics, x + 9, y + 8, 24, color, selected);
+        drawHybridIcon(graphics, texture, icon, x + 9, y + 8, 24, color, selected);
         graphics.text(font, trim(font, label, w - 46), x + 42, y + Math.max(8, (h - 8) / 2),
                 selected ? TEXT : MUTED, false);
     }
@@ -699,6 +1015,12 @@ public final class TerminalUi {
 
     public static void commandStackGroupButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, String label, boolean selected, boolean hovered, int color) {
+        commandStackGroupButton(graphics, font, x, y, w, h, icon, null, label, selected, hovered, color);
+    }
+
+    public static void commandStackGroupButton(GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label,
+            boolean selected, boolean hovered, int color) {
         int bg = selected ? 0xDE0C3340 : hovered ? 0x99102630 : 0x66071117;
         int border = selected ? opaque(color) : hovered ? 0x6638DFF4 : 0x2638DFF4;
         graphics.fill(x, y, x + w, y + h, bg);
@@ -707,17 +1029,23 @@ public final class TerminalUi {
         if (selected) {
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
             graphics.fill(x + Math.max(24, w / 3), y + h - 4, x + w - 8, y + h - 2, 0x99E9FBFF);
-            graphics.fill(x, y + 1, x + w, y + Math.min(y + h - 1, y + Math.max(3, h / 2)), 0x1E66E8FF);
+            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1E66E8FF);
         }
-        int iconSize = Math.min(18, Math.max(14, h - 10));
-        icon.draw(graphics, x + 8, y + Math.max(4, (h - iconSize) / 2), iconSize,
+        int iconSize = Math.min(22, Math.max(16, h - 8));
+        drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(3, (h - iconSize) / 2), iconSize,
                 selected ? color : CYAN_DIM, selected);
-        graphics.text(font, trim(font, label.toUpperCase(), w - 40), x + 32,
+        graphics.text(font, trim(font, label.toUpperCase(), w - 42), x + 34,
                 y + Math.max(5, (h - 8) / 2), selected ? TEXT : MUTED, false);
     }
 
     public static void commandPageButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, String label, String summary,
+            boolean selected, boolean hovered, int color) {
+        commandPageButton(graphics, font, x, y, w, h, icon, null, label, summary, selected, hovered, color);
+    }
+
+    public static void commandPageButton(GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label, String summary,
             boolean selected, boolean hovered, int color) {
         int bg = selected ? 0xE50B3440 : hovered ? 0xA00D2530 : 0x54071117;
         int border = selected ? opaque(color) : hovered ? 0x6638DFF4 : 0x2638DFF4;
@@ -727,12 +1055,12 @@ public final class TerminalUi {
             graphics.fill(x, y, x + 3, y + h, opaque(color));
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
             graphics.fill(x + Math.max(26, w / 3), y + h - 4, x + w - 10, y + h - 2, 0x99E9FBFF);
-            graphics.fill(x, y + 1, x + w, y + Math.min(y + h - 1, y + Math.max(3, h / 2)), 0x1E66E8FF);
+            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1E66E8FF);
         } else if (hovered) {
             graphics.fill(x, y + h - 1, x + w, y + h, 0x7738DFF4);
         }
-        icon.draw(graphics, x + 8, y + Math.max(5, (h - 18) / 2), Math.min(20, Math.max(14, h - 12)),
-                selected ? color : CYAN_DIM, selected);
+        drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(4, (h - 20) / 2),
+                Math.min(24, Math.max(16, h - 10)), selected ? color : CYAN_DIM, selected);
         graphics.text(font, trim(font, label, w - 42), x + 34, y + Math.max(5, h >= 30 ? 6 : (h - 8) / 2),
                 selected ? TEXT : MUTED, false);
         if (h >= 32 && summary != null && !summary.isBlank()) {
@@ -756,8 +1084,8 @@ public final class TerminalUi {
         graphics.fill(x, y, x + w, y + h, 0x74050B10);
         graphics.outline(x, y, w, h, 0x5538DFF4);
         graphics.fill(x, y, x + Math.max(44, Math.min(w, w / 7)), y + 2, opaque(color));
-        graphics.fill(x, y + h - 2, x + Math.max(x + 36, x + Math.min(w, w / 8)), y + h, opaque(color));
-        graphics.fill(x + w - 2, y, x + w, y + Math.min(y + h, y + 46), 0x8838DFF4);
+        graphics.fill(x, y + h - 2, x + Math.max(36, Math.min(w, w / 8)), y + h, opaque(color));
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), 0x8838DFF4);
         graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, 0x5538DFF4);
     }
 
@@ -890,5 +1218,43 @@ public final class TerminalUi {
 
     private static Font font(TerminalRenderContext context) {
         return context.minecraft().font;
+    }
+
+    private static void drawHybridIcon(GuiGraphicsExtractor graphics, Identifier texture, TerminalIcon fallback,
+            int x, int y, int size, int color, boolean active) {
+        if (textureAvailable(texture) && size > 8) {
+            graphics.blit(texture, x, y, x + size, y + size, 0.0F, 1.0F, 0.0F, 1.0F);
+        } else {
+            (fallback == null ? TerminalIcon.DEFAULT : fallback).draw(graphics, x, y, size, color, active);
+        }
+    }
+
+    private static void drawCommandLabel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String label, Identifier texture, int iconColor, int textColor, boolean active) {
+        boolean drawIcon = textureAvailable(texture) && w >= 70 && h >= 16;
+        int iconSize = Math.min(16, Math.max(12, h - 8));
+        int textMax = drawIcon ? Math.max(28, w - 42) : w - 18;
+        String trimmed = trim(context, label, textMax);
+        int textY = y + Math.max(5, (h - 8) / 2);
+        if (drawIcon) {
+            drawHybridIcon(graphics, texture, TerminalIcon.DEFAULT, x + 10, y + Math.max(3, (h - iconSize) / 2),
+                    iconSize, iconColor, active);
+            int centered = x + w / 2 - font(context).width(trimmed) / 2 + 8;
+            int textX = Math.max(x + 32, Math.min(centered, x + w - 8 - font(context).width(trimmed)));
+            graphics.text(font(context), trimmed, textX, textY, textColor, false);
+        } else {
+            graphics.centeredText(font(context), trimmed, x + w / 2, textY, textColor);
+        }
+    }
+
+    private static boolean textureAvailable(Identifier texture) {
+        if (texture == null) {
+            return false;
+        }
+        try {
+            return Minecraft.getInstance().getResourceManager().getResource(texture).isPresent();
+        } catch (RuntimeException | LinkageError ignored) {
+            return false;
+        }
     }
 }

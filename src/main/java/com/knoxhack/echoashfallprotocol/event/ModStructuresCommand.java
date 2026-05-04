@@ -1,7 +1,6 @@
 package com.knoxhack.echoashfallprotocol.event;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
-import com.knoxhack.echoashfallprotocol.worldgen.StructureTemplateGenerator;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.io.IOException;
@@ -100,18 +99,14 @@ public class ModStructuresCommand {
                 )
                 .then(Commands.literal("generate")
                     .executes(ctx -> {
-                        EchoAshfallProtocol.LOGGER.info("[ModStructuresCommand] Manual trigger of structure generation");
-                        boolean generated = StructureTemplateGenerator.generateAllStructures();
+                        EchoAshfallProtocol.LOGGER.info("[ModStructuresCommand] POI structure generation requested in-game; generation is offline-only.");
                         if (ctx.getSource().getEntity() instanceof ServerPlayer player) {
-                            if (generated) {
-                                player.sendSystemMessage(Component.literal(
-                                        "\u00a7a[ModStructures]\u00a7r Generated POI structures. Check src/main/resources/data/echoashfallprotocol/structure."));
-                            } else {
-                                player.sendSystemMessage(Component.literal(
-                                        "\u00a7c[ModStructures]\u00a7r Structure generation failed. Check the server log for details."));
-                            }
+                            player.sendSystemMessage(Component.literal(
+                                    "\u00a7e[ModStructures]\u00a7r POI generation now runs offline from the canonical Python generator."));
+                            player.sendSystemMessage(Component.literal(
+                                    "\u00a77[ModStructures]\u00a7r Use ./gradlew.bat generateEchoPoiStructures or python tools/structure_generator/generator.py."));
                         }
-                        return generated ? 1 : 0;
+                        return 1;
                     })
                 )
         );

@@ -29,6 +29,8 @@ import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
+import com.knoxhack.echoashfallprotocol.world.ExplorationPoiCatalog;
+import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
@@ -165,7 +167,7 @@ public final class AshfallTerminalIntegration {
                 List.of(
                         "Recycler, generator, purifier, grinder, refiner, research, cable, and power blocks are the spine of recovery. They turn ruin into repeatable survival.",
                         "Research points unlock perks and schematic categories, while rare schematics let recovered knowledge catch up to field pressure.",
-                        "Machine mission turn-ins verify progress but do not bypass server-side checks."),
+                        "Machine mission turn-ins verify field progress but do not bypass ECHO validation."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_progression_manual"),
@@ -191,9 +193,9 @@ public final class AshfallTerminalIntegration {
                 "Companion Drone Protocols",
                 "OPEN",
                 List.of(
-                        "Drone commands are tactical orders routed through the terminal and validated server-side.",
+                        "Drone commands are tactical orders routed through the terminal and confirmed against live field state.",
                         "Follow unlocks immediately. Scout and light require partial repairs, combat and scavenge require operational integrity, and patrol requires enhanced integrity.",
-                        "Scout Drone fallback supports recall and mode mapping when no linked companion drone is available."),
+                        "The drone is not only gear. It is ECHO-7's moving witness, and the Scout Drone fallback keeps that witness active when the companion shell is gone."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_nexus_manual"),
@@ -202,8 +204,8 @@ public final class AshfallTerminalIntegration {
                 "OPEN",
                 List.of(
                         "The Nexus Core can commit RESTORE, DESTROY, or CONTROL once the guardian chain is resolved and five Power Nodes are active.",
-                        "RESTORE repairs what remains, DESTROY breaks the machine that broke the world, and CONTROL binds the grid to your signal. The choice is permanent.",
-                        "The chosen path is mirrored through ECHO Core services so addons can react without hard Ashfall dependencies."),
+                        "RESTORE repairs what remains, DESTROY breaks the machine that broke the world, and CONTROL binds the grid to your signal. None of these routes are innocent.",
+                        "The chosen path is mirrored through ECHO Core services so addon chapters can react without owning Ashfall's route state."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_world_regions"),
@@ -211,9 +213,19 @@ public final class AshfallTerminalIntegration {
                 "Wasteland Region Field Notes",
                 "OPEN",
                 List.of(
-                        "The Wasteland is open ash-dirt and low cover: sparse survival pressure with early grass tufts as vegetation, not a full living surface.",
+                        "The Wasteland is open ash-dirt and low cover: sparse survival pressure with early grass tufts as vegetation, not a healed living surface.",
                         "Crash zones carry slag, cables, twisted metal, and scorched debris. City and industrial belts become denser, sharper, and more useful for salvage.",
-                        "Toxic swamps, radiation flats, cryogenic ridges, and Nexus scars each announce their danger through terrain language before the terminal confirms the hazard."),
+                        "Toxic swamps, radiation flats, cryogenic ridges, and Nexus scars each announce their danger through terrain language before the terminal confirms the hazard. Learn the terrain before it becomes a meter."),
+                false));
+        TerminalArchiveRegistry.register(new TerminalArchiveEntry(
+                id("ashfall_poi_atlas"),
+                "Signal Logs",
+                "POI Field Atlas",
+                "OPEN",
+                List.of(
+                        "The Route Map POI Atlas groups every surface template signal under the scanner profile that owns its gameplay identity.",
+                        "Individual ruins are not separate save objectives. ECHO tracks the route profile, then lists template variants so you can recognize wreckage, camps, labs, vaults, and faction hubs in the field.",
+                        "Muted template rows mean the parent route has not been scanned yet; discovered rows inherit the route hazard, prep kit, and objective state from the scanner profile."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_faction_threads"),
@@ -223,7 +235,7 @@ public final class AshfallTerminalIntegration {
                 List.of(
                         "Remnants preserve order, patrol routes, and military stockpiles. Salvagers turn ruin into trade, maps, and routes. Mutant enclaves treat adaptation as survival medicine.",
                         "Faction work is not separate from the main route: trust opens supplies, lore, and safer ways to cross systems the old world left broken.",
-                        "Orbital Remnant, Void Salvager, and Nexus Choir signals echo those same pressures after the Nexus choice reaches orbit."),
+                        "Orbital Remnant, Void Salvager, and Nexus Choir signals echo those same pressures after the Nexus choice reaches orbit, where quarantine turns politics into pressure suits."),
                 false));
     }
 
@@ -330,6 +342,44 @@ public final class AshfallTerminalIntegration {
             boolean hovered = enabled && TerminalUi.inside(mouseX, mouseY, x, y, w, 18);
             TerminalUi.button(context, graphics, x, y, w, label, descriptor.accentColor(), enabled, hovered);
             hitboxes.add(new Hitbox(x, y, w, 18, enabled, action));
+        }
+
+        protected int dataPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                Identifier texture, int x, int y, int w, int h, String title, String detail, float darken) {
+            return TerminalUi.dataPanel(context, graphics, texture, x, y, w, h, title, detail,
+                    descriptor.accentColor(), darken, TerminalUi.ImageFit.COVER);
+        }
+
+        protected int flatDataPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int h, String title, String detail) {
+            return TerminalUi.flatDataPanel(context, graphics, x, y, w, h, title, detail,
+                    descriptor.accentColor());
+        }
+
+        protected void texturedPanel(GuiGraphicsExtractor graphics,
+                Identifier texture, int x, int y, int w, int h, float darken) {
+            TerminalUi.hdBackplatePanel(graphics, texture, x, y, w, h, descriptor.accentColor(), darken,
+                    TerminalUi.ImageFit.COVER);
+        }
+
+        protected void dataRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int h, String title, String detail, String status,
+                boolean selected, boolean hovered, int statusColor) {
+            TerminalUi.dataListRow(context, graphics, x, y, w, h, title, detail, status,
+                    selected, hovered, descriptor.accentColor(), statusColor);
+        }
+
+        protected void texturedButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int h, String label, Identifier icon, boolean enabled,
+                double mouseX, double mouseY, Runnable action) {
+            boolean hovered = enabled && TerminalUi.inside(mouseX, mouseY, x, y, w, h);
+            if (enabled) {
+                TerminalUi.primaryCommandButton(context, graphics, x, y, w, h, label, icon,
+                        descriptor.accentColor(), hovered);
+            } else {
+                TerminalUi.disabledCommandButton(context, graphics, x, y, w, h, label, icon);
+            }
+            addHitbox(x, y, w, h, enabled, action);
         }
 
         protected int drawItems(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -441,20 +491,22 @@ public final class AshfallTerminalIntegration {
             int rightY = wide ? y : y + topH + gap;
             int rightW = wide ? Math.max(260, w - leftW - gap) : w;
 
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.OVERVIEW_PROTOCOL_DASHBOARD,
-                    x, y, leftW, topH, descriptor().accentColor(), 0.76F, false);
-            TerminalUi.cinematicPanel(graphics, x, y, leftW, topH, descriptor().accentColor());
+            TerminalUi.hdBackplatePanel(graphics, TerminalVisualAssets.CARD_ACTIVE_PROTOCOL_HERO,
+                    x, y, leftW, topH, descriptor().accentColor(), 0.56F, TerminalUi.ImageFit.COVER);
             TerminalUi.line(context, graphics, "ACTIVE PROTOCOL", x + 16, y + 15, leftW - 32, descriptor().accentColor());
+            TerminalUi.divider(graphics, x + 16, y + 31, leftW - 32, descriptor().accentColor());
             if (current == null) {
                 wrap(context, graphics,
                         "Protocol registry sync in progress. Field commands will update when the server link refreshes.",
                         x + 16, y + 40, leftW - 32, TerminalUi.MUTED);
             } else {
                 int color = summaryColor(currentSummary);
-                TerminalUi.iconBadge(graphics, TerminalIcon.MISSIONS, x + 18, y + 42, 46, color, true);
-                line(context, graphics, currentSummary.shortTitle(), x + 76, y + 46, leftW - 184, TerminalUi.TEXT);
-                chip(context, graphics, currentSummary.statusLabel(), x + leftW - 118, y + 44, 94, color);
-                wrap(context, graphics, currentSummary.objectiveSummary(), x + 76, y + 65, leftW - 104, TerminalUi.TEXT);
+                Identifier missionIcon = TerminalVisualAssets.missionIconArt(id(current.id()),
+                        current.category() == null ? "" : current.category().getDisplayName());
+                TerminalUi.iconTextureBadge(graphics, missionIcon, x + 22, y + 56, 58, color, true);
+                line(context, graphics, currentSummary.shortTitle(), x + 94, y + 60, leftW - 220, TerminalUi.TEXT);
+                chip(context, graphics, currentSummary.statusLabel(), x + leftW - 130, y + 58, 104, color);
+                wrap(context, graphics, currentSummary.objectiveSummary(), x + 94, y + 80, leftW - 122, TerminalUi.TEXT);
 
                 int cardH = 70;
                 int cardY = y + topH - cardH - 14;
@@ -466,16 +518,18 @@ public final class AshfallTerminalIntegration {
                 line(context, graphics, percent, x + leftW - 60, progressY + 16, 44, color);
 
                 int halfW = Math.max(120, (leftW - 44) / 2);
-                TerminalUi.cinematicPanel(graphics, x + 16, cardY, halfW, cardH, TerminalUi.AMBER);
+                TerminalUi.flatHudPanel(graphics, x + 16, cardY, halfW, cardH, TerminalUi.AMBER);
                 line(context, graphics, "NEXT STEP", x + 26, cardY + 10, halfW - 20, TerminalUi.AMBER);
                 wrap(context, graphics, currentSummary.nextStep(), x + 26, cardY + 27, halfW - 20, TerminalUi.TEXT);
-                TerminalUi.cinematicPanel(graphics, x + 28 + halfW, cardY, leftW - halfW - 44, cardH, descriptor().accentColor());
+                TerminalUi.flatHudPanel(graphics, x + 28 + halfW, cardY, leftW - halfW - 44, cardH,
+                        descriptor().accentColor());
                 line(context, graphics, "REQUIREMENT", x + 38 + halfW, cardY + 10, leftW - halfW - 64, descriptor().accentColor());
                 drawCurrentRequirement(context, graphics, current, quest, x + 38 + halfW, cardY + 27,
                         leftW - halfW - 64);
             }
 
-            TerminalUi.cinematicPanel(graphics, rightX, rightY, rightW, topH, descriptor().accentColor());
+            TerminalUi.hdBackplatePanel(graphics, TerminalVisualAssets.CARD_ROUTE_STATUS_PANEL,
+                    rightX, rightY, rightW, topH, descriptor().accentColor(), 0.60F, TerminalUi.ImageFit.COVER);
             line(context, graphics, "ROUTE STATUS", rightX + 16, rightY + 15, rightW - 32, descriptor().accentColor());
             TerminalUi.divider(graphics, rightX + 16, rightY + 31, rightW - 32, descriptor().accentColor());
             int actionH = 50;
@@ -506,7 +560,7 @@ public final class AshfallTerminalIntegration {
                         "INTEL RECORDS", intel.getAllIntel().size() + " RECORDS / " + intel.getUnreadCount() + " UNREAD",
                         intel.getUnreadCount() > 0 ? TerminalUi.AMBER : TerminalUi.GREEN);
             }
-            TerminalUi.cinematicPanel(graphics, rightX + 16, actionY, rightW - 32, actionH, TerminalUi.CYAN);
+            TerminalUi.flatHudPanel(graphics, rightX + 16, actionY, rightW - 32, actionH, TerminalUi.CYAN);
             line(context, graphics, "NEXT ACTION", rightX + 26, actionY + 8, rightW - 52, TerminalUi.CYAN);
             wrap(context, graphics, nextAction(context.player(), quest, survival, current, post),
                     rightX + 26, actionY + 23, rightW - 52, TerminalUi.TEXT);
@@ -548,15 +602,25 @@ public final class AshfallTerminalIntegration {
 
         private static void drawOverviewMetric(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int width, int height, TerminalIcon icon, String label, String value, String detail, int color) {
-            TerminalUi.cinematicPanel(graphics, x, y, width, height, color);
+            TerminalUi.flatHudPanel(graphics, x, y, width, height, color);
             int iconSize = height < 82 ? 30 : 38;
             int iconY = y + Math.max(9, (height - iconSize) / 2);
             int textX = x + (height < 82 ? 52 : 62);
             int textW = Math.max(40, width - (textX - x) - 12);
-            TerminalUi.iconBadge(graphics, icon, x + 12, iconY, iconSize, color, true);
+            TerminalUi.hybridIconBadge(graphics, overviewMetricTexture(icon), icon, x + 12, iconY, iconSize, color, true);
             TerminalUi.line(context, graphics, label, textX, y + 10, textW, color);
             TerminalUi.line(context, graphics, value, textX, y + 26, textW, color);
             TerminalUi.wrap(context, graphics, detail, textX, y + 42, textW, TerminalUi.MUTED);
+        }
+
+        private static Identifier overviewMetricTexture(TerminalIcon icon) {
+            return switch (icon) {
+                case STATUS -> TerminalVisualAssets.ICON_GROUP_FIELD;
+                case DRONE -> TerminalVisualAssets.ICON_GROUP_PROTOCOL;
+                case CODEX -> TerminalVisualAssets.ICON_GROUP_SYSTEMS;
+                case WORLD -> TerminalVisualAssets.ICON_STATE_NEEDED;
+                default -> null;
+            };
         }
 
         private static void drawCurrentRequirement(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -955,9 +1019,9 @@ public final class AshfallTerminalIntegration {
                         0,
                         1,
                         "Recover the first telemetry thread from the drop-pod perimeter.",
-                        "ECHO-7 fell with the pod, but the pod did not fall cleanly. The first shelter loop also gives the terminal enough signal clarity to reconstruct what survived impact.",
+                        "ECHO-7 fell with the pod, but the pod did not fall cleanly. The first shelter loop gives the terminal enough signal clarity to reconstruct what survived impact and what was already missing.",
                         "Secure the crash outpost so ECHO-7 can stitch together the pod's damaged landing record.",
-                        "Crash outpost anchored. The blackbox confirms the descent vector originated above Earth, not from any ground launch.",
+                        "Crash outpost anchored. Blackbox telemetry confirms the descent vector originated above Earth, not from any ground launch.",
                         "secure_crash_outpost",
                         SideOpCheck.MISSION_COMPLETE,
                         stack(Items.RECOVERY_COMPASS),
@@ -970,7 +1034,7 @@ public final class AshfallTerminalIntegration {
                         0,
                         2,
                         "Classify the ash-dirt surface and low vegetation around the starter basin.",
-                        "The Wasteland is not a grassland. Its living layer appears as sparse tufts, reeds, and mutated shrubs over dead soil, which matches the new survival route: dirt first, forage second.",
+                        "The Wasteland is not a grassland. Its living layer appears as sparse tufts, reeds, and mutated shrubs over dead soil: dirt first, forage second, shelter always.",
                         "Travel the Wasteland or secure the first outpost to confirm the local terrain language.",
                         "Surface report archived. ECHO marks wasteland grass as vegetation, not a stable topsoil layer.",
                         "secure_crash_outpost",
@@ -985,7 +1049,7 @@ public final class AshfallTerminalIntegration {
                         1,
                         1,
                         "Use scanner-led exploration to prove the first ruin route exists.",
-                        "A ruin without a route is only a landmark. Once ECHO records a POI, it can attach hazard profile, prep kit, likely supplies, and lore context to the route.",
+                        "A ruin without a route is only wreckage. Once ECHO records a POI, it can attach hazard profile, prep kit, likely supplies, and the reason the place still matters.",
                         "Craft the Portable Signal Scanner and log one point of interest.",
                         "First ruin signature archived. The wasteland route map now has a real recovery thread.",
                         "craft_portable_scanner",
@@ -993,6 +1057,21 @@ public final class AshfallTerminalIntegration {
                         stack(Items.SPYGLASS),
                         "Route signal",
                         "Discover 1 POI"),
+                new SideOp(
+                        "poi_field_atlas",
+                        "POI Field Atlas",
+                        "Route Records",
+                        1,
+                        2,
+                        "Open the Route Map atlas and start turning isolated scanner hits into a readable field catalog.",
+                        "ECHO can identify a route profile from the scanner, then list every concrete template signal that belongs to that route: camps, wrecks, labs, vaults, hubs, and landmarks without turning each ruin into a separate objective.",
+                        "Use the Route Map POI Atlas after your first scan, then catalogue at least three POI profiles.",
+                        "POI atlas synchronized. ECHO now treats template variants as field recognition, while profile discovery remains the actual route state.",
+                        "scan_first_poi",
+                        SideOpCheck.POI_ATLAS,
+                        stack(Items.MAP),
+                        "POI Atlas",
+                        "Discover 3 POI profiles"),
                 new SideOp(
                         "faction_crossband",
                         "Faction Crossband",
@@ -1015,7 +1094,7 @@ public final class AshfallTerminalIntegration {
                         3,
                         1,
                         "Recover a drone-linked field memory without changing drone progression.",
-                        "The drone is not just equipment. It is ECHO-7's mobile witness: a broken extension of the same emergency system that survived the fall.",
+                        "The drone is not just equipment. It is ECHO-7's mobile witness: a broken extension of the emergency system that survived the fall and kept looking.",
                         "Repair drone support and recover drone intel.",
                         "Drone memory archived. Companion and Scout links now read as field witnesses, not just utility commands.",
                         "repair_echo_drone",
@@ -1030,7 +1109,7 @@ public final class AshfallTerminalIntegration {
                         4,
                         1,
                         "Resolve the first buried guardian signal and classify the node lattice.",
-                        "Every guardian is a local scar with a system role: sentinel, colossus, stalker, juggernaut, hive, behemoth, overseer, warlord, or avatar. The first defeat proves the chain is physical.",
+                        "Every guardian is a local scar with a system role: sentinel, colossus, stalker, juggernaut, hive, behemoth, overseer, warlord, or avatar. The first defeat proves the chain is physical, not just signal noise.",
                         "Neutralize any biome guardian through the main Ashfall route.",
                         "Guardian lattice archived. The Nexus Core is defended by places, not just bosses.",
                         "deploy_stationary_scanner",
@@ -1045,7 +1124,7 @@ public final class AshfallTerminalIntegration {
                         5,
                         1,
                         "Archive the final path commitment once RESTORE, DESTROY, or CONTROL is chosen.",
-                        "The Nexus choice is not a menu branch. It is a moral operating mode for the broken grid: repair, sever, or command.",
+                        "The Nexus choice is not a menu branch. It is a moral operating mode for the broken grid: repair, sever, or command, each with a different kind of blood on it.",
                         "Reach the Nexus decision and commit one path.",
                         "Nexus choice archived. Addon chapters can now react through core services without owning Ashfall progression.",
                         "reach_decision",
@@ -1090,7 +1169,7 @@ public final class AshfallTerminalIntegration {
             SideOp op = sideOp(missionId);
             if (op == null) {
                 return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F,
-                        "LOCKED", "Unknown side operation.", "Unknown optional record.", List.of());
+                        "LOCKED", "Signal lead not found in the current archive index.", "No optional record is available for this signal.", List.of());
             }
             QuestData quest = QuestData.get(player);
             boolean unlocked = isUnlocked(quest, op);
@@ -1128,7 +1207,7 @@ public final class AshfallTerminalIntegration {
                     snapshot.status() == TerminalMissionStatus.COMPLETED ? "success"
                             : snapshot.status() == TerminalMissionStatus.UNLOCKED ? "active" : "muted",
                     List.of("Optional", op.phaseTitle(), op.requirementLabel()),
-                    "ashfall_faction_threads");
+                    "poi_field_atlas".equals(op.path()) ? "ashfall_poi_atlas" : "ashfall_faction_threads");
         }
 
         @Override
@@ -1196,6 +1275,7 @@ public final class AshfallTerminalIntegration {
                         || quest.hasVisitedLocation("biome", "the_wasteland")
                         || quest.hasVisitedLocation("biome", "echoashfallprotocol:the_wasteland");
                 case FIRST_POI -> quest.getDiscoveredPOICount() >= 1;
+                case POI_ATLAS -> quest.getDiscoveredPOICount() >= 3;
                 case FACTION_CONTACT -> quest.hasVisitedLocation("special", "faction_contact:any")
                         || quest.isMissionCompleted("first_faction_contact");
                 case DRONE_INTEL -> quest.hasVisitedLocation("special", "drone:intel_recovered")
@@ -1250,6 +1330,7 @@ public final class AshfallTerminalIntegration {
             MISSION_COMPLETE,
             WASTELAND_SURVEY,
             FIRST_POI,
+            POI_ATLAS,
             FACTION_CONTACT,
             DRONE_INTEL,
             ANY_GUARDIAN,
@@ -1297,53 +1378,50 @@ public final class AshfallTerminalIntegration {
             int listX = wide ? x + groupW + 10 : x;
             int detailX = wide ? listX + listW + 10 : x;
             int detailW = wide ? w - groupW - listW - 26 : w;
-            int listY = wide ? y : y + GROUPS.size() * 18 + 28;
+            int groupPanelH = 34 + GROUPS.size() * 20;
+            int listY = wide ? y : y + groupPanelH + 12;
             List<ArchiveEntry> groupEntries = entriesForGroup(entries, selectedGroup);
             int detailY = wide ? y : listY + listHeight(groupEntries) + 18;
             int viewportH = context.contentHeight();
 
-            section(context, graphics, "FIELD ARCHIVE", x, y);
-            int gy = y + 18;
+            int gy = flatDataPanel(context, graphics, x, y, groupW, groupPanelH, "FIELD ARCHIVE", "");
             for (String group : GROUPS) {
                 GroupCount count = countGroup(entries, group);
                 boolean selected = group.equals(selectedGroup);
                 int color = selected ? descriptor().accentColor() : (count.total() > 0 ? TerminalUi.TEXT : TerminalUi.MUTED);
-                if (selected) {
-                    graphics.fill(x, gy - 2, x + groupW - 5, gy + 13, 0xFF123241);
-                }
-                line(context, graphics, group, x + 4, gy, groupW - 48, color);
-                line(context, graphics, count.open() + "/" + count.total(), x + groupW - 42, gy, 36, TerminalUi.MUTED);
-                addHitbox(x, gy - 2, groupW - 5, 15, () -> {
+                boolean hover = TerminalUi.inside(mouseX, mouseY, x + 10, gy, groupW - 20, 18);
+                TerminalUi.selectableRow(graphics, x + 10, gy, groupW - 20, 18, selected, hover, descriptor().accentColor());
+                line(context, graphics, group, x + 16, gy + 5, groupW - 58, color);
+                line(context, graphics, count.open() + "/" + count.total(), x + groupW - 50, gy + 5, 36, TerminalUi.MUTED);
+                addHitbox(x + 10, gy, groupW - 20, 18, () -> {
                     selectedGroup = group;
                     selectedEntryId = "";
                     recordScroll = 0;
                     detailScroll = 0;
                 });
-                gy += 18;
+                gy += 20;
             }
 
-            section(context, graphics, "RECORDS", listX, listY);
+            int recordsPanelH = wide ? viewportH : Math.max(80, 34 + listHeight(groupEntries));
+            flatDataPanel(context, graphics, listX, listY, listW, recordsPanelH, "RECORDS", "");
             lastRecordX = listX;
-            lastRecordY = listY + 18;
-            lastRecordW = listW - 5;
-            lastRecordH = wide ? Math.max(80, viewportH - 18) : listHeight(groupEntries);
+            lastRecordY = listY + 34;
+            lastRecordW = listW - 8;
+            lastRecordH = Math.max(60, recordsPanelH - 44);
             lastRecordContentH = groupEntries.size() * 30;
             recordScroll = TerminalUi.clampScroll(recordScroll, lastRecordContentH, lastRecordH);
             if (wide) {
                 graphics.enableScissor(lastRecordX, lastRecordY, lastRecordX + lastRecordW, lastRecordY + lastRecordH);
             }
-            int ey = listY + 18 - (wide ? recordScroll : 0);
+            int ey = lastRecordY - (wide ? recordScroll : 0);
             for (ArchiveEntry entry : groupEntries) {
                 boolean selected = entry.id().equals(selectedEntryId);
                 int color = entry.locked() ? TerminalUi.MUTED : statusArchiveColor(entry.status());
-                if (selected) {
-                    graphics.fill(listX, ey - 2, listX + listW - 5, ey + 24, 0xFF123241);
-                }
-                line(context, graphics, entry.title(), listX + 4, ey, listW - 74, selected ? TerminalUi.TEXT : color);
-                chip(context, graphics, entry.status(), listX + listW - 66, ey - 1, 60, color);
-                line(context, graphics, entry.category(), listX + 4, ey + 12, listW - 12, TerminalUi.MUTED);
+                boolean hover = TerminalUi.inside(mouseX, mouseY, listX + 10, ey - 2, listW - 24, 28);
+                dataRow(context, graphics, listX + 10, ey - 2, listW - 24, 28,
+                        entry.title(), entry.category(), entry.status(), selected, hover, color);
                 if (visible(ey - 2, 26, lastRecordY, lastRecordH)) {
-                    addHitbox(listX, ey - 2, listW - 5, 26, () -> {
+                    addHitbox(listX + 10, ey - 2, listW - 24, 28, () -> {
                         selectArchiveEntry(context.player(), entry);
                         detailScroll = 0;
                     });
@@ -1403,32 +1481,32 @@ public final class AshfallTerminalIntegration {
 
         private void drawArchiveDetail(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 ArchiveEntry entry, int x, int y, int width) {
-            section(context, graphics, "DETAIL", x, y);
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.ARCHIVES_DOSSIER_WALL,
-                    x, y + 18, width, Math.min(94, Math.max(62, context.contentHeight() / 5)),
-                    descriptor().accentColor(), 0.84F, true);
+            int panelH = Math.max(130, archiveDetailHeight(context, entry, width));
+            int cy = flatDataPanel(context, graphics, x, y, width, panelH, "DETAIL", "");
             if (entry == null) {
-                wrap(context, graphics, "No archive record is available for this group.", x, y + 18, width, TerminalUi.MUTED);
+                wrap(context, graphics, "No archive record is available for this group.", x + 12, cy, width - 24, TerminalUi.MUTED);
                 return;
             }
-            line(context, graphics, entry.title(), x, y + 18, width - 84, TerminalUi.TEXT);
-            chip(context, graphics, entry.status(), x + Math.max(0, width - 78), y + 16, 74,
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_FIELD_ARCHIVE, TerminalIcon.ARCHIVES,
+                    x + 12, cy, 40, descriptor().accentColor(), !entry.locked());
+            line(context, graphics, entry.title(), x + 62, cy + 4, width - 150, TerminalUi.TEXT);
+            chip(context, graphics, entry.status(), x + Math.max(0, width - 84), cy + 2, 74,
                     entry.locked() ? TerminalUi.MUTED : statusArchiveColor(entry.status()));
-            int cy = y + 36;
+            cy += 52;
             line(context, graphics, "CATEGORY: " + entry.category() + " / GROUP: " + entry.group(),
-                    x, cy, width, TerminalUi.AMBER);
+                    x + 12, cy, width - 24, TerminalUi.AMBER);
             cy += 16;
             if (entry.locked()) {
-                cy = wrap(context, graphics, entry.hint(), x, cy, width, TerminalUi.MUTED) + 5;
-                line(context, graphics, "Content remains gated until discovered.", x, cy, width, TerminalUi.MUTED);
+                cy = wrap(context, graphics, entry.hint(), x + 12, cy, width - 24, TerminalUi.MUTED) + 5;
+                line(context, graphics, "Content remains gated until discovered.", x + 12, cy, width - 24, TerminalUi.MUTED);
                 return;
             }
             if (entry.lines().isEmpty()) {
-                wrap(context, graphics, "No detailed record text is attached yet.", x, cy, width, TerminalUi.MUTED);
+                wrap(context, graphics, "No detailed record text is attached yet.", x + 12, cy, width - 24, TerminalUi.MUTED);
                 return;
             }
             for (String line : entry.lines()) {
-                cy = wrap(context, graphics, line, x, cy, width, TerminalUi.TEXT) + 7;
+                cy = wrap(context, graphics, line, x + 12, cy, width - 24, TerminalUi.TEXT) + 7;
             }
         }
 
@@ -1632,96 +1710,90 @@ public final class AshfallTerminalIntegration {
             int rightX = wide ? x + leftW + 16 : x;
             int rightW = wide ? Math.max(180, w - leftW - 18) : w;
 
-            section(context, graphics, "TERMINAL HEALTH", x, y);
             int hazardReasonH = survival.getHazardReason().isBlank()
                     ? 0
                     : TerminalUi.wrappedHeight(context, survival.getHazardReason(), leftW - 16) + 4;
-            int healthPanelH = Math.max(168, 148 + hazardReasonH);
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.STATUS_HAZARD_SCAN,
-                    x, y + 18, leftW, healthPanelH, descriptor().accentColor(), 0.80F, true);
-            TerminalUi.cinematicPanel(graphics, x, y + 18, leftW, healthPanelH, descriptor().accentColor());
-            int cy = y + 17;
-            line(context, graphics, quest.isTerminalOnline() ? "LINK ONLINE" : "LINK DEGRADED", x + 8, cy + 7, leftW - 16,
+            int healthPanelH = Math.max(190, 170 + hazardReasonH);
+            int cy = flatDataPanel(context, graphics, x, y, leftW, healthPanelH, "TERMINAL HEALTH", "") + 2;
+            line(context, graphics, quest.isTerminalOnline() ? "LINK ONLINE" : "LINK DEGRADED", x + 12, cy, leftW - 24,
                     quest.isTerminalOnline() ? TerminalUi.GREEN : TerminalUi.RED);
             cy += 18;
-            TerminalUi.meter(context, graphics, x + 8, cy + 7, leftW - 16, "Terminal", quest.getTerminalHealth(), TerminalUi.GREEN);
+            TerminalUi.meter(context, graphics, x + 12, cy, leftW - 24, "Terminal", quest.getTerminalHealth(), TerminalUi.GREEN);
             cy += 16;
-            TerminalUi.meter(context, graphics, x + 8, cy + 7, leftW - 16, "Drone", quest.getDroneHealth(), TerminalUi.AMBER);
+            TerminalUi.meter(context, graphics, x + 12, cy, leftW - 24, "Drone", quest.getDroneHealth(), TerminalUi.AMBER);
             cy += 16;
-            TerminalUi.meter(context, graphics, x + 8, cy + 7, leftW - 16, "Hydration", survival.getHydration(), TerminalUi.CYAN);
+            TerminalUi.meter(context, graphics, x + 12, cy, leftW - 24, "Hydration", survival.getHydration(), TerminalUi.CYAN);
             cy += 16;
-            TerminalUi.meter(context, graphics, x + 8, cy + 7, leftW - 16, "Radiation", Math.round(survival.getRadiationLevel()), TerminalUi.RED);
+            TerminalUi.meter(context, graphics, x + 12, cy, leftW - 24, "Radiation", Math.round(survival.getRadiationLevel()), TerminalUi.RED);
             cy += 19;
             line(context, graphics, "Air filter: " + Math.round(survival.getFilterPercent() * 100.0F) + "% / tier "
-                    + survival.getFilterTier(), x + 8, cy + 7, leftW - 16, TerminalUi.TEXT);
+                    + survival.getFilterTier(), x + 12, cy, leftW - 24, TerminalUi.TEXT);
             cy += 14;
             line(context, graphics, "Hazard: " + survival.getPrimaryHazard() + " / " + survival.getHazardSeverity(),
-                    x + 8, cy + 7, leftW - 16, survival.isSafeZone() ? TerminalUi.GREEN : TerminalUi.AMBER);
+                    x + 12, cy, leftW - 24, survival.isSafeZone() ? TerminalUi.GREEN : TerminalUi.AMBER);
             cy += 16;
             if (!survival.getHazardReason().isBlank()) {
-                cy = wrap(context, graphics, survival.getHazardReason(), x + 8, cy + 7, leftW - 16, TerminalUi.MUTED) + 4;
+                cy = wrap(context, graphics, survival.getHazardReason(), x + 12, cy, leftW - 24, TerminalUi.MUTED) + 4;
             }
-            cy = Math.max(cy, y + 18 + healthPanelH + 10);
+            cy = Math.max(cy, y + healthPanelH + 10);
             cy = renderWeatherEventPanel(context, graphics, x, cy, leftW) + 4;
 
             int factionY = cy + 20;
-            section(context, graphics, "FACTION SUMMARY", x, factionY);
-            cy = factionY + 17;
+            int factionH = Math.max(112, 28 + ReputationData.Faction.values().length * 13
+                    + TerminalUi.wrappedHeight(context, "Tracked faction quest: "
+                    + (factionQuests.getTrackedQuestId().isBlank() ? "none" : factionQuests.getTrackedQuestId()), leftW - 28));
+            cy = flatDataPanel(context, graphics, x, factionY, leftW, factionH, "FACTION SUMMARY", "");
             for (ReputationData.Faction faction : ReputationData.Faction.values()) {
                 int rep = reputation.getReputation(faction);
                 ReputationData.ReputationTier tier = reputation.getTier(faction);
                 line(context, graphics, faction.getDisplayName() + ": " + rep + " / " + tier.getDisplayName()
-                        + " / perks " + reputation.getPerkPoints(faction), x, cy, leftW, tier.getColor());
+                        + " / perks " + reputation.getPerkPoints(faction), x + 12, cy, leftW - 24, tier.getColor());
                 cy += 13;
             }
             cy = wrap(context, graphics, "Tracked faction quest: "
                     + (factionQuests.getTrackedQuestId().isBlank() ? "none" : factionQuests.getTrackedQuestId()),
-                    x, cy + 4, leftW, TerminalUi.MUTED);
+                    x + 12, cy + 4, leftW - 24, TerminalUi.MUTED);
             int leftBottom = cy;
 
             int rightY = wide ? y : leftBottom + 22;
             MissionUxSummary missionSummary = MissionUxSummary.current(context.player(), quest);
-            section(context, graphics, "PROTOCOL SYNC", rightX, rightY);
             int syncPanelH = Math.max(190, 154
                     + TerminalUi.wrappedHeight(context, "Next: " + missionSummary.nextStep(), rightW - 16));
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.OVERVIEW_PROTOCOL_DASHBOARD,
-                    rightX, rightY + 18, rightW, syncPanelH, descriptor().accentColor(), 0.82F, true);
-            TerminalUi.cinematicPanel(graphics, rightX, rightY + 18, rightW, syncPanelH, descriptor().accentColor());
-            int ry = rightY + 17;
-            line(context, graphics, "Current: " + missionSummary.shortTitle(), rightX + 8, ry + 7, rightW - 16,
+            int ry = flatDataPanel(context, graphics, rightX, rightY, rightW, syncPanelH, "PROTOCOL SYNC", "");
+            line(context, graphics, "Current: " + missionSummary.shortTitle(), rightX + 12, ry, rightW - 24,
                     summaryColor(missionSummary));
             ry += 14;
             line(context, graphics, missionSummary.statusLabel() + " / " + missionSummary.routeHint(),
-                    rightX + 8, ry + 7, rightW - 16, TerminalUi.TEXT);
+                    rightX + 12, ry, rightW - 24, TerminalUi.TEXT);
             ry += 14;
-            ry = wrap(context, graphics, "Next: " + missionSummary.nextStep(), rightX + 8, ry + 7, rightW - 16,
+            ry = wrap(context, graphics, "Next: " + missionSummary.nextStep(), rightX + 12, ry, rightW - 24,
                     summaryColor(missionSummary)) + 4;
             line(context, graphics, "Current phase: " + (quest.getCurrentPhase() + 1) + "/" + MissionRegistry.getPhaseCount(),
-                    rightX + 8, ry + 7, rightW - 16, TerminalUi.TEXT);
+                    rightX + 12, ry, rightW - 24, TerminalUi.TEXT);
             ry += 14;
             line(context, graphics, "Unlocked missions: " + quest.getUnlockedMissionIds().size(),
-                    rightX + 8, ry + 7, rightW - 16, TerminalUi.TEXT);
+                    rightX + 12, ry, rightW - 24, TerminalUi.TEXT);
             ry += 14;
             line(context, graphics, "Completed missions: " + quest.getCompletedMissionIds().size()
-                    + "/" + MissionRegistry.getAllMissions().size(), rightX + 8, ry + 7, rightW - 16, TerminalUi.GREEN);
+                    + "/" + MissionRegistry.getAllMissions().size(), rightX + 12, ry, rightW - 24, TerminalUi.GREEN);
             ry += 14;
             line(context, graphics, "Pending reward caches: " + quest.getAllPendingRewards().size(),
-                    rightX + 8, ry + 7, rightW - 16, quest.getAllPendingRewards().isEmpty() ? TerminalUi.MUTED : TerminalUi.AMBER);
+                    rightX + 12, ry, rightW - 24, quest.getAllPendingRewards().isEmpty() ? TerminalUi.MUTED : TerminalUi.AMBER);
             ry += 14;
-            line(context, graphics, "ECHO relationship: " + quest.getEchoRelationship(), rightX + 8, ry + 7, rightW - 16, TerminalUi.TEXT);
+            line(context, graphics, "ECHO relationship: " + quest.getEchoRelationship(), rightX + 12, ry, rightW - 24, TerminalUi.TEXT);
             ry += 14;
             line(context, graphics, "Research points: " + research.getPoints() + "/" + ResearchData.MAX_POINTS,
-                    rightX + 8, ry + 7, rightW - 16, TerminalUi.TEXT);
+                    rightX + 12, ry, rightW - 24, TerminalUi.TEXT);
             ry += 14;
             line(context, graphics, "Research tier: " + research.getCurrentTier()
                     + " / perks " + research.getUnlockedPerks().size()
                     + " / schematics " + research.getUnlockedSchematics().size(),
-                    rightX + 8, ry + 7, rightW - 16, TerminalUi.TEXT);
+                    rightX + 12, ry, rightW - 24, TerminalUi.TEXT);
             ry += 14;
             line(context, graphics, "Intel: " + intel.getAllIntel().size() + " records / "
-                    + intel.getUnreadCount() + " unread", rightX + 8, ry + 7, rightW - 16,
+                    + intel.getUnreadCount() + " unread", rightX + 12, ry, rightW - 24,
                     intel.getUnreadCount() > 0 ? TerminalUi.AMBER : TerminalUi.GREEN);
-            ry = rightY + 18 + syncPanelH + 10;
+            ry = rightY + syncPanelH + 10;
 
             TerminalUi.compactCommandStrip(context, graphics, rightX, ry, rightW, "SYNC STATE",
                     "Server sync active. Mission, research, and intel commands remain validated by linked world state.",
@@ -1745,44 +1817,41 @@ public final class AshfallTerminalIntegration {
             int hazardReasonH = survival.getHazardReason().isBlank()
                     ? 0
                     : TerminalUi.wrappedHeight(context, survival.getHazardReason(), leftW - 16) + 4;
-            int healthPanelH = Math.max(168, 148 + hazardReasonH);
-            int leftH = 17 + 18 + healthPanelH + 10
-                    + 12 + weatherEventPanelHeight(context, leftW) + 4
-                    + 20 + 17 + ReputationData.Faction.values().length * 13 + 4
-                    + TerminalUi.wrappedHeight(context, trackedQuest, leftW);
+            int healthPanelH = Math.max(190, 170 + hazardReasonH);
+            int factionH = Math.max(112, 28 + ReputationData.Faction.values().length * 13
+                    + TerminalUi.wrappedHeight(context, trackedQuest, leftW - 28));
+            int leftH = healthPanelH + 10
+                    + weatherEventPanelHeight(context, leftW) + 4
+                    + 20 + factionH;
             String sync = "Server sync active. Mission, research, and intel commands remain validated by linked world state.";
             MissionUxSummary missionSummary = MissionUxSummary.current(context.player(), QuestData.get(context.player()));
             int missionSummaryH = 14 + 14
                     + TerminalUi.wrappedHeight(context, "Next: " + missionSummary.nextStep(), rightW) + 4;
-            int rightH = 17 + missionSummaryH + 14 * 8 + 34 + 17 + TerminalUi.wrappedHeight(context, sync, rightW);
+            int rightH = missionSummaryH + 14 * 8 + 34 + TerminalUi.wrappedHeight(context, sync, rightW);
             return wide ? Math.max(leftH, rightH) : leftH + 22 + rightH;
         }
 
         private static int renderWeatherEventPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                                                    int x, int y, int width) {
             EnvironmentalEventStatus status = terminalEventStatus(context.player());
-            TerminalUi.sectionHeader(context, graphics, "WEATHER EVENT", "", x, y, width, 0xFF92F7A6);
-            int panelY = y + 18;
             int panelH = Math.max(112, weatherEventPanelHeight(context, width));
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.STATUS_HAZARD_SCAN,
-                    x, panelY, width, panelH, 0xFF92F7A6, 0.82F, true);
-            TerminalUi.cinematicPanel(graphics, x, panelY, width, panelH, 0xFF92F7A6);
-            int cy = panelY + 7;
-            TerminalUi.line(context, graphics, "Active: " + status.shortStatusText(), x + 8, cy, width - 16,
+            int cy = TerminalUi.flatDataPanel(context, graphics,
+                    x, y, width, panelH, "WEATHER EVENT", "", 0xFF92F7A6);
+            TerminalUi.line(context, graphics, "Active: " + status.shortStatusText(), x + 12, cy, width - 24,
                     status.active() ? status.hudColor() : TerminalUi.GREEN);
             cy += 14;
             TerminalUi.line(context, graphics, "Weather override: " + status.weatherLabel()
-                    + " / phase " + status.phasePercent() + "%", x + 8, cy, width - 16, TerminalUi.TEXT);
+                    + " / phase " + status.phasePercent() + "%", x + 12, cy, width - 24, TerminalUi.TEXT);
             cy += 14;
-            TerminalUi.line(context, graphics, "Counts: " + weatherCountsLineOne(), x + 8, cy, width - 16, TerminalUi.MUTED);
+            TerminalUi.line(context, graphics, "Counts: " + weatherCountsLineOne(), x + 12, cy, width - 24, TerminalUi.MUTED);
             cy += 14;
-            TerminalUi.line(context, graphics, "Counts: " + weatherCountsLineTwo(), x + 8, cy, width - 16, TerminalUi.MUTED);
+            TerminalUi.line(context, graphics, "Counts: " + weatherCountsLineTwo(), x + 12, cy, width - 24, TerminalUi.MUTED);
             cy += 14;
-            cy = TerminalUi.wrap(context, graphics, "Counter: " + status.counterGuidance(), x + 8, cy, width - 16,
+            cy = TerminalUi.wrap(context, graphics, "Counter: " + status.counterGuidance(), x + 12, cy, width - 24,
                     status.active() ? TerminalUi.AMBER : TerminalUi.MUTED) + 3;
-            cy = TerminalUi.wrap(context, graphics, "Impact: " + status.survivalImpact(), x + 8, cy, width - 16,
+            cy = TerminalUi.wrap(context, graphics, "Impact: " + status.survivalImpact(), x + 12, cy, width - 24,
                     status.active() ? TerminalUi.TEXT : TerminalUi.MUTED);
-            return Math.max(cy + 8, panelY + panelH + 2);
+            return Math.max(cy + 8, y + panelH + 2);
         }
 
         private static int weatherEventPanelHeight(TerminalRenderContext context, int width) {
@@ -1830,35 +1899,33 @@ public final class AshfallTerminalIntegration {
             int rightX = wide ? x + leftW + 14 : x;
             int rightW = wide ? Math.max(220, w - leftW - 18) : w;
 
-            section(context, graphics, "DRONE COMMAND LINK", x, y);
-            int panelY = y + 18;
-            int panelH = 164;
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.DRONE_COMMAND_LINK,
-                    x, panelY, leftW, panelH, descriptor().accentColor(), 0.78F, true);
-            TerminalUi.cinematicPanel(graphics, x, panelY, leftW, panelH, descriptor().accentColor());
-            int cy = panelY + 8;
-            line(context, graphics, "Companion", x + 8, cy, 78, TerminalUi.MUTED);
-            line(context, graphics, snapshot.companionStatus(), x + 94, cy, leftW - 104, snapshot.companionColor());
+            int panelY = y;
+            int panelH = Math.max(194, Math.min(236, context.contentHeight() / 3));
+            int cy = flatDataPanel(context, graphics, x, panelY, leftW, panelH, "DRONE COMMAND LINK", "");
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_COMPANION_LINK, TerminalIcon.DRONE,
+                    x + 14, cy + 2, 38, descriptor().accentColor(), true);
+            line(context, graphics, "Companion", x + 62, cy + 2, 78, TerminalUi.MUTED);
+            line(context, graphics, snapshot.companionStatus(), x + 148, cy + 2, leftW - 160, snapshot.companionColor());
             cy += 12;
-            line(context, graphics, "Scout", x + 8, cy, 78, TerminalUi.MUTED);
-            line(context, graphics, snapshot.scoutStatus(), x + 94, cy, leftW - 104, snapshot.scoutColor());
+            line(context, graphics, "Scout", x + 62, cy + 2, 78, TerminalUi.MUTED);
+            line(context, graphics, snapshot.scoutStatus(), x + 148, cy + 2, leftW - 160, snapshot.scoutColor());
             cy += 12;
-            line(context, graphics, "Repair", x + 8, cy, 78, TerminalUi.MUTED);
+            line(context, graphics, "Repair", x + 62, cy + 2, 78, TerminalUi.MUTED);
             line(context, graphics, quest.getDroneStage().name() + " / integrity " + quest.getDroneHealth() + "%",
-                    x + 94, cy, leftW - 104, TerminalUi.TEXT);
+                    x + 148, cy + 2, leftW - 160, TerminalUi.TEXT);
             cy += 14;
-            TerminalUi.progress(graphics, x + 8, cy, Math.min(300, leftW - 16), 8, quest.getDroneHealth() / 100.0F,
+            TerminalUi.progress(graphics, x + 62, cy + 2, Math.min(300, leftW - 76), 8, quest.getDroneHealth() / 100.0F,
                     quest.getDroneHealth() >= 50 ? TerminalUi.GREEN : TerminalUi.AMBER);
             cy += 13;
-            line(context, graphics, "Cargo", x + 8, cy, 78, TerminalUi.MUTED);
+            line(context, graphics, "Cargo", x + 62, cy + 2, 78, TerminalUi.MUTED);
             line(context, graphics, quest.getDroneInventorySlots() + " slots / speed "
-                    + Math.round(quest.getDroneSpeedMultiplier() * 100.0F) + "%", x + 94, cy, leftW - 104, TerminalUi.TEXT);
+                    + Math.round(quest.getDroneSpeedMultiplier() * 100.0F) + "%", x + 148, cy + 2, leftW - 160, TerminalUi.TEXT);
             cy += 12;
-            line(context, graphics, "Light", x + 8, cy, 78, TerminalUi.MUTED);
+            line(context, graphics, "Light", x + 62, cy + 2, 78, TerminalUi.MUTED);
             line(context, graphics, quest.isDroneLightEnabled() ? "AVAILABLE" : "LOCKED UNTIL PARTIAL REPAIR",
-                    x + 94, cy, leftW - 104, quest.isDroneLightEnabled() ? TerminalUi.GREEN : TerminalUi.MUTED);
+                    x + 148, cy + 2, leftW - 160, quest.isDroneLightEnabled() ? TerminalUi.GREEN : TerminalUi.MUTED);
 
-            int gridY = panelY + 86;
+            int gridY = panelY + panelH - 78;
             int buttonW = Math.max(70, Math.min(116, (leftW - 28) / 3));
             drawCommandButton(context, graphics, x + 8, gridY, buttonW, "RECALL", true, "RECALL", mouseX, mouseY);
             drawCommandButton(context, graphics, x + 14 + buttonW, gridY, buttonW, "FOLLOW", true, "FOLLOW", mouseX, mouseY);
@@ -1874,21 +1941,39 @@ public final class AshfallTerminalIntegration {
                     quest.isDroneLightEnabled(), "TOGGLE_LIGHT", mouseX, mouseY);
 
             int infoY = wide ? y : panelY + panelH + 12;
-            section(context, graphics, "MODE LOCKS", rightX, infoY);
-            int lockPanelY = infoY + 18;
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.DRONE_COMMAND_LINK,
-                    rightX, lockPanelY, rightW, 138, descriptor().accentColor(), 0.84F, true);
-            TerminalUi.cinematicPanel(graphics, rightX, lockPanelY, rightW, 138, descriptor().accentColor());
-            cy = lockPanelY + 8;
-            cy = lockLine(context, graphics, quest, rightX + 8, cy, rightW - 16, "SCOUT", "Partial repair required.");
-            cy = lockLine(context, graphics, quest, rightX + 8, cy, rightW - 16, "COMBAT", "Operational repair required.");
-            cy = lockLine(context, graphics, quest, rightX + 8, cy, rightW - 16, "SCAVENGE", "Operational repair required.");
-            cy = lockLine(context, graphics, quest, rightX + 8, cy, rightW - 16, "PATROL", "Enhanced repair required.");
+            int lockPanelY = infoY;
+            int lockH = wide ? panelH : 156;
+            cy = flatDataPanel(context, graphics, rightX, lockPanelY, rightW, lockH, "MODE LOCKS", "");
+            cy = lockLine(context, graphics, quest, rightX + 12, cy, rightW - 24, "SCOUT", "Partial repair required.");
+            cy = lockLine(context, graphics, quest, rightX + 12, cy, rightW - 24, "COMBAT", "Operational repair required.");
+            cy = lockLine(context, graphics, quest, rightX + 12, cy, rightW - 24, "SCAVENGE", "Operational repair required.");
+            cy = lockLine(context, graphics, quest, rightX + 12, cy, rightW - 24, "PATROL", "Enhanced repair required.");
             TerminalUi.wrap(context, graphics,
                     snapshot.hasAnyDrone()
                             ? "Commands are ready. If a mode is unavailable, repair integrity until the lock reason clears."
                             : "No linked drone is currently in command range. Recall and follow will reconnect when a valid owned drone is nearby.",
-                    rightX + 8, cy + 6, rightW - 16, TerminalUi.MUTED);
+                    rightX + 12, cy + 8, rightW - 24, TerminalUi.MUTED);
+            if (wide) {
+                int telemetryY = panelY + panelH + 14;
+                int telemetryH = Math.min(132, Math.max(96, context.contentHeight() - (telemetryY - y)));
+                if (telemetryH >= 96) {
+                    int ty = flatDataPanel(context, graphics, x, telemetryY, w, telemetryH, "DRONE TELEMETRY", "");
+                    int tileGap = 10;
+                    int tileW = Math.max(120, (w - tileGap * 2) / 3);
+                    TerminalUi.denseDataCard(context, graphics, x + 12, ty + 2, tileW, "REPAIR STATE",
+                            quest.getDroneStage().name(), "Integrity " + quest.getDroneHealth() + "%", TerminalUi.AMBER);
+                    TerminalUi.denseDataCard(context, graphics, x + 12 + tileW + tileGap, ty + 2, tileW, "COMMAND RANGE",
+                            snapshot.hasAnyDrone() ? "LINKED" : "NO CONTACT",
+                            snapshot.hasAnyDrone() ? "Nearby owned drone detected" : "Recall/follow will reconnect when valid",
+                            snapshot.hasAnyDrone() ? TerminalUi.GREEN : TerminalUi.MUTED);
+                    TerminalUi.denseDataCard(context, graphics, x + 12 + (tileW + tileGap) * 2, ty + 2,
+                            Math.max(120, w - 24 - (tileW + tileGap) * 2), "LOADOUT",
+                            quest.getDroneInventorySlots() + " slots",
+                            "Speed " + Math.round(quest.getDroneSpeedMultiplier() * 100.0F) + "% / light "
+                                    + (quest.isDroneLightEnabled() ? "ready" : "locked"),
+                            quest.isDroneLightEnabled() ? TerminalUi.GREEN : TerminalUi.CYAN);
+                }
+            }
         }
 
         @Override
@@ -1907,16 +1992,22 @@ public final class AshfallTerminalIntegration {
             int w = context.contentWidth();
             boolean wide = w >= 620;
             int rightW = wide ? Math.max(220, w - Math.max(330, Math.min(520, w * 55 / 100)) - 18) : w;
-            int locksH = 18 + 138;
-            int leftH = 18 + 164;
+            int locksH = 194;
+            int leftH = 194;
             int stackedH = leftH + 12 + locksH + TerminalUi.wrappedHeight(context, summary, rightW);
-            return wide ? Math.max(context.contentHeight(), Math.max(leftH, locksH)) : Math.max(context.contentHeight(), stackedH);
+            return wide ? Math.max(context.contentHeight(), Math.max(leftH, locksH) + 128) : Math.max(context.contentHeight(), stackedH);
         }
 
         private void drawCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int width, String label, boolean enabled, String command, double mouseX, double mouseY) {
             boolean hovered = enabled && TerminalUi.inside(mouseX, mouseY, x, y, width, 16);
-            TerminalUi.compactButton(context, graphics, x, y, width, label, descriptor().accentColor(), enabled, hovered);
+            if (enabled) {
+                TerminalUi.primaryCommandButton(context, graphics, x, y, width, 18, label,
+                        TerminalVisualAssets.ICON_ACTION_SCAN, descriptor().accentColor(), hovered);
+            } else {
+                TerminalUi.disabledCommandButton(context, graphics, x, y, width, 18, label,
+                        TerminalVisualAssets.ICON_STATE_LOCKED);
+            }
             addHitbox(x, y, width, 16, enabled, () -> context.sendAction(DRONE, DRONE_COMMAND, command));
         }
 
@@ -1989,7 +2080,7 @@ public final class AshfallTerminalIntegration {
                 int detailW = Math.max(180, w - railW - listW - 30);
                 renderCodexRail(context, graphics, entries, x, y, railW, mouseX, mouseY);
                 renderCodexEntryList(context, graphics, visibleEntries, x + railW + 10, y, listW, mouseX, mouseY);
-                renderCodexDetail(context, graphics, selected, detailX, y, detailW);
+                renderCodexDetail(context, graphics, selected, detailX, y, detailW, context.contentHeight());
             } else {
                 int railH = renderCodexRail(context, graphics, entries, x, y, w, mouseX, mouseY);
                 int listY = y + railH + 10;
@@ -1998,7 +2089,8 @@ public final class AshfallTerminalIntegration {
                 int detailY = medium ? listY : listY + codexListHeight(visibleEntries) + 12;
                 int detailW = medium ? Math.max(160, w - listW - 12) : w;
                 renderCodexEntryList(context, graphics, visibleEntries, x, listY, listW, mouseX, mouseY);
-                renderCodexDetail(context, graphics, selected, detailX, detailY, detailW);
+                int detailMinH = medium ? Math.max(150, context.contentHeight() - (detailY - y)) : 150;
+                renderCodexDetail(context, graphics, selected, detailX, detailY, detailW, detailMinH);
             }
         }
 
@@ -2050,77 +2142,80 @@ public final class AshfallTerminalIntegration {
 
         private int renderCodexRail(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 List<CodexEntry> entries, int x, int y, int w, int mouseX, int mouseY) {
-            section(context, graphics, "SURVIVAL INDEX", x, y);
-            int cy = y + 18;
+            int panelH = 34 + CodexCategory.values().length * 20;
+            int cy = flatDataPanel(context, graphics, x, y, w, panelH, "SURVIVAL INDEX", "");
             for (CodexCategory category : CodexCategory.values()) {
                 long total = entries.stream().filter(entry -> entry.category() == category).count();
                 long unlocked = entries.stream().filter(entry -> entry.category() == category && entry.unlocked()).count();
                 boolean selected = category == selectedCategory;
-                boolean hover = TerminalUi.inside(mouseX, mouseY, x, cy, w - 5, 17);
-                TerminalUi.selectableRow(graphics, x, cy, w - 5, 17, selected, hover, descriptor().accentColor());
+                boolean hover = TerminalUi.inside(mouseX, mouseY, x + 10, cy, w - 20, 17);
+                TerminalUi.selectableRow(graphics, x + 10, cy, w - 20, 17, selected, hover, descriptor().accentColor());
                 String count = unlocked + "/" + total;
-                line(context, graphics, category.label(), x + 6, cy + 5, Math.max(38, w - 48),
+                line(context, graphics, category.label(), x + 16, cy + 5, Math.max(38, w - 58),
                         selected ? TerminalUi.TEXT : TerminalUi.MUTED);
-                line(context, graphics, count, x + w - 43, cy + 5, 36,
+                line(context, graphics, count, x + w - 50, cy + 5, 36,
                         unlocked == total ? TerminalUi.GREEN : TerminalUi.AMBER);
-                addHitbox(x, cy, w - 5, 17, () -> {
+                addHitbox(x + 10, cy, w - 20, 17, () -> {
                     selectedCategory = category;
                     selectedEntryId = "";
                 });
                 cy += 20;
             }
-            return cy - y;
+            return Math.max(panelH, cy - y + 8);
         }
 
         private void renderCodexEntryList(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 List<CodexEntry> entries, int x, int y, int w, int mouseX, int mouseY) {
-            section(context, graphics, selectedCategory.label() + " ENTRIES", x, y);
-            line(context, graphics, selectedCategory.summary(), x, y + 15, w, TerminalUi.MUTED);
-            int cy = y + 30;
+            int panelH = 44 + (entries.isEmpty() ? 18 : entries.size() * 38);
+            int cy = flatDataPanel(context, graphics, x, y, w, panelH, selectedCategory.label() + " ENTRIES", "");
+            line(context, graphics, selectedCategory.summary(), x + 12, cy, w - 24, TerminalUi.MUTED);
+            cy += 16;
             if (entries.isEmpty()) {
-                line(context, graphics, "No entries in this category.", x, cy, w, TerminalUi.MUTED);
+                line(context, graphics, "No entries in this category.", x + 12, cy, w - 24, TerminalUi.MUTED);
                 return;
             }
             for (CodexEntry entry : entries) {
                 boolean selected = entry.id().equals(selectedEntryId);
-                boolean hover = TerminalUi.inside(mouseX, mouseY, x, cy, w - 4, 32);
-                TerminalUi.selectableRow(graphics, x, cy, w - 4, 32, selected, hover, descriptor().accentColor());
+                boolean hover = TerminalUi.inside(mouseX, mouseY, x + 10, cy, w - 20, 34);
                 int color = entry.unlocked() ? typeColor(entry.type()) : TerminalUi.MUTED;
-                line(context, graphics, entry.title(), x + 7, cy + 5, w - 14, selected ? TerminalUi.TEXT : color);
                 String status = (entry.unlocked() ? "OPEN / " : "LOCKED / ") + entry.type().label();
-                line(context, graphics, status, x + 7, cy + 18, w - 14,
+                dataRow(context, graphics, x + 10, cy, w - 20, 34, entry.title(), status,
+                        entry.unlocked() ? "OPEN" : "LOCKED", selected, hover,
                         entry.unlocked() ? TerminalUi.GREEN : TerminalUi.AMBER);
-                addHitbox(x, cy, w - 4, 32, () -> selectedEntryId = entry.id());
-                cy += 36;
+                if (!selected && color != TerminalUi.MUTED) {
+                    graphics.fill(x + 13, cy + 4, x + 16, cy + 30, color);
+                }
+                addHitbox(x + 10, cy, w - 20, 34, () -> selectedEntryId = entry.id());
+                cy += 38;
             }
         }
 
         private void renderCodexDetail(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                CodexEntry entry, int x, int y, int w) {
-            section(context, graphics, "FIELD DETAIL", x, y);
-            int cy = y + 18;
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.CODEX_FIELD_MANUAL,
-                    x, cy, w, 58, descriptor().accentColor(), 0.86F, true);
+                CodexEntry entry, int x, int y, int w, int minHeight) {
+            int panelH = Math.max(Math.max(150, minHeight), codexDetailHeight(context, entry, w));
+            int cy = flatDataPanel(context, graphics, x, y, w, panelH, "FIELD DETAIL", "");
             if (entry == null) {
-                line(context, graphics, "No Codex entry selected.", x + 8, cy + 8, w - 16, TerminalUi.MUTED);
+                line(context, graphics, "No Codex entry selected.", x + 12, cy, w - 24, TerminalUi.MUTED);
                 return;
             }
-            line(context, graphics, entry.title(), x + 8, cy + 8, w - 16,
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_SURVIVAL_INDEX, TerminalIcon.CODEX,
+                    x + 12, cy, 40, descriptor().accentColor(), entry.unlocked());
+            line(context, graphics, entry.title(), x + 62, cy + 4, w - 74,
                     entry.unlocked() ? TerminalUi.TEXT : TerminalUi.MUTED);
             line(context, graphics, entry.type().label() + " / " + (entry.unlocked() ? entry.status() : "LOCKED"),
-                    x + 8, cy + 22, w - 16, entry.unlocked() ? typeColor(entry.type()) : TerminalUi.AMBER);
-            cy += 70;
+                    x + 62, cy + 20, w - 74, entry.unlocked() ? typeColor(entry.type()) : TerminalUi.AMBER);
+            cy += 52;
             if (!entry.unlocked()) {
-                cy = drawCodexBlock(context, graphics, "LOCK", entry.lockReason(), x, cy, w, TerminalUi.AMBER);
-                drawCodexBlock(context, graphics, "NEXT", entry.nextHint(), x, cy + 4, w, TerminalUi.MUTED);
+                cy = drawCodexBlock(context, graphics, "LOCK", entry.lockReason(), x + 12, cy, w - 24, TerminalUi.AMBER);
+                drawCodexBlock(context, graphics, "NEXT", entry.nextHint(), x + 12, cy + 4, w - 24, TerminalUi.MUTED);
                 return;
             }
-            cy = drawCodexBlock(context, graphics, "SUMMARY", entry.description(), x, cy, w, TerminalUi.TEXT);
-            cy = drawCodexBlock(context, graphics, "USE", entry.practicalUse(), x, cy + 4, w, TerminalUi.CYAN);
-            cy = drawCodexBlock(context, graphics, "PREP", entry.prep(), x, cy + 4, w, TerminalUi.AMBER);
-            cy = drawCodexBlock(context, graphics, "PROGRESS", entry.progress(), x, cy + 4, w, TerminalUi.GREEN);
-            cy = drawCodexList(context, graphics, "REWARDS/OUTPUTS", entry.rewards(), x, cy + 4, w, TerminalUi.TEXT);
-            drawCodexList(context, graphics, "NOTES", entry.notes(), x, cy + 4, w, TerminalUi.MUTED);
+            cy = drawCodexBlock(context, graphics, "SUMMARY", entry.description(), x + 12, cy, w - 24, TerminalUi.TEXT);
+            cy = drawCodexBlock(context, graphics, "USE", entry.practicalUse(), x + 12, cy + 4, w - 24, TerminalUi.CYAN);
+            cy = drawCodexBlock(context, graphics, "PREP", entry.prep(), x + 12, cy + 4, w - 24, TerminalUi.AMBER);
+            cy = drawCodexBlock(context, graphics, "PROGRESS", entry.progress(), x + 12, cy + 4, w - 24, TerminalUi.GREEN);
+            cy = drawCodexList(context, graphics, "REWARDS/OUTPUTS", entry.rewards(), x + 12, cy + 4, w - 24, TerminalUi.TEXT);
+            drawCodexList(context, graphics, "NOTES", entry.notes(), x + 12, cy + 4, w - 24, TerminalUi.MUTED);
         }
 
         private int drawCodexBlock(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -2178,8 +2273,8 @@ public final class AshfallTerminalIntegration {
             List<CodexEntry> entries = new ArrayList<>();
             entries.add(entry(state, "start_survival", CodexCategory.START, CodexEntryType.PROTOCOL,
                     "Ashfall Survival Loop", "OPEN", CodexUnlockRule.ALWAYS, "",
-                    "Survive the opening crash by stabilizing water, food, shelter, filters, and the ECHO terminal.",
-                    "Use this as the baseline checklist whenever a route pushes into a harsher biome.",
+                    "Survive the opening crash by stabilizing water, food, shelter, filters, and the damaged ECHO terminal.",
+                    "Use this as the baseline checklist whenever a route pushes into a harsher biome or a louder part of the old signal.",
                     "Keep clean water, cooked food, spare filters, and a safe return point.",
                     "Current protocol: " + MissionUxSummary.current(state.player(), state.quest()).shortTitle(),
                     List.of("Stable early base", "Terminal reward flow", "Drone repair path"),
@@ -2187,8 +2282,8 @@ public final class AshfallTerminalIntegration {
                     "This protocol is always available.", "Open the terminal after the crash."));
             entries.add(entry(state, "start_missions", CodexCategory.START, CodexEntryType.PROTOCOL,
                     "Mission And Reward Flow", "OPEN", CodexUnlockRule.ALWAYS, "",
-                    "ECHO missions unlock in order, verify progress server-side, and store many rewards in the terminal.",
-                    "Use the mission browser for active objectives, then return here for reference context.",
+                    "ECHO missions unlock in order, verify progress against world state, and store many rewards in the terminal.",
+                    "Use the mission browser for active objectives, then return here for context when the next order feels too quiet.",
                     "Claim pending rewards before crafting late-step machines or route items.",
                     state.quest().getCompletedMissionIds().size() + "/" + MissionRegistry.getAllMissions().size() + " missions complete.",
                     List.of("Pending rewards: " + state.quest().getAllPendingRewards().size()),
@@ -2196,7 +2291,7 @@ public final class AshfallTerminalIntegration {
                     "This protocol is always available.", "Complete ECHO's first field checks."));
             entries.add(entry(state, "items_radaway", CodexCategory.ITEMS, CodexEntryType.ITEM,
                     "RadAway And Exposure Medicine", "FIELD READY", CodexUnlockRule.PROGRESS_PHASE, "2",
-                    "RadAway and medical supplies counter radiation-zone mistakes and reactor guardian pressure.",
+                    "RadAway and medical supplies counter radiation-zone mistakes, reactor guardian pressure, and the slow confidence that gets survivors killed.",
                     "Carry it before entering radiation routes, reactor ruins, and Behemoth-linked sites.",
                     "Pair medicine with armor repairs and a planned retreat path.",
                     "Radiation biome visits: " + countContains(state.quest().getVisitedBiomes(), "radiation"),
@@ -2205,7 +2300,7 @@ public final class AshfallTerminalIntegration {
                     "Medical protocols are still locked.", "Advance into resource stability or discover a radiation route."));
             entries.add(entry(state, "items_alloy", CodexCategory.ITEMS, CodexEntryType.ITEM,
                     "Dense Alloy And Schematics", "RECOVERED TECH", CodexUnlockRule.PROGRESS_PHASE, "3",
-                    "Dense alloy chunks and schematic fragments are the backbone of mid-game machines, armor, and weapons.",
+                    "Dense alloy chunks and schematic fragments are the backbone of mid-game machines, armor, weapons, and the first real argument with the Gridfall.",
                     "Use guardian rewards and structure caches to close gaps before harsher biomes.",
                     "Do not spend rare fragments until the matching machine or gear route is clear.",
                     "Schematics unlocked: " + state.research().getUnlockedSchematics().size(),
@@ -2214,7 +2309,7 @@ public final class AshfallTerminalIntegration {
                     "Advanced salvage references are locked.", "Complete more early machine and faction bridge missions."));
             entries.add(entry(state, "items_nexus_crystal", CodexCategory.ITEMS, CodexEntryType.ITEM,
                     "Nexus Crystals", "ANOMALY MATERIAL", CodexUnlockRule.ANY_GUARDIAN, "",
-                    "Nexus crystals are guardian-tier materials used by late progression and Nexus-route systems.",
+                    "Nexus crystals are guardian-tier materials used by late progression and Nexus-route systems. They behave less like ore than frozen command residue.",
                     "Treat them as strategic materials rather than common crafting stock.",
                     "Defeat biome guardians and keep the drops secured before pushing the Core route.",
                     "Guardian kills recorded: " + guardianKillCount(state.quest()),
@@ -2223,7 +2318,7 @@ public final class AshfallTerminalIntegration {
                     "Nexus materials are still unidentified.", "Neutralize any biome guardian."));
             entries.add(entry(state, "machines_power", CodexCategory.MACHINES, CodexEntryType.MACHINE,
                     "Power Network", "UTILITY", CodexUnlockRule.PROGRESS_PHASE, "2",
-                    "Generators, cables, power nodes, and load-routing machines turn survival bases into route platforms.",
+                    "Generators, cables, power nodes, and load-routing machines turn survival bases into route platforms that can survive a bad night and a worse signal.",
                     "Use power stability before committing to Nexus, cryo, or orbital preparation.",
                     "Keep a manual fallback for water, food, and defense if the grid is damaged.",
                     "Power nodes collected: " + state.quest().getCollectedPowerNodes() + "/" + NexusCoreBlock.REQUIRED_NODES,
@@ -2232,7 +2327,7 @@ public final class AshfallTerminalIntegration {
                     "Power routing references are locked.", "Stabilize basic resources and start grid missions."));
             entries.add(entry(state, "machines_research", CodexCategory.MACHINES, CodexEntryType.MACHINE,
                     "Research And Fabrication", "SCHEMATIC", CodexUnlockRule.PROGRESS_PHASE, "3",
-                    "Research points, schematic fragments, and rare tech schematics provide the controlled tech climb.",
+                    "Research points, schematic fragments, and rare tech schematics provide the controlled tech climb: recover a memory, test it, then trust it only when it works.",
                     "Use research to convert exploration wins into reliable crafting options.",
                     "Spend points on the route you are actively building, not every tempting branch.",
                     "Research points: " + state.research().getPoints() + "/" + ResearchData.MAX_POINTS,
@@ -2241,7 +2336,7 @@ public final class AshfallTerminalIntegration {
                     "Research references are locked.", "Recover enough infrastructure to begin schematic work."));
             entries.add(entry(state, "hazards_radiation", CodexCategory.HAZARDS, CodexEntryType.HAZARD,
                     "Radiation And Reactor Hot Zones", "HAZARD", CodexUnlockRule.VISITED_BIOME, "radiation",
-                    "Radiation pressure punishes long fights and poor cleanup discipline.",
+                    "Radiation pressure punishes long fights, poor cleanup discipline, and the belief that an invisible threat is not currently working.",
                     "Use RadAway, hazmat gear, scrubber pockets, and short exposure windows.",
                     "Carry medicine before entering reactor basements or red-zone routes.",
                     "Visited radiation routes: " + countContains(state.quest().getVisitedBiomes(), "radiation"),
@@ -2250,7 +2345,7 @@ public final class AshfallTerminalIntegration {
                     "Radiation records are locked.", "Enter or scan a radiation route."));
             entries.add(entry(state, "hazards_cold", CodexCategory.HAZARDS, CodexEntryType.HAZARD,
                     "Cryo Cold And Freeze Control", "HAZARD", CodexUnlockRule.VISITED_BIOME, "cryo",
-                    "Cryo zones pressure movement, warmth, and long-duration planning.",
+                    "Cryo zones pressure movement, warmth, and long-duration planning. Cold is quiet enough to feel fair until your hands stop answering.",
                     "Use thermal liners, hand warmers, and warm-pocket counterplay.",
                     "Avoid overlapping slow windows during cold fights.",
                     "Visited cold routes: " + countContains(state.quest().getVisitedBiomes(), "cryo"),
@@ -2259,7 +2354,7 @@ public final class AshfallTerminalIntegration {
                     "Cryo records are locked.", "Enter or scan a cryogenic route."));
             entries.add(entry(state, "hazards_toxic", CodexCategory.HAZARDS, CodexEntryType.HAZARD,
                     "Toxic Air And Bio Pressure", "HAZARD", CodexUnlockRule.VISITED_BIOME, "toxic",
-                    "Toxic routes become dangerous when poison, filters, and add pressure overlap.",
+                    "Toxic routes become dangerous when poison, filters, and add pressure overlap. If the mask starts to feel routine, leave before it becomes an autopsy note.",
                     "Use filters, clean water, and fast add-clear tools.",
                     "Refresh filters before entering hive or swamp structures.",
                     "Visited toxic routes: " + countContains(state.quest().getVisitedBiomes(), "toxic"),
@@ -2268,7 +2363,7 @@ public final class AshfallTerminalIntegration {
                     "Toxic records are locked.", "Enter or scan a toxic route."));
             entries.add(entry(state, "exploration_sites", CodexCategory.EXPLORATION, CodexEntryType.SITE,
                     "POIs And Route Records", "FIELD MAP", CodexUnlockRule.ALWAYS, "",
-                    "Exploration sites log route markers, POI objective states, power nodes, and special discoveries.",
+                    "Exploration sites log route markers, POI objective states, power nodes, and special discoveries. Every marked ruin is a question the old world failed to answer.",
                     "Use WORLD for raw records and CODEX for what those records mean.",
                     "Bring repair supplies when investigating unknown structures.",
                     "Discovered POIs: " + state.quest().getDiscoveredPOICount(),
@@ -2277,7 +2372,7 @@ public final class AshfallTerminalIntegration {
                     "Exploration records are locked.", "Move beyond the crash site."));
             entries.add(entry(state, "exploration_guardian_sites", CodexCategory.EXPLORATION, CodexEntryType.SITE,
                     "Guardian Entrances", "BOSS ROUTE", CodexUnlockRule.ANY_GUARDIAN_MISSION, "",
-                    "Each biome guardian has a surface entrance and an underground boss site.",
+                    "Each biome guardian has a surface entrance and an underground boss site. The entrance is the warning; the arena is the argument.",
                     "Follow the compass before combat; once the boss is live, the HUD points to the boss instead.",
                     "Clear side rooms, mark exits, and prepare counterplay before entering the arena.",
                     "Active guardian missions unlocked: " + unlockedGuardianMissionCount(state.quest()),
@@ -2289,7 +2384,7 @@ public final class AshfallTerminalIntegration {
             }
             entries.add(entry(state, "nexus_core", CodexCategory.NEXUS, CodexEntryType.PROTOCOL,
                     "Nexus Core Route", "ENDGAME", CodexUnlockRule.ALL_GUARDIANS, "",
-                    "The Nexus Core accepts a final route only after all biome guardians are resolved and power is stable.",
+                    "The Nexus Core accepts a final route only after all biome guardians are resolved and power is stable. It does not ask because it needs permission; it asks because orders bind history.",
                     "Use it to choose the world's post-Nexus direction: restore, destroy, or control.",
                     "Resolve guardians first, then confirm power-node readiness.",
                     "Guardians defeated: " + guardianKillCount(state.quest()) + "/" + BiomeGuardianProfiles.all().size(),
@@ -2298,7 +2393,7 @@ public final class AshfallTerminalIntegration {
                     "Nexus Core records are locked.", "Neutralize all biome guardians."));
             entries.add(entry(state, "nexus_warden", CodexCategory.NEXUS, CodexEntryType.BOSS,
                     "The Warden", "ARCHIVE BOSS", CodexUnlockRule.POST_NEXUS_CHOICE, "",
-                    "The Warden guards the Pre-Fall Archives after a Nexus choice is made.",
+                    "The Warden guards the Pre-Fall Archives after a Nexus choice is made. It protects history from decay, theft, and anyone trying to write the ending alone.",
                     "Break defender lockdowns, survive archive pulses, and claim the final protocol route.",
                     "Bring endgame armor, medicine, sustained damage, and room to clear defenders.",
                     state.post().isWardenDefeated() ? "Warden defeated." : "Warden unresolved.",
@@ -2337,7 +2432,7 @@ public final class AshfallTerminalIntegration {
         private void addOrbitalEntries(List<CodexEntry> entries, CodexState state) {
             entries.add(entry(state, "orbital_route", CodexCategory.ORBITAL, CodexEntryType.ROUTE,
                     "Orbital Route Systems", "ADDON ROUTE", CodexUnlockRule.POST_NEXUS_CHOICE, "",
-                    "Orbital Remnants opens a post-Nexus route chain through launch, Station ECHO, route worlds, and deep space.",
+                    "Orbital Remnants opens a post-Nexus route chain through launch, Station ECHO, route worlds, and deep space. The fall began above you; the return route does not forgive that.",
                     "Use the ORBITAL tab for live scan actions and this Codex page for reference.",
                     "Finish the Ashfall Nexus choice before expecting orbital calibration.",
                     orbitalProgressLine(state),
@@ -2346,7 +2441,7 @@ public final class AshfallTerminalIntegration {
                     "Orbital records are locked.", "Make an Ashfall Nexus choice to unlock orbital calibration."));
             entries.add(entry(state, "orbital_suit", CodexCategory.ORBITAL, CodexEntryType.PROTOCOL,
                     "Suit Systems", "LIFE SUPPORT", CodexUnlockRule.POST_NEXUS_CHOICE, "",
-                    "Orbital bosses pressure oxygen, pressure seals, radiation, gravity, and thermal systems.",
+                    "Orbital bosses pressure oxygen, pressure seals, radiation, gravity, and thermal systems. In orbit, survival is not a health bar; it is a checklist with teeth.",
                     "Treat suit health as a boss resource, not just travel flavor.",
                     "Carry oxygen cells, sealant patches, thermal support, and route-specific parts.",
                     orbitalProgressLine(state),
@@ -2354,19 +2449,19 @@ public final class AshfallTerminalIntegration {
                     List.of("Boss HUD subtitles name the suit system under pressure."),
                     "Suit telemetry is locked.", "Calibrate orbital contact or open the Orbital tab after Nexus."));
             entries.add(orbitalBossEntry(state, "orbital_docking_ai", "Corrupted Docking AI", "Docking AI",
-                    "Airlock pressure and reserve drones turn Station ECHO safety systems hostile.",
+                    "Airlock pressure and reserve drones turn Station ECHO safety systems hostile. The station is still trying to protect itself from the living.",
                     "Keep pressure sealed and clear emergency-port drones before the lock cycle stacks.",
                     "station_coordinates", "Navigation chip and station cache authority."));
             entries.add(orbitalBossEntry(state, "orbital_captain", "The Abandoned Captain", "Captain",
-                    "A failed command loop drains oxygen and wakes broken crew telemetry.",
+                    "A failed command loop drains oxygen and wakes broken crew telemetry. Command survived here as a distress signal with a weapon in its hand.",
                     "Protect oxygen, clear reinforcements, and use the fight to read station lore.",
                     "station_life_support", "Martian silica and Mars transfer records."));
             entries.add(orbitalBossEntry(state, "orbital_cryo_warden", "Europa Cryo Warden", "Cryo Warden",
-                    "Europa vent pulses punish players away from thermal arrays.",
+                    "Europa vent pulses punish players away from thermal arrays. The moon keeps its dead cold and its warnings colder.",
                     "Fight near thermal cover and recover pressure during vent windows.",
                     "europa_cryo_ocean", "Thermal stabilizer and Europa probe array."));
             entries.add(orbitalBossEntry(state, "orbital_echo_zero", "ECHO-0", "ECHO-0",
-                    "The final orbital quarantine fight attacks oxygen, pressure, radiation, and Nexus stabilization.",
+                    "The final orbital quarantine fight attacks oxygen, pressure, radiation, and Nexus stabilization. ECHO-0 is not malfunctioning; it is obeying the worst order it ever received.",
                     "Stabilize suit systems, survive quarantine pulses, and finish the post-ECHO network.",
                     "nexus_anomaly_belt", "Nexus Drive Core and faction-sensitive final rewards."));
         }
@@ -2755,7 +2850,8 @@ public final class AshfallTerminalIntegration {
     }
 
     private static final class WorldTab extends AshfallTab {
-        private static final List<String> SECTIONS = List.of("Current Fix", "Route Marks", "POI Signals", "Nexus Grid");
+        private static final List<String> SECTIONS = List.of(
+                "Current Fix", "Route Marks", "POI Signals", "POI Atlas", "Nexus Grid");
         private String selectedSection = "Current Fix";
 
         private WorldTab() {
@@ -2772,50 +2868,63 @@ public final class AshfallTerminalIntegration {
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
+            int h = context.contentHeight();
             boolean wide = w >= 560;
             int navW = wide ? 150 : w;
             int detailX = wide ? x + navW + 12 : x;
-            int navPanelH = 34 + SECTIONS.size() * 24;
+            int navPanelH = 38 + SECTIONS.size() * 26;
             int detailY = wide ? y : y + navPanelH + 12;
             int detailW = wide ? w - navW - 18 : w;
 
             if (!SECTIONS.contains(selectedSection)) {
                 selectedSection = SECTIONS.get(0);
             }
-            TerminalUi.cinematicPanel(graphics, x, y, navW - 4, navPanelH, descriptor().accentColor());
-            TerminalUi.line(context, graphics, "ROUTE MAP", x + 10, y + 10, navW - 24, descriptor().accentColor());
-            TerminalUi.divider(graphics, x + 10, y + 26, navW - 24, descriptor().accentColor());
-            int sy = y + 34;
+            int sy = flatDataPanel(context, graphics, x, y, navW - 4, navPanelH, "ROUTE MAP", "");
+            sy += 3;
             for (String section : SECTIONS) {
                 boolean selected = section.equals(selectedSection);
-                TerminalUi.selectableRow(graphics, x + 8, sy, navW - 20, 18, selected,
-                        TerminalUi.inside(mouseX, mouseY, x + 8, sy, navW - 20, 18), descriptor().accentColor());
-                line(context, graphics, section, x + 14, sy + 5, navW - 32,
-                        selected ? TerminalUi.TEXT : TerminalUi.MUTED);
-                addHitbox(x + 8, sy, navW - 20, 18, () -> selectedSection = section);
-                sy += 24;
+                boolean hovered = TerminalUi.inside(mouseX, mouseY, x + 8, sy, navW - 20, 20);
+                dataRow(context, graphics, x + 8, sy, navW - 20, 20, section, "", "",
+                        selected, hovered, selected ? descriptor().accentColor() : TerminalUi.MUTED);
+                addHitbox(x + 8, sy, navW - 20, 20, () -> selectedSection = section);
+                sy += 26;
             }
 
             String detailTitle = switch (selectedSection) {
                 case "Route Marks" -> "ROUTE MARKERS";
                 case "POI Signals" -> "POI SIGNAL STATES";
+                case "POI Atlas" -> "POI FIELD ATLAS";
                 case "Nexus Grid" -> "NEXUS ROUTE STATE";
                 default -> "CURRENT ROUTE FIX";
             };
-            TerminalUi.line(context, graphics, detailTitle, detailX, detailY + 10, detailW, descriptor().accentColor());
-            TerminalUi.divider(graphics, detailX, detailY + 26, detailW, descriptor().accentColor());
-            int detailPanelY = detailY + 34;
-            int detailPanelH = Math.max(118, worldDetailHeight(context, quest, detailW - 24) + 42);
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.WORLD_ROUTE_MAP,
-                    detailX, detailPanelY, detailW, detailPanelH,
-                    descriptor().accentColor(), 0.84F, true);
-            TerminalUi.cinematicPanel(graphics, detailX, detailPanelY, detailW, detailPanelH, descriptor().accentColor());
+            int detailPanelY = detailY;
+            int measuredDetailH = Math.max(138, worldDetailHeight(context, quest, detailW - 84) + 78);
+            boolean atlas = "POI Atlas".equals(selectedSection);
+            int detailPanelH = wide && !atlas ? Math.max(220, h - (detailY - y) - 6) : measuredDetailH;
+            TerminalUi.hdBackplatePanel(graphics, TerminalVisualAssets.CARD_PANEL_ROUTE_MAP,
+                    detailX, detailPanelY, detailW, detailPanelH, descriptor().accentColor(), 0.76F,
+                    TerminalUi.ImageFit.COVER);
+            TerminalUi.sectionHeader(context, graphics, detailTitle, "", detailX + 14, detailPanelY + 14,
+                    detailW - 28, descriptor().accentColor());
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_ROUTE_MAP, TerminalIcon.WORLD,
+                    detailX + 16, detailPanelY + 36, 42, descriptor().accentColor(), true);
             BlockPos pos = context.player().blockPosition();
             switch (selectedSection) {
-                case "Route Marks" -> renderRouteMarkers(context, graphics, quest, detailX + 12, detailPanelY + 12, detailW - 24);
-                case "POI Signals" -> renderPoiStates(context, graphics, quest, detailX + 12, detailPanelY + 12, detailW - 24);
-                case "Nexus Grid" -> renderWorldNexus(context, graphics, quest, post, detailX + 12, detailPanelY + 12, detailW - 24);
-                default -> renderLocation(context, graphics, quest, pos, detailX + 12, detailPanelY + 12, detailW - 24);
+                case "Route Marks" -> renderRouteMarkers(context, graphics, quest, detailX + 72, detailPanelY + 38, detailW - 92);
+                case "POI Signals" -> renderPoiStates(context, graphics, quest, detailX + 72, detailPanelY + 38, detailW - 92);
+                case "POI Atlas" -> renderPoiAtlas(context, graphics, quest, detailX + 72, detailPanelY + 38, detailW - 92);
+                case "Nexus Grid" -> renderWorldNexus(context, graphics, quest, post, detailX + 72, detailPanelY + 38, detailW - 92);
+                default -> renderLocation(context, graphics, quest, pos, detailX + 72, detailPanelY + 38, detailW - 92);
+            }
+            boolean summarySafe = switch (selectedSection) {
+                case "Route Marks" -> quest.getVisitedSpecialLocations().size() <= 4;
+                case "POI Signals" -> quest.getPOIObjectiveStates().size() <= 4;
+                case "POI Atlas" -> false;
+                default -> true;
+            };
+            if (wide && summarySafe && detailPanelH >= 310) {
+                renderWorldSummaryTiles(context, graphics, quest, post,
+                        detailX + 18, detailPanelY + detailPanelH - 82, detailW - 36);
             }
         }
 
@@ -2825,9 +2934,12 @@ public final class AshfallTerminalIntegration {
             boolean wide = w >= 560;
             int navW = wide ? 150 : w;
             int detailW = wide ? w - navW - 18 : w;
-            int navH = 34 + SECTIONS.size() * 24;
-            int detailH = 34 + Math.max(118, worldDetailHeight(context, QuestData.get(context.player()), detailW - 24) + 42);
-            return Math.max(context.contentHeight(), wide ? Math.max(navH, detailH) : navH + 12 + detailH);
+            int navH = 38 + SECTIONS.size() * 26;
+            int detailH = Math.max(138, worldDetailHeight(context, QuestData.get(context.player()), detailW - 84) + 78);
+            if (wide && "POI Atlas".equals(selectedSection)) {
+                return Math.max(context.contentHeight(), Math.max(navH, detailH));
+            }
+            return Math.max(context.contentHeight(), wide ? Math.max(navH, context.contentHeight()) : navH + 12 + detailH);
         }
 
         private void renderLocation(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -2841,6 +2953,25 @@ public final class AshfallTerminalIntegration {
             line(context, graphics, "Discovered POIs: " + quest.getDiscoveredPOICount()
                     + " / Power nodes: " + quest.getCollectedPowerNodes() + "/" + NexusCoreBlock.REQUIRED_NODES,
                     x, y + 56, w, TerminalUi.AMBER);
+            line(context, graphics, "POI Atlas: " + ExplorationPoiCatalog.totalTemplateCount()
+                    + " template signals grouped by scanner profile", x, y + 70, w, TerminalUi.MUTED);
+        }
+
+        private void renderWorldSummaryTiles(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                QuestData quest, PostNexusData post, int x, int y, int w) {
+            int gap = 8;
+            int tileW = Math.max(96, (w - gap * 2) / 3);
+            TerminalUi.denseDataCard(context, graphics, x, y, tileW, "ROUTE MEMORY",
+                    quest.getVisitedBiomes().size() + " biomes",
+                    quest.getVisitedDimensions().size() + " dimensions tracked", descriptor().accentColor());
+            TerminalUi.denseDataCard(context, graphics, x + tileW + gap, y, tileW, "SIGNALS",
+                    quest.getDiscoveredPOICount() + " POIs",
+                    quest.getPOIObjectiveStates().size() + " objective states", TerminalUi.AMBER);
+            TerminalUi.denseDataCard(context, graphics, x + (tileW + gap) * 2, y,
+                    Math.max(96, w - (tileW + gap) * 2), "NEXUS GRID",
+                    quest.getCollectedPowerNodes() + "/" + NexusCoreBlock.REQUIRED_NODES + " nodes",
+                    post.hasMadeChoice() ? post.getSelectedPath().name() + " path selected" : "path unresolved",
+                    post.hasMadeChoice() ? TerminalUi.GREEN : TerminalUi.MUTED);
         }
 
         private void renderRouteMarkers(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -2869,6 +3000,40 @@ public final class AshfallTerminalIntegration {
             }
         }
 
+        private void renderPoiAtlas(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                QuestData quest, int x, int y, int w) {
+            List<ExplorationSiteRegistry.SiteProfile> profiles = catalogProfiles();
+            int discovered = 0;
+            for (ExplorationSiteRegistry.SiteProfile profile : profiles) {
+                if (quest.isPOIDiscovered(profile.id())) {
+                    discovered++;
+                }
+            }
+            int cy = y;
+            line(context, graphics, discovered + "/" + profiles.size() + " route profiles catalogued | "
+                    + ExplorationPoiCatalog.totalTemplateCount() + " template signals indexed",
+                    x, cy, w, TerminalUi.AMBER);
+            cy += 18;
+            for (ExplorationSiteRegistry.SiteProfile profile : profiles) {
+                List<ExplorationPoiCatalog.Entry> entries = ExplorationPoiCatalog.forProfile(profile.id());
+                boolean profileDiscovered = quest.isPOIDiscovered(profile.id());
+                String status = profileDiscovered ? quest.getPOIStateSummary(profile.id()) : "UNSCANNED";
+                int profileColor = profileDiscovered ? profile.dangerLevel().getColor() : TerminalUi.MUTED;
+                cy = wrap(context, graphics, profile.displayName() + " | " + status + " | "
+                        + entries.size() + " templates", x, cy, w, profileColor) + 2;
+                cy = wrap(context, graphics, profile.route() + " | " + profile.hazardName()
+                        + " | Prep: " + profile.prepHint(), x + 6, cy, Math.max(60, w - 6),
+                        profileDiscovered ? TerminalUi.TEXT : TerminalUi.MUTED) + 2;
+                for (ExplorationPoiCatalog.Entry entry : entries) {
+                    int rowColor = profileDiscovered ? TerminalUi.TEXT : TerminalUi.MUTED;
+                    String marker = entry.landmark() ? "landmark" : entry.faction() ? "faction" : entry.category();
+                    cy = wrap(context, graphics, "- " + entry.displayName() + " [" + marker + "] "
+                            + entry.poolSummary(), x + 12, cy, Math.max(60, w - 12), rowColor) + 2;
+                }
+                cy += 5;
+            }
+        }
+
         private void renderWorldNexus(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 QuestData quest, PostNexusData post, int x, int y, int w) {
             NexusWorldData.WorldState state = HudState.getNexusState();
@@ -2885,8 +3050,9 @@ public final class AshfallTerminalIntegration {
             return switch (selectedSection) {
                 case "Route Marks" -> measuredRows(context, quest.getVisitedSpecialLocations().stream().sorted().toList(), width);
                 case "POI Signals" -> measuredRows(context, quest.getPOIObjectiveStates().stream().sorted().toList(), width);
+                case "POI Atlas" -> poiAtlasHeight(context, quest, width);
                 case "Nexus Grid" -> 56;
-                default -> 70;
+                default -> 84;
             };
         }
 
@@ -2897,6 +3063,30 @@ public final class AshfallTerminalIntegration {
             int height = 0;
             for (String row : rows) {
                 height += TerminalUi.wrappedHeight(context, "- " + row, width) + 3;
+            }
+            return height;
+        }
+
+        private static List<ExplorationSiteRegistry.SiteProfile> catalogProfiles() {
+            return ExplorationSiteRegistry.allSorted().stream()
+                    .toList();
+        }
+
+        private static int poiAtlasHeight(TerminalRenderContext context, QuestData quest, int width) {
+            int safeWidth = Math.max(80, width);
+            int height = 18;
+            for (ExplorationSiteRegistry.SiteProfile profile : catalogProfiles()) {
+                List<ExplorationPoiCatalog.Entry> entries = ExplorationPoiCatalog.forProfile(profile.id());
+                height += TerminalUi.wrappedHeight(context, profile.displayName() + " | "
+                        + (quest.isPOIDiscovered(profile.id()) ? quest.getPOIStateSummary(profile.id()) : "UNSCANNED")
+                        + " | " + entries.size() + " templates", safeWidth) + 2;
+                height += TerminalUi.wrappedHeight(context, profile.route() + " | " + profile.hazardName()
+                        + " | Prep: " + profile.prepHint(), Math.max(60, safeWidth - 6)) + 2;
+                for (ExplorationPoiCatalog.Entry entry : entries) {
+                    height += TerminalUi.wrappedHeight(context, "- " + entry.displayName() + " ["
+                            + entry.markerLabel() + "] " + entry.poolSummary(), Math.max(60, safeWidth - 12)) + 2;
+                }
+                height += 5;
             }
             return height;
         }
@@ -2936,23 +3126,25 @@ public final class AshfallTerminalIntegration {
             int h = context.contentHeight();
             boolean wide = w >= 760;
             int gap = 14;
-            int commandH = wide ? 52 : 56;
-            int topH = wide ? Math.max(176, h - commandH - gap) : 312;
+            int commandH = wide ? 58 : 60;
+            int topH = wide ? Math.max(286, h - commandH - gap) : 332;
             if (wide && topH + commandH + gap > h) {
-                topH = Math.max(132, h - commandH - gap);
+                topH = Math.max(220, h - commandH - gap);
             }
             int panelW = wide ? Math.max(430, Math.min(620, w * 58 / 100)) : w;
             int briefX = wide ? x + panelW + gap : x;
             int briefY = wide ? y : y + topH + gap;
             int briefW = wide ? Math.max(250, w - panelW - gap) : w;
 
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.NEXUS_CORE_INTERFACE, x, y, panelW, topH,
-                    descriptor().accentColor(), 0.72F, false);
-            TerminalUi.cinematicPanel(graphics, x, y, panelW, topH, descriptor().accentColor());
-            TerminalUi.iconBadge(graphics, TerminalIcon.NEXUS, x + 18, y + 22, 44, descriptor().accentColor(), true);
+            int corePanelH = wide ? Math.min(238, Math.max(196, topH * 58 / 100)) : 214;
+            int summaryY = y + corePanelH + gap;
+            int summaryH = Math.max(74, topH - corePanelH - gap);
+            texturedPanel(graphics, TerminalVisualAssets.CARD_PANEL_NEXUS_PATH, x, y, panelW, corePanelH, 0.68F);
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_NEXUS_CORE, TerminalIcon.NEXUS,
+                    x + 18, y + 28, 44, descriptor().accentColor(), true);
             TerminalUi.line(context, graphics, "NEXUS CORE INTERFACE", x + 74, y + 24, panelW - 100, descriptor().accentColor());
             TerminalUi.divider(graphics, x + 74, y + 42, Math.max(80, panelW - 108), descriptor().accentColor());
-            int cy = y + 80;
+            int cy = y + 76;
             cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Core range",
                     core.nearbyCore(), core.nearbyCore() ? "Nearby" : "Stand near unresolved Nexus Core");
             cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Power nodes",
@@ -2966,17 +3158,17 @@ public final class AshfallTerminalIntegration {
             cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "World seal",
                     state == NexusWorldData.WorldState.NORMAL, sealed ? NexusAccessRules.stateLabel(state) : "Ready for first commitment");
 
-            int summaryY = Math.min(y + topH - 68, Math.max(cy + 6, y + topH - 78));
-            TerminalUi.cinematicPanel(graphics, x + 18, summaryY, panelW - 36, 58, ready ? TerminalUi.GREEN : descriptor().accentColor());
-            TerminalUi.line(context, graphics, sealed ? "SEALED PATH" : "PROGRESS SUMMARY",
-                    x + 30, summaryY + 9, panelW - 60, ready ? TerminalUi.GREEN : descriptor().accentColor());
+            int summaryTextY = TerminalUi.flatDataPanel(context, graphics, x, summaryY, panelW, summaryH,
+                    sealed ? "SEALED PATH" : "PROGRESS SUMMARY", "",
+                    ready ? TerminalUi.GREEN : descriptor().accentColor());
+            summaryTextY += 4;
             if (sealed) {
                 String chooser = HudState.getNexusPlayer();
                 wrap(context, graphics,
                         NexusAccessRules.stateLabel(state)
                                 + (chooser == null || chooser.isBlank() ? "" : " / " + chooser)
                                 + ". Route systems and addon chapters can now read this sealed path.",
-                        x + 30, summaryY + 25, panelW - 60, TerminalUi.GREEN);
+                        x + 18, summaryTextY, panelW - 36, TerminalUi.GREEN);
             } else {
                 String pendingChoice = pendingChoiceLabel(player);
                 wrap(context, graphics, ready
@@ -2984,7 +3176,7 @@ public final class AshfallTerminalIntegration {
                                         ? "Status: READY. Select a path once, then confirm; this choice is permanent."
                                         : "Confirm " + pendingChoice + " to seal this path. No second prompt follows.")
                                 : choiceBlockedReason(state, core, guardians),
-                        x + 30, summaryY + 25, panelW - 60, ready ? TerminalUi.GREEN : TerminalUi.AMBER);
+                        x + 18, summaryTextY, panelW - 36, ready ? TerminalUi.GREEN : TerminalUi.AMBER);
             }
 
             drawPathBrief(context, graphics, briefX, briefY, briefW, topH, state, ready, core, guardians);
@@ -3012,11 +3204,10 @@ public final class AshfallTerminalIntegration {
         private static void drawPathBrief(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int width, int height, NexusWorldData.WorldState state, boolean ready,
                 ClientCoreStatus core, ClientGuardianStatus guardians) {
-            TerminalUi.cinematicPanel(graphics, x, y, width, height, 0xFFC77DFF);
-            TerminalUi.line(context, graphics, "PATH BRIEF", x + 16, y + 18, width - 32, 0xFFC77DFF);
-            TerminalUi.divider(graphics, x + 16, y + 36, width - 32, 0xFFC77DFF);
-            int rowH = Math.max(46, (height - 82) / 3);
-            int cy = y + 52;
+            int cy = TerminalUi.flatDataPanel(context, graphics,
+                    x, y, width, height, "PATH BRIEF", "", 0xFFC77DFF);
+            cy += 7;
+            int rowH = Math.max(46, (height - (cy - y) - 24) / 3);
             pathRow(context, graphics, x + 18, cy, width - 36, rowH, TerminalIcon.STATUS,
                     "RESTORE", "First: repair 3 Power Nodes. Archives, Warden, epilogue. Permanent route.", ready, TerminalUi.GREEN);
             cy += rowH + 8;
@@ -3031,12 +3222,14 @@ public final class AshfallTerminalIntegration {
                 int x, int y, int width, int height, TerminalIcon icon, String title, String detail, boolean ready, int color) {
             graphics.fill(x, y, x + width, y + height, 0x77071117);
             graphics.fill(x, y + height - 1, x + width, y + height, 0x33244352);
+            graphics.outline(x, y, width, height, ready ? (0x33000000 | (color & 0x00FFFFFF)) : 0x33244352);
             int iconSize = height < 52 ? 20 : 24;
-            icon.draw(graphics, x + 10, y + Math.max(7, (height - iconSize) / 2), iconSize, color, ready);
+            TerminalUi.hybridIcon(graphics, TerminalVisualAssets.ICON_PAGE_NEXUS_CORE, icon,
+                    x + 10, y + Math.max(7, (height - iconSize) / 2), iconSize, color, ready);
             TerminalUi.line(context, graphics, title, x + 44, y + 8, width - 126, TerminalUi.TEXT);
             TerminalUi.wrap(context, graphics, detail, x + 44, y + (height < 52 ? 21 : 24), width - 126, TerminalUi.MUTED);
-            TerminalUi.line(context, graphics, ready ? "READY" : "LOCKED", x + width - 78, y + Math.max(12, height / 2 - 4), 68,
-                    ready ? TerminalUi.GREEN : 0xFFC77DFF);
+            TerminalUi.missionStatusPill(context, graphics, ready ? "READY" : "LOCKED",
+                    x + width - 86, y + Math.max(10, height / 2 - 7), 76);
         }
 
         private void drawNexusCommand(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -3046,9 +3239,10 @@ public final class AshfallTerminalIntegration {
             String visibleLabel = armed ? confirmLabel(payload) : label;
             if (ready) {
                 TerminalUi.primaryCommandButton(context, graphics, x, y, width, height, visibleLabel,
-                        armed ? TerminalUi.AMBER : descriptor().accentColor(), hover);
+                        TerminalVisualAssets.ICON_STATE_ACTIVE, armed ? TerminalUi.AMBER : descriptor().accentColor(), hover);
             } else {
-                TerminalUi.disabledCommandButton(context, graphics, x, y, width, height, label + " / LOCKED");
+                TerminalUi.disabledCommandButton(context, graphics, x, y, width, height,
+                        label + " / LOCKED", TerminalVisualAssets.ICON_STATE_LOCKED);
             }
             addHitbox(x, y, width, height, ready, () -> {
                 if (isPendingChoice(context.player(), payload)) {

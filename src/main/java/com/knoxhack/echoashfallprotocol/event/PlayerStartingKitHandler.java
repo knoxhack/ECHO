@@ -5,8 +5,6 @@ import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.gameplay.AshfallInteractionRules;
 import com.knoxhack.echoashfallprotocol.network.WelcomeScreenPacket;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
-import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
-import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.world.StartingDropPodData;
 import com.knoxhack.echoashfallprotocol.worldgen.ProceduralStructureGenerator;
 import net.minecraft.core.BlockPos;
@@ -64,35 +62,7 @@ public class PlayerStartingKitHandler {
             return; // Already received kit
         }
 
-        // Give starting items
-        // 1. Gas Mask packed for later toxic-zone expeditions.
-        ItemStack gasMask = new ItemStack(ModItems.GAS_MASK.get());
-        gasMask.setDamageValue(gasMask.getMaxDamage() / 10);
-        player.getInventory().add(gasMask);
-
-        // 2. Signal Scanner block item ("broken scanner")
-        ItemStack scanner = new ItemStack(ModBlocks.SIGNAL_SCANNER.get().asItem());
-        player.getInventory().add(scanner);
-
-        // 3. Emergency air and hydration
-        player.getInventory().add(new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get(), 2));
-        player.getInventory().add(new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 4));
-        player.getInventory().add(new ItemStack(ModItems.DIRTY_WATER_BOTTLE.get(), 2));
-
-        // 4. Emergency food, medicine, and basic defense
-        player.getInventory().add(new ItemStack(ModItems.EMERGENCY_RATION.get(), 8));
-        player.getInventory().add(new ItemStack(ModItems.BANDAGE.get(), 4));
-        player.getInventory().add(new ItemStack(ModItems.STIM_PACK.get(), 1));
-        player.getInventory().add(new ItemStack(ModItems.RAD_AWAY.get(), 1));
-        player.getInventory().add(new ItemStack(Items.WOODEN_SWORD, 1));
-
-        // 5. First outpost anchor basics for the preparation window
-        player.getInventory().add(new ItemStack(ModBlocks.ASH_CAMPFIRE_ITEM.get(), 1));
-        player.getInventory().add(new ItemStack(Items.CHEST, 1));
-        player.getInventory().add(new ItemStack(Items.TORCH, 8));
-        player.getInventory().add(new ItemStack(Items.GLASS_BOTTLE, 3));
-
-        // 6. Short survival checklist note
+        // Starter supplies live in the pod lockers; the note points players to them.
         ItemStack welcomeNote = new ItemStack(Items.PAPER);
         welcomeNote.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
                 Component.translatable("item.EchoAshfallProtocol.echo_starter_note.name"));
@@ -102,10 +72,10 @@ public class PlayerStartingKitHandler {
                 : "\u00A7eGuide:\u00A7r follow HUD/chat goals; press [N] to reopen this briefing.\n";
         noteTag.putString("message",
             "\n\u00A7b[ECHO-7] FIRST 10 MINUTES\n" +
-            "\n\u00A7eMask:\u00A7r pack the Gas Mask for marked toxic pockets.\n" +
-            "\u00A7eWater:\u00A7r drink Clean Water before scouting.\n" +
-            "\u00A7eShelter:\u00A7r place the Ash Campfire, chest, and torches near the pod.\n" +
-            "\u00A7eTool:\u00A7r keep the sword ready, then craft a Scrap Knife.\n" +
+            "\n\u00A7eLockers:\u00A7r open OXYGEN, TOOLS, SCRAP, and LOGS before leaving.\n" +
+            "\u00A7eWater:\u00A7r drink Clean Water from the OXYGEN locker before scouting.\n" +
+            "\u00A7eShelter:\u00A7r deploy the Ash Campfire, chest, and torches near the ramp.\n" +
+            "\u00A7eTool:\u00A7r take the sword, then craft a Scrap Knife from pod salvage.\n" +
             "\u00A7eScanner:\u00A7r store the Signal Scanner until base power is online.\n" +
             terminalLine +
             "\n\u00A77Emergency Buffer: 10 minutes. Use it to equip, drink, shelter, and craft.\n"

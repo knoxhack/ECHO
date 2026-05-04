@@ -102,7 +102,8 @@ public final class VanillaJourneyProvider implements TerminalMissionProvider {
         VanillaMission mission = mission(missionId);
         if (mission == null) {
             return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F,
-                    "LOCKED", "Unknown Baseline record.", "Unknown mission record.", List.of());
+                    "LOCKED", "Baseline record not found in the current ECHO index.",
+                    "No active Baseline record is available for this signal.", List.of());
         }
         VanillaJourneyData data = VanillaJourneyData.get(player);
         boolean completed = data.isCompleted(mission.id());

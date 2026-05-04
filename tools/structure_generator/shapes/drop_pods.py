@@ -1,10 +1,9 @@
 """
-Drop pod structure generator.
+Compact futuristic starting drop pod generator.
 
-The starting drop pod is a safe mini-base: a large curated capsule wreck in a
-32x32 scorched impact site. The interior has a guaranteed-clear spawn bay, a
-visible ECHO-7 terminal wall, starter storage, bed, side workstations, lighting,
-and a south-facing exit ramp.
+The starting pod is a dense armored survival module in a 20x20 landing scar.
+It keeps a clear spawn bay, bed, ECHO control wall, visible supply lockers,
+crafting surfaces, lights, slim landing struts, roof beacons, and a south ramp.
 """
 
 import json
@@ -16,17 +15,34 @@ from nbtlib.tag import Byte
 BlockEntry = Tuple[int, int, int, str, Optional[Dict[str, str]], Optional[Dict[str, Any]]]
 BlockList = List[BlockEntry]
 
-_CRATER_SIZE = 32
-_POD_X0, _POD_X1 = 8, 23
-_POD_Z0, _POD_Z1 = 7, 24
-_POD_CX, _POD_CZ = 16, 15
+_SITE_SIZE = 20
+_POD_X0, _POD_X1 = 4, 15
+_POD_Z0, _POD_Z1 = 4, 15
+_POD_CX, _POD_CZ = 9, 9
+_DOOR_X = _POD_CX
 
-# Template-space feet block for the player. Java mirrors this coordinate and
-# validates feet/head after placement.
-_SPAWN_X, _SPAWN_Y, _SPAWN_Z = _POD_CX, 1, _POD_CZ + 4
-_BED_FOOT = (_POD_X0 + 2, 1, _POD_CZ + 3)
-_BED_HEAD = (_POD_X0 + 2, 1, _POD_CZ + 4)
+# Template-space feet block for the player. Java mirrors this coordinate after
+# the two buried foundation layers shift into NBT-space.
+_SPAWN_X, _SPAWN_Y, _SPAWN_Z = _POD_CX, 1, _POD_CZ + 3
+_BED_FOOT = (_POD_X0 + 1, 1, _POD_CZ + 1)
+_BED_HEAD = (_POD_X0 + 1, 1, _POD_CZ + 2)
+
 _HULL = "echoashfallprotocol:drop_pod_hull"
+_GLASS = "echoashfallprotocol:drop_pod_glass"
+_DEBRIS = "echoashfallprotocol:rusted_metal_debris"
+_CABLE = "echoashfallprotocol:cable_bundle"
+_TWISTED = "echoashfallprotocol:twisted_metal"
+_CRASH_SLAG = "echoashfallprotocol:crash_slag"
+_YELLOW = "minecraft:yellow_concrete"
+_DARK = "minecraft:black_concrete"
+_MID = "minecraft:gray_concrete"
+_LIGHT = "minecraft:light_gray_concrete"
+_COPPER = "minecraft:cut_copper"
+_POLISHED = "minecraft:polished_andesite"
+_SLAB = "minecraft:polished_andesite_slab"
+_STONE_SLAB = "minecraft:stone_slab"
+_BLACKSTONE = "minecraft:polished_blackstone"
+_DEEPSLATE = "minecraft:polished_deepslate"
 _IRON_BARS = {
     "east": "false",
     "north": "false",
@@ -55,200 +71,66 @@ def _add(
     blocks.append((x, y, z, block_id, props, nbt))
 
 
+def _in_bounds(x: int, z: int) -> bool:
+    return 0 <= x < _SITE_SIZE and 0 <= z < _SITE_SIZE
+
+
+def _is_clipped_corner(x: int, z: int) -> bool:
+    return (
+        (x <= _POD_X0 + 1 and z <= _POD_Z0 + 1)
+        or (x <= _POD_X0 + 1 and z >= _POD_Z1 - 1)
+        or (x >= _POD_X1 - 1 and z <= _POD_Z0 + 1)
+        or (x >= _POD_X1 - 1 and z >= _POD_Z1 - 1)
+    )
+
+
 def _in_pod_footprint(x: int, z: int) -> bool:
-    return _POD_X0 <= x <= _POD_X1 and _POD_Z0 <= z <= _POD_Z1
-
-
-def _near_exit_path(x: int, z: int) -> bool:
-    return abs(x - _POD_CX) <= 1 and _POD_Z1 <= z <= _POD_Z1 + 4
+    return _POD_X0 <= x <= _POD_X1 and _POD_Z0 <= z <= _POD_Z1 and not _is_clipped_corner(x, z)
 
 
 def _shell_cell(x: int, z: int) -> bool:
-    return (x in (_POD_X0, _POD_X1) or z in (_POD_Z0, _POD_Z1)) and _in_pod_footprint(x, z)
+    if not _in_pod_footprint(x, z):
+        return False
+    return any(not _in_pod_footprint(x + dx, z + dz) for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)))
 
 
-def _build_crater(blocks: BlockList, rng: random.Random) -> None:
-    for x in range(_CRATER_SIZE):
-        for z in range(_CRATER_SIZE):
-            if _in_pod_footprint(x, z):
-                continue
-
-            dx = x - _POD_CX
-            dz = z - _POD_CZ
-            dist = (dx * dx + dz * dz) ** 0.5
-            if dist <= 7:
-                mat = rng.choices(
-                    ["minecraft:magma_block", "minecraft:blackstone", "minecraft:netherrack", "minecraft:polished_blackstone"],
-                    [0.25, 0.35, 0.2, 0.2],
-                )[0]
-            elif dist <= 12:
-                mat = rng.choices(
-                    ["minecraft:blackstone", "minecraft:polished_blackstone", "minecraft:netherrack", "minecraft:magma_block"],
-                    [0.45, 0.3, 0.15, 0.1],
-                )[0]
-            elif dist <= 16:
-                mat = rng.choices(
-                    ["minecraft:coarse_dirt", "minecraft:gravel", "minecraft:blackstone"],
-                    [0.5, 0.3, 0.2],
-                )[0]
-            else:
-                continue
-
-            _add(blocks, x, 0, z, mat)
-            if mat == "minecraft:netherrack" and rng.random() < 0.35 and not _near_exit_path(x, z):
-                _add(blocks, x, 1, z, "minecraft:fire")
-
-    # Edge scorch marks pin the template to the intended 32x32 footprint.
-    for x, z in [(0, _POD_CZ), (_CRATER_SIZE - 1, _POD_CZ), (_POD_CX, 0), (_POD_CX, _CRATER_SIZE - 1)]:
-        _add(blocks, x, 0, z, "minecraft:blackstone")
-
-    for lx, lz in [(4, 15), (26, 8), (23, 27), (6, 5), (5, 24)]:
-        _add(blocks, lx, 0, lz, "minecraft:lava")
-
-    smoke_spots = [(4, 4), (4, 26), (26, 4), (26, 26), (16, 3), (3, 15), (28, 15)]
-    for sx, sz in smoke_spots:
-        if _in_pod_footprint(sx, sz):
-            continue
-        _add(
-            blocks,
-            sx,
-            0,
-            sz,
-            "minecraft:campfire",
-            {"lit": "true", "facing": "north", "signal_fire": "true", "waterlogged": "false"},
-        )
-        _add(blocks, sx, 1, sz, "minecraft:stone_slab", {"type": "top", "waterlogged": "false"})
-
-    debris_cells = [
-        (x, z)
-        for x in range(_CRATER_SIZE)
-        for z in range(_CRATER_SIZE)
-        if not _in_pod_footprint(x, z) and not _near_exit_path(x, z)
-    ]
-    rng.shuffle(debris_cells)
-
-    for x, z in debris_cells[:24]:
-        _add(blocks, x, 1, z, "minecraft:iron_bars", dict(_IRON_BARS))
-    for x, z in debris_cells[24:44]:
-        _add(blocks, x, 1, z, "echoashfallprotocol:charred_wood_log", {"axis": rng.choice(["x", "z"])})
-    for x, z in debris_cells[44:62]:
-        _add(blocks, x, 1, z, "minecraft:chain", {"axis": "y", "waterlogged": "false"})
-        if rng.random() < 0.5:
-            _add(blocks, x, 2, z, "minecraft:chain", {"axis": "y", "waterlogged": "false"})
-    for x, z in debris_cells[62:78]:
-        _add(blocks, x, 1, z, "minecraft:stone_button", {"face": "floor", "facing": "north", "powered": "false"})
-
-    # Skidded hull ribs and cables tell the impact direction.
-    for offset in range(7):
-        left_z = _POD_Z1 + 2 + offset
-        right_z = _POD_Z1 + 3 + offset
-        if left_z < _CRATER_SIZE:
-            _add(blocks, _POD_CX - 7 + offset, 1, left_z, _HULL)
-        if right_z < _CRATER_SIZE:
-            _add(blocks, _POD_CX + 6 - offset, 1, right_z, "echoashfallprotocol:rusted_metal_debris")
-    for z in range(_POD_Z1 + 1, min(_CRATER_SIZE, _POD_Z1 + 7)):
-        _add(blocks, _POD_CX - 2, 1, z, "echoashfallprotocol:cable_bundle")
-        if z % 2 == 0:
-            _add(blocks, _POD_CX + 2, 1, z, "echoashfallprotocol:cable_bundle")
+def _near_exit_path(x: int, z: int) -> bool:
+    return abs(x - _DOOR_X) <= 2 and _POD_Z1 <= z < _SITE_SIZE
 
 
-def _build_pod_shell(blocks: BlockList, rng: random.Random) -> None:
-    for x in range(_POD_X0, _POD_X1 + 1):
-        for z in range(_POD_Z0, _POD_Z1 + 1):
-            _add(blocks, x, -2, z, "minecraft:deepslate")
-            _add(blocks, x, -1, z, "minecraft:deepslate")
-
-            if _shell_cell(x, z):
-                _add(blocks, x, 0, z, "minecraft:deepslate")
-            else:
-                _add(blocks, x, 0, z, "minecraft:smooth_stone")
-
-    for z in range(_POD_Z0 + 2, _POD_Z1):
-        _add(blocks, _POD_CX, 0, z, "minecraft:polished_andesite")
-    _add(blocks, _SPAWN_X, 0, _SPAWN_Z, "minecraft:smooth_stone")
-
-    for y in range(1, 5):
-        for x in range(_POD_X0, _POD_X1 + 1):
-            for z in range(_POD_Z0, _POD_Z1 + 1):
-                if not _shell_cell(x, z):
-                    continue
-                is_corner = (x in (_POD_X0, _POD_X1)) and (z in (_POD_Z0, _POD_Z1))
-                is_side_window = y in (2, 3) and z in (_POD_CZ - 4, _POD_CZ, _POD_CZ + 4) and x in (_POD_X0, _POD_X1)
-                if is_side_window:
-                    block = "echoashfallprotocol:drop_pod_glass"
-                elif is_corner and y in (1, 2):
-                    block = "minecraft:crying_obsidian"
-                elif y in (2, 3):
-                    block = "minecraft:polished_andesite" if ((x + z) % 2 == 0) else "minecraft:smooth_stone"
-                else:
-                    block = _HULL
-                _add(blocks, x, y, z, block)
-
-    for x in range(_POD_X0, _POD_X1 + 1):
-        for z in range(_POD_Z0, _POD_Z1 + 1):
-            is_corner = (x in (_POD_X0, _POD_X1)) and (z in (_POD_Z0, _POD_Z1))
-            if is_corner:
-                continue
-            inner = (_POD_X0 + 1 <= x <= _POD_X1 - 1) and (_POD_Z0 + 1 <= z <= _POD_Z1 - 1)
-            center_lights = inner and x == _POD_CX and z in (_POD_CZ - 5, _POD_CZ, _POD_CZ + 5)
-            if center_lights:
-                _add(blocks, x, 5, z, "minecraft:sea_lantern")
-            elif inner:
-                _add(blocks, x, 5, z, "minecraft:quartz_block")
-            else:
-                _add(blocks, x, 5, z, _HULL)
-
-    for x in range(_POD_CX - 5, _POD_CX + 6):
-        for z in range(_POD_CZ - 6, _POD_CZ + 7):
-            if abs(x - _POD_CX) + abs(z - _POD_CZ) <= 8:
-                _add(blocks, x, 6, z, _HULL)
-    for x in range(_POD_CX - 2, _POD_CX + 3):
-        for z in range(_POD_CZ - 2, _POD_CZ + 3):
-            _add(blocks, x, 7, z, _HULL)
-    _add(blocks, _POD_CX, 7, _POD_CZ, "echoashfallprotocol:drop_pod_glass")
-    _add(blocks, _POD_CX, 8, _POD_CZ, "minecraft:lightning_rod")
-
-    for pos in [(_POD_X0, 3, _POD_Z0 + 2), (_POD_X1, 1, _POD_Z1 - 3), (_POD_X0 + 2, 5, _POD_Z0), (_POD_X1 - 2, 4, _POD_Z0 + 1)]:
-        _add(blocks, *pos, "echoashfallprotocol:rusted_metal_debris")
+def _barrel_nbt(loot_table: str) -> Dict[str, Any]:
+    return {"id": "minecraft:barrel", "LootTable": loot_table}
 
 
-_BOOK_PAGE_TEXT = (
-    "AIR TOXIC. FILTER REQUIRED.\n"
-    "GRID STATUS: OFFLINE.\n"
-    "ECHO-7 ONLINE.\n"
-    "OBJECTIVE: SURVIVE.\n"
-    "SCAVENGE. ADAPT. RESTORE.\n"
-    "ECHO: ASHFALL PROTOCOL."
-)
+def _chest_nbt(loot_table: str) -> Dict[str, Any]:
+    return {"id": "minecraft:chest", "LootTable": loot_table}
 
 
-def _echo_book_nbt() -> Dict[str, Any]:
+def _book_nbt(title: str, body: str) -> Dict[str, Any]:
     return {
         "id": "minecraft:written_book",
         "count": Byte(1),
         "components": {
             "minecraft:written_book_content": {
-                "title": {"raw": "ECHO-7 TERMINAL LOG"},
+                "title": {"raw": title},
                 "author": "ECHO-7",
-                "pages": [{"raw": json.dumps({"text": _BOOK_PAGE_TEXT})}],
+                "pages": [{"raw": json.dumps({"text": body})}],
                 "resolved": Byte(1),
             }
         },
     }
 
 
-def _sign_nbt() -> Dict[str, Any]:
+def _sign_nbt(*lines: str) -> Dict[str, Any]:
     blank = '{"text":""}'
+    messages = []
+    for line in list(lines[:4]) + [""] * max(0, 4 - len(lines)):
+        messages.append(json.dumps({"text": line, "color": "yellow" if line.startswith("CAUTION") else "green", "bold": line.startswith(("ECHO", "DP"))}))
     return {
         "id": "minecraft:sign",
         "is_waxed": Byte(0),
         "front_text": {
-            "messages": [
-                blank,
-                '{"text":"ECHO-7","color":"green","bold":true}',
-                '{"text":"ONLINE","color":"green"}',
-                blank,
-            ],
+            "messages": messages,
             "color": "green",
             "has_glowing_text": Byte(1),
         },
@@ -260,169 +142,289 @@ def _sign_nbt() -> Dict[str, Any]:
     }
 
 
-def _barrel_nbt(loot_table: str) -> Dict[str, Any]:
-    return {"id": "minecraft:barrel", "LootTable": loot_table}
+def _build_site(blocks: BlockList, rng: random.Random) -> None:
+    for x in range(_SITE_SIZE):
+        for z in range(_SITE_SIZE):
+            if _in_pod_footprint(x, z):
+                continue
+
+            dx = x - (_POD_CX + 0.5)
+            dz = z - (_POD_CZ + 0.5)
+            dist = (dx * dx + dz * dz) ** 0.5
+            if dist <= 7:
+                mat = rng.choices(
+                    [_CRASH_SLAG, "minecraft:blackstone", _BLACKSTONE, "minecraft:gravel"],
+                    [0.22, 0.34, 0.20, 0.24],
+                )[0]
+            elif dist <= 9 and rng.random() < 0.42:
+                mat = rng.choices(["minecraft:coarse_dirt", "minecraft:gravel", "minecraft:blackstone"], [0.58, 0.28, 0.14])[0]
+            else:
+                continue
+            _add(blocks, x, 0, z, mat)
+
+    # Edge anchors keep the generated NBT at the intended 20x20 footprint.
+    for x, z in [(0, _POD_CZ), (_SITE_SIZE - 1, _POD_CZ), (_POD_CX, 0), (_POD_CX, _SITE_SIZE - 1)]:
+        _add(blocks, x, 0, z, "minecraft:blackstone")
+
+    for x, z in [(2, 2), (17, 2), (2, 17), (17, 17)]:
+        _add(blocks, x, 0, z, _BLACKSTONE)
+        _add(blocks, x, 1, z, "minecraft:stone_button", {"face": "floor", "facing": "north", "powered": "false"})
+
+    for x, z in [(3, 16), (16, 3)]:
+        _add(blocks, x, 0, z, "minecraft:campfire", {"lit": "true", "facing": "north", "signal_fire": "true", "waterlogged": "false"})
+        _add(blocks, x, 1, z, _STONE_SLAB, {"type": "top", "waterlogged": "false"})
+
+    debris_cells = [
+        (x, z)
+        for x in range(_SITE_SIZE)
+        for z in range(_SITE_SIZE)
+        if not _in_pod_footprint(x, z) and not _near_exit_path(x, z)
+    ]
+    rng.shuffle(debris_cells)
+
+    for x, z in debris_cells[:10]:
+        _add(blocks, x, 1, z, rng.choice([_DEBRIS, _CABLE, _TWISTED]))
+    for x, z in debris_cells[10:16]:
+        _add(blocks, x, 1, z, "minecraft:chain", {"axis": rng.choice(["x", "z", "y"]), "waterlogged": "false"})
+    for x, z in debris_cells[16:22]:
+        _add(blocks, x, 1, z, "minecraft:stone_button", {"face": "floor", "facing": "north", "powered": "false"})
+
+    # Short, clean approach path and ramp apron.
+    for z in range(_POD_Z1 + 1, _SITE_SIZE):
+        for x in range(_DOOR_X - 2, _DOOR_X + 3):
+            if _in_bounds(x, z):
+                mat = _BLACKSTONE if abs(x - _DOOR_X) == 2 else _POLISHED
+                _add(blocks, x, 0, z, mat)
 
 
-def _chest_nbt(loot_table: str) -> Dict[str, Any]:
-    return {"id": "minecraft:chest", "LootTable": loot_table}
+def _build_foundation_and_floor(blocks: BlockList) -> None:
+    for x in range(_POD_X0, _POD_X1 + 1):
+        for z in range(_POD_Z0, _POD_Z1 + 1):
+            if not _in_pod_footprint(x, z):
+                continue
+            _add(blocks, x, -2, z, "minecraft:deepslate")
+            _add(blocks, x, -1, z, "minecraft:deepslate")
+            edge = _shell_cell(x, z)
+            _add(blocks, x, 0, z, _DARK if edge else _POLISHED)
+
+    # A narrow caution path frames the work zones without turning the room into
+    # a checkerboard hangar.
+    for x in range(_POD_X0 + 3, _POD_X1 - 2):
+        _add(blocks, x, 0, _POD_Z0 + 3, _YELLOW if x % 2 == 0 else _DARK)
+    for z in range(_POD_Z0 + 4, _POD_Z1 - 2):
+        for x in (_POD_X0 + 3, _POD_X1 - 3):
+            _add(blocks, x, 0, z, _YELLOW if z % 2 == 0 else _DARK)
+
+    for x, z in [(_SPAWN_X, _SPAWN_Z), (_SPAWN_X, _SPAWN_Z - 1), (_DOOR_X, _POD_Z1 - 1)]:
+        _add(blocks, x, 0, z, _POLISHED)
+
+
+def _wall_panel_block(x: int, y: int, z: int) -> str:
+    rib = (
+        x in (_POD_X0, _POD_X1, _POD_X0 + 1, _POD_X1 - 1)
+        or z in (_POD_Z0, _POD_Z1, _POD_Z0 + 1, _POD_Z1 - 1)
+        or (x in (_POD_CX - 3, _POD_CX + 3) and z in (_POD_Z0, _POD_Z1))
+        or (z in (_POD_CZ - 3, _POD_CZ + 3) and x in (_POD_X0, _POD_X1))
+    )
+    if y in (1, 5):
+        return _HULL
+    if rib:
+        return _LIGHT if y == 3 else _HULL
+    if y == 4 and (x + z) % 4 == 0:
+        return _MID
+    return _DEEPSLATE
+
+
+def _build_walls(blocks: BlockList) -> None:
+    for y in range(1, 6):
+        for x in range(_POD_X0, _POD_X1 + 1):
+            for z in range(_POD_Z0, _POD_Z1 + 1):
+                if not _shell_cell(x, z):
+                    continue
+                side_window = y in (2, 3) and (
+                    (x in (_POD_X0, _POD_X1) and _POD_CZ - 1 <= z <= _POD_CZ + 1)
+                    or (z == _POD_Z0 and _POD_CX <= x <= _POD_CX + 1)
+                )
+                is_door = z == _POD_Z1 and x == _DOOR_X and y in (1, 2)
+                if is_door:
+                    continue
+                if side_window:
+                    block = _GLASS
+                else:
+                    block = _wall_panel_block(x, y, z)
+                _add(blocks, x, y, z, block)
+
+    # Deliberate small warning plates, not full wall stripes.
+    for x in (_POD_CX - 2, _POD_CX + 2):
+        _add(blocks, x, 4, _POD_Z1, _YELLOW)
+    for z in (_POD_CZ - 2, _POD_CZ + 2):
+        _add(blocks, _POD_X0, 4, z, _YELLOW)
+        _add(blocks, _POD_X1, 4, z, _YELLOW)
+
+    for x, z, facing in [
+        (_POD_X0 + 1, _POD_Z0 + 2, "south"),
+        (_POD_X1 - 1, _POD_Z0 + 2, "south"),
+        (_POD_X0 + 1, _POD_Z1 - 2, "north"),
+        (_POD_X1 - 1, _POD_Z1 - 2, "north"),
+    ]:
+        _add(blocks, x, 2, z, "minecraft:stone_button", {"face": "wall", "facing": facing, "powered": "false"})
+
+
+def _build_roof(blocks: BlockList) -> None:
+    for x in range(_POD_X0 + 1, _POD_X1):
+        for z in range(_POD_Z0 + 1, _POD_Z1):
+            if _is_clipped_corner(x, z):
+                continue
+            edge_band = x in (_POD_X0 + 1, _POD_X1 - 1) or z in (_POD_Z0 + 1, _POD_Z1 - 1)
+            block = _HULL if edge_band else _DEEPSLATE
+            if edge_band and (x + z) % 5 == 0:
+                block = _LIGHT
+            _add(blocks, x, 6, z, block)
+
+    # A smaller, cleaner roof caution frame and service hatch.
+    for x in range(_POD_CX - 3, _POD_CX + 5):
+        for z in (_POD_CZ - 3, _POD_CZ + 4):
+            if _in_bounds(x, z) and _in_pod_footprint(x, z):
+                _add(blocks, x, 6, z, _YELLOW if (x + z) % 2 == 0 else _DARK)
+    for z in range(_POD_CZ - 2, _POD_CZ + 4):
+        for x in (_POD_CX - 3, _POD_CX + 4):
+            if _in_bounds(x, z) and _in_pod_footprint(x, z):
+                _add(blocks, x, 6, z, _YELLOW if (x + z) % 2 == 0 else _DARK)
+
+    for x in range(_POD_CX - 1, _POD_CX + 3):
+        for z in range(_POD_CZ - 1, _POD_CZ + 3):
+            _add(blocks, x, 7, z, _HULL)
+    _add(blocks, _POD_CX, 7, _POD_CZ, _GLASS)
+    _add(blocks, _POD_CX + 1, 7, _POD_CZ + 1, "minecraft:sea_lantern")
+
+    for x, z in [(_POD_X0 + 2, _POD_Z0 + 2), (_POD_X1 - 2, _POD_Z0 + 2), (_POD_X0 + 2, _POD_Z1 - 2), (_POD_X1 - 2, _POD_Z1 - 2)]:
+        _add(blocks, x, 6, z, "minecraft:blackstone")
+        _add(blocks, x, 7, z, "minecraft:redstone_torch", {"lit": "true"})
+
+
+def _build_struts_and_pipes(blocks: BlockList) -> None:
+    struts = [
+        ((_POD_X0 + 2, _POD_Z0 + 1), (2, 2), (1, 0, 0, 1)),
+        ((_POD_X1 - 2, _POD_Z0 + 1), (17, 2), (-1, 0, 0, 1)),
+        ((_POD_X0 + 2, _POD_Z1 - 1), (2, 17), (1, 0, 0, -1)),
+        ((_POD_X1 - 2, _POD_Z1 - 1), (17, 17), (-1, 0, 0, -1)),
+    ]
+    for (sx, sz), (fx, fz), (foot_dx, foot_dz, brace_dx, brace_dz) in struts:
+        _add(blocks, fx, 0, fz, _BLACKSTONE)
+        _add(blocks, fx + foot_dx, 0, fz, _BLACKSTONE)
+        _add(blocks, fx, 0, fz + foot_dz, _BLACKSTONE)
+        _add(blocks, fx, 1, fz, _HULL)
+        mx, mz = (sx + fx) // 2, (sz + fz) // 2
+        _add(blocks, mx, 1, mz, "minecraft:iron_bars", dict(_IRON_BARS))
+        _add(blocks, mx, 2, mz, _COPPER)
+        _add(blocks, mx + brace_dx, 1, mz + brace_dz, "minecraft:chain", {"axis": "y", "waterlogged": "false"})
+        _add(blocks, sx, 1, sz, _LIGHT)
+        _add(blocks, sx, 2, sz, _HULL)
+
+    for x in range(_POD_X0 + 3, _POD_X1 - 2, 3):
+        _add(blocks, x, 3, _POD_Z0 - 1, _COPPER)
+        _add(blocks, x + 1, 3, _POD_Z0 - 1, _CABLE)
+        _add(blocks, x, 3, _POD_Z1 + 1, _COPPER)
+    for z in range(_POD_Z0 + 3, _POD_Z1 - 2, 3):
+        _add(blocks, _POD_X0 - 1, 3, z, _CABLE)
+        _add(blocks, _POD_X1 + 1, 3, z, _COPPER)
 
 
 def _clear_spawn_bay(blocks: BlockList) -> None:
     for pos in [
         (_SPAWN_X, _SPAWN_Y, _SPAWN_Z),
         (_SPAWN_X, _SPAWN_Y + 1, _SPAWN_Z),
+        (_SPAWN_X, _SPAWN_Y, _SPAWN_Z - 1),
+        (_SPAWN_X, _SPAWN_Y + 1, _SPAWN_Z - 1),
         (_SPAWN_X - 1, _SPAWN_Y, _SPAWN_Z),
         (_SPAWN_X + 1, _SPAWN_Y, _SPAWN_Z),
+        (_SPAWN_X - 1, _SPAWN_Y + 1, _SPAWN_Z),
+        (_SPAWN_X + 1, _SPAWN_Y + 1, _SPAWN_Z),
     ]:
         _add(blocks, *pos, "minecraft:air")
 
 
-def _build_interior(blocks: BlockList) -> None:
-    barrel_tables = [
-        "echoashfallprotocol:chests/drop_pod_survival",
-        "echoashfallprotocol:chests/drop_pod_scrap",
-        "echoashfallprotocol:chests/drop_pod_logs",
+def _build_lockers(blocks: BlockList) -> None:
+    lockers = [
+        (_POD_X0 + 2, _POD_Z0 + 1, "echoashfallprotocol:chests/drop_pod_survival", "OXYGEN"),
+        (_POD_X0 + 3, _POD_Z0 + 1, "echoashfallprotocol:chests/drop_pod_tools", "TOOLS"),
+        (_POD_X1 - 3, _POD_Z0 + 1, "echoashfallprotocol:chests/drop_pod_scrap", "SCRAP"),
+        (_POD_X1 - 2, _POD_Z0 + 1, "echoashfallprotocol:chests/drop_pod_logs", "LOGS"),
     ]
-    for i, table in enumerate(barrel_tables):
-        _add(
-            blocks,
-            _POD_X0 + 1 + i,
-            1,
-            _POD_Z0 + 1,
-            "minecraft:barrel",
-            {"facing": "south", "open": "false"},
-            _barrel_nbt(table),
-        )
+    for x, z, table, label in lockers:
+        _add(blocks, x, 1, z, "minecraft:barrel", {"facing": "south", "open": "false"}, _barrel_nbt(table))
+        _add(blocks, x, 2, z + 1, "minecraft:oak_wall_sign", {"facing": "south", "waterlogged": "false"}, _sign_nbt(label))
+        _add(blocks, x, 2, z, "minecraft:iron_trapdoor", {"facing": "north", "half": "bottom", "open": "false", "powered": "false", "waterlogged": "false"})
 
-    _add(blocks, _POD_X1 - 1, 1, _POD_CZ - 2, "minecraft:grindstone", {"face": "floor", "facing": "west"})
-    _add(blocks, _POD_X1 - 1, 1, _POD_CZ, "minecraft:cartography_table")
-    _add(blocks, _POD_X1 - 1, 1, _POD_CZ + 2, "minecraft:crafting_table")
-    _add(
-        blocks,
-        _POD_X1 - 1,
-        2,
-        _POD_CZ,
-        "minecraft:iron_trapdoor",
-        {"facing": "west", "half": "bottom", "open": "false", "powered": "false", "waterlogged": "false"},
-    )
 
-    _add(blocks, _POD_CX, 1, _POD_Z0 + 1, "minecraft:quartz_pillar", {"axis": "y"})
-    _add(blocks, _POD_CX, 2, _POD_Z0 + 1, "minecraft:quartz_pillar", {"axis": "y"})
-    _add(
-        blocks,
-        _POD_CX,
-        2,
-        _POD_Z0 + 2,
-        "minecraft:oak_wall_sign",
-        {"facing": "south", "waterlogged": "false"},
-        _sign_nbt(),
-    )
-    _add(blocks, _POD_CX, 2, _POD_Z0, "minecraft:sea_lantern")
-    _add(
-        blocks,
-        _POD_CX - 1,
-        1,
-        _POD_Z0 + 2,
-        "minecraft:lectern",
-        {"facing": "south", "has_book": "true", "powered": "false"},
-        {"id": "minecraft:lectern", "Book": _echo_book_nbt(), "Page": 0},
-    )
-    _add(
-        blocks,
-        _POD_CX + 2,
-        1,
-        _POD_Z0 + 2,
-        "minecraft:chest",
-        {"facing": "south", "type": "single", "waterlogged": "false"},
-        _chest_nbt("echoashfallprotocol:chests/crashed_satellite_cache"),
-    )
+def _build_echo_wall(blocks: BlockList) -> None:
+    _add(blocks, _POD_CX, 1, _POD_Z0 + 2, "minecraft:lectern", {"facing": "south", "has_book": "true", "powered": "false"}, {
+        "id": "minecraft:lectern",
+        "Book": _book_nbt(
+            "ECHO-7 WAKE LOG",
+            "ECHO-7 ONLINE.\nPOD DP-07 IMPACT STABLE.\nLOCKERS: OXYGEN, TOOLS, SCRAP, LOGS.\nOBJECTIVE: SURVIVE.",
+        ),
+        "Page": 0,
+    })
+    _add(blocks, _POD_CX, 2, _POD_Z0 + 1, "minecraft:oak_wall_sign", {"facing": "south", "waterlogged": "false"}, _sign_nbt("ECHO-7", "ONLINE", "DP-07"))
+    _add(blocks, _POD_CX - 1, 1, _POD_Z0 + 2, "minecraft:cartography_table")
+    _add(blocks, _POD_CX + 1, 1, _POD_Z0 + 2, "minecraft:crafting_table")
+    _add(blocks, _POD_CX, 3, _POD_Z0 + 1, "minecraft:sea_lantern")
+    _add(blocks, _POD_CX - 1, 0, _POD_Z0 + 2, _DARK)
+    _add(blocks, _POD_CX, 0, _POD_Z0 + 2, _DARK)
+    _add(blocks, _POD_CX + 1, 0, _POD_Z0 + 2, _DARK)
 
-    _add(blocks, _POD_X0 + 1, 1, _POD_CZ - 1, "minecraft:oak_stairs", {"facing": "east", "half": "bottom", "shape": "straight", "waterlogged": "false"})
-    _add(blocks, _POD_X0 + 1, 1, _POD_CZ + 6, "minecraft:oak_stairs", {"facing": "east", "half": "bottom", "shape": "straight", "waterlogged": "false"})
-    _add(
-        blocks,
-        *_BED_FOOT,
-        "minecraft:white_bed",
-        {"facing": "south", "occupied": "false", "part": "foot"},
-    )
-    _add(
-        blocks,
-        *_BED_HEAD,
-        "minecraft:white_bed",
-        {"facing": "south", "occupied": "false", "part": "head"},
-    )
-    _add(blocks, _BED_FOOT[0] - 1, 1, _BED_FOOT[2], "minecraft:barrel", {"facing": "east", "open": "false"}, _barrel_nbt("echoashfallprotocol:chests/drop_pod_survival"))
-    _add(blocks, _BED_FOOT[0] + 1, 1, _BED_HEAD[2], "minecraft:sea_lantern")
 
-    for z in range(_POD_CZ + 1, _POD_Z1 - 2, 2):
-        _add(blocks, _POD_X1 - 2, 1, z, "minecraft:heavy_weighted_pressure_plate", {"power": "0"})
-        _add(blocks, _POD_X1 - 2, 2, z, "minecraft:iron_trapdoor", {"facing": "west", "half": "bottom", "open": "false", "powered": "false", "waterlogged": "false"})
+def _build_interior(blocks: BlockList) -> None:
+    _build_lockers(blocks)
+    _build_echo_wall(blocks)
 
-    _add(
-        blocks,
-        _POD_CX,
-        1,
-        _POD_Z1,
-        "minecraft:iron_door",
-        {"facing": "north", "half": "lower", "hinge": "left", "open": "false", "powered": "false"},
-    )
-    _add(
-        blocks,
-        _POD_CX,
-        2,
-        _POD_Z1,
-        "minecraft:iron_door",
-        {"facing": "north", "half": "upper", "hinge": "left", "open": "false", "powered": "false"},
-    )
-    _add(blocks, _POD_CX - 1, 1, _POD_Z1, "minecraft:iron_bars", dict(_IRON_BARS))
-    _add(blocks, _POD_CX + 1, 1, _POD_Z1, "minecraft:iron_bars", dict(_IRON_BARS))
-    _add(
-        blocks,
-        _POD_CX + 1,
-        2,
-        _POD_Z1,
-        "minecraft:stone_button",
-        {"face": "wall", "facing": "south", "powered": "false"},
-    )
+    _add(blocks, *_BED_FOOT, "minecraft:white_bed", {"facing": "south", "occupied": "false", "part": "foot"})
+    _add(blocks, *_BED_HEAD, "minecraft:white_bed", {"facing": "south", "occupied": "false", "part": "head"})
+    _add(blocks, _BED_FOOT[0], 2, _BED_FOOT[2] - 1, "minecraft:sea_lantern")
+    _add(blocks, _POD_X0 + 2, 1, _POD_CZ + 3, "minecraft:heavy_weighted_pressure_plate", {"power": "0"})
+    _add(blocks, _POD_X0 + 2, 2, _POD_CZ + 3, "minecraft:iron_trapdoor", {"facing": "west", "half": "bottom", "open": "false", "powered": "false", "waterlogged": "false"})
 
-    _add(blocks, _POD_CX, 0, _POD_Z1 + 1, "minecraft:polished_andesite")
-    _add(blocks, _POD_CX - 1, 0, _POD_Z1 + 1, "minecraft:smooth_stone")
-    _add(blocks, _POD_CX + 1, 0, _POD_Z1 + 1, "minecraft:smooth_stone")
-    _add(blocks, _POD_CX, 0, _POD_Z1 + 2, "minecraft:polished_andesite_slab", {"type": "bottom", "waterlogged": "false"})
-    _add(blocks, _POD_CX - 1, 0, _POD_Z1 + 2, "minecraft:polished_andesite_slab", {"type": "bottom", "waterlogged": "false"})
-    _add(blocks, _POD_CX + 1, 0, _POD_Z1 + 2, "minecraft:polished_andesite_slab", {"type": "bottom", "waterlogged": "false"})
-    for z in range(_POD_Z1 + 3, min(_CRATER_SIZE, _POD_Z1 + 7)):
-        _add(blocks, _POD_CX, 0, z, "minecraft:stone_slab", {"type": "bottom", "waterlogged": "false"})
+    _add(blocks, _POD_X1 - 1, 1, _POD_CZ - 1, "minecraft:grindstone", {"face": "floor", "facing": "west"})
+    _add(blocks, _POD_X1 - 1, 1, _POD_CZ + 1, "minecraft:chest", {"facing": "west", "type": "single", "waterlogged": "false"}, _chest_nbt("echoashfallprotocol:chests/crashed_satellite_cache"))
+    _add(blocks, _POD_X1 - 1, 2, _POD_CZ + 1, "minecraft:iron_trapdoor", {"facing": "west", "half": "bottom", "open": "false", "powered": "false", "waterlogged": "false"})
+
+    # Compact floor consoles make the room feel occupied while preserving the
+    # spawn bay and runtime starter-cache placement options.
+    for x, z in [(_POD_CX - 2, _POD_CZ + 1), (_POD_CX + 2, _POD_CZ + 1), (_POD_CX + 2, _POD_CZ + 3)]:
+        _add(blocks, x, 1, z, "minecraft:heavy_weighted_pressure_plate", {"power": "0"})
+        _add(blocks, x, 2, z, "minecraft:iron_trapdoor", {"facing": "north", "half": "bottom", "open": "false", "powered": "false", "waterlogged": "false"})
+
+    for x, z in [(_POD_CX - 2, _POD_CZ), (_POD_CX + 2, _POD_CZ), (_POD_CX, _POD_CZ + 1)]:
+        _add(blocks, x, 5, z, "minecraft:sea_lantern")
+
+    _add(blocks, _DOOR_X, 1, _POD_Z1, "minecraft:iron_door", {"facing": "north", "half": "lower", "hinge": "left", "open": "false", "powered": "false"})
+    _add(blocks, _DOOR_X, 2, _POD_Z1, "minecraft:iron_door", {"facing": "north", "half": "upper", "hinge": "left", "open": "false", "powered": "false"})
+    _add(blocks, _DOOR_X - 1, 1, _POD_Z1, "minecraft:iron_bars", dict(_IRON_BARS))
+    _add(blocks, _DOOR_X + 1, 1, _POD_Z1, "minecraft:iron_bars", dict(_IRON_BARS))
+    _add(blocks, _DOOR_X + 1, 2, _POD_Z1, "minecraft:stone_button", {"face": "wall", "facing": "south", "powered": "false"})
+    _add(blocks, _DOOR_X, 3, _POD_Z1, "minecraft:oak_wall_sign", {"facing": "south", "waterlogged": "false"}, _sign_nbt("CAUTION", "DROP RAMP"))
+
+    for z in range(_POD_Z1 + 1, _SITE_SIZE):
+        _add(blocks, _DOOR_X, 0, z, _SLAB, {"type": "bottom", "waterlogged": "false"})
+        _add(blocks, _DOOR_X - 1, 0, z, _STONE_SLAB, {"type": "bottom", "waterlogged": "false"})
+        _add(blocks, _DOOR_X + 1, 0, z, _STONE_SLAB, {"type": "bottom", "waterlogged": "false"})
+        if z % 2 == 0:
+            _add(blocks, _DOOR_X - 2, 0, z, _YELLOW)
+            _add(blocks, _DOOR_X + 2, 0, z, _DARK)
 
     _clear_spawn_bay(blocks)
-
-
-def _build_hidden_compartment(blocks: BlockList) -> None:
-    hx, hz = _POD_CX, _POD_Z0 - 1
-    _add(blocks, hx - 1, 1, hz, _HULL)
-    _add(blocks, hx + 1, 1, hz, _HULL)
-    _add(blocks, hx, 0, hz, "minecraft:deepslate")
-    _add(blocks, hx, 2, hz, _HULL)
-    _add(blocks, hx, 1, hz - 1, _HULL)
-    _add(
-        blocks,
-        hx,
-        1,
-        hz,
-        "minecraft:chest",
-        {"facing": "south", "type": "single", "waterlogged": "false"},
-        _chest_nbt("echoashfallprotocol:chests/crashed_satellite_cache"),
-    )
 
 
 def generate_drop_pod(seed: int) -> BlockList:
     rng = _r(seed)
     blocks: BlockList = []
 
-    _build_crater(blocks, rng)
-    _build_pod_shell(blocks, rng)
+    _build_site(blocks, rng)
+    _build_foundation_and_floor(blocks)
+    _build_walls(blocks)
+    _build_roof(blocks)
+    _build_struts_and_pipes(blocks)
     _build_interior(blocks)
-    _build_hidden_compartment(blocks)
 
     return blocks

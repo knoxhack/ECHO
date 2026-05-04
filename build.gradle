@@ -226,11 +226,26 @@ tasks.register('validateEchoGameplayData', Exec) {
     commandLine echoPythonExecutable, 'tools/validate_gameplay_data.py'
 }
 
+tasks.register('generateEchoPoiStructures', Exec) {
+    group = 'generation'
+    description = 'Regenerates ECHO: Ashfall Protocol POI structure templates from the canonical Python generator.'
+    workingDir = projectDir
+    commandLine echoPythonExecutable, 'tools/structure_generator/generator.py'
+}
+
+tasks.register('checkEchoPoiStructures', Exec) {
+    group = 'verification'
+    description = 'Validates generated POI structure templates and template-pool coverage.'
+    workingDir = projectDir
+    commandLine echoPythonExecutable, 'tools/structure_generator/generator.py', '--check'
+}
+
 tasks.register('verifyEchoRelease') {
     group = 'verification'
     description = 'Runs release-hardening validators, workspace build, and both GameTest servers.'
     dependsOn tasks.named('validateEchoResources')
     dependsOn tasks.named('validateEchoGameplayData')
+    dependsOn tasks.named('checkEchoPoiStructures')
     dependsOn tasks.named('buildEchoWorkspace')
     dependsOn ':echocore:runGameTestServer'
     dependsOn ':echoterminal:runGameTestServer'

@@ -648,7 +648,7 @@ def watchtower(
 
     # Ladder shaft
     for y in range(base_height, base_height + tower_height):
-        add_block(blocks, cx, y, cz, "minecraft:ladder")
+        add_block(blocks, cx, y, cz, "minecraft:ladder", {"facing": "north"})
 
     # Observation deck
     deck_y = base_height + tower_height
@@ -724,7 +724,7 @@ def underground_vault(
     """Create an underground vault/basement, returns vault center coordinates."""
     # Entrance ladder/stairs
     for y in range(1, vault_height + 1):
-        add_block(blocks, entrance_x, -y, entrance_z, "minecraft:ladder")
+        add_block(blocks, entrance_x, -y, entrance_z, "minecraft:ladder", {"facing": "north"})
         # Clear shaft
         add_block(blocks, entrance_x + 1, -y, entrance_z, "minecraft:air")
         add_block(blocks, entrance_x - 1, -y, entrance_z, "minecraft:air")

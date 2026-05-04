@@ -21,7 +21,7 @@ The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions w
 
 ECHO: Ashfall Protocol uses ECHO-7 missions as the main progression spine.
 
-The shared terminal also exposes **Signal Leads**: optional lore and recon records derived from existing progress. They explain crash telemetry, worldgen surface identity, POI signals, faction contact, drone memory, guardian nodes, Nexus choice context, and the ECHO-0 quarantine thread without blocking the main route or changing rewards.
+The shared terminal also exposes **Signal Leads**: optional lore and recon records derived from existing progress. They explain crash telemetry, worldgen surface identity, POI signals, the POI Field Atlas, faction contact, drone memory, guardian nodes, Nexus choice context, and the ECHO-0 quarantine thread without blocking the main route or changing rewards.
 
 | Phase | Name | Focus |
 |---|---|---|
@@ -104,7 +104,7 @@ JEI support is optional but recommended. ECHO: Ashfall Protocol registers custom
 
 ## World and Exploration
 
-ECHO: Ashfall Protocol replaces peaceful overworld assumptions with ruined ecosystems and sparse but valuable POIs. The Portable Signal Scanner is the exploration spine: it reports the actual site, route, hazard profile, prep kit, objective, reward track, distance, direction, and field-log state.
+ECHO: Ashfall Protocol replaces peaceful overworld assumptions with ruined ecosystems and sparse but valuable POIs. The Portable Signal Scanner is the exploration spine: it reports the actual site, route, hazard profile, prep kit, objective, reward track, distance, direction, and field-log state. The Route Map POI Atlas then groups all concrete template signals under those scanner profiles so players can learn the difference between camps, wrecks, hubs, labs, vaults, and landmarks without changing progression.
 
 - **Crash zones:** violent debris fields and starting-resource pressure.
 - **Wastelands:** open terrain, low cover, scrap, and early danger.
@@ -135,7 +135,7 @@ ECHO intelligence is gathered through drones, faction proximity, intercepted tra
 The ECHO terminal is the player-facing command surface.
 
 - **PROTOCOL:** Command Deck, Protocol Roadmap, and Signal Leads for active route control, required objectives, and optional recon.
-- **FIELD:** Route Map, Field Archive, Survival Index, and Baseline for routes, records, recipes, and recovered Minecraft tasks.
+- **FIELD:** Route Map, POI Atlas, Field Archive, Survival Index, and Baseline for routes, records, template recognition, recipes, and recovered Minecraft tasks.
 - **SYSTEMS:** Vitals Scan and Companion Link for hazard telemetry, mutation/research state, and drone commands.
 - **NEXUS:** Nexus Core for the final path interface and permanent choice confirmation.
 - **ORBITAL:** Orbital Command, Route Survey, and ECHO-0 Records when the optional addon is installed.
@@ -180,12 +180,12 @@ The choice is intended to be irreversible and becomes the narrative gate for opt
 
 When ECHO: Orbital Remnants is installed with ECHO: Ashfall Protocol, it becomes the ORBITAL / ECHO-0 Route Chain after the Nexus decision.
 
-- Before any Nexus choice, Earth orbital calibration is locked.
+- Before any Nexus choice, Earth orbital calibration is locked by the quarantine handoff.
 - After any Nexus choice, Orbital Command can calibrate contact and continue the launch chain.
 - The ECHO terminal displays ECHO-0 Route Chain objectives, field records, Survival Index references, route flags, suit telemetry, station power, and orbital faction standings.
 - Orbital Remnants progress is not merged into the main Ashfall turn-in system; it is rendered as owned ORBITAL channels.
 
-Lore continuity: Gridfall breaks Earth, the pod fell from Station ECHO, ECHO-7 survives as a damaged rescue fragment of ECHO-0, the Nexus choice reopens deep protocols, and Orbital Remnants follows the signal back into haunted orbit.
+Lore continuity: Gridfall breaks Earth, the pod fell from Station ECHO, ECHO-7 survives as a damaged field operator under ECHO-0's old authority, the Nexus choice reopens deep protocols, and Orbital Remnants follows the signal back into a quarantine system that still thinks silence is safety.
 
 ## 1.2.0 Full Endgame Smoke Notes
 

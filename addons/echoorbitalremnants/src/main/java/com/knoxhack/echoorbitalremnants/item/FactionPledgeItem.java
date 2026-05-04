@@ -33,7 +33,7 @@ public class FactionPledgeItem extends Item {
             }
             String message = alreadyAligned
                     ? "ECHO-7 // Faction alignment already active: " + faction.displayName + ". Contract remains on terminal."
-                    : "ECHO-7 // Faction alignment accepted: " + faction.displayName + ". Contract assigned on terminal.";
+                    : "ECHO-7 // Faction alignment accepted: " + faction.displayName + ". Relay contract assigned on terminal.";
             player.sendSystemMessage(Component.literal(message));
         }
         return InteractionResult.SUCCESS_SERVER;

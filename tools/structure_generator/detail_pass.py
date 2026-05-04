@@ -642,12 +642,102 @@ def add_silhouette_polish(blocks: BlockList, rng: random.Random, category: str) 
     return result
 
 
+def add_category_signature(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    name: str = "",
+) -> BlockList:
+    """Stamp a concise, readable visual motif onto each generated POI."""
+    bounds = _bounds(blocks)
+    if not bounds:
+        return blocks
+
+    min_x, max_x, min_y, max_y, min_z, max_z = bounds
+    cx = (min_x + max_x) // 2
+    cz = (min_z + max_z) // 2
+    base_y = min_y + 1
+    result = blocks[:]
+
+    def add(x: int, y: int, z: int, block: str, props: Optional[Dict[str, str]] = None) -> None:
+        result.append((x, y, z, block, props))
+
+    def post(x: int, z: int, height: int, block: str) -> None:
+        for y in range(base_y, base_y + height):
+            add(x, y, z, block)
+
+    if category == "crash_zone_wasteland":
+        for offset in range(-2, 3):
+            add(cx + offset, base_y, cz + rng.choice([-2, 2]), "echoashfallprotocol:drop_pod_hull")
+            add(cx + offset, base_y + 1, cz, "echoashfallprotocol:power_cable")
+        add(cx - 3, base_y, cz - 1, "echoashfallprotocol:rusted_metal_debris")
+        add(cx + 3, base_y, cz + 1, "echoashfallprotocol:cable_bundle")
+    elif category == "ruined_plains":
+        add(cx, base_y, cz, "minecraft:campfire", {"lit": "true", "facing": "north", "signal_fire": "false", "waterlogged": "false"})
+        post(cx - 2, cz - 2, 3, "echoashfallprotocol:charred_wood_log")
+        add(cx + 2, base_y, cz - 1, "echoashfallprotocol:rain_collector")
+        add(cx + 1, base_y, cz + 2, "echoashfallprotocol:wild_berry_bush")
+    elif category == "ruined_cityscape":
+        post(cx - 2, cz, 5, "echoashfallprotocol:rebar_block")
+        post(cx + 2, cz + 1, 4, "echoashfallprotocol:concrete_rubble")
+        for x in range(min_x + 1, max_x, 4):
+            add(x, min(max_y, base_y + 3), cz, "echoashfallprotocol:power_cable")
+    elif category == "industrial_ruins":
+        gantry_y = min(max_y + 1, base_y + 5)
+        for x in range(min_x + 1, max_x, 3):
+            add(x, gantry_y, cz, "echoashfallprotocol:item_pipe")
+        post(cx - 3, cz - 2, 4, "echoashfallprotocol:rusted_metal_sheet")
+        add(cx, base_y, cz, "echoashfallprotocol:scrap_press")
+        add(cx + 2, base_y, cz + 1, "echoashfallprotocol:battery_bank")
+    elif category == "toxic_swamp":
+        for dx, dz in ((0, 0), (1, 0), (0, 1), (-1, 0), (0, -1), (1, 1)):
+            add(cx + dx, min_y, cz + dz, rng.choice(["echoashfallprotocol:toxic_puddle", "echoashfallprotocol:acidic_sludge"]))
+        post(cx - 3, cz, 4, "echoashfallprotocol:corroded_pipe")
+        add(cx + 2, base_y, cz + 2, "echoashfallprotocol:bio_processing_station")
+    elif category == "radiation_zone":
+        for x in range(cx - 4, cx + 5, 2):
+            add(x, base_y, cz - 2, "echoashfallprotocol:radiation_block")
+            add(x, base_y + 1, cz - 2, "minecraft:redstone_torch", {"lit": "true"})
+        add(cx, base_y, cz + 2, "echoashfallprotocol:toxic_waste_barrel")
+        add(cx + 2, base_y, cz + 2, "echoashfallprotocol:uranium_crystal")
+    elif category == "cryogenic_ruins":
+        post(cx, cz, 5, "echoashfallprotocol:frozen_conduit")
+        add(cx, base_y + 5, cz, "echoashfallprotocol:blue_ice_crystal")
+        for dx, dz in ((-2, 0), (2, 0), (0, -2), (0, 2)):
+            add(cx + dx, min_y, cz + dz, "minecraft:blue_ice")
+    elif category == "nexus_scar":
+        post(cx, cz, 6, "minecraft:crying_obsidian")
+        add(cx, base_y + 6, cz, "echoashfallprotocol:echo_crystal")
+        for dx, dz in ((-2, -1), (2, 1), (-1, 2), (1, -2)):
+            add(cx + dx, min_y, cz + dz, rng.choice(["echoashfallprotocol:riftstone", "echoashfallprotocol:energized_fissure"]))
+    elif category == "faction":
+        if name.startswith("remnant_outpost/"):
+            add(cx, base_y, cz, "echoashfallprotocol:weapon_rack")
+            add(cx + 1, base_y, cz, "echoashfallprotocol:supply_crate")
+            add(cx - 1, base_y, cz, "echoashfallprotocol:power_node")
+        elif name.startswith("salvager_post/"):
+            add(cx, base_y, cz, "echoashfallprotocol:trade_counter")
+            add(cx + 1, base_y, cz, "echoashfallprotocol:map_table")
+            add(cx - 1, base_y, cz, "echoashfallprotocol:rain_collector")
+        elif name.startswith("mutant_sanctuary/"):
+            add(cx, base_y, cz, "echoashfallprotocol:spore_garden")
+            add(cx + 1, base_y, cz, "echoashfallprotocol:bio_processing_station")
+            add(cx - 1, min_y, cz, "echoashfallprotocol:toxic_moss")
+    else:
+        add(cx, base_y, cz, "minecraft:campfire", {"lit": "true", "facing": "north", "signal_fire": "false", "waterlogged": "false"})
+        add(cx + 1, base_y, cz, "echoashfallprotocol:rain_collector")
+        add(cx - 1, base_y, cz, "echoashfallprotocol:supply_crate")
+
+    return result
+
+
 def apply_detail_pass(
     blocks: BlockList,
     category: str,
     biome: str,
     seed: int,
     structure_size: str = "small",
+    name: str = "",
 ) -> BlockList:
     """Apply complete detail pass to structure.
 
@@ -689,6 +779,7 @@ def apply_detail_pass(
     # Add readable approach paths and skyline anchors.
     result = add_access_path(result, rng, category)
     result = add_silhouette_polish(result, rng, category)
+    result = add_category_signature(result, rng, category, name)
     result = add_lighting_nodes(result, rng, category, count=max(2, int(3 * multiplier)))
 
     # Determine story type from category

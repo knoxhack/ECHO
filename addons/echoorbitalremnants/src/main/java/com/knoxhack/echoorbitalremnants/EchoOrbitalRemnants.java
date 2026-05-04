@@ -51,7 +51,7 @@ public class EchoOrbitalRemnants {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        LOGGER.info("ECHO-7 orbital systems initialized. Orbit is haunted above.");
+        LOGGER.info("ECHO-7 orbital systems initialized. Quarantine route chain ready.");
         event.enqueueWork(() -> {
             AshfallCompat.registerAddonChapter();
             if (ModList.get().isLoaded("echoterminal")) {

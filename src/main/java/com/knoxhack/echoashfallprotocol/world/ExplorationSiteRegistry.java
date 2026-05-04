@@ -33,42 +33,42 @@ public final class ExplorationSiteRegistry {
     static {
         register(site(
                 "drop_pod", "Drop Pod Wreck", "Crash Recovery Route",
-                "Early salvage beacon from a broken pod or emergency impact site.",
+                "Early salvage beacon from a failed rescue pod or emergency impact site, still warm enough to matter.",
                 SiteKind.SURVIVAL_CACHE, POIData.DangerLevel.MEDIUM, HazardProfile.SALVAGE,
-                "carry water, food, and a weapon",
-                "Survival", "pod scrap, emergency water, rations, basic parts",
-                "Recover the cache and log the pod telemetry.",
+                "carry water, food, and a weapon; do not assume the beacon is alone",
+                "Survival", "pod scrap, emergency water, rations, basic parts, damaged telemetry",
+                "Recover the cache, confirm no survivor signal remains, and log the pod telemetry.",
                 "drop_pod_survival", null, 5, false,
                 List.of("drop_pod"),
                 List.of("crash_pod", "pod_wreck")));
 
         register(site(
                 "crash_zone_wasteland", "Crash Zone Wreck Field", "Crash Wreck Route",
-                "Scattered command wreckage, salvage huts, and ash-buried caches near the first route.",
+                "Scattered command wreckage, salvage huts, and ash-buried caches around the first broken rescue route.",
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.SALVAGE,
-                "pack clean water, food, bandages, and basic tools",
-                "Survival", "starter salvage, clean water, basic medicine, scrap circuits",
-                "Search the wreckage, recover command notes, then return before night.",
+                "pack clean water, food, bandages, and tools; the ash hides sharp metal",
+                "Survival", "starter salvage, clean water, medicine, scrap circuits, command notes",
+                "Search the wreckage, recover any route notes, then return before night.",
                 "crash_zone_wasteland_cache", null, 10, false,
                 List.of("crash_zone_wasteland", "crash_zone_landmarks"),
                 List.of("crash_zone", "wreckage_command_post", "salvager_hut")));
 
         register(site(
                 "survivor_cache", "Survivor Cache Signal", "Global Recovery Route",
-                "Small shelters, road wrecks, radio relays, and abandoned camps outside major ruins.",
+                "Small shelters, road wrecks, radio relays, and abandoned camps where somebody made one more plan than they lived to use.",
                 SiteKind.SURVIVAL_CACHE, POIData.DangerLevel.SAFE, HazardProfile.SAFE,
-                "carry water and a weapon; this is a recovery stop",
-                "Survival", "dirty water, food, torches, medicine, route notes",
-                "Loot the cache and archive any survivor note.",
+                "carry water and a weapon; recovery stops still attract hunger",
+                "Survival", "dirty water, food, torches, medicine, route notes, last messages",
+                "Loot the cache, archive any survivor note, and keep moving.",
                 "survivor_cache", null, 8, false,
                 List.of("global"),
                 List.of("observation_post", "abandoned_camp", "radio_relay_small", "road_wreck")));
 
         register(site(
                 "ruined_plains", "Ruined Plains Expedition Site", "Open Wasteland Route",
-                "Open-route camps, relay towers, windmill ruins, trader posts, and scavenger supply drops.",
+                "Open-route camps, relay towers, windmill ruins, trader posts, and supply drops where the horizon looks safer than it is.",
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.SALVAGE,
-                "pack water, food, medicine, and scanner charge",
+                "pack water, food, medicine, and scanner charge; open ground burns time",
                 "Exploration", "maps, light salvage, trade goods, survivor supplies",
                 "Scan the camp or relay, then mark the route for later faction work.",
                 "salvager_trading_post_cache", null, 12, false,
@@ -77,43 +77,43 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "scavenger_camp", "Scavenger Camp", "Scavenger Camp Route",
-                "A salvage camp with loose contracts, useful caches, and light hostile pressure.",
+                "A salvage camp with loose contracts, useful caches, and enough armed suspicion to keep trade honest.",
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.COMBAT,
-                "bring a weapon, bandages, water, and trade space",
-                "Utility", "scavenger cache, route maps, scrap, filters",
-                "Secure the cache and decide whether to work with the local Salvagers.",
+                "bring a weapon, bandages, water, and empty trade space",
+                "Utility", "scavenger cache, route maps, scrap, filters, rumor value",
+                "Secure the cache and decide whether the local Salvagers are worth owing.",
                 "scavenger_camp_cache", ReputationData.Faction.SALVAGERS, 12, false,
                 List.of("scavenger_camp"),
                 List.of("salvage_camp")));
 
         register(site(
                 "salvager_trading_post", "Salvager Trading Post", "Salvager Trade Route",
-                "A neutral trade post where the Salvagers turn ruin logistics into survival.",
+                "A neutral trade post where the Salvagers turn ruin logistics, rumor, and debt into survival.",
                 SiteKind.FACTION_HUB, POIData.DangerLevel.SAFE, HazardProfile.SAFE,
-                "safe zone; bring trade goods and empty inventory space",
-                "Utility", "trades, maps, imported goods, rare salvage",
-                "Contact the trader and archive the local route board.",
+                "safe zone; bring trade goods, maps, and empty inventory space",
+                "Utility", "trades, maps, imported goods, rare salvage, contract leads",
+                "Contact the trader and archive the route board before prices change.",
                 "salvager_trading_post_cache", ReputationData.Faction.SALVAGERS, 15, true,
                 List.of("salvager_village"),
                 List.of("salvager_post", "salvager_village")));
 
         register(site(
                 "remnant_outpost", "Remnant Outpost", "Remnant Military Route",
-                "A disciplined Remnant field base built around old security doctrine.",
+                "A disciplined Remnant field base built around old security doctrine and new fear.",
                 SiteKind.FACTION_HUB, POIData.DangerLevel.HIGH, HazardProfile.COMBAT,
-                "bring armor, medicine, clean water, and respect their perimeter",
+                "bring armor, medicine, clean water, and visible respect for the perimeter",
                 "Combat", "armor parts, ammunition stock, dense salvage, faction work",
-                "Make contact or survey the perimeter without starting a fight.",
+                "Make contact or survey the perimeter without making their patrol write your ending.",
                 "remnant_outpost_cache", ReputationData.Faction.REMNANTS, 18, false,
                 List.of("remnant_village"),
                 List.of("remnant_village", "military_outpost")));
 
         register(site(
                 "mutant_sanctuary", "Mutant Sanctuary", "Mutant Bio Route",
-                "A living enclave where adapted survivors study spores, medicine, and mutation pressure.",
+                "A living enclave where adapted survivors study spores, medicine, mutation pressure, and the price of staying human enough.",
                 SiteKind.FACTION_HUB, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
-                "bring a gas mask with filter, clean water, and RadAway",
-                "Bio", "medicine, tissue, mutagen, filters, bio schematics",
+                "bring a gas mask with filter, clean water, RadAway, and patience",
+                "Bio", "medicine, tissue, mutagen, filters, bio schematics, adaptation notes",
                 "Enter carefully, contact the elder, and log the bio-processing route.",
                 "mutant_sanctuary_cache", ReputationData.Faction.MUTANTS, 18, false,
                 List.of("mutant_village"),
@@ -121,32 +121,32 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "toxic_swamp", "Toxic Swamp Field Site", "Toxic Swamp Route",
-                "Chemical spills, broken pipelines, stilted outposts, and spore huts in toxic-air pockets.",
+                "Chemical spills, broken pipelines, stilted outposts, and spore huts in toxic-air pockets that test filters by the minute.",
                 SiteKind.HAZARD_SITE, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
-                "equip gas mask and filter; carry clean water and medicine",
-                "Bio", "filters, medicine, tissue samples, chemical salvage",
-                "Scan the toxic source, recover samples, and leave before filters run low.",
+                "equip gas mask and filter; carry clean water, medicine, and a spare exit",
+                "Bio", "filters, medicine, tissue samples, chemical salvage, spore readings",
+                "Scan the toxic source, recover samples, and leave before the filter becomes a memory.",
                 "bio_lab_cache", ReputationData.Faction.MUTANTS, 16, false,
                 List.of("toxic_swamp", "toxic_swamp_landmarks"),
                 List.of("spore_research_hut", "stilted_outpost", "chemical_spill", "broken_pipeline")));
 
         register(site(
                 "bio_lab", "Bio Lab", "Bio Lab Route",
-                "A broken research lab with medicine, tissue samples, and unstable lifeforms.",
+                "A broken research lab with medicine, tissue samples, and unstable lifeforms still following trial protocol.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
-                "bring gas mask and filter, bandages, clean water, and RadAway",
-                "Bio", "medicine, tissue, filters, restoration samples, schematics",
-                "Recover a data log or biological sample from the lab core.",
+                "bring gas mask and filter, bandages, clean water, RadAway, and room for samples",
+                "Bio", "medicine, tissue, filters, restoration samples, schematics, failed cures",
+                "Recover a data log or biological sample from the lab core without joining the experiment.",
                 "bio_lab_cache", ReputationData.Faction.MUTANTS, 20, false,
                 List.of("bio_lab"),
                 List.of("bio_facility", "bio_archive")));
 
         register(site(
                 "industrial_ruins", "Industrial Ruins Worksite", "Industrial Worksite Route",
-                "Conveyor shells, storage yards, pipe clusters, and corrosion-heavy factory grounds.",
+                "Conveyor shells, storage yards, pipe clusters, and corrosion-heavy factory grounds where old quotas still feel enforced.",
                 SiteKind.HAZARD_SITE, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
-                "bring gas mask and filter, repair supplies, water, and bandages",
-                "Utility", "machine parts, circuits, filters, industrial scrap",
+                "bring gas mask and filter, repair supplies, water, bandages, and patience for dead machines",
+                "Utility", "machine parts, circuits, filters, industrial scrap, repair leads",
                 "Repair or scan the worksite marker, then recover the main cache.",
                 "industrial_factory_cache", ReputationData.Faction.SALVAGERS, 18, false,
                 List.of("industrial_ruins", "industrial_ruins_landmarks"),
@@ -154,10 +154,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "industrial_factory", "Industrial Factory", "Factory Route",
-                "A larger factory shell with useful machinery and stronger local pressure.",
+                "A larger factory shell with useful machinery, sealed workcells, and stronger local pressure.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
-                "bring filters, repair tools, medicine, and an exit route",
-                "Utility", "machine parts, factory components, circuits, schematics",
+                "bring filters, repair tools, medicine, and an exit route that does not rely on luck",
+                "Utility", "machine parts, factory components, circuits, schematics, controller residue",
                 "Scan the factory controller remains and recover the cache.",
                 "industrial_factory_cache", ReputationData.Faction.SALVAGERS, 20, false,
                 List.of("industrial_factory"),
@@ -165,10 +165,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "ruined_cityscape", "Ruined City Block", "Urban Block Route",
-                "Collapsed towers, barricades, server shells, parking ruins, and urban ambush routes.",
+                "Collapsed towers, barricades, server shells, parking ruins, and urban ambush routes with too many windows.",
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.URBAN_COMBAT,
-                "bring a weapon, torches, water, and bandages",
-                "Utility", "data drives, circuits, survivor notes, city salvage",
+                "bring a weapon, torches, water, bandages, and a habit of checking corners",
+                "Utility", "data drives, circuits, survivor notes, city salvage, old access cards",
                 "Archive the block and recover any data cache before pushing deeper.",
                 "data_center_cache", null, 14, false,
                 List.of("ruined_cityscape", "ruined_city_landmarks"),
@@ -176,21 +176,21 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "data_center_ruin", "Data Center Ruin", "Data Center Route",
-                "A dead server complex where scanner parts, logs, and old-world data survive.",
+                "A dead server complex where scanner parts, logs, and old-world data survive under bad power.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.HIGH, HazardProfile.URBAN_COMBAT,
-                "bring water, medicine, scanner charge, and light",
-                "Utility", "data logs, circuits, scanner parts, schematics",
-                "Recover a data log from the server core.",
+                "bring water, medicine, scanner charge, light, and something for close corridors",
+                "Utility", "data logs, circuits, scanner parts, schematics, corrupted keys",
+                "Recover a data log from the server core before the building remembers alarms.",
                 "data_center_cache", ReputationData.Faction.SALVAGERS, 20, false,
                 List.of("data_center_ruin"),
                 List.of("data_center", "server_farm")));
 
         register(site(
                 "subway_station", "Subway Station", "Subway Route",
-                "Sheltered transit tunnels with emergency caches and dangerous sight lines.",
+                "Sheltered transit tunnels with emergency caches, old crowd-control gates, and dangerous sight lines.",
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.URBAN_COMBAT,
-                "bring torches, food, water, and bandages",
-                "Survival", "emergency caches, shelter supplies, route maps",
+                "bring torches, food, water, bandages, and a clean way back up",
+                "Survival", "emergency caches, shelter supplies, route maps, tunnel notes",
                 "Survey the platform and recover the emergency cache.",
                 "subway_station_cache", ReputationData.Faction.MUTANTS, 16, false,
                 List.of("subway_station"),
@@ -198,10 +198,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "military_vault", "Military Vault", "Vault Route",
-                "A hardened storage site with dense materials, combat pressure, and high-value tech.",
+                "A hardened storage site with dense materials, combat pressure, and high-value tech behind old orders.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.EXTREME, HazardProfile.COMBAT,
                 "bring armor, medicine, clean water, and route-specific hazard gear",
-                "Combat", "dense alloy, weapons, armor, power cells",
+                "Combat", "dense alloy, weapons, armor, power cells, sealed orders",
                 "Secure the vault cache or defeat the local guardian.",
                 "military_vault_cache", ReputationData.Faction.REMNANTS, 25, false,
                 List.of("military_vault"),
@@ -209,10 +209,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "radiation_zone", "Radiation Zone Hotspot", "Radiation Hotspot Route",
-                "Containment breaches, craters, fallout shelters, and irradiated vehicles.",
+                "Containment breaches, craters, fallout shelters, and irradiated vehicles where silence is not safety.",
                 SiteKind.HAZARD_SITE, POIData.DangerLevel.CRITICAL, HazardProfile.RADIATION,
                 "bring RadAway, clean water, hazmat if available, and a short route plan",
-                "Recovery", "RadAway, isotopes, reactor salvage, sealed supplies",
+                "Recovery", "RadAway, isotopes, reactor salvage, sealed supplies, exposure readings",
                 "Measure the hot zone, recover shelter supplies, then retreat and treat exposure.",
                 "reactor_ruin_cache", ReputationData.Faction.REMNANTS, 20, false,
                 List.of("radiation_zone", "radiation_zone_landmarks"),
@@ -220,21 +220,21 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "reactor_ruin", "Reactor Ruin", "Reactor Route",
-                "A severe reactor site where scrubber pockets and RadAway matter more than loitering.",
+                "A severe reactor site where scrubber pockets and RadAway matter more than bravery.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.EXTREME, HazardProfile.RADIATION,
                 "bring RadAway, hazmat or armor, clean water, and scrubber support",
-                "Combat", "isotopes, Nexus crystals, power-node leads, dense components",
-                "Scan the reactor core and recover the power-node lead.",
+                "Combat", "isotopes, Nexus crystals, power-node leads, dense components, hot-zone logs",
+                "Scan the reactor core and recover the power-node lead before exposure writes the report.",
                 "reactor_ruin_cache", ReputationData.Faction.REMNANTS, 28, false,
                 List.of("reactor_ruin"),
                 List.of("relay_station_east", "power_plant_ruin", "reactor")));
 
         register(site(
                 "cryogenic_ruins", "Cryogenic Ruins", "Cryogenic Route",
-                "Frozen pods, broken tanks, cold caches, and brittle facility ruins.",
+                "Frozen pods, broken tanks, cold caches, and brittle facility ruins where time stopped without permission.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.CRITICAL, HazardProfile.CRYO_COLD,
-                "bring hand warmers, food, thermal liner, and clean water",
-                "Cryo", "cold gear, preserved schematics, ice salvage, data drives",
+                "bring hand warmers, food, thermal liner, clean water, and a warm exit",
+                "Cryo", "cold gear, preserved schematics, ice salvage, data drives, thaw notes",
                 "Recover a cryogenic sample and warm up before deeper entry.",
                 "cryogenic_ruins_cache", ReputationData.Faction.MUTANTS, 24, false,
                 List.of("cryogenic_ruins", "cryogenic_ruins_landmarks"),
@@ -242,10 +242,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "nexus_scar", "Nexus Scar", "Nexus Route",
-                "A late-route anomaly scar combining toxic pressure, radiation instability, and mutation risk.",
+                "A late-route anomaly scar combining toxic pressure, radiation instability, mutation risk, and the Core's unfinished math.",
                 SiteKind.MAIN_SITE, POIData.DangerLevel.EXTREME, HazardProfile.NEXUS_ANOMALY,
-                "bring elite filters, RadAway, hazmat, full medicine, and best weapons",
-                "Nexus", "Nexus crystals, anomaly data, endgame salvage",
+                "bring elite filters, RadAway, hazmat, full medicine, best weapons, and no loose pride",
+                "Nexus", "Nexus crystals, anomaly data, endgame salvage, command residue",
                 "Stabilize or destroy the scar anchor after the route is secured.",
                 "reactor_ruin_cache", null, 30, false,
                 List.of("nexus_scar", "nexus_scar_landmarks"),
@@ -253,10 +253,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "relay_station", "Relay Station", "Signal Route",
-                "A damaged signal node that extends scanner range and supports distant outposts.",
+                "A damaged signal node that extends scanner range, supports distant outposts, and sometimes repeats voices it should not have.",
                 SiteKind.RELAY, POIData.DangerLevel.MEDIUM, HazardProfile.SAFE,
                 "bring repair parts, power cells, water, and a weapon",
-                "Utility", "circuit boards, antenna parts, energy cells",
+                "Utility", "circuit boards, antenna parts, energy cells, routing packets",
                 "Repair the relay and archive the routing packet.",
                 "relay_station_cache", null, 15, true,
                 List.of("relay_station"),
@@ -264,10 +264,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "satellite_array", "Satellite Array", "Satellite Signal Route",
-                "A broken skyward receiver still listening for pre-Gridfall routing packets.",
+                "A broken skyward receiver still listening for pre-Gridfall routing packets and quarantine static.",
                 SiteKind.LANDMARK, POIData.DangerLevel.HIGH, HazardProfile.SALVAGE,
                 "bring repair parts, water, and combat supplies",
-                "Utility", "satellite parts, circuits, data drives",
+                "Utility", "satellite parts, circuits, data drives, orbital noise",
                 "Scan the receiver dish and recover its data cache.",
                 "satellite_cache", null, 18, false,
                 List.of("satellite_array"),
@@ -275,10 +275,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "sewer_junction", "Sewer Junction", "City / Toxic Route",
-                "A wet utility route with emergency supplies and toxic pockets.",
+                "A wet utility route with emergency supplies, toxic pockets, and city runoff that learned bad chemistry.",
                 SiteKind.LANDMARK, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
-                "bring mask/filter, torches, clean water, and bandages",
-                "Survival", "sewer salvage, clay route items, medicine, filters",
+                "bring mask/filter, torches, clean water, bandages, and spare patience",
+                "Survival", "sewer salvage, clay route items, medicine, filters, maintenance tags",
                 "Mark the junction and recover the maintenance cache.",
                 "sewer_cache", ReputationData.Faction.MUTANTS, 16, false,
                 List.of("sewer_junction"),
@@ -286,10 +286,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "train_yard", "Train Yard", "Industrial / City Route",
-                "Rusted transit stock and freight containers with good salvage and exposed combat lanes.",
+                "Rusted transit stock and freight containers with good salvage, exposed combat lanes, and old cargo manifests.",
                 SiteKind.LANDMARK, POIData.DangerLevel.HIGH, HazardProfile.COMBAT,
                 "bring armor, water, medicine, and a spare weapon",
-                "Utility", "freight salvage, rails, circuits, machine parts",
+                "Utility", "freight salvage, rails, circuits, machine parts, cargo manifests",
                 "Secure the freight cache and archive the yard route.",
                 "train_yard_cache", ReputationData.Faction.SALVAGERS, 16, false,
                 List.of("train_yard"),
@@ -297,10 +297,10 @@ public final class ExplorationSiteRegistry {
 
         register(site(
                 "abandoned_mine", "Abandoned Mine", "Resource Route",
-                "A deep extraction site with cave-ins, materials, and enough danger to punish greed.",
+                "A deep extraction site with cave-ins, materials, and enough darkness to punish greed.",
                 SiteKind.RESOURCE_SITE, POIData.DangerLevel.HIGH, HazardProfile.COMBAT,
                 "bring armor, food, water, light, and a retreat buffer",
-                "Resource", "rare metals, minerals, fossils, mining salvage",
+                "Resource", "rare metals, minerals, fossils, mining salvage, sealed core samples",
                 "Recover one deep-site cache without overextending.",
                 "abandoned_mine_cache", null, 16, false,
                 List.of("abandoned_mine"),
@@ -455,9 +455,9 @@ public final class ExplorationSiteRegistry {
         String id = normalize(rawId);
         String display = prettify(id);
         return new SiteProfile(
-                id, display, "Uncatalogued", "Signal origin matches a recoverable point of interest.",
+                id, display, "Uncatalogued", "Signal origin matches a recoverable point of interest, but ECHO lacks a clean profile.",
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.UNKNOWN,
-                "scan again closer before committing", "Exploration", "mixed salvage and exploration intel",
+                "scan again closer before committing", "Exploration", "mixed salvage and uncertain route intel",
                 "Approach, verify the site, and archive local hazards.", "survivor_cache", null,
                 10, false, Set.of(id), Set.of()
         );
@@ -519,15 +519,15 @@ public final class ExplorationSiteRegistry {
     }
 
     public enum HazardProfile {
-        SAFE("Safe", "No major hazard profile."),
-        SALVAGE("Salvage", "Normal travel with local debris and light combat."),
+        SAFE("Safe", "No major hazard profile; keep basic supplies anyway."),
+        SALVAGE("Salvage", "Normal travel with local debris, sharp wreckage, and light combat."),
         TOXIC_AIR("Toxic Air", "Gas mask and filter matter inside marked toxic pockets."),
         RADIATION("Radiation", "RadAway, hazmat, and short exposure loops matter."),
         CRYO_COLD("Cryo Cold", "Warmth, food, shelter, and thermal gear matter."),
-        NEXUS_ANOMALY("Nexus Anomaly", "Mixed endgame hazard pressure with mutation instability."),
+        NEXUS_ANOMALY("Nexus Anomaly", "Mixed endgame hazard pressure with mutation instability and command residue."),
         COMBAT("Combat", "Armor, medicine, and weapon durability matter."),
         URBAN_COMBAT("Urban Combat", "Light, cover, medicine, and route awareness matter."),
-        UNKNOWN("Unknown", "Hazard profile not yet classified.");
+        UNKNOWN("Unknown", "Hazard profile not yet classified; trust distance before confidence.");
 
         private final String displayName;
         private final String guidance;

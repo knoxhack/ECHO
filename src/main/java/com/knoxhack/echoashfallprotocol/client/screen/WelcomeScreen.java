@@ -1,11 +1,14 @@
 package com.knoxhack.echoashfallprotocol.client.screen;
 
+import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.neoforged.fml.ModList;
 import org.lwjgl.glfw.GLFW;
 
@@ -19,6 +22,9 @@ public class WelcomeScreen extends Screen {
     private static final int BUTTON_AREA_H = 40;
     private static final int FOOTER_H = 18;
     private static final int CONTENT_PAD = 14;
+    private static final int BACKGROUND_SOURCE_W = 1920;
+    private static final int BACKGROUND_SOURCE_H = 1080;
+    private static final int ICON_SOURCE_SIZE = 128;
 
     private static final int COL_BG = 0xF2080C14;
     private static final int COL_PANEL = 0xE60D141C;
@@ -31,6 +37,15 @@ public class WelcomeScreen extends Screen {
     private static final int COL_YELLOW = 0xFFFFD54F;
     private static final int COL_RED = 0xFFFF5252;
     private static final int COL_PURPLE = 0xFFC8A4FF;
+
+    private static final Identifier WELCOME_BACKGROUND = Identifier.fromNamespaceAndPath(
+            EchoAshfallProtocol.MODID, "textures/gui/welcome/welcome_background.png");
+    private static final Identifier ICON_MASK = Identifier.fromNamespaceAndPath(
+            EchoAshfallProtocol.MODID, "textures/gui/welcome/icons/mask.png");
+    private static final Identifier ICON_WATER = Identifier.fromNamespaceAndPath(
+            EchoAshfallProtocol.MODID, "textures/gui/welcome/icons/water.png");
+    private static final Identifier ICON_SHELTER = Identifier.fromNamespaceAndPath(
+            EchoAshfallProtocol.MODID, "textures/gui/welcome/icons/shelter.png");
 
     private static final String[] STATUS_KEYS = {
             "screen.EchoAshfallProtocol.welcome.status.pod",
@@ -211,8 +226,14 @@ public class WelcomeScreen extends Screen {
     }
 
     private void drawBackdrop(GuiGraphicsExtractor g, float frame) {
-        g.fill(0, 0, width, height, 0xDD000000);
-        g.fillGradient(0, 0, width, height, COL_BG, 0xF00F1722);
+        if (!drawWelcomeBackground(g)) {
+            g.fill(0, 0, width, height, 0xDD000000);
+            g.fillGradient(0, 0, width, height, COL_BG, 0xF00F1722);
+        }
+
+        g.fill(0, 0, width, height, 0x88000008);
+        g.fillGradient(0, 0, width, Math.max(1, height / 3), 0xAA020713, 0x22020713);
+        g.fillGradient(0, Math.max(0, height - height / 3), width, height, 0x22000000, 0xB8000006);
 
         for (int x = (int) -(frame % 28); x < width; x += 28) {
             g.fill(x, 0, x + 1, height, 0x1038A8FF);
@@ -226,6 +247,31 @@ public class WelcomeScreen extends Screen {
         for (int x = 0; x < width; x += 96) {
             g.fill(x + 6, 8, x + 36, 9, 0x354DBAF4);
             g.fill(x + 44, height - 10, x + 78, height - 9, 0x244DBAF4);
+        }
+    }
+
+    private boolean drawWelcomeBackground(GuiGraphicsExtractor g) {
+        try {
+            float screenAspect = width / (float) Math.max(1, height);
+            float sourceAspect = BACKGROUND_SOURCE_W / (float) BACKGROUND_SOURCE_H;
+            int srcW = BACKGROUND_SOURCE_W;
+            int srcH = BACKGROUND_SOURCE_H;
+            float u = 0.0F;
+            float v = 0.0F;
+
+            if (screenAspect > sourceAspect) {
+                srcH = Math.max(1, Math.round(BACKGROUND_SOURCE_W / screenAspect));
+                v = (BACKGROUND_SOURCE_H - srcH) / 2.0F;
+            } else if (screenAspect < sourceAspect) {
+                srcW = Math.max(1, Math.round(BACKGROUND_SOURCE_H * screenAspect));
+                u = (BACKGROUND_SOURCE_W - srcW) / 2.0F;
+            }
+
+            g.blit(RenderPipelines.GUI_TEXTURED, WELCOME_BACKGROUND, 0, 0, u, v, width, height,
+                    srcW, srcH, BACKGROUND_SOURCE_W, BACKGROUND_SOURCE_H, 0xFFFFFFFF);
+            return true;
+        } catch (RuntimeException | LinkageError ignored) {
+            return false;
         }
     }
 
@@ -397,7 +443,7 @@ public class WelcomeScreen extends Screen {
         g.fill(x + w - 23, y + 6, x + w - 8, y + 7, (0x55 << 24) | (card.color & 0x00FFFFFF));
 
         g.enableScissor(x + 1, y + 1, x + w - 1, y + h - 1);
-        int iconW = compact ? 0 : Math.min(52, w / 3);
+        int iconW = compact ? 0 : Math.min(70, Math.min(w / 3, h - 28));
         if (iconW > 0 && h >= 76) {
             drawCardIcon(g, card.key, x + 10, y + 25, iconW, h - 38, card.color);
         }
@@ -427,6 +473,13 @@ public class WelcomeScreen extends Screen {
     }
 
     private void drawCardIcon(GuiGraphicsExtractor g, String key, int x, int y, int w, int h, int color) {
+        int size = Math.max(1, Math.min(Math.min(w, h), 70));
+        int ix = x + (w - size) / 2;
+        int iy = y + (h - size) / 2;
+        if (drawGeneratedCardIcon(g, key, ix, iy, size)) {
+            return;
+        }
+
         int cx = x + w / 2;
         int cy = y + h / 2;
         int soft = (0x33 << 24) | (color & 0x00FFFFFF);
@@ -457,6 +510,30 @@ public class WelcomeScreen extends Screen {
         g.outline(cx - 17, cy - 1, 34, 29, bright);
         g.outline(cx - 6, cy + 10, 12, 18, bright);
         g.fill(cx - 22, cy, cx + 22, cy + 3, bright);
+    }
+
+    private boolean drawGeneratedCardIcon(GuiGraphicsExtractor g, String key, int x, int y, int size) {
+        Identifier texture = iconTexture(key);
+        if (texture == null) {
+            return false;
+        }
+
+        try {
+            g.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F, size, size,
+                    ICON_SOURCE_SIZE, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE, ICON_SOURCE_SIZE, 0xFFFFFFFF);
+            return true;
+        } catch (RuntimeException | LinkageError ignored) {
+            return false;
+        }
+    }
+
+    private Identifier iconTexture(String key) {
+        return switch (key) {
+            case "mask" -> ICON_MASK;
+            case "water" -> ICON_WATER;
+            case "shelter" -> ICON_SHELTER;
+            default -> null;
+        };
     }
 
     private void drawCenterBriefing(GuiGraphicsExtractor g, int x, int y, int w, int h) {

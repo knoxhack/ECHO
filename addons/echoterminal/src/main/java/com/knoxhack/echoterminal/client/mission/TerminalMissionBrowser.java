@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.input.CharacterEvent;
@@ -34,7 +35,7 @@ public final class TerminalMissionBrowser {
     private static final int MODE_ROW_HEIGHT = 18;
     private static final int PHASE_ROW_HEIGHT = 22;
     private static final int MISSION_ROW_HEIGHT = 30;
-    private static final int ACTION_BAR_HEIGHT = 64;
+    private static final int ACTION_BAR_HEIGHT = 92;
     private static final int TREE_FOCUS_EXTRA = 8;
 
     private final TerminalMissionProvider provider;
@@ -226,12 +227,12 @@ public final class TerminalMissionBrowser {
             int utilityY = y + 36;
             int utilityW = Math.max(1, (innerW - 4) / 2);
             int compactW = Math.max(1, innerW - utilityW - 4);
-            drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND", true, mouseX, mouseY, () -> {
+            drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND ALL", true, mouseX, mouseY, () -> {
                 allExpanded = true;
                 expandedPhases.clear();
                 collapsedPhases.clear();
             });
-            drawCompactButton(context, graphics, innerX + utilityW + 4, utilityY, compactW, "COMPACT", true,
+            drawCompactButton(context, graphics, innerX + utilityW + 4, utilityY, compactW, "COLLAPSE ALL", true,
                     mouseX, mouseY, () -> {
                         allExpanded = false;
                         expandedPhases.clear();
@@ -421,10 +422,10 @@ public final class TerminalMissionBrowser {
             TerminalUi.iconTextureBadge(graphics, TerminalVisualAssets.missionIconArt(record.definition().id(),
                             record.definition().category()),
                     x + 5, y + 3, 20, color, selected);
-            TerminalUi.line(context, graphics, record.presentation().shortTitle(), x + 31, y + 7, w - 110,
+            TerminalUi.line(context, graphics, record.presentation().shortTitle(), x + 31, y + 7, w - 134,
                     missionTitleColor(record.snapshot().status(), selected, color));
-            TerminalUi.miniStatusPill(context, graphics, compactStatusLabel(record.snapshot()),
-                    x + w - 74, y + 7, 64, color, selected);
+            TerminalUi.missionStatusPill(context, graphics, compactStatusLabel(record.snapshot()),
+                    x + w - 94, y + 6, 84);
         } else {
             TerminalUi.missionCard(context, graphics, null,
                     x, y, w, 26, record.presentation().shortTitle(), roleLabel(record.role()),
@@ -445,7 +446,7 @@ public final class TerminalMissionBrowser {
         TerminalMissionSnapshot snapshot = record.snapshot();
         boolean selected = record.id().equals(selectedMissionId);
         int color = statusColor(snapshot.status());
-        int chipW = Math.max(58, Math.min(76, rowW / 4));
+        int chipW = Math.max(84, Math.min(112, rowW / 4));
         int chipX = rowX + rowW - chipW - 6;
         int textX = rowX + 36;
         int titleW = Math.max(42, chipX - textX - 8);
@@ -466,8 +467,7 @@ public final class TerminalMissionBrowser {
         String rolePrefix = record.role() == TerminalMissionRole.OPTIONAL ? "[OPT] " : "";
         TerminalUi.line(context, graphics, rolePrefix + record.definition().missionOrder() + ". " + record.presentation().shortTitle(),
                 textX, y + 3, titleW, missionTitleColor(snapshot.status(), selected, color));
-        TerminalUi.miniStatusPill(context, graphics, compactStatusLabel(snapshot),
-                chipX, y + 3, chipW, color, selected || snapshot.status() == TerminalMissionStatus.CLAIMABLE);
+        TerminalUi.missionStatusPill(context, graphics, compactStatusLabel(snapshot), chipX, y + 3, chipW);
         TerminalUi.progress(graphics, textX, y + 20, progressW, 4, snapshot.progress(), color);
         if (visible(y, MISSION_ROW_HEIGHT, viewportY, viewportH)) {
             addHitbox(rowX, y, rowW, MISSION_ROW_HEIGHT - 4, true, () -> selectMission(record.id(), false));
@@ -485,7 +485,7 @@ public final class TerminalMissionBrowser {
         int bodyX = x + 10;
         int bodyW = w - 24;
         int bodyY = y + 10;
-        int actionH = Math.min(ACTION_BAR_HEIGHT, Math.max(56, h / 5));
+        int actionH = Math.min(ACTION_BAR_HEIGHT, Math.max(84, h / 5));
         int actionY = y + h - actionH - 8;
         int bodyH = Math.max(70, actionY - bodyY - 8);
         lastDetailX = bodyX;
@@ -550,28 +550,21 @@ public final class TerminalMissionBrowser {
     private int drawBriefingHeader(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRecord record, int x, int y, int w, int mouseX, int mouseY) {
         int color = statusColor(record.snapshot().status());
-        boolean art = viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets();
-        int height = art ? 92 : 78;
-        if (art) {
-            TerminalUi.imagePanel(context, graphics, record.visuals().categoryArt(), x, y, w - 4, height,
-                    color, 0.76F, false);
-            TerminalUi.cinematicPanel(graphics, x, y, w - 4, height, color);
-        } else {
-            TerminalUi.cinematicPanel(graphics, x, y, w - 4, height, color);
-        }
+        int height = briefingHeaderHeight(record);
+        TerminalUi.flatHudPanel(graphics, x, y, w - 4, height, color);
         TerminalUi.iconTextureBadge(graphics, TerminalVisualAssets.missionIconArt(record.definition().id(),
                         record.definition().category()),
-                x + 10, y + 16, 36, color, true);
-        int chipW = Math.max(72, Math.min(110, w / 5));
-        TerminalUi.miniStatusPill(context, graphics, compactStatusLabel(record.snapshot()),
-                x + w - chipW - 14, y + 10, chipW, color, record.snapshot().status() == TerminalMissionStatus.CLAIMABLE);
-        TerminalUi.line(context, graphics, record.presentation().shortTitle().toUpperCase(), x + 58, y + 17,
-                Math.max(40, w - chipW - 76), TerminalUi.TEXT);
+                x + 10, y + 14, 48, color, true);
+        int chipW = Math.max(104, Math.min(140, w / 5));
+        TerminalUi.missionStatusPill(context, graphics, compactStatusLabel(record.snapshot()),
+                x + w - chipW - 14, y + 12, chipW);
+        TerminalUi.line(context, graphics, record.presentation().shortTitle().toUpperCase(), x + 70, y + 20,
+                Math.max(40, w - chipW - 92), TerminalUi.TEXT);
         TerminalUi.line(context, graphics, tagLine(record.definition(), record.presentation(), record.role()),
-                x + 58, y + 32, Math.max(40, w - chipW - 76), color);
-        TerminalUi.line(context, graphics, record.presentation().objectiveSummary(),
-                x + 10, y + 55, w - 20, TerminalUi.TEXT);
-        TerminalUi.progress(graphics, x + 10, y + height - 12, w - 24, 6, record.snapshot().progress(), color);
+                x + 70, y + 36, Math.max(40, w - chipW - 92), color);
+        TerminalUi.wrap(context, graphics, record.presentation().objectiveSummary(),
+                x + 70, y + 54, Math.max(48, w - 94), TerminalUi.TEXT);
+        TerminalUi.progress(graphics, x + 10, y + height - 13, w - 24, 6, record.snapshot().progress(), color);
         return y + height;
     }
 
@@ -588,15 +581,15 @@ public final class TerminalMissionBrowser {
             TerminalMissionRequirement requirement, int x, int y, int w, int mouseX, int mouseY) {
         int color = requirement.satisfied() ? TerminalUi.GREEN : TerminalUi.AMBER;
         int rowH = requirementHeight(context, requirement, w);
-        TerminalUi.cinematicPanel(graphics, x, y, w, rowH - 4, color);
+        TerminalUi.flatHudPanel(graphics, x, y, w, rowH - 4, color);
         TerminalUi.itemSlot(context, graphics, requirement.icon(), x + 6, y + 6, color,
                 TerminalUi.inside(mouseX, mouseY, x + 6, y + 6, 20, 20));
-        TerminalUi.line(context, graphics, requirement.label(), x + 32, y + 6, w - 116, color);
+        TerminalUi.line(context, graphics, requirement.label(), x + 32, y + 6, w - 154, color);
         String progress = requirement.need() > 0 ? requirement.have() + "/" + requirement.need() : "";
-        TerminalUi.miniStatusPill(context, graphics, requirement.satisfied() ? "DONE" : "NEED",
-                x + w - 70, y + 6, 58, color, requirement.satisfied());
+        TerminalUi.missionStatusPill(context, graphics, requirement.satisfied() ? "DONE" : "NEEDED",
+                x + w - 98, y + 6, 86);
         TerminalUi.wrap(context, graphics, requirement.detail().isBlank() ? progress : requirement.detail(),
-                x + 32, y + 18, w - 106, TerminalUi.MUTED);
+                x + 32, y + 20, w - 142, TerminalUi.MUTED);
         return y + rowH;
     }
 
@@ -623,26 +616,27 @@ public final class TerminalMissionBrowser {
     private void drawStickyActions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRecord record, int x, int y, int w, int h, int mouseX, int mouseY) {
         String summary = commandSummary(record.snapshot(), record.presentation());
-        TerminalUi.cinematicPanel(graphics, x, y, w - 4, h, provider.chapter().accentColor());
+        TerminalUi.flatHudPanel(graphics, x, y, w - 4, h, provider.chapter().accentColor());
         TerminalUi.line(context, graphics, "COMMAND", x + 8, y + 8, w - 20, provider.chapter().accentColor());
         TerminalUi.line(context, graphics, summary, x + 8, y + 21, w - 20, TerminalUi.TEXT);
-        int buttonY = y + 35;
+        int buttonY = y + 43;
         List<TerminalMissionAction> actions = record.snapshot().actions();
         if (actions.isEmpty()) {
             TerminalUi.disabledReasonRow(context, graphics, x + 8, buttonY, w - 20,
                     "No direct terminal action is available for this record.", TerminalUi.MUTED);
             return;
         }
-        int buttonH = 18;
+        int buttonH = 22;
         int buttonW = actions.size() == 1 ? Math.min(220, w - 20) : Math.max(104, (w - 28) / actions.size());
         int bx = x + 8;
         for (TerminalMissionAction action : actions) {
             boolean hover = action.enabled() && TerminalUi.inside(mouseX, mouseY, bx, buttonY, buttonW, buttonH);
             if (action.enabled()) {
                 TerminalUi.primaryCommandButton(context, graphics, bx, buttonY, buttonW, buttonH, action.label(),
-                        provider.chapter().accentColor(), hover);
+                        actionIcon(action), provider.chapter().accentColor(), hover);
             } else {
-                TerminalUi.disabledCommandButton(context, graphics, bx, buttonY, buttonW, buttonH, action.label());
+                TerminalUi.disabledCommandButton(context, graphics, bx, buttonY, buttonW, buttonH,
+                        action.label(), actionIcon(action));
             }
             TerminalMissionAction hitAction = action;
             addHitbox(bx, buttonY, buttonW, buttonH, action.enabled(), () -> context.sendAction(
@@ -653,7 +647,7 @@ public final class TerminalMissionBrowser {
         }
         String reason = firstDisabledReason(actions);
         if (!reason.isBlank()) {
-            TerminalUi.line(context, graphics, reason, x + 8, buttonY + 21, w - 20, TerminalUi.MUTED);
+            TerminalUi.line(context, graphics, reason, x + 8, buttonY + 29, w - 20, 0xFFC2D4DC);
         }
     }
 
@@ -747,7 +741,7 @@ public final class TerminalMissionBrowser {
     }
 
     private int briefingHeaderHeight(MissionRecord record) {
-        return viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets() ? 92 : 78;
+        return viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets() ? 104 : 90;
     }
 
     private int nextStepCalloutHeight(TerminalRenderContext context, MissionRecord record, int width) {
@@ -762,7 +756,7 @@ public final class TerminalMissionBrowser {
         if (requirement.need() > 0 && detail.isBlank()) {
             detail = requirement.have() + "/" + requirement.need();
         }
-        int detailH = TerminalUi.wrappedHeight(context, detail, Math.max(40, width - 106));
+        int detailH = TerminalUi.wrappedHeight(context, detail, Math.max(40, width - 114));
         return Math.max(38, 24 + detailH) + 5;
     }
 
@@ -997,7 +991,7 @@ public final class TerminalMissionBrowser {
         return switch (snapshot.status()) {
             case CLAIMABLE -> "Reward cache is ready. Claim it here before moving on.";
             case COMPLETED, CLAIMED -> "Protocol complete. Any pending cache remains available here.";
-            case UNLOCKED -> "Follow the next step above. Turn-in unlocks after server validation.";
+            case UNLOCKED -> "Follow the next step above. Turn-in unlocks after ECHO validation.";
             case VIEW_ONLY -> "View-only record. Actions are disabled for this path.";
             case LOCKED -> presentation.nextStep();
         };
@@ -1037,6 +1031,18 @@ public final class TerminalMissionBrowser {
             }
         }
         return "";
+    }
+
+    private static Identifier actionIcon(TerminalMissionAction action) {
+        String value = ((action == null ? "" : action.id()) + " " + (action == null ? "" : action.label()))
+                .toLowerCase(Locale.ROOT);
+        if (value.contains("claim") || value.contains("reward")) {
+            return TerminalVisualAssets.ICON_ACTION_CLAIM;
+        }
+        if (value.contains("turn") || value.contains("submit") || value.contains("finish")) {
+            return TerminalVisualAssets.ICON_ACTION_TURN_IN;
+        }
+        return TerminalVisualAssets.ICON_ACTION_VIEW;
     }
 
     private static String intelLabel(String key) {

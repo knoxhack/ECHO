@@ -70,21 +70,21 @@ public class EchoTerminalItem extends Item {
             }
             if (level.dimension() == ModDimensions.LUNAR_SCAR_ZONE && has(player, ModItems.HELIUM_3_CELL.get())) {
                 if (midGameObjectivesEnabled() && !progress.lunarExtractorGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Mars telemetry held. Restore three Helium Extractor Nodes with Helium Extractor Cores.");
+                    report(player, progress, "Mars telemetry held. Restore three Helium Extractor Nodes with Helium Extractor Cores before the transfer window can hold.");
                     return;
                 }
                 progress.unlockMarsRoute(player);
-                report(player, progress, "Mars transfer window resolved from Helium-3 telemetry.");
+                report(player, progress, "Mars transfer window resolved from Helium-3 telemetry. The route is thin, but real.");
             } else if (level.dimension() == ModDimensions.MARS_ASH_BASIN && has(player, ModItems.MARTIAN_SILICA.get())) {
                 if (midGameObjectivesEnabled() && !progress.marsHabitatGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Europa prep held. Repair three Mars Pressure Consoles with Pressure Regulators.");
+                    report(player, progress, "Europa prep held. Repair three Mars Pressure Consoles with Pressure Regulators before the suit route can hold.");
                     return;
                 }
                 progress.unlockEuropaRoute(player);
                 report(player, progress, "Europa cryo route triangulated through Martian terraformer dust.");
             } else if (level.dimension() == ModDimensions.EUROPA_CRYO_OCEAN && has(player, ModItems.CRYO_CRYSTAL.get())) {
                 if (midGameObjectivesEnabled() && !progress.europaArrayGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Deep Space Protocol held. Calibrate three Europa Thermal Arrays with Europa Probe Arrays.");
+                    report(player, progress, "Deep Space Protocol held. Calibrate three Europa Thermal Arrays with Europa Probe Arrays before the anomaly route opens.");
                     return;
                 }
                 progress.unlockDeepSpaceProtocol(player);
@@ -100,7 +100,7 @@ public class EchoTerminalItem extends Item {
             }
         } else {
             if (!progress.launchSiteTracked() && AshfallCompat.isOrbitalCalibrationLocked(player)) {
-                report(player, progress, "Orbital link locked. Resolve an ECHO: Ashfall Protocol Nexus path before ECHO-7 expands beyond Earth.");
+                report(player, progress, "Orbital link locked. Resolve an ECHO: Ashfall Protocol Nexus path before ECHO-7 can challenge quarantine beyond Earth.");
                 return;
             }
             boolean seedSites = !progress.launchSiteTracked();
@@ -108,7 +108,7 @@ public class EchoTerminalItem extends Item {
                 progress.markOrbitalContact(player);
                 List<GroundRecoverySite> sites = GroundRecoverySites.seedStarterSites(serverLevel, player.blockPosition());
                 progress.setGroundRecoverySites(player, sites);
-                report(player, progress, "Orbital signal calibrated. Five Earth recovery sites tracked. Scan each landmark to secure launch salvage.");
+                report(player, progress, "Orbital signal calibrated. Five Earth recovery sites tracked. Scan each landmark to secure launch salvage and prove the sky is answering.");
                 return;
             }
             if (progress.hasGroundRecoverySites() && !progress.allGroundRecoverySitesComplete()) {
@@ -320,7 +320,7 @@ public class EchoTerminalItem extends Item {
         }
         EchoTerminalProgress.ContractResult result = progress.completeFactionContract(player);
         grantFactionContractReward(player, faction);
-        String report = result.name() + " complete. Contract rewards delivered (" + result.completedCount() + " total).";
+        String report = result.name() + " complete. Contract rewards delivered; faction relay count " + result.completedCount() + ".";
         if (EchoTerminalProgress.get(player).finalNetworkSealed()) {
             report = EchoTerminalProgress.get(player).lastTerminalReport();
         }
@@ -418,7 +418,7 @@ public class EchoTerminalItem extends Item {
             return factionBlockedReport(player, progress, progress.activeContractFaction());
         }
         if (progress.factionContractCoolingDown()) {
-            return "Faction contract cooling down. Wait for the terminal sync counter to clear, then press SCAN again.";
+            return "Faction contract cooling down. Wait for the relay sync counter to clear, then press SCAN again.";
         }
         if (progress.allSurveysComplete()) {
             return progress.completedFactionContractCount() == 0

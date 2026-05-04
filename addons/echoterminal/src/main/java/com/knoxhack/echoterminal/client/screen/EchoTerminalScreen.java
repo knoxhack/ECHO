@@ -242,7 +242,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             int groupH = compact ? 24 : 28;
             boolean groupHover = TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, groupRailW - 16, groupH);
             TerminalUi.commandStackGroupButton(graphics, font, groupRailX + 8, cy, groupRailW - 16, groupH,
-                    TerminalIcon.fromGroup(group), navigationModel.groupLabel(group), active, groupHover, groupColor);
+                    TerminalIcon.fromGroup(group), TerminalVisualAssets.terminalGroupIcon(group),
+                    navigationModel.groupLabel(group), active, groupHover, groupColor);
             cy += groupH + (active ? 5 : 3);
             if (active) {
                 for (TerminalNavigationModel.IndexedTab entry : navigationModel.tabsInGroup(group)) {
@@ -250,7 +251,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                     boolean selected = entry.index() == activeTab;
                     boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + 14, cy, groupRailW - 22, rowH);
                     TerminalUi.commandPageButton(graphics, font, groupRailX + 14, cy, groupRailW - 22, rowH,
-                            TerminalIcon.fromTitle(tab.chrome().shortTitle()), tab.chrome().shortTitle(),
+                            TerminalIcon.fromTitle(tab.chrome().shortTitle()),
+                            TerminalVisualAssets.terminalPageIcon(tab.chrome().shortTitle()), tab.chrome().shortTitle(),
                             compact ? "" : tab.chrome().summary(), selected, hover, tab.descriptor().accentColor());
                     cy += rowH + gap;
                 }
@@ -273,14 +275,17 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
             boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, buttonW, rowH);
             TerminalUi.iconRailButton(graphics, font, groupRailX + 8, cy, buttonW, rowH,
-                    TerminalIcon.fromGroup(group), "", active, hover, groupColor);
+                    TerminalIcon.fromGroup(group), TerminalVisualAssets.terminalGroupIcon(group), "",
+                    active, hover, groupColor);
             cy += rowH + 6;
         }
         if (!tabs.isEmpty()) {
             TerminalTab tab = tabs.get(activeTab);
             int pageY = Math.min(groupRailY + groupRailH - 82, cy + 8);
-            TerminalIcon.fromTitle(tab.chrome().shortTitle()).draw(graphics,
-                    groupRailX + Math.max(8, (groupRailW - 28) / 2), pageY, 28, tab.descriptor().accentColor(), true);
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.terminalPageIcon(tab.chrome().shortTitle()),
+                    TerminalIcon.fromTitle(tab.chrome().shortTitle()),
+                    groupRailX + Math.max(8, (groupRailW - 28) / 2), pageY, 28,
+                    tab.descriptor().accentColor(), true);
             graphics.fill(groupRailX + 10, groupRailY + groupRailH - 26,
                     groupRailX + groupRailW - 10, groupRailY + groupRailH - 22, 0x552E8E9D);
             graphics.fill(groupRailX + 10, groupRailY + groupRailH - 26,

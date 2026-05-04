@@ -736,8 +736,8 @@ public final class ModGameTests {
         var template = helper.getLevel().getStructureManager().get(id("drop_pod"));
         helper.assertTrue(template.isPresent(), "Starting drop pod NBT template should load");
         var size = template.orElseThrow().getSize();
-        helper.assertTrue(size.getX() == 32 && size.getY() == 11 && size.getZ() == 32,
-                "Starting drop pod should keep the curated 32x11x32 footprint");
+        helper.assertTrue(size.getX() == 20 && size.getY() == 10 && size.getZ() == 20,
+                "Starting drop pod should keep the curated 20x10x20 footprint");
 
         BlockPos origin = helper.absolutePos(new BlockPos(32, 4, 32));
         BlockPos spawn = ProceduralStructureGenerator.placeStartingDropPod(
@@ -756,12 +756,14 @@ public final class ModGameTests {
                 "Drop pod spawn should stand on the pod floor");
 
         BlockPos placePos = origin.offset(-size.getX() / 2, -2, -size.getZ() / 2);
-        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(10, 3, 18)).is(Blocks.WHITE_BED),
+        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(5, 3, 10)).is(Blocks.WHITE_BED),
                 "Curated drop pod should include the guaranteed bed foot");
-        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(10, 3, 19)).is(Blocks.WHITE_BED),
+        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(5, 3, 11)).is(Blocks.WHITE_BED),
                 "Curated drop pod should include the guaranteed bed head");
         helper.assertTrue(countBlocks(helper, placePos, size, "echoashfallprotocol:drop_pod_hull") >= 80,
                 "Curated drop pod should retain a readable hull shell");
+        helper.assertTrue(countBlocks(helper, placePos, size, "minecraft:barrel") >= 4,
+                "Curated drop pod should expose visible starter lockers");
         helper.assertTrue(countBlocks(helper, placePos, size, "minecraft:chest") >= 1,
                 "Curated drop pod should retain starter cache storage");
         helper.succeed();

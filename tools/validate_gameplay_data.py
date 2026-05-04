@@ -142,13 +142,13 @@ SUBSTRATE_GRINDER_ITEMS = (
 
 SUBSTRATE_GRINDER_BLOCKS = SUBSTRATE_GRINDER_ITEMS[:19]
 
-POD_EXPECTED_SIZE = (32, 11, 32)
+POD_EXPECTED_SIZE = (20, 10, 20)
 POD_EXPECTED_BED_STATES = {
-    (10, 3, 18): (
+    (5, 3, 10): (
         "minecraft:white_bed",
         (("facing", "south"), ("occupied", "false"), ("part", "foot")),
     ),
-    (10, 3, 19): (
+    (5, 3, 11): (
         "minecraft:white_bed",
         (("facing", "south"), ("occupied", "false"), ("part", "head")),
     ),
@@ -171,6 +171,7 @@ POD_VANILLA_STATE_SCHEMAS = {
         "axis": {"x", "y", "z"},
         "waterlogged": {"false", "true"},
     },
+    "minecraft:black_concrete": {},
     "minecraft:chest": {
         "facing": {"north", "south", "west", "east"},
         "type": {"single", "left", "right"},
@@ -181,9 +182,11 @@ POD_VANILLA_STATE_SCHEMAS = {
     "minecraft:coarse_dirt": {},
     "minecraft:crafting_table": {},
     "minecraft:crying_obsidian": {},
+    "minecraft:cut_copper": {},
     "minecraft:deepslate": {},
     "minecraft:fire": {},
     "minecraft:gravel": {},
+    "minecraft:gray_concrete": {},
     "minecraft:grindstone": {
         "face": {"floor", "wall", "ceiling"},
         "facing": {"north", "south", "west", "east"},
@@ -258,6 +261,7 @@ POD_VANILLA_STATE_SCHEMAS = {
         "occupied": {"false", "true"},
         "part": {"head", "foot"},
     },
+    "minecraft:yellow_concrete": {},
 }
 
 
@@ -321,6 +325,33 @@ def walk_strings(value: Any) -> Iterable[str]:
     elif isinstance(value, dict):
         for item in value.values():
             yield from walk_strings(item)
+
+
+def echo_template_pool_locations(errors: list[str]) -> set[str]:
+    locations: set[str] = set()
+
+    def collect_locations(value: Any) -> None:
+        if isinstance(value, dict):
+            location = value.get("location")
+            if isinstance(location, str) and location.startswith(f"{MODID}:"):
+                locations.add(location)
+            for child in value.values():
+                collect_locations(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect_locations(child)
+
+    for path in json_files(DATA_ROOT / "worldgen/template_pool"):
+        data = load_json(path, errors)
+        if not isinstance(data, dict):
+            continue
+        collect_locations(data)
+    return locations
+
+
+def structure_template_path(location: str) -> Path:
+    path = location.split(":", 1)[1] if ":" in location else location
+    return DATA_ROOT / "structure" / f"{path}.nbt"
 
 
 def nbt_state_key(entry: Any) -> tuple[str, tuple[tuple[str, str], ...]]:
@@ -651,7 +682,60 @@ def check_worldgen(errors: list[str]) -> None:
                     errors.append(
                         f"STRUCTURE_SET_BALANCE_DRIFT {path.relative_to(ROOT)}: "
                         f"spacing/separation {actual} expected {(spacing, separation)}"
-                    )
+                )
+
+
+def check_poi_catalog(errors: list[str]) -> None:
+    catalog_source = read_source("world/ExplorationPoiCatalog.java", errors)
+    site_source = read_source("world/ExplorationSiteRegistry.java", errors)
+    terminal_source = read_source("integration/AshfallTerminalIntegration.java", errors)
+    procedural_doc = (ROOT / "PROCEDURAL_STRUCTURES.md").read_text(encoding="utf-8")
+    structure_readme = (DATA_ROOT / "structure/README.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    getting_started = (ROOT / "GETTING_STARTED.md").read_text(encoding="utf-8")
+    overview = (ROOT / "MODPACK_OVERVIEW.md").read_text(encoding="utf-8")
+
+    pool_locations = echo_template_pool_locations(errors)
+    catalog_entries = re.findall(
+        r'entry\(\s*"([^"]+)",\s*"[^"]*",\s*"([^"]+)",\s*"[^"]*",\s*List\.of\(',
+        catalog_source,
+    )
+    catalog_locations = {location for location, _profile in catalog_entries}
+    site_ids = set(re.findall(r'register\(site\(\s*\n\s*"([a-z0-9_]+)"', site_source))
+
+    for location in sorted(pool_locations - catalog_locations):
+        errors.append(f"MISSING_POI_CATALOG_ENTRY {location}")
+    for location in sorted(catalog_locations - pool_locations):
+        errors.append(f"STALE_POI_CATALOG_ENTRY {location}")
+    for location, profile_id in catalog_entries:
+        if profile_id not in site_ids:
+            errors.append(f"POI_CATALOG_MISSING_PROFILE {location}: {profile_id}")
+        if not structure_template_path(location).exists():
+            errors.append(f"POI_CATALOG_MISSING_NBT {location}")
+
+    require_source_tokens(
+        "POI Atlas terminal surface",
+        catalog_source + terminal_source,
+        (
+            "class ExplorationPoiCatalog",
+            "POI Atlas",
+            "renderPoiAtlas",
+            "poi_field_atlas",
+            "ExplorationPoiCatalog.totalTemplateCount()",
+        ),
+        errors,
+    )
+    require_source_tokens(
+        "POI Atlas docs coverage",
+        procedural_doc + structure_readme + readme + getting_started + overview,
+        (
+            "POI Atlas",
+            "POI Field Atlas",
+            "template signals",
+            "scanner profile",
+        ),
+        errors,
+    )
 
 
 def check_item_definitions(registered: set[str], errors: list[str]) -> None:
@@ -1758,6 +1842,7 @@ def main() -> int:
     check_first_hour_stability_data(errors)
     check_substrate_grinder_data(errors)
     check_worldgen(errors)
+    check_poi_catalog(errors)
     check_item_definitions(registered, errors)
     check_structure_nbt_palettes(registered_blocks, errors)
     check_starting_drop_pod_templates(registered_blocks, errors)

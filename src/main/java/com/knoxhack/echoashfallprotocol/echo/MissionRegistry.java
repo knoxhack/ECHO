@@ -38,7 +38,7 @@ public class MissionRegistry {
         List<Mission> phase0 = new ArrayList<>();
         phase0.add(new Mission(
                 "drink_clean_water",
-                "[ECHO-7] Hydration buffer required. Drink or carry Clean Water before extending beyond the pod; ECHO will validate the turn-in server-side.",
+                "[ECHO-7] Hydration buffer required. Drink or carry Clean Water before extending beyond the pod; ECHO will validate the turn-in through the mission channel.",
                 "Confirm Clean Water + Turn In",
                 "[ECHO-7] Clean water confirmed. Dirty water remains a backup until purification is online.",
                 List.of(new ItemStack(Items.GLASS_BOTTLE, 2), new ItemStack(ModItems.EMERGENCY_RATION.get(), 1)),
@@ -71,7 +71,7 @@ public class MissionRegistry {
         ));
         phase0.add(new Mission(
                 "craft_scrap_knife",
-                "[ECHO-7] Outpost anchor confirmed. Craft 1 Scrap Knife for salvage operations, then report back for server validation.",
+                "[ECHO-7] Outpost anchor confirmed. Craft 1 Scrap Knife for salvage operations, then return the protocol for ECHO validation.",
                 "Craft Scrap Knife + Turn In",
                 "[ECHO-7] Scrap Knife accepted. Salvage efficiency improved. Now extend water access without wasting clean reserves.",
                 List.of(new ItemStack(ModItems.SCRAP_METAL.get(), 12), new ItemStack(ModItems.EMERGENCY_RATION.get(), 2)),
@@ -86,7 +86,7 @@ public class MissionRegistry {
         ));
         phase0.add(new Mission(
                 "get_dirty_water",
-                "[ECHO-7] Long-term hydration requires input. Fill a bottle from any water source, then report back for server validation.",
+                "[ECHO-7] Long-term hydration requires input. Fill a bottle from any water source, then return the protocol for ECHO validation.",
                 "Collect Dirty Water + Turn In",
                 "[ECHO-7] Water sample acquired. Dirty water is emergency-usable, but clean water remains the plan. Purify before long routes.",
                 List.of(new ItemStack(ModItems.ASH.get(), 8), new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 2)),
@@ -392,7 +392,7 @@ public class MissionRegistry {
         ));
         phase1.add(new Mission(
                 "charge_basic_battery",
-                "[ECHO-7] Portable power prevents machine stalls away from cables. Keep a charged Basic Battery in inventory, then press [TURN IN].",
+                "[ECHO-7] Portable power prevents machine stalls away from cables. Keep a charged Basic Battery in inventory, then return this protocol.",
                 "Charge Basic Battery + Turn In",
                 "[ECHO-7] Portable FE reserve confirmed. Insert batteries into machines, generators, or banks, or sneak-right-click energy blocks to transfer charge.",
                 List.of(new ItemStack(ModItems.SCRAP_WIRE.get(), 4), new ItemStack(Items.REDSTONE, 2)),
@@ -577,7 +577,7 @@ public class MissionRegistry {
         ));
         phase1.add(new Mission(
                 "equip_gas_mask",
-                "[ECHO-7] First hazard route unlocked. Equip your Gas Mask before entering toxic pockets, then press [TURN IN].",
+                "[ECHO-7] First hazard route unlocked. Equip your Gas Mask before entering toxic pockets, then return this protocol.",
                 "Equip Gas Mask + Turn In",
                 "[ECHO-7] Respiratory seal confirmed. Filters drain only inside toxic hazard zones.",
                 List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get(), 1), new ItemStack(ModItems.BANDAGE.get(), 2)),
@@ -596,7 +596,7 @@ public class MissionRegistry {
         ));
         phase1.add(new Mission(
                 "fix_mask_filter",
-                "[ECHO-7] Filter reserve check. Secure 1 spare Basic Filter Cartridge before your first toxic-zone expedition, then press [TURN IN].",
+                "[ECHO-7] Filter reserve check. Secure 1 spare Basic Filter Cartridge before your first toxic-zone expedition, then return this protocol.",
                 "Secure Filter Cartridge + Turn In",
                 "[ECHO-7] Spare filter logged. Cartridges drain only when a mask is filtering toxic air.",
                 List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get(), 1), new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1)),
@@ -651,7 +651,7 @@ public class MissionRegistry {
         // Mission 1: First Contact - interact with any faction job site
         phase25.add(new Mission(
                 "first_faction_contact",
-                "[ECHO-7] Survivor networks detected. Right-click any faction job-site block to open local task channels.",
+                "[ECHO-7] Survivor networks detected. Right-click any faction job-site block to open local task channels. The ruins are inhabited, and every inhabited ruin has rules.",
                 "Contact Any Faction Job Site",
                 "[ECHO-7] Faction channel confirmed. Job-site blocks can offer tasks, deliveries, and reputation routes.",
                 List.of(new ItemStack(ModItems.ENERGY_CELL.get(), 2), new ItemStack(ModItems.SCRAP_CIRCUIT.get(), 3)),
@@ -671,7 +671,7 @@ public class MissionRegistry {
         // Mission 2: Contact Remnants
         phase25.add(new Mission(
                 "contact_remnants",
-                "[ECHO-7] Remnant military channels require physical access. Right-click a Supply Crate or Weapon Rack at a Remnant outpost.",
+                "[ECHO-7] Remnant military channels require physical access. Right-click a Supply Crate or Weapon Rack at a Remnant outpost; order answers through locked storage.",
                 "Contact Remnants",
                 "[ECHO-7] Remnant channel open. Expect security tasks, quartermaster requests, and structured military support.",
                 List.of(new ItemStack(Items.ARROW, 16), new ItemStack(ModItems.BANDAGE.get(), 2), new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1)),
@@ -691,7 +691,7 @@ public class MissionRegistry {
         // Mission 3: Contact Salvagers
         phase25.add(new Mission(
                 "contact_salvagers",
-                "[ECHO-7] Salvager trade channels are local and opportunistic. Right-click a Trade Counter or Map Table at a Salvager post.",
+                "[ECHO-7] Salvager trade channels are local and opportunistic. Right-click a Trade Counter or Map Table at a Salvager post; maps are their currency before emeralds.",
                 "Contact Salvagers",
                 "[ECHO-7] Salvager channel open. Trade routes, salvage contracts, and exploration leads are now on your map.",
                 List.of(new ItemStack(ModItems.SCRAP_METAL.get(), 12), new ItemStack(ModItems.SCRAP_WIRE.get(), 6), new ItemStack(Items.EMERALD, 2)),
@@ -711,7 +711,7 @@ public class MissionRegistry {
         // Mission 4: Contact Mutants
         phase25.add(new Mission(
                 "contact_mutants",
-                "[ECHO-7] Mutant biological enclaves respond through living work sites. Right-click a Bio Processing Station or Spore Garden.",
+                "[ECHO-7] Mutant biological enclaves respond through living work sites. Right-click a Bio Processing Station or Spore Garden; adaptation has its own bureaucracy.",
                 "Contact Mutants",
                 "[ECHO-7] Mutant channel open. Medical exchange, adaptation research, and bio-recovery tasks are available.",
                 List.of(new ItemStack(ModItems.BANDAGE.get(), 3), new ItemStack(ModItems.RAD_AWAY.get(), 1), new ItemStack(ModItems.MUTATED_TISSUE.get(), 2)),
@@ -804,7 +804,7 @@ public class MissionRegistry {
         // Mission 5: Build Research Lab
         phase25.add(new Mission(
                 "build_research_lab",
-                "[ECHO-7] Research infrastructure required. Construct a Research Lab to process schematic fragments and unlock advanced technology.",
+                "[ECHO-7] Research infrastructure required. Construct a Research Lab to translate schematic fragments into usable survival doctrine.",
                 "Build a Research Lab",
                 "[ECHO-7] Research Lab operational. You can now spend research points to unlock perks and process schematic fragments.",
                 List.of(new ItemStack(ModItems.SCHEMATIC_FRAGMENT.get(), 1)),
@@ -824,7 +824,7 @@ public class MissionRegistry {
         // Mission 3: First Schematic
         phase25.add(new Mission(
                 "first_schematic",
-                "[ECHO-7] Ancient technology awaits. Find and use a Schematic Fragment at your Research Lab to unlock new crafting recipes.",
+                "[ECHO-7] Ancient technology does not awaken cleanly. Process one Schematic Fragment at the Research Lab and recover the first lost procedure.",
                 "Unlock Your First Schematic",
                 "[ECHO-7] Schematic knowledge integrated. Tier 2 recipes are now available for crafting.",
                 List.of(new ItemStack(ModItems.SCRAP_CIRCUIT.get(), 6)),
@@ -1114,7 +1114,7 @@ public class MissionRegistry {
         // Mission 5: First Perk
         phase25.add(new Mission(
                 "first_perk",
-                "[ECHO-7] Personal enhancement available. Unlock your first research perk to gain permanent benefits.",
+                "[ECHO-7] Personal enhancement available. Unlock your first research perk; survival is becoming a controlled modification problem.",
                 "Unlock Your First Perk",
                 "[ECHO-7] Perk acquired. Your abilities have been permanently enhanced through research.",
                 List.of(new ItemStack(ModItems.MUTAGEN_VIAL.get(), 1)),
@@ -1131,7 +1131,7 @@ public class MissionRegistry {
         // Mission 6: POI Explorer
         phase25.add(new Mission(
                 "poi_explorer",
-                "[ECHO-7] The wasteland holds secrets. Discover 3 unique Points of Interest to expand your map and knowledge.",
+                "[ECHO-7] The wasteland holds patterns, not secrets. Discover 3 unique Points of Interest so the map can stop guessing.",
                 "Discover 3 POIs",
                 "[ECHO-7] Exploration milestone reached. Your map now shows additional points of interest.",
                 List.of(new ItemStack(ModItems.PORTABLE_SIGNAL_SCANNER.get(), 1), new ItemStack(ModItems.ENERGY_CELL.get(), 4)),
@@ -1151,7 +1151,7 @@ public class MissionRegistry {
         List<Mission> phase2 = new ArrayList<>();
         phase2.add(new Mission(
                 "build_field_med_bay",
-                "[ECHO-7] Genetic instability detected in environment. Construct a Field Med Bay to monitor your DNA.",
+                "[ECHO-7] Genetic instability detected in environment. Construct a Field Med Bay before the wasteland starts editing you without consent.",
                 "Build a Field Med Bay",
                 "[ECHO-7] Med Bay initialized. Use this to mitigate radiation side effects and manage mutations.",
                 List.of(new ItemStack(ModItems.RAD_AWAY.get(), 2)),
@@ -1378,7 +1378,7 @@ public class MissionRegistry {
         ));
         phase3.add(new Mission(
                 "build_isotope_refiner",
-                "[ECHO-7] These minerals are highly contaminated. Use an Isotope Refiner to purify them for crafting.",
+                "[ECHO-7] These minerals are highly contaminated. Use an Isotope Refiner to separate useful trace material from whatever the Gridfall left inside it.",
                 "Build an Isotope Refiner",
                 "[ECHO-7] Refiner active. This is the only path to nuclear-grade materials and alloys.",
                 List.of(new ItemStack(ModItems.DENSE_ALLOY_CHUNK.get(), 4)),
@@ -1482,9 +1482,9 @@ public class MissionRegistry {
         List<Mission> phase4 = new ArrayList<>();
         phase4.add(new Mission(
                 "deploy_stationary_scanner",
-                "[ECHO-7] The world is vast and broken. Deploy a Stationary Signal Scanner block to continuously locate hidden ruins and Power Nodes in your base area.",
+                "[ECHO-7] The world is vast and broken. Deploy a Stationary Signal Scanner to listen for hidden ruins, Power Nodes, and guardian entrances your portable scan may miss.",
                 "Deploy a Stationary Signal Scanner",
-                "[ECHO-7] Stationary scanner online. I've marked several low-frequency signatures in your proximity. This base scanner complements your portable device.",
+                "[ECHO-7] Stationary scanner online. Low-frequency signatures marked. The base now listens while you move.",
                 List.of(new ItemStack(ModItems.ENERGY_CELL.get(), 4)),
                 player -> hasBlockNearPlayer(player, "signal_scanner"),
                 List.of(new ItemStack(ModItems.MACHINE_CASING.get(), 4), new ItemStack(ModItems.SCRAP_CIRCUIT.get(), 4), new ItemStack(ModItems.ENERGY_CELL.get(), 2)),
@@ -1754,9 +1754,9 @@ public class MissionRegistry {
         List<Mission> phase5 = new ArrayList<>();
         phase5.add(new Mission(
                 "find_nexus_core",
-                "[ECHO-7] I see it. The Nexus Core. Stand near the unresolved Core structure and hold position.",
+                "[ECHO-7] I see it. The Nexus Core. Stand near the unresolved Core structure and hold position; the grid is listening back.",
                 "Locate the Nexus Core",
-                "[ECHO-7] We have arrived. The system is still running after years of Gridfall. You must decide the fate of the grid.",
+                "[ECHO-7] We have arrived. The system is still running after years of Gridfall. It is waiting for a command, and commands have consequences.",
                 List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 2)),
                 player -> hasBlockNearPlayer(player, "nexus_core"),
                 Collections.emptyList(),
@@ -1862,7 +1862,7 @@ public class MissionRegistry {
                 "restore_guardian",
                 "[ECHO-7] A final guardian bars total integration. The Warden runs defender lockdowns and pulse phases; enter with medicine, top-tier weapons, and a Return Keystone.",
                 "Defeat The Warden in Pre-Fall Archives",
-                "[ECHO-7] The Guardian falls. Return to MISSIONS and confirm the Restore epilogue.",
+                "[ECHO-7] The Warden falls. Return to the mission channel and confirm the Restore epilogue.",
                 List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 8)),
                 player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
                 Collections.emptyList(),
@@ -1948,7 +1948,7 @@ public class MissionRegistry {
                 "destroy_guardian",
                 "[ECHO-7] Even chaos has its guardians. The Warden runs defender lockdowns and pulse phases; enter with medicine, top-tier weapons, and a Return Keystone.",
                 "Defeat The Warden in Pre-Fall Archives",
-                "[ECHO-7] The last chain is broken. Return to MISSIONS and confirm the Destroy epilogue.",
+                "[ECHO-7] The last chain is broken. Return to the mission channel and confirm the Destroy epilogue.",
                 List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 8)),
                 player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
                 Collections.emptyList(),
@@ -2039,7 +2039,7 @@ public class MissionRegistry {
                 "control_guardian",
                 "[ECHO-7] A rival power stirs in the depths. The Warden runs defender lockdowns and pulse phases; enter with medicine, top-tier weapons, and a Return Keystone.",
                 "Defeat The Warden in Pre-Fall Archives",
-                "[ECHO-7] The Warden kneels. Return to MISSIONS and confirm the Control epilogue.",
+                "[ECHO-7] The Warden yields. Return to the mission channel and confirm the Control epilogue.",
                 List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 8)),
                 player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
                 Collections.emptyList(),
@@ -2359,9 +2359,9 @@ public class MissionRegistry {
     ) {
         return new Mission(
                 id,
-                "[ECHO-7] Guardian signal locked below " + biomeName + ". Scan for the visible " + structureName + " entrance, descend into the buried node, archive the site, then neutralize " + bossName + ".",
+                "[ECHO-7] Guardian signal locked below " + biomeName + ". Scan for the visible " + structureName + " entrance, descend into the buried node, read the room before it reads you, then neutralize " + bossName + ".",
                 "Defeat " + bossName,
-                "[ECHO-7] " + bossName + " neutralized. Underground Gridfall node archived; next guardian signal unlocked.",
+                "[ECHO-7] " + bossName + " neutralized. Underground Gridfall node archived; another old instruction has gone quiet.",
                 rewards,
                 player -> QuestData.get(player).getEntityKills(entityId) >= 1,
                 Collections.emptyList(),

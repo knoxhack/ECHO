@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from PIL import Image
@@ -86,25 +86,31 @@ ALLOWED_PIXEL_TEXTURE_SIZES = {
     (16, 16),
     (144, 144),
 }
-TERMINAL_GUI_TEXTURES = {
-    "terminal_frame_backdrop.png": (512, 256),
-    "overview_protocol_dashboard.png": (512, 256),
-    "missions_visual_hero.png": (512, 256),
-    "mission_survival.png": (256, 128),
-    "mission_crafting.png": (256, 128),
-    "mission_tech.png": (256, 128),
-    "mission_exploration.png": (256, 128),
-    "mission_combat.png": (256, 128),
-    "mission_story.png": (256, 128),
-    "mission_side_ops.png": (256, 128),
-    "status_hazard_scan.png": (512, 256),
-    "drone_command_link.png": (512, 256),
-    "archives_dossier_wall.png": (512, 256),
-    "codex_field_manual.png": (512, 256),
-    "world_route_map.png": (512, 256),
-    "nexus_core_interface.png": (512, 256),
-    "orbital_route_telemetry.png": (512, 256),
-    "addons_module_grid.png": (512, 256),
+TERMINAL_GUI_TEXTURE_SIZES = {
+    (1920, 1080),
+    (2048, 1024),
+    (1024, 512),
+    (512, 256),
+}
+TERMINAL_REQUIRED_GUI_TEXTURES = {
+    "terminal_frame_backdrop.png",
+    "overview_protocol_dashboard.png",
+    "missions_visual_hero.png",
+    "mission_survival.png",
+    "mission_crafting.png",
+    "mission_tech.png",
+    "mission_exploration.png",
+    "mission_combat.png",
+    "mission_story.png",
+    "mission_side_ops.png",
+    "status_hazard_scan.png",
+    "drone_command_link.png",
+    "archives_dossier_wall.png",
+    "codex_field_manual.png",
+    "world_route_map.png",
+    "nexus_core_interface.png",
+    "orbital_route_telemetry.png",
+    "addons_module_grid.png",
 }
 ASHFALL_TERMINAL_BACKGROUNDS = {
     "nexus_main_menu.png": (1920, 1080),
@@ -119,6 +125,18 @@ ASHFALL_FULL_SURFACE_GRASS_BLOCKS = {
     "echoashfallprotocol:toxic_wasteland_grass_block",
     "echoashfallprotocol:mutated_wasteland_grass_block",
 }
+
+
+def expected_terminal_gui_size(file_name: str) -> tuple[int, int] | None:
+    if file_name == "terminal_frame_backdrop.png":
+        return (1920, 1080)
+    if file_name.startswith("cards/"):
+        return None
+    if file_name.startswith("mission_"):
+        return (512, 256)
+    if "/" not in file_name:
+        return (2048, 1024)
+    return None
 
 
 def rel(path: Path) -> str:
@@ -407,25 +425,60 @@ def check_terminal_visual_assets(errors: list[str]) -> None:
     manifest_path = ROOT / "tools/terminal_art_manifest.json"
     manifest = load_json(manifest_path, errors)
     manifest_assets: dict[str, tuple[int, int]] = {}
+    manifest_ids: set[str] = set()
     if isinstance(manifest, dict) and isinstance(manifest.get("assets"), list):
         for entry in manifest["assets"]:
             if not isinstance(entry, dict):
                 continue
+            asset_id = entry.get("id")
             file_name = entry.get("file")
             size = entry.get("size")
-            if isinstance(file_name, str) and isinstance(size, list) and len(size) == 2:
-                manifest_assets[file_name] = (int(size[0]), int(size[1]))
+            if not isinstance(asset_id, str) or not asset_id:
+                errors.append(f"BAD_TERMINAL_ART_MANIFEST_ID {rel(manifest_path)}: {entry!r}")
+                continue
+            if asset_id in manifest_ids:
+                errors.append(f"DUPLICATE_TERMINAL_ART_MANIFEST_ID {asset_id}")
+            manifest_ids.add(asset_id)
+            if not isinstance(file_name, str) or not file_name:
+                errors.append(f"BAD_TERMINAL_ART_MANIFEST_FILE {asset_id}: {file_name!r}")
+                continue
+            rel_path = PurePosixPath(file_name)
+            if file_name != rel_path.as_posix() or rel_path.is_absolute() or ".." in rel_path.parts:
+                errors.append(f"BAD_TERMINAL_ART_MANIFEST_PATH {asset_id}: {file_name}")
+                continue
+            if not isinstance(size, list) or len(size) != 2:
+                errors.append(f"BAD_TERMINAL_ART_MANIFEST_SIZE {file_name}: {size!r}")
+                continue
+            try:
+                expected = (int(size[0]), int(size[1]))
+            except (TypeError, ValueError):
+                errors.append(f"BAD_TERMINAL_ART_MANIFEST_SIZE {file_name}: {size!r}")
+                continue
+            if expected not in TERMINAL_GUI_TEXTURE_SIZES:
+                allowed = " or ".join(f"{w}x{h}" for w, h in sorted(TERMINAL_GUI_TEXTURE_SIZES))
+                errors.append(
+                    f"UNSUPPORTED_TERMINAL_ART_MANIFEST_SIZE {file_name}: "
+                    f"{expected[0]}x{expected[1]}, expected {allowed}"
+                )
+            bucket_expected = expected_terminal_gui_size(file_name)
+            if bucket_expected is not None and expected != bucket_expected:
+                errors.append(
+                    f"BAD_TERMINAL_ART_MANIFEST_SIZE {file_name}: "
+                    f"{expected[0]}x{expected[1]}, expected {bucket_expected[0]}x{bucket_expected[1]}"
+                )
+            if file_name in manifest_assets:
+                errors.append(f"DUPLICATE_TERMINAL_ART_MANIFEST_FILE {file_name}")
+                continue
+            manifest_assets[file_name] = expected
     else:
         errors.append(f"MISSING_TERMINAL_ART_MANIFEST {rel(manifest_path)}")
 
-    for file_name, expected in TERMINAL_GUI_TEXTURES.items():
+    for file_name in sorted(TERMINAL_REQUIRED_GUI_TEXTURES):
         if file_name not in manifest_assets:
             errors.append(f"MISSING_TERMINAL_ART_MANIFEST_ENTRY {file_name}")
-        elif manifest_assets[file_name] != expected:
-            width, height = manifest_assets[file_name]
-            errors.append(f"BAD_TERMINAL_ART_MANIFEST_SIZE {file_name}: {width}x{height}, expected {expected[0]}x{expected[1]}")
 
-        path = asset_root / file_name
+    for file_name, expected in manifest_assets.items():
+        path = asset_root / PurePosixPath(file_name)
         if not path.exists():
             errors.append(f"MISSING_TERMINAL_GUI_TEXTURE {rel(path)}")
             continue
@@ -438,18 +491,21 @@ def check_terminal_visual_assets(errors: list[str]) -> None:
         if size != expected:
             errors.append(f"BAD_TERMINAL_GUI_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected {expected[0]}x{expected[1]}")
 
-    supported_sizes = set(TERMINAL_GUI_TEXTURES.values())
     if asset_root.exists():
         for path in asset_root.rglob("*.png"):
+            file_name = path.relative_to(asset_root).as_posix()
+            if file_name not in manifest_assets:
+                errors.append(f"UNMANIFESTED_TERMINAL_GUI_TEXTURE {rel(path)}")
+                continue
             try:
                 with Image.open(path) as image:
                     size = image.size
             except Exception as exc:  # noqa: BLE001
                 errors.append(f"BAD_TERMINAL_GUI_TEXTURE {rel(path)}: {exc}")
                 continue
-            if size not in supported_sizes:
-                expected = " or ".join(f"{w}x{h}" for w, h in sorted(supported_sizes))
-                errors.append(f"UNSUPPORTED_TERMINAL_GUI_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected {expected}")
+            expected = manifest_assets[file_name]
+            if size != expected:
+                errors.append(f"BAD_TERMINAL_GUI_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected {expected[0]}x{expected[1]}")
 
 
 def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[str]) -> None:

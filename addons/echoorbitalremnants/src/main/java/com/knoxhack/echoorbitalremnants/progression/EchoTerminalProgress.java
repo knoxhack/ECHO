@@ -19,7 +19,7 @@ import java.util.List;
 
 public class EchoTerminalProgress {
     private static final String ROOT = "echoorbitalremnants_progress";
-    private static final String FINAL_NETWORK_REPORT = "Orbital Remnants arc complete. ECHO-0 is resolved, every route survey is mapped, Nexus anchors are stable, and one faction relay is sealed.";
+    private static final String FINAL_NETWORK_REPORT = "Orbital Remnants arc complete. ECHO-0 is resolved, route surveys are mapped, Nexus anchors are stable, and one faction relay proves orbit no longer owns Earth.";
 
     private boolean orbitalContact;
     private boolean launchSiteTracked;
@@ -52,7 +52,7 @@ public class EchoTerminalProgress {
     private FactionStanding voidSalvagerStanding = FactionStanding.UNKNOWN;
     private FactionStanding nexusChoirStanding = FactionStanding.UNKNOWN;
     private int echoMemoryFragments;
-    private String lastTerminalReport = "Terminal link ready.";
+    private String lastTerminalReport = "ECHO terminal link ready. Awaiting field signal.";
     private int orbitSurveyScans;
     private int moonSurveyScans;
     private int marsSurveyScans;
@@ -120,7 +120,7 @@ public class EchoTerminalProgress {
     public GroundSiteScanResult scanGroundRecoverySite(Player player) {
         List<GroundRecoverySite> sites = groundRecoverySites();
         if (sites.isEmpty()) {
-            return new GroundSiteScanResult(false, "No Earth recovery sites are currently tracked. Sneak-use SCAN on Earth to recalibrate.");
+            return new GroundSiteScanResult(false, "No Earth recovery sites are tracked. Sneak-use SCAN on Earth to rebuild the launch salvage map.");
         }
 
         for (int i = 0; i < sites.size(); i++) {
@@ -129,7 +129,7 @@ public class EchoTerminalProgress {
                 List<GroundRecoverySite> updated = new ArrayList<>(sites);
                 updated.set(i, site.completed());
                 setGroundRecoverySites(player, updated);
-                return new GroundSiteScanResult(true, site.type().displayName() + " logged. " + site.type().rewardRole() + " marked recovered.");
+                return new GroundSiteScanResult(true, site.type().displayName() + " logged. " + site.type().rewardRole() + " recovered for launch.");
             }
         }
 
@@ -147,7 +147,7 @@ public class EchoTerminalProgress {
         launchPrepared = true;
         save(player);
         AshfallCompat.mirrorMilestone(player, "launch_prepared", "Launch chain prepared",
-                "Launch infrastructure, pressure gear, oxygen support, and rocket assembly are ready.");
+                "Launch infrastructure, pressure gear, oxygen support, and rocket assembly are ready. Orbit may object.");
     }
 
     public void markLowOrbitReached(Player player) {
@@ -218,7 +218,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 3);
         save(player);
         AshfallCompat.mirrorMilestone(player, "lunar_signal", "Lunar Signal investigated",
-                "Helium-3 telemetry from the Lunar Scar Zone proves Nexus contamination predates Earth's collapse.");
+                "Helium-3 telemetry from the Lunar Scar Zone proves Nexus contamination crossed the route before Earth fell silent.");
     }
 
     public void unlockMarsRoute(Player player) {
@@ -229,7 +229,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 3);
         save(player);
         AshfallCompat.mirrorMilestone(player, "mars_route", "Mars transfer route unlocked",
-                "Lunar Helium-3 resolved a transfer window to the Mars Ash Basin.");
+                "Lunar Helium-3 resolved a transfer window to the Mars Ash Basin, where pressure records did not end cleanly.");
     }
 
     public void markMarsAshBasinVisited(Player player) {
@@ -268,7 +268,7 @@ public class EchoTerminalProgress {
         nexusChoirStanding = FactionStanding.CONTACTED;
         save(player);
         AshfallCompat.mirrorMilestone(player, "nexus_anomaly_belt", "Nexus Anomaly Belt entered",
-                "Folded station fragments expose ECHO-0 beyond the old Earth network.");
+                "Folded station fragments expose ECHO-0 beyond the old Earth network. The quarantine finally has a voice.");
     }
 
     public void markEchoZeroEncountered(Player player) {
@@ -279,7 +279,7 @@ public class EchoTerminalProgress {
         nexusChoirStanding = FactionStanding.TRUSTED;
         save(player);
         AshfallCompat.mirrorMilestone(player, "echo_zero_resolved", "ECHO-0 resolved",
-                "The quarantine is broken. Nexus anchor stabilization can begin.");
+                "The quarantine is broken. Nexus anchor stabilization can begin before the old silence reorganizes.");
     }
 
     public void markEchoZeroRewardClaimed(Player player) {
@@ -615,13 +615,13 @@ public class EchoTerminalProgress {
             return contractDisplay(activeFactionContract) + " | " + contractRequirement(activeFactionContract);
         }
         if (factionContractCooldown > 0) {
-            return "Faction Contract: network cooling down (" + factionContractCooldown + " scan syncs).";
+            return "Faction Contract: relay network cooling down (" + factionContractCooldown + " scan syncs).";
         }
         FactionPledgeItem.Faction faction = preferredAlignedFaction();
         if (faction != null) {
             return contractDisplay(contractId(faction)) + " available. Press SCAN when the listed proof is ready.";
         }
-        return "Faction Contract: pledge to Orbital Remnant, Void Salvagers, or Nexus Choir to unlock mission contracts.";
+        return "Faction Contract: pledge to Orbital Remnant, Void Salvagers, or Nexus Choir to unlock route contracts.";
     }
 
     public String factionContractRequirement() {
@@ -644,16 +644,16 @@ public class EchoTerminalProgress {
 
     public String missionHelpReport() {
         if (!orbitalContact) {
-            return "ECHO HELP: Sneak-use SCAN on Earth first. Recovery sites seed from calibration.";
+            return "ECHO HELP: Sneak-use SCAN on Earth first. Recovery sites rebuild the launch salvage map.";
         }
         if (finalNetworkSealed) {
             return "ECHO HELP: " + FINAL_NETWORK_REPORT;
         }
         if (!lowOrbitReached || !launchPrepared) {
-            return "ECHO HELP: Press SCAN when blocked. LAUNCH lists missing gear and rocket parts.";
+            return "ECHO HELP: Press SCAN when blocked. LAUNCH lists missing gear and rocket parts; orbit will not accept guesswork.";
         }
         if (midGameObjectivesRequired() && !allMidGameObjectivesComplete() && !echoZeroEncountered) {
-            return "ECHO HELP: Mid-game routes need three unique repairs each. Stand near an objective block with the repair item, then SCAN.";
+            return "ECHO HELP: Route repairs need three unique sites each. Stand near an objective block with the repair item, then SCAN.";
         }
         if (echoZeroEncountered && !nexusStabilized) {
             return "ECHO HELP: Nexus stabilization is " + nexusStabilizationText()
@@ -664,7 +664,7 @@ public class EchoTerminalProgress {
                     + " Complete one ECHO-tab contract before the final seal.";
         }
         if (allSurveysComplete() && completedFactionContractCount() > 0) {
-            return "ECHO HELP: Final prerequisites are complete. Press SCAN once to seal the final survey network.";
+            return "ECHO HELP: Final prerequisites are complete. Press SCAN once to seal the survey network.";
         }
         return "ECHO HELP: SCAN advances route hooks. SURVEY logs each unique route site once.";
     }
@@ -700,7 +700,7 @@ public class EchoTerminalProgress {
 
     public String nextObjective(LaunchReadiness launch, LaunchReadiness assembly) {
         if (!orbitalContact) {
-            return "Next Step: Sneak-use the ECHO-7 Terminal on Earth to calibrate orbital contact and mark starter recovery sites.";
+            return "Next Step: Sneak-use the ECHO-7 Terminal on Earth to calibrate orbital contact and mark launch recovery sites.";
         }
         if (hasGroundRecoverySites() && !allGroundRecoverySitesComplete()) {
             GroundRecoverySite next = nextIncompleteGroundSite();
@@ -712,7 +712,7 @@ public class EchoTerminalProgress {
         if (!launchPrepared) {
             if (launch != null && !launch.ready()) {
                 return "Next Step: Build launch prep. Missing: " + missingSummary(launch)
-                        + ". Search the tracked Earth recovery sites for machines and salvage.";
+                        + ". Search the tracked Earth recovery sites for machines, salvage, and old orbital parts.";
             }
             if (assembly != null && !assembly.ready()) {
                 return "Next Step: Open the Rocket Assembly Frame. Missing parts: " + missingSummary(assembly) + ".";
@@ -729,10 +729,10 @@ public class EchoTerminalProgress {
             return "Next Step: Repair three unique Station Relay Nodes in Orbit with Station Relay Fuses. SCAN at each node; duplicates do not count.";
         }
         if (!lunarSignalInvestigated) {
-            return "Next Step: Craft the Orbital Shuttle, use it from orbital staging, then search the Moon landing cache.";
+            return "Next Step: Craft the Orbital Shuttle, use it from orbital staging, then search the Lunar Scar cache.";
         }
         if (midGameObjectivesRequired() && !lunarExtractorGateOpen()) {
-            return "Next Step: Restore three unique Helium Extractor Nodes on the Moon with Helium Extractor Cores. SCAN at each node to stabilize Mars.";
+            return "Next Step: Restore three unique Helium Extractor Nodes on the Moon with Helium Extractor Cores. SCAN at each node to stabilize the Mars route.";
         }
         if (!marsRouteUnlocked) {
             return "Next Step: Carry a Helium-3 Cell in the Lunar Scar Zone and press SCAN to resolve Mars.";
@@ -741,7 +741,7 @@ public class EchoTerminalProgress {
             return "Next Step: Use the Mars Transfer Window from orbital staging and search the buried habitat cache.";
         }
         if (midGameObjectivesRequired() && !marsHabitatGateOpen()) {
-            return "Next Step: Repair three unique Mars Pressure Consoles with Pressure Regulators. SCAN at each console to make Europa prep reliable.";
+            return "Next Step: Repair three unique Mars Pressure Consoles with Pressure Regulators. SCAN at each console to make Europa prep hold.";
         }
         if (!europaRouteUnlocked) {
             return "Next Step: Carry Martian Silica in the Mars Ash Basin and press SCAN to resolve Europa.";
@@ -759,7 +759,7 @@ public class EchoTerminalProgress {
             return "Next Step: Craft and use the Nexus Drive Vessel from orbital staging, then locate the anomaly cache.";
         }
         if (!echoZeroEncountered) {
-            return "Next Step: Confront and defeat ECHO-0 in the Nexus Anomaly Belt. Nexus stabilization stays locked until then.";
+            return "Next Step: Confront ECHO-0 in the Nexus Anomaly Belt. Nexus stabilization stays locked until quarantine authority breaks.";
         }
         if (!nexusStabilized) {
             return "Next Step: Nexus stabilization " + nexusStabilizationText()
@@ -772,7 +772,7 @@ public class EchoTerminalProgress {
             return "Next Step: Complete one faction contract from the ECHO tab. " + factionContractRequirement();
         }
         if (!finalNetworkSealed) {
-            return "Next Step: Press SCAN to seal the final survey network and close the Orbital Remnants arc.";
+            return "Next Step: Press SCAN to seal the final survey network and close the quarantine aftermath.";
         }
         return "Next Step: " + FINAL_NETWORK_REPORT;
     }
@@ -791,7 +791,7 @@ public class EchoTerminalProgress {
 
     public String scanRequirement() {
         if (!orbitalContact) {
-            return "Scan from Earth to calibrate orbital contact and seed recovery sites.";
+            return "Scan from Earth to calibrate orbital contact and map recovery sites.";
         }
         if (hasGroundRecoverySites() && !allGroundRecoverySitesComplete()) {
             GroundRecoverySite next = nextIncompleteGroundSite();
@@ -808,7 +808,7 @@ public class EchoTerminalProgress {
             return "Repair Station Relay Nodes in Orbit (" + stationRelayRepairs() + "/3). Each unique relay consumes one Station Relay Fuse.";
         }
         if (!lunarSignalInvestigated) {
-            return "Use the Orbital Shuttle from orbital staging; the Moon cache contains Helium-3 telemetry.";
+            return "Use the Orbital Shuttle from orbital staging; the Lunar Scar cache contains Helium-3 telemetry.";
         }
         if (midGameObjectivesRequired() && !lunarExtractorGateOpen()) {
             return "Repair Helium Extractor Nodes on the Moon (" + lunarExtractorRepairs() + "/3). Each unique node consumes one Helium Extractor Core.";
@@ -830,7 +830,7 @@ public class EchoTerminalProgress {
             return "Use the Nexus Drive Vessel from orbital staging.";
         }
         if (!echoZeroEncountered) {
-            return "Defeat ECHO-0 inside the Nexus Anomaly Belt; Nexus stabilization is locked until then.";
+            return "Resolve ECHO-0 inside the Nexus Anomaly Belt; Nexus stabilization is locked until quarantine authority breaks.";
         }
         if (!nexusStabilized) {
             return "Nexus stabilization " + nexusStabilizationText()
@@ -939,7 +939,7 @@ public class EchoTerminalProgress {
             case "nexus_anomaly_belt" -> nexusStabilized ? "Anchors stabilized." : "Nexus anchors remain unstable after ECHO-0.";
             default -> hasGroundRecoverySites() && !allGroundRecoverySitesComplete()
                     ? groundRecoverySummary()
-                    : "Ground conditions nominal.";
+                    : "Ground conditions readable. Keep the terminal close.";
         };
     }
 
@@ -1380,7 +1380,7 @@ public class EchoTerminalProgress {
         progress.voidSalvagerStanding = readStanding(tag.getStringOr("void_salvager_standing", FactionStanding.UNKNOWN.name()));
         progress.nexusChoirStanding = readStanding(tag.getStringOr("nexus_choir_standing", FactionStanding.UNKNOWN.name()));
         progress.echoMemoryFragments = tag.getIntOr("echo_memory_fragments", 0);
-        progress.lastTerminalReport = tag.getStringOr("last_terminal_report", "Terminal link ready.");
+        progress.lastTerminalReport = tag.getStringOr("last_terminal_report", "ECHO terminal link ready. Awaiting field signal.");
         progress.orbitSurveyScans = tag.getIntOr("orbit_survey_scans", 0);
         progress.moonSurveyScans = tag.getIntOr("moon_survey_scans", 0);
         progress.marsSurveyScans = tag.getIntOr("mars_survey_scans", 0);
@@ -1474,9 +1474,9 @@ public class EchoTerminalProgress {
 
     private static String contractRequirement(String contract) {
         return switch (contract) {
-            case "orbital_remnant_relay" -> "Scan a Low Orbit Signal Relay or carry Orbit Survey Data.";
-            case "void_salvager_manifest" -> "Scan orbital salvage or turn in 1 Orbital Alloy and 1 Vacuum Circuit.";
-            case "nexus_choir_anchor" -> "After ECHO-0, scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard.";
+            case "orbital_remnant_relay" -> "Scan a Low Orbit Signal Relay or carry Orbit Survey Data for the disciplined route record.";
+            case "void_salvager_manifest" -> "Scan orbital salvage or turn in 1 Orbital Alloy and 1 Vacuum Circuit for the manifest.";
+            case "nexus_choir_anchor" -> "After ECHO-0, scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard for the forbidden reading.";
             default -> "No active faction contract.";
         };
     }
@@ -1610,7 +1610,7 @@ public class EchoTerminalProgress {
                 return completeMessage;
             }
             if (locked) {
-                return name + ". Resolve the prerequisite before this scan can count.";
+                return name + ". Resolve the prerequisite before ECHO can trust this scan.";
             }
             if (duplicate) {
                 return name + " already logged at this site. Find another landmark or spend a survey item.";
@@ -1636,7 +1636,7 @@ public class EchoTerminalProgress {
                 return completeMessage;
             }
             if (duplicate) {
-                return name + " already repaired at this site. Find another generated route site.";
+                return name + " already repaired at this site. Find another route site.";
             }
             if (count >= target) {
                 return name + " already complete.";

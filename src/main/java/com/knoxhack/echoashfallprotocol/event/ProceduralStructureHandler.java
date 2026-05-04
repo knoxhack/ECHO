@@ -195,7 +195,7 @@ public class ProceduralStructureHandler {
                 BlockPos checkPos = center.offset(dx, 0, dz);
                 
                 // Get surface height
-                int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, 
+                int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                                                 checkPos.getX(), checkPos.getZ());
                 
                 BlockPos surfacePos = checkPos.atY(surfaceY);

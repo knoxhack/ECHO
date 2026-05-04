@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/bush",
   "textures": {
-    "texture": "minecraft:block/dead_bush"
+    "texture": "echoashfallprotocol:block/ash_bush"
   }
 }

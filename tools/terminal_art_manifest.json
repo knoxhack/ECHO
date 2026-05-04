@@ -1,15 +1,15 @@
 {
   "style_bible": "Near-future survival command terminal, cyan tactical holography, dark glass, subtle amber alerts, grounded post-apocalyptic sci-fi, Xbox AAA UI, readable, premium, no fake text.",
   "generator": "Codex terminal polish pass",
-  "source_atlas": "Existing ECHO menu/loading backgrounds for plates; original code-generated transparent mission badges for mission icons.",
+  "source_atlas": "Mixed-size HD terminal GUI assets stored at validation target dimensions; transparent icons are tracked separately.",
   "mockup_parity_pass": "2026-05-02 terminal command hub polish; 2026-05-03 original per-mission icon pass",
   "assets": [
     {
       "id": "terminal_frame_backdrop",
       "file": "terminal_frame_backdrop.png",
       "size": [
-        512,
-        256
+        1920,
+        1080
       ],
       "tab": "shell",
       "prompt_summary": "Mockup-parity dark app-shell backdrop with cyan tactical frame",
@@ -19,8 +19,8 @@
       "id": "overview_protocol_dashboard",
       "file": "overview_protocol_dashboard.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "overview",
       "prompt_summary": "Crash-site command dashboard hero, smoke plume and outpost silhouette",
@@ -30,8 +30,8 @@
       "id": "missions_visual_hero",
       "file": "missions_visual_hero.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "missions",
       "prompt_summary": "Mission hub field-operation hero with salvage route staging",
@@ -41,8 +41,8 @@
       "id": "mission_survival",
       "file": "mission_survival.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Storm-lit outpost survival shelter mission card",
@@ -52,8 +52,8 @@
       "id": "mission_crafting",
       "file": "mission_crafting.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Workbench salvage and tool crafting mission card",
@@ -63,8 +63,8 @@
       "id": "mission_tech",
       "file": "mission_tech.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Technical blueprint dossier and machinery mission card",
@@ -74,8 +74,8 @@
       "id": "mission_exploration",
       "file": "mission_exploration.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Scanner route map exploration mission card",
@@ -85,8 +85,8 @@
       "id": "mission_combat",
       "file": "mission_combat.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Guardian threat silhouette combat mission card",
@@ -96,8 +96,8 @@
       "id": "mission_story",
       "file": "mission_story.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Recovered archive wall story mission card",
@@ -107,8 +107,8 @@
       "id": "mission_side_ops",
       "file": "mission_side_ops.png",
       "size": [
-        256,
-        128
+        512,
+        256
       ],
       "tab": "mission",
       "prompt_summary": "Side operation staging vehicle and field cache mission card",
@@ -118,8 +118,8 @@
       "id": "status_hazard_scan",
       "file": "status_hazard_scan.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "status",
       "prompt_summary": "Hazard scan telemetry over dark wasteland signal traces",
@@ -129,8 +129,8 @@
       "id": "drone_command_link",
       "file": "drone_command_link.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "drone",
       "prompt_summary": "Companion drone command-link blueprint and telemetry schematic",
@@ -140,8 +140,8 @@
       "id": "archives_dossier_wall",
       "file": "archives_dossier_wall.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "archives",
       "prompt_summary": "Recovered dossier wall with pinned archive evidence",
@@ -151,8 +151,8 @@
       "id": "codex_field_manual",
       "file": "codex_field_manual.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "codex",
       "prompt_summary": "Field manual holographic pages and technical record panels",
@@ -162,8 +162,8 @@
       "id": "world_route_map",
       "file": "world_route_map.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "world",
       "prompt_summary": "World route map with signal arcs and network nodes",
@@ -173,8 +173,8 @@
       "id": "nexus_core_interface",
       "file": "nexus_core_interface.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "nexus",
       "prompt_summary": "Purple Nexus core command chamber and final path interface",
@@ -184,8 +184,8 @@
       "id": "orbital_route_telemetry",
       "file": "orbital_route_telemetry.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "orbital",
       "prompt_summary": "Orbital route telemetry over Earth and station silhouette",
@@ -195,12 +195,206 @@
       "id": "addons_module_grid",
       "file": "addons_module_grid.png",
       "size": [
-        512,
-        256
+        2048,
+        1024
       ],
       "tab": "addons",
       "prompt_summary": "Addon module grid with modular hardware tiles",
       "fallback_category": "addons_module_grid"
+    },
+    {
+      "id": "active_protocol_hero",
+      "file": "cards/active_protocol_hero.png",
+      "size": [
+        2048,
+        1024
+      ],
+      "tab": "shared",
+      "prompt_summary": "Clean text-free HD active protocol hero plate with dark center and edge-weighted cyan/amber HUD accents",
+      "fallback_category": "active_protocol_hero"
+    },
+    {
+      "id": "metric_tile_plate",
+      "file": "cards/metric_tile_plate.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "shared",
+      "prompt_summary": "HD terminal UI art asset for metric tile plate",
+      "fallback_category": "metric_tile_plate"
+    },
+    {
+      "id": "mission_detail_header",
+      "file": "cards/mission_detail_header.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "shared",
+      "prompt_summary": "HD terminal UI art asset for mission detail header",
+      "fallback_category": "mission_detail_header"
+    },
+    {
+      "id": "next_action_panel",
+      "file": "cards/next_action_panel.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "shared",
+      "prompt_summary": "HD terminal UI art asset for next action panel",
+      "fallback_category": "next_action_panel"
+    },
+    {
+      "id": "panel_archive_codex",
+      "file": "cards/panel_archive_codex.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "field",
+      "prompt_summary": "Regenerated text-free archive/codex plate with clean blue HUD frame",
+      "fallback_category": "panel_archive_codex"
+    },
+    {
+      "id": "panel_chapter_status",
+      "file": "cards/panel_chapter_status.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "addons",
+      "prompt_summary": "Regenerated text-free chapter status plate with restrained purple frame",
+      "fallback_category": "panel_chapter_status"
+    },
+    {
+      "id": "panel_detail_standard",
+      "file": "cards/panel_detail_standard.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "shared",
+      "prompt_summary": "Regenerated text-free standard detail card plate with dark readable center",
+      "fallback_category": "panel_detail_standard"
+    },
+    {
+      "id": "panel_drone_command",
+      "file": "cards/panel_drone_command.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "drone",
+      "prompt_summary": "Regenerated text-free amber drone command plate with quiet interior",
+      "fallback_category": "panel_drone_command"
+    },
+    {
+      "id": "panel_list_compact",
+      "file": "cards/panel_list_compact.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "shared",
+      "prompt_summary": "Regenerated text-free compact list card plate with quiet center",
+      "fallback_category": "panel_list_compact"
+    },
+    {
+      "id": "panel_nexus_path",
+      "file": "cards/panel_nexus_path.png",
+      "size": [
+        2048,
+        1024
+      ],
+      "tab": "nexus",
+      "prompt_summary": "Clean text-free HD purple Nexus path plate with quiet center and restrained edge circuitry",
+      "fallback_category": "panel_nexus_path"
+    },
+    {
+      "id": "panel_orbital_command",
+      "file": "cards/panel_orbital_command.png",
+      "size": [
+        2048,
+        1024
+      ],
+      "tab": "orbital",
+      "prompt_summary": "Clean text-free HD orbital command plate with dark map-safe center and clean blue frame",
+      "fallback_category": "panel_orbital_command"
+    },
+    {
+      "id": "panel_route_map",
+      "file": "cards/panel_route_map.png",
+      "size": [
+        2048,
+        1024
+      ],
+      "tab": "field",
+      "prompt_summary": "Clean text-free HD route map plate with subtle cyan edge circuitry and text-safe center",
+      "fallback_category": "panel_route_map"
+    },
+    {
+      "id": "panel_status_health",
+      "file": "cards/panel_status_health.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "systems",
+      "prompt_summary": "Regenerated text-free green health telemetry plate with dark readable center",
+      "fallback_category": "panel_status_health"
+    },
+    {
+      "id": "panel_status_sync",
+      "file": "cards/panel_status_sync.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "systems",
+      "prompt_summary": "Regenerated text-free protocol sync plate with restrained edge accents",
+      "fallback_category": "panel_status_sync"
+    },
+    {
+      "id": "route_status_panel",
+      "file": "cards/route_status_panel.png",
+      "size": [
+        2048,
+        1024
+      ],
+      "tab": "field",
+      "prompt_summary": "Clean text-free HD route status plate with dark center and quiet cyan/green HUD accents",
+      "fallback_category": "route_status_panel"
+    },
+    {
+      "id": "signal_detail_header",
+      "file": "cards/signal_detail_header.png",
+      "size": [
+        1024,
+        512
+      ],
+      "tab": "shared",
+      "prompt_summary": "HD terminal UI art asset for signal detail header",
+      "fallback_category": "signal_detail_header"
     }
-  ]
+  ],
+  "hd_asset_contract": {
+    "full_shell_background": [
+      1920,
+      1080
+    ],
+    "large_hero_map_status_panels": [
+      2048,
+      1024
+    ],
+    "reusable_card_plates": [
+      1024,
+      512
+    ],
+    "mission_category_row_art": [
+      512,
+      256
+    ]
+  }
 }

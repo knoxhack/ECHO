@@ -208,6 +208,31 @@ def _add_signature_details(blocks: BlockList, name: str, category: str, theme, r
         for dx, dz in ((0, 0), (1, 0), (0, 1), (-1, 0), (0, -1)):
             blocks.append((cx + dx, min_y, cz + dz, rng.choice(["echoashfallprotocol:toxic_puddle", "echoashfallprotocol:acidic_sludge"]), None))
 
+    if category == "crash_zone_wasteland":
+        z = rng.randint(min_z, max_z)
+        for x in range(min_x, max_x + 1, 3):
+            blocks.append((x, min_y + 1, z, rng.choice(["echoashfallprotocol:power_cable", "echoashfallprotocol:cable_bundle"]), None))
+    elif category == "ruined_plains":
+        cx, cz = (min_x + max_x) // 2, (min_z + max_z) // 2
+        blocks.append((cx, min_y + 1, cz, "echoashfallprotocol:rain_collector", None))
+        blocks.append((cx + 1, min_y + 1, cz, "echoashfallprotocol:wild_berry_bush", None))
+    elif category == "industrial_ruins":
+        x = rng.randint(min_x, max_x)
+        for z in range(min_z, max_z + 1, 2):
+            blocks.append((x, min_y + 2, z, "echoashfallprotocol:item_pipe", None))
+    elif category == "radiation_zone":
+        cx, cz = (min_x + max_x) // 2, (min_z + max_z) // 2
+        blocks.append((cx, min_y + 1, cz, "echoashfallprotocol:radiation_block", None))
+        blocks.append((cx + 1, min_y + 1, cz, "echoashfallprotocol:toxic_waste_barrel", None))
+    elif category == "cryogenic_ruins":
+        cx, cz = (min_x + max_x) // 2, (min_z + max_z) // 2
+        blocks.append((cx, min_y + 1, cz, "echoashfallprotocol:frozen_conduit", None))
+        blocks.append((cx, min_y + 2, cz, "echoashfallprotocol:blue_ice_crystal", None))
+    elif category == "nexus_scar":
+        cx, cz = (min_x + max_x) // 2, (min_z + max_z) // 2
+        blocks.append((cx, min_y, cz, "echoashfallprotocol:riftstone", None))
+        blocks.append((cx, min_y + 1, cz, "echoashfallprotocol:echo_crystal", None))
+
     if category == "faction":
         if name.startswith("remnant_outpost/"):
             cx = (min_x + max_x) // 2

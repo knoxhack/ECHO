@@ -20,7 +20,7 @@ public record MissionUxSummary(
         missionId = clean(missionId, "");
         shortTitle = clean(shortTitle, "Mission Record");
         objectiveSummary = clean(objectiveSummary, "");
-        nextStep = clean(nextStep, "Continue the active route from the MISSIONS tab.");
+        nextStep = clean(nextStep, "Continue the active ECHO route from the mission channel.");
         routeHint = clean(routeHint, "");
         statusLabel = clean(statusLabel, "LOCKED");
         statusTone = clean(statusTone, "muted");
@@ -37,8 +37,8 @@ public record MissionUxSummary(
             return new MissionUxSummary(
                     "",
                     "Protocol Sync Pending",
-                    "Mission registry data is still syncing from the server.",
-                    "Close and reopen the terminal after the next sync tick.",
+                    "ECHO-7 is rebuilding the active protocol index from world state.",
+                    "Close and reopen the terminal after the next sync pulse.",
                     "",
                     "SYNC",
                     "muted",
@@ -77,7 +77,8 @@ public record MissionUxSummary(
         for (String prerequisite : mission.getPrerequisites()) {
             if (!quest.isMissionCompleted(prerequisite)) {
                 Mission prereq = MissionRegistry.getMissionById(prerequisite);
-                return "Complete " + (prereq == null ? prerequisite : prereq.objectiveText()) + ".";
+                return "Complete " + (prereq == null ? prerequisite : prereq.objectiveText())
+                        + " before this protocol can clear.";
             }
         }
         if (mission.isPathRestricted() && PostNexusData.get(player).getSelectedPath() != mission.requiredPath()) {
@@ -86,7 +87,7 @@ public record MissionUxSummary(
         if (mission.isPathPreview(player)) {
             return "Resolve the required Nexus path before this protocol can run.";
         }
-        return "Complete the prior protocol to unlock this route.";
+        return "Complete the prior protocol; ECHO will expose this route when the chain is stable.";
     }
 
     public static String turnInReason(Player player, QuestData quest, Mission mission,
@@ -95,22 +96,22 @@ public record MissionUxSummary(
             return unlockReason(player, quest, mission);
         }
         if (!current) {
-            return "Only the current active protocol can be turned in.";
+            return "Only the current active protocol can accept a turn-in.";
         }
         if (!mission.isTurnInMission()) {
-            return "This protocol completes automatically.";
+            return "This protocol completes automatically when ECHO confirms the field state.";
         }
         if (!completeNow) {
-            return "Finish the visible requirements before turn-in.";
+            return "Finish the visible requirements before returning this protocol.";
         }
-        return "Server validation required.";
+        return "ECHO validation required.";
     }
 
     private static String nextStep(Player player, QuestData quest, Mission mission,
             QuestData.MissionStatus status, boolean current, boolean completeNow,
             boolean pendingRewards, boolean preview) {
         if (pendingRewards) {
-            return "Claim the completed protocol reward cache from MISSIONS.";
+            return "Claim the completed protocol reward cache before pushing the route farther.";
         }
         if (status == QuestData.MissionStatus.LOCKED || preview) {
             return unlockReason(player, quest, mission);
@@ -120,19 +121,19 @@ public record MissionUxSummary(
         }
         if (mission.isTurnInMission() && completeNow) {
             return terminalInstalled()
-                    ? "Objective complete. Turn in this protocol from MISSIONS."
-                    : "Objective complete. ECHO will complete this protocol server-side.";
+                    ? "Objective complete. Return this protocol through the mission channel."
+                    : "Objective complete. ECHO will close this protocol on the next validation pulse.";
         }
         String requirement = firstOpenRequirement(player, quest, mission);
         if (!requirement.isBlank()) {
             return requirement;
         }
         if (!mission.isTurnInMission()) {
-            return "Keep progressing; this protocol completes automatically when the server check passes.";
+            return "Keep progressing; this protocol closes automatically when ECHO confirms the field state.";
         }
         return terminalInstalled()
-                ? "Finish the visible requirements, then turn in this protocol."
-                : "Finish the visible requirements; ECHO will complete it server-side.";
+                ? "Finish the visible requirements, then return this protocol."
+                : "Finish the visible requirements; ECHO will complete it after validation.";
     }
 
     private static boolean terminalInstalled() {

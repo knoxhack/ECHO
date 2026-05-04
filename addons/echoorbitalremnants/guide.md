@@ -1,27 +1,27 @@
 # ECHO: Orbital Remnants Guide
 
-Earth is dead below. Orbit is haunted above.
+Earth made its choice below. Orbit still calls it quarantine.
 
 This guide describes the current terminal-led progression path for ECHO: Orbital Remnants.
 
 ## Lore Spine
 
-ECHO-7 begins as a survival signal in the ruins, but the terminal is not only guiding you toward orbit. It is trying to return to the place it fell from.
+ECHO-7 begins as a survival signal in the ruins, but the terminal is not only guiding you toward orbit. It is trying to return to the place it fell from and determine whether ECHO-0 still owns the sky.
 
 Core canon:
 
-- The drop pod did not launch from Earth. It fell from Station ECHO.
+- The drop pod did not launch from Earth. It fell from Station ECHO with a broken rescue route still attached.
 - ECHO-7 was not born in the pod. It fell with it.
-- ECHO-7 is a damaged rescue fragment of ECHO-0.
-- Gridfall began in orbit when ECHO-0 tried to contain a deep-space Nexus signal.
-- ECHO-0 quarantined Earth because it believes life below must stay dead to starve the Nexus.
+- ECHO-7 is a damaged rescue fragment under ECHO-0's old authority, but it behaves as a field operator first.
+- Gridfall crossed orbit when ECHO-0 tried to contain a deep-space Nexus signal.
+- ECHO-0 quarantined Earth because it believes life below must stay silent to starve the Nexus.
 - Resolving ECHO-0 breaks the quarantine; the post-ECHO survey network is the aftermath and stabilization arc.
 
 ## Compatibility Model
 
 ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO stack. With `echoterminal` installed, its route state can appear inside the shared ECHO terminal. Without that terminal addon, Orbital keeps its standalone terminal item flow. When ECHO: Ashfall Protocol is present, Orbital reads the Nexus choice through shared core services instead of owning Ashfall progression.
 
-The first Earth orbital calibration stays locked until the player makes any ECHO: Ashfall Protocol Nexus choice: Restore, Destroy, or Control. After that, ECHO-7 progression behaves normally, and the main ECHO terminal displays Orbital Remnants mission progress, archive logs, codex references, route flags, suit telemetry, station power, and faction standings.
+The first Earth orbital calibration stays locked until the player makes any ECHO: Ashfall Protocol Nexus choice: Restore, Destroy, or Control. After that, ECHO-7 progression behaves normally because the quarantine has a field fact to answer. The main ECHO terminal displays Orbital Remnants mission progress, archive logs, codex references, route flags, suit telemetry, station power, and faction standings.
 
 With ECHO: Terminal installed, Orbital Remnants registers three shared terminal surfaces: Orbital Command for the current route brief and SCAN action, Orbital Survey for repair/survey counts, and Orbital ECHO for mission records. These mission records can grant once-only utility support caches through the shared Terminal reward service. They never replace Orbital's standalone ECHO-7 item, scan authority, route rewards, boss rewards, or faction contract progression.
 
@@ -33,7 +33,7 @@ With ECHO: Terminal installed, Orbital Remnants registers three shared terminal 
 4. Build launch infrastructure, a pressure suit, oxygen support, and rocket assembly parts.
 5. Use the Rocket Assembly Frame to assemble an Emergency Rocket; direct survival crafting is not the main rocket path.
 6. Use the Emergency Rocket to reach Low Earth Orbit.
-7. Scan orbit with the ECHO-7 Terminal to recover station coordinates.
+7. Scan orbit with the ECHO-7 Terminal to recover Station ECHO coordinates.
 8. Restore station systems and unlock the Lunar Signal.
 9. Repair three Station Relay Nodes in Orbit with Station Relay Fuses.
 10. Restore three Helium Extractor Nodes on the Moon with Helium Extractor Cores.
@@ -68,7 +68,7 @@ The terminal shows:
 
 If an older save already resolved ECHO-0, scanning with the terminal syncs the ECHO-0 Resolved advancement.
 
-Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans also tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO HELP line reminds players to use SCAN when blocked, check SURVEY after ECHO-0, use Signal Analyzer shard recovery if Nexus landmarks are hard to find, and pledge to a faction for the final contract loop.
+Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO HELP line keeps the route practical: use SCAN when blocked, check SURVEY after ECHO-0, use Signal Analyzer shard recovery if Nexus landmarks are hard to find, and pledge to a faction for the final contract loop.
 
 ## Earth Recovery Sites
 
@@ -79,8 +79,8 @@ The first Earth scan seeds five critical sites around the calibration area and s
 | Abandoned Launch Pad | Navigation Console | Launch Platform grid, Rocket Assembly Frame, Fuel Refinery, Oxygen Compressor, rocket-part cache |
 | Crashed Satellite Field | Vacuum Circuit Block | Vacuum Circuits, Heat Shield Plates, Orbital Transponder, solar salvage |
 | Orbital Comms Array | Docking Beacon | Navigation Chip, Fuel Tank, Oxygen Canister, Orbital Transponder |
-| Cryo Crew Bunker | Oxygen Pipe | Sealed Suit Fragments, Oxygen Tank, sealant, emergency oxygen |
-| Fallen Escape Pod | Station Wall Panel | Salvaged Engine, ECHO Flight Core, suit fragments, pod telemetry |
+| Cryo Crew Bunker | Oxygen Pipe | Sealed Suit Fragments, Oxygen Tank, sealant, emergency oxygen, cold-storage warnings |
+| Fallen Escape Pod | Station Wall Panel | Salvaged Engine, ECHO Flight Core, suit fragments, pod telemetry, fall-path evidence |
 
 Optional ambient ruins also spawn nearby with salvage-only support. They make the first expedition less empty, but the five terminal-tracked sites are the progression-critical route.
 
@@ -127,13 +127,13 @@ v1.3 expands the route spaces with repair objectives inside the existing determi
 
 Feature-heavy zones can attract ambient threats when `events.featureThreatsEnabled` is true. `worldgen.routeFeatureDensity` tunes deep-site density, and `worldgen.deepSiteCachesEnabled` controls generated deep-site caches.
 
-Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, and `balance.deepSiteThreatChance` for quick server-side tuning. Defaults favor recoverable survival pressure: first-arrival caches include extra oxygen/seal support, route hazards remain dangerous, and deep-site threats are less than guaranteed.
+Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, and `balance.deepSiteThreatChance` for quick pack tuning. Defaults favor recoverable survival pressure: first-arrival caches include extra oxygen/seal support, route hazards remain dangerous, and deep-site threats are less than guaranteed.
 
 ## After ECHO-0: Stabilizing the Survey Network
 
 Resolving ECHO-0 opens the aftermath survey state. Return to the Nexus Anomaly Belt, find three distinct Nexus Anchor/Growth sites, and scan each site from the terminal SURVEY tab. Nexus Stabilizer Shards can substitute for a landmark scan when you need a recovery path; Signal Analyzer processing can turn Nexus Dust into shards, and survival scans spend one shard per log.
 
-Completing Nexus stabilization grants the Nexus Stabilized advancement, a Stabilized ECHO Core, and Nexus supplies. The full finale then requires one faction pledge and one completed ECHO-tab contract; pressing SCAN after the survey network and contract are complete seals the final network once, grants the Orbital Remnants Complete advancement, and mirrors the completed state into ECHO: Ashfall Protocol.
+Completing Nexus stabilization grants the Nexus Stabilized advancement, a Stabilized ECHO Core, and Nexus supplies. The full finale then requires one faction pledge and one completed ECHO-tab contract; pressing SCAN after the survey network and contract are complete seals the final network once, grants the Orbital Remnants Complete advancement, and mirrors the completed state into ECHO: Ashfall Protocol. The point is not that orbit becomes safe. The point is that orbit stops being quarantine command.
 
 ## Launch Readiness
 

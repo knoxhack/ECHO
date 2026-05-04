@@ -66,6 +66,35 @@ Guardian mode adds a biome-specific surface landmark, themed descent route, and 
 - **Biomes:** Crash Zone
 - **Features:** Emergency shelter, starter supplies
 
+## POI Field Atlas Catalog
+
+The Route Map POI Atlas is the player-facing catalog for the 99 concrete template signals referenced by Ashfall template pools. Each row below is grouped by scanner profile: discovery, mission checks, loot routing, aliases, and save data remain profile-level, while the atlas helps players recognize the concrete ruin, camp, hub, vault, lab, or landmark variant in the field.
+
+| Scanner profile | Route | Template signals |
+|---|---|---|
+| `bio_lab` | Bio Lab Route | Bio Facility; Bio Lab |
+| `drop_pod` | Crash Recovery Route | Drop Pod |
+| `crash_zone_wasteland` | Crash Wreck Route | Ash Covered Ruin; Burned Convoy; Cargo Lift Wreck; Cargo Module Field; Containment Facility Ruin; Crash Site Large; Drop Pod Wreck Large; Radiation Field; Salvager Hut; Salvager Worksite; Scrap Pile Medium; Scrap Pile Small; Ship Breaking Yard; Wreckage Cluster; Wreckage Command Post |
+| `cryogenic_ruins` | Cryogenic Route | Broken Tank; Cryo Tank Field; Frozen Cache; Frozen Comms Tower; Frozen Lab Large; Frozen Vehicle; Ice Covered Ruin |
+| `data_center_ruin` | Data Center Route | Data Center Ruin; Server Farm |
+| `industrial_factory` | Factory Route | Industrial Factory; Industrial Factory Shell |
+| `survivor_cache` | Global Recovery Route | Abandoned Camp; Debris Field Large; Debris Field Small; Radio Relay Small; Road Checkpoint; Road Wreck; Survivor Cache |
+| `industrial_ruins` | Industrial Worksite Route | Conveyor Ruin; Crane Wreck; Factory Pipe Gate; Pipe Cluster; Rail Signal Yard; Storage Yard |
+| `mutant_sanctuary` | Mutant Bio Route | Biodome Hub; Processing Hut |
+| `nexus_scar` | Nexus Route | Floating Obelisk Cluster; Nexus Pylon |
+| `ruined_plains` | Open Wasteland Route | Abandoned Homestead; Impact Crater; Nomad Camp; Relay Tower; Settlement Ruins; Supply Drop; Trader Post; Walled Encampment; Wasteland Bunker Ruin; Windmill Ruin |
+| `radiation_zone` | Radiation Hotspot Route | Containment Breach; Contaminated Lab; Fallout Shelter; Irradiated Vehicle; Radiation Beacon Line; Radiation Crater; Waste Barrel Cluster |
+| `reactor_ruin` | Reactor Route | Power Plant Ruin; Reactor Containment Ruin; Reactor Gatehouse; Reactor Ruin; Reactor Ruin Alias |
+| `remnant_outpost` | Remnant Military Route | Armory; Barracks; Command Bunker; Guard Post; Street Corner; Street Cross; Street Straight; Supply Depot; Wall Corner; Wall Section |
+| `salvager_trading_post` | Salvager Trade Route | Market Plaza; Warehouse |
+| `scavenger_camp` | Scavenger Camp Route | Scavenger Camp |
+| `subway_station` | Subway Route | Subway Stairwell; Subway Station |
+| `toxic_swamp` | Toxic Swamp Route | Abandoned Shed; Broken Pipeline; Chemical Spill; Corroded Pipe Network; Pipe Pump House; Sludge Drain; Spore Research Hut; Stilted Outpost; Toxic Pool Small |
+| `ruined_cityscape` | Urban Block Route | Collapsed Building Small; Collapsed Building Tall; Collapsed Tower Large; Parking Ruin; Street Barricade |
+| `military_vault` | Vault Route | Bunker Complex; Military Vault |
+
+Profile-only scanner records currently have no template-pool entry but remain visible in the Route Map atlas with a zero template count: `relay_station`, `satellite_array`, `sewer_junction`, `train_yard`, and `abandoned_mine`.
+
 ### Guardian Sites
 - **Surface:** distinct landmarks for each guardian, including rescue hatch, bunker door, subway stair, freight lift, toxic sinkhole, reactor hatch, frozen shaft, impact breach, or Nexus breach
 - **Descent:** themed ladder shafts, stair-styled shafts, lift shafts, sinkholes, or breach shafts with a reliable fallback route
@@ -106,6 +135,15 @@ com.knoxhack.echoashfallprotocol.event/
 ## Testing
 
 ### Find Generated Structures
+
+Regenerate and validate the committed surface POI template assets from the canonical Python pipeline:
+
+```powershell
+./gradlew.bat generateEchoPoiStructures
+./gradlew.bat checkEchoPoiStructures
+```
+
+The offline generator writes the runtime `structure` resources and keeps the legacy plural mirror in sync. In-game structure commands remain useful for exporting hand-built templates and testing procedural placements, but `/modstructures generate` now points back to the offline generator instead of writing POI assets itself.
 
 ```
 # Teleport to nearest bio lab

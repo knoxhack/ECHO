@@ -188,8 +188,8 @@ public final class EndgameMissionProgress {
                 1,
                 ready ? "Ready for terminal turn-in" : "Defeat The Warden first",
                 new ItemStack(ModBlocks.NEXUS_CORE_ITEM.get()),
-                ready ? "Turn in the epilogue from MISSIONS."
-                        : "Defeat The Warden, then confirm the epilogue in MISSIONS."));
+                ready ? "Return the epilogue through the mission channel."
+                        : "Defeat The Warden, then confirm the epilogue in the mission channel."));
     }
 
     private static Snapshot controlResourcesSnapshot(Player player, PostNexusData post, boolean completed) {

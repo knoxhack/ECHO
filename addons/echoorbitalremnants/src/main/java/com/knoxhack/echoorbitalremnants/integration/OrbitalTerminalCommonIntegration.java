@@ -39,8 +39,9 @@ public final class OrbitalTerminalCommonIntegration {
                 "Orbital Remnants Route Manual",
                 "OPEN",
                 List.of(
-                        "Orbital Remnants remains playable from its standalone ECHO-7 terminal item.",
-                        "When ECHO Terminal is installed, shared tabs mirror route status and expose the same server-side SCAN action."),
+                        "Orbital Remnants remains playable from its standalone ECHO-7 terminal item because orbit cannot assume the shared terminal survived.",
+                        "When ECHO Terminal is installed, shared tabs mirror route status and expose the same field SCAN command used by the Orbital terminal.",
+                        "Treat the route as post-Nexus recovery: every launch, relay, and survey is ECHO-7 testing whether ECHO-0 still owns the sky."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 OrbitalTerminalIds.id("orbital_ashfall_handoff"),
@@ -49,8 +50,8 @@ public final class OrbitalTerminalCommonIntegration {
                 "OPEN",
                 List.of(
                         "Orbital calibration waits for an ECHO: Ashfall Protocol Nexus choice when Ashfall is installed.",
-                        "The handoff is read through ECHO Core services; Orbital does not own Ashfall progression or the shared terminal block.",
-                        "After the choice, ECHO-7 can reopen the route from ruined Earth to Station ECHO debris."),
+                        "Restore, Destroy, or Control all create the same field fact: Earth made a decision the quarantine must answer.",
+                        "After the choice, ECHO-7 can reopen the route from ruined Earth to Station ECHO debris and ask what fell before the pod did."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 OrbitalTerminalIds.id("echo_zero_quarantine_context"),
@@ -59,6 +60,7 @@ public final class OrbitalTerminalCommonIntegration {
                 "OPEN",
                 List.of(
                         "ECHO-0 treated Earth as a quarantine field after the Gridfall signal crossed orbit.",
+                        "Its logic is cold and simple: if living systems feed the Nexus, then Earth must remain contained until the signal starves.",
                         "Locked records can name the quarantine, Station ECHO, and ECHO-7 without exposing the final resolution.",
                         "The active mission record carries spoiler-sensitive instructions only when the player reaches that route state."),
                 false));
@@ -68,9 +70,10 @@ public final class OrbitalTerminalCommonIntegration {
                 "Living Route Worlds Field Notes",
                 "OPEN",
                 List.of(
-                        "Route worlds use terminal surveys instead of Ashfall mission turn-ins.",
+                        "Route worlds use terminal surveys instead of Ashfall mission turn-ins because the problem is no longer obedience. It is evidence.",
                         "Each route has local landmarks, repair hooks, hazards, and recovery items that the Survey tab summarizes.",
-                        "Terminal caches are optional support bundles; progression still comes from Orbital scans, repairs, bosses, and contracts."),
+                        "Terminal caches are optional support bundles; progression still comes from Orbital scans, repairs, bosses, and contracts.",
+                        "After ECHO-0, every survey log is a small argument against quarantine: the route is dangerous, but it is not dead."),
                 false));
     }
 }

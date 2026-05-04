@@ -22,41 +22,41 @@ public class FactionQuestRegistry {
     
     // === REMNANT QUESTS (Military/Tech focus) ===
     public static final FactionQuest REMNANT_PATROL = register(new FactionQuest(
-        "remnant.patrol", "Perimeter Supply Audit", 
-        "Deliver basic salvage so the Remnants can reinforce their perimeter before they trust you with combat work.",
+        "remnant.patrol", "Perimeter Supply Audit",
+        "Deliver basic salvage so the Remnants can patch weak points before they let an outsider stand inside the wire.",
         ReputationData.Faction.REMNANTS, FactionQuest.QuestType.DELIVERY, FactionQuest.Difficulty.EASY,
-        new String[]{"Deliver 6 scrap metal", "Report to Drill Sergeant"},
-        List.of(obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:scrap_metal", 6, "Deliver scrap metal", ReputationData.Faction.REMNANTS)),
+        new String[]{"Deliver 6 scrap metal", "Report to the perimeter sergeant"},
+        List.of(obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:scrap_metal", 6, "Deliver perimeter scrap", ReputationData.Faction.REMNANTS)),
         new String[]{"echoashfallprotocol:power_cell", "echoashfallprotocol:bandage", "echoashfallprotocol:filter_cartridge_basic"},
         0 // Neutral can accept
     ));
     
     public static final FactionQuest REMNANT_RECOVERY = register(new FactionQuest(
-        "remnant.recovery", "Tech Recovery", 
-        "Recover military-grade components from a crashed drone in the wasteland.",
+        "remnant.recovery", "Tech Recovery",
+        "Locate a hardened salvage site and recover electronics the Remnants can fold back into patrol logistics.",
         ReputationData.Faction.REMNANTS, FactionQuest.QuestType.RETRIEVAL, FactionQuest.Difficulty.MEDIUM,
-        new String[]{"Locate crashed drone", "Recover Circuit Board", "Return to Quartermaster"},
+        new String[]{"Locate military salvage", "Recover a circuit board", "Return to the quartermaster"},
         List.of(obj(FactionQuest.ObjectiveType.POI_DISCOVERY, "military_vault", 1, "Locate military salvage", ReputationData.Faction.REMNANTS),
-            obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:circuit_board", 1, "Deliver a Circuit Board", ReputationData.Faction.REMNANTS)),
+            obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:circuit_board", 1, "Deliver a circuit board", ReputationData.Faction.REMNANTS)),
         new String[]{"echoashfallprotocol:circuit_board", "echoashfallprotocol:energy_cell", "echoashfallprotocol:filter_cartridge_advanced"},
         25 // Friendly required
     ));
     
     public static final FactionQuest REMNANT_DEFENSE = register(new FactionQuest(
-        "remnant.defense", "Outpost Defense", 
-        "Defend the Remnant Outpost from a mutant raid.",
+        "remnant.defense", "Outpost Defense",
+        "Hold a Remnant position long enough for their generator crew to keep the safe lights on.",
         ReputationData.Faction.REMNANTS, FactionQuest.QuestType.DEFENSE, FactionQuest.Difficulty.HARD,
-        new String[]{"Survive 3 waves of mutants", "Protect the generator", "Report to Drill Sergeant"},
+        new String[]{"Hold through the raid", "Keep the generator line intact", "Report to the drill sergeant"},
         List.of(obj(FactionQuest.ObjectiveType.RAID_DEFENSE, "remnants", 1, "Defend a Remnant position", ReputationData.Faction.REMNANTS)),
         new String[]{"echoashfallprotocol:dense_alloy_chunk", "echoashfallprotocol:machine_casing", "echoashfallprotocol:bandage"},
         50 // Friendly required
     ));
     
     public static final FactionQuest REMNANT_SABOTAGE = register(new FactionQuest(
-        "remnant.sabotage", "Sabotage Operation", 
-        "Enter a reactor relay route and disable the damaged communications backbone.",
+        "remnant.sabotage", "Relay Severance",
+        "Enter a reactor relay route and cut damaged command traffic before it routes something worse back to the outpost.",
         ReputationData.Faction.REMNANTS, FactionQuest.QuestType.RECON, FactionQuest.Difficulty.EXTREME,
-        new String[]{"Locate reactor relay route", "Disable 3 communication relays", "Escape"},
+        new String[]{"Locate the reactor relay route", "Disable or recalibrate 3 relays", "Leave before the network notices"},
         List.of(obj(FactionQuest.ObjectiveType.POI_DISCOVERY, "reactor_ruin", 1, "Locate reactor relay route", ReputationData.Faction.REMNANTS),
             obj(FactionQuest.ObjectiveType.REPAIR, "relay", 3, "Disable or recalibrate relays", ReputationData.Faction.REMNANTS)),
         new String[]{"echoashfallprotocol:scout_drone_item", "echoashfallprotocol:energy_cell", "echoashfallprotocol:nexus_crystal"},
@@ -65,32 +65,32 @@ public class FactionQuestRegistry {
     
     // === SALVAGER QUESTS (Trade/Scavenging focus) ===
     public static final FactionQuest SALVAGER_DELIVERY = register(new FactionQuest(
-        "salvager.delivery", "Supply Run", 
-        "Deliver simple trade supplies to prove you can support salvage routes without draining your medical reserve.",
+        "salvager.delivery", "Supply Run",
+        "Deliver useful trade stock and prove you can move goods without turning every favor into a rescue bill.",
         ReputationData.Faction.SALVAGERS, FactionQuest.QuestType.DELIVERY, FactionQuest.Difficulty.EASY,
-        new String[]{"Deliver 6 scrap metal", "Deliver 1 clean water", "Return to Merchant"},
-        List.of(obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:scrap_metal", 6, "Deliver scrap metal", ReputationData.Faction.SALVAGERS),
+        new String[]{"Deliver 6 scrap metal", "Deliver 1 clean water", "Return to the route merchant"},
+        List.of(obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:scrap_metal", 6, "Deliver trade scrap", ReputationData.Faction.SALVAGERS),
             obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:clean_water_bottle", 1, "Deliver clean water", ReputationData.Faction.SALVAGERS)),
         new String[]{"echoashfallprotocol:scrap_wire", "echoashfallprotocol:clean_water_bottle", "echoashfallprotocol:energy_cell"},
         0 // Neutral can accept
     ));
     
     public static final FactionQuest SALVAGER_SALVAGE = register(new FactionQuest(
-        "salvager.salvage", "Wreck Salvage", 
-        "Salvage valuable machine components from a factory shell.",
+        "salvager.salvage", "Wreck Salvage",
+        "Survey a factory shell and pull enough scrap to prove the route is worth selling twice.",
         ReputationData.Faction.SALVAGERS, FactionQuest.QuestType.RETRIEVAL, FactionQuest.Difficulty.MEDIUM,
-        new String[]{"Explore factory route", "Recover machine parts", "Watch for bandits"},
+        new String[]{"Explore the factory route", "Recover machine scrap", "Watch the exits"},
         List.of(obj(FactionQuest.ObjectiveType.POI_DISCOVERY, "industrial_factory", 1, "Locate salvage site", ReputationData.Faction.SALVAGERS),
-            obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:scrap_metal", 12, "Deliver scrap metal", ReputationData.Faction.SALVAGERS)),
+            obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:scrap_metal", 12, "Deliver route scrap", ReputationData.Faction.SALVAGERS)),
         new String[]{"echoashfallprotocol:scrap_metal", "echoashfallprotocol:dense_alloy_chunk", "echoashfallprotocol:schematic_fragment_machines"},
         25 // Friendly required
     ));
     
     public static final FactionQuest SALVAGER_EXPEDITION = register(new FactionQuest(
-        "salvager.expedition", "Deep Expedition", 
-        "Lead a dangerous expedition through industrial ruins for dense material recovery.",
+        "salvager.expedition", "Deep Expedition",
+        "Map an industrial ruin and bring back dense alloy before greed keeps you underground too long.",
         ReputationData.Faction.SALVAGERS, FactionQuest.QuestType.RECON, FactionQuest.Difficulty.HARD,
-        new String[]{"Map industrial ruins", "Recover dense alloy", "Avoid overexposure"},
+        new String[]{"Map the industrial ruins", "Recover dense alloy", "Retreat before exposure stacks"},
         List.of(obj(FactionQuest.ObjectiveType.POI_DISCOVERY, "industrial_ruins", 1, "Map a resource site", ReputationData.Faction.SALVAGERS),
             obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:dense_alloy_chunk", 3, "Deliver dense alloy", ReputationData.Faction.SALVAGERS)),
         new String[]{"echoashfallprotocol:gem_fragment", "echoashfallprotocol:schematic_fragment_machines", "echoashfallprotocol:nexus_crystal"},
@@ -98,10 +98,10 @@ public class FactionQuestRegistry {
     ));
     
     public static final FactionQuest SALVAGER_NEGOTIATION = register(new FactionQuest(
-        "salvager.negotiation", "High-Stakes Negotiation", 
-        "Negotiate a trade deal with a rival faction's leader.",
+        "salvager.negotiation", "High-Stakes Negotiation",
+        "Carry a Nexus Crystal as leverage and turn rival faction tension into a route the Salvagers can keep open.",
         ReputationData.Faction.SALVAGERS, FactionQuest.QuestType.DELIVERY, FactionQuest.Difficulty.EXTREME,
-        new String[]{"Visit two faction hubs", "Stake a Nexus Crystal", "Return with signed contract"},
+        new String[]{"Visit two faction hubs", "Stake a Nexus Crystal", "Return with a live contract"},
         List.of(obj(FactionQuest.ObjectiveType.RECON, "faction_hub", 2, "Visit two faction hubs", null),
             obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:nexus_crystal", 1, "Stake a Nexus Crystal", ReputationData.Faction.SALVAGERS)),
         new String[]{"echoashfallprotocol:nexus_crystal", "echoashfallprotocol:dense_alloy_chunk", "echoashfallprotocol:clean_water_bottle"},
@@ -110,20 +110,20 @@ public class FactionQuestRegistry {
     
     // === MUTANT QUESTS (Bio/Adaptation focus) ===
     public static final FactionQuest MUTANT_HUNT = register(new FactionQuest(
-        "mutant.hunt", "Sample Exchange", 
-        "Provide one biological sample so the Mutant Front can calibrate safe adaptation support.",
+        "mutant.hunt", "Sample Exchange",
+        "Provide a controlled biological sample so the Mutant Front can tune medicine without guessing on living bodies.",
         ReputationData.Faction.MUTANTS, FactionQuest.QuestType.RETRIEVAL, FactionQuest.Difficulty.EASY,
-        new String[]{"Deliver 1 mutated tissue", "Confirm sample handling"},
-        List.of(obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:mutated_tissue", 1, "Deliver mutated tissue", ReputationData.Faction.MUTANTS)),
+        new String[]{"Deliver 1 mutated tissue", "Confirm safe sample handling"},
+        List.of(obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:mutated_tissue", 1, "Deliver controlled tissue", ReputationData.Faction.MUTANTS)),
         new String[]{"echoashfallprotocol:mutagen_vial", "echoashfallprotocol:rad_away", "echoashfallprotocol:bandage"},
         0 // Neutral can accept
     ));
     
     public static final FactionQuest MUTANT_RESCUE = register(new FactionQuest(
-        "mutant.rescue", "Stranded Mutants", 
-        "Rescue stranded mutant survivors from a contaminated zone.",
+        "mutant.rescue", "Stranded Mutants",
+        "Locate stranded adapted survivors and bring enough treatment for the ones still fighting the air.",
         ReputationData.Faction.MUTANTS, FactionQuest.QuestType.RETRIEVAL, FactionQuest.Difficulty.MEDIUM,
-        new String[]{"Locate stranded survivors", "Clear contamination", "Escort to safety"},
+        new String[]{"Locate stranded survivors", "Deliver treatment supplies", "Mark a safer exit"},
         List.of(obj(FactionQuest.ObjectiveType.POI_DISCOVERY, "toxic_swamp", 1, "Locate contaminated zone", ReputationData.Faction.MUTANTS),
             obj(FactionQuest.ObjectiveType.ITEM_DELIVERY, "echoashfallprotocol:rad_away", 2, "Deliver RadAway", ReputationData.Faction.MUTANTS)),
         new String[]{"echoashfallprotocol:rad_away", "echoashfallprotocol:mutagen_vial", "echoashfallprotocol:filter_cartridge_advanced"},
@@ -131,10 +131,10 @@ public class FactionQuestRegistry {
     ));
     
     public static final FactionQuest MUTANT_PURIFICATION = register(new FactionQuest(
-        "mutant.purification", "Zone Purification", 
-        "Establish a safe zone by clearing heavy radiation and mutations.",
+        "mutant.purification", "Zone Purification",
+        "Repair purifier units and hold the safe zone while the swamp decides whether to give the air back.",
         ReputationData.Faction.MUTANTS, FactionQuest.QuestType.REPAIR, FactionQuest.Difficulty.HARD,
-        new String[]{"Clear radiation from zone", "Repair 3 purification units", "Defend during startup"},
+        new String[]{"Repair 3 purification units", "Defend during startup", "Confirm the air holds"},
         List.of(obj(FactionQuest.ObjectiveType.REPAIR, "purifier", 3, "Repair purifier units", ReputationData.Faction.MUTANTS),
             obj(FactionQuest.ObjectiveType.RAID_DEFENSE, "mutants", 1, "Defend the safe zone", ReputationData.Faction.MUTANTS)),
         new String[]{"echoashfallprotocol:filtration_membrane", "echoashfallprotocol:clean_water_bottle", "echoashfallprotocol:stim_pack"},
@@ -142,12 +142,12 @@ public class FactionQuestRegistry {
     ));
     
     public static final FactionQuest MUTANT_EVOLUTION = register(new FactionQuest(
-        "mutant.evolution", "Evolution Trial", 
-        "Complete a dangerous trial to prove mastery over mutations.",
+        "mutant.evolution", "Evolution Trial",
+        "Enter an extreme radiation route and prove you can survive mutation pressure without surrendering judgment.",
         ReputationData.Faction.MUTANTS, FactionQuest.QuestType.RECON, FactionQuest.Difficulty.EXTREME,
-        new String[]{"Survive extreme radiation", "Defeat evolved mutant", "Claim mutation core"},
+        new String[]{"Enter extreme radiation", "Defeat evolved mutants", "Return before the change gets expensive"},
         List.of(obj(FactionQuest.ObjectiveType.POI_DISCOVERY, "radiation_zone", 1, "Enter extreme radiation", null),
-            obj(FactionQuest.ObjectiveType.KILL, "mutant", 5, "Defeat evolved mutants", ReputationData.Faction.MUTANTS)),
+            obj(FactionQuest.ObjectiveType.KILL, "mutant", 5, "Defeat evolved threats", ReputationData.Faction.MUTANTS)),
         new String[]{"echoashfallprotocol:nexus_crystal", "echoashfallprotocol:mutagen_vial", "echoashfallprotocol:rad_away"},
         75 // Allied required
     ));

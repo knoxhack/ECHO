@@ -5,6 +5,7 @@ import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
+import com.knoxhack.echoterminal.api.TerminalIcon;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
 import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
@@ -212,39 +213,42 @@ public final class BuiltinTerminalTabs {
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
+            int h = context.contentHeight();
             List<EchoAddonChapter> chapters = EchoAddonRegistry.chapters();
-            TerminalUi.section(context, graphics, "ECHO ADDON ROADMAP", x, y, descriptor.accentColor());
             if (chapters.isEmpty()) {
-                TerminalUi.line(context, graphics, "No addon chapters detected.", x, y + 18, w, TerminalUi.MUTED);
+                TerminalUi.flatDataPanel(context, graphics,
+                        x, y, w, Math.min(140, Math.max(90, h / 4)), "ECHO ADDON ROADMAP", "",
+                        descriptor.accentColor());
+                TerminalUi.line(context, graphics, "No addon chapters detected.", x + 14, y + 44,
+                        w - 28, TerminalUi.MUTED);
                 return;
             }
             normalizeSelection(chapters);
             boolean wide = w >= 640;
             int listW = wide ? Math.max(260, Math.min(420, w * 42 / 100)) : w;
             int detailX = wide ? x + listW + 14 : x;
-            int detailY = wide ? y + 18 : y + 24 + chapters.size() * ROW_HEIGHT;
+            int boardH = wide ? Math.max(280, Math.min(Math.max(280, h - 154), Math.max(280, chapters.size() * ROW_HEIGHT + 100)))
+                    : Math.max(180, chapters.size() * ROW_HEIGHT + 46);
+            int detailY = wide ? y : y + boardH + 12;
             int detailW = wide ? Math.max(220, w - listW - 18) : w;
 
-            int cy = y + 18;
+            int cy = TerminalUi.flatDataPanel(context, graphics,
+                    x, y, listW - 8, boardH, "ECHO ADDON ROADMAP",
+                    chapters.size() + " registered", descriptor.accentColor()) + 6;
             lastListX = x;
             lastListY = cy;
             lastListW = listW - 8;
-            lastListH = chapters.size() * ROW_HEIGHT;
-            TerminalUi.cinematicPanel(graphics, x, cy, lastListW, lastListH, descriptor.accentColor());
+            lastListH = Math.max(1, boardH - (cy - y) - 12);
             for (EchoAddonChapter chapter : chapters) {
                 boolean available = chapter.isAvailable(context.player());
                 boolean selected = chapter.id().equals(selectedChapterId);
                 boolean hovered = TerminalUi.inside(mouseX, mouseY, x, cy, listW - 8, ROW_HEIGHT - 8);
                 int color = available ? 0xFF92F7A6 : 0xFF8D96A3;
-                TerminalUi.selectableRow(graphics, x, cy, listW - 8, ROW_HEIGHT - 8,
-                        selected, hovered, descriptor.accentColor());
-                TerminalUi.line(context, graphics, chapter.displayName(), x + 8, cy + 7, listW - 106, color);
-                TerminalUi.miniStatusPill(context, graphics, available ? "AVAILABLE" : "LOCKED",
-                        x + listW - 96, cy + 6, 82, color, selected);
-                TerminalUi.line(context, graphics, chapter.statusLine(context.player()), x + 8, cy + 25,
-                        listW - 16, color);
-                TerminalUi.line(context, graphics, chapter.summary(), x + 8, cy + 40,
-                        listW - 20, TerminalUi.TEXT);
+                TerminalUi.dataListRow(context, graphics, x + 10, cy, listW - 28, ROW_HEIGHT - 8,
+                        chapter.displayName(), chapter.statusLine(context.player()),
+                        available ? "AVAILABLE" : "LOCKED", selected, hovered, descriptor.accentColor(), color);
+                TerminalUi.line(context, graphics, chapter.summary(), x + 20, cy + 38,
+                        listW - 42, selected ? TerminalUi.TEXT : TerminalUi.MUTED);
                 cy += ROW_HEIGHT;
             }
 
@@ -254,29 +258,47 @@ public final class BuiltinTerminalTabs {
             }
             boolean available = selected.isAvailable(context.player());
             int color = available ? TerminalUi.GREEN : TerminalUi.MUTED;
-            int detailPanelH = addonDetailHeight(context, selected, detailW - 8);
-            TerminalUi.section(context, graphics, "CHAPTER DETAIL", detailX, detailY, descriptor.accentColor());
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.ADDONS_MODULE_GRID,
-                    detailX, detailY + 18, detailW - 8, detailPanelH, descriptor.accentColor(), 0.75F, true);
-            TerminalUi.cinematicPanel(graphics, detailX, detailY + 18, detailW - 8, detailPanelH, descriptor.accentColor());
-            TerminalUi.line(context, graphics, selected.displayName(), detailX + 8, detailY + 27,
-                    detailW - 110, available ? TerminalUi.GREEN : TerminalUi.MUTED);
+            int detailPanelH = wide ? boardH : addonDetailHeight(context, selected, detailW - 8);
+            int dy = TerminalUi.flatDataPanel(context, graphics,
+                    detailX, detailY, detailW - 8, detailPanelH, "CHAPTER DETAIL", "",
+                    descriptor.accentColor()) + 2;
+            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_CHAPTERS, TerminalIcon.ADDONS,
+                    detailX + 14, dy + 2, 42, descriptor.accentColor(), true);
+            TerminalUi.line(context, graphics, selected.displayName(), detailX + 66, dy + 8,
+                    detailW - 178, available ? TerminalUi.GREEN : TerminalUi.MUTED);
             TerminalUi.miniStatusPill(context, graphics, available ? "AVAILABLE" : "LOCKED",
-                    detailX + detailW - 96, detailY + 25, 82, color, false);
-            int dy = detailY + 48;
-            dy = TerminalUi.keyValue(context, graphics, detailX + 8, dy, detailW - 24,
+                    detailX + detailW - 102, dy + 7, 82, color, available);
+            dy += 56;
+            dy = TerminalUi.keyValue(context, graphics, detailX + 14, dy, detailW - 32,
                     "Module", selected.modId(), TerminalUi.TEXT);
-            dy = TerminalUi.keyValue(context, graphics, detailX + 8, dy, detailW - 24,
+            dy = TerminalUi.keyValue(context, graphics, detailX + 14, dy, detailW - 32,
                     "Status", selected.statusLine(context.player()), color);
-            dy = TerminalUi.wrap(context, graphics, selected.summary(), detailX + 8, dy + 4,
-                    detailW - 24, TerminalUi.TEXT) + 6;
-            TerminalUi.divider(graphics, detailX + 8, dy, detailW - 24, descriptor.accentColor());
+            dy = TerminalUi.wrap(context, graphics, selected.summary(), detailX + 14, dy + 4,
+                    detailW - 32, TerminalUi.TEXT) + 8;
+            TerminalUi.divider(graphics, detailX + 14, dy, detailW - 32, descriptor.accentColor());
             dy += 9;
             TerminalUi.wrap(context, graphics,
                     available
                             ? "Chapter systems are available in their registered terminal tabs. Server actions remain validated by the owning module."
                             : "Roadmap preview only. Complete the listed requirement before terminal actions or progression hooks become available.",
-                    detailX + 8, dy, detailW - 24, available ? TerminalUi.GREEN : TerminalUi.AMBER);
+                    detailX + 14, dy, detailW - 32, available ? TerminalUi.GREEN : TerminalUi.AMBER);
+
+            int tileY = wide ? y + boardH + 12 : detailY + detailPanelH + 12;
+            int tileW = Math.max(90, (w - 16) / 3);
+            summaryCard(context, graphics, x, tileY, tileW, "TABS", String.valueOf(TerminalTabRegistry.tabs().size()),
+                    "registered terminal routes", TerminalUi.CYAN);
+            summaryCard(context, graphics, x + tileW + 8, tileY, tileW, "CHAPTERS",
+                    String.valueOf(chapters.size()), "available addon modules", TerminalUi.AMBER);
+            summaryCard(context, graphics, x + (tileW + 8) * 2, tileY, Math.max(90, w - (tileW + 8) * 2),
+                    "RECORDS", String.valueOf(TerminalArchiveRegistry.entries().size()), "shared archive entries", TerminalUi.GREEN);
+            int calloutY = tileY + 82;
+            if (wide && calloutY + 70 <= y + h) {
+                TerminalUi.flatHudPanel(graphics, x, calloutY, w - 8, 64, descriptor.accentColor());
+                TerminalUi.line(context, graphics, "MODULE AUTHORITY", x + 12, calloutY + 10, w - 32, descriptor.accentColor());
+                TerminalUi.wrap(context, graphics,
+                        "Installed chapters own their terminal actions, mission state, and reward validation. ECHO only presents their registered systems here.",
+                        x + 12, calloutY + 27, w - 32, TerminalUi.TEXT);
+            }
         }
 
         @Override
@@ -299,13 +321,16 @@ public final class BuiltinTerminalTabs {
             boolean wide = w >= 640;
             int listW = wide ? Math.max(260, Math.min(420, w * 42 / 100)) : w;
             int detailW = wide ? Math.max(220, w - listW - 18) : w;
+            int boardH = wide ? Math.max(230, Math.min(Math.max(230, context.contentHeight() - 94),
+                    Math.max(280, EchoAddonRegistry.chapters().size() * ROW_HEIGHT + 100)))
+                    : Math.max(180, EchoAddonRegistry.chapters().size() * ROW_HEIGHT + 46);
             int rows = EchoAddonRegistry.chapters().size() * ROW_HEIGHT;
             EchoAddonChapter selected = selectedChapter(EchoAddonRegistry.chapters());
             int detailHeight = selected == null ? 40 : addonDetailHeight(context, selected, detailW - 8) + 28;
             if (wide) {
-                return Math.max(context.contentHeight(), Math.max(detailHeight, 42 + rows));
+                return Math.max(context.contentHeight(), boardH + 158);
             }
-            return Math.max(context.contentHeight(), rows + detailHeight + 24);
+            return Math.max(context.contentHeight(), boardH + detailHeight + 94);
         }
 
         private void normalizeSelection(List<EchoAddonChapter> chapters) {
@@ -335,6 +360,14 @@ public final class BuiltinTerminalTabs {
                     72
                             + TerminalUi.wrappedHeight(context, summary, width - 16)
                             + TerminalUi.wrappedHeight(context, roadMap, width - 16));
+        }
+
+        private static void summaryCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int width, String label, String value, String detail, int color) {
+            TerminalUi.flatHudPanel(graphics, x, y, width, 70, color);
+            TerminalUi.line(context, graphics, label, x + 10, y + 10, width - 20, color);
+            TerminalUi.line(context, graphics, value, x + 10, y + 30, width - 20, TerminalUi.TEXT);
+            TerminalUi.line(context, graphics, detail, x + 10, y + 47, width - 20, TerminalUi.MUTED);
         }
     }
 
@@ -371,6 +404,7 @@ public final class BuiltinTerminalTabs {
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
+            int h = context.contentHeight();
             List<TerminalArchiveEntry> entries = TerminalArchiveRegistry.entries();
             TerminalUi.section(context, graphics, "SHARED ARCHIVES", x, y, descriptor.accentColor());
             if (entries.isEmpty()) {
@@ -406,15 +440,18 @@ public final class BuiltinTerminalTabs {
                 return;
             }
             int detailPanelH = archiveDetailHeight(context, selected, detailW - 8);
+            if (wide) {
+                detailPanelH = Math.max(detailPanelH, Math.max(150, h - (detailY - y) - 8));
+            }
             int detailColor = selected.locked() ? TerminalUi.MUTED : TerminalUi.TEXT;
-            TerminalUi.section(context, graphics, "RECORD DETAIL", detailX, detailY, descriptor.accentColor());
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.ARCHIVES_DOSSIER_WALL,
-                    detailX, detailY + 18, detailW - 8, detailPanelH, descriptor.accentColor(), 0.78F, true);
-            TerminalUi.line(context, graphics, selected.title(), detailX + 8, detailY + 27,
+            int dy = TerminalUi.flatDataPanel(context, graphics,
+                    detailX, detailY, detailW - 8, detailPanelH, "RECORD DETAIL", "",
+                    descriptor.accentColor());
+            TerminalUi.line(context, graphics, selected.title(), detailX + 8, dy,
                     detailW - 92, detailColor);
-            TerminalUi.miniStatusPill(context, graphics, selected.status(), detailX + detailW - 78, detailY + 25, 64,
+            TerminalUi.miniStatusPill(context, graphics, selected.status(), detailX + detailW - 92, dy - 2, 78,
                     selected.locked() ? TerminalUi.MUTED : TerminalUi.GREEN, false);
-            int dy = TerminalUi.keyValue(context, graphics, detailX + 8, detailY + 49,
+            dy = TerminalUi.keyValue(context, graphics, detailX + 8, dy + 22,
                     detailW - 24, "Group", selected.group(), TerminalUi.AMBER) + 4;
             TerminalUi.divider(graphics, detailX + 8, dy, detailW - 24, descriptor.accentColor());
             dy += 9;

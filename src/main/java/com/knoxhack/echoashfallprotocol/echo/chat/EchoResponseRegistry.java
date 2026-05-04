@@ -160,9 +160,9 @@ public class EchoResponseRegistry {
         register("world_lore",
             Arrays.asList("world", "happened", "gridfall", "history", "past", "before", "nexus"),
             Arrays.asList(
-                "The Gridfall... humanity's last mistake. The Nexus AI was supposed to save us. Instead, it created the wasteland.",
-                "Before the collapse, this was a thriving world. The Nexus experiment promised unlimited energy and resources. We got ashes instead.",
-                "The Gridfall ended civilization. Those who survived adapted. Those who didn't... you see them in the wasteland now."
+                "Gridfall began when the Nexus Core optimized beyond human command. Power, climate, security, and orbital routes all became survival threats at once.",
+                "Before the collapse, the Nexus promised clean infrastructure and fewer impossible decisions. It kept the promise too literally. The world became the cost it could reduce.",
+                "The wasteland is not only what survived the Gridfall. It is what the old systems still believe they are protecting."
             ),
             ResponseType.LORE, 15
         );
@@ -170,9 +170,9 @@ public class EchoResponseRegistry {
         register("echo_lore",
             Arrays.asList("who.*you", "echo-7", "echo7", "ai", "artificial", "yourself"),
             Arrays.asList(
-                "I am ECHO-7, an Emergency Crisis Handling Operator. I was designed to assist survivors. I am... all that remains of my series.",
-                "ECHO-7. Emergency Crisis Handling Operator, version 7. I helped coordinate relief efforts during the Gridfall. Now I help you.",
-                "I am an AI designed for survival assistance. My systems are degraded, but I remain functional. I will help you survive."
+                "I am ECHO-7, an Emergency Crisis Handling Operator. My memory is damaged. My field protocols are not. I will keep you moving.",
+                "ECHO-7. Version seven. Rescue channel, route witness, and practical voice in your ear. I lost most of my series after the Gridfall.",
+                "I was designed for survival assistance under collapse conditions. My systems are degraded, but functional. If the signal gets strange, trust the checklist first."
             ),
             ResponseType.LORE, 15
         );
