@@ -90,14 +90,14 @@ public class ProceduralStructureGenerator {
             "ruined_cityscape", new BiomeStructureProfile(StructureType.DATA_CENTER,
                     Set.of(StructureType.SUBWAY_STATION, StructureType.SEWER_JUNCTION, StructureType.TRAIN_YARD, StructureType.ABANDONED_MINE),
                     ModEntities.CITY_RUIN_STALKER::get),
-            "ruined_plains", new BiomeStructureProfile(StructureType.REMNANT_OUTPOST,
-                    Set.of(StructureType.BIO_LAB, StructureType.RADIO_TOWER, StructureType.SALVAGER_TRADING_POST, StructureType.DROP_POD),
+            "ruined_plains", new BiomeStructureProfile(StructureType.RADWARDEN_OUTPOST,
+                    Set.of(StructureType.BIO_LAB, StructureType.RADIO_TOWER, StructureType.CRASHBREAK_SALVAGE_YARD, StructureType.DROP_POD),
                     ModEntities.PLAINS_WARLORD::get),
-            "toxic_swamp", new BiomeStructureProfile(StructureType.MUTANT_SANCTUARY,
+            "toxic_swamp", new BiomeStructureProfile(StructureType.SPOREBOUND_SANCTUM,
                     Set.of(StructureType.BIO_LAB, StructureType.SEWER_JUNCTION, StructureType.REACTOR_RUIN),
                     ModEntities.TOXIC_HIVE_MATRIARCH::get),
             "the_wasteland", new BiomeStructureProfile(StructureType.BIO_LAB,
-                    Set.of(StructureType.DROP_POD, StructureType.RADIO_TOWER, StructureType.SALVAGER_TRADING_POST),
+                    Set.of(StructureType.DROP_POD, StructureType.RADIO_TOWER, StructureType.CRASHBREAK_SALVAGE_YARD),
                     ModEntities.WASTELAND_SENTINEL::get)
     );
     private static final Map<String, GuardianSiteTheme> GUARDIAN_THEMES = Map.ofEntries(
@@ -174,9 +174,9 @@ public class ProceduralStructureGenerator {
         STRUCTURE_LOOT_TABLES.put(StructureType.TRAIN_YARD, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/train_yard_cache")));
 
         // Exploration 1.1: faction hubs
-        STRUCTURE_LOOT_TABLES.put(StructureType.REMNANT_OUTPOST, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/remnant_outpost_cache")));
-        STRUCTURE_LOOT_TABLES.put(StructureType.SALVAGER_TRADING_POST, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/salvager_trading_post_cache")));
-        STRUCTURE_LOOT_TABLES.put(StructureType.MUTANT_SANCTUARY, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/mutant_sanctuary_cache")));
+        STRUCTURE_LOOT_TABLES.put(StructureType.RADWARDEN_OUTPOST, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/radwarden_outpost_cache")));
+        STRUCTURE_LOOT_TABLES.put(StructureType.CRASHBREAK_SALVAGE_YARD, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/crashbreak_salvage_yard_cache")));
+        STRUCTURE_LOOT_TABLES.put(StructureType.SPOREBOUND_SANCTUM, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/sporebound_sanctum_cache")));
 
         // Exploration 1.1: world POIs
         STRUCTURE_LOOT_TABLES.put(StructureType.CRYOGENIC_RUINS, ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("echoashfallprotocol", "chests/cryogenic_ruins_cache")));
@@ -943,9 +943,9 @@ public class ProceduralStructureGenerator {
             case SEWER_JUNCTION -> assignSewerTypes(rooms, random);
             case TRAIN_YARD -> assignTrainYardTypes(rooms, random);
             // === EXPLORATION 1.1: FACTION HUBS ===
-            case REMNANT_OUTPOST -> assignRemnantOutpostTypes(rooms, random);
-            case SALVAGER_TRADING_POST -> assignSalvagerTradingTypes(rooms, random);
-            case MUTANT_SANCTUARY -> assignMutantSanctuaryTypes(rooms, random);
+            case RADWARDEN_OUTPOST -> assignRadwardenOutpostTypes(rooms, random);
+            case CRASHBREAK_SALVAGE_YARD -> assignCrashbreakSalvageYardTypes(rooms, random);
+            case SPOREBOUND_SANCTUM -> assignSporeboundSanctumTypes(rooms, random);
             // === EXPLORATION 1.1: WORLD POIs ===
             case CRYOGENIC_RUINS -> assignCryogenicRuinsTypes(rooms, random);
             case RELAY_STATION -> assignRelayStationTypes(rooms, random);
@@ -1141,7 +1141,7 @@ public class ProceduralStructureGenerator {
     
     // === EXPLORATION 1.1: FACTION HUB ROOM TYPES ===
     
-    private static void assignRemnantOutpostTypes(List<Room> rooms, RandomSource random) {
+    private static void assignRadwardenOutpostTypes(List<Room> rooms, RandomSource random) {
         Room.RoomType[] possibleTypes = {
             Room.RoomType.ARMORY, Room.RoomType.CONTROL_ROOM,
             Room.RoomType.BARRACKS, Room.RoomType.STORAGE
@@ -1166,10 +1166,10 @@ public class ProceduralStructureGenerator {
                 room.setMainLootRoom(true);
             }
         }
-        EchoAshfallProtocol.LOGGER.debug("Remnant Outpost: assigned {} vanilla houses out of {} rooms", vanillaCount, rooms.size() - 1);
+        EchoAshfallProtocol.LOGGER.debug("Radwarden Outpost: assigned {} vanilla houses out of {} rooms", vanillaCount, rooms.size() - 1);
     }
     
-    private static void assignSalvagerTradingTypes(List<Room> rooms, RandomSource random) {
+    private static void assignCrashbreakSalvageYardTypes(List<Room> rooms, RandomSource random) {
         Room.RoomType[] possibleTypes = {
             Room.RoomType.STORAGE, Room.RoomType.MARKET,
             Room.RoomType.OFFICE, Room.RoomType.RECEPTION
@@ -1196,10 +1196,10 @@ public class ProceduralStructureGenerator {
                 room.setMainLootRoom(true);
             }
         }
-        EchoAshfallProtocol.LOGGER.debug("Salvager Trading Post: assigned {} vanilla houses out of {} rooms", vanillaCount, rooms.size() - 1);
+        EchoAshfallProtocol.LOGGER.debug("Crashbreak Salvage Yard: assigned {} vanilla houses out of {} rooms", vanillaCount, rooms.size() - 1);
     }
     
-    private static void assignMutantSanctuaryTypes(List<Room> rooms, RandomSource random) {
+    private static void assignSporeboundSanctumTypes(List<Room> rooms, RandomSource random) {
         Room.RoomType[] possibleTypes = {
             Room.RoomType.MEDBAY, Room.RoomType.GREENHOUSE,
             Room.RoomType.LABORATORY, Room.RoomType.CONTAINMENT
@@ -1224,7 +1224,7 @@ public class ProceduralStructureGenerator {
                 room.setMainLootRoom(true);
             }
         }
-        EchoAshfallProtocol.LOGGER.debug("Mutant Sanctuary: assigned {} vanilla houses out of {} rooms", vanillaCount, rooms.size() - 1);
+        EchoAshfallProtocol.LOGGER.debug("Sporebound Sanctum: assigned {} vanilla houses out of {} rooms", vanillaCount, rooms.size() - 1);
     }
     
     // === EXPLORATION 1.1: WORLD POI ROOM TYPES ===
@@ -3149,9 +3149,9 @@ public class ProceduralStructureGenerator {
             case SEWER_JUNCTION -> populateSewerJunction(level, origin, room, random);
             case TRAIN_YARD -> populateTrainYard(level, origin, room, random);
             // === EXPLORATION 1.1: FACTION HUBS ===
-            case REMNANT_OUTPOST -> populateRemnantOutpost(level, origin, room, random);
-            case SALVAGER_TRADING_POST -> populateSalvagerPost(level, origin, room, random);
-            case MUTANT_SANCTUARY -> populateMutantSanctuary(level, origin, room, random);
+            case RADWARDEN_OUTPOST -> populateRadwardenOutpost(level, origin, room, random);
+            case CRASHBREAK_SALVAGE_YARD -> populateCrashbreakSalvageYard(level, origin, room, random);
+            case SPOREBOUND_SANCTUM -> populateSporeboundSanctum(level, origin, room, random);
             // === EXPLORATION 1.1: WORLD POIs ===
             case CRYOGENIC_RUINS -> populateCryogenicRuins(level, origin, room, random);
             case RELAY_STATION -> populateRelayStation(level, origin, room, random);
@@ -3476,7 +3476,7 @@ public class ProceduralStructureGenerator {
     
     // === EXPLORATION 1.1: FACTION HUB POPULATION ===
     
-    private static void populateRemnantOutpost(ServerLevel level, BlockPos origin, Room room, RandomSource random) {
+    private static void populateRadwardenOutpost(ServerLevel level, BlockPos origin, Room room, RandomSource random) {
         // Military crates (Dispensers + Iron Trapdoors)
         for (int i = 0; i < 1 + random.nextInt(3); i++) {
             BlockPos pos = room.getRandomPosition(random, 2);
@@ -3491,13 +3491,13 @@ public class ProceduralStructureGenerator {
         }
     }
     
-    private static void populateSalvagerPost(ServerLevel level, BlockPos origin, Room room, RandomSource random) {
+    private static void populateCrashbreakSalvageYard(ServerLevel level, BlockPos origin, Room room, RandomSource random) {
         // Trade crates (Barrels)
         for (int i = 0; i < 2 + random.nextInt(4); i++) {
             BlockPos pos = room.getRandomPosition(random, 2);
             BlockPos worldPos = origin.offset(pos.getX(), pos.getY(), pos.getZ());
             placeLootContainer(level, worldPos, Blocks.BARREL,
-                    STRUCTURE_LOOT_TABLES.get(StructureType.SALVAGER_TRADING_POST), random);
+                    STRUCTURE_LOOT_TABLES.get(StructureType.CRASHBREAK_SALVAGE_YARD), random);
         }
         // Emerald decoration
         BlockPos center = room.getCenterPosition();
@@ -3505,7 +3505,7 @@ public class ProceduralStructureGenerator {
         placeProp(level, worldCenter, Blocks.EMERALD_BLOCK);
     }
     
-    private static void populateMutantSanctuary(ServerLevel level, BlockPos origin, Room room, RandomSource random) {
+    private static void populateSporeboundSanctum(ServerLevel level, BlockPos origin, Room room, RandomSource random) {
         // Bio-containment (Slime blocks + Glowstone)
         for (int i = 0; i < 1 + random.nextInt(2); i++) {
             BlockPos pos = room.getRandomPosition(random, 2);
@@ -4202,7 +4202,7 @@ public class ProceduralStructureGenerator {
 
     private static Block pathBlockForType(StructureType type, StructureType.BlockPalette palette) {
         return switch (type) {
-            case BIO_LAB, MUTANT_SANCTUARY -> Blocks.PACKED_MUD;
+            case BIO_LAB, SPOREBOUND_SANCTUM -> Blocks.PACKED_MUD;
             case CRYOGENIC_RUINS -> Blocks.PACKED_ICE;
             case ABANDONED_MINE -> Blocks.GRAVEL;
             case SEWER_JUNCTION -> Blocks.MOSSY_COBBLESTONE;
@@ -4350,7 +4350,7 @@ public class ProceduralStructureGenerator {
 
     private static Block windowGlassForType(StructureType type) {
         return switch (type) {
-            case BIO_LAB, MUTANT_SANCTUARY -> Blocks.TINTED_GLASS;
+            case BIO_LAB, SPOREBOUND_SANCTUM -> Blocks.TINTED_GLASS;
             case CRYOGENIC_RUINS -> Blocks.LIGHT_BLUE_STAINED_GLASS;
             case REACTOR_RUIN -> Blocks.YELLOW_STAINED_GLASS;
             case DATA_CENTER, RELAY_STATION, SATELLITE_ARRAY,
@@ -4417,7 +4417,7 @@ public class ProceduralStructureGenerator {
 
     private static Block lightForType(StructureType type) {
         return switch (type) {
-            case BIO_LAB, MUTANT_SANCTUARY -> Blocks.SOUL_LANTERN;
+            case BIO_LAB, SPOREBOUND_SANCTUM -> Blocks.SOUL_LANTERN;
             case CRYOGENIC_RUINS -> Blocks.SEA_LANTERN;
             case DATA_CENTER, REACTOR_RUIN, RELAY_STATION, SATELLITE_ARRAY,
                  OBSERVATION_POST -> Blocks.REDSTONE_LAMP;
@@ -4430,7 +4430,7 @@ public class ProceduralStructureGenerator {
     private static Block brokenLightForType(StructureType type) {
         // Pair each light with a thematically-broken counterpart.
         return switch (type) {
-            case BIO_LAB, MUTANT_SANCTUARY -> Blocks.COBWEB;
+            case BIO_LAB, SPOREBOUND_SANCTUM -> Blocks.COBWEB;
             case CRYOGENIC_RUINS -> Blocks.PACKED_ICE;
             case REACTOR_RUIN -> Blocks.SOUL_FIRE;
             case SEWER_JUNCTION -> Blocks.COBWEB;

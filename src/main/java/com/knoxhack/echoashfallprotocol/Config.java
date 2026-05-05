@@ -282,9 +282,9 @@ public class Config {
         defineStructureConfig(StructureType.RADIO_TOWER, 44, 11);
         defineStructureConfig(StructureType.RELAY_STATION, 48, 12);
         defineStructureConfig(StructureType.OBSERVATION_POST, 60, 15);
-        defineStructureConfig(StructureType.REMNANT_OUTPOST, 50, 12);
-        defineStructureConfig(StructureType.SALVAGER_TRADING_POST, 42, 10);
-        defineStructureConfig(StructureType.MUTANT_SANCTUARY, 46, 11);
+        defineStructureConfig(StructureType.RADWARDEN_OUTPOST, 50, 12);
+        defineStructureConfig(StructureType.CRASHBREAK_SALVAGE_YARD, 42, 10);
+        defineStructureConfig(StructureType.SPOREBOUND_SANCTUM, 46, 11);
         defineStructureConfig(StructureType.CRYOGENIC_RUINS, 54, 13);
         defineStructureConfig(StructureType.DERELICT_WORKSHOP, 38, 9);
         defineStructureConfig(StructureType.ABANDONED_MINE, 58, 14);

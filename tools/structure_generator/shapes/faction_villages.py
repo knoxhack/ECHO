@@ -1,6 +1,6 @@
 """
 Faction Village shape generators for wasteland-themed villages.
-Generates Remnant, Salvager, and Mutant village structures.
+Generates Radwarden, Crashbreak, and Sporebound village structures.
 """
 
 import random
@@ -23,10 +23,10 @@ def _r(seed: int) -> random.Random:
     return random.Random(seed)
 
 
-# === REMNANT VILLAGE STRUCTURES ===
+# === RADWARDEN VILLAGE STRUCTURES ===
 
-def generate_remnant_command_bunker(seed: int) -> BlockList:
-    """Central command bunker for Remnant villages."""
+def generate_radwarden_command_bunker(seed: int) -> BlockList:
+    """Central command bunker for Radwarden villages."""
     rng = _r(seed)
     blocks: BlockList = []
 
@@ -76,10 +76,10 @@ def generate_remnant_command_bunker(seed: int) -> BlockList:
     add_block(blocks, 4, 4, 11, "minecraft:redstone_lamp")
     add_block(blocks, 11, 4, 11, "minecraft:redstone_lamp")
 
-    return enforce_guardrails("remnant_command_bunker", blocks, 16, 16, 7)
+    return enforce_guardrails("radwarden_command_bunker", blocks, 16, 16, 7)
 
 
-def generate_remnant_barracks(seed: int) -> BlockList:
+def generate_radwarden_barracks(seed: int) -> BlockList:
     """Soldier sleeping quarters."""
     rng = _r(seed)
     blocks: BlockList = []
@@ -119,10 +119,10 @@ def generate_remnant_barracks(seed: int) -> BlockList:
     add_block(blocks, 3, 1, 8, "minecraft:barrel")
     add_block(blocks, 8, 1, 8, "minecraft:barrel")
 
-    return enforce_guardrails("remnant_barracks", blocks, 12, 12, 6)
+    return enforce_guardrails("radwarden_barracks", blocks, 12, 12, 6)
 
 
-def generate_remnant_armory(seed: int) -> BlockList:
+def generate_radwarden_armory(seed: int) -> BlockList:
     """Weapon and equipment storage."""
     rng = _r(seed)
     blocks: BlockList = []
@@ -160,11 +160,11 @@ def generate_remnant_armory(seed: int) -> BlockList:
     add_block(blocks, 1, 1, 4, "minecraft:chest")
     add_block(blocks, 8, 1, 4, "minecraft:chest")
 
-    return enforce_guardrails("remnant_armory", blocks, 10, 10, 5)
+    return enforce_guardrails("radwarden_armory", blocks, 10, 10, 5)
 
 
-def generate_remnant_guard_post(seed: int) -> BlockList:
-    """Compact sentry post used as a Remnant house-pool filler."""
+def generate_radwarden_guard_post(seed: int) -> BlockList:
+    """Compact sentry post used as a Radwarden house-pool filler."""
     blocks: BlockList = []
 
     fill(blocks, 0, 0, 0, 7, 0, 7, "minecraft:smooth_stone")
@@ -195,10 +195,10 @@ def generate_remnant_guard_post(seed: int) -> BlockList:
     add_block(blocks, 7, 0, 7, "minecraft:campfire")
     add_block(blocks, 3, 5, 3, "minecraft:lantern")
 
-    return enforce_guardrails("remnant_guard_post", blocks, 8, 8, 6)
+    return enforce_guardrails("radwarden_guard_post", blocks, 8, 8, 6)
 
 
-def generate_remnant_supply_depot(seed: int) -> BlockList:
+def generate_radwarden_supply_depot(seed: int) -> BlockList:
     """Fortified storage hut with supply-crate job-site coverage."""
     rng = _r(seed)
     blocks: BlockList = []
@@ -222,10 +222,10 @@ def generate_remnant_supply_depot(seed: int) -> BlockList:
     add_block(blocks, 10, 0, 1, "minecraft:campfire")
     add_block(blocks, 5, 0, 8, "minecraft:cauldron")
 
-    return enforce_guardrails("remnant_supply_depot", blocks, 12, 10, 6)
+    return enforce_guardrails("radwarden_supply_depot", blocks, 12, 10, 6)
 
 
-def generate_remnant_street_straight(seed: int) -> BlockList:
+def generate_radwarden_street_straight(seed: int) -> BlockList:
     """Straight street segment."""
     blocks: BlockList = []
 
@@ -254,10 +254,10 @@ def generate_remnant_street_straight(seed: int) -> BlockList:
     add_block(blocks, 7, 0, 7, "minecraft:cauldron")
     add_block(blocks, 14, 0, 3, "minecraft:barrel")
 
-    return enforce_guardrails("remnant_street_straight", blocks, 16, 16, 4)
+    return enforce_guardrails("radwarden_street_straight", blocks, 16, 16, 4)
 
 
-def generate_remnant_street_corner(seed: int) -> BlockList:
+def generate_radwarden_street_corner(seed: int) -> BlockList:
     """Corner street segment."""
     blocks: BlockList = []
 
@@ -287,11 +287,11 @@ def generate_remnant_street_corner(seed: int) -> BlockList:
     add_block(blocks, 7, 0, 7, "minecraft:cauldron")
     add_block(blocks, 2, 0, 14, "minecraft:chest")
 
-    return enforce_guardrails("remnant_street_corner", blocks, 16, 16, 4)
+    return enforce_guardrails("radwarden_street_corner", blocks, 16, 16, 4)
 
 
-def generate_remnant_street_cross(seed: int) -> BlockList:
-    """Four-way Remnant street junction."""
+def generate_radwarden_street_cross(seed: int) -> BlockList:
+    """Four-way Radwarden street junction."""
     blocks: BlockList = []
 
     fill(blocks, 0, -1, 0, 15, -1, 15, "minecraft:coarse_dirt")
@@ -313,10 +313,10 @@ def generate_remnant_street_cross(seed: int) -> BlockList:
     add_block(blocks, 0, 0, 0, "minecraft:campfire")
     add_block(blocks, 15, 0, 15, "minecraft:campfire")
 
-    return enforce_guardrails("remnant_street_cross", blocks, 16, 16, 4)
+    return enforce_guardrails("radwarden_street_cross", blocks, 16, 16, 4)
 
 
-def generate_remnant_wall_section(seed: int) -> BlockList:
+def generate_radwarden_wall_section(seed: int) -> BlockList:
     """Village perimeter wall section."""
     blocks: BlockList = []
 
@@ -339,11 +339,11 @@ def generate_remnant_wall_section(seed: int) -> BlockList:
     add_block(blocks, 15, 0, 0, "minecraft:campfire")
     add_block(blocks, 7, 0, 7, "minecraft:barrel")
 
-    return enforce_guardrails("remnant_wall_section", blocks, 16, 16, 5)
+    return enforce_guardrails("radwarden_wall_section", blocks, 16, 16, 5)
 
 
-def generate_remnant_wall_corner(seed: int) -> BlockList:
-    """L-shaped perimeter wall terminator/corner for Remnant villages."""
+def generate_radwarden_wall_corner(seed: int) -> BlockList:
+    """L-shaped perimeter wall terminator/corner for Radwarden villages."""
     blocks: BlockList = []
 
     fill(blocks, 0, -1, 0, 15, -1, 15, "minecraft:coarse_dirt")
@@ -366,13 +366,13 @@ def generate_remnant_wall_corner(seed: int) -> BlockList:
     add_block(blocks, 0, 0, 15, "minecraft:campfire")
     add_block(blocks, 4, 0, 4, "minecraft:chest")
 
-    return enforce_guardrails("remnant_wall_corner", blocks, 16, 16, 6)
+    return enforce_guardrails("radwarden_wall_corner", blocks, 16, 16, 6)
 
 
-# === SALVAGER VILLAGE STRUCTURES ===
+# === CRASHBREAK VILLAGE STRUCTURES ===
 
-def generate_salvager_market_plaza(seed: int) -> BlockList:
-    """Central marketplace for Salvager villages."""
+def generate_crashbreak_market_plaza(seed: int) -> BlockList:
+    """Central marketplace for Crashbreak villages."""
     rng = _r(seed)
     blocks: BlockList = []
 
@@ -401,10 +401,10 @@ def generate_salvager_market_plaza(seed: int) -> BlockList:
     add_block(blocks, 5, 1, 8, "minecraft:flower_pot")
     add_block(blocks, 11, 1, 8, "minecraft:flower_pot")
 
-    return enforce_guardrails("salvager_market_plaza", blocks, 16, 16, 4)
+    return enforce_guardrails("crashbreak_market_plaza", blocks, 16, 16, 4)
 
 
-def generate_salvager_warehouse(seed: int) -> BlockList:
+def generate_crashbreak_warehouse(seed: int) -> BlockList:
     """Storage building with trade counter."""
     rng = _r(seed)
     blocks: BlockList = []
@@ -437,13 +437,13 @@ def generate_salvager_warehouse(seed: int) -> BlockList:
     # Entrance
     fill(blocks, 6, 1, 13, 7, 3, 13, "minecraft:air")
 
-    return enforce_guardrails("salvager_warehouse", blocks, 14, 14, 6)
+    return enforce_guardrails("crashbreak_warehouse", blocks, 14, 14, 6)
 
 
-# === MUTANT VILLAGE STRUCTURES ===
+# === SPOREBOUND VILLAGE STRUCTURES ===
 
-def generate_mutant_biodome_hub(seed: int) -> BlockList:
-    """Central biodome for Mutant villages."""
+def generate_sporebound_biodome_hub(seed: int) -> BlockList:
+    """Central biodome for Sporebound villages."""
     rng = _r(seed)
     blocks: BlockList = []
 
@@ -470,10 +470,10 @@ def generate_mutant_biodome_hub(seed: int) -> BlockList:
     # Water feature
     fill(blocks, 6, 0, 10, 10, 0, 14, "minecraft:water")
 
-    return enforce_guardrails("mutant_biodome_hub", blocks, 16, 16, 6)
+    return enforce_guardrails("sporebound_biodome_hub", blocks, 16, 16, 6)
 
 
-def generate_mutant_processing_hut(seed: int) -> BlockList:
+def generate_sporebound_processing_hut(seed: int) -> BlockList:
     """Small bio-processing workshop."""
     rng = _r(seed)
     blocks: BlockList = []
@@ -506,26 +506,26 @@ def generate_mutant_processing_hut(seed: int) -> BlockList:
     add_block(blocks, 2, 3, 2, "minecraft:glow_lichen")
     add_block(blocks, 7, 3, 7, "minecraft:glow_lichen")
 
-    return enforce_guardrails("mutant_processing_hut", blocks, 10, 10, 4)
+    return enforce_guardrails("sporebound_processing_hut", blocks, 10, 10, 4)
 
 
 # Export all generators
 FACTION_GENERATORS = {
-    # Remnant structures
-    "remnant_outpost/command_bunker": generate_remnant_command_bunker,
-    "remnant_outpost/barracks": generate_remnant_barracks,
-    "remnant_outpost/armory": generate_remnant_armory,
-    "remnant_outpost/guard_post": generate_remnant_guard_post,
-    "remnant_outpost/supply_depot": generate_remnant_supply_depot,
-    "remnant_outpost/street_straight": generate_remnant_street_straight,
-    "remnant_outpost/street_corner": generate_remnant_street_corner,
-    "remnant_outpost/street_cross": generate_remnant_street_cross,
-    "remnant_outpost/wall_section": generate_remnant_wall_section,
-    "remnant_outpost/wall_corner": generate_remnant_wall_corner,
-    # Salvager structures
-    "salvager_post/market_plaza": generate_salvager_market_plaza,
-    "salvager_post/warehouse": generate_salvager_warehouse,
-    # Mutant structures
-    "mutant_sanctuary/biodome_hub": generate_mutant_biodome_hub,
-    "mutant_sanctuary/processing_hut": generate_mutant_processing_hut,
+    # Radwarden structures
+    "radwarden_outpost/command_bunker": generate_radwarden_command_bunker,
+    "radwarden_outpost/barracks": generate_radwarden_barracks,
+    "radwarden_outpost/armory": generate_radwarden_armory,
+    "radwarden_outpost/guard_post": generate_radwarden_guard_post,
+    "radwarden_outpost/supply_depot": generate_radwarden_supply_depot,
+    "radwarden_outpost/street_straight": generate_radwarden_street_straight,
+    "radwarden_outpost/street_corner": generate_radwarden_street_corner,
+    "radwarden_outpost/street_cross": generate_radwarden_street_cross,
+    "radwarden_outpost/wall_section": generate_radwarden_wall_section,
+    "radwarden_outpost/wall_corner": generate_radwarden_wall_corner,
+    # Crashbreak structures
+    "crashbreak_salvage/market_plaza": generate_crashbreak_market_plaza,
+    "crashbreak_salvage/warehouse": generate_crashbreak_warehouse,
+    # Sporebound structures
+    "sporebound_sanctum/biodome_hub": generate_sporebound_biodome_hub,
+    "sporebound_sanctum/processing_hut": generate_sporebound_processing_hut,
 }

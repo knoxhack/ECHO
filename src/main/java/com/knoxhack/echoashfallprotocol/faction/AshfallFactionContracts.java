@@ -45,7 +45,7 @@ public final class AshfallFactionContracts {
                 objective(ObjectiveType.REPAIR, List.of("relay", "factory", "power_node"), 2, "Repair two industrial route systems"),
                 List.of("echoashfallprotocol:machine_casing", "echoashfallprotocol:energy_cell"));
         loadout("sporebound_sanctum", "Sporebound Sanctum", "Sample", ServiceKind.MEDICAL,
-                List.of("toxic_swamp", "bio_lab", "mutant_sanctuary"),
+                List.of("toxic_swamp", "bio_lab", "sporebound_sanctum"),
                 item("echoashfallprotocol:mutated_tissue", 2, "Deliver controlled biological samples"),
                 objective(ObjectiveType.KILL, List.of("toxic_slime", "mutated_crawler", "mutant", "zombie"), 4,
                         "Cull unstable bioforms near a route"),

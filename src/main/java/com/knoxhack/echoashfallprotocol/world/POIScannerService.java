@@ -191,7 +191,7 @@ public final class POIScannerService {
 
         if (!alreadyDiscovered && profile.faction() != null) {
             var territory = player.getData(ModAttachments.FACTION_TERRITORY.get());
-            territory.registerVillage(hit.position(), profile.faction(), profile.displayName());
+            territory.addVillage(hit.position(), profile.faction(), profile.displayName());
             territory.modifyBiomeInfluence(profile.faction(), player.level().getBiome(hit.position()).toString(), 20);
             com.knoxhack.echoashfallprotocol.faction.FactionTerritory.saveAndSync(player, territory);
         }

@@ -225,22 +225,22 @@
       "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/first_faction_contact.png"
     },
     {
-      "mission": "echoashfallprotocol:contact_remnants",
-      "title": "Contact Remnants",
+      "mission": "echoashfallprotocol:contact_radwarden_compact",
+      "title": "Contact Radwarden Compact",
       "category": "exploration",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_remnants.png"
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_radwarden_compact.png"
     },
     {
-      "mission": "echoashfallprotocol:contact_salvagers",
-      "title": "Contact Salvagers",
+      "mission": "echoashfallprotocol:contact_crashbreak_salvage",
+      "title": "Contact Crashbreak Salvage",
       "category": "exploration",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_salvagers.png"
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_crashbreak_salvage.png"
     },
     {
-      "mission": "echoashfallprotocol:contact_mutants",
-      "title": "Contact Mutants",
+      "mission": "echoashfallprotocol:contact_sporebound_sanctum",
+      "title": "Contact Sporebound Sanctum",
       "category": "exploration",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_mutants.png"
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/contact_sporebound_sanctum.png"
     },
     {
       "mission": "echoashfallprotocol:complete_first_faction_task",
@@ -249,22 +249,22 @@
       "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/complete_first_faction_task.png"
     },
     {
-      "mission": "echoashfallprotocol:earn_remnant_trust",
-      "title": "Complete Remnant Task",
+      "mission": "echoashfallprotocol:complete_radwarden_contract",
+      "title": "Complete Radwarden Contract",
       "category": "exploration",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/earn_remnant_trust.png"
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/complete_radwarden_contract.png"
     },
     {
-      "mission": "echoashfallprotocol:make_salvager_trade",
-      "title": "Complete Salvager Task",
+      "mission": "echoashfallprotocol:complete_crashbreak_contract",
+      "title": "Complete Crashbreak Contract",
       "category": "exploration",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/make_salvager_trade.png"
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/complete_crashbreak_contract.png"
     },
     {
-      "mission": "echoashfallprotocol:recover_mutant_sample",
-      "title": "Complete Mutant Task",
+      "mission": "echoashfallprotocol:complete_sporebound_contract",
+      "title": "Complete Sporebound Contract",
       "category": "exploration",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/recover_mutant_sample.png"
+      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/complete_sporebound_contract.png"
     },
     {
       "mission": "echoashfallprotocol:build_research_lab",

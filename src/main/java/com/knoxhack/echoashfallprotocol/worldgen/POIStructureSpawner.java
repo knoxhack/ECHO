@@ -89,7 +89,7 @@ public class POIStructureSpawner {
         LOOT_TABLES.put("cryogenic_ruins", ResourceKey.create(Registries.LOOT_TABLE,
             Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "chests/cryogenic_ruins_cache")));
         LOOT_TABLES.put("ruined_plains", ResourceKey.create(Registries.LOOT_TABLE,
-            Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "chests/salvager_trading_post_cache")));
+            Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "chests/crashbreak_salvage_yard_cache")));
         LOOT_TABLES.put("global", ResourceKey.create(Registries.LOOT_TABLE,
             Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "chests/survivor_cache")));
     }
@@ -345,7 +345,7 @@ public class POIStructureSpawner {
                 templates.add(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "biomes/crash_zone_wasteland/wreckage_cluster"));
                 templates.add(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "biomes/crash_zone_wasteland/ash_covered_ruin"));
                 templates.add(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "biomes/crash_zone_wasteland/wreckage_command_post"));
-                templates.add(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "biomes/crash_zone_wasteland/salvager_hut"));
+                templates.add(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "biomes/crash_zone_wasteland/crashbreak_hut"));
                 break;
             case "ruined_cityscape":
                 templates.add(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "biomes/ruined_cityscape/collapsed_building_small"));

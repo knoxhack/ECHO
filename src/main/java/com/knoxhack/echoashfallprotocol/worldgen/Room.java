@@ -124,10 +124,10 @@ public class Room {
         STAIRCASE,
         HIDDEN_ROOM,
         // === EXPLORATION 1.1 ROOM TYPES ===
-        MARKET,       // Salvager Trading Post
+        MARKET,       // Crashbreak Salvage Yard
         OFFICE,       // Administrative spaces
         RECEPTION,    // Entry/greeting areas
-        GREENHOUSE,   // Mutant Sanctuary
+        GREENHOUSE,   // Sporebound Sanctum
         WORKSHOP,     // Derelict Workshop
         SHAFT,        // Abandoned Mine
         ORE_VEIN,     // Abandoned Mine rich areas

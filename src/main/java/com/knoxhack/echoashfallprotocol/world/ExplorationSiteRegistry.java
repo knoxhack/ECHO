@@ -1,6 +1,6 @@
 package com.knoxhack.echoashfallprotocol.world;
 
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,7 +51,7 @@ public final class ExplorationSiteRegistry {
                 "Search the wreckage, recover any route notes, then return before night.",
                 "crash_zone_wasteland_cache", null, 10, false,
                 List.of("crash_zone_wasteland", "crash_zone_landmarks"),
-                List.of("crash_zone", "wreckage_command_post", "salvager_hut")));
+                List.of("crash_zone", "wreckage_command_post", "crashbreak_hut")));
 
         register(site(
                 "survivor_cache", "Survivor Cache Signal", "Global Recovery Route",
@@ -71,7 +71,7 @@ public final class ExplorationSiteRegistry {
                 "pack water, food, medicine, and scanner charge; open ground burns time",
                 "Exploration", "maps, light salvage, trade goods, survivor supplies",
                 "Scan the camp or relay, then mark the route for later faction work.",
-                "salvager_trading_post_cache", null, 12, false,
+                "crashbreak_salvage_yard_cache", null, 12, false,
                 List.of("ruined_plains", "wasteland_landmarks"),
                 List.of("relay_tower", "trader_post", "nomad_camp", "supply_drop")));
 
@@ -81,43 +81,43 @@ public final class ExplorationSiteRegistry {
                 SiteKind.LANDMARK, POIData.DangerLevel.MEDIUM, HazardProfile.COMBAT,
                 "bring a weapon, bandages, water, and empty trade space",
                 "Utility", "scavenger cache, route maps, scrap, filters, rumor value",
-                "Secure the cache and decide whether the local Salvagers are worth owing.",
-                "scavenger_camp_cache", ReputationData.Faction.SALVAGERS, 12, false,
+                "Secure the cache and decide whether the local Crashbreak crew is worth owing.",
+                "scavenger_camp_cache", AshfallBiomeFactions.CRASHBREAK_SALVAGE, 12, false,
                 List.of("scavenger_camp"),
                 List.of("salvage_camp")));
 
         register(site(
-                "salvager_trading_post", "Salvager Trading Post", "Salvager Trade Route",
-                "A neutral trade post where the Salvagers turn ruin logistics, rumor, and debt into survival.",
+                "crashbreak_salvage_yard", "Crashbreak Salvage Yard", "Crashbreak Salvage Route",
+                "A neutral trade post where Crashbreak turns ruin logistics, rumor, and debt into survival.",
                 SiteKind.FACTION_HUB, POIData.DangerLevel.SAFE, HazardProfile.SAFE,
                 "safe zone; bring trade goods, maps, and empty inventory space",
                 "Utility", "trades, maps, imported goods, rare salvage, contract leads",
                 "Contact the trader and archive the route board before prices change.",
-                "salvager_trading_post_cache", ReputationData.Faction.SALVAGERS, 15, true,
-                List.of("salvager_village"),
-                List.of("salvager_post", "salvager_village")));
+                "crashbreak_salvage_yard_cache", AshfallBiomeFactions.CRASHBREAK_SALVAGE, 15, true,
+                List.of("crashbreak_salvage_yard"),
+                List.of("crashbreak_salvage", "crashbreak_salvage_yard")));
 
         register(site(
-                "remnant_outpost", "Remnant Outpost", "Remnant Military Route",
-                "A disciplined Remnant field base built around old security doctrine and new fear.",
+                "radwarden_outpost", "Radwarden Outpost", "Radwarden Containment Route",
+                "A disciplined Radwarden field base built around old security doctrine and new fear.",
                 SiteKind.FACTION_HUB, POIData.DangerLevel.HIGH, HazardProfile.COMBAT,
                 "bring armor, medicine, clean water, and visible respect for the perimeter",
                 "Combat", "armor parts, ammunition stock, dense salvage, faction work",
                 "Make contact or survey the perimeter without making their patrol write your ending.",
-                "remnant_outpost_cache", ReputationData.Faction.REMNANTS, 18, false,
-                List.of("remnant_village"),
-                List.of("remnant_village", "military_outpost")));
+                "radwarden_outpost_cache", AshfallBiomeFactions.RADWARDEN_COMPACT, 18, false,
+                List.of("radwarden_outpost"),
+                List.of("radwarden_outpost", "military_outpost")));
 
         register(site(
-                "mutant_sanctuary", "Mutant Sanctuary", "Mutant Bio Route",
+                "sporebound_sanctum", "Sporebound Sanctum", "Sporebound Bio Route",
                 "A living enclave where adapted survivors study spores, medicine, mutation pressure, and the price of staying human enough.",
                 SiteKind.FACTION_HUB, POIData.DangerLevel.HIGH, HazardProfile.TOXIC_AIR,
                 "bring a gas mask with filter, clean water, RadAway, and patience",
                 "Bio", "medicine, tissue, mutagen, filters, bio schematics, adaptation notes",
                 "Enter carefully, contact the elder, and log the bio-processing route.",
-                "mutant_sanctuary_cache", ReputationData.Faction.MUTANTS, 18, false,
-                List.of("mutant_village"),
-                List.of("mutant_village", "bio_dome", "mutant_biodome")));
+                "sporebound_sanctum_cache", AshfallBiomeFactions.SPOREBOUND_SANCTUM, 18, false,
+                List.of("sporebound_sanctum"),
+                List.of("sporebound_sanctum", "bio_dome", "sporebound_biodome")));
 
         register(site(
                 "toxic_swamp", "Toxic Swamp Field Site", "Toxic Swamp Route",
@@ -126,7 +126,7 @@ public final class ExplorationSiteRegistry {
                 "equip gas mask and filter; carry clean water, medicine, and a spare exit",
                 "Bio", "filters, medicine, tissue samples, chemical salvage, spore readings",
                 "Scan the toxic source, recover samples, and leave before the filter becomes a memory.",
-                "bio_lab_cache", ReputationData.Faction.MUTANTS, 16, false,
+                "bio_lab_cache", AshfallBiomeFactions.SPOREBOUND_SANCTUM, 16, false,
                 List.of("toxic_swamp", "toxic_swamp_landmarks"),
                 List.of("spore_research_hut", "stilted_outpost", "chemical_spill", "broken_pipeline")));
 
@@ -137,7 +137,7 @@ public final class ExplorationSiteRegistry {
                 "bring gas mask and filter, bandages, clean water, RadAway, and room for samples",
                 "Bio", "medicine, tissue, filters, restoration samples, schematics, failed cures",
                 "Recover a data log or biological sample from the lab core without joining the experiment.",
-                "bio_lab_cache", ReputationData.Faction.MUTANTS, 20, false,
+                "bio_lab_cache", AshfallBiomeFactions.SPOREBOUND_SANCTUM, 20, false,
                 List.of("bio_lab"),
                 List.of("bio_facility", "bio_archive")));
 
@@ -148,7 +148,7 @@ public final class ExplorationSiteRegistry {
                 "bring gas mask and filter, repair supplies, water, bandages, and patience for dead machines",
                 "Utility", "machine parts, circuits, filters, industrial scrap, repair leads",
                 "Repair or scan the worksite marker, then recover the main cache.",
-                "industrial_factory_cache", ReputationData.Faction.SALVAGERS, 18, false,
+                "industrial_factory_cache", AshfallBiomeFactions.RUSTWORKS_UNION, 18, false,
                 List.of("industrial_ruins", "industrial_ruins_landmarks"),
                 List.of("conveyor_ruin", "storage_yard", "pipe_cluster")));
 
@@ -159,7 +159,7 @@ public final class ExplorationSiteRegistry {
                 "bring filters, repair tools, medicine, and an exit route that does not rely on luck",
                 "Utility", "machine parts, factory components, circuits, schematics, controller residue",
                 "Scan the factory controller remains and recover the cache.",
-                "industrial_factory_cache", ReputationData.Faction.SALVAGERS, 20, false,
+                "industrial_factory_cache", AshfallBiomeFactions.RUSTWORKS_UNION, 20, false,
                 List.of("industrial_factory"),
                 List.of("derelict_workshop", "factory_ruin")));
 
@@ -181,7 +181,7 @@ public final class ExplorationSiteRegistry {
                 "bring water, medicine, scanner charge, light, and something for close corridors",
                 "Utility", "data logs, circuits, scanner parts, schematics, corrupted keys",
                 "Recover a data log from the server core before the building remembers alarms.",
-                "data_center_cache", ReputationData.Faction.SALVAGERS, 20, false,
+                "data_center_cache", AshfallBiomeFactions.METRO_ARCHIVISTS, 20, false,
                 List.of("data_center_ruin"),
                 List.of("data_center", "server_farm")));
 
@@ -192,7 +192,7 @@ public final class ExplorationSiteRegistry {
                 "bring torches, food, water, bandages, and a clean way back up",
                 "Survival", "emergency caches, shelter supplies, route maps, tunnel notes",
                 "Survey the platform and recover the emergency cache.",
-                "subway_station_cache", ReputationData.Faction.MUTANTS, 16, false,
+                "subway_station_cache", AshfallBiomeFactions.METRO_ARCHIVISTS, 16, false,
                 List.of("subway_station"),
                 List.of("subway", "transit_tunnel")));
 
@@ -203,7 +203,7 @@ public final class ExplorationSiteRegistry {
                 "bring armor, medicine, clean water, and route-specific hazard gear",
                 "Combat", "dense alloy, weapons, armor, power cells, sealed orders",
                 "Secure the vault cache or defeat the local guardian.",
-                "military_vault_cache", ReputationData.Faction.REMNANTS, 25, false,
+                "military_vault_cache", AshfallBiomeFactions.RADWARDEN_COMPACT, 25, false,
                 List.of("military_vault"),
                 List.of("vault", "bunker_complex")));
 
@@ -214,7 +214,7 @@ public final class ExplorationSiteRegistry {
                 "bring RadAway, clean water, hazmat if available, and a short route plan",
                 "Recovery", "RadAway, isotopes, reactor salvage, sealed supplies, exposure readings",
                 "Measure the hot zone, recover shelter supplies, then retreat and treat exposure.",
-                "reactor_ruin_cache", ReputationData.Faction.REMNANTS, 20, false,
+                "reactor_ruin_cache", AshfallBiomeFactions.RADWARDEN_COMPACT, 20, false,
                 List.of("radiation_zone", "radiation_zone_landmarks"),
                 List.of("contaminated_lab", "fallout_shelter", "radiation_crater")));
 
@@ -225,7 +225,7 @@ public final class ExplorationSiteRegistry {
                 "bring RadAway, hazmat or armor, clean water, and scrubber support",
                 "Combat", "isotopes, Nexus crystals, power-node leads, dense components, hot-zone logs",
                 "Scan the reactor core and recover the power-node lead before exposure writes the report.",
-                "reactor_ruin_cache", ReputationData.Faction.REMNANTS, 28, false,
+                "reactor_ruin_cache", AshfallBiomeFactions.RADWARDEN_COMPACT, 28, false,
                 List.of("reactor_ruin"),
                 List.of("relay_station_east", "power_plant_ruin", "reactor")));
 
@@ -236,7 +236,7 @@ public final class ExplorationSiteRegistry {
                 "bring hand warmers, food, thermal liner, clean water, and a warm exit",
                 "Cryo", "cold gear, preserved schematics, ice salvage, data drives, thaw notes",
                 "Recover a cryogenic sample and warm up before deeper entry.",
-                "cryogenic_ruins_cache", ReputationData.Faction.MUTANTS, 24, false,
+                "cryogenic_ruins_cache", AshfallBiomeFactions.THAWBOUND_COLLECTIVE, 24, false,
                 List.of("cryogenic_ruins", "cryogenic_ruins_landmarks"),
                 List.of("frozen_cache", "ice_covered_ruin", "cryo_ruins")));
 
@@ -280,7 +280,7 @@ public final class ExplorationSiteRegistry {
                 "bring mask/filter, torches, clean water, bandages, and spare patience",
                 "Survival", "sewer salvage, clay route items, medicine, filters, maintenance tags",
                 "Mark the junction and recover the maintenance cache.",
-                "sewer_cache", ReputationData.Faction.MUTANTS, 16, false,
+                "sewer_cache", AshfallBiomeFactions.SPOREBOUND_SANCTUM, 16, false,
                 List.of("sewer_junction"),
                 List.of("sewer")));
 
@@ -291,7 +291,7 @@ public final class ExplorationSiteRegistry {
                 "bring armor, water, medicine, and a spare weapon",
                 "Utility", "freight salvage, rails, circuits, machine parts, cargo manifests",
                 "Secure the freight cache and archive the yard route.",
-                "train_yard_cache", ReputationData.Faction.SALVAGERS, 16, false,
+                "train_yard_cache", AshfallBiomeFactions.RUSTWORKS_UNION, 16, false,
                 List.of("train_yard"),
                 List.of("rail_yard")));
 
@@ -426,7 +426,7 @@ public final class ExplorationSiteRegistry {
             String resourceProfile,
             String objective,
             String lootTable,
-            @Nullable ReputationData.Faction faction,
+            @Nullable Identifier faction,
             int researchPoints,
             boolean fastTravel,
             List<String> structureIds,
@@ -559,7 +559,7 @@ public final class ExplorationSiteRegistry {
             String resourceProfile,
             String objective,
             String lootTable,
-            @Nullable ReputationData.Faction faction,
+            @Nullable Identifier faction,
             int researchPoints,
             boolean fastTravel,
             Set<String> structureIds,

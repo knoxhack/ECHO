@@ -39,11 +39,11 @@ public class PerkEffectHandler {
         float damageMultiplier = 1.0f;
 
         // Check for weapon damage perks (stacking)
-        if (hasPerk(researchData, "remnant.weapon_damage.3")) {
+        if (hasPerk(researchData, "radwarden.weapon_damage.3")) {
             damageMultiplier = 1.30f; // +30%
-        } else if (hasPerk(researchData, "remnant.weapon_damage.2")) {
+        } else if (hasPerk(researchData, "radwarden.weapon_damage.2")) {
             damageMultiplier = 1.20f; // +20%
-        } else if (hasPerk(researchData, "remnant.weapon_damage.1")) {
+        } else if (hasPerk(researchData, "radwarden.weapon_damage.1")) {
             damageMultiplier = 1.10f; // +10%
         }
 
@@ -68,9 +68,9 @@ public class PerkEffectHandler {
         float durabilityMultiplier = 1.0f;
 
         // Check for armor durability perks
-        if (hasPerk(researchData, "remnant.armor_durability.2")) {
+        if (hasPerk(researchData, "radwarden.armor_durability.2")) {
             durabilityMultiplier = 0.70f; // 30% reduction
-        } else if (hasPerk(researchData, "remnant.armor_durability.1")) {
+        } else if (hasPerk(researchData, "radwarden.armor_durability.1")) {
             durabilityMultiplier = 0.85f; // 15% reduction
         }
 
@@ -114,14 +114,14 @@ public class PerkEffectHandler {
         boolean inCombat = (currentTime - lastCombat) < COMBAT_COOLDOWN_TICKS;
 
         // HEALTH REGEN PERKS
-        if (hasPerk(researchData, "mutant.regen.2")) {
+        if (hasPerk(researchData, "sporebound.regen.2")) {
             // Tier 2: Faster regen out of combat, reduced in combat
             if (!inCombat && player.getHealth() < player.getMaxHealth()) {
                 player.heal(0.5f); // 0.5 HP per second out of combat
             } else if (inCombat && player.getHealth() < player.getMaxHealth()) {
                 player.heal(0.2f); // 0.2 HP per second in combat
             }
-        } else if (hasPerk(researchData, "mutant.regen.1")) {
+        } else if (hasPerk(researchData, "sporebound.regen.1")) {
             // Tier 1: Slow regen only out of combat
             if (!inCombat && player.getHealth() < player.getMaxHealth()) {
                 player.heal(0.3f); // 0.3 HP per second out of combat
@@ -153,9 +153,9 @@ public class PerkEffectHandler {
     public static float getLootBonusChance(ServerPlayer player) {
         ResearchData researchData = ResearchData.get(player);
 
-        if (hasPerk(researchData, "salvager.loot.2")) {
+        if (hasPerk(researchData, "crashbreak.loot.2")) {
             return 0.30f;
-        } else if (hasPerk(researchData, "salvager.loot.1")) {
+        } else if (hasPerk(researchData, "crashbreak.loot.1")) {
             return 0.15f;
         }
         return 0.0f;
@@ -163,7 +163,7 @@ public class PerkEffectHandler {
 
     public static int getLootBonusRolls(ServerPlayer player) {
         ResearchData researchData = ResearchData.get(player);
-        return hasPerk(researchData, "salvager.loot.2") ? 2 : hasPerk(researchData, "salvager.loot.1") ? 1 : 0;
+        return hasPerk(researchData, "crashbreak.loot.2") ? 2 : hasPerk(researchData, "crashbreak.loot.1") ? 1 : 0;
     }
 
     /**
@@ -178,9 +178,9 @@ public class PerkEffectHandler {
     public static float getMachineSpeedMultiplier(Player player) {
         ResearchData researchData = ResearchData.get(player);
         
-        if (hasPerk(researchData, "remnant.machine_eff.2")) {
+        if (hasPerk(researchData, "radwarden.machine_eff.2")) {
             return 1.20f; // 20% faster
-        } else if (hasPerk(researchData, "remnant.machine_eff.1")) {
+        } else if (hasPerk(researchData, "radwarden.machine_eff.1")) {
             return 1.10f; // 10% faster
         }
         return 1.0f; // No bonus
@@ -193,11 +193,11 @@ public class PerkEffectHandler {
     public static float getRadiationResistanceMultiplier(ServerPlayer player) {
         ResearchData researchData = ResearchData.get(player);
         
-        if (hasPerk(researchData, "mutant.rad_resist.3")) {
+        if (hasPerk(researchData, "sporebound.rad_resist.3")) {
             return 0.40f; // 60% resistance = 40% damage taken
-        } else if (hasPerk(researchData, "mutant.rad_resist.2")) {
+        } else if (hasPerk(researchData, "sporebound.rad_resist.2")) {
             return 0.60f; // 40% resistance = 60% damage taken
-        } else if (hasPerk(researchData, "mutant.rad_resist.1")) {
+        } else if (hasPerk(researchData, "sporebound.rad_resist.1")) {
             return 0.80f; // 20% resistance = 80% damage taken
         }
         return 1.0f; // No resistance
@@ -210,9 +210,9 @@ public class PerkEffectHandler {
     public static float getTradePriceMultiplier(ServerPlayer player) {
         ResearchData researchData = ResearchData.get(player);
         
-        if (hasPerk(researchData, "salvager.trade.2")) {
+        if (hasPerk(researchData, "crashbreak.trade.2")) {
             return 0.80f; // 20% cheaper
-        } else if (hasPerk(researchData, "salvager.trade.1")) {
+        } else if (hasPerk(researchData, "crashbreak.trade.1")) {
             return 0.90f; // 10% cheaper
         }
         return 1.0f; // Normal price
@@ -229,9 +229,9 @@ public class PerkEffectHandler {
     public static float getLootingSpeedMultiplier(Player player) {
         ResearchData researchData = ResearchData.get(player);
         
-        if (hasPerk(researchData, "salvager.speed.2")) {
+        if (hasPerk(researchData, "crashbreak.speed.2")) {
             return 1.40f; // 40% faster
-        } else if (hasPerk(researchData, "salvager.speed.1")) {
+        } else if (hasPerk(researchData, "crashbreak.speed.1")) {
             return 1.20f; // 20% faster
         }
         return 1.0f; // Normal speed
@@ -254,10 +254,10 @@ public class PerkEffectHandler {
 
     public static float getMutationSideEffectMultiplier(ServerPlayer player) {
         ResearchData researchData = ResearchData.get(player);
-        if (hasPerk(researchData, "mutant.synergy.2")) {
+        if (hasPerk(researchData, "sporebound.synergy.2")) {
             return 0.0F;
         }
-        if (hasPerk(researchData, "mutant.synergy.1")) {
+        if (hasPerk(researchData, "sporebound.synergy.1")) {
             return 0.45F;
         }
         return 1.0F;

@@ -30,7 +30,7 @@ def _r(seed: int) -> random.Random:
     return random.Random(seed)
 
 
-def generate_salvager_worksite(seed: int) -> BlockList:
+def generate_crashbreak_worksite(seed: int) -> BlockList:
     """Medium: 26x24 crane structure, scrap piles, work benches, tool shed."""
     rng = _r(seed)
     blocks: BlockList = []
@@ -104,7 +104,7 @@ def generate_salvager_worksite(seed: int) -> BlockList:
 
     add_signal_marker(blocks, 22, 4, 4)
 
-    return enforce_guardrails("salvager_worksite", blocks, 22, 20, 10, min_story_nodes=5, min_reward_nodes=3)
+    return enforce_guardrails("crashbreak_worksite", blocks, 22, 20, 10, min_story_nodes=5, min_reward_nodes=3)
 
 
 def generate_crash_site_large(seed: int) -> BlockList:

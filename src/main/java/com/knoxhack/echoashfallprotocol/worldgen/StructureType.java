@@ -52,15 +52,15 @@ public enum StructureType {
                     Blocks.OAK_PLANKS, Blocks.CHEST)),
     
     // === EXPLORATION 1.1: FACTION HUBS ===
-    REMNANT_OUTPOST("remnant_outpost", 4, 8, 20, 36,
+    RADWARDEN_OUTPOST("radwarden_outpost", 4, 8, 20, 36,
             new BlockPalette(Blocks.STONE_BRICKS, Blocks.IRON_BLOCK, Blocks.REDSTONE_BLOCK,
                     Blocks.CRACKED_STONE_BRICKS, Blocks.DISPENSER)),
     
-    SALVAGER_TRADING_POST("salvager_trading_post", 3, 6, 15, 28,
+    CRASHBREAK_SALVAGE_YARD("crashbreak_salvage_yard", 3, 6, 15, 28,
             new BlockPalette(Blocks.OAK_PLANKS, Blocks.COBBLESTONE, Blocks.CHEST,
                     Blocks.MOSSY_COBBLESTONE, Blocks.EMERALD_BLOCK)),
     
-    MUTANT_SANCTUARY("mutant_sanctuary", 4, 10, 18, 32,
+    SPOREBOUND_SANCTUM("sporebound_sanctum", 4, 10, 18, 32,
             new BlockPalette(Blocks.MOSSY_STONE_BRICKS, Blocks.GLOWSTONE, Blocks.SLIME_BLOCK,
                     Blocks.DIRT, Blocks.BEACON)),
     
@@ -195,9 +195,9 @@ public enum StructureType {
             case RADIO_TOWER -> List.of(ArchStyle.INDUSTRIAL_DECAY);
             case SEWER_JUNCTION -> List.of(ArchStyle.INDUSTRIAL_DECAY);
             case TRAIN_YARD -> List.of(ArchStyle.INDUSTRIAL_DECAY, ArchStyle.RETROFIT_TIMBER);
-            case REMNANT_OUTPOST -> List.of(ArchStyle.BUNKER, ArchStyle.BRUTALIST);
-            case SALVAGER_TRADING_POST -> List.of(ArchStyle.RETROFIT_TIMBER, ArchStyle.INDUSTRIAL_DECAY);
-            case MUTANT_SANCTUARY -> List.of(ArchStyle.RETROFIT_TIMBER, ArchStyle.INDUSTRIAL_DECAY);
+            case RADWARDEN_OUTPOST -> List.of(ArchStyle.BUNKER, ArchStyle.BRUTALIST);
+            case CRASHBREAK_SALVAGE_YARD -> List.of(ArchStyle.RETROFIT_TIMBER, ArchStyle.INDUSTRIAL_DECAY);
+            case SPOREBOUND_SANCTUM -> List.of(ArchStyle.RETROFIT_TIMBER, ArchStyle.INDUSTRIAL_DECAY);
             case CRYOGENIC_RUINS -> List.of(ArchStyle.MODULAR, ArchStyle.BUNKER);
             case DERELICT_WORKSHOP -> List.of(ArchStyle.RETROFIT_TIMBER, ArchStyle.INDUSTRIAL_DECAY);
             case ABANDONED_MINE -> List.of(ArchStyle.RETROFIT_TIMBER, ArchStyle.INDUSTRIAL_DECAY);

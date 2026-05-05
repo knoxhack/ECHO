@@ -22,7 +22,7 @@
             },
             "block_entity_modifier": {
               "type": "minecraft:append_loot",
-              "loot_table": "echoashfallprotocol:chests/salvager_trading_post_cache"
+              "loot_table": "echoashfallprotocol:chests/crashbreak_salvage_yard_cache"
             }
           },
           {
@@ -38,7 +38,7 @@
             },
             "block_entity_modifier": {
               "type": "minecraft:append_loot",
-              "loot_table": "echoashfallprotocol:chests/salvager_trading_post_cache"
+              "loot_table": "echoashfallprotocol:chests/crashbreak_salvage_yard_cache"
             }
           }
         ]

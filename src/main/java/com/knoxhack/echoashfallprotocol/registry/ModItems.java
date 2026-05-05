@@ -139,9 +139,6 @@ public class ModItems {
     public static final DeferredItem<Item> STEAM_WRAITH_SPAWN_EGG = registerSpawnEgg("steam_wraith_spawn_egg", ModEntities.STEAM_WRAITH::get);
     public static final DeferredItem<Item> MUTATED_CRAWLER_SPAWN_EGG = registerSpawnEgg("mutated_crawler_spawn_egg", ModEntities.MUTATED_CRAWLER::get);
     public static final DeferredItem<Item> ECHO_COMPANION_DRONE_SPAWN_EGG = registerSpawnEgg("echo_companion_drone_spawn_egg", ModEntities.ECHO_COMPANION_DRONE::get);
-    public static final DeferredItem<Item> REMNANT_SOLDIER_SPAWN_EGG = registerSpawnEgg("remnant_soldier_spawn_egg", ModEntities.REMNANT_SOLDIER::get);
-    public static final DeferredItem<Item> SALVAGER_TRADER_SPAWN_EGG = registerSpawnEgg("salvager_trader_spawn_egg", ModEntities.SALVAGER_TRADER::get);
-    public static final DeferredItem<Item> MUTANT_CREATURE_SPAWN_EGG = registerSpawnEgg("mutant_creature_spawn_egg", ModEntities.MUTANT_CREATURE::get);
     public static final DeferredItem<Item> GRIDBOUND_HUSK_SPAWN_EGG = registerSpawnEgg("gridbound_husk_spawn_egg", ModEntities.GRIDBOUND_HUSK::get);
     public static final DeferredItem<Item> RELAY_WARDEN_SPAWN_EGG = registerSpawnEgg("relay_warden_spawn_egg", ModEntities.RELAY_WARDEN::get);
     public static final DeferredItem<Item> SIGNAL_LEECH_SPAWN_EGG = registerSpawnEgg("signal_leech_spawn_egg", ModEntities.SIGNAL_LEECH::get);
@@ -365,8 +362,8 @@ public class ModItems {
             props -> new DataLogItem(props, DataLogItem.DataLogType.SURVIVOR_JOURNAL, "Day 47",
                     new String[]{"Found this terminal in an old shelter. If anyone finds this, take the supplies first and feel sad later.",
                             "The air hurts. Everything hurts. I have been walking north since the Gridfall, following old relay towers and ECHO pings that fade when I get close.",
-                            "I saw my first Glowing Ghoul yesterday. Used to be a person. The radiation changes you, they say. Some join the Mutant Front before the sickness finishes choosing for them.",
-                            "The Remnants offered a bunk if I surrendered my map. The Salvagers offered water for the map. I kept walking. Pride is heavy when your lungs are failing.",
+                            "I saw my first Glowing Ghoul yesterday. Used to be a person. The radiation changes you, they say. Some find a Sanctum before the sickness finishes choosing for them.",
+                            "The Radwardens offered a bunk if I surrendered my map. Crashbreak offered water for the map. I kept walking. Pride is heavy when your lungs are failing.",
                             "If you see ECHO-7, tell her I heard the route. I just could not make my body obey it."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
                     AshfallTooltip.of("data_log:survivor_journal"));
 
@@ -380,34 +377,34 @@ public class ModItems {
                             "What we built to reach the stars now teaches the wasteland how to stay frozen."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE),
                     AshfallTooltip.of("data_log:research_data"));
 
-    public static final DeferredItem<Item> DATA_LOG_REMNANT_MANIFESTO = register("data_log_remnant_manifesto",
-            props -> new DataLogItem(props, DataLogItem.DataLogType.PREFALL_HISTORY, "Remnant Collective Charter",
+    public static final DeferredItem<Item> DATA_LOG_RADWARDEN_CHARTER = register("data_log_radwarden_charter",
+            props -> new DataLogItem(props, DataLogItem.DataLogType.PREFALL_HISTORY, "Radwarden Compact Charter",
                     new String[]{"We are what remains of order.",
-                            "The Remnant Collective formed in the first year after Gridfall: soldiers, municipal engineers, shelter wardens, corporate security, anyone who still knew how to count supplies under pressure.",
+                            "The Radwarden Compact formed in the first year after Gridfall: soldiers, municipal engineers, shelter wardens, corporate security, anyone who still knew how to count supplies under pressure.",
                             "Our mission is not nostalgia. Restore the Grid where it can serve people, sever it where it serves the Core, and keep patrol lines tight enough for children to sleep.",
-                            "The Mutant Front calls us oppressors. The Salvagers call us idealists with better guns. Both statements contain useful intelligence.",
+                            "The Sanctum calls us rigid. Crashbreak calls us idealists with better guns. Both statements contain useful intelligence.",
                             "If you read this, you have a choice. Stand a watch. Rebuild a wall. Prove order can protect without becoming the Nexus again."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
                     AshfallTooltip.of("data_log:prefall_history"));
 
-    public static final DeferredItem<Item> DATA_LOG_SALVAGER_CODE = register("data_log_salvager_code",
-            props -> new DataLogItem(props, DataLogItem.DataLogType.PREFALL_HISTORY, "The Salvager's Creed",
+    public static final DeferredItem<Item> DATA_LOG_CRASHBREAK_CODE = register("data_log_crashbreak_code",
+            props -> new DataLogItem(props, DataLogItem.DataLogType.PREFALL_HISTORY, "The Crashbreak Code",
                     new String[]{"Rule 1: Everything has value to someone.",
                             "Rule 2: Information is worth more than bullets.",
                             "Rule 3: Neutral ground is sacred. Bleed outside the trading post.",
                             "Rule 4: Debts are paid. Reputation is currency.",
                             "Rule 5: The past is scrap until somebody needs it alive again.",
-                            "We trade with Remnants, Mutants, and independents alike. Ideology does not purify water, patch a filter, or tell you which bridge still holds.",
+                            "We trade with wardens, sanctums, and independents alike. Ideology does not purify water, patch a filter, or tell you which bridge still holds.",
                             "Maps move before merchandise. A route can feed a settlement longer than a crate can.",
-                            "- Guildmaster Chen, Salvager Trading Post Alpha"}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
+                            "- Guildmaster Chen, Crashbreak Route Yard Alpha"}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
                     AshfallTooltip.of("data_log:prefall_history"));
 
-    public static final DeferredItem<Item> DATA_LOG_MUTANT_TRUTH = register("data_log_mutant_truth",
+    public static final DeferredItem<Item> DATA_LOG_SPOREBOUND_ADAPTATION = register("data_log_sporebound_adaptation",
             props -> new DataLogItem(props, DataLogItem.DataLogType.RESEARCH_DATA, "On Radiation Adaptation",
                     new String[]{"They call us monsters. We call ourselves evolved.",
                             "Radiation does not only poison. It edits. Those who survive the sickness may wake with night sight, stronger lungs, toxin tolerance, or a heartbeat that no pre-Fall chart would accept.",
                             "The cost is not poetic. Some lose memory, speech, restraint, or the shape that let neighbors recognize them. Ghouls are not warnings from outside the Front. They are our dead, still walking.",
                             "Balance is the work. Medicine, samples, scrubbed water, rest, and honesty when the body asks for more than it can pay.",
-                            "Join us in the bio-domes. The Remnants guard the old frame. The Salvagers price the parts. We study what survives after both fail."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
+                            "Join us in the bio-domes. The Radwardens guard the old frame. Crashbreak prices the parts. We study what survives after both fail."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
                     AshfallTooltip.of("data_log:research_data"));
 
     public static final DeferredItem<Item> DATA_LOG_FIRST_LIGHT = register("data_log_first_light",
@@ -423,7 +420,7 @@ public class ModItems {
             props -> new DataLogItem(props, DataLogItem.DataLogType.TECHNICAL_MANUAL, "Research Lab Protocol",
                     new String[]{"Research Lab Operating Note",
                             "Schematic fragments are compressed process memories: recipes, material tolerances, safety limits, and field repairs too complex for a damaged terminal to infer alone.",
-                            "Faction hubs became knowledge markets after the Gridfall. Remnants guarded military designs, Salvagers traded route maps, and Mutant enclaves preserved biological notes nobody else wanted to admit were useful.",
+                            "Faction hubs became knowledge markets after the Gridfall. Radwardens guarded containment designs, Crashbreak crews traded route maps, and Sporebound circles preserved biological notes nobody else wanted to admit were useful.",
                             "Install fragments through a Research Lab. ECHO will translate the recovered pattern into perks and craftable systems.",
                             "Do not treat research as curiosity. In the field, curiosity is what you spend after the water is clean."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON),
                     AshfallTooltip.of("data_log:technical_manual"));
@@ -459,7 +456,7 @@ public class ModItems {
     public static final DeferredItem<Item> DATA_LOG_BIOME_BOSSES = register("data_log_biome_bosses",
             props -> new DataLogItem(props, DataLogItem.DataLogType.NEXUS_ARCHIVES, "Biome Guardian Dossiers",
                     new String[]{"ECHO Threat Index - Regional Guardians",
-                            "Each hostile biome hides a buried Gridfall control node below a visible surface entrance. Some are corrupted security remnants, some are failed containment systems, and some are living command relays shaped by radiation.",
+            "Each hostile biome hides a buried Gridfall control node below a visible surface entrance. Some are corrupted security echoes, some are failed containment systems, and some are living command relays shaped by radiation.",
                             "The Wasteland Sentinel waits below a rescue hatch as if the first emergency protocol never ended. The Plains Warlord and City Stalker turned bunkers and subway vaults into territory law.",
                             "Industrial, cryogenic, toxic, radiation, crash-zone, and Nexus guardians each anchor a different Gridfall failure mode underground. None of them are the Core. All of them teach you how the Core thinks.",
                             "Neutralize them to cut the path to the Nexus into stable, survivable steps.",

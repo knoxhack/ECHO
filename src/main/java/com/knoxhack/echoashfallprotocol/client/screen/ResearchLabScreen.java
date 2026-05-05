@@ -42,9 +42,9 @@ public class ResearchLabScreen extends AbstractContainerScreen<ResearchLabMenu> 
     private static final int COL_LOCK = 0xFF555E6B;
 
     private static final Perk.Branch[] BRANCHES = {
-        Perk.Branch.REMNANT_TECH,
-        Perk.Branch.SALVAGER_TRADE,
-        Perk.Branch.MUTANT_BIO
+        Perk.Branch.RADWARDEN_TECH,
+        Perk.Branch.CRASHBREAK_SALVAGE,
+        Perk.Branch.SPOREBOUND_BIO
     };
 
     private static final int GUI_WIDTH = 600;

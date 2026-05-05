@@ -1,9 +1,10 @@
 package com.knoxhack.echoashfallprotocol.event;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
 import com.knoxhack.echoashfallprotocol.faction.FactionProgressionHelper;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
@@ -48,7 +49,7 @@ public class FieldOpsContractHandler {
         } else {
             data.assign(FieldOpsData.ContractType.CORRUPTED_BOUNTY, "corrupted_bounty", "Corrupted Bounty", 6);
             player.sendSystemMessage(Component.literal(
-                    "[ECHO-7] Combat contract uploaded: eliminate 6 corrupted hostiles for Remnant bounty credit.")
+                    "[ECHO-7] Combat contract uploaded: eliminate 6 corrupted hostiles for Radwarden bounty credit.")
                     .withStyle(ChatFormatting.RED));
         }
 
@@ -134,7 +135,6 @@ public class FieldOpsContractHandler {
 
     private static void completeContract(ServerPlayer player, FieldOpsData data) {
         FieldOpsData.ContractType type = data.getActiveContract();
-        ReputationData reputation = ReputationData.get(player);
         ResearchData research = ResearchData.get(player);
 
         switch (type) {
@@ -142,22 +142,19 @@ public class FieldOpsContractHandler {
                 giveItem(player, new ItemStack(ModItems.EMERGENCY_RATION.get(), 2));
                 giveItem(player, new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get(), 1));
                 giveItem(player, new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1));
-                reputation.addReputation(ReputationData.Faction.MUTANTS, 4);
-                com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(player, ReputationData.Faction.MUTANTS, 4);
+                EchoCoreServices.addFactionReputation(player, AshfallBiomeFactions.SPOREBOUND_SANCTUM, 4);
                 research.addPoints(8);
             }
             case SCANNER_SWEEP -> {
                 giveItem(player, new ItemStack(ModItems.CIRCUIT_BOARD.get(), 1));
                 giveItem(player, new ItemStack(ModItems.ENERGY_CELL.get(), 1));
-                reputation.addReputation(ReputationData.Faction.SALVAGERS, 4);
-                com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(player, ReputationData.Faction.SALVAGERS, 4);
+                EchoCoreServices.addFactionReputation(player, AshfallBiomeFactions.CRASHBREAK_SALVAGE, 4);
                 research.addPoints(12);
             }
             case CORRUPTED_BOUNTY -> {
                 giveItem(player, new ItemStack(ModItems.POWER_CELL.get(), 1));
                 giveItem(player, new ItemStack(ModItems.SCRAP_METAL.get(), 4));
-                reputation.addReputation(ReputationData.Faction.REMNANTS, 5);
-                com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(player, ReputationData.Faction.REMNANTS, 5);
+                EchoCoreServices.addFactionReputation(player, AshfallBiomeFactions.RADWARDEN_COMPACT, 5);
                 research.addPoints(10);
             }
             case NONE -> {
@@ -165,7 +162,6 @@ public class FieldOpsContractHandler {
             }
         }
 
-        player.setData(ModAttachments.REPUTATION_DATA.get(), reputation);
         ResearchData.saveAndSync(player, research);
         FactionProgressionHelper.syncMilestones(player);
 

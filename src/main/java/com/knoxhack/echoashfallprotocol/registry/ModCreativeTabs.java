@@ -104,9 +104,6 @@ public class ModCreativeTabs {
                         output.accept(ModItems.STEAM_WRAITH_SPAWN_EGG.get());
                         output.accept(ModItems.MUTATED_CRAWLER_SPAWN_EGG.get());
                         output.accept(ModItems.ECHO_COMPANION_DRONE_SPAWN_EGG.get());
-                        output.accept(ModItems.REMNANT_SOLDIER_SPAWN_EGG.get());
-                        output.accept(ModItems.SALVAGER_TRADER_SPAWN_EGG.get());
-                        output.accept(ModItems.MUTANT_CREATURE_SPAWN_EGG.get());
                         output.accept(ModItems.GRIDBOUND_HUSK_SPAWN_EGG.get());
                         output.accept(ModItems.RELAY_WARDEN_SPAWN_EGG.get());
                         output.accept(ModItems.SIGNAL_LEECH_SPAWN_EGG.get());
@@ -282,9 +279,9 @@ public class ModCreativeTabs {
                         output.accept(ModItems.DATA_LOG_ECHO_CREATION.get());
                         output.accept(ModItems.DATA_LOG_SURVIVOR_ALPHA.get());
                         output.accept(ModItems.DATA_LOG_CLIMATE_WEAPONS.get());
-                        output.accept(ModItems.DATA_LOG_REMNANT_MANIFESTO.get());
-                        output.accept(ModItems.DATA_LOG_SALVAGER_CODE.get());
-                        output.accept(ModItems.DATA_LOG_MUTANT_TRUTH.get());
+                        output.accept(ModItems.DATA_LOG_RADWARDEN_CHARTER.get());
+                        output.accept(ModItems.DATA_LOG_CRASHBREAK_CODE.get());
+                        output.accept(ModItems.DATA_LOG_SPOREBOUND_ADAPTATION.get());
                         output.accept(ModItems.DATA_LOG_FIRST_LIGHT.get());
                         output.accept(ModItems.DATA_LOG_RESEARCH_PROTOCOL.get());
                         output.accept(ModItems.DATA_LOG_SUBSTRATE_EXTRACTION.get());

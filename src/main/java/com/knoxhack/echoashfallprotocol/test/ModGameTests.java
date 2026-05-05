@@ -1,5 +1,8 @@
 package com.knoxhack.echoashfallprotocol.test;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoFactionContract;
+import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.block.NexusCoreBlock;
 import com.knoxhack.echoashfallprotocol.block.PowerNodeBlock;
@@ -22,7 +25,6 @@ import com.knoxhack.echoashfallprotocol.entity.ScoutDrone;
 import com.knoxhack.echoashfallprotocol.entity.boss.BiomeBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.NexusFinalBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.WardenBossEntity;
-import com.knoxhack.echoashfallprotocol.entity.faction.SalvagerTrader;
 import com.knoxhack.echoashfallprotocol.endgame.NexusAccessRules;
 import com.knoxhack.echoashfallprotocol.endgame.NexusChoiceService;
 import com.knoxhack.echoashfallprotocol.endgame.NexusFinalBossProfile;
@@ -40,11 +42,9 @@ import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventStatus;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
 import com.knoxhack.echoashfallprotocol.event.ModStructuresCommand;
 import com.knoxhack.echoashfallprotocol.event.PostNexusEventHandler;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuest;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestRegistry;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
-import com.knoxhack.echoashfallprotocol.faction.AshfallFactionInteractionHandler;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContracts;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.item.RareTechSchematicItem;
@@ -152,10 +152,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("first_night_route_safety", () -> ModGameTests::firstNightRouteSafety);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> EXPLORATION_SITE_PROFILES =
             TEST_FUNCTIONS.register("exploration_site_profiles", () -> ModGameTests::explorationSiteProfiles);
-    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTION_QUEST_BALANCE =
-            TEST_FUNCTIONS.register("faction_quest_balance", () -> ModGameTests::factionQuestBalance);
-    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASHFALL_FACTION_CORE_CONTRACTS =
-            TEST_FUNCTIONS.register("ashfall_faction_core_contracts", () -> ModGameTests::ashfallFactionCoreContracts);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTION_CONTRACT_BALANCE =
+            TEST_FUNCTIONS.register("faction_contract_balance", () -> ModGameTests::factionContractBalance);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STRICT_FACTION_ENTITY_IDS =
+            TEST_FUNCTIONS.register("strict_faction_entity_ids", () -> ModGameTests::strictFactionEntityIds);
 
     private ModGameTests() {
     }
@@ -189,8 +189,8 @@ public final class ModGameTests {
         register(event, environment, "mission_guide_coverage", MISSION_GUIDE_COVERAGE.getId());
         register(event, environment, "first_night_route_safety", FIRST_NIGHT_ROUTE_SAFETY.getId());
         register(event, environment, "exploration_site_profiles", EXPLORATION_SITE_PROFILES.getId());
-        register(event, environment, "faction_quest_balance", FACTION_QUEST_BALANCE.getId());
-        register(event, environment, "ashfall_faction_core_contracts", ASHFALL_FACTION_CORE_CONTRACTS.getId());
+        register(event, environment, "faction_contract_balance", FACTION_CONTRACT_BALANCE.getId());
+        register(event, environment, "strict_faction_entity_ids", STRICT_FACTION_ENTITY_IDS.getId());
     }
 
     private static void entityAttributeHardening(GameTestHelper helper) {
@@ -806,13 +806,6 @@ public final class ModGameTests {
         ResearchData research = ResearchData.get(player);
         research.resetAll();
 
-        ItemStack fragments = new ItemStack(ModItems.SCHEMATIC_FRAGMENT.get(), 4);
-        helper.assertTrue(SalvagerTrader.tryEliteRareSchematicTrade(player, fragments, 51, 1.0F),
-                "Elite Salvager trade should accept 4 generic schematic fragments");
-        helper.assertTrue(fragments.isEmpty(), "Elite Salvager trade should consume the input fragments");
-        helper.assertTrue(countItem(player, ModItems.RARE_TECH_SCHEMATIC.get()) == 1,
-                "Elite Salvager trade should grant one rare tech schematic");
-
         ItemStack rare = new ItemStack(ModItems.RARE_TECH_SCHEMATIC.get());
         RareTechSchematicItem.DecodeResult decoded = RareTechSchematicItem.decodeAtResearchLab(player, rare);
         ResearchData decodedResearch = ResearchData.get(player);
@@ -1113,9 +1106,7 @@ public final class ModGameTests {
                 ModEntities.WILD_DOG.get(),
                 ModEntities.FERAL_HUMAN.get(),
                 ModEntities.CRASH_SURVIVOR.get(),
-                ModEntities.REMNANT_SOLDIER.get(),
-                ModEntities.SALVAGER_TRADER.get(),
-                ModEntities.MUTANT_CREATURE.get(),
+                ModEntities.FACTION_NPC.get(),
                 ModEntities.GRIDBOUND_HUSK.get(),
                 ModEntities.RELAY_WARDEN.get(),
                 ModEntities.SIGNAL_LEECH.get(),
@@ -1172,9 +1163,6 @@ public final class ModGameTests {
                 ModEntities.MUTATED_CRAWLER.get(),
                 ModEntities.WILD_DOG.get(),
                 ModEntities.FERAL_HUMAN.get(),
-                ModEntities.REMNANT_SOLDIER.get(),
-                ModEntities.SALVAGER_TRADER.get(),
-                ModEntities.MUTANT_CREATURE.get(),
                 ModEntities.GRIDBOUND_HUSK.get(),
                 ModEntities.RELAY_WARDEN.get(),
                 ModEntities.SIGNAL_LEECH.get(),
@@ -1506,115 +1494,76 @@ public final class ModGameTests {
         helper.succeed();
     }
 
-    private static void factionQuestBalance(GameTestHelper helper) {
-        List<String> warnings = FactionQuestRegistry.validationWarnings();
-        helper.assertTrue(warnings.isEmpty(),
-                "Faction quest registry warnings: " + String.join("; ", warnings));
-
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            List<FactionQuest> quests = FactionQuestRegistry.getForFaction(faction);
-            helper.assertTrue(quests.size() == 4, "Faction should have exactly four quests: " + faction.name());
-            quests.sort((left, right) -> Integer.compare(left.getRequiredReputation(), right.getRequiredReputation()));
-
-            int reputation = 0;
-            for (int index = 0; index < quests.size(); index++) {
-                FactionQuest quest = quests.get(index);
-                int expectedRequired = index * 25;
-                helper.assertTrue(quest.getRequiredReputation() == expectedRequired,
-                        "Faction quest required reputation ladder changed: " + quest.getId());
-                helper.assertTrue(reputation >= quest.getRequiredReputation(),
-                        "Faction quest ladder should be reachable before accepting: " + quest.getId());
-                reputation += quest.getRewardReputation();
-                helper.assertTrue(reputation == (index + 1) * 25,
-                        "Faction quest rewards should advance one tier per contract: " + quest.getId());
-            }
+    private static void factionContractBalance(GameTestHelper helper) {
+        if (EchoCoreServices.factionDefinitions().stream().noneMatch(definition -> AshfallFactionMap.isAshfall(definition.id()))) {
+            AshfallBiomeFactions.register();
         }
 
-        assertPoiObjective(helper, "salvager.salvage", "industrial_factory");
-        assertPoiObjective(helper, "salvager.expedition", "industrial_ruins");
-        assertPoiObjective(helper, "remnant.sabotage", "reactor_ruin");
-        assertPoiObjective(helper, "mutant.evolution", "radiation_zone");
+        List<EchoFactionDefinition> definitions = AshfallFactionMap.all().stream()
+                .map(factionId -> EchoCoreServices.factionDefinition(factionId).orElse(null))
+                .toList();
+        helper.assertTrue(definitions.stream().allMatch(java.util.Objects::nonNull),
+                "All 10 Ashfall Echo Core factions should be registered");
+        helper.assertTrue(definitions.size() == 10, "Ashfall should expose exactly 10 Echo Core factions");
 
-        FactionQuest.Objective negotiation = requireObjective(helper,
-                requireFactionQuest(helper, "salvager.negotiation"),
-                FactionQuest.ObjectiveType.RECON,
-                "faction_hub");
-        helper.assertTrue(negotiation.requiredCount() == 2,
-                "Salvager negotiation should require two faction hub visits");
-        helper.assertTrue(negotiation.faction() == null,
-                "Salvager negotiation faction hub objective should be cross-faction");
+        int contractCount = 0;
+        for (EchoFactionDefinition definition : definitions) {
+            helper.assertTrue(definition.contracts().size() == 3,
+                    "Faction should have field/trusted/aligned contracts: " + definition.id());
+            helper.assertTrue(definition.contracts().stream().map(EchoFactionContract::requiredReputation).toList()
+                            .equals(List.of(0, 35, 75)),
+                    "Contract reputation tiers should be 0/35/75: " + definition.id());
+            for (EchoFactionContract contract : definition.contracts()) {
+                AshfallFactionContracts.Spec spec = AshfallFactionContracts.spec(contract.id()).orElse(null);
+                helper.assertTrue(spec != null, "Ashfall contract spec should exist: " + contract.id());
+                if (spec != null) {
+                    helper.assertTrue(!spec.objectives().isEmpty(),
+                            "Ashfall contract should have objectives: " + contract.id());
+                    helper.assertTrue(spec.reputationReward() > 0,
+                            "Ashfall contract should grant reputation: " + contract.id());
+                    contractCount++;
+                }
+            }
+        }
+        helper.assertTrue(contractCount == 30, "Ashfall should expose 30 Echo Core contracts");
+
+        assertContractHasObjective(helper, "crashbreak_salvage_field_contract",
+                AshfallFactionContracts.ObjectiveType.POI_DISCOVERY);
+        assertContractHasObjective(helper, "radwarden_compact_aligned_contract",
+                AshfallFactionContracts.ObjectiveType.REPAIR);
+        assertContractHasObjective(helper, "sporebound_sanctum_aligned_contract",
+                AshfallFactionContracts.ObjectiveType.KILL);
 
         helper.assertTrue("industrial_factory".equals(ExplorationSiteRegistry.normalize("derelict_workshop")),
                 "Legacy derelict workshop alias should still resolve to industrial factory profile");
         helper.succeed();
     }
 
-    private static void ashfallFactionCoreContracts(GameTestHelper helper) {
-        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-        com.knoxhack.echocore.api.EchoFactionRegistry.withClearedForTests(() -> {
-            com.knoxhack.echocore.api.EchoCoreServices.registerFactionActionHandler(AshfallFactionInteractionHandler.INSTANCE);
-            AshfallBiomeFactions.register();
-            List<com.knoxhack.echocore.api.EchoFactionDefinition> definitions =
-                    com.knoxhack.echocore.api.EchoFactionRegistry.byModId(EchoAshfallProtocol.MODID);
-            helper.assertTrue(definitions.size() == 10,
-                    "Ashfall should register 10 Echo Core factions, found " + definitions.size());
-            for (com.knoxhack.echocore.api.EchoFactionDefinition definition : definitions) {
-                helper.assertTrue(definition.contracts().size() == 3,
-                        "Ashfall faction should expose field/trusted/aligned contracts: " + definition.id());
-                List<Integer> required = definition.contracts().stream()
-                        .map(com.knoxhack.echocore.api.EchoFactionContract::requiredReputation)
-                        .sorted()
-                        .toList();
-                helper.assertTrue(required.equals(List.of(0, 35, 75)),
-                        "Ashfall contract ladder should be 0/35/75 for " + definition.id() + ": " + required);
-
-                com.knoxhack.echocore.api.EchoFactionContract field = definition.contracts().stream()
-                        .filter(contract -> contract.id().getPath().endsWith("_field_contract"))
-                        .findFirst()
-                        .orElseThrow();
-                com.knoxhack.echocore.api.EchoFactionContractState available =
-                        com.knoxhack.echocore.api.EchoCoreServices.factionContractState(
-                                player, definition.id(), field.id(), "contact");
-                helper.assertTrue(available.canAccept(), "Field contract should be acceptable at neutral standing: " + field.id());
-                helper.assertTrue(!available.canComplete(), "Field contract should not complete before acceptance: " + field.id());
-                helper.assertTrue(com.knoxhack.echocore.api.EchoCoreServices.acceptFactionContract(
-                        player, definition.id(), field.id()), "Field contract should accept through Echo Core: " + field.id());
-                com.knoxhack.echocore.api.EchoFactionContractState active =
-                        com.knoxhack.echocore.api.EchoCoreServices.factionContractState(
-                                player, definition.id(), field.id(), "contact");
-                helper.assertTrue(!active.canComplete(),
-                        "Ashfall field contract should require objective progress before completion: " + field.id());
-                com.knoxhack.echocore.api.EchoFactionDataService.resetFaction(player, definition.id());
-            }
-        });
+    private static void strictFactionEntityIds(GameTestHelper helper) {
+        helper.assertTrue(BuiltInRegistries.ENTITY_TYPE.containsKey(id("faction_npc")),
+                "Generic faction_npc entity id should remain registered");
+        assertRetiredEntityIdAbsent(helper, "remnant", "soldier");
+        assertRetiredEntityIdAbsent(helper, "salvager", "trader");
+        assertRetiredEntityIdAbsent(helper, "mutant", "creature");
         helper.succeed();
     }
 
-    private static void assertPoiObjective(GameTestHelper helper, String questId, String targetId) {
-        FactionQuest quest = requireFactionQuest(helper, questId);
-        requireObjective(helper, quest, FactionQuest.ObjectiveType.POI_DISCOVERY, targetId);
-        String normalized = ExplorationSiteRegistry.normalize(targetId);
-        helper.assertTrue(ExplorationSiteRegistry.get(normalized).isPresent(),
-                "Faction POI objective should resolve to scanner profile: " + questId + " -> " + targetId);
+    private static void assertRetiredEntityIdAbsent(GameTestHelper helper, String first, String second) {
+        Identifier entityId = id(first + "_" + second);
+        helper.assertTrue(!BuiltInRegistries.ENTITY_TYPE.containsKey(entityId),
+                "Retired Ashfall faction entity id should not be registered: " + entityId);
     }
 
-    private static FactionQuest requireFactionQuest(GameTestHelper helper, String questId) {
-        FactionQuest quest = FactionQuestRegistry.get(questId);
-        helper.assertTrue(quest != null, "Faction quest should exist: " + questId);
-        if (quest == null) {
-            throw new IllegalStateException("Missing faction quest " + questId);
+    private static void assertContractHasObjective(GameTestHelper helper, String contractPath,
+            AshfallFactionContracts.ObjectiveType type) {
+        AshfallFactionContracts.Spec spec = AshfallFactionContracts.spec(
+                net.minecraft.resources.Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, contractPath)).orElse(null);
+        helper.assertTrue(spec != null, "Ashfall contract should exist: " + contractPath);
+        if (spec == null) {
+            return;
         }
-        return quest;
-    }
-
-    private static FactionQuest.Objective requireObjective(GameTestHelper helper, FactionQuest quest,
-                                                          FactionQuest.ObjectiveType type, String targetId) {
-        for (FactionQuest.Objective objective : quest.getObjectiveModels()) {
-            if (objective.type() == type && targetId.equals(objective.targetId())) {
-                return objective;
-            }
-        }
-        throw new IllegalStateException("Missing " + type + " objective " + targetId + " for " + quest.getId());
+        helper.assertTrue(spec.objectives().stream().anyMatch(objective -> objective.type() == type),
+                "Ashfall contract should include " + type + " objective: " + contractPath);
     }
 
     private static Mission requireMission(GameTestHelper helper, String missionId) {

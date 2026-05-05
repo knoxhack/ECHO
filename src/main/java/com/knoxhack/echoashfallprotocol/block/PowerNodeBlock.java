@@ -3,9 +3,7 @@ package com.knoxhack.echoashfallprotocol.block;
 import com.knoxhack.echoashfallprotocol.block.entity.PowerNodeBlockEntity;
 import com.knoxhack.echoashfallprotocol.echo.EchoMessages;
 import com.knoxhack.echoashfallprotocol.event.PostNexusEventHandler;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuest;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestProgression;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractProgression;
 import com.knoxhack.echoashfallprotocol.registry.ModBlockEntities;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.mojang.serialization.MapCodec;
@@ -84,8 +82,7 @@ public class PowerNodeBlock extends BaseEntityBlock {
                 player.sendSystemMessage(Component.literal(
                         EchoMessages.getMessage(EchoMessages.Context.POWER_NODE_ACTIVATED)));
                 if (player instanceof ServerPlayer serverPlayer) {
-                    FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.REPAIR, "relay", ReputationData.Faction.REMNANTS, 1);
-                    com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractProgression.progressRepair(serverPlayer, "power_node");
+                    AshfallFactionContractProgression.progressRepair(serverPlayer, "power_node");
                     PostNexusEventHandler.recordPowerNodeActivated(serverPlayer, pos);
                 }
             } else {

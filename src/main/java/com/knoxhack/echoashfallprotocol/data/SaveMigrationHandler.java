@@ -2,8 +2,6 @@ package com.knoxhack.echoashfallprotocol.data;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestData;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
@@ -11,7 +9,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 
 /**
- * Handles save migration for ECHO exploration and faction progress.
+ * Handles save migration for ECHO exploration progress.
  * 
  * Migration rules:
  * - Existing saves: Neutral reputation (0) for all factions
@@ -43,18 +41,6 @@ public class SaveMigrationHandler {
     private static void performMigration(ServerPlayer player, int fromVersion) {
         EchoAshfallProtocol.LOGGER.info("Performing save migration for player {} from version {}", 
             player.getName().getString(), fromVersion);
-
-        // Reset the retired three-faction player-facing reputation model now that Echo Core owns faction standing.
-        ReputationData reputation = ReputationData.get(player);
-        if (fromVersion < 2) {
-            reputation.resetLegacyProgress();
-            ReputationData.saveAndSync(player, reputation);
-            FactionQuestData factionQuestData = FactionQuestData.get(player);
-            factionQuestData.clearLegacyFactionProgress();
-            FactionQuestData.saveAndSync(player, factionQuestData);
-            EchoAshfallProtocol.LOGGER.debug("Reset legacy Ashfall faction reputation and quests for {}",
-                    player.getName().getString());
-        }
 
         // Initialize research data for existing players
         ResearchData research = ResearchData.get(player);

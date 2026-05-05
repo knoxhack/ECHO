@@ -158,7 +158,7 @@ GLOBAL_BLOCKS = [
     "minecraft:oak_fence",
 ]
 
-REMNANT_BLOCKS = [
+RADWARDEN_BLOCKS = [
     "echoashfallprotocol:weapon_rack",
     "echoashfallprotocol:supply_crate",
     "echoashfallprotocol:rusted_metal_sheet",
@@ -171,7 +171,7 @@ REMNANT_BLOCKS = [
     "minecraft:smooth_stone",
 ]
 
-SALVAGER_BLOCKS = [
+CRASHBREAK_BLOCKS = [
     "echoashfallprotocol:trade_counter",
     "echoashfallprotocol:map_table",
     "echoashfallprotocol:supply_crate",
@@ -184,7 +184,7 @@ SALVAGER_BLOCKS = [
     "minecraft:campfire",
 ]
 
-MUTANT_BLOCKS = [
+SPOREBOUND_BLOCKS = [
     "echoashfallprotocol:bio_processing_station",
     "echoashfallprotocol:spore_garden",
     "echoashfallprotocol:toxic_puddle",

@@ -92,8 +92,6 @@ public class EndgameLootHandler {
                entityType.contains("mutated_crawler") ||
                entityType.contains("scavenger_bandit") ||
                entityType.contains("wild_dog") ||
-               entityType.contains("feral_human") ||
-               entityType.contains("remnant_soldier") ||
-               entityType.contains("mutant_creature");
+               entityType.contains("feral_human");
     }
 }

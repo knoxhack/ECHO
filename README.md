@@ -23,7 +23,7 @@ The world is not just hostile. It reacts. Radiation mutates after sustained seve
 - **Power restoration:** micro generators, battery banks, power nodes, thermal arrays, deep-core mining, and the Nexus grid.
 - **Mission progression:** ECHO-7 keeps the required route practical through podfall survival, biological adaptation, geological extraction, buried guardian nodes, Prime Relay warfront prep, grid restoration, and the irreversible Nexus choice.
 - **Signal Leads:** optional recon records explain crash telemetry, region identity, factions, drone memory, guardians, Nexus context, and ECHO-0 quarantine without blocking the main route or spoiling final outcomes.
-- **Factions and intel:** 10 Echo Core Ashfall factions, legacy Remnants/Salvagers/Mutants compatibility hooks, faction NPCs, and orbital-aligned factions use reputation, contacts, contracts, POI affinity, patrol pressure, dossiers, and drone reconnaissance.
+- **Factions and intel:** 10 Echo Core Ashfall factions use reputation, contacts, contracts, POI affinity, patrol pressure, services, dossiers, and drone reconnaissance.
 - **World exploration:** scanner-led POI routes across wasteland biomes, toxic swamps, ruined cities, radiation zones, crash scars, cryogenic ruins, Nexus scars, faction hubs, procedural landmarks, and underground guardian arenas with visible surface entrances.
 - **ECHO terminal:** Command Deck, What Now, Mission Graph, Protocol Roadmap, Signal Leads, Route Map, POI Atlas, Route Records, Field Archive, Survival Index, Faction Atlas, Baseline, Vitals, Companion Link, Reward Inbox, Nexus Core, and ORBITAL channels collect lore, objectives, telemetry, faction reports, route state, and optional expansion status.
 

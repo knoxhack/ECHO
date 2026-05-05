@@ -6,9 +6,6 @@ import com.knoxhack.echoashfallprotocol.entity.boss.NexusFinalBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.NexusFinalBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.WardenBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.faction.FactionNpcEntity;
-import com.knoxhack.echoashfallprotocol.entity.faction.MutantCreature;
-import com.knoxhack.echoashfallprotocol.entity.faction.RemnantSoldier;
-import com.knoxhack.echoashfallprotocol.entity.faction.SalvagerTrader;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
@@ -90,19 +87,6 @@ public class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<CrashSurvivor>> CRASH_SURVIVOR =
             ENTITIES.registerEntityType("crash_survivor", CrashSurvivor::new, MobCategory.CREATURE,
                     builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
-
-    // Faction Mobs
-    public static final DeferredHolder<EntityType<?>, EntityType<RemnantSoldier>> REMNANT_SOLDIER =
-            ENTITIES.registerEntityType("remnant_soldier", RemnantSoldier::new, MobCategory.MONSTER,
-                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
-
-    public static final DeferredHolder<EntityType<?>, EntityType<SalvagerTrader>> SALVAGER_TRADER =
-            ENTITIES.registerEntityType("salvager_trader", SalvagerTrader::new, MobCategory.CREATURE,
-                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
-
-    public static final DeferredHolder<EntityType<?>, EntityType<MutantCreature>> MUTANT_CREATURE =
-            ENTITIES.registerEntityType("mutant_creature", MutantCreature::new, MobCategory.MONSTER,
-                    builder -> builder.sized(0.65F, 2.0F).clientTrackingRange(64));
 
     public static final DeferredHolder<EntityType<?>, EntityType<FactionNpcEntity>> FACTION_NPC =
             ENTITIES.registerEntityType("faction_npc", FactionNpcEntity::new, MobCategory.CREATURE,
@@ -199,11 +183,6 @@ public class ModEntities {
         event.put(WILD_DOG.get(), WildDog.createAttributes().build());
         event.put(FERAL_HUMAN.get(), FeralHuman.createAttributes().build());
         event.put(CRASH_SURVIVOR.get(), CrashSurvivor.createAttributes().build());
-        
-        // Faction Mobs
-        event.put(REMNANT_SOLDIER.get(), RemnantSoldier.createAttributes().build());
-        event.put(SALVAGER_TRADER.get(), SalvagerTrader.createAttributes().build());
-        event.put(MUTANT_CREATURE.get(), MutantCreature.createAttributes().build());
         event.put(FACTION_NPC.get(), FactionNpcEntity.createAttributes().build());
         
         // Boss Entities
@@ -240,9 +219,6 @@ public class ModEntities {
         registerMonsterSpawn(event, MUTATED_CRAWLER);
         registerMonsterSpawn(event, WILD_DOG);
         registerMonsterSpawn(event, FERAL_HUMAN);
-        registerMonsterSpawn(event, REMNANT_SOLDIER);
-        registerMonsterSpawn(event, SALVAGER_TRADER);
-        registerMonsterSpawn(event, MUTANT_CREATURE);
         registerGroundMobSpawn(event, FACTION_NPC);
         registerGroundMobSpawn(event, WARDEN_BOSS);
         registerGroundMobSpawn(event, WASTELAND_SENTINEL);

@@ -1,10 +1,10 @@
 # Faction Village Structures
 
-This folder contains NBT structure files for the three wasteland faction villages.
+This folder contains NBT structure files for Ashfall faction hubs.
 
 ## Structure Requirements
 
-### Remnant Military Compound (`remnant_outpost/`)
+### Radwarden Field Compound (`radwarden_outpost/`)
 - **Theme:** Military bunker, concrete walls, defensive positions
 - **Key Blocks:** Weapon Rack (profession block), Supply Crate (profession block)
 - **Building Types:**
@@ -16,7 +16,7 @@ This folder contains NBT structure files for the three wasteland faction village
   - `street_straight.nbt`, `street_corner.nbt`, `street_cross.nbt` - Pathways
   - `wall_section.nbt`, `wall_corner.nbt` - Perimeter walls
 
-### Salvager Trading Post (`salvager_post/`)
+### Crashbreak Salvage Yard (`crashbreak_salvage/`)
 - **Theme:** Converted train station, market stalls, scrap metal
 - **Key Blocks:** Trade Counter (profession block), Map Table (profession block)
 - **Building Types:**
@@ -26,7 +26,7 @@ This folder contains NBT structure files for the three wasteland faction village
   - `living_quarters.nbt` - NPC housing
   - `street_plaza.nbt` - Open market areas
 
-### Mutant Sanctuary (`mutant_sanctuary/`)
+### Sporebound Sanctum (`sporebound_sanctum/`)
 - **Theme:** Bio-dome, organic growth, glowing plants
 - **Key Blocks:** Bio Processing Station (profession block), Spore Garden (profession block)
 - **Building Types:**
@@ -41,7 +41,7 @@ This folder contains NBT structure files for the three wasteland faction village
 1. Build the structure in-game using creative mode
 2. Use the `/structure` command to save:
    ```
-   /structure save echoashfallprotocol:faction/remnant_outpost/barracks <x> <y> <z> <x2> <y2> <z2> true
+   /structure save echoashfallprotocol:faction/radwarden_outpost/barracks <x> <y> <z> <x2> <y2> <z2> true
    ```
 3. The NBT file will be saved in your `.minecraft/saves/<world>/generated/echoashfallprotocol/structure/faction/` folder
 4. Copy it to this directory
@@ -49,7 +49,7 @@ This folder contains NBT structure files for the three wasteland faction village
 ## Jigsaw Markers
 
 Place jigsaw blocks in your structures to connect pieces:
-- **Target Pool:** `echoashfallprotocol:<faction>_village/houses`
+- **Target Pool:** `echoashfallprotocol:<faction>/houses`
 - **Attachment Type:** `minecraft:building`
 - **Turns into:** The profession block for this building type
 
@@ -62,8 +62,8 @@ Place entity markers (armor stands) where you want faction NPCs to spawn:
 ## Profession Block Placement
 
 Make sure to place the profession blocks in your NBT files:
-- Remnant: `echoashfallprotocol:weapon_rack`, `echoashfallprotocol:supply_crate`
-- Salvager: `echoashfallprotocol:trade_counter`, `echoashfallprotocol:map_table`
-- Mutant: `echoashfallprotocol:bio_processing_station`, `echoashfallprotocol:spore_garden`
+- Radwarden: `echoashfallprotocol:weapon_rack`, `echoashfallprotocol:supply_crate`
+- Crashbreak: `echoashfallprotocol:trade_counter`, `echoashfallprotocol:map_table`
+- Sporebound: `echoashfallprotocol:bio_processing_station`, `echoashfallprotocol:spore_garden`
 
 Villagers will automatically pathfind and claim these blocks to gain the corresponding profession.

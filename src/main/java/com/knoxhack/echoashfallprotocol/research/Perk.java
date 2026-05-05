@@ -1,18 +1,17 @@
 package com.knoxhack.echoashfallprotocol.research;
 
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import net.minecraft.world.entity.player.Player;
 
 /**
  * Research Perk definition with effects that apply to players.
- * Three branches matching factions: Remnant Tech, Salvager Trade, Mutant Bio
+ * Three branches matching the first Ashfall faction families.
  */
 public class Perk {
     
     public enum Branch {
-        REMNANT_TECH("Remnant Tech", "Safety and infrastructure: weapons, armor durability, machine efficiency", 0xFF4DBAF4),
-        SALVAGER_TRADE("Salvager Trade", "Routes and economy: better loot, cheaper trades, faster scavenging", 0xFFFFA94D),
-        MUTANT_BIO("Mutant Bio", "Survival biology: radiation resistance, regeneration, mutation control", 0xFF42D67E);
+        RADWARDEN_TECH("Radwarden Tech", "Safety and infrastructure: weapons, armor durability, machine efficiency", 0xFF4DBAF4),
+        CRASHBREAK_SALVAGE("Crashbreak Salvage", "Routes and economy: better loot, cheaper trades, faster scavenging", 0xFFFFA94D),
+        SPOREBOUND_BIO("Sporebound Bio", "Survival biology: radiation resistance, regeneration, mutation control", 0xFF42D67E);
         
         private final String name;
         private final String description;

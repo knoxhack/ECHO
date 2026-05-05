@@ -982,7 +982,7 @@ def check_echo_core_faction_source_guards(errors: list[str]) -> None:
     ashfall_npc = read_source("entity/faction/FactionNpcEntity.java", errors)
     ashfall_dialogue = read_source("faction/FactionNpcDialogueService.java", errors)
     ashfall_population = read_source("faction/FactionNpcPopulationHandler.java", errors)
-    ashfall_bridge = read_source("faction/AshfallFactionBridge.java", errors)
+    ashfall_map = read_source("faction/AshfallFactionMap.java", errors)
     ashfall_mod_entities = read_source("entity/ModEntities.java", errors)
     ashfall_client = read_source("EchoAshfallProtocolClient.java", errors)
     faction_screen = read_source("client/screen/FactionDialogueScreen.java", errors)
@@ -990,8 +990,6 @@ def check_echo_core_faction_source_guards(errors: list[str]) -> None:
     faction_action_packet = read_source("network/FactionNpcActionPacket.java", errors)
     mod_network = read_source("network/ModNetwork.java", errors)
     migration = read_source("data/SaveMigrationHandler.java", errors)
-    reputation = read_source("faction/ReputationData.java", errors)
-    faction_quests = read_source("faction/FactionQuestData.java", errors)
     orbital_factions = read_orbital_source("integration/OrbitalFactions.java", errors)
     orbital_progress = read_orbital_source("progression/EchoTerminalProgress.java", errors)
     orbital_services = read_orbital_source("integration/AshfallCompat.java", errors)
@@ -1058,18 +1056,21 @@ def check_echo_core_faction_source_guards(errors: list[str]) -> None:
             errors.append(f"MISSING_ORBITAL_CORE_FACTION echoorbitalremnants:{faction_id}")
 
     require_source_tokens(
-        "Ashfall faction registration and legacy cleanup",
-        ashfall_factions + ashfall_services + migration + reputation + faction_quests + ashfall_bridge,
+        "Ashfall faction registration and clean routing",
+        ashfall_factions + ashfall_services + migration + ashfall_map
+        + ashfall_contracts + ashfall_contract_progression,
         (
             "AshfallBiomeFactions.register()",
             "registerFactionActionHandler",
             "Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID",
-            "resetLegacyProgress",
-            "clearLegacyFactionProgress",
             "CURRENT_MIGRATION_VERSION = 2",
-            "Reset legacy Ashfall faction reputation and quests",
-            "coreFactionId(ReputationData.Faction faction)",
-            "EchoCoreServices.addFactionReputation",
+            "class AshfallFactionMap",
+            "List<Identifier> all()",
+            "boolean isAshfall(Identifier factionId)",
+            "Identifier resolveFactionId(String value)",
+            "Identifier forPoi(String poiId)",
+            "Identifier forEntity(String entityId)",
+            "EchoCoreServices.factionDefinition",
         ),
         errors,
     )
@@ -2021,6 +2022,97 @@ def check_lore_cohesion_source_guards(errors: list[str]) -> None:
             errors.append(f"STALE_ORBITAL_COMPAT_COPY {rel_path}")
 
 
+def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
+    """Keep the old 3-faction Ashfall runtime from leaking back in."""
+
+    scan_roots = (
+        JAVA_ROOT,
+        DATA_ROOT,
+        ASSET_ROOT,
+        ROOT / "tools",
+        ROOT / "README.md",
+    )
+    suffixes = {".java", ".json", ".md", ".py", ".toml", ".properties", ".txt"}
+    allow_path_parts = (
+        "tools/validate_gameplay_data.py",
+    )
+    line_allow_tokens = (
+        "Orbital Remnants",
+        "Orbital Remnant",
+        "Void Salvager",
+        "echoorbitalremnants",
+        "orbital_remnant",
+        "void_salvager",
+    )
+    legacy_patterns = (
+        r"ReputationData\.Faction",
+        r"\bReputationData\b",
+        r"\bLegacyFactionIds\b",
+        r"\bLegacyReputationData\b",
+        r"\bLegacyFactionQuestData\b",
+        r"\bLEGACY_REMNANT_SOLDIER\b",
+        r"\bLEGACY_SALVAGER_TRADER\b",
+        r"\bLEGACY_MUTANT_CREATURE\b",
+        r"\bFactionQuest(?:Data|Progression|Registry)?\b",
+        r"\bVillagerQuestHandler\b",
+        r"\bAshfallFactionBridge\b",
+        r"\bcontact_remnants\b",
+        r"\bcontact_salvagers\b",
+        r"\bcontact_mutants\b",
+        r"\bearn_remnant_trust\b",
+        r"\bmake_salvager_trade\b",
+        r"\brecover_mutant_sample\b",
+        r"\bremnant_soldier\b",
+        r"\bsalvager_trader\b",
+        r"\bmutant_creature\b",
+        r"\breputation_data\b",
+        r"\bfaction_quest_data\b",
+        r"\bremnant_village\b",
+        r"\bsalvager_village\b",
+        r"\bmutant_village\b",
+        r"\bremnant_outpost\b",
+        r"\bsalvager_trading_post\b",
+        r"\bmutant_sanctuary\b",
+        r"\bRemnants\b",
+        r"\bSalvagers\b",
+        r"\bRemnant\b",
+        r"\bSalvager\b",
+        r"\bMutants\b",
+        r"\bMutant Sanctuary\b",
+        r"\bContact Mutants\b",
+        r"\b3 Factions\b",
+    )
+    compiled = [re.compile(pattern) for pattern in legacy_patterns]
+
+    def allowed(path: Path, line: str) -> bool:
+        rel_path = path.relative_to(ROOT).as_posix()
+        if any(part in rel_path for part in allow_path_parts):
+            return True
+        return any(token in line for token in line_allow_tokens)
+
+    for root in scan_roots:
+        if not root.exists():
+            continue
+        files = [root] if root.is_file() else root.rglob("*")
+        for path in files:
+            if not path.is_file() or path.suffix not in suffixes:
+                continue
+            try:
+                lines = path.read_text(encoding="utf-8").splitlines()
+            except UnicodeDecodeError:
+                continue
+            for line_number, line in enumerate(lines, start=1):
+                if allowed(path, line):
+                    continue
+                for pattern in compiled:
+                    if pattern.search(line):
+                        errors.append(
+                            f"STALE_ASHFALL_3_FACTION_REFERENCE {path.relative_to(ROOT)}:{line_number}: "
+                            f"{pattern.pattern}"
+                        )
+                        break
+
+
 def main() -> int:
     errors: list[str] = []
     registered = collect_registered_ids()
@@ -2048,6 +2140,7 @@ def main() -> int:
     check_guardian_structure_source_guards(errors)
     check_terminal_mission_browser_source_guards(errors)
     check_lore_cohesion_source_guards(errors)
+    check_clean_ashfall_faction_rebuild_guards(errors)
 
     if errors:
         print("Gameplay data validation failed:")

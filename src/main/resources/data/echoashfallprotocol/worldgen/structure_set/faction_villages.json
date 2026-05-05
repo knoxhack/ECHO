@@ -1,15 +1,15 @@
 {
   "structures": [
     {
-      "structure": "echoashfallprotocol:remnant_village",
+      "structure": "echoashfallprotocol:radwarden_outpost",
       "weight": 3
     },
     {
-      "structure": "echoashfallprotocol:salvager_village",
+      "structure": "echoashfallprotocol:crashbreak_salvage_yard",
       "weight": 3
     },
     {
-      "structure": "echoashfallprotocol:mutant_village",
+      "structure": "echoashfallprotocol:sporebound_sanctum",
       "weight": 2
     }
   ],

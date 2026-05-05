@@ -82,7 +82,7 @@ public final class AshfallBiomeFactions {
                 roles("Spore Tender", "Antitoxin Brewer", "Myco Scout"),
                 "Spore Sample", "Gather a clean read from a toxic growth without letting the route learn your lungs.",
                 "Scan a toxic POI or recover a sample marker.", "Antitoxin service priority.",
-                List.of("toxic_grove", "spore_lab", "mutant_den"));
+                List.of("toxic_grove", "spore_lab", "sporebound_den"));
 
         registerFaction("crashbreak_salvage", "Crashbreak Salvage", "Crashbreak", "Crash Fields",
                 "Wreck crews carving aircraft hulls and pod debris into usable route infrastructure.",

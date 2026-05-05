@@ -968,7 +968,7 @@ public class ModBlocks {
     public static final DeferredItem<BlockItem> FACTORY_CONTROLLER_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("factory_controller", FACTORY_CONTROLLER);
 
     // === FACTION VILLAGER PROFESSION BLOCKS ===
-    // Remnant Professions
+    // Radwarden workstations
     public static final DeferredBlock<Block> WEAPON_RACK = registerSimpleProfessionBlock("weapon_rack",
             MapColor.COLOR_BLUE, SoundType.METAL);
     public static final DeferredItem<BlockItem> WEAPON_RACK_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("weapon_rack", WEAPON_RACK);
@@ -977,7 +977,7 @@ public class ModBlocks {
             MapColor.COLOR_LIGHT_BLUE, SoundType.WOOD);
     public static final DeferredItem<BlockItem> SUPPLY_CRATE_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("supply_crate", SUPPLY_CRATE);
 
-    // Salvager Professions
+    // Crashbreak workstations
     public static final DeferredBlock<Block> TRADE_COUNTER = registerSimpleProfessionBlock("trade_counter",
             MapColor.COLOR_YELLOW, SoundType.WOOD);
     public static final DeferredItem<BlockItem> TRADE_COUNTER_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("trade_counter", TRADE_COUNTER);
@@ -986,7 +986,7 @@ public class ModBlocks {
             MapColor.COLOR_BROWN, SoundType.WOOD);
     public static final DeferredItem<BlockItem> MAP_TABLE_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("map_table", MAP_TABLE);
 
-    // Mutant Professions
+    // Sporebound workstations
     public static final DeferredBlock<Block> BIO_PROCESSING_STATION = registerSimpleProfessionBlock("bio_processing_station",
             MapColor.COLOR_GREEN, SoundType.SLIME_BLOCK);
     public static final DeferredItem<BlockItem> BIO_PROCESSING_STATION_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("bio_processing_station", BIO_PROCESSING_STATION);

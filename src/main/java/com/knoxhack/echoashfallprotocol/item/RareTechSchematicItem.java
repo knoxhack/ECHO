@@ -19,7 +19,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
 /**
- * Salvager elite research reward that decodes into a missing schematic branch.
+ * Crashbreak elite research reward that decodes into a missing schematic branch.
  */
 public class RareTechSchematicItem extends Item {
     public static final int MISSING_CATEGORY_RP = 75;

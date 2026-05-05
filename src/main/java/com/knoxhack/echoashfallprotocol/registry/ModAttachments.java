@@ -6,9 +6,7 @@ import com.knoxhack.echoashfallprotocol.survival.MutationData;
 import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.event.SmartEventData;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractData;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import com.knoxhack.echoashfallprotocol.survival.ColdData;
 import com.knoxhack.echoashfallprotocol.survival.CombatData;
@@ -56,14 +54,6 @@ public class ModAttachments {
     public static final Supplier<AttachmentType<SmartEventData>> SMART_EVENT_DATA = ATTACHMENT_TYPES.register(
             "smart_event_data",
             () -> AttachmentType.<SmartEventData>serializable(SmartEventData::new)
-                    .build()
-    );
-
-    public static final Supplier<AttachmentType<ReputationData>> REPUTATION_DATA = ATTACHMENT_TYPES.register(
-            "reputation_data",
-            () -> AttachmentType.<ReputationData>serializable(ReputationData::new)
-                    .sync((holder, player) -> holder == player, ReputationData.STREAM_CODEC)
-                    .copyOnDeath()
                     .build()
     );
 
@@ -145,14 +135,6 @@ public class ModAttachments {
             () -> AttachmentType.<com.knoxhack.echoashfallprotocol.faction.FactionTerritory>serializable(
                     com.knoxhack.echoashfallprotocol.faction.FactionTerritory::new)
                     .sync((holder, player) -> holder == player, com.knoxhack.echoashfallprotocol.faction.FactionTerritory.STREAM_CODEC)
-                    .copyOnDeath()
-                    .build()
-    );
-
-    public static final Supplier<AttachmentType<FactionQuestData>> FACTION_QUEST_DATA = ATTACHMENT_TYPES.register(
-            "faction_quest_data",
-            () -> AttachmentType.<FactionQuestData>serializable(FactionQuestData::new)
-                    .sync((holder, player) -> holder == player, FactionQuestData.STREAM_CODEC)
                     .copyOnDeath()
                     .build()
     );

@@ -132,17 +132,17 @@
 	spacing = 60
 	separation = 15
 
-[structures.remnant_outpost]
+[structures.radwarden_outpost]
 	enabled = true
 	spacing = 50
 	separation = 12
 
-[structures.salvager_trading_post]
+[structures.crashbreak_salvage_yard]
 	enabled = true
 	spacing = 42
 	separation = 10
 
-[structures.mutant_sanctuary]
+[structures.sporebound_sanctum]
 	enabled = true
 	spacing = 46
 	separation = 11

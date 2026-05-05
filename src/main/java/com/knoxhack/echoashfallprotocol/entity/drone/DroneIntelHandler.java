@@ -2,10 +2,11 @@ package com.knoxhack.echoashfallprotocol.entity.drone;
 
 import com.knoxhack.echoashfallprotocol.echo.EchoIntel;
 import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.faction.FactionDiplomacy;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -62,7 +63,7 @@ public class DroneIntelHandler {
                     nearestVillage.center.getX(),
                     nearestVillage.center.getY(),
                     nearestVillage.center.getZ(),
-                    nearestVillage.controllingFaction.getDisplayName(),
+                    AshfallFactionMap.displayName(nearestVillage.controllingFaction),
                     isVillageUnderThreat(level, nearestVillage) ? "THREAT DETECTED" : "Secure"
                 );
                 
@@ -101,11 +102,11 @@ public class DroneIntelHandler {
         
         for (var mob : nearbyMobs) {
             // Identify faction affiliation from entity type/name
-            ReputationData.Faction mobFaction = identifyMobFaction(mob);
+            Identifier mobFaction = identifyMobFaction(mob);
             if (mobFaction == null) continue;
             
             // Check if this faction is hostile to the player
-            for (ReputationData.Faction playerFaction : ReputationData.Faction.values()) {
+            for (Identifier playerFaction : AshfallFactionMap.all()) {
                 if (diplomacy.isAtWar(playerFaction, mobFaction) || 
                     diplomacy.getState(playerFaction, mobFaction).isConflict()) {
                     
@@ -149,7 +150,7 @@ public class DroneIntelHandler {
         if (transmission != null) {
             var echoIntel = owner.getData(ModAttachments.ECHO_INTEL.get());
             echoIntel.addInterceptedTransmission(
-                "Intercepted " + nearestVillage.controllingFaction.getDisplayName() + " Comms",
+                "Intercepted " + AshfallFactionMap.displayName(nearestVillage.controllingFaction) + " Comms",
                 transmission,
                 nearestVillage.controllingFaction
             );
@@ -158,7 +159,7 @@ public class DroneIntelHandler {
             // Alert player to critical intel
             owner.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "\u00A7c[ECHO-7]\u00A7r Intercepted transmission from " + 
-                nearestVillage.controllingFaction.getDisplayName() + "!"
+                AshfallFactionMap.displayName(nearestVillage.controllingFaction) + "!"
             ));
             
             interceptCooldown = 1200; // 1 minute cooldown
@@ -179,7 +180,7 @@ public class DroneIntelHandler {
         // This would need biome lookup
         String biomeKey = level.getBiome(pos).toString();
         
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
+        for (Identifier faction : AshfallFactionMap.all()) {
             int influence = territory.getBiomeInfluence(faction, biomeKey);
             if (influence >= 30) { // Significant presence
                 var echoIntel = owner.getData(ModAttachments.ECHO_INTEL.get());
@@ -204,7 +205,7 @@ public class DroneIntelHandler {
         return ((ServerLevel) level).getServer().getPlayerList().getPlayer(ownerUUID);
     }
     
-    private boolean hasRecentIntel(EchoIntel intel, ReputationData.Faction faction) {
+    private boolean hasRecentIntel(EchoIntel intel, Identifier faction) {
         var factionIntel = intel.getFactionIntel(faction);
         long now = System.currentTimeMillis();
         
@@ -241,32 +242,30 @@ public class DroneIntelHandler {
         }
     }
     
-    private ReputationData.Faction identifyMobFaction(net.minecraft.world.entity.Mob mob) {
+    private Identifier identifyMobFaction(net.minecraft.world.entity.Mob mob) {
         String entityId = mob.getType().getDescriptionId();
         
-        if (entityId.contains("military") || entityId.contains("soldier") || entityId.contains("remnant")) {
-            return ReputationData.Faction.REMNANTS;
-        } else if (entityId.contains("scavenger") || entityId.contains("bandit") || entityId.contains("salvager")) {
-            return ReputationData.Faction.SALVAGERS;
-        } else if (entityId.contains("mutant") || entityId.contains("feral") || entityId.contains("ghoul")) {
-            return ReputationData.Faction.MUTANTS;
+        if (entityId.contains("military") || entityId.contains("soldier") || entityId.contains("guard")
+                || entityId.contains("scavenger") || entityId.contains("bandit") || entityId.contains("raider")
+                || entityId.contains("mutant") || entityId.contains("feral") || entityId.contains("ghoul")) {
+            return AshfallFactionMap.forEntity(entityId);
         }
         return null;
     }
     
-    private String generateTransmission(ReputationData.Faction faction, FactionDiplomacy diplomacy, ServerLevel level) {
+    private String generateTransmission(Identifier faction, FactionDiplomacy diplomacy, ServerLevel level) {
         List<String> messages = new java.util.ArrayList<>();
         
         // Messages based on diplomatic state
-        for (ReputationData.Faction other : ReputationData.Faction.values()) {
-            if (other == faction) continue;
+        for (Identifier other : AshfallFactionMap.all()) {
+            if (other.equals(faction)) continue;
             
             var state = diplomacy.getState(faction, other);
             switch (state) {
-                case OPEN_WAR -> messages.add("Hostile forces detected near " + other.getDisplayName() + " sector.");
-                case SKIRMISH -> messages.add("Skirmish reported on " + other.getDisplayName() + " border.");
-                case TENSION -> messages.add("Increased patrols around " + other.getDisplayName() + " territory.");
-                case ALLIANCE -> messages.add("Coordinated operation with " + other.getDisplayName() + " confirmed.");
+                case OPEN_WAR -> messages.add("Hostile forces detected near " + AshfallFactionMap.displayName(other) + " sector.");
+                case SKIRMISH -> messages.add("Skirmish reported on " + AshfallFactionMap.displayName(other) + " border.");
+                case TENSION -> messages.add("Increased patrols around " + AshfallFactionMap.displayName(other) + " territory.");
+                case ALLIANCE -> messages.add("Coordinated operation with " + AshfallFactionMap.displayName(other) + " confirmed.");
                 default -> {}
             }
         }

@@ -1,5 +1,7 @@
 package com.knoxhack.echoashfallprotocol.echo;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.item.GasMaskItem;
 import com.knoxhack.echoashfallprotocol.item.DataLogItem;
 import com.knoxhack.echoashfallprotocol.item.BatteryItem;
@@ -8,6 +10,7 @@ import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
@@ -669,14 +672,14 @@ public class MissionRegistry {
                 List.of(new Mission.LocationRequirement("special", "faction_contact:any", "Any Faction Job Site"))
         ));
         
-        // Mission 2: Contact Remnants
+        // Mission 2: Contact Radwarden Compact
         phase25.add(new Mission(
-                "contact_remnants",
-                "[ECHO-7] Remnant military channels require physical access. Right-click a Supply Crate or Weapon Rack at a Remnant outpost; order answers through locked storage.",
-                "Contact Remnants",
-                "[ECHO-7] Remnant channel open. Expect security tasks, quartermaster requests, and structured military support.",
+                "contact_radwarden_compact",
+                "[ECHO-7] Radwarden containment channels require physical access. Right-click a warning beacon, supply crate, or contact near a hot-zone route.",
+                "Contact Radwarden Compact",
+                "[ECHO-7] Radwarden channel open. Expect containment work, decon requests, and structured hazard support.",
                 List.of(new ItemStack(Items.ARROW, 16), new ItemStack(ModItems.BANDAGE.get(), 2), new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1)),
-                player -> hasFactionContact(player, "remnants"),
+                player -> hasFactionContact(player, "radwarden_compact"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -686,17 +689,17 @@ public class MissionRegistry {
                 "",
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of(new Mission.LocationRequirement("special", "faction_contact:remnants", "Remnant Job Site"))
+                List.of(new Mission.LocationRequirement("special", "faction_contact:radwarden_compact", "Radwarden Contact"))
         ));
 
-        // Mission 3: Contact Salvagers
+        // Mission 3: Contact Crashbreak Salvage
         phase25.add(new Mission(
-                "contact_salvagers",
-                "[ECHO-7] Salvager trade channels are local and opportunistic. Right-click a Trade Counter or Map Table at a Salvager post; maps are their currency before emeralds.",
-                "Contact Salvagers",
-                "[ECHO-7] Salvager channel open. Trade routes, salvage contracts, and exploration leads are now on your map.",
+                "contact_crashbreak_salvage",
+                "[ECHO-7] Crashbreak salvage channels are local and opportunistic. Right-click a contact near wreckage, a trade counter, or a route map table.",
+                "Contact Crashbreak Salvage",
+                "[ECHO-7] Crashbreak channel open. Wreck routes, salvage contracts, and exploration leads are now on your map.",
                 List.of(new ItemStack(ModItems.SCRAP_METAL.get(), 12), new ItemStack(ModItems.SCRAP_WIRE.get(), 6), new ItemStack(Items.EMERALD, 2)),
-                player -> hasFactionContact(player, "salvagers"),
+                player -> hasFactionContact(player, "crashbreak_salvage"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -706,17 +709,17 @@ public class MissionRegistry {
                 "",
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of(new Mission.LocationRequirement("special", "faction_contact:salvagers", "Salvager Job Site"))
+                List.of(new Mission.LocationRequirement("special", "faction_contact:crashbreak_salvage", "Crashbreak Contact"))
         ));
 
-        // Mission 4: Contact Mutants
+        // Mission 4: Contact Sporebound Sanctum
         phase25.add(new Mission(
-                "contact_mutants",
-                "[ECHO-7] Mutant biological enclaves respond through living work sites. Right-click a Bio Processing Station or Spore Garden; adaptation has its own bureaucracy.",
-                "Contact Mutants",
-                "[ECHO-7] Mutant channel open. Medical exchange, adaptation research, and bio-recovery tasks are available.",
+                "contact_sporebound_sanctum",
+                "[ECHO-7] Sporebound biological circles respond through living work sites. Right-click a Bio Processing Station, Spore Garden, or Sanctum contact.",
+                "Contact Sporebound Sanctum",
+                "[ECHO-7] Sporebound channel open. Medical exchange, adaptation research, and bio-recovery tasks are available.",
                 List.of(new ItemStack(ModItems.BANDAGE.get(), 3), new ItemStack(ModItems.RAD_AWAY.get(), 1), new ItemStack(ModItems.MUTATED_TISSUE.get(), 2)),
-                player -> hasFactionContact(player, "mutants"),
+                player -> hasFactionContact(player, "sporebound_sanctum"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -726,7 +729,7 @@ public class MissionRegistry {
                 "",
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of(new Mission.LocationRequirement("special", "faction_contact:mutants", "Mutant Job Site"))
+                List.of(new Mission.LocationRequirement("special", "faction_contact:sporebound_sanctum", "Sporebound Contact"))
         ));
 
         phase25.add(new Mission(
@@ -740,7 +743,7 @@ public class MissionRegistry {
                 null,
                 Mission.MissionCategory.EXPLORATION,
                 Mission.Difficulty.NORMAL,
-                List.of("contact_remnants", "contact_salvagers", "contact_mutants"),
+                List.of("contact_radwarden_compact", "contact_crashbreak_salvage", "contact_sporebound_sanctum"),
                 true,
                 "",
                 Collections.emptyList(),
@@ -748,12 +751,12 @@ public class MissionRegistry {
                 List.of(new Mission.LocationRequirement("special", "faction:first_task_complete", "Faction Task Complete"))
         ));
         phase25.add(new Mission(
-                "earn_remnant_trust",
-                "[ECHO-7] Remnant trust is earned through discipline. Complete one Remnant job from a Supply Crate or Weapon Rack.",
-                "Complete Remnant Task",
-                "[ECHO-7] Remnant task logged. Military support channels are warming up.",
+                "complete_radwarden_contract",
+                "[ECHO-7] Radwarden trust is earned through containment discipline. Complete one Radwarden field contract.",
+                "Complete Radwarden Contract",
+                "[ECHO-7] Radwarden contract logged. Hazard support channels are warming up.",
                 List.of(new ItemStack(Items.ARROW, 24), new ItemStack(ModItems.STIM_PACK.get(), 1)),
-                player -> hasSpecialMarker(player, "faction:remnants_task_complete"),
+                player -> hasSpecialMarker(player, "faction:radwarden_compact:contract_complete"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -763,15 +766,15 @@ public class MissionRegistry {
                 "",
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of(new Mission.LocationRequirement("special", "faction:remnants_task_complete", "Remnant Task Complete"))
+                List.of(new Mission.LocationRequirement("special", "faction:radwarden_compact:contract_complete", "Radwarden Contract Complete"))
         ));
         phase25.add(new Mission(
-                "make_salvager_trade",
-                "[ECHO-7] Salvager work teaches routes and value. Complete one Salvager job from a Trade Counter or Map Table.",
-                "Complete Salvager Task",
-                "[ECHO-7] Salvager task logged. Trade networks are now part of your survival plan.",
+                "complete_crashbreak_contract",
+                "[ECHO-7] Crashbreak work teaches routes and value. Complete one Crashbreak field contract.",
+                "Complete Crashbreak Contract",
+                "[ECHO-7] Crashbreak contract logged. Salvage networks are now part of your survival plan.",
                 List.of(new ItemStack(ModItems.SCRAP_METAL.get(), 16), new ItemStack(Items.EMERALD, 3)),
-                player -> hasSpecialMarker(player, "faction:salvagers_task_complete"),
+                player -> hasSpecialMarker(player, "faction:crashbreak_salvage:contract_complete"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -781,15 +784,15 @@ public class MissionRegistry {
                 "",
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of(new Mission.LocationRequirement("special", "faction:salvagers_task_complete", "Salvager Task Complete"))
+                List.of(new Mission.LocationRequirement("special", "faction:crashbreak_salvage:contract_complete", "Crashbreak Contract Complete"))
         ));
         phase25.add(new Mission(
-                "recover_mutant_sample",
-                "[ECHO-7] Mutant work reveals biological adaptation routes. Complete one Mutant job from a Bio Processing Station or Spore Garden.",
-                "Complete Mutant Task",
-                "[ECHO-7] Mutant task logged. Medical and adaptation channels are accessible.",
+                "complete_sporebound_contract",
+                "[ECHO-7] Sporebound work reveals biological adaptation routes. Complete one Sporebound field contract.",
+                "Complete Sporebound Contract",
+                "[ECHO-7] Sporebound contract logged. Medical and adaptation channels are accessible.",
                 List.of(new ItemStack(ModItems.MUTATED_TISSUE.get(), 3), new ItemStack(ModItems.RAD_AWAY.get(), 1)),
-                player -> hasSpecialMarker(player, "faction:mutants_task_complete"),
+                player -> hasSpecialMarker(player, "faction:sporebound_sanctum:contract_complete"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -799,7 +802,7 @@ public class MissionRegistry {
                 "",
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of(new Mission.LocationRequirement("special", "faction:mutants_task_complete", "Mutant Task Complete"))
+                List.of(new Mission.LocationRequirement("special", "faction:sporebound_sanctum:contract_complete", "Sporebound Contract Complete"))
         ));
 
         // Mission 5: Build Research Lab
@@ -814,7 +817,7 @@ public class MissionRegistry {
                 null,
                 Mission.MissionCategory.TECH,
                 Mission.Difficulty.HARD,
-                List.of("earn_remnant_trust", "make_salvager_trade", "recover_mutant_sample"),
+                List.of("complete_radwarden_contract", "complete_crashbreak_contract", "complete_sporebound_contract"),
                 true,
                 "research_lab",
                 List.of(new Mission.BlockRequirement("research_lab", 1)),
@@ -935,7 +938,7 @@ public class MissionRegistry {
                 "Enter Bio Lab",
                 "[ECHO-7] Bio hazard site archived. Expect medicine, tissue samples, toxic pockets, and unstable lifeforms.",
                 List.of(new ItemStack(ModItems.RAD_AWAY.get(), 1), new ItemStack(ModItems.FILTER_CARTRIDGE_ADVANCED.get(), 1)),
-                player -> hasDiscoveredPOI(player, "mutant_sanctuary") || hasDiscoveredPOI(player, "bio_lab"),
+                player -> hasDiscoveredPOI(player, "sporebound_sanctum") || hasDiscoveredPOI(player, "bio_lab"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -961,11 +964,11 @@ public class MissionRegistry {
         ));
         phase25.add(new Mission(
                 "clear_military_vault",
-                "[ECHO-7] Military vaults hold dense materials and severe threats. Scan a Remnant or vault-class site before alloy hunting.",
+                "[ECHO-7] Military vaults hold dense materials and severe threats. Scan a Radwarden or vault-class site before alloy hunting.",
                 "Survey Military Vault",
                 "[ECHO-7] Military route identified. Bring armor, medicine, clean water, and filters only if the site flags toxic air.",
                 List.of(new ItemStack(ModItems.SCRAP_WIRE.get(), 8), new ItemStack(ModItems.ENERGY_CELL.get(), 2)),
-                player -> hasDiscoveredPOI(player, "remnant_outpost") || hasDiscoveredPOI(player, "military_vault"),
+                player -> hasDiscoveredPOI(player, "radwarden_outpost") || hasDiscoveredPOI(player, "military_vault"),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.EXPLORATION,
@@ -1097,9 +1100,9 @@ public class MissionRegistry {
                 "Earn Faction Trust",
                 "[ECHO-7] Faction relationship established. Better supplies, intel, and support routes are now visible.",
                 List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_ELITE.get(), 1)),
-                player -> com.knoxhack.echocore.api.EchoCoreServices.factionProfiles(player).stream()
-                        .anyMatch(profile -> profile.definition().id().toString().startsWith("echoashfallprotocol:")
-                                && profile.reputation() >= 5),
+                player -> EchoCoreServices.factionProfiles(player).stream()
+                        .filter(profile -> AshfallFactionMap.isAshfall(profile.definition().id()))
+                        .anyMatch(profile -> profile.reputation() >= 5),
                 null,
                 null,
                 Mission.MissionCategory.SURVIVAL,
@@ -1601,7 +1604,7 @@ public class MissionRegistry {
                 "neutralize_plains_warlord",
                 "Plains Warlord",
                 "echoashfallprotocol:plains_warlord",
-                "Remnant Outpost",
+                "Radwarden Outpost",
                 "Ruined Plains",
                 "neutralize_wasteland_sentinel",
                 Mission.Difficulty.HARD,
@@ -1631,7 +1634,7 @@ public class MissionRegistry {
                 "neutralize_toxic_hive_matriarch",
                 "Toxic Hive Matriarch",
                 "echoashfallprotocol:toxic_hive_matriarch",
-                "Mutant Sanctuary",
+                "Sporebound Sanctum",
                 "Toxic Swamp",
                 "neutralize_industrial_juggernaut",
                 Mission.Difficulty.EXTREME,
@@ -2426,13 +2429,15 @@ public class MissionRegistry {
     private static boolean hasAnyFactionContact(Player player) {
         QuestData quest = QuestData.get(player);
         return quest.hasVisitedLocation("special", "faction_contact:any")
-                || hasFactionContact(player, "remnants")
-                || hasFactionContact(player, "salvagers")
-                || hasFactionContact(player, "mutants");
+                || EchoCoreServices.factionProfiles(player).stream()
+                        .anyMatch(profile -> AshfallFactionMap.isAshfall(profile.definition().id()) && profile.contacted());
     }
 
     private static boolean hasFactionContact(Player player, String factionId) {
-        return QuestData.get(player).hasVisitedLocation("special", "faction_contact:" + factionId);
+        Identifier id = AshfallFactionMap.resolveFactionId(factionId);
+        return EchoCoreServices.factionProfile(player, id).map(profile -> profile.contacted() || profile.contactCount() > 0)
+                .orElse(false)
+                || QuestData.get(player).hasVisitedLocation("special", "faction_contact:" + id.getPath());
     }
 
     private static boolean hasSpecialMarker(Player player, String marker) {

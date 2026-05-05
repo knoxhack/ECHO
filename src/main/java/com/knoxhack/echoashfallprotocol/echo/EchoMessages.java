@@ -258,9 +258,9 @@ public class EchoMessages {
         ));
 
         MESSAGES.put(Context.BIOME_RADIATION_ZONE, List.of(
-                ECHO + "Radiation zone entered. RadAway, scrubber routes, and exit timing are mission-critical.",
-                ECHO + "Fallout crust underfoot. Power Node components likely; high-dose lifeforms likely too.",
-                ECHO + "Geiger readings exceed advisory limits. The Remnants used places like this as proving grounds."
+                ECHO + "Radiation zone entered. RadAway, scrubber routes, and exit timing are now mission-critical.",
+                ECHO + "Fallout crust underfoot. Power Node components and dense alloys are likely, but so are high-dose lifeforms.",
+                ECHO + "Geiger readings have exceeded advisory limits. The Radwarden patrols used places like this as proving grounds."
         ));
 
         MESSAGES.put(Context.BIOME_NEXUS_SCAR, List.of(

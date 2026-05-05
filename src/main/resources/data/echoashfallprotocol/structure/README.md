@@ -17,9 +17,9 @@ The player-facing Route Map now includes a POI Atlas. It groups all concrete tem
 | `crash_zone_wasteland` | Crash wreck route | 15 |
 | `ruined_plains` | Open wasteland route | 10 |
 | `scavenger_camp` | Scavenger camp route | 1 |
-| `salvager_trading_post` | Salvager hub | 2 |
-| `remnant_outpost` | Remnant hub | 10 |
-| `mutant_sanctuary` | Mutant hub | 2 |
+| `crashbreak_salvage_yard` | Crashbreak hub | 2 |
+| `radwarden_outpost` | Radwarden hub | 10 |
+| `sporebound_sanctum` | Sporebound hub | 2 |
 | `toxic_swamp` | Toxic swamp route | 9 |
 | `bio_lab` | Bio lab route | 2 |
 | `industrial_ruins` | Industrial worksite route | 6 |
@@ -69,7 +69,7 @@ Each wasteland biome has a required guardian profile. The visible surface struct
 | Biome | Surface entrance | Underground arena | Guardian |
 |---|---|---|---|
 | `the_wasteland` | Half-buried rescue hatch | Buried Rescue-Control Lab | Wasteland Sentinel |
-| `ruined_plains` | Reinforced bunker door | Underground Remnant Command Bunker | Plains Warlord |
+| `ruined_plains` | Reinforced bunker door | Underground Radwarden Command Bunker | Plains Warlord |
 | `ruined_cityscape` | Subway service stair | Subway Data-Vault Ambush Site | City Ruin Stalker |
 | `industrial_ruins` | Ruined freight lift | Factory Sublevel Maintenance Core | Industrial Juggernaut |
 | `toxic_swamp` | Toxic sinkhole | Sunken Bio-Hive | Toxic Hive Matriarch |

@@ -67,17 +67,17 @@ THEMES = {
 }
 
 FACTION_THEMES = {
-    "remnant_outpost": {
+    "radwarden_outpost": {
         "ground": ["echoashfallprotocol:concrete_rubble", "echoashfallprotocol:rusted_metal_sheet", "echoashfallprotocol:power_cable"],
         "debris": ["echoashfallprotocol:weapon_rack", "echoashfallprotocol:supply_crate", "echoashfallprotocol:rusted_metal_debris"],
         "story": ["echoashfallprotocol:relay_station", "echoashfallprotocol:battery_bank", "echoashfallprotocol:power_node"],
     },
-    "salvager_post": {
+    "crashbreak_salvage": {
         "ground": ["echoashfallprotocol:rubble", "echoashfallprotocol:concrete_chunk", "echoashfallprotocol:ash_layer"],
         "debris": ["echoashfallprotocol:supply_crate", "echoashfallprotocol:rusted_metal_debris", "echoashfallprotocol:rain_collector"],
         "story": ["echoashfallprotocol:trade_counter", "echoashfallprotocol:map_table", "echoashfallprotocol:rain_collector"],
     },
-    "mutant_sanctuary": {
+    "sporebound_sanctum": {
         "ground": ["echoashfallprotocol:toxic_moss", "echoashfallprotocol:toxic_puddle", "echoashfallprotocol:acidic_sludge"],
         "debris": ["echoashfallprotocol:mutated_bush", "echoashfallprotocol:nuclear_fungus", "echoashfallprotocol:mutated_sapling"],
         "story": ["echoashfallprotocol:bio_processing_station", "echoashfallprotocol:spore_garden", "echoashfallprotocol:toxic_waste_barrel"],
@@ -234,21 +234,21 @@ def _add_signature_details(blocks: BlockList, name: str, category: str, theme, r
         blocks.append((cx, min_y + 1, cz, "echoashfallprotocol:echo_crystal", None))
 
     if category == "faction":
-        if name.startswith("remnant_outpost/"):
+        if name.startswith("radwarden_outpost/"):
             cx = (min_x + max_x) // 2
             blocks.append((cx, min_y + 1, min_z, "echoashfallprotocol:weapon_rack", None))
             blocks.append((cx - 1, min_y + 1, min_z, "echoashfallprotocol:supply_crate", None))
             blocks.append((cx + 1, min_y + 1, min_z, "echoashfallprotocol:power_node", None))
             for x in range(min_x, max_x + 1, 3):
                 blocks.append((x, min_y + 1, max_z, "minecraft:iron_bars", None))
-        elif name.startswith("salvager_post/"):
+        elif name.startswith("crashbreak_salvage/"):
             cx = (min_x + max_x) // 2
             blocks.append((cx, min_y + 1, min_z, "echoashfallprotocol:trade_counter", None))
             blocks.append((cx - 1, min_y + 1, min_z + 1, "echoashfallprotocol:map_table", None))
             blocks.append((cx + 1, min_y + 1, min_z + 1, "echoashfallprotocol:rain_collector", None))
             for x in range(min_x + 1, max_x, 4):
                 blocks.append((x, min_y + 1, max_z - 1, "echoashfallprotocol:supply_crate", None))
-        elif name.startswith("mutant_sanctuary/"):
+        elif name.startswith("sporebound_sanctum/"):
             cx, cz = (min_x + max_x) // 2, (min_z + max_z) // 2
             blocks.append((cx, min_y + 1, min_z, "echoashfallprotocol:spore_garden", None))
             blocks.append((cx, min_y, cz, "echoashfallprotocol:toxic_moss", None))
