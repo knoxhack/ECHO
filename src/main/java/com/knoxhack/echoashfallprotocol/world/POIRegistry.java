@@ -1,7 +1,7 @@
 package com.knoxhack.echoashfallprotocol.world;
 
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
@@ -79,10 +79,10 @@ public final class POIRegistry {
         return new ArrayList<>(RELAY_STATIONS);
     }
 
-    public static List<POIData> getByFaction(ReputationData.Faction faction) {
+    public static List<POIData> getByFaction(Identifier faction) {
         List<POIData> result = new ArrayList<>();
         for (POIData poi : FACTION_HUBS) {
-            if (poi.getAssociatedFaction() == faction) {
+            if (faction != null && faction.equals(poi.getAssociatedFaction())) {
                 result.add(poi);
             }
         }

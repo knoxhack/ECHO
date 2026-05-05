@@ -22,7 +22,7 @@ public class ModPoiTypes {
 
     public static final DeferredRegister<PoiType> POI_TYPES = DeferredRegister.create(Registries.POINT_OF_INTEREST_TYPE, EchoAshfallProtocol.MODID);
 
-    // === REMNANT POIs ===
+    // === RADWARDEN POIs ===
     public static final DeferredHolder<PoiType, PoiType> WEAPON_RACK_POI = registerPoi(
             "weapon_rack_poi", ModBlocks.WEAPON_RACK, 1, 1
     );
@@ -30,7 +30,7 @@ public class ModPoiTypes {
             "supply_crate_poi", ModBlocks.SUPPLY_CRATE, 1, 1
     );
 
-    // === SALVAGER POIs ===
+    // === CRASHBREAK POIs ===
     public static final DeferredHolder<PoiType, PoiType> TRADE_COUNTER_POI = registerPoi(
             "trade_counter_poi", ModBlocks.TRADE_COUNTER, 1, 1
     );
@@ -38,7 +38,7 @@ public class ModPoiTypes {
             "map_table_poi", ModBlocks.MAP_TABLE, 1, 1
     );
 
-    // === MUTANT POIs ===
+    // === SPOREBOUND POIs ===
     public static final DeferredHolder<PoiType, PoiType> BIO_PROCESSING_STATION_POI = registerPoi(
             "bio_processing_station_poi", ModBlocks.BIO_PROCESSING_STATION, 1, 1
     );

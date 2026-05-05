@@ -16,7 +16,7 @@ import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
 import com.knoxhack.echoashfallprotocol.faction.AshfallFactionInteractionHandler;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
-import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
+import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -104,12 +104,12 @@ public final class AshfallCoreServices {
         }
     }
 
-    private static NexusCampaignData campaignData(Player player) {
+    private static NexusWorldData campaignData(Player player) {
         if (player == null || !(player.level() instanceof ServerLevel level)) {
             return null;
         }
         try {
-            return NexusCampaignData.get(level.getServer().overworld());
+            return NexusWorldData.get(level.getServer().overworld());
         } catch (RuntimeException exception) {
             EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus campaign data unavailable; using fallback campaign state.", exception);
             return null;
@@ -265,14 +265,23 @@ public final class AshfallCoreServices {
 
         @Override
         public int instability(Player player) {
-            NexusCampaignData campaign = campaignData(player);
-            return campaign == null ? 0 : campaign.getInstability();
+            NexusWorldData campaign = campaignData(player);
+            if (campaign == null) {
+                return 0;
+            }
+            if (campaign.isDestroyed()) {
+                return 85;
+            }
+            if (campaign.isControlled()) {
+                return 45;
+            }
+            return campaign.isRestored() ? 15 : 0;
         }
 
         @Override
         public boolean isWarfrontComplete(Player player) {
-            NexusCampaignData campaign = campaignData(player);
-            return campaign != null && campaign.isWarfrontComplete();
+            NexusWorldData campaign = campaignData(player);
+            return campaign != null && campaign.hasChoiceBeenMade();
         }
 
         @Override
@@ -290,8 +299,13 @@ public final class AshfallCoreServices {
 
         @Override
         public List<String> relaySummary(Player player) {
-            NexusCampaignData campaign = campaignData(player);
-            return campaign == null ? List.of() : campaign.relaySummaryLines();
+            NexusWorldData campaign = campaignData(player);
+            if (campaign == null) {
+                return List.of();
+            }
+            return List.of(
+                    "Nexus state: " + campaign.getState().name().toLowerCase(Locale.ROOT),
+                    "Tracked power nodes: " + campaign.getActiveNodePositions().size());
         }
 
         @Override
@@ -300,7 +314,7 @@ public final class AshfallCoreServices {
                 return false;
             }
             try {
-                return PostNexusData.get(player).isFinalBossDefeated();
+                return PostNexusData.get(player).isWardenDefeated();
             } catch (RuntimeException exception) {
                 EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus final boss lookup failed.", exception);
                 return false;
@@ -309,8 +323,9 @@ public final class AshfallCoreServices {
 
         @Override
         public String statusLine(Player player) {
-            NexusCampaignData campaign = campaignData(player);
-            return campaign == null ? "Nexus campaign sync pending." : campaign.statusLine();
+            NexusWorldData campaign = campaignData(player);
+            return campaign == null ? "Nexus campaign sync pending."
+                    : "Nexus state " + campaign.getState().name().toLowerCase(Locale.ROOT) + ".";
         }
     }
 }

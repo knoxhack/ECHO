@@ -1,9 +1,10 @@
 package com.knoxhack.echoashfallprotocol.entity.drone;
 
 import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.faction.FactionDiplomacy;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -122,10 +123,10 @@ public class DroneCombatAI {
         score += (int) ((1024 - Math.min(distSqr, 1024)) / 100);
         
         // Check faction affiliation
-        ReputationData.Faction mobFaction = identifyMobFaction(mob);
+        Identifier mobFaction = identifyMobFaction(mob);
         if (mobFaction != null) {
             // Check if this faction is hostile to player
-            for (ReputationData.Faction playerFaction : ReputationData.Faction.values()) {
+            for (Identifier playerFaction : AshfallFactionMap.all()) {
                 FactionDiplomacy.DiplomaticState state = diplomacy.getState(playerFaction, mobFaction);
                 
                 if (state == FactionDiplomacy.DiplomaticState.OPEN_WAR) {
@@ -138,7 +139,9 @@ public class DroneCombatAI {
             }
             
             // Also consider player reputation with that faction
-            int reputation = com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.reputation(owner, mobFaction);
+            int reputation = com.knoxhack.echocore.api.EchoCoreServices.factionProfile(owner, mobFaction)
+                    .map(profile -> profile.reputation())
+                    .orElse(0);
             if (reputation < 0) {
                 score += Math.abs(reputation) / 2; // Negative rep = higher priority
             }
@@ -231,18 +234,13 @@ public class DroneCombatAI {
     /**
      * Identify which faction a mob belongs to based on entity type/name
      */
-    private ReputationData.Faction identifyMobFaction(Mob mob) {
+    private Identifier identifyMobFaction(Mob mob) {
         String entityId = mob.getType().getDescriptionId();
-        
-        if (entityId.contains("military") || entityId.contains("soldier") || entityId.contains("remnant") || 
-            entityId.contains("guard")) {
-            return ReputationData.Faction.REMNANTS;
-        } else if (entityId.contains("scavenger") || entityId.contains("bandit") || entityId.contains("salvager") ||
-                   entityId.contains("raider")) {
-            return ReputationData.Faction.SALVAGERS;
-        } else if (entityId.contains("mutant") || entityId.contains("feral") || entityId.contains("ghoul") ||
-                   entityId.contains("infected")) {
-            return ReputationData.Faction.MUTANTS;
+        if (entityId.contains("military") || entityId.contains("soldier")
+                || entityId.contains("guard") || entityId.contains("scavenger") || entityId.contains("bandit")
+                || entityId.contains("raider") || entityId.contains("mutant") || entityId.contains("feral")
+                || entityId.contains("ghoul") || entityId.contains("infected")) {
+            return AshfallFactionMap.forEntity(entityId);
         }
         return null;
     }

@@ -1,5 +1,7 @@
 package com.knoxhack.echoashfallprotocol.integration;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoFactionProfile;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.block.NexusCoreBlock;
 import com.knoxhack.echoashfallprotocol.block.entity.NexusCoreBlockEntity;
@@ -18,8 +20,7 @@ import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
 import com.knoxhack.echoashfallprotocol.entity.ScoutDrone;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventStatus;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestData;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.network.ArchiveIntelReadPacket;
@@ -64,6 +65,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -233,14 +235,38 @@ public final class AshfallTerminalIntegration {
                 "Faction Signal Threads",
                 "OPEN",
                 List.of(
-                        "Remnants preserve order, patrol routes, and military stockpiles. Salvagers turn ruin into trade, maps, and routes. Mutant enclaves treat adaptation as survival medicine.",
-                        "Faction work is not separate from the main route: trust opens supplies, lore, and safer ways to cross systems the old world left broken.",
+                        "Ten Ashfall factions now report through Echo Core: shelters, rangers, freeholds, archivists, workers, sanctums, salvage crews, wardens, thaw crews, and scar witnesses.",
+                        "Faction work is not separate from the main route: contacts, contracts, services, and standing all feed the same synced Echo Core record.",
                         "Orbital Remnant, Void Salvager, and Nexus Choir signals echo those same pressures after the Nexus choice reaches orbit, where quarantine turns politics into pressure suits."),
                 false));
     }
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, path);
+    }
+
+    private static List<EchoFactionProfile> ashfallFactionProfiles(Player player) {
+        if (player == null) {
+            return List.of();
+        }
+        return AshfallFactionMap.all().stream()
+                .map(factionId -> EchoCoreServices.factionProfile(player, factionId))
+                .flatMap(Optional::stream)
+                .toList();
+    }
+
+    private static String activeFactionContractLine(List<EchoFactionProfile> profiles) {
+        if (profiles == null || profiles.isEmpty()) {
+            return "Active faction contract: Echo Core faction data unavailable.";
+        }
+        for (EchoFactionProfile profile : profiles) {
+            if (profile.activeContractId().isPresent()) {
+                return "Active faction contract: " + profile.definition().shortName()
+                        + " / " + profile.activeContractId().get().getPath();
+            }
+        }
+        long contacted = profiles.stream().filter(EchoFactionProfile::contacted).count();
+        return "Active faction contract: none / contacts " + contacted + "/" + profiles.size();
     }
 
     private static void turnInCurrentMission(ServerPlayer player, String payload) {
@@ -1079,7 +1105,7 @@ public final class AshfallTerminalIntegration {
                         2,
                         1,
                         "Identify the first living social signal in the wasteland.",
-                        "Remnants, Salvagers, and Mutant enclaves each read Gridfall differently. Contacting any faction proves the ruins are not empty; they are contested.",
+                    "Ashfall factions read each route differently. Contacting any faction proves the ruins are not empty; they are organized, territorial, and listening.",
                         "Reach any faction job site and open first contact.",
                         "Crossband stable. ECHO can now separate military order, salvage economy, and biological adaptation threads.",
                         "first_faction_contact",
@@ -1581,7 +1607,8 @@ public final class AshfallTerminalIntegration {
                         false,
                         "",
                         List.of(entry.content, "Priority: " + entry.priority.getLabel()
-                                + (entry.relatedFaction == null ? "" : " / Faction: " + entry.relatedFaction.getDisplayName())),
+                                + (entry.relatedFaction == null ? "" : " / Faction: "
+                                        + AshfallFactionMap.displayName(entry.relatedFaction))),
                         true,
                         entry.id));
             }
@@ -1699,8 +1726,7 @@ public final class AshfallTerminalIntegration {
             ResearchData research = ResearchData.get(context.player());
             SurvivalData survival = context.player().getData(ModAttachments.SURVIVAL_DATA.get());
             EchoIntel intel = EchoIntel.get(context.player());
-            ReputationData reputation = ReputationData.get(context.player());
-            FactionQuestData factionQuests = FactionQuestData.get(context.player());
+            List<EchoFactionProfile> factionProfiles = ashfallFactionProfiles(context.player());
 
             int x = context.contentX();
             int y = context.contentY();
@@ -1739,20 +1765,19 @@ public final class AshfallTerminalIntegration {
             cy = renderWeatherEventPanel(context, graphics, x, cy, leftW) + 4;
 
             int factionY = cy + 20;
-            int factionH = Math.max(112, 28 + ReputationData.Faction.values().length * 13
-                    + TerminalUi.wrappedHeight(context, "Tracked faction quest: "
-                    + (factionQuests.getTrackedQuestId().isBlank() ? "none" : factionQuests.getTrackedQuestId()), leftW - 28));
+            String activeContract = activeFactionContractLine(factionProfiles);
+            int factionH = Math.max(112, 28 + factionProfiles.size() * 13
+                    + TerminalUi.wrappedHeight(context, activeContract, leftW - 28));
             cy = flatDataPanel(context, graphics, x, factionY, leftW, factionH, "FACTION SUMMARY", "");
-            for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-                int rep = reputation.getReputation(faction);
-                ReputationData.ReputationTier tier = reputation.getTier(faction);
-                line(context, graphics, faction.getDisplayName() + ": " + rep + " / " + tier.getDisplayName()
-                        + " / perks " + reputation.getPerkPoints(faction), x + 12, cy, leftW - 24, tier.getColor());
+            for (EchoFactionProfile profile : factionProfiles) {
+                int color = profile.contacted() ? profile.definition().accentColor() : TerminalUi.MUTED;
+                line(context, graphics, profile.definition().shortName() + ": " + profile.reputation()
+                        + " / " + profile.standing().displayName()
+                        + (profile.contacted() ? " / contacted" : " / no contact"),
+                        x + 12, cy, leftW - 24, color);
                 cy += 13;
             }
-            cy = wrap(context, graphics, "Tracked faction quest: "
-                    + (factionQuests.getTrackedQuestId().isBlank() ? "none" : factionQuests.getTrackedQuestId()),
-                    x + 12, cy + 4, leftW - 24, TerminalUi.MUTED);
+            cy = wrap(context, graphics, activeContract, x + 12, cy + 4, leftW - 24, TerminalUi.MUTED);
             int leftBottom = cy;
 
             int rightY = wide ? y : leftBottom + 22;
@@ -1807,19 +1832,18 @@ public final class AshfallTerminalIntegration {
 
         private static int statusHeight(TerminalRenderContext context) {
             SurvivalData survival = context.player().getData(ModAttachments.SURVIVAL_DATA.get());
-            FactionQuestData factionQuests = FactionQuestData.get(context.player());
+            List<EchoFactionProfile> factionProfiles = ashfallFactionProfiles(context.player());
             int w = context.contentWidth();
             boolean wide = w >= 620;
             int leftW = wide ? Math.max(230, w / 2 - 8) : w;
             int rightW = wide ? Math.max(180, w - leftW - 18) : w;
-            String trackedQuest = "Tracked faction quest: "
-                    + (factionQuests.getTrackedQuestId().isBlank() ? "none" : factionQuests.getTrackedQuestId());
+            String activeContract = activeFactionContractLine(factionProfiles);
             int hazardReasonH = survival.getHazardReason().isBlank()
                     ? 0
                     : TerminalUi.wrappedHeight(context, survival.getHazardReason(), leftW - 16) + 4;
             int healthPanelH = Math.max(190, 170 + hazardReasonH);
-            int factionH = Math.max(112, 28 + ReputationData.Faction.values().length * 13
-                    + TerminalUi.wrappedHeight(context, trackedQuest, leftW - 28));
+            int factionH = Math.max(112, 28 + factionProfiles.size() * 13
+                    + TerminalUi.wrappedHeight(context, activeContract, leftW - 28));
             int leftH = healthPanelH + 10
                     + weatherEventPanelHeight(context, leftW) + 4
                     + 20 + factionH;
@@ -2743,9 +2767,12 @@ public final class AshfallTerminalIntegration {
                     + " / unread " + intel.getUnreadCount(), x, y, w,
                     intel.getUnreadCount() > 0 ? TerminalUi.AMBER : TerminalUi.GREEN);
             int cy = y + 24;
-            for (ReputationData.Faction faction : ReputationData.Faction.values()) {
+            for (Identifier faction : AshfallFactionMap.all()) {
                 int complete = intel.getDossierCompletion(faction);
-                line(context, graphics, faction.getDisplayName() + " dossier " + complete + "%", x, cy, w, TerminalUi.TEXT);
+                String name = EchoCoreServices.factionDefinition(faction)
+                        .map(definition -> definition.shortName())
+                        .orElse(AshfallFactionMap.displayName(faction));
+                line(context, graphics, name + " dossier " + complete + "%", x, cy, w, TerminalUi.TEXT);
                 TerminalUi.progress(graphics, x + Math.min(150, w / 2), cy + 2,
                         Math.max(80, w - Math.min(155, w / 2 + 5)), 8, complete / 100.0F, TerminalUi.CYAN);
                 cy += 16;
@@ -2788,7 +2815,7 @@ public final class AshfallTerminalIntegration {
         }
 
         private void renderFactions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                EchoIntel intel, ReputationData reputation, int x, int y, int w) {
+                EchoIntel intel, int x, int y, int w) {
             String insight = intel.synthesizeInsight();
             int cy = y;
             if (insight != null && !insight.isBlank()) {
@@ -2797,11 +2824,12 @@ public final class AshfallTerminalIntegration {
                 line(context, graphics, "Pattern analysis: no elevated faction pattern detected.", x, cy, w, TerminalUi.MUTED);
                 cy += 22;
             }
-            for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-                int rep = reputation.getReputation(faction);
-                ReputationData.ReputationTier tier = reputation.getTier(faction);
-                line(context, graphics, faction.getDisplayName() + ": " + rep + " / " + tier.getDisplayName()
-                        + " / perk points " + reputation.getPerkPoints(faction), x, cy, w, tier.getColor());
+            for (EchoFactionProfile profile : ashfallFactionProfiles(context.player())) {
+                int color = profile.contacted() ? profile.definition().accentColor() : TerminalUi.MUTED;
+                line(context, graphics, profile.definition().displayName() + ": " + profile.reputation()
+                        + " / " + profile.standing().displayName()
+                        + " / contracts " + profile.completedContracts(),
+                        x, cy, w, color);
                 cy += 14;
             }
         }

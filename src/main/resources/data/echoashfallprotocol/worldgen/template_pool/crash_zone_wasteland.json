@@ -52,7 +52,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "terrain_matching",
-        "location": "echoashfallprotocol:biomes/crash_zone_wasteland/salvager_hut",
+        "location": "echoashfallprotocol:biomes/crash_zone_wasteland/crashbreak_hut",
         "processors": "echoashfallprotocol:crash_zone_loot"
       }
     },
@@ -70,7 +70,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "terrain_matching",
-        "location": "echoashfallprotocol:biomes/crash_zone_wasteland/salvager_worksite",
+        "location": "echoashfallprotocol:biomes/crash_zone_wasteland/crashbreak_worksite",
         "processors": "echoashfallprotocol:crash_zone_loot"
       }
     },

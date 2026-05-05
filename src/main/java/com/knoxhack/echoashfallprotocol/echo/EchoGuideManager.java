@@ -10,6 +10,7 @@ import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.registry.ModSounds;
 import com.knoxhack.echoashfallprotocol.entity.ModEntities;
 import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
+import com.knoxhack.echoashfallprotocol.entity.faction.FactionNpcEntity;
 import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -166,15 +167,9 @@ public class EchoGuideManager {
         List<LivingEntity> entities = player.level().getEntitiesOfClass(LivingEntity.class, area);
 
         for (LivingEntity entity : entities) {
-            String typeId = EntityType.getKey(entity.getType()).toString();
-            if ("echoashfallprotocol:remnant_soldier".equals(typeId)) {
-                return "remnant_outpost";
-            }
-            if ("echoashfallprotocol:salvager_trader".equals(typeId)) {
-                return "salvager_trading_post";
-            }
-            if ("echoashfallprotocol:mutant_creature".equals(typeId)) {
-                return "mutant_sanctuary";
+            if (entity instanceof FactionNpcEntity npc) {
+                EchoCoreServices.markFactionContacted(player, npc.factionId());
+                return npc.factionId().getPath() + "_contact";
             }
         }
 
@@ -183,7 +178,7 @@ public class EchoGuideManager {
             return "minecraft:villager".equals(typeId) || "minecraft:iron_golem".equals(typeId);
         });
         if (hasVillageNpc || hasVillageBlockSignature((ServerLevel) player.level(), player.blockPosition())) {
-            return "salvager_trading_post";
+            return "survivor_network_contact";
         }
 
         return null;

@@ -32,9 +32,9 @@ public class ProceduralStructureHandler {
             Map.entry(StructureType.RADIO_TOWER, Set.of("ruined_plains", "crash_zone_wasteland", "radiation_zone")),
             Map.entry(StructureType.SEWER_JUNCTION, Set.of("toxic_swamp", "ruined_cityscape", "industrial_ruins")),
             Map.entry(StructureType.TRAIN_YARD, Set.of("industrial_ruins", "ruined_cityscape", "crash_zone_wasteland")),
-            Map.entry(StructureType.REMNANT_OUTPOST, Set.of("ruined_plains", "crash_zone_wasteland", "radiation_zone")),
-            Map.entry(StructureType.SALVAGER_TRADING_POST, Set.of("ruined_plains", "crash_zone_wasteland", "ruined_cityscape")),
-            Map.entry(StructureType.MUTANT_SANCTUARY, Set.of("toxic_swamp")),
+            Map.entry(StructureType.RADWARDEN_OUTPOST, Set.of("ruined_plains", "crash_zone_wasteland", "radiation_zone")),
+            Map.entry(StructureType.CRASHBREAK_SALVAGE_YARD, Set.of("ruined_plains", "crash_zone_wasteland", "ruined_cityscape")),
+            Map.entry(StructureType.SPOREBOUND_SANCTUM, Set.of("toxic_swamp")),
             Map.entry(StructureType.CRYOGENIC_RUINS, Set.of("cryogenic_ruins")),
             Map.entry(StructureType.RELAY_STATION, Set.of("ruined_plains", "crash_zone_wasteland")),
             Map.entry(StructureType.DERELICT_WORKSHOP, Set.of("ruined_plains", "industrial_ruins", "crash_zone_wasteland")),
@@ -71,9 +71,9 @@ public class ProceduralStructureHandler {
         SPAWN_CONFIGS.put(StructureType.OBSERVATION_POST, new SpawnConfig(60, 15, 210415012));
 
         // Exploration 1.1: faction hubs
-        SPAWN_CONFIGS.put(StructureType.REMNANT_OUTPOST, new SpawnConfig(50, 12, 210415013));
-        SPAWN_CONFIGS.put(StructureType.SALVAGER_TRADING_POST, new SpawnConfig(42, 10, 210415014));
-        SPAWN_CONFIGS.put(StructureType.MUTANT_SANCTUARY, new SpawnConfig(46, 11, 210415015));
+        SPAWN_CONFIGS.put(StructureType.RADWARDEN_OUTPOST, new SpawnConfig(50, 12, 210415013));
+        SPAWN_CONFIGS.put(StructureType.CRASHBREAK_SALVAGE_YARD, new SpawnConfig(42, 10, 210415014));
+        SPAWN_CONFIGS.put(StructureType.SPOREBOUND_SANCTUM, new SpawnConfig(46, 11, 210415015));
 
         // Exploration 1.1: world POIs
         SPAWN_CONFIGS.put(StructureType.CRYOGENIC_RUINS, new SpawnConfig(54, 13, 210415016));

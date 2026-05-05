@@ -70,26 +70,26 @@ public class StructureGenCommand {
                         return 0;
                     }))
                 // === FACTION HUBS WITH VANILLA HOUSE INTEGRATION ===
-                .then(Commands.literal("remnant_outpost")
+                .then(Commands.literal("radwarden_outpost")
                     .executes(ctx -> {
                         if (ctx.getSource().getEntity() instanceof ServerPlayer player) {
-                            generateFactionHub(player, StructureType.REMNANT_OUTPOST, "Remnant Outpost");
+                            generateFactionHub(player, StructureType.RADWARDEN_OUTPOST, "Radwarden Outpost");
                             return 1;
                         }
                         return 0;
                     }))
-                .then(Commands.literal("salvager_post")
+                .then(Commands.literal("crashbreak_salvage")
                     .executes(ctx -> {
                         if (ctx.getSource().getEntity() instanceof ServerPlayer player) {
-                            generateFactionHub(player, StructureType.SALVAGER_TRADING_POST, "Salvager Trading Post");
+                            generateFactionHub(player, StructureType.CRASHBREAK_SALVAGE_YARD, "Crashbreak Salvage Yard");
                             return 1;
                         }
                         return 0;
                     }))
-                .then(Commands.literal("mutant_sanctuary")
+                .then(Commands.literal("sporebound_sanctum")
                     .executes(ctx -> {
                         if (ctx.getSource().getEntity() instanceof ServerPlayer player) {
-                            generateFactionHub(player, StructureType.MUTANT_SANCTUARY, "Mutant Sanctuary");
+                            generateFactionHub(player, StructureType.SPOREBOUND_SANCTUM, "Sporebound Sanctum");
                             return 1;
                         }
                         return 0;

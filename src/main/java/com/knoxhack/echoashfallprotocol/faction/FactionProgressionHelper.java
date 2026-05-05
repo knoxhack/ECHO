@@ -1,76 +1,77 @@
 package com.knoxhack.echoashfallprotocol.faction;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
-import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Applies early faction rewards so reputation matters before the late game.
+ * Applies early rewards from Echo Core Ashfall standing.
  */
 public final class FactionProgressionHelper {
-
     private FactionProgressionHelper() {
     }
 
     public static void syncMilestones(ServerPlayer player) {
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            syncMilestones(player, faction);
+        for (Identifier factionId : AshfallFactionMap.all()) {
+            syncMilestones(player, factionId);
         }
     }
 
-    public static void syncMilestones(ServerPlayer player, ReputationData.Faction faction) {
+    public static void syncMilestones(ServerPlayer player, Identifier factionId) {
         QuestData quest = QuestData.get(player);
         ResearchData research = ResearchData.get(player);
-        int rep = AshfallFactionBridge.reputation(player, faction);
-        String prefix = "faction_" + faction.name().toLowerCase();
+        int reputation = EchoCoreServices.factionProfile(player, factionId)
+                .map(profile -> profile.reputation())
+                .orElse(0);
+        String prefix = "faction_" + factionId.getPath();
+        String displayName = AshfallFactionMap.displayName(factionId);
 
-        if (rep >= 25 && !quest.isAssetDiscovered(prefix + "_safehouse")) {
+        if (reputation >= 25 && !quest.isAssetDiscovered(prefix + "_safehouse")) {
             quest.discoverAsset(prefix + "_safehouse");
-
-            String schematic = getFactionSchematic(faction);
+            String schematic = schematicFor(factionId);
             if (!research.hasSchematic(schematic)) {
                 research.unlockSchematic(schematic);
                 ResearchData.saveAndSync(player, research);
             }
-
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                "§6[ECHO-7]§r " + faction.getDisplayName() + " allied status reached. " +
-                "Trade discount increased and " + schematic + " schematics archived."
-            ));
+            player.sendSystemMessage(Component.literal("\u00A76[ECHO-7]\u00A7r " + displayName
+                    + " allied status reached. " + schematic + " schematics archived."));
         }
 
-        if (rep >= 50 && !quest.isAssetDiscovered(prefix + "_priority")) {
+        if (reputation >= 50 && !quest.isAssetDiscovered(prefix + "_priority")) {
             quest.discoverAsset(prefix + "_priority");
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                "§b[ECHO-7]§r " + faction.getDisplayName() + " priority status granted. Supply lanes opened."
-            ));
+            player.sendSystemMessage(Component.literal("\u00A7b[ECHO-7]\u00A7r " + displayName
+                    + " priority status granted. Supply lanes opened."));
         }
 
-        if (rep >= 75 && !quest.isAssetDiscovered(prefix + "_elite")) {
+        if (reputation >= 75 && !quest.isAssetDiscovered(prefix + "_elite")) {
             quest.discoverAsset(prefix + "_elite");
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                "§d[ECHO-7]§r Elite standing with " + faction.getDisplayName() +
-                " confirmed. High-value schematics and contracts unlocked."
-            ));
+            player.sendSystemMessage(Component.literal("\u00A7d[ECHO-7]\u00A7r Elite standing with "
+                    + displayName + " confirmed. High-value contracts unlocked."));
         }
 
-        if (rep >= 100 && !quest.isAssetDiscovered(prefix + "_command")) {
+        if (reputation >= 100 && !quest.isAssetDiscovered(prefix + "_command")) {
             quest.discoverAsset(prefix + "_command");
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                "§a[ECHO-7]§r " + faction.getDisplayName() +
-                " command-tier support active. Maximum field discount online."
-            ));
+            player.sendSystemMessage(Component.literal("\u00A7a[ECHO-7]\u00A7r " + displayName
+                    + " command-tier support active."));
         }
 
         QuestData.saveAndSync(player, quest);
     }
 
-    private static String getFactionSchematic(ReputationData.Faction faction) {
-        return switch (faction) {
-            case REMNANTS -> "weapons";
-            case SALVAGERS -> "machines";
-            case MUTANTS -> "medical";
-        };
+    private static String schematicFor(Identifier factionId) {
+        if (AshfallBiomeFactions.RADWARDEN_COMPACT.equals(factionId)
+                || AshfallBiomeFactions.ASHLAND_RANGERS.equals(factionId)
+                || AshfallBiomeFactions.DUSTLINE_FREEHOLDS.equals(factionId)) {
+            return "weapons";
+        }
+        if (AshfallBiomeFactions.CRASHBREAK_SALVAGE.equals(factionId)
+                || AshfallBiomeFactions.RUSTWORKS_UNION.equals(factionId)
+                || AshfallBiomeFactions.METRO_ARCHIVISTS.equals(factionId)) {
+            return "machines";
+        }
+        return "medical";
     }
 }

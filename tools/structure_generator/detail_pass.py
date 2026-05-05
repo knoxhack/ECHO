@@ -1032,15 +1032,15 @@ def add_category_signature(
         for dx, dz in ((-2, -1), (2, 1), (-1, 2), (1, -2)):
             add(cx + dx, min_y, cz + dz, rng.choice(["echoashfallprotocol:riftstone", "echoashfallprotocol:energized_fissure"]))
     elif category == "faction":
-        if name.startswith("remnant_outpost/"):
+        if name.startswith("radwarden_outpost/"):
             add(cx, base_y, cz, "echoashfallprotocol:weapon_rack")
             add(cx + 1, base_y, cz, "echoashfallprotocol:supply_crate")
             add(cx - 1, base_y, cz, "echoashfallprotocol:power_node")
-        elif name.startswith("salvager_post/"):
+        elif name.startswith("crashbreak_salvage/"):
             add(cx, base_y, cz, "echoashfallprotocol:trade_counter")
             add(cx + 1, base_y, cz, "echoashfallprotocol:map_table")
             add(cx - 1, base_y, cz, "echoashfallprotocol:rain_collector")
-        elif name.startswith("mutant_sanctuary/"):
+        elif name.startswith("sporebound_sanctum/"):
             add(cx, base_y, cz, "echoashfallprotocol:spore_garden")
             add(cx + 1, base_y, cz, "echoashfallprotocol:bio_processing_station")
             add(cx - 1, min_y, cz, "echoashfallprotocol:toxic_moss")
@@ -1159,8 +1159,8 @@ def add_route_role_set_piece(
             add(cx, y, cz, "minecraft:crying_obsidian")
         add(cx, base_y + 7, cz, "echoashfallprotocol:echo_crystal")
     elif category == "faction":
-        pad_block = "minecraft:smooth_stone" if name.startswith("remnant_outpost/") else "minecraft:gravel"
-        if name.startswith("mutant_sanctuary/"):
+        pad_block = "minecraft:smooth_stone" if name.startswith("radwarden_outpost/") else "minecraft:gravel"
+        if name.startswith("sporebound_sanctum/"):
             pad_block = "echoashfallprotocol:toxic_moss"
         for dx in range(-2, 3):
             for dz in range(-1, 2):

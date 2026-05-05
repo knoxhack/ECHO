@@ -79,7 +79,7 @@ from .ruined_plains_big import (
     generate_settlement_ruins,
 )
 from .crash_zone_medium import (
-    generate_salvager_worksite,
+    generate_crashbreak_worksite,
     generate_crash_site_large,
     generate_radiation_field,
 )
@@ -192,7 +192,7 @@ SHAPE_REGISTRY: Dict[str, Generator] = {
     "settlement_ruins": generate_settlement_ruins,
 
     # Crash Zone - Medium structures
-    "salvager_worksite": generate_salvager_worksite,
+    "crashbreak_worksite": generate_crashbreak_worksite,
     "crash_site_large": generate_crash_site_large,
     "radiation_field": generate_radiation_field,
 

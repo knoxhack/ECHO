@@ -1,9 +1,9 @@
 package com.knoxhack.echoashfallprotocol.world;
 
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -46,7 +46,7 @@ public class POIData {
     private final String description;
     private final POIType type;
     private final DangerLevel danger;
-    private final ReputationData.Faction associatedFaction; // null for neutral
+    private final Identifier associatedFaction; // null for neutral
     private final String[] lootDescriptions;
     private final String[] features;
     private final int researchPoints;
@@ -54,7 +54,7 @@ public class POIData {
     private final String[] requiredGear;
     
     public POIData(String id, String name, String description, POIType type, 
-                   DangerLevel danger, ReputationData.Faction faction,
+                   DangerLevel danger, Identifier faction,
                    String[] lootDescriptions, String[] features,
                    int researchPoints, boolean hasFastTravel, String[] requiredGear) {
         this.id = id;
@@ -75,7 +75,7 @@ public class POIData {
     public String getDescription() { return description; }
     public POIType getType() { return type; }
     public DangerLevel getDangerLevel() { return danger; }
-    public ReputationData.Faction getAssociatedFaction() { return associatedFaction; }
+    public Identifier getAssociatedFaction() { return associatedFaction; }
     public String[] getLootDescriptions() { return lootDescriptions; }
     public String[] getFeatures() { return features; }
     public int getResearchPoints() { return researchPoints; }

@@ -1,27 +1,36 @@
 package com.knoxhack.echoashfallprotocol.faction;
 
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.common.util.ValueIOSerializable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-
 /**
- * Manages legacy inter-faction diplomatic relations and war/peace states.
- * Echo Core owns the player-facing 10 Ashfall faction standing model.
+ * Identifier-keyed Ashfall faction relation state.
  */
 public class FactionDiplomacy implements ValueIOSerializable {
     public static final StreamCodec<RegistryFriendlyByteBuf, FactionDiplomacy> STREAM_CODEC = StreamCodec.of(
-        FactionDiplomacy::writeSync,
-        FactionDiplomacy::readSync
+            FactionDiplomacy::writeSync,
+            FactionDiplomacy::readSync
     );
-    
+
+    private final Map<String, Integer> relations = new HashMap<>();
+    private final Map<String, Long> lastStateChangeTick = new HashMap<>();
+    private final Random random = new Random();
+
+    public FactionDiplomacy() {
+        initializeDefaults();
+    }
+
     public enum DiplomaticState {
         ALLIANCE("Alliance", 0xFF4DBAF4, 75, 100),
         TRUCE("Truce", 0xFF8A9BB0, 25, 74),
@@ -29,22 +38,27 @@ public class FactionDiplomacy implements ValueIOSerializable {
         TENSION("Tension", 0xFFFFA94D, -25, -1),
         SKIRMISH("Skirmish", 0xFFFF8C42, -50, -26),
         OPEN_WAR("Open War", 0xFFFF3333, -100, -51);
-        
+
         private final String displayName;
         private final int color;
         private final int minRelation;
         private final int maxRelation;
-        
+
         DiplomaticState(String displayName, int color, int minRelation, int maxRelation) {
             this.displayName = displayName;
             this.color = color;
             this.minRelation = minRelation;
             this.maxRelation = maxRelation;
         }
-        
-        public String getDisplayName() { return displayName; }
-        public int getColor() { return color; }
-        
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public int getColor() {
+            return color;
+        }
+
         public static DiplomaticState fromRelation(int relation) {
             for (DiplomaticState state : values()) {
                 if (relation >= state.minRelation && relation <= state.maxRelation) {
@@ -53,165 +67,126 @@ public class FactionDiplomacy implements ValueIOSerializable {
             }
             return COLD_WAR;
         }
-        
+
         public boolean isConflict() {
             return this == TENSION || this == SKIRMISH || this == OPEN_WAR;
         }
-        
+
         public boolean isCooperative() {
             return this == ALLIANCE || this == TRUCE;
         }
     }
-    
-    // Faction pairs
-    public enum FactionPair {
-        REMNANT_SALVAGER(ReputationData.Faction.REMNANTS, ReputationData.Faction.SALVAGERS),
-        REMNANT_MUTANT(ReputationData.Faction.REMNANTS, ReputationData.Faction.MUTANTS),
-        SALVAGER_MUTANT(ReputationData.Faction.SALVAGERS, ReputationData.Faction.MUTANTS);
-        
-        private final ReputationData.Faction factionA;
-        private final ReputationData.Faction factionB;
-        
-        FactionPair(ReputationData.Faction a, ReputationData.Faction b) {
-            this.factionA = a;
-            this.factionB = b;
+
+    public static final class FactionPair {
+        private static final List<FactionPair> VALUES = buildPairs();
+        private final Identifier factionA;
+        private final Identifier factionB;
+
+        private FactionPair(Identifier factionA, Identifier factionB) {
+            this.factionA = factionA;
+            this.factionB = factionB;
         }
-        
-        public ReputationData.Faction getFactionA() { return factionA; }
-        public ReputationData.Faction getFactionB() { return factionB; }
-        
-        public static FactionPair fromFactions(ReputationData.Faction a, ReputationData.Faction b) {
-            for (FactionPair pair : values()) {
-                if ((pair.factionA == a && pair.factionB == b) || 
-                    (pair.factionA == b && pair.factionB == a)) {
+
+        public Identifier getFactionA() {
+            return factionA;
+        }
+
+        public Identifier getFactionB() {
+            return factionB;
+        }
+
+        public static List<FactionPair> values() {
+            return VALUES;
+        }
+
+        public static FactionPair fromFactions(Identifier a, Identifier b) {
+            if (a == null || b == null || a.equals(b)) {
+                return null;
+            }
+            for (FactionPair pair : VALUES) {
+                if (pair.involves(a) && pair.involves(b)) {
                     return pair;
                 }
             }
             return null;
         }
-        
-        public boolean involves(ReputationData.Faction faction) {
-            return factionA == faction || factionB == faction;
-        }
-        
-        public ReputationData.Faction getOther(ReputationData.Faction faction) {
-            return factionA == faction ? factionB : factionA;
-        }
-    }
-    
-    // Relation values (-100 to +100) for each pair
-    private int remnantSalvagerRelation = -10;  // Natural competition
-    private int remnantMutantRelation = -40;    // Strong hostility
-    private int salvagerMutantRelation = -20;   // Distrust
-    
-    private final Map<FactionPair, Long> lastStateChangeTick = new HashMap<>();
-    private final Random random = new Random();
-    
-    public FactionDiplomacy() {}
 
-    private static void writeSync(RegistryFriendlyByteBuf buf, FactionDiplomacy data) {
-        buf.writeVarInt(data.remnantSalvagerRelation);
-        buf.writeVarInt(data.remnantMutantRelation);
-        buf.writeVarInt(data.salvagerMutantRelation);
-        buf.writeVarInt(data.lastStateChangeTick.size());
-        for (Map.Entry<FactionPair, Long> entry : data.lastStateChangeTick.entrySet()) {
-            buf.writeUtf(entry.getKey().name());
-            buf.writeLong(entry.getValue());
+        public boolean involves(Identifier faction) {
+            return factionA.equals(faction) || factionB.equals(faction);
+        }
+
+        public Identifier getOther(Identifier faction) {
+            return factionA.equals(faction) ? factionB : factionA;
+        }
+
+        public String key() {
+            return pairKey(factionA, factionB);
+        }
+
+        private static List<FactionPair> buildPairs() {
+            List<FactionPair> pairs = new ArrayList<>();
+            List<Identifier> factions = AshfallFactionMap.all();
+            for (int left = 0; left < factions.size(); left++) {
+                for (int right = left + 1; right < factions.size(); right++) {
+                    pairs.add(new FactionPair(factions.get(left), factions.get(right)));
+                }
+            }
+            return List.copyOf(pairs);
         }
     }
 
-    private static FactionDiplomacy readSync(RegistryFriendlyByteBuf buf) {
-        FactionDiplomacy data = new FactionDiplomacy();
-        data.remnantSalvagerRelation = buf.readVarInt();
-        data.remnantMutantRelation = buf.readVarInt();
-        data.salvagerMutantRelation = buf.readVarInt();
-        data.lastStateChangeTick.clear();
-        int count = buf.readVarInt();
-        for (int i = 0; i < count; i++) {
-            String pairName = buf.readUtf();
-            long tick = buf.readLong();
-            try {
-                data.lastStateChangeTick.put(FactionPair.valueOf(pairName), tick);
-            } catch (IllegalArgumentException ignored) {}
-        }
-        return data;
-    }
-    
     public int getRelation(FactionPair pair) {
-        return switch (pair) {
-            case REMNANT_SALVAGER -> remnantSalvagerRelation;
-            case REMNANT_MUTANT -> remnantMutantRelation;
-            case SALVAGER_MUTANT -> salvagerMutantRelation;
-        };
+        return pair == null ? 0 : relations.getOrDefault(pair.key(), 0);
     }
-    
-    public int getRelation(ReputationData.Faction a, ReputationData.Faction b) {
-        FactionPair pair = FactionPair.fromFactions(a, b);
-        return pair != null ? getRelation(pair) : 0;
+
+    public int getRelation(Identifier a, Identifier b) {
+        return getRelation(FactionPair.fromFactions(a, b));
     }
-    
+
     public void setRelation(FactionPair pair, int value) {
-        int clamped = Math.max(-100, Math.min(100, value));
-        switch (pair) {
-            case REMNANT_SALVAGER -> remnantSalvagerRelation = clamped;
-            case REMNANT_MUTANT -> remnantMutantRelation = clamped;
-            case SALVAGER_MUTANT -> salvagerMutantRelation = clamped;
+        if (pair != null) {
+            relations.put(pair.key(), clamp(value));
         }
     }
-    
+
     public void modifyRelation(FactionPair pair, int amount) {
         setRelation(pair, getRelation(pair) + amount);
     }
-    
+
     public DiplomaticState getState(FactionPair pair) {
         return DiplomaticState.fromRelation(getRelation(pair));
     }
-    
-    public DiplomaticState getState(ReputationData.Faction a, ReputationData.Faction b) {
-        FactionPair pair = FactionPair.fromFactions(a, b);
-        return pair != null ? getState(pair) : DiplomaticState.COLD_WAR;
+
+    public DiplomaticState getState(Identifier a, Identifier b) {
+        return getState(FactionPair.fromFactions(a, b));
     }
-    
-    /**
-     * Check if two factions are currently at war
-     */
-    public boolean isAtWar(ReputationData.Faction a, ReputationData.Faction b) {
+
+    public boolean isAtWar(Identifier a, Identifier b) {
         DiplomaticState state = getState(a, b);
         return state == DiplomaticState.OPEN_WAR || state == DiplomaticState.SKIRMISH;
     }
-    
-    /**
-     * Check if two factions are allied
-     */
-    public boolean isAllied(ReputationData.Faction a, ReputationData.Faction b) {
+
+    public boolean isAllied(Identifier a, Identifier b) {
         return getState(a, b) == DiplomaticState.ALLIANCE;
     }
-    
-    /**
-     * Get the worst diplomatic state involving a given faction
-     */
-    public DiplomaticState getWorstStateForFaction(ReputationData.Faction faction) {
+
+    public DiplomaticState getWorstStateForFaction(Identifier faction) {
         DiplomaticState worst = DiplomaticState.ALLIANCE;
         for (FactionPair pair : FactionPair.values()) {
-            if (pair.involves(faction)) {
-                DiplomaticState state = getState(pair);
-                if (state.ordinal() > worst.ordinal()) {
-                    worst = state;
-                }
+            if (pair.involves(faction) && getState(pair).ordinal() > worst.ordinal()) {
+                worst = getState(pair);
             }
         }
         return worst;
     }
-    
-    /**
-     * Get the faction that is most hostile to the given faction
-     */
-    public ReputationData.Faction getMostHostile(ReputationData.Faction faction) {
-        ReputationData.Faction mostHostile = null;
+
+    public Identifier getMostHostile(Identifier faction) {
+        Identifier mostHostile = null;
         int lowestRelation = 100;
-        
-        for (ReputationData.Faction other : ReputationData.Faction.values()) {
-            if (other == faction) continue;
+        for (Identifier other : AshfallFactionMap.all()) {
+            if (other.equals(faction)) {
+                continue;
+            }
             int relation = getRelation(faction, other);
             if (relation < lowestRelation) {
                 lowestRelation = relation;
@@ -220,96 +195,81 @@ public class FactionDiplomacy implements ValueIOSerializable {
         }
         return mostHostile;
     }
-    
-    /**
-     * Simulate natural drift in faction relations over time
-     * Called periodically by world tick events
-     */
+
     public void tickRelations(long worldTick) {
-        // Small random drift every 20 minutes (24000 ticks)
-        if (worldTick % 24000 != 0) return;
-        
+        if (worldTick % 24000L != 0L) {
+            return;
+        }
         for (FactionPair pair : FactionPair.values()) {
             int current = getRelation(pair);
-            DiplomaticState state = getState(pair);
-            
-            // Natural tendency toward COLD_WAR
-            int drift = switch (state) {
-                case ALLIANCE -> -2;      // Alliances require maintenance
-                case TRUCE -> -1;         // Truces slowly decay
-                case COLD_WAR -> 1;       // Cold war warms slightly
-                case TENSION -> -2;       // Tension escalates
-                case SKIRMISH -> -3;      // Skirmishes push toward war
-                case OPEN_WAR -> -1;      // Wars continue until resolved
-            };
-            
-            // Random variation
-            drift += random.nextInt(3) - 1;
-            
-            setRelation(pair, current + drift);
+            if (current > 0) {
+                modifyRelation(pair, -1);
+            } else if (current < 0 && random.nextFloat() < 0.35F) {
+                modifyRelation(pair, 1);
+            }
         }
     }
-    
-    /**
-     * Force a state change with a minimum cooldown
-     */
+
     public boolean tryStateChange(FactionPair pair, DiplomaticState targetState, long worldTick, int cooldownTicks) {
-        Long lastChange = lastStateChangeTick.get(pair);
-        if (lastChange != null && worldTick - lastChange < cooldownTicks) {
-            return false; // Cooldown active
+        if (pair == null || targetState == null) {
+            return false;
         }
-        
-        int targetRelation = switch (targetState) {
-            case ALLIANCE -> 75;
-            case TRUCE -> 25;
-            case COLD_WAR -> 0;
-            case TENSION -> -25;
-            case SKIRMISH -> -50;
+        long last = lastStateChangeTick.getOrDefault(pair.key(), 0L);
+        if (worldTick - last < cooldownTicks) {
+            return false;
+        }
+        int target = switch (targetState) {
+            case ALLIANCE -> 80;
+            case TRUCE -> 40;
+            case COLD_WAR -> 10;
+            case TENSION -> -10;
+            case SKIRMISH -> -35;
             case OPEN_WAR -> -75;
         };
-        
-        setRelation(pair, targetRelation + random.nextInt(10) - 5);
-        lastStateChangeTick.put(pair, worldTick);
+        setRelation(pair, target);
+        lastStateChangeTick.put(pair.key(), worldTick);
         return true;
     }
-    
+
     @Override
     public void serialize(ValueOutput output) {
-        output.putInt("RemnantSalvagerRelation", remnantSalvagerRelation);
-        output.putInt("RemnantMutantRelation", remnantMutantRelation);
-        output.putInt("SalvagerMutantRelation", salvagerMutantRelation);
-        
-        // Save state change timestamps
-        output.putInt("StateChangeCount", lastStateChangeTick.size());
-        int idx = 0;
-        for (Map.Entry<FactionPair, Long> entry : lastStateChangeTick.entrySet()) {
-            output.putString("StateChange_" + idx + "_Pair", entry.getKey().name());
-            output.putLong("StateChange_" + idx + "_Tick", entry.getValue());
-            idx++;
+        output.putInt("relationCount", relations.size());
+        int index = 0;
+        for (Map.Entry<String, Integer> entry : relations.entrySet()) {
+            output.putString("relation_" + index + "_pair", entry.getKey());
+            output.putInt("relation_" + index + "_value", entry.getValue());
+            index++;
+        }
+        output.putInt("stateChangeCount", lastStateChangeTick.size());
+        index = 0;
+        for (Map.Entry<String, Long> entry : lastStateChangeTick.entrySet()) {
+            output.putString("stateChange_" + index + "_pair", entry.getKey());
+            output.putLong("stateChange_" + index + "_tick", entry.getValue());
+            index++;
         }
     }
-    
+
     @Override
     public void deserialize(ValueInput input) {
-        remnantSalvagerRelation = input.getIntOr("RemnantSalvagerRelation", -10);
-        remnantMutantRelation = input.getIntOr("RemnantMutantRelation", -40);
-        salvagerMutantRelation = input.getIntOr("SalvagerMutantRelation", -20);
-        
-        // Clamp values
-        remnantSalvagerRelation = Math.max(-100, Math.min(100, remnantSalvagerRelation));
-        remnantMutantRelation = Math.max(-100, Math.min(100, remnantMutantRelation));
-        salvagerMutantRelation = Math.max(-100, Math.min(100, salvagerMutantRelation));
-        
-        // Load state change timestamps
+        relations.clear();
+        initializeDefaults();
+        int relationCount = input.getIntOr("relationCount", -1);
+        if (relationCount >= 0) {
+            for (int i = 0; i < relationCount; i++) {
+                String key = normalizePairKey(input.getStringOr("relation_" + i + "_pair", ""));
+                if (!key.isBlank()) {
+                    relations.put(key, clamp(input.getIntOr("relation_" + i + "_value", 0)));
+                }
+            }
+        }
+
         lastStateChangeTick.clear();
-        int count = input.getIntOr("StateChangeCount", 0);
-        for (int i = 0; i < count; i++) {
-            String pairName = input.getStringOr("StateChange_" + i + "_Pair", "");
-            long tick = input.getLongOr("StateChange_" + i + "_Tick", 0L);
-            try {
-                FactionPair pair = FactionPair.valueOf(pairName);
-                lastStateChangeTick.put(pair, tick);
-            } catch (IllegalArgumentException ignored) {}
+        int changeCount = input.getIntOr("stateChangeCount", 0);
+        for (int i = 0; i < changeCount; i++) {
+            String key = normalizePairKey(input.getStringOr("stateChange_" + i + "_pair", ""));
+            if (!key.isBlank()) {
+                lastStateChangeTick.put(key, input.getLongOr("stateChange_" + i + "_tick", 0L));
+            }
         }
     }
 
@@ -320,5 +280,70 @@ public class FactionDiplomacy implements ValueIOSerializable {
 
     public static void syncToClient(ServerPlayer player) {
         player.syncData(ModAttachments.FACTION_DIPLOMACY.get());
+    }
+
+    private void initializeDefaults() {
+        setDefault(AshfallBiomeFactions.RADWARDEN_COMPACT, AshfallBiomeFactions.SPOREBOUND_SANCTUM, -35);
+        setDefault(AshfallBiomeFactions.RUSTWORKS_UNION, AshfallBiomeFactions.CRASHBREAK_SALVAGE, 20);
+        setDefault(AshfallBiomeFactions.METRO_ARCHIVISTS, AshfallBiomeFactions.SCARBOUND_CONCLAVE, -15);
+        setDefault(AshfallBiomeFactions.SURVIVOR_NETWORK, AshfallBiomeFactions.DUSTLINE_FREEHOLDS, 25);
+        setDefault(AshfallBiomeFactions.THAWBOUND_COLLECTIVE, AshfallBiomeFactions.RADWARDEN_COMPACT, 10);
+    }
+
+    private void setDefault(Identifier a, Identifier b, int value) {
+        relations.putIfAbsent(pairKey(a, b), value);
+    }
+
+    private static void writeSync(RegistryFriendlyByteBuf buf, FactionDiplomacy data) {
+        buf.writeVarInt(data.relations.size());
+        for (Map.Entry<String, Integer> entry : data.relations.entrySet()) {
+            buf.writeUtf(entry.getKey());
+            buf.writeVarInt(entry.getValue());
+        }
+        buf.writeVarInt(data.lastStateChangeTick.size());
+        for (Map.Entry<String, Long> entry : data.lastStateChangeTick.entrySet()) {
+            buf.writeUtf(entry.getKey());
+            buf.writeLong(entry.getValue());
+        }
+    }
+
+    private static FactionDiplomacy readSync(RegistryFriendlyByteBuf buf) {
+        FactionDiplomacy data = new FactionDiplomacy();
+        data.relations.clear();
+        int count = buf.readVarInt();
+        for (int i = 0; i < count; i++) {
+            data.relations.put(normalizePairKey(buf.readUtf()), clamp(buf.readVarInt()));
+        }
+        data.lastStateChangeTick.clear();
+        int changeCount = buf.readVarInt();
+        for (int i = 0; i < changeCount; i++) {
+            data.lastStateChangeTick.put(normalizePairKey(buf.readUtf()), buf.readLong());
+        }
+        return data;
+    }
+
+    private static String pairKey(Identifier a, Identifier b) {
+        String left = a.toString();
+        String right = b.toString();
+        return left.compareTo(right) <= 0 ? left + "|" + right : right + "|" + left;
+    }
+
+    private static String normalizePairKey(String key) {
+        if (key == null || key.isBlank()) {
+            return "";
+        }
+        String[] parts = key.split("\\|");
+        if (parts.length != 2) {
+            return "";
+        }
+        try {
+            return pairKey(Identifier.parse(parts[0]), Identifier.parse(parts[1]));
+        } catch (RuntimeException ignored) {
+            return "";
+        }
+    }
+
+    private static int clamp(int value) {
+        return Math.max(-100, Math.min(100, value));
     }
 }

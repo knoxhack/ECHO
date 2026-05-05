@@ -853,9 +853,9 @@ public class QuestData implements ValueIOSerializable {
             case "poi" -> visitedSpecialLocations.contains(ExplorationSiteRegistry.normalize(locationId))
                     || isPOIDiscovered(locationId)
                     || ("faction_hub".equals(locationId)
-                            && (isPOIDiscovered("remnant_outpost")
-                                    || isPOIDiscovered("salvager_trading_post")
-                                    || isPOIDiscovered("mutant_sanctuary")));
+                            && (isPOIDiscovered("radwarden_outpost")
+                                    || isPOIDiscovered("crashbreak_salvage_yard")
+                                    || isPOIDiscovered("sporebound_sanctum")));
             case "special" -> visitedSpecialLocations.contains(locationId);
             default -> visitedSpecialLocations.contains(locationType + ":" + locationId);
         };

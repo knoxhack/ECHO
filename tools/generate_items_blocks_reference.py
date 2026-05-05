@@ -185,12 +185,12 @@ ASHFALL_BLOCK_DESCRIPTIONS = {
     "load_distributor": ("Power utility", "Power-grid utility for distributing machine load."),
     "nexus_capacitor": ("Power storage", "Late-game Nexus-styled energy capacitor."),
     "factory_controller": ("Automation", "Factory controller for coordinated machine operation."),
-    "weapon_rack": ("Faction workstation", "Remnant faction profession/workstation block."),
-    "supply_crate": ("Faction workstation", "Remnant faction supply profession/workstation block."),
-    "trade_counter": ("Faction workstation", "Salvager faction trade profession/workstation block."),
-    "map_table": ("Faction workstation", "Salvager faction map profession/workstation block."),
-    "bio_processing_station": ("Faction workstation", "Mutant faction bio-processing profession/workstation block."),
-    "spore_garden": ("Faction workstation", "Mutant faction spore/garden profession/workstation block."),
+    "weapon_rack": ("Faction workstation", "Radwarden faction profession/workstation block."),
+    "supply_crate": ("Faction workstation", "Radwarden faction supply profession/workstation block."),
+    "trade_counter": ("Faction workstation", "Crashbreak faction trade profession/workstation block."),
+    "map_table": ("Faction workstation", "Crashbreak faction map profession/workstation block."),
+    "bio_processing_station": ("Faction workstation", "Sporebound faction bio-processing profession/workstation block."),
+    "spore_garden": ("Faction workstation", "Sporebound faction spore/garden profession/workstation block."),
 }
 
 

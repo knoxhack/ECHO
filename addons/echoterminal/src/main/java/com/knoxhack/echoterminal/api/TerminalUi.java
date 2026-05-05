@@ -205,7 +205,7 @@ public final class TerminalUi {
             wrap(context, graphics, detail, textX, y + 36, Math.max(40, w - (textX - x) - 18), MUTED);
         }
         if (pillW > 0) {
-            miniStatusPill(context, graphics, status, x + w - pillW - 14, y + 18, pillW,
+            TerminalUi.miniStatusPill(context, graphics, status, x + w - pillW - 14, y + 18, pillW,
                     statusColor, true);
         }
         return y + h;
@@ -262,7 +262,7 @@ public final class TerminalUi {
 
     public static int imageHero(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, int color) {
-        imagePanel(context, graphics, texture, x, y, w, h, color, 0.62F, true);
+        TerminalUi.imagePanel(context, graphics, texture, x, y, w, h, color, 0.62F, true);
         return y + h + 8;
     }
 

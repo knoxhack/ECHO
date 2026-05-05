@@ -199,19 +199,9 @@ public final class AshfallFactionContractProgression {
         EchoIntel intel = EchoIntel.get(player);
         intel.addReconIntel("Faction Contract Complete",
                 profile.definition().displayName() + " contract resolved: " + spec.title(),
-                legacyFaction(profile.definition().id()),
+                profile.definition().id(),
                 EchoIntel.IntelPriority.MEDIUM);
         EchoIntel.saveAndSync(player, intel);
-    }
-
-    private static ReputationData.Faction legacyFaction(Identifier factionId) {
-        if (AshfallBiomeFactions.RADWARDEN_COMPACT.equals(factionId)) {
-            return ReputationData.Faction.REMNANTS;
-        }
-        if (AshfallBiomeFactions.SPOREBOUND_SANCTUM.equals(factionId)) {
-            return ReputationData.Faction.MUTANTS;
-        }
-        return ReputationData.Faction.SALVAGERS;
     }
 
     private static boolean matches(AshfallFactionContracts.Objective objective, String targetId) {

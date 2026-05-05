@@ -79,7 +79,7 @@ public class EchoAshfallProtocol {
         LOGGER.info("ECHO-7 AI Guide: ONLINE");
         LOGGER.info("Mutation System: ACTIVE");
         LOGGER.info("Smart Event Framework: ENABLED");
-        LOGGER.info("Faction System: ACTIVE (3 Factions)");
+        LOGGER.info("Faction System: ACTIVE (10 Echo Core Ashfall factions)");
         LOGGER.info("Research System: ACTIVE (15 Perks, 5 Schematics)");
         LOGGER.info("Cold Survival: ACTIVE (Cryogenic Ruins Biome)");
         LOGGER.info("Fast Travel: ACTIVE (Radio Network)");

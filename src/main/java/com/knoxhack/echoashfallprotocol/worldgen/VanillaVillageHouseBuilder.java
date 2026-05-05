@@ -120,8 +120,8 @@ public class VanillaVillageHouseBuilder {
 
     // === FACTION PALETTES ===
     
-    /** Remnant: Military/harsh - Stone bricks, iron, dark materials */
-    public static final FactionPalette REMNANT_PALETTE = new FactionPalette(
+    /** Radwarden: Military/harsh - Stone bricks, iron, dark materials */
+    public static final FactionPalette RADWARDEN_PALETTE = new FactionPalette(
         Blocks.STONE_BRICKS,        // wallBlock - sturdy military
         Blocks.STONE_BRICKS,        // floorBlock - stone flooring
         Blocks.STONE_BRICK_STAIRS,  // roofBlock - stone sloped roof
@@ -132,8 +132,8 @@ public class VanillaVillageHouseBuilder {
         Blocks.CRAFTING_TABLE       // detailBlock - work areas
     );
 
-    /** Salvager: Neutral/trade - Oak wood, maintained, classic village */
-    public static final FactionPalette SALVAGER_PALETTE = new FactionPalette(
+    /** Crashbreak: Neutral/trade - Oak wood, maintained, classic village */
+    public static final FactionPalette CRASHBREAK_PALETTE = new FactionPalette(
         Blocks.OAK_PLANKS,          // wallBlock - classic village
         Blocks.OAK_PLANKS,          // floorBlock - wooden floors
         Blocks.OAK_STAIRS,          // roofBlock - classic gable roof
@@ -144,8 +144,8 @@ public class VanillaVillageHouseBuilder {
         Blocks.CHEST                // detailBlock - trade storage
     );
 
-    /** Mutant: Overgrown/bio-adapted - Mossy, spruce, tinted glass, organic */
-    public static final FactionPalette MUTANT_PALETTE = new FactionPalette(
+    /** Sporebound: Overgrown/bio-adapted - Mossy, spruce, tinted glass, organic */
+    public static final FactionPalette SPOREBOUND_PALETTE = new FactionPalette(
         Blocks.MOSSY_STONE_BRICKS,  // wallBlock - overgrown stone
         Blocks.SPRUCE_PLANKS,       // floorBlock - dark wood floors
         Blocks.SPRUCE_STAIRS,       // roofBlock - dark sloped roof
@@ -164,10 +164,10 @@ public class VanillaVillageHouseBuilder {
                                           Room room, StructureType type, RandomSource random) {
         // Determine faction palette
         FactionPalette palette = switch (type) {
-            case REMNANT_OUTPOST -> REMNANT_PALETTE;
-            case SALVAGER_TRADING_POST -> SALVAGER_PALETTE;
-            case MUTANT_SANCTUARY -> MUTANT_PALETTE;
-            default -> SALVAGER_PALETTE;
+            case RADWARDEN_OUTPOST -> RADWARDEN_PALETTE;
+            case CRASHBREAK_SALVAGE_YARD -> CRASHBREAK_PALETTE;
+            case SPOREBOUND_SANCTUM -> SPOREBOUND_PALETTE;
+            default -> CRASHBREAK_PALETTE;
         };
 
         // Determine house size from room type

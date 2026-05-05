@@ -1826,6 +1826,93 @@ def check_lore_cohesion_source_guards(errors: list[str]) -> None:
             errors.append(f"STALE_ORBITAL_COMPAT_COPY {rel_path}")
 
 
+def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
+    """Keep the old 3-faction Ashfall runtime from leaking back in."""
+
+    scan_roots = (
+        JAVA_ROOT,
+        DATA_ROOT,
+        ASSET_ROOT,
+        ROOT / "tools",
+    )
+    suffixes = {".java", ".json", ".md", ".py", ".toml", ".properties", ".txt"}
+    allow_path_parts = (
+        "src/main/java/com/knoxhack/echoashfallprotocol/faction/migration/",
+        "src/main/java/com/knoxhack/echoashfallprotocol/data/SaveMigrationHandler.java",
+        "src/main/java/com/knoxhack/echoashfallprotocol/registry/ModAttachments.java",
+        "src/main/java/com/knoxhack/echoashfallprotocol/entity/ModEntities.java",
+        "src/main/java/com/knoxhack/echoashfallprotocol/EchoAshfallProtocolClient.java",
+        "src/main/java/com/knoxhack/echoashfallprotocol/test/ModGameTests.java",
+        "src/main/resources/assets/echoashfallprotocol/lang/en_us.json",
+        "tools/validate_gameplay_data.py",
+    )
+    line_allow_tokens = (
+        "Orbital Remnants",
+        "Orbital Remnant",
+        "Void Salvager",
+        "echoorbitalremnants",
+        "orbital_remnant",
+        "void_salvager",
+    )
+    legacy_patterns = (
+        r"ReputationData\.Faction",
+        r"\bReputationData\b",
+        r"\bFactionQuest(?:Data|Progression|Registry)?\b",
+        r"\bVillagerQuestHandler\b",
+        r"\bAshfallFactionBridge\b",
+        r"\bcontact_remnants\b",
+        r"\bcontact_salvagers\b",
+        r"\bcontact_mutants\b",
+        r"\bearn_remnant_trust\b",
+        r"\bmake_salvager_trade\b",
+        r"\brecover_mutant_sample\b",
+        r"\breputation_data\b",
+        r"\bfaction_quest_data\b",
+        r"\bremnant_village\b",
+        r"\bsalvager_village\b",
+        r"\bmutant_village\b",
+        r"\bremnant_outpost\b",
+        r"\bsalvager_trading_post\b",
+        r"\bmutant_sanctuary\b",
+        r"\bRemnants\b",
+        r"\bSalvagers\b",
+        r"\bRemnant\b",
+        r"\bSalvager\b",
+        r"\bMutant Sanctuary\b",
+        r"\bContact Mutants\b",
+        r"\b3 Factions\b",
+    )
+    compiled = [re.compile(pattern) for pattern in legacy_patterns]
+
+    def allowed(path: Path, line: str) -> bool:
+        rel_path = path.relative_to(ROOT).as_posix()
+        if any(part in rel_path for part in allow_path_parts):
+            return True
+        return any(token in line for token in line_allow_tokens)
+
+    for root in scan_roots:
+        if not root.exists():
+            continue
+        files = [root] if root.is_file() else root.rglob("*")
+        for path in files:
+            if not path.is_file() or path.suffix not in suffixes:
+                continue
+            try:
+                lines = path.read_text(encoding="utf-8").splitlines()
+            except UnicodeDecodeError:
+                continue
+            for line_number, line in enumerate(lines, start=1):
+                if allowed(path, line):
+                    continue
+                for pattern in compiled:
+                    if pattern.search(line):
+                        errors.append(
+                            f"STALE_ASHFALL_3_FACTION_REFERENCE {path.relative_to(ROOT)}:{line_number}: "
+                            f"{pattern.pattern}"
+                        )
+                        break
+
+
 def main() -> int:
     errors: list[str] = []
     registered = collect_registered_ids()
@@ -1852,6 +1939,7 @@ def main() -> int:
     check_guardian_structure_source_guards(errors)
     check_terminal_mission_browser_source_guards(errors)
     check_lore_cohesion_source_guards(errors)
+    check_clean_ashfall_faction_rebuild_guards(errors)
 
     if errors:
         print("Gameplay data validation failed:")

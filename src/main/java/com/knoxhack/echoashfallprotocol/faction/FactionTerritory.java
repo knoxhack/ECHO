@@ -1,409 +1,284 @@
 package com.knoxhack.echoashfallprotocol.faction;
 
-import net.minecraft.core.BlockPos;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.common.util.ValueIOSerializable;
 
-import java.util.*;
-
 /**
- * Tracks faction influence over biomes and chunks.
- * Used for territory control, raid spawning, and quest generation.
+ * Tracks identifier-keyed faction influence over biomes, chunks, and contact sites.
  */
 public class FactionTerritory implements ValueIOSerializable {
     public static final StreamCodec<RegistryFriendlyByteBuf, FactionTerritory> STREAM_CODEC = StreamCodec.of(
-        FactionTerritory::writeSync,
-        FactionTerritory::readSync
+            FactionTerritory::writeSync,
+            FactionTerritory::readSync
     );
-    
-    // Influence threshold constants
+
     public static final int CONTESTED_THRESHOLD = 30;
     public static final int DOMINANT_THRESHOLD = 60;
     public static final int CONTROLLED_THRESHOLD = 80;
-    
+
+    private final Map<Identifier, Map<String, Integer>> biomeInfluence = new HashMap<>();
+    private final Map<String, Identifier> chunkOwnership = new HashMap<>();
+    private final List<VillageControl> factionVillages = new ArrayList<>();
+
+    public FactionTerritory() {
+        for (Identifier factionId : AshfallFactionMap.all()) {
+            biomeInfluence.put(factionId, new HashMap<>());
+        }
+    }
+
     public enum TerritoryStatus {
         UNCLAIMED("Unclaimed", 0xFF555555),
         CONTESTED("Contested", 0xFFFFA94D),
         DOMINANT("Dominant", 0xFF8A9BB0),
         CONTROLLED("Controlled", 0xFF42D67E);
-        
+
         private final String displayName;
         private final int mapColor;
-        
+
         TerritoryStatus(String displayName, int mapColor) {
             this.displayName = displayName;
             this.mapColor = mapColor;
         }
-        
-        public String getDisplayName() { return displayName; }
-        public int getMapColor() { return mapColor; }
-    }
-    
-    // Biome influence: faction -> biome -> influence value (0-100)
-    private final Map<ReputationData.Faction, Map<String, Integer>> biomeInfluence = new HashMap<>();
-    
-    // Chunk ownership: chunk pos -> primary faction
-    private final Map<String, ReputationData.Faction> chunkOwnership = new HashMap<>();
-    
-    // Village locations and their controlling factions
-    private final List<VillageControl> factionVillages = new ArrayList<>();
-    
-    public FactionTerritory() {
-        // Initialize biome influence maps
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            biomeInfluence.put(faction, new HashMap<>());
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public int getMapColor() {
+            return mapColor;
         }
     }
 
-    private static void writeSync(RegistryFriendlyByteBuf buf, FactionTerritory data) {
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            Map<String, Integer> influence = data.biomeInfluence.getOrDefault(faction, Collections.emptyMap());
-            buf.writeVarInt(influence.size());
-            for (Map.Entry<String, Integer> entry : influence.entrySet()) {
-                buf.writeUtf(entry.getKey());
-                buf.writeVarInt(entry.getValue());
-            }
-        }
-
-        buf.writeVarInt(data.chunkOwnership.size());
-        for (Map.Entry<String, ReputationData.Faction> entry : data.chunkOwnership.entrySet()) {
-            buf.writeUtf(entry.getKey());
-            buf.writeUtf(entry.getValue().name());
-        }
-
-        buf.writeVarInt(data.factionVillages.size());
-        for (VillageControl village : data.factionVillages) {
-            buf.writeBlockPos(village.center);
-            buf.writeUtf(village.controllingFaction.name());
-            buf.writeUtf(village.name);
-            buf.writeLong(village.captureTime);
-        }
-    }
-
-    private static FactionTerritory readSync(RegistryFriendlyByteBuf buf) {
-        FactionTerritory data = new FactionTerritory();
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            Map<String, Integer> influence = new HashMap<>();
-            int count = buf.readVarInt();
-            for (int i = 0; i < count; i++) {
-                String key = buf.readUtf();
-                int value = buf.readVarInt();
-                if (!key.isEmpty()) influence.put(key, value);
-            }
-            data.biomeInfluence.put(faction, influence);
-        }
-
-        data.chunkOwnership.clear();
-        int chunkCount = buf.readVarInt();
-        for (int i = 0; i < chunkCount; i++) {
-            String key = buf.readUtf();
-            String factionName = buf.readUtf();
-            try {
-                if (!key.isEmpty()) {
-                    data.chunkOwnership.put(key, ReputationData.Faction.valueOf(factionName));
-                }
-            } catch (IllegalArgumentException ignored) {}
-        }
-
-        data.factionVillages.clear();
-        int villageCount = buf.readVarInt();
-        for (int i = 0; i < villageCount; i++) {
-            BlockPos center = buf.readBlockPos();
-            String factionName = buf.readUtf();
-            String name = buf.readUtf();
-            long captureTime = buf.readLong();
-            try {
-                data.factionVillages.add(new VillageControl(center, ReputationData.Faction.valueOf(factionName), name, captureTime));
-            } catch (IllegalArgumentException ignored) {}
-        }
-        return data;
-    }
-    
-    /**
-     * Get a faction's influence in a specific biome
-     */
-    public int getBiomeInfluence(ReputationData.Faction faction, String biomeKey) {
+    public int getBiomeInfluence(Identifier faction, String biomeKey) {
         return biomeInfluence.getOrDefault(faction, Collections.emptyMap())
-                .getOrDefault(biomeKey, 0);
+                .getOrDefault(normalizeBiome(biomeKey), 0);
     }
-    
-    /**
-     * Set a faction's influence in a biome
-     */
-    public void setBiomeInfluence(ReputationData.Faction faction, String biomeKey, int value) {
-        biomeInfluence.computeIfAbsent(faction, k -> new HashMap<>())
-                .put(biomeKey, Math.max(0, Math.min(100, value)));
+
+    public void setBiomeInfluence(Identifier faction, String biomeKey, int value) {
+        if (faction == null) {
+            return;
+        }
+        biomeInfluence.computeIfAbsent(faction, key -> new HashMap<>())
+                .put(normalizeBiome(biomeKey), clamp(value));
     }
-    
-    /**
-     * Modify biome influence (add/subtract)
-     */
-    public void modifyBiomeInfluence(ReputationData.Faction faction, String biomeKey, int amount) {
-        int current = getBiomeInfluence(faction, biomeKey);
-        setBiomeInfluence(faction, biomeKey, current + amount);
+
+    public void modifyBiomeInfluence(Identifier faction, String biomeKey, int amount) {
+        setBiomeInfluence(faction, biomeKey, getBiomeInfluence(faction, biomeKey) + amount);
     }
-    
-    /**
-     * Get the dominant faction in a biome
-     */
-    public ReputationData.Faction getDominantFaction(String biomeKey) {
-        ReputationData.Faction dominant = null;
+
+    public Identifier getDominantFaction(String biomeKey) {
+        Identifier dominant = null;
         int maxInfluence = 0;
-        
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            int influence = getBiomeInfluence(faction, biomeKey);
+        for (Identifier factionId : AshfallFactionMap.all()) {
+            int influence = getBiomeInfluence(factionId, biomeKey);
             if (influence > maxInfluence) {
                 maxInfluence = influence;
-                dominant = faction;
+                dominant = factionId;
             }
         }
         return dominant;
     }
-    
-    /**
-     * Get territory status for a biome
-     */
+
     public TerritoryStatus getBiomeStatus(String biomeKey) {
-        ReputationData.Faction dominant = getDominantFaction(biomeKey);
-        if (dominant == null) return TerritoryStatus.UNCLAIMED;
-        
+        Identifier dominant = getDominantFaction(biomeKey);
+        if (dominant == null) {
+            return TerritoryStatus.UNCLAIMED;
+        }
         int influence = getBiomeInfluence(dominant, biomeKey);
-        
-        if (influence >= CONTROLLED_THRESHOLD) return TerritoryStatus.CONTROLLED;
-        if (influence >= DOMINANT_THRESHOLD) return TerritoryStatus.DOMINANT;
-        if (influence >= CONTESTED_THRESHOLD) return TerritoryStatus.CONTESTED;
+        if (influence >= CONTROLLED_THRESHOLD) {
+            return TerritoryStatus.CONTROLLED;
+        }
+        if (influence >= DOMINANT_THRESHOLD) {
+            return TerritoryStatus.DOMINANT;
+        }
+        if (influence >= CONTESTED_THRESHOLD) {
+            return TerritoryStatus.CONTESTED;
+        }
         return TerritoryStatus.UNCLAIMED;
     }
-    
-    /**
-     * Check if a biome is contested (two or more factions have significant influence)
-     */
+
     public boolean isBiomeContested(String biomeKey) {
         int factionsWithInfluence = 0;
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            if (getBiomeInfluence(faction, biomeKey) >= CONTESTED_THRESHOLD) {
+        for (Identifier factionId : AshfallFactionMap.all()) {
+            if (getBiomeInfluence(factionId, biomeKey) >= CONTESTED_THRESHOLD) {
                 factionsWithInfluence++;
             }
         }
         return factionsWithInfluence >= 2;
     }
-    
-    /**
-     * Get all biomes where a faction has dominance
-     */
-    public List<String> getFactionBiomes(ReputationData.Faction faction, TerritoryStatus minStatus) {
+
+    public List<String> getFactionBiomes(Identifier faction, TerritoryStatus minStatus) {
         List<String> biomes = new ArrayList<>();
-        Map<String, Integer> influenceMap = biomeInfluence.getOrDefault(faction, Collections.emptyMap());
-        
-        for (Map.Entry<String, Integer> entry : influenceMap.entrySet()) {
-            int threshold = switch (minStatus) {
-                case UNCLAIMED -> 0;
-                case CONTESTED -> CONTESTED_THRESHOLD;
-                case DOMINANT -> DOMINANT_THRESHOLD;
-                case CONTROLLED -> CONTROLLED_THRESHOLD;
-            };
-            
+        int threshold = switch (minStatus) {
+            case UNCLAIMED -> 0;
+            case CONTESTED -> CONTESTED_THRESHOLD;
+            case DOMINANT -> DOMINANT_THRESHOLD;
+            case CONTROLLED -> CONTROLLED_THRESHOLD;
+        };
+        for (Map.Entry<String, Integer> entry : biomeInfluence.getOrDefault(faction, Collections.emptyMap()).entrySet()) {
             if (entry.getValue() >= threshold) {
                 biomes.add(entry.getKey());
             }
         }
         return biomes;
     }
-    
-    /**
-     * Set chunk ownership
-     */
-    public void setChunkOwner(ChunkPos pos, Level level, ReputationData.Faction faction) {
-        String key = getChunkKey(pos, level);
-        if (faction == null) {
-            chunkOwnership.remove(key);
-        } else {
-            chunkOwnership.put(key, faction);
+
+    public void setChunkOwner(ChunkPos pos, Level level, Identifier faction) {
+        if (pos != null && level != null && faction != null) {
+            chunkOwnership.put(chunkKey(pos, level), faction);
         }
     }
-    
-    /**
-     * Get chunk owner
-     */
-    public ReputationData.Faction getChunkOwner(ChunkPos pos, Level level) {
-        return chunkOwnership.get(getChunkKey(pos, level));
+
+    public Identifier getChunkOwner(ChunkPos pos, Level level) {
+        if (pos == null || level == null) {
+            return null;
+        }
+        return chunkOwnership.get(chunkKey(pos, level));
     }
-    
-    private String getChunkKey(ChunkPos pos, Level level) {
-        return level.dimension().toString() + "_" + pos.x() + "_" + pos.z();
+
+    public void addVillage(BlockPos center, Identifier controllingFaction, String villageName) {
+        if (center != null && controllingFaction != null) {
+            factionVillages.add(new VillageControl(center, controllingFaction, villageName, System.currentTimeMillis()));
+        }
     }
-    
-    /**
-     * Register a faction village
-     */
-    public void registerVillage(BlockPos center, ReputationData.Faction controllingFaction, String villageName) {
-        // Remove existing village at this location
-        factionVillages.removeIf(v -> v.center.distSqr(center) < 10000); // ~100 blocks
-        
-        factionVillages.add(new VillageControl(center, controllingFaction, villageName, System.currentTimeMillis()));
-        
-        // Boost controlling faction's influence in surrounding biomes
-        // This would be expanded with actual biome detection
-    }
-    
-    /**
-     * Get villages controlled by a faction
-     */
-    public List<VillageControl> getFactionVillages(ReputationData.Faction faction) {
+
+    public List<VillageControl> getFactionVillages(Identifier faction) {
         return factionVillages.stream()
-                .filter(v -> v.controllingFaction == faction)
+                .filter(village -> village.controllingFaction.equals(faction))
                 .toList();
     }
 
     public List<VillageControl> getAllVillages() {
-        return new ArrayList<>(factionVillages);
+        return List.copyOf(factionVillages);
     }
-    
-    /**
-     * Transfer village control (e.g., after successful defense/raid)
-     */
-    public boolean transferVillageControl(BlockPos villageCenter, ReputationData.Faction newFaction) {
+
+    public boolean transferVillageControl(BlockPos villageCenter, Identifier newFaction) {
+        if (newFaction == null) {
+            return false;
+        }
         for (VillageControl village : factionVillages) {
-            if (village.center.distSqr(villageCenter) < 10000) {
-                ReputationData.Faction oldFaction = village.controllingFaction;
-                if (oldFaction == newFaction) return false;
-                
+            if (village.center.closerThan(villageCenter, 16.0D)) {
                 village.controllingFaction = newFaction;
                 village.captureTime = System.currentTimeMillis();
-                
-                // Influence shift would happen here - reduce old faction, boost new
                 return true;
             }
         }
         return false;
     }
-    
-    /**
-     * Get the closest faction village to a position
-     */
-    public VillageControl getNearestVillage(BlockPos pos, ReputationData.Faction faction) {
+
+    public VillageControl getNearestVillage(BlockPos pos, Identifier faction) {
         VillageControl nearest = null;
-        double nearestDist = Double.MAX_VALUE;
-        
+        double nearestDistance = Double.MAX_VALUE;
         for (VillageControl village : factionVillages) {
-            if (faction != null && village.controllingFaction != faction) continue;
-            
-            double dist = village.center.distSqr(pos);
-            if (dist < nearestDist) {
-                nearestDist = dist;
+            if (faction != null && !village.controllingFaction.equals(faction)) {
+                continue;
+            }
+            double distance = village.center.distSqr(pos);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
                 nearest = village;
             }
         }
         return nearest;
     }
-    
+
     @Override
     public void serialize(ValueOutput output) {
-        // Save biome influence
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            Map<String, Integer> influence = biomeInfluence.getOrDefault(faction, Collections.emptyMap());
-            output.putInt("BiomeCount_" + faction.name(), influence.size());
-            int idx = 0;
-            for (Map.Entry<String, Integer> entry : influence.entrySet()) {
-                output.putString("Biome_" + faction.name() + "_" + idx + "_Key", entry.getKey());
-                output.putInt("Biome_" + faction.name() + "_" + idx + "_Value", entry.getValue());
-                idx++;
+        output.putInt("influenceFactionCount", biomeInfluence.size());
+        int factionIndex = 0;
+        for (Map.Entry<Identifier, Map<String, Integer>> factionEntry : biomeInfluence.entrySet()) {
+            output.putString("influence_" + factionIndex + "_faction", factionEntry.getKey().toString());
+            output.putInt("influence_" + factionIndex + "_count", factionEntry.getValue().size());
+            int biomeIndex = 0;
+            for (Map.Entry<String, Integer> biomeEntry : factionEntry.getValue().entrySet()) {
+                output.putString("influence_" + factionIndex + "_" + biomeIndex + "_biome", biomeEntry.getKey());
+                output.putInt("influence_" + factionIndex + "_" + biomeIndex + "_value", biomeEntry.getValue());
+                biomeIndex++;
             }
+            factionIndex++;
         }
-        
-        // Save chunk ownership
-        output.putInt("ChunkCount", chunkOwnership.size());
-        int chunkIdx = 0;
-        for (Map.Entry<String, ReputationData.Faction> entry : chunkOwnership.entrySet()) {
-            output.putString("Chunk_" + chunkIdx + "_Key", entry.getKey());
-            output.putString("Chunk_" + chunkIdx + "_Faction", entry.getValue().name());
-            chunkIdx++;
+        output.putInt("chunkCount", chunkOwnership.size());
+        int index = 0;
+        for (Map.Entry<String, Identifier> entry : chunkOwnership.entrySet()) {
+            output.putString("chunk_" + index + "_key", entry.getKey());
+            output.putString("chunk_" + index + "_faction", entry.getValue().toString());
+            index++;
         }
-        
-        // Save villages
-        output.putInt("VillageCount", factionVillages.size());
+        output.putInt("villageCount", factionVillages.size());
         for (int i = 0; i < factionVillages.size(); i++) {
-            VillageControl v = factionVillages.get(i);
-            output.putInt("Village_" + i + "_X", v.center.getX());
-            output.putInt("Village_" + i + "_Y", v.center.getY());
-            output.putInt("Village_" + i + "_Z", v.center.getZ());
-            output.putString("Village_" + i + "_Faction", v.controllingFaction.name());
-            output.putString("Village_" + i + "_Name", v.name);
-            output.putLong("Village_" + i + "_CaptureTime", v.captureTime);
+            VillageControl village = factionVillages.get(i);
+            output.putInt("village_" + i + "_x", village.center.getX());
+            output.putInt("village_" + i + "_y", village.center.getY());
+            output.putInt("village_" + i + "_z", village.center.getZ());
+            output.putString("village_" + i + "_faction", village.controllingFaction.toString());
+            output.putString("village_" + i + "_name", village.name);
+            output.putLong("village_" + i + "_time", village.captureTime);
         }
     }
-    
+
     @Override
     public void deserialize(ValueInput input) {
-        // Load biome influence
-        for (ReputationData.Faction faction : ReputationData.Faction.values()) {
-            Map<String, Integer> influence = new HashMap<>();
-            int count = input.getIntOr("BiomeCount_" + faction.name(), 0);
-            for (int i = 0; i < count; i++) {
-                String key = input.getStringOr("Biome_" + faction.name() + "_" + i + "_Key", "");
-                int value = input.getIntOr("Biome_" + faction.name() + "_" + i + "_Value", 0);
-                if (!key.isEmpty()) {
-                    influence.put(key, value);
+        biomeInfluence.clear();
+        for (Identifier factionId : AshfallFactionMap.all()) {
+            biomeInfluence.put(factionId, new HashMap<>());
+        }
+
+        int factionCount = input.getIntOr("influenceFactionCount", -1);
+        if (factionCount >= 0) {
+            for (int i = 0; i < factionCount; i++) {
+                Identifier faction = parseFaction(input.getStringOr("influence_" + i + "_faction", ""));
+                int count = input.getIntOr("influence_" + i + "_count", 0);
+                if (faction == null) {
+                    continue;
+                }
+                Map<String, Integer> influence = biomeInfluence.computeIfAbsent(faction, key -> new HashMap<>());
+                for (int j = 0; j < count; j++) {
+                    String biome = normalizeBiome(input.getStringOr("influence_" + i + "_" + j + "_biome", ""));
+                    if (!biome.isBlank()) {
+                        influence.put(biome, clamp(input.getIntOr("influence_" + i + "_" + j + "_value", 0)));
+                    }
                 }
             }
-            biomeInfluence.put(faction, influence);
         }
-        
-        // Load chunk ownership
+
         chunkOwnership.clear();
-        int chunkCount = input.getIntOr("ChunkCount", 0);
+        int chunkCount = input.getIntOr("chunkCount", 0);
         for (int i = 0; i < chunkCount; i++) {
-            String key = input.getStringOr("Chunk_" + i + "_Key", "");
-            String factionName = input.getStringOr("Chunk_" + i + "_Faction", "");
-            if (!key.isEmpty() && !factionName.isEmpty()) {
-                try {
-                    chunkOwnership.put(key, ReputationData.Faction.valueOf(factionName));
-                } catch (IllegalArgumentException ignored) {}
+            Identifier faction = parseFaction(input.getStringOr("chunk_" + i + "_faction", ""));
+            String key = input.getStringOr("chunk_" + i + "_key", "");
+            if (faction != null && !key.isBlank()) {
+                chunkOwnership.put(key, faction);
             }
         }
-        
-        // Load villages
+
         factionVillages.clear();
-        int villageCount = input.getIntOr("VillageCount", 0);
+        int villageCount = input.getIntOr("villageCount", 0);
         for (int i = 0; i < villageCount; i++) {
-            int x = input.getIntOr("Village_" + i + "_X", 0);
-            int y = input.getIntOr("Village_" + i + "_Y", 0);
-            int z = input.getIntOr("Village_" + i + "_Z", 0);
-            String factionName = input.getStringOr("Village_" + i + "_Faction", "");
-            String name = input.getStringOr("Village_" + i + "_Name", "Unknown Village");
-            long captureTime = input.getLongOr("Village_" + i + "_CaptureTime", 0L);
-            
-            try {
-                ReputationData.Faction faction = ReputationData.Faction.valueOf(factionName);
-                VillageControl v = new VillageControl(new BlockPos(x, y, z), faction, name, captureTime);
-                factionVillages.add(v);
-            } catch (IllegalArgumentException ignored) {}
-        }
-    }
-    
-    /**
-     * Record class for village control data
-     */
-    public static class VillageControl {
-        public final BlockPos center;
-        public ReputationData.Faction controllingFaction;
-        public final String name;
-        public long captureTime;
-        
-        public VillageControl(BlockPos center, ReputationData.Faction faction, String name, long captureTime) {
-            this.center = center;
-            this.controllingFaction = faction;
-            this.name = name;
-            this.captureTime = captureTime;
+            Identifier faction = parseFaction(input.getStringOr("village_" + i + "_faction", ""));
+            if (faction != null) {
+                factionVillages.add(new VillageControl(
+                        new BlockPos(input.getIntOr("village_" + i + "_x", 0),
+                                input.getIntOr("village_" + i + "_y", 64),
+                                input.getIntOr("village_" + i + "_z", 0)),
+                        faction,
+                        input.getStringOr("village_" + i + "_name", "Faction Contact"),
+                        input.getLongOr("village_" + i + "_time", System.currentTimeMillis())));
+            }
         }
     }
 
@@ -418,5 +293,105 @@ public class FactionTerritory implements ValueIOSerializable {
 
     public static void syncToClient(ServerPlayer player) {
         player.syncData(ModAttachments.FACTION_TERRITORY.get());
+    }
+
+    public static class VillageControl {
+        public final BlockPos center;
+        public Identifier controllingFaction;
+        public final String name;
+        public long captureTime;
+
+        public VillageControl(BlockPos center, Identifier faction, String name, long captureTime) {
+            this.center = center;
+            this.controllingFaction = faction;
+            this.name = name == null || name.isBlank() ? AshfallFactionMap.shortName(faction) + " Contact" : name;
+            this.captureTime = captureTime;
+        }
+    }
+
+    private static void writeSync(RegistryFriendlyByteBuf buf, FactionTerritory data) {
+        buf.writeVarInt(data.biomeInfluence.size());
+        for (Map.Entry<Identifier, Map<String, Integer>> factionEntry : data.biomeInfluence.entrySet()) {
+            buf.writeUtf(factionEntry.getKey().toString());
+            buf.writeVarInt(factionEntry.getValue().size());
+            for (Map.Entry<String, Integer> biomeEntry : factionEntry.getValue().entrySet()) {
+                buf.writeUtf(biomeEntry.getKey());
+                buf.writeVarInt(biomeEntry.getValue());
+            }
+        }
+        buf.writeVarInt(data.chunkOwnership.size());
+        for (Map.Entry<String, Identifier> entry : data.chunkOwnership.entrySet()) {
+            buf.writeUtf(entry.getKey());
+            buf.writeUtf(entry.getValue().toString());
+        }
+        buf.writeVarInt(data.factionVillages.size());
+        for (VillageControl village : data.factionVillages) {
+            buf.writeBlockPos(village.center);
+            buf.writeUtf(village.controllingFaction.toString());
+            buf.writeUtf(village.name);
+            buf.writeLong(village.captureTime);
+        }
+    }
+
+    private static FactionTerritory readSync(RegistryFriendlyByteBuf buf) {
+        FactionTerritory data = new FactionTerritory();
+        data.biomeInfluence.clear();
+        int factionCount = buf.readVarInt();
+        for (int i = 0; i < factionCount; i++) {
+            Identifier faction = parseFaction(buf.readUtf());
+            Map<String, Integer> influence = new HashMap<>();
+            int count = buf.readVarInt();
+            for (int j = 0; j < count; j++) {
+                influence.put(normalizeBiome(buf.readUtf()), clamp(buf.readVarInt()));
+            }
+            if (faction != null) {
+                data.biomeInfluence.put(faction, influence);
+            }
+        }
+        data.chunkOwnership.clear();
+        int chunkCount = buf.readVarInt();
+        for (int i = 0; i < chunkCount; i++) {
+            String key = buf.readUtf();
+            Identifier faction = parseFaction(buf.readUtf());
+            if (faction != null) {
+                data.chunkOwnership.put(key, faction);
+            }
+        }
+        data.factionVillages.clear();
+        int villageCount = buf.readVarInt();
+        for (int i = 0; i < villageCount; i++) {
+            BlockPos center = buf.readBlockPos();
+            Identifier faction = parseFaction(buf.readUtf());
+            String name = buf.readUtf();
+            long time = buf.readLong();
+            if (faction != null) {
+                data.factionVillages.add(new VillageControl(center, faction, name, time));
+            }
+        }
+        return data;
+    }
+
+    private static String chunkKey(ChunkPos pos, Level level) {
+        ResourceKey<Level> dimension = level.dimension();
+        return dimension.identifier() + ":" + pos.x() + "," + pos.z();
+    }
+
+    private static Identifier parseFaction(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return value.contains(":") ? Identifier.parse(value) : AshfallFactionMap.fromLegacyKey(value);
+        } catch (RuntimeException ignored) {
+            return AshfallFactionMap.fromLegacyKey(value);
+        }
+    }
+
+    private static String normalizeBiome(String biomeKey) {
+        return biomeKey == null ? "" : biomeKey.toLowerCase(java.util.Locale.ROOT).trim();
+    }
+
+    private static int clamp(int value) {
+        return Math.max(0, Math.min(100, value));
     }
 }

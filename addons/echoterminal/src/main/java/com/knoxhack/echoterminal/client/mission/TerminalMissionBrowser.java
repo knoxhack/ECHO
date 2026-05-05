@@ -227,12 +227,12 @@ public final class TerminalMissionBrowser {
             int utilityY = y + 36;
             int utilityW = Math.max(1, (innerW - 4) / 2);
             int compactW = Math.max(1, innerW - utilityW - 4);
-            drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND ALL", true, mouseX, mouseY, () -> {
+            drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND", true, mouseX, mouseY, () -> {
                 allExpanded = true;
                 expandedPhases.clear();
                 collapsedPhases.clear();
             });
-            drawCompactButton(context, graphics, innerX + utilityW + 4, utilityY, compactW, "COLLAPSE ALL", true,
+            drawCompactButton(context, graphics, innerX + utilityW + 4, utilityY, compactW, "COMPACT", true,
                     mouseX, mouseY, () -> {
                         allExpanded = false;
                         expandedPhases.clear();

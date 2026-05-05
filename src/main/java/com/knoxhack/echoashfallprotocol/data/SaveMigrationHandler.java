@@ -1,9 +1,11 @@
 package com.knoxhack.echoashfallprotocol.data;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
+import com.knoxhack.echoashfallprotocol.faction.migration.LegacyFactionQuestData;
+import com.knoxhack.echoashfallprotocol.faction.migration.LegacyReputationData;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestData;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
@@ -44,15 +46,9 @@ public class SaveMigrationHandler {
         EchoAshfallProtocol.LOGGER.info("Performing save migration for player {} from version {}", 
             player.getName().getString(), fromVersion);
 
-        // Reset the retired three-faction player-facing reputation model now that Echo Core owns faction standing.
-        ReputationData reputation = ReputationData.get(player);
         if (fromVersion < 2) {
-            reputation.resetLegacyProgress();
-            ReputationData.saveAndSync(player, reputation);
-            FactionQuestData factionQuestData = FactionQuestData.get(player);
-            factionQuestData.clearLegacyFactionProgress();
-            FactionQuestData.saveAndSync(player, factionQuestData);
-            EchoAshfallProtocol.LOGGER.debug("Reset legacy Ashfall faction reputation and quests for {}",
+            migrateLegacyFactionData(player);
+            EchoAshfallProtocol.LOGGER.debug("Migrated retired Ashfall faction reputation and quests for {}",
                     player.getName().getString());
         }
 
@@ -71,5 +67,33 @@ public class SaveMigrationHandler {
 
         EchoAshfallProtocol.LOGGER.info("Save migration completed for player {}", 
             player.getName().getString());
+    }
+
+    private static void migrateLegacyFactionData(ServerPlayer player) {
+        LegacyReputationData reputation = player.getData(ModAttachments.LEGACY_REPUTATION_DATA.get());
+        if (reputation.hasAnyProgress()) {
+            migrateLegacyRep(player, AshfallBiomeFactions.RADWARDEN_COMPACT, reputation.remnantRep());
+            migrateLegacyRep(player, AshfallBiomeFactions.CRASHBREAK_SALVAGE, reputation.salvagerRep());
+            migrateLegacyRep(player, AshfallBiomeFactions.SPOREBOUND_SANCTUM, reputation.mutantRep());
+            reputation.clear();
+            player.setData(ModAttachments.LEGACY_REPUTATION_DATA.get(), reputation);
+        }
+
+        LegacyFactionQuestData questData = player.getData(ModAttachments.LEGACY_FACTION_QUEST_DATA.get());
+        if (questData.hadLegacyProgress()) {
+            EchoCoreServices.markFactionContacted(player, AshfallBiomeFactions.RADWARDEN_COMPACT);
+            EchoCoreServices.markFactionContacted(player, AshfallBiomeFactions.CRASHBREAK_SALVAGE);
+            EchoCoreServices.markFactionContacted(player, AshfallBiomeFactions.SPOREBOUND_SANCTUM);
+            questData.clear();
+            player.setData(ModAttachments.LEGACY_FACTION_QUEST_DATA.get(), questData);
+        }
+        EchoCoreServices.syncFactionDataToClient(player);
+    }
+
+    private static void migrateLegacyRep(ServerPlayer player, net.minecraft.resources.Identifier factionId, int reputation) {
+        if (reputation != 0) {
+            EchoCoreServices.addFactionReputation(player, factionId, reputation);
+            EchoCoreServices.markFactionContacted(player, factionId);
+        }
     }
 }

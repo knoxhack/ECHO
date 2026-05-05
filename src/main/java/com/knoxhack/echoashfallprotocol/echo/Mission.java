@@ -472,7 +472,7 @@ public record Mission(
     /**
      * Represents a location/biome visit requirement.
      * @param locationType Type: "biome", "poi", "dimension"
-     * @param locationId The location ID (e.g., "minecraft:desert", "remnant_outpost")
+     * @param locationId The location ID (e.g., "minecraft:desert", "radwarden_outpost")
      * @param displayName Human-readable name for UI
      */
     public record LocationRequirement(String locationType, String locationId, String displayName) {

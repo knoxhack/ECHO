@@ -14,9 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.server.level.ServerPlayer;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuest;
-import com.knoxhack.echoashfallprotocol.faction.FactionQuestProgression;
-import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractProgression;
 import com.knoxhack.echoashfallprotocol.fasttravel.RadioNetwork;
 import com.knoxhack.echoashfallprotocol.fasttravel.StationRegistry;
 
@@ -129,7 +127,7 @@ public class RelayStationBlock extends Block {
                 com.knoxhack.echoashfallprotocol.research.ResearchData.get(player);
             research.addPoints(15);
             com.knoxhack.echoashfallprotocol.research.ResearchData.saveAndSync(serverPlayer, research);
-            FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.REPAIR, "relay", ReputationData.Faction.REMNANTS, 1);
+            AshfallFactionContractProgression.progressRepair(serverPlayer, "relay");
         }
     }
     
@@ -168,7 +166,7 @@ public class RelayStationBlock extends Block {
                 com.knoxhack.echoashfallprotocol.research.ResearchData.get(player);
             research.addPoints(10);
             com.knoxhack.echoashfallprotocol.research.ResearchData.saveAndSync(serverPlayer, research);
-            FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.REPAIR, "relay", ReputationData.Faction.REMNANTS, 1);
+            AshfallFactionContractProgression.progressRepair(serverPlayer, "relay");
         }
     }
     
