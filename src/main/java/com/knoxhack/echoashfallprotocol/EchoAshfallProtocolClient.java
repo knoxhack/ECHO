@@ -204,9 +204,6 @@ public class EchoAshfallProtocolClient {
             event.registerEntityRenderer(ModEntities.WILD_DOG.get(), WildDogRenderer::new);
             event.registerEntityRenderer(ModEntities.FERAL_HUMAN.get(), FeralHumanRenderer::new);
             event.registerEntityRenderer(ModEntities.CRASH_SURVIVOR.get(), CrashSurvivorRenderer::new);
-            event.registerEntityRenderer(ModEntities.LEGACY_REMNANT_SOLDIER.get(), FactionNpcRenderer::new);
-            event.registerEntityRenderer(ModEntities.LEGACY_SALVAGER_TRADER.get(), FactionNpcRenderer::new);
-            event.registerEntityRenderer(ModEntities.LEGACY_MUTANT_CREATURE.get(), FactionNpcRenderer::new);
             event.registerEntityRenderer(ModEntities.FACTION_NPC.get(), FactionNpcRenderer::new);
             event.registerEntityRenderer(ModEntities.WARDEN_BOSS.get(), WardenBossRenderer::new);
             event.registerEntityRenderer(ModEntities.WASTELAND_SENTINEL.get(), WastelandSentinelRenderer::new);

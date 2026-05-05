@@ -7,8 +7,6 @@ import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.event.SmartEventData;
 import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractData;
-import com.knoxhack.echoashfallprotocol.faction.migration.LegacyFactionQuestData;
-import com.knoxhack.echoashfallprotocol.faction.migration.LegacyReputationData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import com.knoxhack.echoashfallprotocol.survival.ColdData;
 import com.knoxhack.echoashfallprotocol.survival.CombatData;
@@ -56,13 +54,6 @@ public class ModAttachments {
     public static final Supplier<AttachmentType<SmartEventData>> SMART_EVENT_DATA = ATTACHMENT_TYPES.register(
             "smart_event_data",
             () -> AttachmentType.<SmartEventData>serializable(SmartEventData::new)
-                    .build()
-    );
-
-    public static final Supplier<AttachmentType<LegacyReputationData>> LEGACY_REPUTATION_DATA = ATTACHMENT_TYPES.register(
-            "reputation_data",
-            () -> AttachmentType.<LegacyReputationData>serializable(LegacyReputationData::new)
-                    .copyOnDeath()
                     .build()
     );
 
@@ -144,13 +135,6 @@ public class ModAttachments {
             () -> AttachmentType.<com.knoxhack.echoashfallprotocol.faction.FactionTerritory>serializable(
                     com.knoxhack.echoashfallprotocol.faction.FactionTerritory::new)
                     .sync((holder, player) -> holder == player, com.knoxhack.echoashfallprotocol.faction.FactionTerritory.STREAM_CODEC)
-                    .copyOnDeath()
-                    .build()
-    );
-
-    public static final Supplier<AttachmentType<LegacyFactionQuestData>> LEGACY_FACTION_QUEST_DATA = ATTACHMENT_TYPES.register(
-            "faction_quest_data",
-            () -> AttachmentType.<LegacyFactionQuestData>serializable(LegacyFactionQuestData::new)
                     .copyOnDeath()
                     .build()
     );

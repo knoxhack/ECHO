@@ -3,7 +3,6 @@ package com.knoxhack.echoashfallprotocol.faction;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
-import com.knoxhack.echoashfallprotocol.faction.migration.LegacyFactionIds;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.resources.Identifier;
@@ -36,8 +35,27 @@ public final class AshfallFactionMap {
                 && ALL.contains(factionId);
     }
 
-    public static Identifier fromLegacyKey(String key) {
-        return LegacyFactionIds.map(key);
+    public static Identifier resolveFactionId(String value) {
+        String normalized = normalize(value);
+        if (normalized.isBlank()) {
+            return AshfallBiomeFactions.SURVIVOR_NETWORK;
+        }
+
+        if (normalized.contains(":")) {
+            try {
+                Identifier parsed = Identifier.parse(normalized);
+                return isAshfall(parsed) ? parsed : AshfallBiomeFactions.SURVIVOR_NETWORK;
+            } catch (RuntimeException ignored) {
+                return AshfallBiomeFactions.SURVIVOR_NETWORK;
+            }
+        }
+
+        for (Identifier factionId : ALL) {
+            if (factionId.getPath().equals(normalized)) {
+                return factionId;
+            }
+        }
+        return AshfallBiomeFactions.SURVIVOR_NETWORK;
     }
 
     public static Identifier forPoi(String poiId) {
@@ -79,7 +97,36 @@ public final class AshfallFactionMap {
     }
 
     public static Identifier forEntity(String entityId) {
-        return fromLegacyKey(entityId);
+        String value = normalize(entityId);
+        if (value.contains("nexus") || value.contains("scar")) {
+            return AshfallBiomeFactions.SCARBOUND_CONCLAVE;
+        }
+        if (value.contains("cryo") || value.contains("frozen")) {
+            return AshfallBiomeFactions.THAWBOUND_COLLECTIVE;
+        }
+        if (value.contains("radiation") || value.contains("rad_zombie") || value.contains("behemoth")) {
+            return AshfallBiomeFactions.RADWARDEN_COMPACT;
+        }
+        if (value.contains("crash") || value.contains("scavenger") || value.contains("bandit")) {
+            return AshfallBiomeFactions.CRASHBREAK_SALVAGE;
+        }
+        if (value.contains("toxic") || value.contains("spore") || value.contains("feral")
+                || value.contains("crawler") || value.contains("ghoul")) {
+            return AshfallBiomeFactions.SPOREBOUND_SANCTUM;
+        }
+        if (value.contains("rust") || value.contains("steam") || value.contains("industrial")) {
+            return AshfallBiomeFactions.RUSTWORKS_UNION;
+        }
+        if (value.contains("city") || value.contains("metro")) {
+            return AshfallBiomeFactions.METRO_ARCHIVISTS;
+        }
+        if (value.contains("plains") || value.contains("warlord") || value.contains("wild_dog")) {
+            return AshfallBiomeFactions.DUSTLINE_FREEHOLDS;
+        }
+        if (value.contains("ash") || value.contains("wasteland")) {
+            return AshfallBiomeFactions.ASHLAND_RANGERS;
+        }
+        return AshfallBiomeFactions.SURVIVOR_NETWORK;
     }
 
     public static String displayName(Identifier factionId) {

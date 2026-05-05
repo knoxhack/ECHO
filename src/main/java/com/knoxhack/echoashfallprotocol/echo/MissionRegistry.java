@@ -2277,7 +2277,7 @@ public class MissionRegistry {
     }
 
     private static boolean hasFactionContact(Player player, String factionId) {
-        Identifier id = AshfallFactionMap.fromLegacyKey(factionId);
+        Identifier id = AshfallFactionMap.resolveFactionId(factionId);
         return EchoCoreServices.factionProfile(player, id).map(profile -> profile.contacted() || profile.contactCount() > 0)
                 .orElse(false)
                 || QuestData.get(player).hasVisitedLocation("special", "faction_contact:" + id.getPath());

@@ -140,6 +140,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("exploration_site_profiles", () -> ModGameTests::explorationSiteProfiles);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTION_CONTRACT_BALANCE =
             TEST_FUNCTIONS.register("faction_contract_balance", () -> ModGameTests::factionContractBalance);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STRICT_FACTION_ENTITY_IDS =
+            TEST_FUNCTIONS.register("strict_faction_entity_ids", () -> ModGameTests::strictFactionEntityIds);
 
     private ModGameTests() {
     }
@@ -172,6 +174,7 @@ public final class ModGameTests {
         register(event, environment, "first_night_route_safety", FIRST_NIGHT_ROUTE_SAFETY.getId());
         register(event, environment, "exploration_site_profiles", EXPLORATION_SITE_PROFILES.getId());
         register(event, environment, "faction_contract_balance", FACTION_CONTRACT_BALANCE.getId());
+        register(event, environment, "strict_faction_entity_ids", STRICT_FACTION_ENTITY_IDS.getId());
     }
 
     private static void entityAttributeHardening(GameTestHelper helper) {
@@ -942,9 +945,6 @@ public final class ModGameTests {
                 ModEntities.FERAL_HUMAN.get(),
                 ModEntities.CRASH_SURVIVOR.get(),
                 ModEntities.FACTION_NPC.get(),
-                ModEntities.LEGACY_REMNANT_SOLDIER.get(),
-                ModEntities.LEGACY_SALVAGER_TRADER.get(),
-                ModEntities.LEGACY_MUTANT_CREATURE.get(),
                 ModEntities.WARDEN_BOSS.get(),
                 ModEntities.WASTELAND_SENTINEL.get(),
                 ModEntities.CRASH_ZONE_COLOSSUS.get(),
@@ -1302,6 +1302,21 @@ public final class ModGameTests {
         helper.assertTrue("industrial_factory".equals(ExplorationSiteRegistry.normalize("derelict_workshop")),
                 "Legacy derelict workshop alias should still resolve to industrial factory profile");
         helper.succeed();
+    }
+
+    private static void strictFactionEntityIds(GameTestHelper helper) {
+        helper.assertTrue(BuiltInRegistries.ENTITY_TYPE.containsKey(id("faction_npc")),
+                "Generic faction_npc entity id should remain registered");
+        assertRetiredEntityIdAbsent(helper, "remnant", "soldier");
+        assertRetiredEntityIdAbsent(helper, "salvager", "trader");
+        assertRetiredEntityIdAbsent(helper, "mutant", "creature");
+        helper.succeed();
+    }
+
+    private static void assertRetiredEntityIdAbsent(GameTestHelper helper, String first, String second) {
+        Identifier entityId = id(first + "_" + second);
+        helper.assertTrue(!BuiltInRegistries.ENTITY_TYPE.containsKey(entityId),
+                "Retired Ashfall faction entity id should not be registered: " + entityId);
     }
 
     private static void assertContractHasObjective(GameTestHelper helper, String contractPath,

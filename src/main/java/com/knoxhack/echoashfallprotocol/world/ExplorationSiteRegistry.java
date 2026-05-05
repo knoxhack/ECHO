@@ -117,7 +117,7 @@ public final class ExplorationSiteRegistry {
                 "Enter carefully, contact the elder, and log the bio-processing route.",
                 "sporebound_sanctum_cache", AshfallBiomeFactions.SPOREBOUND_SANCTUM, 18, false,
                 List.of("sporebound_sanctum"),
-                List.of("sporebound_sanctum", "bio_dome", "mutant_biodome")));
+                List.of("sporebound_sanctum", "bio_dome", "sporebound_biodome")));
 
         register(site(
                 "toxic_swamp", "Toxic Swamp Field Site", "Toxic Swamp Route",

@@ -28,7 +28,7 @@ public class FactionEvents {
         ResearchData research = ResearchData.get(player);
         research.addPoints(10 + (difficulty * 5));
 
-        Identifier helpedFaction = AshfallFactionMap.fromLegacyKey(missionId);
+        Identifier helpedFaction = AshfallFactionMap.resolveFactionId(missionId);
         if (player instanceof ServerPlayer serverPlayer) {
             int reputation = 5 + difficulty;
             EchoCoreServices.addFactionReputation(serverPlayer, helpedFaction, reputation);
@@ -99,7 +99,7 @@ public class FactionEvents {
         String entityName = event.getEntity().getType().getDescriptionId();
         Identifier affectedFaction = AshfallFactionMap.forEntity(entityName);
 
-        if (entityName.contains("feral_human") || entityName.contains("mutant")) {
+        if (entityName.contains("feral_human") || entityName.contains("mutated") || entityName.contains("toxic")) {
             EchoCoreServices.addFactionReputation(player, AshfallBiomeFactions.SPOREBOUND_SANCTUM, -2);
         }
 
@@ -113,9 +113,7 @@ public class FactionEvents {
         }
 
         AshfallFactionContractProgression.progressKill(player, entityName);
-        if (affectedFaction != null) {
-            FactionProgressionHelper.syncMilestones(player, affectedFaction);
-        }
+        FactionProgressionHelper.syncMilestones(player, affectedFaction);
     }
 
     private static void maybeDropFragment(LivingDeathEvent event, net.minecraft.world.item.Item first,

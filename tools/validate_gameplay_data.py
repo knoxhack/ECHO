@@ -1834,16 +1834,10 @@ def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
         DATA_ROOT,
         ASSET_ROOT,
         ROOT / "tools",
+        ROOT / "README.md",
     )
     suffixes = {".java", ".json", ".md", ".py", ".toml", ".properties", ".txt"}
     allow_path_parts = (
-        "src/main/java/com/knoxhack/echoashfallprotocol/faction/migration/",
-        "src/main/java/com/knoxhack/echoashfallprotocol/data/SaveMigrationHandler.java",
-        "src/main/java/com/knoxhack/echoashfallprotocol/registry/ModAttachments.java",
-        "src/main/java/com/knoxhack/echoashfallprotocol/entity/ModEntities.java",
-        "src/main/java/com/knoxhack/echoashfallprotocol/EchoAshfallProtocolClient.java",
-        "src/main/java/com/knoxhack/echoashfallprotocol/test/ModGameTests.java",
-        "src/main/resources/assets/echoashfallprotocol/lang/en_us.json",
         "tools/validate_gameplay_data.py",
     )
     line_allow_tokens = (
@@ -1857,6 +1851,12 @@ def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
     legacy_patterns = (
         r"ReputationData\.Faction",
         r"\bReputationData\b",
+        r"\bLegacyFactionIds\b",
+        r"\bLegacyReputationData\b",
+        r"\bLegacyFactionQuestData\b",
+        r"\bLEGACY_REMNANT_SOLDIER\b",
+        r"\bLEGACY_SALVAGER_TRADER\b",
+        r"\bLEGACY_MUTANT_CREATURE\b",
         r"\bFactionQuest(?:Data|Progression|Registry)?\b",
         r"\bVillagerQuestHandler\b",
         r"\bAshfallFactionBridge\b",
@@ -1866,6 +1866,9 @@ def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
         r"\bearn_remnant_trust\b",
         r"\bmake_salvager_trade\b",
         r"\brecover_mutant_sample\b",
+        r"\bremnant_soldier\b",
+        r"\bsalvager_trader\b",
+        r"\bmutant_creature\b",
         r"\breputation_data\b",
         r"\bfaction_quest_data\b",
         r"\bremnant_village\b",
@@ -1878,6 +1881,7 @@ def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
         r"\bSalvagers\b",
         r"\bRemnant\b",
         r"\bSalvager\b",
+        r"\bMutants\b",
         r"\bMutant Sanctuary\b",
         r"\bContact Mutants\b",
         r"\b3 Factions\b",

@@ -86,19 +86,6 @@ public class ModEntities {
             ENTITIES.registerEntityType("crash_survivor", CrashSurvivor::new, MobCategory.CREATURE,
                     builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
 
-    // Hidden one-release migration aliases for old Ashfall faction entity ids.
-    public static final DeferredHolder<EntityType<?>, EntityType<FactionNpcEntity>> LEGACY_REMNANT_SOLDIER =
-            ENTITIES.registerEntityType("remnant_soldier", FactionNpcEntity::new, MobCategory.CREATURE,
-                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
-
-    public static final DeferredHolder<EntityType<?>, EntityType<FactionNpcEntity>> LEGACY_SALVAGER_TRADER =
-            ENTITIES.registerEntityType("salvager_trader", FactionNpcEntity::new, MobCategory.CREATURE,
-                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
-
-    public static final DeferredHolder<EntityType<?>, EntityType<FactionNpcEntity>> LEGACY_MUTANT_CREATURE =
-            ENTITIES.registerEntityType("mutant_creature", FactionNpcEntity::new, MobCategory.CREATURE,
-                    builder -> builder.sized(0.65F, 2.0F).clientTrackingRange(64));
-
     public static final DeferredHolder<EntityType<?>, EntityType<FactionNpcEntity>> FACTION_NPC =
             ENTITIES.registerEntityType("faction_npc", FactionNpcEntity::new, MobCategory.CREATURE,
                     builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
@@ -161,10 +148,6 @@ public class ModEntities {
         event.put(WILD_DOG.get(), WildDog.createAttributes().build());
         event.put(FERAL_HUMAN.get(), FeralHuman.createAttributes().build());
         event.put(CRASH_SURVIVOR.get(), CrashSurvivor.createAttributes().build());
-        
-        event.put(LEGACY_REMNANT_SOLDIER.get(), FactionNpcEntity.createAttributes().build());
-        event.put(LEGACY_SALVAGER_TRADER.get(), FactionNpcEntity.createAttributes().build());
-        event.put(LEGACY_MUTANT_CREATURE.get(), FactionNpcEntity.createAttributes().build());
         event.put(FACTION_NPC.get(), FactionNpcEntity.createAttributes().build());
         
         // Boss Entities

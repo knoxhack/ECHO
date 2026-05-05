@@ -380,11 +380,7 @@ public class FactionTerritory implements ValueIOSerializable {
         if (value == null || value.isBlank()) {
             return null;
         }
-        try {
-            return value.contains(":") ? Identifier.parse(value) : AshfallFactionMap.fromLegacyKey(value);
-        } catch (RuntimeException ignored) {
-            return AshfallFactionMap.fromLegacyKey(value);
-        }
+        return AshfallFactionMap.resolveFactionId(value);
     }
 
     private static String normalizeBiome(String biomeKey) {
