@@ -231,7 +231,7 @@ public final class OrbitalTerminalIntegration {
 
             int rightH = wide ? h : 268;
             int ry = TerminalUi.flatDataPanel(context, graphics,
-                    rightX, rightY, rightW, rightH, "ECHO HELP", "",
+                    rightX, rightY, rightW, rightH, "ECHO NOTE", "",
                     descriptor.accentColor());
             ry = TerminalUi.wrap(context, graphics, snapshot.missionHelp(), rightX + 18, ry + 4,
                     rightW - 36, TerminalUi.TEXT) + 12;

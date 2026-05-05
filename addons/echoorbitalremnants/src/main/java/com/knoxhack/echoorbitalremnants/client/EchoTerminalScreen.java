@@ -189,7 +189,7 @@ public class EchoTerminalScreen extends Screen {
         graphics.text(font, Component.literal("Choir " + snapshot.nexusChoirStanding()), rightX, y + 62, 0xD8F6FF, false);
         graphics.text(font, Component.literal("CONTRACT"), rightX, y + 80, 0xFFD166, true);
         graphics.textWithWordWrap(font, Component.literal(snapshot.factionContract()), rightX, y + 94, rightWidth, 0xD8F6FF);
-        graphics.text(font, Component.literal("ECHO HELP"), x, y + 128, 0xFFD166, true);
+        graphics.text(font, Component.literal("ECHO NOTE"), x, y + 128, 0xFFD166, true);
         graphics.textWithWordWrap(font, Component.literal(snapshot.missionHelp()), x + 62, y + 128, width - 62, 0xCBEFFF);
     }
 

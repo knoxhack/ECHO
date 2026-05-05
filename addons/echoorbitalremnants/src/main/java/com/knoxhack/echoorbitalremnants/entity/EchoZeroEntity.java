@@ -142,7 +142,7 @@ public class EchoZeroEntity extends NexusHuskEntity {
         }
         progress.markEchoZeroRewardClaimed(player);
 
-        player.sendSystemMessage(Component.literal("ECHO-7 // ECHO-0 resolved. Quarantine broken. Stabilize Nexus anchors to close the post-ECHO network."));
+        player.sendSystemMessage(Component.literal("ECHO-7 // ECHO-0 resolved. Quarantine broken. Stabilize Nexus anchors to close the post-ECHO-0 network."));
         return true;
     }
 

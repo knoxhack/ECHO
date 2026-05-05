@@ -2,7 +2,28 @@ package com.knoxhack.echocore.test;
 
 import com.knoxhack.echocore.EchoCore;
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
+import com.knoxhack.echocore.api.EchoDialogueTree;
+import com.knoxhack.echocore.api.EchoFactionAction;
+import com.knoxhack.echocore.api.EchoFactionActionHandlerService;
+import com.knoxhack.echocore.api.EchoFactionActionResult;
+import com.knoxhack.echocore.api.EchoFactionContract;
+import com.knoxhack.echocore.api.EchoFactionDefinition;
+import com.knoxhack.echocore.api.EchoFactionPoiAffinity;
+import com.knoxhack.echocore.api.EchoFactionRegistry;
+import com.knoxhack.echocore.api.EchoFactionStanding;
+import com.knoxhack.echocore.api.EchoHazardTelemetry;
+import com.knoxhack.echocore.api.EchoProfile;
+import com.knoxhack.echocore.api.EchoProfileService;
+import com.knoxhack.echocore.api.EchoNpcRole;
+import com.knoxhack.echocore.api.EchoPackMode;
+import com.knoxhack.echocore.api.EchoProgressLedger;
+import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echocore.api.EchoServiceRegistry;
+import com.knoxhack.echocore.api.NexusCampaignService;
+import com.knoxhack.echocore.api.TerminalPlacementService;
+import com.knoxhack.echocore.api.TerminalRewardService;
+import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +34,7 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
@@ -25,6 +47,10 @@ public final class ModGameTests {
 
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_SERVICE_NOOPS =
             TEST_FUNCTIONS.register("core_service_noops", () -> ModGameTests::coreServiceNoops);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_PLATFORM_CONTRACTS =
+            TEST_FUNCTIONS.register("core_platform_contracts", () -> ModGameTests::corePlatformContracts);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_FACTION_DATA =
+            TEST_FUNCTIONS.register("core_faction_data", () -> ModGameTests::coreFactionData);
 
     private ModGameTests() {
     }
@@ -36,6 +62,8 @@ public final class ModGameTests {
     public static void registerTests(RegisterGameTestsEvent event) {
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("core_release"));
         register(event, environment, "core_service_noops", CORE_SERVICE_NOOPS.getId());
+        register(event, environment, "core_platform_contracts", CORE_PLATFORM_CONTRACTS.getId());
+        register(event, environment, "core_faction_data", CORE_FACTION_DATA.getId());
     }
 
     private static void coreServiceNoops(GameTestHelper helper) {
@@ -44,6 +72,334 @@ public final class ModGameTests {
                     "Terminal placement should no-op without Terminal installed");
             helper.assertTrue(EchoCoreServices.terminalStructureBlockState().is(Blocks.AIR),
                     "Terminal structure fallback should be air");
+        });
+        helper.succeed();
+    }
+
+    private static void corePlatformContracts(GameTestHelper helper) {
+        EchoServiceRegistry.withClearedForTests(() -> {
+            EchoCoreServices.clearPlatformServicesForTests();
+            EchoCoreServices.registerPackModeService(player -> EchoPackMode.FULL_SAGA);
+            helper.assertTrue(EchoCoreServices.packMode(null) == EchoPackMode.FULL_SAGA,
+                    "Pack mode service overrides should resolve stable modes");
+            EchoProgressLedger ledger = EchoProgressLedger.empty()
+                    .withMilestone("ashfall:nexus")
+                    .withMilestone("ashfall:nexus")
+                    .withFlag("path", "restore")
+                    .withActiveObjective("orbital:launch");
+            helper.assertTrue(ledger.milestones().size() == 1, "Ledger milestones should de-duplicate ids");
+            helper.assertTrue("restore".equals(ledger.flag("path")), "Ledger flags should be readable");
+
+            EchoHazardTelemetry telemetry = new EchoHazardTelemetry(80, 20, 0, 100, 100, 0, 0, 0, "")
+                    .merge(new EchoHazardTelemetry(60, 70, 20, 42, 90, 0, 0, 10, "Radiation elevated."));
+            helper.assertTrue(telemetry.hydration() == 60 && telemetry.radiation() == 70 && telemetry.oxygen() == 42,
+                    "Hazard telemetry should merge by most dangerous values");
+
+            EchoCoreServices.registerHazardTelemetryService(player -> {
+                throw new IllegalStateException("test hazard provider failure");
+            });
+            helper.assertTrue(EchoCoreServices.hazardTelemetry(null).hydration() == 100,
+                    "Failing hazard providers should be ignored");
+
+            EchoCoreServices.registerRouteRecordService(player -> {
+                List<EchoRouteRecord> records = new java.util.ArrayList<>();
+                records.add(new EchoRouteRecord(id("z_route"), "echocore", "Z Route", "Route", "Overworld", "ACTIVE", "Test route.", false));
+                records.add(new EchoRouteRecord(id("a_route"), "echocore", "A Route", "Route", "Overworld", "ACTIVE", "Test route.", false));
+                records.add(new EchoRouteRecord(id("a_route"), "echocore", "Duplicate Route", "Route", "Overworld", "ACTIVE", "Ignored.", false));
+                records.add(null);
+                return records;
+            });
+            EchoCoreServices.registerRouteRecordService(player -> {
+                throw new IllegalStateException("test route provider failure");
+            });
+            List<EchoRouteRecord> routes = EchoCoreServices.routeRecords(null);
+            helper.assertTrue(routes.size() == 2, "Route record services should de-duplicate ids and ignore invalid records");
+            helper.assertTrue(routes.get(0).id().equals(id("a_route")),
+                    "Route record services should sort records by stable id/title order");
+
+            EchoCoreServices.registerDiagnosticService(player -> {
+                List<EchoDiagnosticBlocker> blockers = new java.util.ArrayList<>();
+                blockers.add(new EchoDiagnosticBlocker(id("info_blocker"), "echocore", EchoDiagnosticBlocker.Severity.INFO,
+                        "Info", "Info detail.", "Read it."));
+                blockers.add(new EchoDiagnosticBlocker(id("critical_blocker"), "echocore", EchoDiagnosticBlocker.Severity.CRITICAL,
+                        "Critical", "Critical detail.", "Fix it."));
+                blockers.add(new EchoDiagnosticBlocker(id("critical_blocker"), "echocore", EchoDiagnosticBlocker.Severity.WARNING,
+                        "Duplicate", "Ignored.", "Ignored."));
+                blockers.add(null);
+                return blockers;
+            });
+            EchoCoreServices.registerDiagnosticService(player -> {
+                throw new IllegalStateException("test diagnostic provider failure");
+            });
+            List<EchoDiagnosticBlocker> diagnostics = EchoCoreServices.diagnostics(null);
+            helper.assertTrue(diagnostics.size() == 2,
+                    "Diagnostic services should de-duplicate ids and ignore invalid records");
+            helper.assertTrue(diagnostics.get(0).severity() == EchoDiagnosticBlocker.Severity.CRITICAL,
+                    "Diagnostics should sort critical blockers first");
+
+            var player = helper.makeMockPlayer(GameType.SURVIVAL);
+            EchoCoreServices.registerProfileService(new EchoProfileService() {
+                @Override
+                public EchoProfile profile(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test profile provider failure");
+                }
+
+                @Override
+                public void saveProfile(net.minecraft.server.level.ServerPlayer player, EchoProfile profile) {
+                    throw new IllegalStateException("test profile save failure");
+                }
+
+                @Override
+                public EchoProgressLedger progressLedger(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test ledger provider failure");
+                }
+
+                @Override
+                public void saveProgressLedger(net.minecraft.server.level.ServerPlayer player,
+                        EchoProgressLedger ledger) {
+                    throw new IllegalStateException("test ledger save failure");
+                }
+            });
+            helper.assertTrue(EchoCoreServices.profile(player).callsign().equals("ECHO Operator"),
+                    "Failing profile service should return the empty profile fallback");
+            helper.assertTrue(EchoCoreServices.progressLedger(player).milestones().isEmpty(),
+                    "Failing ledger service should return an empty ledger fallback");
+            EchoCoreServices.saveProfile(null, EchoProfile.empty());
+            EchoCoreServices.saveProgressLedger(null, EchoProgressLedger.empty());
+
+            EchoCoreServices.registerTerminalPlacementService(new TerminalPlacementService() {
+                @Override
+                public boolean placeTerminal(net.minecraft.world.level.Level level, BlockPos pos,
+                        net.minecraft.world.entity.player.Player owner) {
+                    throw new IllegalStateException("test terminal placement failure");
+                }
+
+                @Override
+                public net.minecraft.world.level.block.state.BlockState structureBlockState() {
+                    throw new IllegalStateException("test terminal block state failure");
+                }
+
+                @Override
+                public boolean isTerminalBlock(net.minecraft.world.level.block.state.BlockState state) {
+                    throw new IllegalStateException("test terminal block check failure");
+                }
+            });
+            helper.assertFalse(EchoCoreServices.placeTerminal(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)), player),
+                    "Failing terminal placement service should return false");
+            helper.assertTrue(EchoCoreServices.terminalStructureBlockState().is(Blocks.AIR),
+                    "Failing terminal block state should return air");
+            helper.assertFalse(EchoCoreServices.isTerminalBlock(Blocks.STONE.defaultBlockState()),
+                    "Failing terminal block check should return false");
+
+            EchoCoreServices.registerTerminalRewardService(new TerminalRewardService() {
+                @Override
+                public boolean storeRewards(net.minecraft.server.level.ServerPlayer player, String missionId,
+                        List<net.minecraft.world.item.ItemStack> rewards) {
+                    throw new IllegalStateException("test reward store failure");
+                }
+
+                @Override
+                public boolean claimRewards(net.minecraft.server.level.ServerPlayer player) {
+                    throw new IllegalStateException("test reward claim failure");
+                }
+
+                @Override
+                public int pendingRewardCount(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test reward count failure");
+                }
+            });
+            helper.assertFalse(EchoCoreServices.storeTerminalRewards(null, "test", List.of()),
+                    "Failing reward store should return false");
+            helper.assertFalse(EchoCoreServices.claimTerminalRewards(null),
+                    "Failing reward claim should return false");
+            helper.assertTrue(EchoCoreServices.pendingTerminalRewardCount(player) == 0,
+                    "Failing reward count should return zero");
+
+            EchoCoreServices.registerNexusPathService(target -> {
+                throw new IllegalStateException("test nexus path failure");
+            });
+            helper.assertFalse(EchoCoreServices.hasPostNexusChoice(player),
+                    "Failing Nexus path provider should return false");
+            EchoCoreServices.registerNexusCampaignService(new NexusCampaignService() {
+                @Override
+                public String pathId(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test campaign path failure");
+                }
+
+                @Override
+                public int instability(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test campaign instability failure");
+                }
+
+                @Override
+                public boolean isWarfrontComplete(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test campaign warfront failure");
+                }
+
+                @Override
+                public boolean isFinalProtocolComplete(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test campaign final failure");
+                }
+
+                @Override
+                public String statusLine(net.minecraft.world.entity.player.Player player) {
+                    throw new IllegalStateException("test campaign status failure");
+                }
+            });
+            helper.assertTrue(EchoCoreServices.nexusCampaignPathId(player).isBlank(),
+                    "Failing campaign path should return blank");
+            helper.assertTrue(EchoCoreServices.nexusInstability(player) == 0,
+                    "Failing campaign instability should return zero");
+            helper.assertFalse(EchoCoreServices.isNexusWarfrontComplete(player),
+                    "Failing campaign warfront should return false");
+            helper.assertFalse(EchoCoreServices.isNexusFinalProtocolComplete(player),
+                    "Failing campaign final protocol should return false");
+            helper.assertTrue(!EchoCoreServices.nexusCampaignStatusLine(player).isBlank(),
+                    "Failing campaign status should return a fallback line");
+
+            EchoCoreServices.registerIntelMirrorService((target, sourceModId, recordId, title, content) -> {
+                throw new IllegalStateException("test intel mirror failure");
+            });
+            EchoCoreServices.mirrorIntel(null, EchoCore.MODID, "test", "Test", "Test content");
+            EchoCoreServices.clearPlatformServicesForTests();
+        });
+        helper.succeed();
+    }
+
+    private static void coreFactionData(GameTestHelper helper) {
+        EchoFactionRegistry.withClearedForTests(() -> {
+            EchoCoreServices.clearPlatformServicesForTests();
+            var player = helper.makeMockPlayer(GameType.SURVIVAL);
+            Identifier factionId = id("test_faction");
+            Identifier contractId = id("test_contract");
+            EchoCoreServices.registerFaction(new EchoFactionDefinition(
+                    factionId,
+                    "Test Faction",
+                    "Test",
+                    "Core Test",
+                    "Verifies portable faction state.",
+                    "None",
+                    "Bring assertions.",
+                    "Debug services",
+                    0x72A7FF,
+                    false,
+                    List.of(new EchoNpcRole("quartermaster", "Quartermaster", "Supplies test state.")),
+                    List.of(new EchoFactionAction(id("test_action"), "Request Supplies", "No-op test action.", 0, true)),
+                    List.of(new EchoFactionContract(
+                            contractId,
+                            "Prove Contact",
+                            "Complete the test handshake.",
+                            0,
+                            40,
+                            "Accept and complete a core contract.",
+                            "Standing",
+                            "Core")),
+                    List.of(new EchoFactionPoiAffinity("test_profile", "hub", 1, true)),
+                    new EchoDialogueTree("Hello, operator.", List.of("Standing", "Contracts"), "Signal clear.")));
+            boolean conflictingDuplicateRejected = false;
+            try {
+                EchoCoreServices.registerFaction(new EchoFactionDefinition(
+                        factionId,
+                        "Conflicting Faction",
+                        "Conflict",
+                        "Core Test",
+                        "Conflicting duplicate.",
+                        "None",
+                        "Bring assertions.",
+                        "Debug services",
+                        0x72A7FF,
+                        false,
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        EchoDialogueTree.EMPTY));
+            } catch (IllegalStateException expected) {
+                conflictingDuplicateRejected = true;
+            }
+            helper.assertTrue(conflictingDuplicateRejected,
+                    "Faction registry should reject conflicting duplicate definitions");
+
+            boolean duplicateContractRejected = false;
+            try {
+                new EchoFactionDefinition(
+                        id("duplicate_contract_faction"),
+                        "Duplicate Contract Faction",
+                        "Dup",
+                        "Core Test",
+                        "Verifies duplicate contract validation.",
+                        "None",
+                        "Bring assertions.",
+                        "Debug services",
+                        0x72A7FF,
+                        false,
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new EchoFactionContract(contractId, "One", "", 0, 1, "", "", ""),
+                                new EchoFactionContract(contractId, "Two", "", 0, 1, "", "", "")),
+                        List.of(),
+                        EchoDialogueTree.EMPTY);
+            } catch (IllegalArgumentException expected) {
+                duplicateContractRejected = true;
+            }
+            helper.assertTrue(duplicateContractRejected,
+                    "Faction definitions should reject duplicate contract ids");
+            EchoCoreServices.registerFactionActionHandler(new EchoFactionActionHandlerService() {
+                @Override
+                public boolean supports(Identifier id) {
+                    return factionId.equals(id);
+                }
+
+                @Override
+                public List<EchoFactionAction> actions(net.minecraft.world.entity.player.Player player,
+                        com.knoxhack.echocore.api.EchoFactionProfile profile, String roleId) {
+                    return List.of(new EchoFactionAction(id("test_handler_action"),
+                            "Handler Action", "Exercises addon action handlers.", 0, false));
+                }
+
+                @Override
+                public String localContext(net.minecraft.world.entity.player.Player player,
+                        com.knoxhack.echocore.api.EchoFactionProfile profile, String roleId) {
+                    return "Mock route context.";
+                }
+
+                @Override
+                public EchoFactionActionResult handle(net.minecraft.server.level.ServerPlayer player,
+                        Identifier id, Identifier actionId, String roleId, Identifier targetId) {
+                    if (id("test_handler_action").equals(actionId)) {
+                        return EchoFactionActionResult.success("Handled", "Addon action result persisted.", 5);
+                    }
+                    return EchoFactionActionResult.failure("Unhandled", "Unexpected action.");
+                }
+            });
+
+            helper.assertTrue(EchoCoreServices.factionDefinitions().size() == 1, "Faction registry should expose definitions");
+            EchoCoreServices.recordFactionInteraction(player, factionId, "quartermaster", 42L);
+            var snapshot = EchoCoreServices.factionInteractionSnapshot(player, factionId, "quartermaster").orElseThrow();
+            helper.assertTrue("Quartermaster".equals(snapshot.roleName()), "Snapshot should resolve NPC role names");
+            helper.assertTrue(snapshot.actions().stream().anyMatch(action -> action.id().equals(id("test_handler_action"))),
+                    "Snapshot should include addon-provided actions");
+            helper.assertTrue("Mock route context.".equals(snapshot.localContext()),
+                    "Snapshot should include addon local context");
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                EchoFactionActionResult result = EchoCoreServices.performFactionAction(
+                        serverPlayer, factionId, id("test_handler_action"), "quartermaster", null);
+                helper.assertTrue(result.success(), "Action handler result should report success");
+                helper.assertTrue(EchoCoreServices.factionProfile(player, factionId).orElseThrow().reputation() == 5,
+                        "Action handler reputation delta should persist");
+            }
+            helper.assertTrue(EchoCoreServices.acceptFactionContract(player, factionId, contractId),
+                    "Player should be able to accept an available faction contract");
+            helper.assertTrue(EchoCoreServices.completeFactionContract(player, factionId, contractId),
+                    "Player should be able to complete the active faction contract");
+            var profile = EchoCoreServices.factionProfile(player, factionId).orElseThrow();
+            helper.assertTrue(profile.completedContracts() == 1, "Completed contracts should persist");
+            helper.assertTrue(profile.standing() == EchoFactionStanding.TRUSTED, "Contract reward should raise standing");
+            helper.assertTrue(EchoCoreServices.factionStandingLines(player, factionId.toString()).stream()
+                            .anyMatch(line -> line.contains("Test Faction")),
+                    "Compatibility standing lines should include Echo Core profile summaries");
+            EchoCoreServices.clearPlatformServicesForTests();
         });
         helper.succeed();
     }

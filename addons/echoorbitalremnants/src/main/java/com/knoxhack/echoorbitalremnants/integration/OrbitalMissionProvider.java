@@ -39,7 +39,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         return new TerminalMissionChapter(
                 OrbitalTerminalIds.CHAPTER_ID,
                 "ECHO-0 ROUTE CHAIN",
-                "Post-Nexus route chapter for Earth recovery, Station ECHO debris, route worlds, ECHO-0 quarantine, surveys, and faction relay sealing.",
+                "Post-Nexus ECHO-7 route records for Earth recovery, Station ECHO debris, ECHO-0 quarantine, surveys, and the final network seal.",
                 300,
                 ACCENT,
                 true);
@@ -60,8 +60,8 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         OrbitalMission mission = mission(missionId);
         if (mission == null) {
             return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F,
-                    "UNKNOWN", "Orbital route record not found in the current ECHO-0 index.",
-                    "No active Orbital Remnants record is available for this signal.", List.of());
+                    "UNKNOWN", "Orbital route signal missing from the current ECHO-0 index.",
+                    "No clean Orbital Remnants field record is available for this signal.", List.of());
         }
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
         boolean available = isAvailable(player, progress, mission);
@@ -147,8 +147,8 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                 mission.phaseOrder(),
                 mission.order(),
                 mission.title(),
-                mission.briefing(),
-                mission.guide(),
+                briefing(player, mission),
+                guide(player, mission),
                 mission.category(),
                 mission.difficulty(),
                 icon(mission),
@@ -175,7 +175,9 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         return switch (mission) {
             case EARTH_CALIBRATION -> List.of(requirement(
                     "Earth calibration",
-                    progress.launchSiteTracked() ? "Orbital contact calibrated from ruined Earth." : "Sneak-use ECHO-7 on Earth after the Nexus handoff.",
+                    progress.launchSiteTracked()
+                            ? "Orbital contact calibrated from ruined Earth."
+                            : earthCalibrationInstruction(player),
                     ModItems.ECHO_TERMINAL.get(), progress.launchSiteTracked() ? 1 : 0, 1));
             case LAUNCH_CHAIN -> List.of(
                     requirement("Launch systems", missingOrReady(launch, "Launch systems ready."),
@@ -192,7 +194,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                     ModItems.STATION_RELAY_FUSE.get(), progress.stationNetworkGateOpen() ? 3 : progress.stationRelayRepairs(), 3));
             case LUNAR_SIGNAL -> List.of(requirement(
                     "Lunar signal",
-                    progress.lunarSignalInvestigated() ? "Lunar quarantine scar investigated." : "Use the Orbital Shuttle from staging.",
+                    progress.lunarSignalInvestigated() ? "Lunar scar telemetry logged." : "Use the Orbital Shuttle from staging.",
                     ModItems.ORBITAL_SHUTTLE.get(), progress.lunarSignalInvestigated() ? 1 : 0, 1));
             case MARS_ROUTE -> List.of(requirement(
                     "Mars transfer",
@@ -229,6 +231,34 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         int safeNeed = Math.max(1, need);
         int safeHave = Math.max(0, Math.min(safeNeed, have));
         return TerminalMissionRequirement.custom(label, detail, new ItemStack(icon), safeHave, safeNeed, safeHave >= safeNeed);
+    }
+
+    private static String briefing(Player player, OrbitalMission mission) {
+        if (mission != OrbitalMission.EARTH_CALIBRATION) {
+            return mission.briefing();
+        }
+        return standaloneOrbital(player)
+                ? "Recover an orbital handoff file and reopen ECHO-7 contact from ruined Earth."
+                : mission.briefing();
+    }
+
+    private static String guide(Player player, OrbitalMission mission) {
+        if (mission != OrbitalMission.EARTH_CALIBRATION) {
+            return mission.guide();
+        }
+        return standaloneOrbital(player)
+                ? "Sneak-use the ECHO-7 Terminal on Earth. The standalone pack treats calibration as a recovered handoff file: practical salvage first, missing sky records later."
+                : mission.guide();
+    }
+
+    private static String earthCalibrationInstruction(Player player) {
+        return standaloneOrbital(player)
+                ? "Sneak-use ECHO-7 on Earth to recover the orbital handoff file."
+                : "Sneak-use ECHO-7 on Earth after the Nexus handoff.";
+    }
+
+    private static boolean standaloneOrbital(Player player) {
+        return EchoCoreServices.packMode(player) == com.knoxhack.echocore.api.EchoPackMode.ORBITAL_STANDALONE;
     }
 
     private static boolean isAvailable(Player player, EchoTerminalProgress progress, OrbitalMission mission) {
@@ -278,13 +308,13 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
 
     private static String lockedReason(Player player, EchoTerminalProgress progress, OrbitalMission mission) {
         if (mission == OrbitalMission.EARTH_CALIBRATION && AshfallCompat.isOrbitalCalibrationLocked(player)) {
-            return "Resolve an ECHO: Ashfall Protocol Nexus path before ECHO-0 opens orbital calibration.";
+            return "Resolve an ECHO: Ashfall Protocol Nexus path before ECHO-0 allows orbital calibration.";
         }
         OrbitalMission previous = mission.previous();
         if (previous == null) {
-            return "Orbital route record locked by ECHO-0 quarantine state.";
+            return "Orbital route record sealed by ECHO-0 quarantine state.";
         }
-        return "Complete " + previous.title() + " first, then reopen the route record.";
+        return "Complete " + previous.title() + " first, then reopen this route record.";
     }
 
     private static String actionHint(Player player, EchoTerminalProgress progress, OrbitalMission mission,
@@ -294,7 +324,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         }
         if (complete) {
             return claimed
-                    ? "Support cache claimed. Continue the Orbital route from the next active record."
+                    ? "Support cache claimed. Continue from the next active orbital record."
                     : "Route record complete. Claim the optional support cache before the next vacuum push.";
         }
         if (mission == OrbitalMission.SURVEY_NETWORK) {
@@ -440,22 +470,22 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
     private enum OrbitalMission {
         EARTH_CALIBRATION("earth_calibration", "EARTH RECONTACT", 0, 0,
                 "Earth Calibration",
-                "Reopen ECHO-7 orbital contact from ruined Earth after the Nexus decision.",
-                "Sneak-use the ECHO-7 Terminal on Earth. When Ashfall is installed, complete any Nexus path first so the quarantine handoff is real.",
+                "Reopen ECHO-7 orbital contact from ruined Earth after the Nexus decision gives the sky something to answer.",
+                "Sneak-use the ECHO-7 Terminal on Earth. When Ashfall is installed, complete any Nexus path first so the quarantine handoff has a real field trigger.",
                 "Calibration", "Guide"),
         LAUNCH_CHAIN("launch_chain", "EARTH RECONTACT", 0, 1,
                 "Launch Chain",
                 "Build the launch pad, assembly frame, fuel, oxygen, suit, and rocket parts without trusting orbit to be kind.",
-                "Use Earth recovery sites and machine recipes to complete launch readiness.",
+                "Use Earth recovery sites and machine recipes to complete launch readiness. Orbit does not forgive guessed parts.",
                 "Crafting", "Route"),
         LOW_ORBIT("low_orbit", "ORBITAL CALIBRATION", 1, 0,
                 "Low Earth Orbit",
                 "Use the Emergency Rocket and establish the first orbital vector through debris and quarantine static.",
-                "Launch from Earth, recover the return vector, and scan for Station ECHO systems.",
+                "Launch from Earth, recover the return vector, and scan for Station ECHO systems before oxygen becomes the whole plan.",
                 "Route", "Hazard"),
         STATION_NETWORK("station_network", "ORBITAL CALIBRATION", 1, 1,
                 "Station Network",
-                "Restore station life support and repair the Low Orbit relay network before the route goes blind.",
+                "Restore station life support and repair the Low Orbit relay network before the route goes blind again.",
                 "Scan Station Relay Nodes with Station Relay Fuses. Some recovered saves may already have a bypassed relay gate.",
                 "Repair", "Route"),
         LUNAR_SIGNAL("lunar_signal", "Moon", 2, 0,
@@ -476,22 +506,22 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         DEEP_SPACE_PROTOCOL("deep_space_protocol", "Nexus Anomaly", 5, 0,
                 "Deep Space Protocol",
                 "Use Europa or Nexus-drive telemetry to reveal the anomaly belt and the authority hiding beyond it.",
-                "Calibrate Europa thermal arrays when required, then scan with Cryo Crystal or Nexus Drive support.",
+                "Calibrate Europa thermal arrays when required, then scan with Cryo Crystal or Nexus Drive support. The route opens only after the evidence holds.",
                 "Route", "Endgame"),
         ECHO_ZERO("echo_zero", "Nexus Anomaly", 5, 1,
                 "ECHO-0",
                 "Confront the quarantine intelligence that believes Earth must stay silent to starve the Nexus.",
-                "Enter the Nexus Anomaly Belt, survive oxygen, pressure, and radiation pressure, then resolve ECHO-0.",
+                "Enter the Nexus Anomaly Belt, survive oxygen, pressure, and radiation load, then resolve ECHO-0.",
                 "Story", "Endgame"),
         SURVEY_NETWORK("survey_network", "ROUTE SURVEY", 6, 0,
                 "Survey Network",
                 "Map the route worlds and stabilize the post-ECHO Nexus anchors before the old quarantine reinterprets silence.",
-                "Use the Survey tab to finish each route's three unique logs.",
+                "Use the Survey tab to finish each route's three unique logs. Evidence is the countermeasure now.",
                 "Survey", "Endgame"),
         FACTION_CONTRACT("faction_contract", "ROUTE SURVEY", 6, 1,
                 "Faction Contract",
                 "Seal one faction relay after the survey network is stable enough for people to argue over it.",
-                "Pledge to a faction, follow the ECHO-tab proof requirement, and press SCAN when ready.",
+                "Pledge to a faction, follow the ECHO-tab proof requirement, and press SCAN when the field proof is ready.",
                 "Faction", "Endgame"),
         FINAL_SEAL("final_seal", "FINAL SEAL", 7, 0,
                 "Final Network Seal",

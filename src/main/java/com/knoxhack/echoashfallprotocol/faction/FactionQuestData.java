@@ -120,6 +120,15 @@ public class FactionQuestData implements ValueIOSerializable {
         this.trackedQuestId = trackedQuestId == null ? "" : trackedQuestId;
     }
 
+    public void clearLegacyFactionProgress() {
+        activeQuestIds.clear();
+        completedQuestIds.clear();
+        objectiveProgress.clear();
+        lastAcceptedTicks.clear();
+        lastCompletedTicks.clear();
+        trackedQuestId = "";
+    }
+
     private static String progressKey(String questId, int objectiveIndex) {
         return questId + "#" + objectiveIndex;
     }

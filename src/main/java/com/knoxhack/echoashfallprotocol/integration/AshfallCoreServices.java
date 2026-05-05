@@ -3,12 +3,27 @@ package com.knoxhack.echoashfallprotocol.integration;
 import com.knoxhack.echocore.api.EchoAddonChapter;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
+import com.knoxhack.echocore.api.EchoHazardTelemetry;
+import com.knoxhack.echocore.api.EchoProfile;
+import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echocore.api.NexusCampaignService;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.echo.EchoIntel;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionInteractionHandler;
+import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
+import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * Ashfall-owned service implementations exposed through ECHO Core.
@@ -46,29 +61,182 @@ public final class AshfallCoreServices {
                 if (player == null) {
                     return "Ashfall systems available.";
                 }
-                QuestData quest = QuestData.get(player);
-                return "Phase " + (quest.getCurrentPhase() + 1)
-                        + " / Mission " + (quest.getCurrentMissionIndex() + 1);
+                try {
+                    QuestData quest = QuestData.get(player);
+                    return "Phase " + (quest.getCurrentPhase() + 1)
+                            + " / Mission " + (quest.getCurrentMissionIndex() + 1);
+                } catch (RuntimeException exception) {
+                    EchoAshfallProtocol.LOGGER.warn("Ashfall chapter status failed; using fallback status.", exception);
+                    return "Ashfall systems available.";
+                }
             }
         });
 
-        EchoCoreServices.registerNexusPathService(player -> player != null && PostNexusData.get(player).hasMadeChoice());
+        EchoCoreServices.registerNexusPathService(AshfallCoreServices::hasPostNexusChoice);
+        EchoCoreServices.registerNexusCampaignService(new AshfallNexusCampaignService());
         EchoCoreServices.registerIntelMirrorService(AshfallCoreServices::mirrorIntel);
+        EchoCoreServices.registerHazardTelemetryService(AshfallCoreServices::hazardTelemetry);
+        EchoCoreServices.registerDiagnosticService(AshfallCoreServices::diagnostics);
+        EchoCoreServices.registerRouteRecordService(AshfallCoreServices::routeRecords);
+        EchoCoreServices.registerFactionActionHandler(AshfallFactionInteractionHandler.INSTANCE);
+        AshfallBiomeFactions.register();
+        EchoAshfallProtocol.LOGGER.info("ECHO platform providers after Ashfall setup: {}",
+                EchoCoreServices.platformProviderSummary());
+    }
+
+    private static boolean hasPostNexusChoice(Player player) {
+        if (player == null) {
+            return false;
+        }
+        try {
+            PostNexusData postNexus = PostNexusData.get(player);
+            boolean hasChoice = postNexus.hasMadeChoice();
+            if (hasChoice && player instanceof ServerPlayer serverPlayer) {
+                String path = postNexus.getSelectedPath().name().toLowerCase(Locale.ROOT);
+                EchoProfile profile = EchoCoreServices.profile(player).withNexusPath(path).completeArc("ashfall:nexus");
+                EchoCoreServices.saveProfile(serverPlayer, profile);
+                EchoCoreServices.recordMilestone(serverPlayer, "ashfall:nexus:" + path);
+            }
+            return hasChoice;
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus path provider failed; treating path as unresolved.", exception);
+            return false;
+        }
+    }
+
+    private static NexusCampaignData campaignData(Player player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        try {
+            return NexusCampaignData.get(level.getServer().overworld());
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus campaign data unavailable; using fallback campaign state.", exception);
+            return null;
+        }
+    }
+
+    private static EchoHazardTelemetry hazardTelemetry(Player player) {
+        if (player == null) {
+            return EchoHazardTelemetry.nominal();
+        }
+        try {
+            SurvivalData survival = player.getData(ModAttachments.SURVIVAL_DATA.get());
+            int hydration = Math.round(survival.getHydrationPercent() * 100.0F);
+            int radiation = Math.round(survival.getRadiationLevel());
+            int toxicAir = survival.isToxicAirActive() ? 80 : 0;
+            int cold = survival.isCryoZone() ? Math.max(45, Math.round(survival.getHazardIntensity() * 100.0F)) : 0;
+            int heat = survival.isAcidContact() ? 45 : 0;
+            int exposure = survival.isNexusAnomaly() ? 75 : survival.isRadiationStorm() ? 60 : 0;
+            String status = survival.getHazardReason().isBlank()
+                    ? "Ashfall survival telemetry online."
+                    : survival.getHazardReason();
+            return new EchoHazardTelemetry(hydration, radiation, toxicAir, 100, 100, cold, heat, exposure, status);
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall hazard telemetry failed; using nominal telemetry.", exception);
+            return EchoHazardTelemetry.nominal();
+        }
+    }
+
+    private static List<EchoDiagnosticBlocker> diagnostics(Player player) {
+        if (player == null) {
+            return List.of();
+        }
+        try {
+            List<EchoDiagnosticBlocker> blockers = new ArrayList<>();
+            SurvivalData survival = player.getData(ModAttachments.SURVIVAL_DATA.get());
+            QuestData quest = QuestData.get(player);
+            if (survival.getHydration() <= 25) {
+                blockers.add(blocker("ashfall_low_hydration", EchoDiagnosticBlocker.Severity.WARNING,
+                        "Hydration low", "Water is below safe field range.",
+                        "Purify dirty water or return to shelter before pushing the route."));
+            }
+            if (survival.isToxicAirActive() && !survival.hasMask()) {
+                blockers.add(blocker("ashfall_toxic_air_no_mask", EchoDiagnosticBlocker.Severity.BLOCKED,
+                        "Toxic air active", "The local atmosphere is unsafe and no mask is active.",
+                        "Equip or craft a mask before long exposure."));
+            }
+            if (!quest.getAllPendingRewards().isEmpty()) {
+                blockers.add(blocker("ashfall_pending_rewards", EchoDiagnosticBlocker.Severity.INFO,
+                        "Mission rewards pending", "Ashfall has unclaimed mission reward caches.",
+                        "Open the Ashfall mission channel or shared Reward Inbox to claim support items."));
+            }
+            PostNexusData postNexus = PostNexusData.get(player);
+            if (quest.getCurrentPhase() >= 7 && !postNexus.hasMadeChoice()) {
+                blockers.add(blocker("ashfall_nexus_unresolved", EchoDiagnosticBlocker.Severity.BLOCKED,
+                        "Nexus path unresolved", "The endgame path has not been committed.",
+                        "Use the Nexus Core terminal near the resolved grid and choose Restore, Destroy, or Control."));
+            }
+            return List.copyOf(blockers);
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall diagnostic provider failed; returning no blockers.", exception);
+            return List.of();
+        }
+    }
+
+    private static List<EchoRouteRecord> routeRecords(Player player) {
+        if (player == null) {
+            return List.of();
+        }
+        try {
+            QuestData quest = QuestData.get(player);
+            PostNexusData postNexus = PostNexusData.get(player);
+            return List.of(
+                    new EchoRouteRecord(
+                            id("ashfall_active_protocol"),
+                            CHAPTER_ID,
+                            "Ashfall Active Protocol",
+                            "Mission",
+                            player.level().dimension().identifier().toString(),
+                            "PHASE " + (quest.getCurrentPhase() + 1),
+                            "Current Ashfall mission route index " + (quest.getCurrentMissionIndex() + 1) + ".",
+                            false),
+                    new EchoRouteRecord(
+                            id("ashfall_nexus_handoff"),
+                            CHAPTER_ID,
+                            "Nexus Handoff",
+                            "Legacy",
+                            "Overworld Nexus Core",
+                            postNexus.hasMadeChoice() ? postNexus.getSelectedPath().name() : "LOCKED",
+                            postNexus.hasMadeChoice()
+                                    ? "Nexus legacy is ready for Orbital Remnants."
+                                    : "Resolve the Ashfall Nexus path to create a full-saga handoff.",
+                            postNexus.hasMadeChoice()));
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall route provider failed; returning no routes.", exception);
+            return List.of();
+        }
+    }
+
+    private static EchoDiagnosticBlocker blocker(String path, EchoDiagnosticBlocker.Severity severity,
+            String title, String detail, String nextAction) {
+        return new EchoDiagnosticBlocker(id(path), CHAPTER_ID, severity, title, detail, nextAction);
     }
 
     private static void mirrorIntel(ServerPlayer player, String sourceModId, String id, String title, String content) {
+        if (player == null) {
+            return;
+        }
         String safeSource = sanitize(sourceModId, "addon");
         String safeId = sanitize(id, "entry");
         String safeTitle = title == null || title.isBlank() ? safeId : title;
         String safeContent = content == null ? "" : content;
 
-        QuestData quest = QuestData.get(player);
-        quest.addToArchive("[" + safeSource.toUpperCase(Locale.ROOT) + "] " + safeTitle);
-        QuestData.saveAndSync(player, quest);
+        try {
+            QuestData quest = QuestData.get(player);
+            quest.addToArchive("[" + safeSource.toUpperCase(Locale.ROOT) + "] " + safeTitle);
+            QuestData.saveAndSync(player, quest);
 
-        EchoIntel intel = EchoIntel.get(player);
-        intel.discoverLore(safeSource + "_" + safeId, safeTitle, safeContent);
-        EchoIntel.saveAndSync(player, intel);
+            EchoIntel intel = EchoIntel.get(player);
+            intel.discoverLore(safeSource + "_" + safeId, safeTitle, safeContent);
+            EchoIntel.saveAndSync(player, intel);
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall intel mirror failed for {}:{}.", safeSource, safeId, exception);
+        }
+    }
+
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, path);
     }
 
     private static String sanitize(String value, String fallback) {
@@ -76,5 +244,73 @@ public final class AshfallCoreServices {
             return fallback;
         }
         return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_./-]", "_");
+    }
+
+    private static final class AshfallNexusCampaignService implements NexusCampaignService {
+        @Override
+        public String pathId(Player player) {
+            if (player == null) {
+                return "";
+            }
+            try {
+                PostNexusData postNexus = PostNexusData.get(player);
+                return postNexus.hasMadeChoice()
+                        ? postNexus.getSelectedPath().name().toLowerCase(Locale.ROOT)
+                        : "";
+            } catch (RuntimeException exception) {
+                EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus campaign path lookup failed.", exception);
+                return "";
+            }
+        }
+
+        @Override
+        public int instability(Player player) {
+            NexusCampaignData campaign = campaignData(player);
+            return campaign == null ? 0 : campaign.getInstability();
+        }
+
+        @Override
+        public boolean isWarfrontComplete(Player player) {
+            NexusCampaignData campaign = campaignData(player);
+            return campaign != null && campaign.isWarfrontComplete();
+        }
+
+        @Override
+        public boolean isFinalProtocolComplete(Player player) {
+            if (player == null) {
+                return false;
+            }
+            try {
+                return PostNexusData.get(player).isFinalProtocolComplete();
+            } catch (RuntimeException exception) {
+                EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus final protocol lookup failed.", exception);
+                return false;
+            }
+        }
+
+        @Override
+        public List<String> relaySummary(Player player) {
+            NexusCampaignData campaign = campaignData(player);
+            return campaign == null ? List.of() : campaign.relaySummaryLines();
+        }
+
+        @Override
+        public boolean isFinalBossDefeated(Player player) {
+            if (player == null) {
+                return false;
+            }
+            try {
+                return PostNexusData.get(player).isFinalBossDefeated();
+            } catch (RuntimeException exception) {
+                EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus final boss lookup failed.", exception);
+                return false;
+            }
+        }
+
+        @Override
+        public String statusLine(Player player) {
+            NexusCampaignData campaign = campaignData(player);
+            return campaign == null ? "Nexus campaign sync pending." : campaign.statusLine();
+        }
     }
 }

@@ -71,15 +71,13 @@ public class FactionPatrolSpawner {
             
             FactionTerritory territory = player.getData(ModAttachments.FACTION_TERRITORY.get());
             FactionDiplomacy diplomacy = player.getData(ModAttachments.FACTION_DIPLOMACY.get());
-            ReputationData reputation = player.getData(ModAttachments.REPUTATION_DATA.get());
-            
             // Check each faction for patrol spawning
             for (ReputationData.Faction faction : ReputationData.Faction.values()) {
                 int currentPatrols = countFactionPatrols(faction, player.blockPosition());
                 if (currentPatrols >= MAX_PATROLS_PER_FACTION) continue;
                 
                 // Get player's reputation with this faction
-                int rep = reputation.getReputation(faction);
+                int rep = AshfallFactionBridge.reputation(player, faction);
                 
                 // Spawn chance based on reputation and territory control
                 double spawnChance = calculateSpawnChance(faction, rep, diplomacy, territory, player, level);
@@ -163,8 +161,7 @@ public class FactionPatrolSpawner {
             activePatrols.put(patrol.getId(), patrol);
             
             // Notify player if friendly
-            ReputationData reputation = player.getData(ModAttachments.REPUTATION_DATA.get());
-            if (reputation.getReputation(faction) >= 25) {
+            if (AshfallFactionBridge.reputation(player, faction) >= 25) {
                 player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                     "\u00A7a[ECHO-7]\u00A7r " + faction.getDisplayName() + " patrol spotted nearby."
                 ));
@@ -207,8 +204,7 @@ public class FactionPatrolSpawner {
      */
     private static void configurePatrolAI(Mob member, ReputationData.Faction faction, 
                                          ServerPlayer player, FactionTerritory.VillageControl homeVillage) {
-        ReputationData reputation = player.getData(ModAttachments.REPUTATION_DATA.get());
-        int rep = reputation.getReputation(faction);
+        int rep = AshfallFactionBridge.reputation(player, faction);
         
         // Always target enemy faction mobs
         member.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(member, Monster.class, false) {
@@ -234,8 +230,7 @@ public class FactionPatrolSpawner {
                 public boolean canUse() {
                     if (this.target instanceof Player targetPlayer) {
                         // Check if this player is the owner or has bad reputation
-                        ReputationData targetRep = targetPlayer.getData(ModAttachments.REPUTATION_DATA.get());
-                        return targetRep.getReputation(faction) <= ReputationData.HOSTILE_THRESHOLD;
+                        return AshfallFactionBridge.reputation(targetPlayer, faction) <= ReputationData.HOSTILE_THRESHOLD;
                     }
                     return false;
                 }

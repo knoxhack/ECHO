@@ -20,10 +20,9 @@ public final class FactionProgressionHelper {
     }
 
     public static void syncMilestones(ServerPlayer player, ReputationData.Faction faction) {
-        ReputationData reputation = ReputationData.get(player);
         QuestData quest = QuestData.get(player);
         ResearchData research = ResearchData.get(player);
-        int rep = reputation.getReputation(faction);
+        int rep = AshfallFactionBridge.reputation(player, faction);
         String prefix = "faction_" + faction.name().toLowerCase();
 
         if (rep >= 25 && !quest.isAssetDiscovered(prefix + "_safehouse")) {

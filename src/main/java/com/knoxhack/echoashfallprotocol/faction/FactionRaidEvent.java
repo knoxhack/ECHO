@@ -289,6 +289,7 @@ public class FactionRaidEvent {
                 if (pair != null) diplomacy.modifyRelation(pair, -2);
                 FactionQuestProgression.progress(player, FactionQuest.ObjectiveType.RAID_DEFENSE,
                     defendingFaction.getDisplayName().toLowerCase(), defendingFaction, 1);
+                AshfallFactionContractProgression.progressRaidDefense(player, AshfallFactionBridge.coreFactionId(defendingFaction));
             }
 
             FactionTerritory.saveAndSync(player, territory);

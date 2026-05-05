@@ -1,7 +1,7 @@
 package com.knoxhack.echoashfallprotocol.entity.faction;
 
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge;
 import com.knoxhack.echoashfallprotocol.faction.ReputationData;
-import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -45,9 +45,9 @@ public class RemnantSoldier extends Monster {
                 if (!super.canUse()) return false;
                 if (this.target == null) return false;
                 
-                // Check reputation - only attack if negative reputation with Remnants
-                ReputationData factionData = this.target.getData(ModAttachments.REPUTATION_DATA.get());
-                int reputation = factionData.getReputation(ReputationData.Faction.REMNANTS);
+                if (!(this.target instanceof Player targetPlayer)) return false;
+                // Legacy Remnants now bridge to Echo Core standing.
+                int reputation = AshfallFactionBridge.reputation(targetPlayer, ReputationData.Faction.REMNANTS);
                 return reputation < 0; // Only attack players with negative reputation
             }
         });
@@ -57,9 +57,7 @@ public class RemnantSoldier extends Monster {
      * Determine if this soldier should attack a player based on reputation
      */
     private boolean shouldAttackPlayer(Player player) {
-        // Get player's reputation with Remnant Collective
-        ReputationData factionData = player.getData(ModAttachments.REPUTATION_DATA.get());
-        int reputation = factionData.getReputation(ReputationData.Faction.REMNANTS);
+        int reputation = AshfallFactionBridge.reputation(player, ReputationData.Faction.REMNANTS);
         
         // Attack if reputation is negative (suspicious or worse)
         return reputation < 0;

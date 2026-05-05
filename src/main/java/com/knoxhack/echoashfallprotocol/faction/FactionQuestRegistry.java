@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Registry for all faction quests in the game.
- * Includes quests for Remnants, Salvagers, and Mutants.
+ * Registry for legacy faction quests retained as compatibility work.
+ * Echo Core owns the 10 Ashfall contracts shown to players.
  */
 public class FactionQuestRegistry {
     

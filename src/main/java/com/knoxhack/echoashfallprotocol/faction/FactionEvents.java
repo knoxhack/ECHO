@@ -49,6 +49,9 @@ public class FactionEvents {
             reputation.addReputation(ReputationData.Faction.MUTANTS, 5 + difficulty);
             helpedFaction = ReputationData.Faction.MUTANTS;
         }
+        if (helpedFaction != null) {
+            AshfallFactionBridge.addReputation(player, helpedFaction, 5 + difficulty);
+        }
         
         // Diplomatic consequences: helping one faction affects relations with their enemies
         if (helpedFaction != null && player instanceof ServerPlayer serverPlayer) {
@@ -82,6 +85,7 @@ public class FactionEvents {
                 // Reduce reputation with the enemy faction
                 int reputationLoss = Math.max(1, amount / 3); // 1/3 of the gain is lost with enemies
                 reputation.addReputation(other, -reputationLoss);
+                AshfallFactionBridge.addReputation(player, other, -reputationLoss);
                 
                 // Also worsen diplomatic relations between the factions
                 diplomacy.modifyRelation(pair, -1);
@@ -124,14 +128,18 @@ public class FactionEvents {
         if (discoveredFaction == null && (normalizedId.contains("military") || normalizedId.contains("reactor") || normalizedId.contains("radiation"))) {
             discoveredFaction = ReputationData.Faction.REMNANTS;
             reputation.addReputation(discoveredFaction, 2);
+            AshfallFactionBridge.addReputation(player, discoveredFaction, 2);
         } else if (discoveredFaction == null && (normalizedId.contains("factory") || normalizedId.contains("workshop") || normalizedId.contains("data_center") || normalizedId.contains("salvager"))) {
             discoveredFaction = ReputationData.Faction.SALVAGERS;
             reputation.addReputation(discoveredFaction, 2);
+            AshfallFactionBridge.addReputation(player, discoveredFaction, 2);
         } else if (discoveredFaction == null && (normalizedId.contains("bio") || normalizedId.contains("cryo") || normalizedId.contains("subway") || normalizedId.contains("toxic"))) {
             discoveredFaction = ReputationData.Faction.MUTANTS;
             reputation.addReputation(discoveredFaction, 2);
+            AshfallFactionBridge.addReputation(player, discoveredFaction, 2);
         } else if (discoveredFaction != null) {
             reputation.addReputation(discoveredFaction, 2);
+            AshfallFactionBridge.addReputation(player, discoveredFaction, 2);
         }
 
         if (player instanceof ServerPlayer serverPlayer) {
@@ -139,6 +147,8 @@ public class FactionEvents {
             if (discoveredFaction != null) {
                 FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.RECON, "faction_hub", discoveredFaction, 1);
             }
+            AshfallFactionContractProgression.progressPoi(serverPlayer, normalizedId);
+            FactionNpcPopulationHandler.onPoiDiscovered(serverPlayer, normalizedId);
             ReputationData.saveAndSync(serverPlayer, reputation);
             ResearchData.saveAndSync(serverPlayer, research);
             FactionProgressionHelper.syncMilestones(serverPlayer);
@@ -162,6 +172,7 @@ public class FactionEvents {
         // Example: Killing feral humans (mutant faction) reduces mutant reputation
         if (entityName.contains("feral_human") || entityName.contains("mutant")) {
             reputation.addReputation(ReputationData.Faction.MUTANTS, -2);
+            AshfallFactionBridge.addReputation(player, ReputationData.Faction.MUTANTS, -2);
         }
         
         // Rare fragment drops from faction-affiliated mobs
@@ -179,6 +190,7 @@ public class FactionEvents {
             }
             // Killing military units reduces remnant reputation
             reputation.addReputation(ReputationData.Faction.REMNANTS, -1);
+            AshfallFactionBridge.addReputation(player, ReputationData.Faction.REMNANTS, -1);
         }
         
         if (entityName.contains("scavenger") || entityName.contains("bandit")) {
@@ -197,6 +209,7 @@ public class FactionEvents {
 
         if (player instanceof ServerPlayer serverPlayer) {
             FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.KILL, entityName, identifyFaction(entityName), 1);
+            AshfallFactionContractProgression.progressKill(serverPlayer, entityName);
             ReputationData.saveAndSync(serverPlayer, reputation);
             FactionProgressionHelper.syncMilestones(serverPlayer);
         }

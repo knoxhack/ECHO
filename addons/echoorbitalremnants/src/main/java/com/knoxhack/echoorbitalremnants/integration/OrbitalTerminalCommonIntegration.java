@@ -39,8 +39,8 @@ public final class OrbitalTerminalCommonIntegration {
                 "Orbital Remnants Route Manual",
                 "OPEN",
                 List.of(
-                        "Orbital Remnants remains playable from its standalone ECHO-7 terminal item because orbit cannot assume the shared terminal survived.",
-                        "When ECHO Terminal is installed, shared tabs mirror route status and expose the same field SCAN command used by the Orbital terminal.",
+                        "Orbital Remnants remains playable from its standalone ECHO-7 terminal item because orbit cannot assume any shared console survived the fall.",
+                        "When ECHO Terminal is installed, shared tabs mirror route status and expose the same field SCAN channel used by the Orbital terminal.",
                         "Treat the route as post-Nexus recovery: every launch, relay, and survey is ECHO-7 testing whether ECHO-0 still owns the sky."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
@@ -61,8 +61,8 @@ public final class OrbitalTerminalCommonIntegration {
                 List.of(
                         "ECHO-0 treated Earth as a quarantine field after the Gridfall signal crossed orbit.",
                         "Its logic is cold and simple: if living systems feed the Nexus, then Earth must remain contained until the signal starves.",
-                        "Locked records can name the quarantine, Station ECHO, and ECHO-7 without exposing the final resolution.",
-                        "The active mission record carries spoiler-sensitive instructions only when the player reaches that route state."),
+                        "Early records may name the quarantine, Station ECHO, and ECHO-7. They do not disclose what waits at the end of the route.",
+                        "The active mission record opens sharper instructions only when the field state proves you are there."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 OrbitalTerminalIds.id("living_route_worlds_field_notes"),

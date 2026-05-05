@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Manages inter-faction diplomatic relations and war/peace states.
- * Tracks relationships between Remnants, Salvagers, and Mutants.
+ * Manages legacy inter-faction diplomatic relations and war/peace states.
+ * Echo Core owns the player-facing 10 Ashfall faction standing model.
  */
 public class FactionDiplomacy implements ValueIOSerializable {
     public static final StreamCodec<RegistryFriendlyByteBuf, FactionDiplomacy> STREAM_CODEC = StreamCodec.of(

@@ -388,11 +388,14 @@ public class FactionWorldManager {
             var reputation = ReputationData.get(player);
             if (raid.getStatus() == FactionRaidEvent.RaidStatus.DEFENDER_VICTORY) {
                 reputation.addReputation(raid.getDefendingFaction(), 2);
+                AshfallFactionBridge.addReputation(player, raid.getDefendingFaction(), 2);
                 player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                     "\u00A7a[ECHO-7] " + raid.getDefendingFaction().getDisplayName() + " patrol confidence increased near this route."));
             } else if (raid.getStatus() == FactionRaidEvent.RaidStatus.ATTACKER_VICTORY) {
                 reputation.addReputation(raid.getAttackingFaction(), 1);
                 reputation.addReputation(raid.getDefendingFaction(), -2);
+                AshfallFactionBridge.addReputation(player, raid.getAttackingFaction(), 1);
+                AshfallFactionBridge.addReputation(player, raid.getDefendingFaction(), -2);
                 player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                     "\u00A7c[ECHO-7] Territory pressure shifted toward " + raid.getAttackingFaction().getDisplayName() + ". Vendor safety may vary."));
             }

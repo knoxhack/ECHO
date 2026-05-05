@@ -536,8 +536,8 @@ public final class ModGameTests {
         EchoTerminalSnapshot midGameBlocked = EchoTerminalSnapshot.from(player);
         helper.assertTrue(midGameBlocked.scanRequirement().contains("(0/3)"),
                 "Mid-game terminal guidance should expose the current repair count");
-        helper.assertTrue(midGameBlocked.missionHelp().contains("ECHO HELP"),
-                "Mid-game terminal help should use consistent ECHO HELP wording");
+        helper.assertTrue(midGameBlocked.missionHelp().contains("ECHO NOTE"),
+                "Mid-game terminal help should use consistent ECHO NOTE wording");
 
         EchoTerminalProgress.get(player).markLunarSignalInvestigated(player);
         EchoTerminalProgress.get(player).unlockMarsRoute(player);

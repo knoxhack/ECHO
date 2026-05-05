@@ -10,8 +10,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.common.util.ValueIOSerializable;
 
 /**
- * Player faction reputation tracking system.
- * Three factions with reputation range -100 (hostile) to +100 (allied).
+ * Legacy faction reputation buckets retained for old mobs/events.
+ * Player-facing standing is bridged into Echo Core's 10 Ashfall factions.
  */
 public class ReputationData implements ValueIOSerializable {
     public static final StreamCodec<RegistryFriendlyByteBuf, ReputationData> STREAM_CODEC = StreamCodec.of(
@@ -104,6 +104,18 @@ public class ReputationData implements ValueIOSerializable {
      */
     public void addReputation(Faction faction, int amount) {
         setReputation(faction, getReputation(faction) + amount);
+    }
+
+    /**
+     * Clears the retired three-faction player-facing reputation model.
+     */
+    public void resetLegacyProgress() {
+        remnantRep = 0;
+        salvagerRep = 0;
+        mutantRep = 0;
+        remnantPerks = 0;
+        salvagerPerks = 0;
+        mutantPerks = 0;
     }
     
     /**

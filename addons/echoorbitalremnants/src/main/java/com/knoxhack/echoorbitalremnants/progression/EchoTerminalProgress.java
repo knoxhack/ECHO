@@ -3,6 +3,7 @@ package com.knoxhack.echoorbitalremnants.progression;
 import com.knoxhack.echoorbitalremnants.Config;
 import com.knoxhack.echoorbitalremnants.item.FactionPledgeItem;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
+import com.knoxhack.echoorbitalremnants.integration.OrbitalFactions;
 import com.knoxhack.echoorbitalremnants.lore.OrbitalLore;
 import com.knoxhack.echoorbitalremnants.registry.ModBlocks;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
@@ -97,6 +98,7 @@ public class EchoTerminalProgress {
 
     public void save(Player player) {
         player.getPersistentData().put(ROOT, write());
+        OrbitalFactions.sync(player, this);
     }
 
     public void setLastTerminalReport(Player player, String report) {
@@ -644,29 +646,29 @@ public class EchoTerminalProgress {
 
     public String missionHelpReport() {
         if (!orbitalContact) {
-            return "ECHO HELP: Sneak-use SCAN on Earth first. Recovery sites rebuild the launch salvage map.";
+            return "ECHO NOTE: Sneak-use SCAN on Earth first. Recovery sites rebuild the launch salvage map.";
         }
         if (finalNetworkSealed) {
-            return "ECHO HELP: " + FINAL_NETWORK_REPORT;
+            return "ECHO NOTE: " + FINAL_NETWORK_REPORT;
         }
         if (!lowOrbitReached || !launchPrepared) {
-            return "ECHO HELP: Press SCAN when blocked. LAUNCH lists missing gear and rocket parts; orbit will not accept guesswork.";
+            return "ECHO NOTE: Press SCAN when blocked. LAUNCH lists missing gear and rocket parts; orbit will not accept guesswork.";
         }
         if (midGameObjectivesRequired() && !allMidGameObjectivesComplete() && !echoZeroEncountered) {
-            return "ECHO HELP: Route repairs need three unique sites each. Stand near an objective block with the repair item, then SCAN.";
+            return "ECHO NOTE: Route repairs need three unique sites each. Stand near an objective block with the repair item, then SCAN.";
         }
         if (echoZeroEncountered && !nexusStabilized) {
-            return "ECHO HELP: Nexus stabilization is " + nexusStabilizationText()
+            return "ECHO NOTE: Nexus stabilization is " + nexusStabilizationText()
                     + ". Scan distinct Nexus Anchor/Growth sites, or spend Nexus Stabilizer Shards from Signal Analyzer support.";
         }
         if (allSurveysComplete() && completedFactionContractCount() == 0) {
-            return "ECHO HELP: Survey network complete. " + factionContractRequirement()
+            return "ECHO NOTE: Survey network complete. " + factionContractRequirement()
                     + " Complete one ECHO-tab contract before the final seal.";
         }
         if (allSurveysComplete() && completedFactionContractCount() > 0) {
-            return "ECHO HELP: Final prerequisites are complete. Press SCAN once to seal the survey network.";
+            return "ECHO NOTE: Final prerequisites are complete. Press SCAN once to seal the survey network.";
         }
-        return "ECHO HELP: SCAN advances route hooks. SURVEY logs each unique route site once.";
+        return "ECHO NOTE: SCAN advances route hooks. SURVEY logs each unique route site once.";
     }
 
     public String activeTab() {
@@ -913,7 +915,7 @@ public class EchoTerminalProgress {
         lines.add(surveyLine("Europa", europaSurveyComplete, europaSurveyScans, europaSurveySites,
                 "Thermal Vent/Probe", "Nexus prep"));
         lines.add(surveyLine("Nexus", nexusStabilized, nexusSurveyScans, nexusSurveySites,
-                "Anchor/Growth/Shard", echoZeroEncountered ? "post-ECHO network" : "locked until ECHO-0"));
+                "Anchor/Growth/Shard", echoZeroEncountered ? "post-ECHO-0 network" : "locked until ECHO-0"));
         return List.copyOf(lines);
     }
 
@@ -1476,7 +1478,7 @@ public class EchoTerminalProgress {
         return switch (contract) {
             case "orbital_remnant_relay" -> "Scan a Low Orbit Signal Relay or carry Orbit Survey Data for the disciplined route record.";
             case "void_salvager_manifest" -> "Scan orbital salvage or turn in 1 Orbital Alloy and 1 Vacuum Circuit for the manifest.";
-            case "nexus_choir_anchor" -> "After ECHO-0, scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard for the forbidden reading.";
+            case "nexus_choir_anchor" -> "After ECHO-0, scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard for a stable reading.";
             default -> "No active faction contract.";
         };
     }

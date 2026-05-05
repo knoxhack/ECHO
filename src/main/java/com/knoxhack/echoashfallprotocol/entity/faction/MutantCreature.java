@@ -1,7 +1,7 @@
 package com.knoxhack.echoashfallprotocol.entity.faction;
 
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge;
 import com.knoxhack.echoashfallprotocol.faction.ReputationData;
-import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -49,9 +49,7 @@ public class MutantCreature extends Monster {
         if (super.doHurtTarget(level, target)) {
             // Apply poison/radiation effect on hit
             if (target instanceof Player player) {
-                // Check if player is not allied with mutants
-                ReputationData factionData = player.getData(ModAttachments.REPUTATION_DATA.get());
-                int reputation = factionData.getReputation(ReputationData.Faction.MUTANTS);
+                int reputation = AshfallFactionBridge.reputation(player, ReputationData.Faction.MUTANTS);
                 
                 // Even allied players get poisoned (mutants can't control their mutations)
                 player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));

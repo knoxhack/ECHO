@@ -1,5 +1,6 @@
 package com.knoxhack.echocore.api;
 
+import com.knoxhack.echocore.EchoCore;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -17,12 +18,15 @@ public final class EchoAddonRegistry {
     }
 
     public static void register(EchoAddonChapter chapter) {
-        if (chapter == null || chapter.id() == null || chapter.id().isBlank()) {
-            throw new IllegalArgumentException("ECHO addon chapter id is required.");
+        String chapterId = safeId(chapter, "register");
+        if (chapterId == null || chapterId.isBlank()) {
+            EchoCore.LOGGER.warn("ECHO addon chapter {} did not expose a valid id; ignoring chapter.",
+                    providerName(chapter));
+            return;
         }
-        String id = chapter.id().toLowerCase(Locale.ROOT);
-        if (!id.equals(chapter.id())) {
-            throw new IllegalArgumentException("ECHO addon chapter id must be lowercase: " + chapter.id());
+        String id = chapterId.toLowerCase(Locale.ROOT);
+        if (!id.equals(chapterId)) {
+            throw new IllegalArgumentException("ECHO addon chapter id must be lowercase: " + chapterId);
         }
         CHAPTERS.put(id, chapter);
     }
@@ -33,11 +37,33 @@ public final class EchoAddonRegistry {
 
     public static List<EchoAddonChapter> chapters() {
         List<EchoAddonChapter> chapters = new ArrayList<>(CHAPTERS.values());
-        chapters.sort(Comparator.comparing(EchoAddonChapter::id));
+        chapters.removeIf(chapter -> safeId(chapter, "list") == null);
+        chapters.sort(Comparator.comparing(chapter -> {
+            String id = safeId(chapter, "sort");
+            return id == null ? "" : id;
+        }));
         return List.copyOf(chapters);
     }
 
     public static void clearForTests() {
         CHAPTERS.clear();
+    }
+
+    private static String safeId(EchoAddonChapter chapter, String surface) {
+        if (chapter == null) {
+            return null;
+        }
+        try {
+            String id = chapter.id();
+            return id == null || id.isBlank() ? null : id;
+        } catch (RuntimeException exception) {
+            EchoCore.LOGGER.warn("ECHO addon chapter {} failed during {}; ignoring chapter output.",
+                    providerName(chapter), surface, exception);
+            return null;
+        }
+    }
+
+    private static String providerName(Object provider) {
+        return provider == null ? "<null>" : provider.getClass().getName();
     }
 }

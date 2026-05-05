@@ -1,8 +1,8 @@
 package com.knoxhack.echoashfallprotocol.entity.faction;
 
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge;
 import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.research.PerkEffectHandler;
-import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -62,9 +62,7 @@ public class SalvagerTrader extends Monster {
     }
     
     private boolean shouldAttackPlayer(Player player) {
-        // Get player's reputation with Rust Market (Salvagers)
-        ReputationData factionData = player.getData(ModAttachments.REPUTATION_DATA.get());
-        int reputation = factionData.getReputation(ReputationData.Faction.SALVAGERS);
+        int reputation = AshfallFactionBridge.reputation(player, ReputationData.Faction.SALVAGERS);
         
         // Attack only if reputation is very negative (hated)
         return reputation < -50;
@@ -73,9 +71,8 @@ public class SalvagerTrader extends Monster {
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!this.level().isClientSide()) {
-            // Get reputation for trade checks
-            ReputationData factionData = player.getData(ModAttachments.REPUTATION_DATA.get());
-            int reputation = factionData.getReputation(ReputationData.Faction.SALVAGERS);
+            AshfallFactionBridge.markLegacyContact(player, ReputationData.Faction.SALVAGERS);
+            int reputation = AshfallFactionBridge.reputation(player, ReputationData.Faction.SALVAGERS);
             
             ItemStack held = player.getItemInHand(hand);
             float tradeMultiplier = player instanceof ServerPlayer serverPlayer
@@ -152,9 +149,7 @@ public class SalvagerTrader extends Monster {
     }
     
     private void openTradeMenu(Player player) {
-        // Get reputation for trade modifiers
-        ReputationData factionData = player.getData(ModAttachments.REPUTATION_DATA.get());
-        int reputation = factionData.getReputation(ReputationData.Faction.SALVAGERS);
+        int reputation = AshfallFactionBridge.reputation(player, ReputationData.Faction.SALVAGERS);
         
         // Send trade info to player
         player.sendSystemMessage(net.minecraft.network.chat.Component.literal("=== Rust Market Trader ==="));

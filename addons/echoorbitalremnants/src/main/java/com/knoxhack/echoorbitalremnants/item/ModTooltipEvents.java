@@ -48,7 +48,7 @@ public class ModTooltipEvents {
             case "europa_thermal_probe" -> "Scan near Europa vents to chart safe thermal pockets.";
             case "nexus_stabilizer_shard" -> "Post-ECHO-0 shard used to stabilize Nexus anchors.";
             case "stabilized_echo_core" -> "Final post-survey core from stabilized Nexus anchors.";
-            case "orbital_black_box" -> "Boss-tier flight recorder proof; marks major orbital encounters without duplicating rewards.";
+            case "orbital_black_box" -> "Major-encounter flight recorder proof; marks orbital threats without duplicating rewards.";
             case "station_relay_fuse" -> "Consumed to repair Station Relay Nodes in Low Earth Orbit.";
             case "station_power_matrix" -> "Route reward from the restored Station Network; used in advanced orbital systems.";
             case "helium_extractor_core" -> "Consumed to restore lunar Helium Extractor Nodes.";

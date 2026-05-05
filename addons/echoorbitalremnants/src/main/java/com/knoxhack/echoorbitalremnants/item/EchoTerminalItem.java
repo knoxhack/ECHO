@@ -70,21 +70,21 @@ public class EchoTerminalItem extends Item {
             }
             if (level.dimension() == ModDimensions.LUNAR_SCAR_ZONE && has(player, ModItems.HELIUM_3_CELL.get())) {
                 if (midGameObjectivesEnabled() && !progress.lunarExtractorGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Mars telemetry held. Restore three Helium Extractor Nodes with Helium Extractor Cores before the transfer window can hold.");
+                    report(player, progress, "Mars telemetry unstable. Restore three Helium Extractor Nodes with Helium Extractor Cores before the transfer window can hold.");
                     return;
                 }
                 progress.unlockMarsRoute(player);
                 report(player, progress, "Mars transfer window resolved from Helium-3 telemetry. The route is thin, but real.");
             } else if (level.dimension() == ModDimensions.MARS_ASH_BASIN && has(player, ModItems.MARTIAN_SILICA.get())) {
                 if (midGameObjectivesEnabled() && !progress.marsHabitatGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Europa prep held. Repair three Mars Pressure Consoles with Pressure Regulators before the suit route can hold.");
+                    report(player, progress, "Europa prep unstable. Repair three Mars Pressure Consoles with Pressure Regulators before the suit route can hold.");
                     return;
                 }
                 progress.unlockEuropaRoute(player);
                 report(player, progress, "Europa cryo route triangulated through Martian terraformer dust.");
             } else if (level.dimension() == ModDimensions.EUROPA_CRYO_OCEAN && has(player, ModItems.CRYO_CRYSTAL.get())) {
                 if (midGameObjectivesEnabled() && !progress.europaArrayGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Deep Space Protocol held. Calibrate three Europa Thermal Arrays with Europa Probe Arrays before the anomaly route opens.");
+                    report(player, progress, "Deep Space Protocol unstable. Calibrate three Europa Thermal Arrays with Europa Probe Arrays before the anomaly route opens.");
                     return;
                 }
                 progress.unlockDeepSpaceProtocol(player);
@@ -100,7 +100,7 @@ public class EchoTerminalItem extends Item {
             }
         } else {
             if (!progress.launchSiteTracked() && AshfallCompat.isOrbitalCalibrationLocked(player)) {
-                report(player, progress, "Orbital link locked. Resolve an ECHO: Ashfall Protocol Nexus path before ECHO-7 can challenge quarantine beyond Earth.");
+                report(player, progress, "Orbital link sealed. Resolve an ECHO: Ashfall Protocol Nexus path before ECHO-7 can challenge quarantine beyond Earth.");
                 return;
             }
             boolean seedSites = !progress.launchSiteTracked();
@@ -118,7 +118,7 @@ public class EchoTerminalItem extends Item {
             }
             if (seedSites) {
                 progress.markOrbitalContact(player);
-                report(player, progress, "Orbital signal calibrated. Recovery sites could not be seeded in this level.");
+                report(player, progress, "Orbital signal calibrated. Recovery sites could not be seeded here; use launch recipes and local salvage as the fallback route.");
                 return;
             }
             report(player, progress, progress.allGroundRecoverySitesComplete()
@@ -138,7 +138,7 @@ public class EchoTerminalItem extends Item {
                 return null;
             }
             if (!has(player, ModItems.STATION_RELAY_FUSE.get()) && !player.hasInfiniteMaterials() && !progress.stationNetworkGateOpen()) {
-                return "Station relay blocked: insert one Station Relay Fuse at this node.";
+                return "Station relay waiting for one Station Relay Fuse at this node.";
             }
             EchoTerminalProgress.RouteObjectiveResult result = progress.repairStationRelay(player, siteId);
             consumeRepairItem(player, ModItems.STATION_RELAY_FUSE.get(), result);
@@ -155,7 +155,7 @@ public class EchoTerminalItem extends Item {
                 return null;
             }
             if (!has(player, ModItems.HELIUM_EXTRACTOR_CORE.get()) && !player.hasInfiniteMaterials() && !progress.lunarExtractorGateOpen()) {
-                return "Helium extractor blocked: insert one Helium Extractor Core at this node.";
+                return "Helium extractor waiting for one Helium Extractor Core at this node.";
             }
             EchoTerminalProgress.RouteObjectiveResult result = progress.repairLunarExtractor(player, siteId);
             consumeRepairItem(player, ModItems.HELIUM_EXTRACTOR_CORE.get(), result);
@@ -172,7 +172,7 @@ public class EchoTerminalItem extends Item {
                 return null;
             }
             if (!has(player, ModItems.PRESSURE_REGULATOR.get()) && !player.hasInfiniteMaterials() && !progress.marsHabitatGateOpen()) {
-                return "Mars console blocked: insert one Pressure Regulator at this habitat console.";
+                return "Mars console waiting for one Pressure Regulator at this habitat console.";
             }
             EchoTerminalProgress.RouteObjectiveResult result = progress.repairMarsPressureConsole(player, siteId);
             consumeRepairItem(player, ModItems.PRESSURE_REGULATOR.get(), result);
@@ -189,7 +189,7 @@ public class EchoTerminalItem extends Item {
                 return null;
             }
             if (!has(player, ModItems.EUROPA_PROBE_ARRAY.get()) && !player.hasInfiniteMaterials() && !progress.europaArrayGateOpen()) {
-                return "Europa array blocked: insert one Europa Probe Array at this thermal array.";
+                return "Europa array waiting for one Europa Probe Array at this thermal array.";
             }
             EchoTerminalProgress.RouteObjectiveResult result = progress.repairEuropaThermalArray(player, siteId);
             consumeRepairItem(player, ModItems.EUROPA_PROBE_ARRAY.get(), result);
@@ -320,7 +320,7 @@ public class EchoTerminalItem extends Item {
         }
         EchoTerminalProgress.ContractResult result = progress.completeFactionContract(player);
         grantFactionContractReward(player, faction);
-        String report = result.name() + " complete. Contract rewards delivered; faction relay count " + result.completedCount() + ".";
+        String report = result.name() + " complete. Contract cache delivered; faction relay count " + result.completedCount() + ".";
         if (EchoTerminalProgress.get(player).finalNetworkSealed()) {
             report = EchoTerminalProgress.get(player).lastTerminalReport();
         }
@@ -361,14 +361,14 @@ public class EchoTerminalItem extends Item {
     private static String factionBlockedReport(Player player, EchoTerminalProgress progress, FactionPledgeItem.Faction faction) {
         return switch (faction) {
             case ORBITAL_REMNANT -> player.level().dimension() != ModDimensions.LOW_EARTH_ORBIT
-                    ? "Faction contract blocked: wrong dimension. Go to Low Earth Orbit or spend 1 Orbit Survey Data."
-                    : "Faction contract blocked: scan a Signal Relay/Docking Beacon or spend 1 Orbit Survey Data.";
-            case VOID_SALVAGERS -> "Faction contract blocked: scan orbital salvage nearby or carry 1 Orbital Alloy and 1 Vacuum Circuit.";
+                    ? "Faction contract wrong dimension: waiting for Low Earth Orbit, or 1 Orbit Survey Data as proof."
+                    : "Faction contract waiting for a Signal Relay/Docking Beacon scan, or 1 Orbit Survey Data.";
+            case VOID_SALVAGERS -> "Faction contract waiting for orbital salvage, or 1 Orbital Alloy plus 1 Vacuum Circuit.";
             case NEXUS_CHOIR -> !progress.echoZeroEncountered()
-                    ? "Faction contract blocked: Nexus Choir anchor readings unlock only after ECHO-0 is resolved."
+                    ? "Faction contract sealed: Nexus Choir anchor readings unlock only after ECHO-0 is resolved."
                     : player.level().dimension() != ModDimensions.NEXUS_ANOMALY_BELT
-                    ? "Faction contract blocked: wrong dimension. Go to the Nexus Anomaly Belt or spend 1 Nexus Stabilizer Shard."
-                    : "Faction contract blocked: scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard.";
+                    ? "Faction contract waiting for the Nexus Anomaly Belt, or 1 Nexus Stabilizer Shard."
+                    : "Faction contract waiting for a Nexus Anchor/Growth scan, or 1 Nexus Stabilizer Shard.";
         };
     }
 
@@ -418,7 +418,7 @@ public class EchoTerminalItem extends Item {
             return factionBlockedReport(player, progress, progress.activeContractFaction());
         }
         if (progress.factionContractCoolingDown()) {
-            return "Faction contract cooling down. Wait for the relay sync counter to clear, then press SCAN again.";
+            return "Faction relay is cooling down. Wait for the sync counter to clear, then press SCAN again.";
         }
         if (progress.allSurveysComplete()) {
             return progress.completedFactionContractCount() == 0
@@ -471,7 +471,7 @@ public class EchoTerminalItem extends Item {
         if (progress.completedFactionContractCount() == 0) {
             return "Faction contract unavailable. Use a faction pledge item first, then check the ECHO tab.";
         }
-        return "Scan found no route hook. Use the ROUTES or SURVEY tab for the next required location and item.";
+        return "Scan found no route hook. Use ROUTES or SURVEY for the next required location and item.";
     }
 
     private static void report(Player player, EchoTerminalProgress progress, String message) {
