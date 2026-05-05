@@ -143,18 +143,21 @@ public class FieldOpsContractHandler {
                 giveItem(player, new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get(), 1));
                 giveItem(player, new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1));
                 reputation.addReputation(ReputationData.Faction.MUTANTS, 4);
+                com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(player, ReputationData.Faction.MUTANTS, 4);
                 research.addPoints(8);
             }
             case SCANNER_SWEEP -> {
                 giveItem(player, new ItemStack(ModItems.CIRCUIT_BOARD.get(), 1));
                 giveItem(player, new ItemStack(ModItems.ENERGY_CELL.get(), 1));
                 reputation.addReputation(ReputationData.Faction.SALVAGERS, 4);
+                com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(player, ReputationData.Faction.SALVAGERS, 4);
                 research.addPoints(12);
             }
             case CORRUPTED_BOUNTY -> {
                 giveItem(player, new ItemStack(ModItems.POWER_CELL.get(), 1));
                 giveItem(player, new ItemStack(ModItems.SCRAP_METAL.get(), 4));
                 reputation.addReputation(ReputationData.Faction.REMNANTS, 5);
+                com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(player, ReputationData.Faction.REMNANTS, 5);
                 research.addPoints(10);
             }
             case NONE -> {

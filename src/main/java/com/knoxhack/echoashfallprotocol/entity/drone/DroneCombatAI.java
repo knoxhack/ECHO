@@ -138,8 +138,7 @@ public class DroneCombatAI {
             }
             
             // Also consider player reputation with that faction
-            ReputationData rep = owner.getData(ModAttachments.REPUTATION_DATA.get());
-            int reputation = rep.getReputation(mobFaction);
+            int reputation = com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.reputation(owner, mobFaction);
             if (reputation < 0) {
                 score += Math.abs(reputation) / 2; // Negative rep = higher priority
             }

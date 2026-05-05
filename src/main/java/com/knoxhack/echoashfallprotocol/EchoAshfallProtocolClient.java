@@ -13,6 +13,7 @@ import com.knoxhack.echoashfallprotocol.client.renderer.DroneModel;
 import com.knoxhack.echoashfallprotocol.client.renderer.EchoCompanionDroneRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.EchoDroneRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.FeralHumanRenderer;
+import com.knoxhack.echoashfallprotocol.client.renderer.FactionNpcRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.GlowingGhoulRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.GuardianBossModel;
 import com.knoxhack.echoashfallprotocol.client.renderer.IrradiatedWolfRenderer;
@@ -209,6 +210,7 @@ public class EchoAshfallProtocolClient {
             event.registerEntityRenderer(ModEntities.REMNANT_SOLDIER.get(), RemnantSoldierRenderer::new);
             event.registerEntityRenderer(ModEntities.SALVAGER_TRADER.get(), SalvagerTraderRenderer::new);
             event.registerEntityRenderer(ModEntities.MUTANT_CREATURE.get(), MutantCreatureRenderer::new);
+            event.registerEntityRenderer(ModEntities.FACTION_NPC.get(), FactionNpcRenderer::new);
             event.registerEntityRenderer(ModEntities.WARDEN_BOSS.get(), WardenBossRenderer::new);
             event.registerEntityRenderer(ModEntities.WASTELAND_SENTINEL.get(), WastelandSentinelRenderer::new);
             event.registerEntityRenderer(ModEntities.CRASH_ZONE_COLOSSUS.get(), BiomeBossRenderer::new);

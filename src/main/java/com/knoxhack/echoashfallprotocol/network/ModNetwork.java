@@ -84,6 +84,22 @@ public class ModNetwork {
             }
         );
 
+        registrar.playToClient(
+            FactionDialogueOpenPacket.TYPE,
+            FactionDialogueOpenPacket.CODEC,
+            (packet, ctx) -> {
+                ctx.enqueueWork(() -> handleFactionDialogueOpen(packet));
+            }
+        );
+
+        registrar.playToServer(
+            FactionNpcActionPacket.TYPE,
+            FactionNpcActionPacket.CODEC,
+            (packet, ctx) -> {
+                ctx.enqueueWork(() -> handleFactionNpcAction(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
+            }
+        );
+
         // Register Environmental Sync packet (Server to Client)
         registrar.playToClient(
             EnvironmentalSyncPacket.TYPE,
@@ -161,6 +177,10 @@ public class ModNetwork {
             com.knoxhack.echoashfallprotocol.echo.EchoIntel.get(player);
         intel.markAsRead(intelId);
         com.knoxhack.echoashfallprotocol.echo.EchoIntel.saveAndSync(player, intel);
+    }
+
+    private static void handleFactionNpcAction(FactionNpcActionPacket packet, net.minecraft.server.level.ServerPlayer player) {
+        com.knoxhack.echoashfallprotocol.faction.FactionNpcDialogueService.handleAction(player, packet);
     }
 
     private static void handleResearchPurchase(ResearchPurchasePacket packet, net.minecraft.server.level.ServerPlayer player) {
@@ -509,6 +529,10 @@ public class ModNetwork {
 
     private static void handleWelcomeScreen(WelcomeScreenPacket packet) {
         dispatchToClientHandler("handleWelcomeScreen", WelcomeScreenPacket.class, packet);
+    }
+
+    private static void handleFactionDialogueOpen(FactionDialogueOpenPacket packet) {
+        dispatchToClientHandler("handleFactionDialogueOpen", FactionDialogueOpenPacket.class, packet);
     }
 
     private static void handleNexusState(NexusStatePacket packet) {

@@ -127,6 +127,8 @@ public class ExpansionEvents {
         
         // Also grant reputation with Salvagers (they maintain the network)
         ReputationData.get(player).addReputation(ReputationData.Faction.SALVAGERS, 3);
+        com.knoxhack.echoashfallprotocol.faction.AshfallFactionBridge.addReputation(
+                player, ReputationData.Faction.SALVAGERS, 3);
     }
     
     /**

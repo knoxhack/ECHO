@@ -2,6 +2,7 @@ package com.knoxhack.echoashfallprotocol.data;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
+import com.knoxhack.echoashfallprotocol.faction.FactionQuestData;
 import com.knoxhack.echoashfallprotocol.faction.ReputationData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,7 +22,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 public class SaveMigrationHandler {
 
     // Migration version - increment when data format changes
-    public static final int CURRENT_MIGRATION_VERSION = 1;
+    public static final int CURRENT_MIGRATION_VERSION = 2;
 
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
@@ -43,15 +44,16 @@ public class SaveMigrationHandler {
         EchoAshfallProtocol.LOGGER.info("Performing save migration for player {} from version {}", 
             player.getName().getString(), fromVersion);
 
-        // Initialize faction reputation for existing players
+        // Reset the retired three-faction player-facing reputation model now that Echo Core owns faction standing.
         ReputationData reputation = ReputationData.get(player);
-        if (reputation.getReputation(ReputationData.Faction.REMNANTS) == 0 &&
-            reputation.getReputation(ReputationData.Faction.SALVAGERS) == 0 &&
-            reputation.getReputation(ReputationData.Faction.MUTANTS) == 0) {
-            // Set all factions to Neutral (0) for existing saves
-            // New players will also start at Neutral
-            EchoAshfallProtocol.LOGGER.debug("Initialized faction reputation to Neutral for {}", 
-                player.getName().getString());
+        if (fromVersion < 2) {
+            reputation.resetLegacyProgress();
+            ReputationData.saveAndSync(player, reputation);
+            FactionQuestData factionQuestData = FactionQuestData.get(player);
+            factionQuestData.clearLegacyFactionProgress();
+            FactionQuestData.saveAndSync(player, factionQuestData);
+            EchoAshfallProtocol.LOGGER.debug("Reset legacy Ashfall faction reputation and quests for {}",
+                    player.getName().getString());
         }
 
         // Initialize research data for existing players

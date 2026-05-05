@@ -3,6 +3,7 @@ package com.knoxhack.echoashfallprotocol.entity;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.entity.boss.BiomeBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.WardenBossEntity;
+import com.knoxhack.echoashfallprotocol.entity.faction.FactionNpcEntity;
 import com.knoxhack.echoashfallprotocol.entity.faction.MutantCreature;
 import com.knoxhack.echoashfallprotocol.entity.faction.RemnantSoldier;
 import com.knoxhack.echoashfallprotocol.entity.faction.SalvagerTrader;
@@ -101,6 +102,10 @@ public class ModEntities {
             ENTITIES.registerEntityType("mutant_creature", MutantCreature::new, MobCategory.MONSTER,
                     builder -> builder.sized(0.65F, 2.0F).clientTrackingRange(64));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<FactionNpcEntity>> FACTION_NPC =
+            ENTITIES.registerEntityType("faction_npc", FactionNpcEntity::new, MobCategory.CREATURE,
+                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
+
     // Boss Entities
     public static final DeferredHolder<EntityType<?>, EntityType<WardenBossEntity>> WARDEN_BOSS =
             ENTITIES.registerEntityType("warden_boss", WardenBossEntity::new, MobCategory.MONSTER,
@@ -164,6 +169,7 @@ public class ModEntities {
         event.put(REMNANT_SOLDIER.get(), RemnantSoldier.createAttributes().build());
         event.put(SALVAGER_TRADER.get(), SalvagerTrader.createAttributes().build());
         event.put(MUTANT_CREATURE.get(), MutantCreature.createAttributes().build());
+        event.put(FACTION_NPC.get(), FactionNpcEntity.createAttributes().build());
         
         // Boss Entities
         event.put(WARDEN_BOSS.get(), WardenBossEntity.createAttributes().build());
@@ -195,6 +201,7 @@ public class ModEntities {
         registerMonsterSpawn(event, REMNANT_SOLDIER);
         registerMonsterSpawn(event, SALVAGER_TRADER);
         registerMonsterSpawn(event, MUTANT_CREATURE);
+        registerGroundMobSpawn(event, FACTION_NPC);
         registerGroundMobSpawn(event, WARDEN_BOSS);
         registerGroundMobSpawn(event, WASTELAND_SENTINEL);
         registerGroundMobSpawn(event, CRASH_ZONE_COLOSSUS);

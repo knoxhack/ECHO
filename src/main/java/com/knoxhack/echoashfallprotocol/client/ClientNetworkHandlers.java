@@ -1,9 +1,11 @@
 package com.knoxhack.echoashfallprotocol.client;
 
 import com.knoxhack.echoashfallprotocol.client.hud.HudState;
+import com.knoxhack.echoashfallprotocol.client.screen.FactionDialogueScreen;
 import com.knoxhack.echoashfallprotocol.client.screen.WelcomeScreen;
 import com.knoxhack.echoashfallprotocol.network.BossNavigationPacket;
 import com.knoxhack.echoashfallprotocol.network.EnvironmentalSyncPacket;
+import com.knoxhack.echoashfallprotocol.network.FactionDialogueOpenPacket;
 import com.knoxhack.echoashfallprotocol.network.GraceCountdownPacket;
 import com.knoxhack.echoashfallprotocol.network.NexusStatePacket;
 import com.knoxhack.echoashfallprotocol.network.WelcomeScreenPacket;
@@ -68,5 +70,9 @@ public final class ClientNetworkHandlers {
 
     public static void handleWelcomeScreen(WelcomeScreenPacket packet) {
         Minecraft.getInstance().execute(WelcomeScreen::requestOpen);
+    }
+
+    public static void handleFactionDialogueOpen(FactionDialogueOpenPacket packet) {
+        Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(new FactionDialogueScreen(packet)));
     }
 }

@@ -7,6 +7,7 @@ import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.event.SmartEventData;
 import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractData;
 import com.knoxhack.echoashfallprotocol.faction.FactionQuestData;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import com.knoxhack.echoashfallprotocol.survival.ColdData;
@@ -152,6 +153,14 @@ public class ModAttachments {
             "faction_quest_data",
             () -> AttachmentType.<FactionQuestData>serializable(FactionQuestData::new)
                     .sync((holder, player) -> holder == player, FactionQuestData.STREAM_CODEC)
+                    .copyOnDeath()
+                    .build()
+    );
+
+    public static final Supplier<AttachmentType<AshfallFactionContractData>> ASHFALL_FACTION_CONTRACT_DATA = ATTACHMENT_TYPES.register(
+            "ashfall_faction_contract_data",
+            () -> AttachmentType.<AshfallFactionContractData>serializable(AshfallFactionContractData::new)
+                    .sync((holder, player) -> holder == player, AshfallFactionContractData.STREAM_CODEC)
                     .copyOnDeath()
                     .build()
     );
