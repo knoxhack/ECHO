@@ -206,9 +206,9 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
         TerminalTabChrome chrome = tab == null ? null : tab.chrome();
         String status = theme.statusProvider().statusLine(Minecraft.getInstance());
-        String meta = Minecraft.getInstance().player == null ? "TERMINAL LINK OFFLINE" : "TERMINAL LINK ONLINE";
+        String meta = Minecraft.getInstance().player == null ? "LINK OFFLINE" : "LINK ONLINE";
         if (chrome != null && !chrome.summary().isBlank()) {
-            meta = chrome.summary() + "  |  " + (Minecraft.getInstance().player == null ? "OFFLINE" : "ONLINE");
+            meta += "  |  " + chrome.summary();
         }
         TerminalUi.appShellBackdrop(graphics, TerminalVisualAssets.TERMINAL_FRAME_BACKDROP,
                 panelX, panelY, panelW, panelH, chromeColor(tab),
@@ -236,6 +236,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         int cy = groupRailY + (compact ? 32 : 40);
         int rowH = commandRowHeight();
         int gap = commandRowGap();
+        graphics.enableScissor(groupRailX, groupRailY + 28, groupRailX + groupRailW,
+                groupRailY + groupRailH - 54);
         for (String group : navigationModel.groups()) {
             boolean active = group.equals(activeGroup);
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
@@ -259,6 +261,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 cy += 5;
             }
         }
+        graphics.disableScissor();
         TerminalUi.diagnosticRail(graphics, font, groupRailX + 10, groupRailY + groupRailH - 47,
                 groupRailW - 20, 36, Minecraft.getInstance().player != null, accent);
     }
@@ -300,7 +303,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 collapseToggleY + collapseToggleH, bg);
         graphics.outline(collapseToggleX, collapseToggleY, collapseToggleW, collapseToggleH,
                 TerminalUi.opaque(accent));
-        String label = commandStackCollapsed ? ">>" : "<<";
+        String label = commandStackCollapsed ? "OPEN" : "MIN";
         graphics.centeredText(font, label, collapseToggleX + collapseToggleW / 2,
                 collapseToggleY + Math.max(4, (collapseToggleH - 8) / 2), TerminalUi.TEXT);
     }
@@ -334,12 +337,12 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         int bodyAccent = tabs.isEmpty() ? theme.accentColor() : chromeColor(tabs.get(activeTab));
         TerminalUi.cinematicContentFrame(graphics, contentX, contentY, contentW, contentH, bodyAccent);
         if (tabs.isEmpty()) {
-            graphics.text(font, Component.literal("No terminal tabs registered."), contentX + 10, contentY + 10, theme.mutedColor(), false);
+            graphics.text(font, Component.literal("No terminal channels are online."), contentX + 10, contentY + 10, theme.mutedColor(), false);
             return;
         }
         if (Minecraft.getInstance().player == null) {
             graphics.text(font, Component.literal("LINK OFFLINE"), contentX + 10, contentY + 10, TerminalUi.RED, true);
-            graphics.text(font, Component.literal("Player sync is unavailable. Reopen after joining a world."),
+            graphics.text(font, Component.literal("Operator link unavailable. Reopen after joining a world."),
                     contentX + 10, contentY + 26, theme.mutedColor(), false);
             return;
         }
@@ -357,12 +360,12 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private void drawFooter(GuiGraphicsExtractor graphics, List<TerminalTab> tabs) {
         String footer = layoutProfile == TerminalLayoutProfile.COMPACT_STACK
-                ? "ESC Back   LEFT/RIGHT Navigate   Wheel Scroll"
-                : "ESC Back   M Map   I Inventory   D Drone   J Journal   L Terminal Log   LEFT/RIGHT Navigate";
+                ? "ESC Close   LEFT/RIGHT Tabs   UP/DOWN Groups   WHEEL Scroll"
+                : "ESC Close   M Close   LEFT/RIGHT Tabs   UP/DOWN Groups   PAGE Scroll   WHEEL Scroll";
         String label = "";
         if (!tabs.isEmpty()) {
             TerminalTab tab = tabs.get(activeTab);
-            label = "TERMINAL ID: ECHO-7  |  " + navigationModel.groupLabel(tab.chrome().group())
+            label = "ECHO-7 LINK  |  " + navigationModel.groupLabel(tab.chrome().group())
                     + " / " + tab.chrome().shortTitle();
         }
         int color = tabs.isEmpty() ? theme.accentColor() : chromeColor(tabs.get(activeTab));
@@ -459,10 +462,10 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         int tabCount = Math.max(1, navigationModel.tabsInGroup(activeGroup).size());
         int groupCount = Math.max(1, navigationModel.groups().size());
         boolean compact = groupRailW < 190;
-        int reserved = (compact ? 82 : 98) + groupCount * (compact ? 27 : 34);
-        int available = Math.max(compact ? 96 : 132, groupRailH - reserved);
-        int max = compact ? 28 : 38;
-        int min = compact ? 24 : 30;
+        int reserved = (compact ? 94 : 118) + groupCount * (compact ? 27 : 34);
+        int min = compact ? 22 : 26;
+        int max = compact ? 28 : 34;
+        int available = Math.max(tabCount * min, groupRailH - reserved);
         return Math.max(min, Math.min(max, (available / tabCount) - 2));
     }
 
@@ -559,9 +562,9 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     }
 
     private void layout() {
-        int margin = Math.max(6, Math.min(14, Math.min(width, height) / 72));
-        panelW = Math.min(theme.panelMaxWidth(), Math.max(390, width - margin * 2));
-        panelH = Math.min(theme.panelMaxHeight(), Math.max(300, height - margin * 2));
+        int margin = Math.max(8, Math.min(16, Math.min(width, height) / 68));
+        panelW = Math.min(theme.panelMaxWidth(), Math.max(340, width - margin * 2));
+        panelH = Math.min(theme.panelMaxHeight(), Math.max(280, height - margin * 2));
         layoutProfile = panelW < 660
                 ? TerminalLayoutProfile.COMPACT_STACK
                 : panelW < 980 ? TerminalLayoutProfile.MEDIUM_CAROUSEL : TerminalLayoutProfile.APP_HUB;
@@ -570,16 +573,19 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         commandStackNavigation = true;
         sidebarNavigation = true;
         int footerTop = panelY + panelH - 34;
-        groupRailX = panelX + 18;
-        groupRailY = panelY + 60;
+        int horizontalPad = panelW < 560 ? 12 : 18;
+        groupRailX = panelX + horizontalPad;
+        groupRailY = panelY + 58;
         if (commandStackCollapsed) {
-            groupRailW = panelW >= 760 ? 60 : 52;
+            groupRailW = panelW >= 760 ? 58 : 50;
+        } else if (panelW >= 980) {
+            groupRailW = Math.max(232, Math.min(286, panelW / 5));
         } else if (panelW >= 760) {
-            groupRailW = Math.max(218, Math.min(278, panelW / 5));
+            groupRailW = Math.max(206, Math.min(238, panelW / 4));
         } else {
-            groupRailW = Math.max(112, Math.min(168, panelW / 4));
+            groupRailW = Math.max(108, Math.min(152, panelW / 4));
         }
-        groupRailH = Math.max(220, footerTop - groupRailY - 10);
+        groupRailH = Math.max(210, footerTop - groupRailY - 8);
         pageRailX = groupRailX;
         pageRailY = groupRailY;
         pageRailW = groupRailW;
@@ -589,14 +595,14 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         navW = pageRailW;
         navH = pageRailH;
         collapseToggleH = 18;
-        collapseToggleW = commandStackCollapsed ? Math.max(28, groupRailW - 16) : 34;
+        collapseToggleW = commandStackCollapsed ? Math.max(36, groupRailW - 16) : 38;
         collapseToggleX = commandStackCollapsed ? groupRailX + 8 : groupRailX + groupRailW - collapseToggleW - 8;
         collapseToggleY = groupRailY + 8;
-        int gap = commandStackCollapsed ? 10 : panelW >= 760 ? 16 : 10;
+        int gap = commandStackCollapsed ? 10 : panelW >= 760 ? 14 : 8;
         contentX = groupRailX + groupRailW + gap;
         contentY = groupRailY;
-        contentW = Math.max(panelW < 520 ? 180 : 260, panelX + panelW - contentX - 18);
-        contentH = Math.max(170, footerTop - contentY - 10);
+        contentW = Math.max(panelW < 520 ? 180 : 260, panelX + panelW - contentX - horizontalPad);
+        contentH = Math.max(168, footerTop - contentY - 8);
     }
 
     private String trim(String text, int maxWidth) {

@@ -50,7 +50,7 @@ public final class AshfallCompat {
 
             @Override
             public String summary() {
-                return "Post-Nexus orbital survival chapter: launch chain, Station ECHO debris, route surveys, and ECHO-0 quarantine.";
+                return "Orbital survival chapter: launch chain, Station ECHO debris, route surveys, and ECHO-0 quarantine.";
             }
 
             @Override
@@ -72,8 +72,8 @@ public final class AshfallCompat {
                         return "ORBITAL REMNANTS: Standalone recovered handoff file active.";
                     }
                     return isAvailable(player)
-                            ? "ORBITAL REMNANTS: Nexus choice confirmed. Earth calibration can challenge quarantine."
-                            : "ORBITAL REMNANTS: Locked until a Nexus choice gives orbit a field answer.";
+                            ? "ORBITAL REMNANTS: Earth calibration can challenge quarantine."
+                            : "ORBITAL REMNANTS: Calibration unavailable until player data is ready.";
                 } catch (RuntimeException exception) {
                     EchoOrbitalRemnants.LOGGER.warn("Orbital chapter status failed; using recovered handoff fallback.",
                             exception);
@@ -99,27 +99,11 @@ public final class AshfallCompat {
     }
 
     public static boolean isOrbitalCalibrationLocked(Player player) {
-        try {
-            return isAshfallLoaded() && !hasPostNexusChoice(player);
-        } catch (RuntimeException exception) {
-            EchoOrbitalRemnants.LOGGER.warn("Orbital calibration lock check failed; keeping route unlocked.", exception);
-            return false;
-        }
+        return false;
     }
 
     public static boolean hasPostNexusChoice(Player player) {
-        if (player == null) {
-            return false;
-        }
-        try {
-            if (!isAshfallLoaded()) {
-                return true;
-            }
-            return EchoCoreServices.hasPostNexusChoice(player);
-        } catch (RuntimeException exception) {
-            EchoOrbitalRemnants.LOGGER.warn("Orbital Nexus handoff check failed; treating handoff as unresolved.", exception);
-            return false;
-        }
+        return player != null;
     }
 
     public static void mirrorMilestone(Player player, String id, String title, String content) {
@@ -192,7 +176,7 @@ public final class AshfallCompat {
                     blockers.add(blocker("orbital_launch_readiness", EchoDiagnosticBlocker.Severity.BLOCKED,
                             "Launch readiness incomplete",
                             "Launch or rocket assembly requirements are missing.",
-                            "Open Orbital Command and complete the listed launch systems before using the Emergency Rocket."));
+                            "Open Orbital Command and complete the listed launch systems before staging the Emergency Rocket vehicle."));
                 }
             }
             SuitState suit = SuitState.get(player);
@@ -215,7 +199,12 @@ public final class AshfallCompat {
         }
         try {
             EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+            LaunchReadiness launch = LaunchReadiness.evaluateForLaunch(player);
+            LaunchReadiness assembly = LaunchReadiness.evaluateForAssembly(player);
             String dimension = player.level().dimension().identifier().toString();
+            String launchStatus = progress.lowOrbitReached()
+                    ? "COMPLETE"
+                    : launch.ready() && assembly.ready() ? "STAGE VEHICLE" : "IN PROGRESS";
             return List.of(
                     route("orbital_earth_recontact", "Earth Recontact", "Calibration", dimension,
                             progress.launchSiteTracked() ? "CALIBRATED" : "SCAN REQUIRED",
@@ -224,8 +213,8 @@ public final class AshfallCompat {
                                     : "Sneak-use ECHO-7 on Earth to rebuild the launch salvage map.",
                             progress.launchSiteTracked()),
                     route("orbital_launch_chain", "Launch Chain", "Launch", "Overworld",
-                            progress.lowOrbitReached() ? "COMPLETE" : progress.launchPrepared() ? "READY" : "IN PROGRESS",
-                            "Launch platform, pressure gear, oxygen support, and rocket assembly feed this route.",
+                            launchStatus,
+                            "Launch platform, pressure gear, oxygen support, rocket assembly, and staged vehicle countdown feed this route.",
                             progress.lowOrbitReached()),
                     route("orbital_route_worlds", "Route Worlds", "Survey", "Orbit/Moon/Mars/Europa",
                             progress.allSurveysComplete() ? "MAPPED" : progress.surveyStatus(),

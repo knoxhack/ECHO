@@ -122,7 +122,7 @@ public class EchoTerminalItem extends Item {
                 return;
             }
             report(player, progress, progress.allGroundRecoverySitesComplete()
-                    ? "Earth recovery complete. Build the launch chain and assemble the Emergency Rocket."
+                    ? "Earth recovery complete. Build the launch chain, assemble the Emergency Rocket, then stage it on the pad."
                     : "Orbital signal calibrated. Recovery sites tracked.");
         }
     }

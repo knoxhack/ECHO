@@ -126,10 +126,10 @@ public final class VanillaJourneyProvider implements TerminalMissionProvider {
                 status,
                 completed ? 1.0F : 0.0F,
                 claimed ? "CLAIMED" : completed ? "CLAIMABLE" : "ADVANCEMENT",
-                completed ? "" : "Complete the vanilla advancement on the server.",
+                completed ? "" : "Complete the linked vanilla advancement.",
                 claimed ? "Cache claimed. Keep following the vanilla route."
                         : completed ? "Advancement complete. Cache ready to claim."
-                        : "Server validates advancement progress before cache claims.",
+                        : "ECHO validates advancement progress before cache claims.",
                 actions);
     }
 

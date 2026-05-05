@@ -1,12 +1,14 @@
 package com.knoxhack.echoorbitalremnants.item;
 
-import com.knoxhack.echoorbitalremnants.Config;
+import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.progression.LaunchReadiness;
+import com.knoxhack.echoorbitalremnants.progression.LaunchPadLocator;
 import com.knoxhack.echoorbitalremnants.registry.ModEntities;
 import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
-import com.knoxhack.echoorbitalremnants.world.OrbitalDebrisField;
+import java.util.Optional;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -17,8 +19,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import java.util.Set;
 
 public class EmergencyRocketItem extends Item {
     public EmergencyRocketItem(Properties properties) {
@@ -39,37 +41,61 @@ public class EmergencyRocketItem extends Item {
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && !progress.hasEarthReturnPoint()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Re-entry denied. No Earth return vector is saved."));
+                player.sendSystemMessage(Component.literal("ECHO-7 // Re-entry denied. Launch from Earth once to save an Earth return vector."));
                 return InteractionResult.CONSUME;
             }
 
-            LaunchReadiness readiness = LaunchReadiness.evaluateForLaunch(player);
-            if (!readiness.ready()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Launch abort. Missing launch checks:"));
-                readiness.missing().stream().limit(8).forEach(player::sendSystemMessage);
-                return InteractionResult.CONSUME;
-            }
-
-            progress.setEarthReturnPoint(player);
-            progress.setReturnPoint(player);
-            progress.markLaunchPrepared(player);
-            progress.markLowOrbitReached(player);
-
-            if (player instanceof ServerPlayer serverPlayer) {
-                ServerLevel targetLevel = ModDimensions.resolve(serverPlayer.level().getServer(), ModDimensions.LOW_EARTH_ORBIT, serverPlayer.level());
-                double orbitY = targetLevel.dimension() == ModDimensions.LOW_EARTH_ORBIT ? 96.0D : Math.max(player.getY() + 80.0D, Config.ORBITAL_ALTITUDE.get());
-                BlockPos target = BlockPos.containing(player.getX(), orbitY, player.getZ());
-                OrbitalDebrisField.seedArrivalField(targetLevel, target);
-                Entity dockingAi = ModEntities.CORRUPTED_DOCKING_AI.get().create(targetLevel, EntitySpawnReason.EVENT);
-                if (dockingAi != null) {
-                    dockingAi.setPos(target.getX() + 6.0D, target.getY() + 1.0D, target.getZ() - 6.0D);
-                    targetLevel.addFreshEntity(dockingAi);
+            boolean bypassesReadiness = LaunchReadiness.bypassesReadiness(player);
+            if (!bypassesReadiness) {
+                LaunchReadiness readiness = LaunchReadiness.evaluateForLaunch(player);
+                if (!readiness.ready()) {
+                    player.sendSystemMessage(Component.literal("ECHO-7 // Launch hold. Complete these checks before staging the rocket:"));
+                    readiness.missing().stream().limit(8).forEach(player::sendSystemMessage);
+                    return InteractionResult.CONSUME;
                 }
-                serverPlayer.teleportTo(targetLevel, player.getX(), orbitY, player.getZ(), Set.of(), player.getYRot(), player.getXRot(), false);
             }
 
-            player.sendSystemMessage(Component.literal("ECHO-7 // Emergency Rocket ignition. Low Earth orbit acquired."));
-            player.sendSystemMessage(Component.literal("\"I was not born in your pod. I fell with it.\""));
+            if (!(level instanceof ServerLevel serverLevel)) {
+                return InteractionResult.CONSUME;
+            }
+
+            Optional<BlockPos> padCenter = LaunchPadLocator.findNearbyPlatformCenter(player);
+            EmergencyRocketEntity rocket = ModEntities.EMERGENCY_ROCKET_VEHICLE.get().create(serverLevel, EntitySpawnReason.EVENT);
+            if (rocket == null) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement failed. Vehicle registry offline."));
+                return InteractionResult.CONSUME;
+            }
+
+            double rocketX = player.getX();
+            double rocketY = player.getY();
+            double rocketZ = player.getZ();
+            if (padCenter.isPresent()) {
+                BlockPos base = padCenter.get();
+                rocketX = base.getX() + 0.5D;
+                rocketY = base.getY() + 2.0D;
+                rocketZ = base.getZ() + 0.5D;
+            }
+            rocket.setLaunchPadPosition(rocketX, rocketY, rocketZ, player.getYRot());
+            if (!serverLevel.noBlockCollision(rocket, rocket.getBoundingBox()) || !serverLevel.noBorderCollision(rocket, rocket.getBoundingBox())) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement blocked. Clear blocks or entities from the rocket volume above the pad."));
+                return InteractionResult.CONSUME;
+            }
+            if (!serverLevel.getEntities((Entity) null, rocket.getBoundingBox().inflate(2.0D, 1.0D, 2.0D),
+                    entity -> entity.getType() == ModEntities.EMERGENCY_ROCKET_VEHICLE.get()).isEmpty()) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement blocked. Break or launch the existing staged vehicle first."));
+                return InteractionResult.CONSUME;
+            }
+
+            if (!serverLevel.addFreshEntity(rocket)) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement failed. Move to a loaded, clear staging area and try again."));
+                return InteractionResult.CONSUME;
+            }
+            rocket.playStagedFeedback();
+            ItemStack stack = player.getItemInHand(hand);
+            if (!bypassesReadiness) {
+                stack.shrink(1);
+            }
+            player.sendSystemMessage(Component.literal("ECHO-7 // Emergency Rocket staged on pad center. Board the cabin and start countdown."));
         }
         return InteractionResult.SUCCESS_SERVER;
     }

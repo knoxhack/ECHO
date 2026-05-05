@@ -140,7 +140,7 @@ public class EchoTerminalProgress {
             return new GroundSiteScanResult(false, "No landmark in scan range. Nearest: " + nearest.type().displayName()
                     + " ~" + nearest.distanceTo(player) + " blocks away.");
         }
-        return new GroundSiteScanResult(false, "All Earth recovery sites are logged. Build the launch chain and assemble the Emergency Rocket.");
+        return new GroundSiteScanResult(false, "All Earth recovery sites are logged. Build the launch chain, assemble the Emergency Rocket, then stage it on the pad.");
     }
 
     public void markLaunchPrepared(Player player) {
@@ -149,7 +149,7 @@ public class EchoTerminalProgress {
         launchPrepared = true;
         save(player);
         AshfallCompat.mirrorMilestone(player, "launch_prepared", "Launch chain prepared",
-                "Launch infrastructure, pressure gear, oxygen support, and rocket assembly are ready. Orbit may object.");
+                "The staged Emergency Rocket cleared readiness, countdown, and ascent. Orbit may object.");
     }
 
     public void markLowOrbitReached(Player player) {
@@ -197,19 +197,29 @@ public class EchoTerminalProgress {
     }
 
     public void setReturnPoint(Player player) {
-        returnX = player.getX();
-        returnY = player.getY();
-        returnZ = player.getZ();
-        returnDimension = player.level().dimension().identifier().toString();
+        setReturnPoint(player, player.getX(), player.getY(), player.getZ(),
+                player.level().dimension().identifier().toString());
+    }
+
+    public void setReturnPoint(Player player, double x, double y, double z, String dimension) {
+        returnX = x;
+        returnY = y;
+        returnZ = z;
+        returnDimension = dimension;
         hasReturnPoint = true;
         save(player);
     }
 
     public void setEarthReturnPoint(Player player) {
-        earthReturnX = player.getX();
-        earthReturnY = player.getY();
-        earthReturnZ = player.getZ();
-        earthReturnDimension = player.level().dimension().identifier().toString();
+        setEarthReturnPoint(player, player.getX(), player.getY(), player.getZ(),
+                player.level().dimension().identifier().toString());
+    }
+
+    public void setEarthReturnPoint(Player player, double x, double y, double z, String dimension) {
+        earthReturnX = x;
+        earthReturnY = y;
+        earthReturnZ = z;
+        earthReturnDimension = dimension;
         hasEarthReturnPoint = true;
         save(player);
     }
@@ -652,7 +662,7 @@ public class EchoTerminalProgress {
             return "ECHO NOTE: " + FINAL_NETWORK_REPORT;
         }
         if (!lowOrbitReached || !launchPrepared) {
-            return "ECHO NOTE: Press SCAN when blocked. LAUNCH lists missing gear and rocket parts; orbit will not accept guesswork.";
+            return "ECHO NOTE: Press SCAN when blocked. LAUNCH lists missing gear and rocket parts; when green, stage the rocket on the pad and start countdown.";
         }
         if (midGameObjectivesRequired() && !allMidGameObjectivesComplete() && !echoZeroEncountered) {
             return "ECHO NOTE: Route repairs need three unique sites each. Stand near an objective block with the repair item, then SCAN.";
@@ -719,10 +729,10 @@ public class EchoTerminalProgress {
             if (assembly != null && !assembly.ready()) {
                 return "Next Step: Open the Rocket Assembly Frame. Missing parts: " + missingSummary(assembly) + ".";
             }
-            return "Next Step: Build launch infrastructure, pressure suit gear, oxygen support, and rocket assembly parts.";
+            return "Next Step: Use the Emergency Rocket on the 5x5 Launch Platform to stage the vehicle, board it, then start countdown.";
         }
         if (!lowOrbitReached) {
-            return "Next Step: Take the Emergency Rocket from the Rocket Assembly Frame and use it from Earth.";
+            return "Next Step: Board the staged Emergency Rocket on Earth and start countdown.";
         }
         if (!stationLifeSupportRestored) {
             return "Next Step: In Low Earth Orbit, find or carry the Station Life Support Core, then press SCAN.";
@@ -801,7 +811,7 @@ public class EchoTerminalProgress {
                     + " landmark: " + next.type().landmark().getName().getString() + ".";
         }
         if (!lowOrbitReached) {
-            return "Build the launch chain, assemble the Emergency Rocket, then launch.";
+            return "Build the launch chain and assemble the Emergency Rocket; when ready, stage it on the pad, board, and launch.";
         }
         if (!stationLifeSupportRestored) {
             return "Scan in Low Earth Orbit with a Station Life Support Core nearby or carried.";

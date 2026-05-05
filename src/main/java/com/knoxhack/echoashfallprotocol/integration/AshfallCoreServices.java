@@ -24,6 +24,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.fml.ModList;
 
 /**
  * Ashfall-owned service implementations exposed through ECHO Core.
@@ -72,8 +73,10 @@ public final class AshfallCoreServices {
             }
         });
 
-        EchoCoreServices.registerNexusPathService(AshfallCoreServices::hasPostNexusChoice);
-        EchoCoreServices.registerNexusCampaignService(new AshfallNexusCampaignService());
+        if (!nexusProtocolLoaded()) {
+            EchoCoreServices.registerNexusPathService(AshfallCoreServices::hasPostNexusChoice);
+            EchoCoreServices.registerNexusCampaignService(new AshfallNexusCampaignService());
+        }
         EchoCoreServices.registerIntelMirrorService(AshfallCoreServices::mirrorIntel);
         EchoCoreServices.registerHazardTelemetryService(AshfallCoreServices::hazardTelemetry);
         EchoCoreServices.registerDiagnosticService(AshfallCoreServices::diagnostics);
@@ -82,6 +85,15 @@ public final class AshfallCoreServices {
         AshfallBiomeFactions.register();
         EchoAshfallProtocol.LOGGER.info("ECHO platform providers after Ashfall setup: {}",
                 EchoCoreServices.platformProviderSummary());
+    }
+
+    private static boolean nexusProtocolLoaded() {
+        try {
+            return ModList.get().isLoaded("echonexusprotocol");
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus ownership check failed; keeping legacy Nexus services available.", exception);
+            return false;
+        }
     }
 
     private static boolean hasPostNexusChoice(Player player) {
@@ -161,11 +173,13 @@ public final class AshfallCoreServices {
                         "Mission rewards pending", "Ashfall has unclaimed mission reward caches.",
                         "Open the Ashfall mission channel or shared Reward Inbox to claim support items."));
             }
-            PostNexusData postNexus = PostNexusData.get(player);
-            if (quest.getCurrentPhase() >= 7 && !postNexus.hasMadeChoice()) {
-                blockers.add(blocker("ashfall_nexus_unresolved", EchoDiagnosticBlocker.Severity.BLOCKED,
-                        "Nexus path unresolved", "The endgame path has not been committed.",
-                        "Use the Nexus Core terminal near the resolved grid and choose Restore, Destroy, or Control."));
+            if (!nexusProtocolLoaded()) {
+                PostNexusData postNexus = PostNexusData.get(player);
+                if (quest.getCurrentPhase() >= 7 && !postNexus.hasMadeChoice()) {
+                    blockers.add(blocker("ashfall_nexus_unresolved", EchoDiagnosticBlocker.Severity.BLOCKED,
+                            "Nexus path unresolved", "The endgame path has not been committed.",
+                            "Use the Nexus Core terminal near the resolved grid and choose Restore, Destroy, or Control."));
+                }
             }
             return List.copyOf(blockers);
         } catch (RuntimeException exception) {
@@ -180,28 +194,31 @@ public final class AshfallCoreServices {
         }
         try {
             QuestData quest = QuestData.get(player);
-            PostNexusData postNexus = PostNexusData.get(player);
-            return List.of(
-                    new EchoRouteRecord(
-                            id("ashfall_active_protocol"),
-                            CHAPTER_ID,
-                            "Ashfall Active Protocol",
-                            "Mission",
-                            player.level().dimension().identifier().toString(),
-                            "PHASE " + (quest.getCurrentPhase() + 1),
-                            "Current Ashfall mission route index " + (quest.getCurrentMissionIndex() + 1) + ".",
-                            false),
-                    new EchoRouteRecord(
-                            id("ashfall_nexus_handoff"),
-                            CHAPTER_ID,
-                            "Nexus Handoff",
-                            "Legacy",
-                            "Overworld Nexus Core",
-                            postNexus.hasMadeChoice() ? postNexus.getSelectedPath().name() : "LOCKED",
-                            postNexus.hasMadeChoice()
-                                    ? "Nexus legacy is ready for Orbital Remnants."
-                                    : "Resolve the Ashfall Nexus path to create a full-saga handoff.",
-                            postNexus.hasMadeChoice()));
+            List<EchoRouteRecord> routes = new ArrayList<>();
+            routes.add(new EchoRouteRecord(
+                    id("ashfall_active_protocol"),
+                    CHAPTER_ID,
+                    "Ashfall Active Protocol",
+                    "Mission",
+                    player.level().dimension().identifier().toString(),
+                    "PHASE " + (quest.getCurrentPhase() + 1),
+                    "Current Ashfall mission route index " + (quest.getCurrentMissionIndex() + 1) + ".",
+                    false));
+            if (!nexusProtocolLoaded()) {
+                PostNexusData postNexus = PostNexusData.get(player);
+                routes.add(new EchoRouteRecord(
+                        id("ashfall_nexus_handoff"),
+                        CHAPTER_ID,
+                        "Nexus Handoff",
+                        "Legacy",
+                        "Overworld Nexus Core",
+                        postNexus.hasMadeChoice() ? postNexus.getSelectedPath().name() : "LOCKED",
+                        postNexus.hasMadeChoice()
+                                ? "Nexus legacy is ready for Orbital Remnants."
+                                : "Resolve the Ashfall Nexus path to create a full-saga handoff.",
+                        postNexus.hasMadeChoice()));
+            }
+            return List.copyOf(routes);
         } catch (RuntimeException exception) {
             EchoAshfallProtocol.LOGGER.warn("Ashfall route provider failed; returning no routes.", exception);
             return List.of();

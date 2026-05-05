@@ -3,6 +3,7 @@ package com.knoxhack.echoorbitalremnants.integration;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoorbitalremnants.item.EchoTerminalItem;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
+import com.knoxhack.echoorbitalremnants.progression.EmergencyRocketStatus;
 import com.knoxhack.echoorbitalremnants.progression.LaunchReadiness;
 import com.knoxhack.echoorbitalremnants.registry.ModBlocks;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
@@ -172,6 +173,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
 
     private static List<TerminalMissionRequirement> requirements(Player player, EchoTerminalProgress progress,
             LaunchReadiness launch, LaunchReadiness assembly, OrbitalMission mission) {
+        EmergencyRocketStatus rocket = EmergencyRocketStatus.near(player);
         return switch (mission) {
             case EARTH_CALIBRATION -> List.of(requirement(
                     "Earth calibration",
@@ -182,11 +184,14 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             case LAUNCH_CHAIN -> List.of(
                     requirement("Launch systems", missingOrReady(launch, "Launch systems ready."),
                             ModBlocks.LAUNCH_PLATFORM.get(), launch.ready() ? 1 : 0, 1),
-                    requirement("Rocket assembly", missingOrReady(assembly, "Rocket assembly ready."),
-                            ModItems.EMERGENCY_ROCKET.get(), assembly.ready() || progress.launchPrepared() ? 1 : 0, 1));
+                    requirement("Rocket assembly",
+                            assembly.ready() || rocket.staged() || progress.launchPrepared()
+                                    ? rocket.detail(progress.lowOrbitReached(), launch, assembly)
+                                    : missingOrReady(assembly, "Rocket assembly ready."),
+                            ModItems.EMERGENCY_ROCKET.get(), assembly.ready() || rocket.staged() || progress.launchPrepared() ? 1 : 0, 1));
             case LOW_ORBIT -> List.of(requirement(
                     "Low Earth Orbit",
-                    progress.lowOrbitReached() ? "Emergency Rocket vector confirmed." : "Use the Emergency Rocket from Earth.",
+                    progress.lowOrbitReached() ? "Emergency Rocket vector confirmed." : rocket.detail(false, launch, assembly),
                     ModItems.EMERGENCY_ROCKET.get(), progress.lowOrbitReached() ? 1 : 0, 1));
             case STATION_NETWORK -> List.of(requirement(
                     "Station relay network",
@@ -329,6 +334,11 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         }
         if (mission == OrbitalMission.SURVEY_NETWORK) {
             return "Use the Survey tab for route counts. " + progress.missionHelpReport();
+        }
+        if (mission == OrbitalMission.LAUNCH_CHAIN || mission == OrbitalMission.LOW_ORBIT) {
+            LaunchReadiness launch = LaunchReadiness.evaluateForLaunch(player);
+            LaunchReadiness assembly = LaunchReadiness.evaluateForAssembly(player);
+            return EmergencyRocketStatus.near(player).detail(progress.lowOrbitReached(), launch, assembly);
         }
         if (mission == OrbitalMission.FACTION_CONTRACT) {
             return progress.factionContractRequirement();
@@ -476,12 +486,12 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         LAUNCH_CHAIN("launch_chain", "EARTH RECONTACT", 0, 1,
                 "Launch Chain",
                 "Build the launch pad, assembly frame, fuel, oxygen, suit, and rocket parts without trusting orbit to be kind.",
-                "Use Earth recovery sites and machine recipes to complete launch readiness. Orbit does not forgive guessed parts.",
+                "Use Earth recovery sites and machine recipes to complete launch readiness, then stage the Emergency Rocket vehicle on the 5x5 pad.",
                 "Crafting", "Route"),
         LOW_ORBIT("low_orbit", "ORBITAL CALIBRATION", 1, 0,
                 "Low Earth Orbit",
-                "Use the Emergency Rocket and establish the first orbital vector through debris and quarantine static.",
-                "Launch from Earth, recover the return vector, and scan for Station ECHO systems before oxygen becomes the whole plan.",
+                "Board the staged Emergency Rocket and establish the first orbital vector through debris and quarantine static.",
+                "Launch from the pad after countdown, recover the return vector, and scan for Station ECHO systems before oxygen becomes the whole plan.",
                 "Route", "Hazard"),
         STATION_NETWORK("station_network", "ORBITAL CALIBRATION", 1, 1,
                 "Station Network",

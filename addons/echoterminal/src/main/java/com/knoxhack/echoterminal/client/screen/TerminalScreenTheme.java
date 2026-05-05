@@ -20,7 +20,7 @@ public record TerminalScreenTheme(
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("Terminal title is required.");
         }
-        statusProvider = Objects.requireNonNullElse(statusProvider, minecraft -> "API ONLINE");
+        statusProvider = Objects.requireNonNullElse(statusProvider, minecraft -> "LINK ONLINE");
         footerText = footerText == null ? "" : footerText;
         panelMaxWidth = Math.max(360, panelMaxWidth);
         panelMaxHeight = Math.max(270, panelMaxHeight);
@@ -29,7 +29,7 @@ public record TerminalScreenTheme(
     public static TerminalScreenTheme modular() {
         return new TerminalScreenTheme(
                 "ECHO-7 MODULAR TERMINAL",
-                minecraft -> "API ONLINE",
+                minecraft -> "LINK ONLINE",
                 "M / ESC closes | arrows cycle tabs | up/down groups | wheel/page scrolls",
                 0xEE050B10,
                 0xF20A1218,

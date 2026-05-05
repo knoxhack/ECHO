@@ -79,8 +79,8 @@ public class EchoCompanionDrone extends Mob {
     public static final int REPAIR_INVENTORY = 75;
     public static final int REPAIR_FULL = 100;
 
-    private static final double FOLLOW_STOP_DISTANCE_SQR = 4.0D;
-    private static final double FOLLOW_SLOW_DISTANCE_SQR = 25.0D;
+    private static final double FOLLOW_STOP_DISTANCE_SQR = 9.0D;
+    private static final double FOLLOW_SLOW_DISTANCE_SQR = 49.0D;
     private static final double FOLLOW_TELEPORT_DISTANCE_SQR = 1600.0D;
     private static final double SCAVENGE_SCAN_RADIUS = 4.0D;
     private static final double SCAVENGE_COLLECT_DISTANCE_SQR = 3.0D;
@@ -119,6 +119,15 @@ public class EchoCompanionDrone extends Mob {
         for (int i = 0; i < inventory.length; i++) {
             inventory[i] = ItemStack.EMPTY;
         }
+    }
+
+    @Override
+    public boolean isPushable() {
+        return false;
+    }
+
+    @Override
+    protected void pushEntities() {
     }
 
     @Override
@@ -725,9 +734,9 @@ public class EchoCompanionDrone extends Mob {
         flatLook = flatLook.normalize();
         Vec3 side = new Vec3(-flatLook.z, 0.0D, flatLook.x).normalize();
         return owner.position()
-            .subtract(flatLook.scale(1.8D))
-            .add(side.scale(0.9D))
-            .add(0.0D, 1.65D, 0.0D);
+            .subtract(flatLook.scale(2.75D))
+            .add(side.scale(1.35D))
+            .add(0.0D, 2.05D, 0.0D);
     }
 
     private void clearCombatState() {

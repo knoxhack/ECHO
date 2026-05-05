@@ -3,6 +3,8 @@ package com.knoxhack.echoorbitalremnants;
 import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.suit.SuitState;
 import com.knoxhack.echoorbitalremnants.client.EchoTerminalScreen;
+import com.knoxhack.echoorbitalremnants.client.EmergencyRocketModel;
+import com.knoxhack.echoorbitalremnants.client.EmergencyRocketRenderer;
 import com.knoxhack.echoorbitalremnants.client.OrbitalMachineScreen;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIntegration;
 import com.knoxhack.echoorbitalremnants.network.OpenEchoTerminalPayload;
@@ -60,6 +62,11 @@ public class EchoOrbitalRemnantsClient {
     }
 
     @SubscribeEvent
+    static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(EmergencyRocketModel.LAYER_LOCATION, EmergencyRocketModel::createBodyLayer);
+    }
+
+    @SubscribeEvent
     static void registerClientPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
         event.register(OpenEchoTerminalPayload.TYPE, (payload, context) -> {
             Minecraft minecraft = Minecraft.getInstance();
@@ -86,6 +93,7 @@ public class EchoOrbitalRemnantsClient {
 
     @SubscribeEvent
     static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.EMERGENCY_ROCKET_VEHICLE.get(), EmergencyRocketRenderer::new);
         event.registerEntityRenderer(ModEntities.ECHO_DEFENSE_DRONE.get(),
                 context -> new TintedVexRenderer(context, entityTexture("echo_defense_drone"), 0xFF82E9FF, 1.0F, 0.34F));
         event.registerEntityRenderer(ModEntities.VACUUM_WRAITH.get(),

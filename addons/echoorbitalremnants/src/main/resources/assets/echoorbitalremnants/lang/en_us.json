@@ -1,6 +1,8 @@
 {
   "itemGroup.echoorbitalremnants.orbital_remnants": "ECHO: Orbital Remnants",
 
+  "entity.echoorbitalremnants.emergency_rocket_vehicle": "Emergency Rocket",
+
   "item.echoorbitalremnants.echo_terminal": "ECHO-7 Terminal",
   "item.echoorbitalremnants.orbital_transponder": "Orbital Transponder",
   "item.echoorbitalremnants.sealed_suit_fragment": "Sealed Suit Fragment",

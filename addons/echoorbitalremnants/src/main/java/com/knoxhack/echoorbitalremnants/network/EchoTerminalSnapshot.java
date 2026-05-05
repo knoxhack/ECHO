@@ -2,6 +2,7 @@ package com.knoxhack.echoorbitalremnants.network;
 
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
+import com.knoxhack.echoorbitalremnants.progression.EmergencyRocketStatus;
 import com.knoxhack.echoorbitalremnants.progression.LaunchReadiness;
 import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.suit.SuitState;
@@ -27,6 +28,14 @@ public record EchoTerminalSnapshot(
         List<String> launchMissing,
         boolean assemblyReady,
         List<String> assemblyMissing,
+        String rocketLaunchStatus,
+        String rocketLaunchDetail,
+        int rocketCountdownSeconds,
+        float rocketAscentProgress,
+        boolean rocketStaged,
+        boolean rocketOccupied,
+        boolean rocketCountingDown,
+        boolean rocketLaunching,
         int oxygen,
         int pressure,
         int radiation,
@@ -63,11 +72,13 @@ public record EchoTerminalSnapshot(
         SuitState suit = SuitState.get(player);
         LaunchReadiness launch = LaunchReadiness.evaluateForLaunch(player);
         LaunchReadiness assembly = LaunchReadiness.evaluateForAssembly(player);
+        EmergencyRocketStatus rocket = EmergencyRocketStatus.near(player);
         boolean ashesLocked = !progress.launchSiteTracked() && AshfallCompat.isOrbitalCalibrationLocked(player);
         return new EchoTerminalSnapshot(
                 progress.activeTab(),
                 player.level().dimension().identifier().toString(),
-                ashesLocked ? "Next Step: Resolve an ECHO: Ashfall Protocol Nexus path to unlock Orbital Remnants." : progress.nextObjective(launch, assembly),
+                ashesLocked ? "Next Step: Resolve an ECHO: Ashfall Protocol Nexus path to unlock Orbital Remnants."
+                        : launchObjective(progress, launch, assembly, rocket),
                 progress.missionStep(),
                 ashesLocked ? "Nexus decision required before orbital calibration can begin." : progress.scanRequirement(),
                 progress.lastTerminalReport(),
@@ -80,6 +91,14 @@ public record EchoTerminalSnapshot(
                 missingText(launch),
                 assembly.ready(),
                 missingText(assembly),
+                rocket.label(progress.lowOrbitReached(), launch, assembly),
+                rocket.detail(progress.lowOrbitReached(), launch, assembly),
+                rocket.countdownSeconds(),
+                rocket.ascentProgress(),
+                rocket.staged(),
+                rocket.occupied(),
+                rocket.countingDown(),
+                rocket.launching(),
                 suit.oxygen(),
                 suit.pressure(),
                 suit.radiation(),
@@ -126,6 +145,14 @@ public record EchoTerminalSnapshot(
                 readList(buffer),
                 buffer.readBoolean(),
                 readList(buffer),
+                buffer.readUtf(MAX_STRING),
+                buffer.readUtf(MAX_STRING),
+                buffer.readInt(),
+                buffer.readFloat(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readInt(),
                 buffer.readInt(),
                 buffer.readInt(),
@@ -171,6 +198,14 @@ public record EchoTerminalSnapshot(
         writeList(buffer, launchMissing);
         buffer.writeBoolean(assemblyReady);
         writeList(buffer, assemblyMissing);
+        buffer.writeUtf(rocketLaunchStatus, MAX_STRING);
+        buffer.writeUtf(rocketLaunchDetail, MAX_STRING);
+        buffer.writeInt(rocketCountdownSeconds);
+        buffer.writeFloat(rocketAscentProgress);
+        buffer.writeBoolean(rocketStaged);
+        buffer.writeBoolean(rocketOccupied);
+        buffer.writeBoolean(rocketCountingDown);
+        buffer.writeBoolean(rocketLaunching);
         buffer.writeInt(oxygen);
         buffer.writeInt(pressure);
         buffer.writeInt(radiation);
@@ -205,6 +240,14 @@ public record EchoTerminalSnapshot(
                 .limit(MAX_LIST)
                 .map(component -> component.getString().replaceFirst("^- ", ""))
                 .toList();
+    }
+
+    private static String launchObjective(EchoTerminalProgress progress, LaunchReadiness launch,
+            LaunchReadiness assembly, EmergencyRocketStatus rocket) {
+        if (progress.launchSiteTracked() && !progress.lowOrbitReached() && launch.ready() && assembly.ready()) {
+            return rocket.nextObjective(false, launch, assembly);
+        }
+        return progress.nextObjective(launch, assembly);
     }
 
     private static List<String> readList(RegistryFriendlyByteBuf buffer) {

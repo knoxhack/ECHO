@@ -5,6 +5,7 @@ import com.knoxhack.echoorbitalremnants.Config;
 import com.knoxhack.echoorbitalremnants.block.entity.OrbitalMachineBlockEntity;
 import com.knoxhack.echoorbitalremnants.entity.AbandonedCaptainEntity;
 import com.knoxhack.echoorbitalremnants.entity.CorruptedDockingAiEntity;
+import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalMissionProvider;
@@ -35,6 +36,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -50,15 +52,19 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -104,6 +110,14 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("early_ground_recovery", () -> ModGameTests::earlyGroundRecovery);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> EARLY_LAUNCH_TO_ORBIT =
             TEST_FUNCTIONS.register("early_launch_to_orbit", () -> ModGameTests::earlyLaunchToOrbit);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROCKET_VEHICLE_PLACEMENT =
+            TEST_FUNCTIONS.register("rocket_vehicle_placement", () -> ModGameTests::rocketVehiclePlacement);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROCKET_COUNTDOWN_ABORT =
+            TEST_FUNCTIONS.register("rocket_countdown_abort", () -> ModGameTests::rocketCountdownAbort);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROCKET_IGNITION_COMMIT =
+            TEST_FUNCTIONS.register("rocket_ignition_commit", () -> ModGameTests::rocketIgnitionCommit);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROCKET_DAMAGE_DROP =
+            TEST_FUNCTIONS.register("rocket_damage_drop", () -> ModGameTests::rocketDamageDrop);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_FACTION_CONTRACTS =
             TEST_FUNCTIONS.register("beta_faction_contracts", () -> ModGameTests::betaFactionContracts);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_ORBITAL_REMNANT_CONTRACT =
@@ -156,6 +170,10 @@ public final class ModGameTests {
         register(event, environment, "beta_cache_support", BETA_CACHE_SUPPORT.getId());
         register(event, environment, "early_ground_recovery", EARLY_GROUND_RECOVERY.getId());
         register(event, environment, "early_launch_to_orbit", EARLY_LAUNCH_TO_ORBIT.getId());
+        register(event, environment, "rocket_vehicle_placement", ROCKET_VEHICLE_PLACEMENT.getId());
+        register(event, environment, "rocket_countdown_abort", ROCKET_COUNTDOWN_ABORT.getId());
+        register(event, environment, "rocket_ignition_commit", ROCKET_IGNITION_COMMIT.getId());
+        register(event, environment, "rocket_damage_drop", ROCKET_DAMAGE_DROP.getId());
         register(event, environment, "beta_faction_contracts", BETA_FACTION_CONTRACTS.getId());
         register(event, environment, "beta_orbital_remnant_contract", BETA_ORBITAL_REMNANT_CONTRACT.getId());
         register(event, environment, "beta_void_salvager_contract", BETA_VOID_SALVAGER_CONTRACT.getId());
@@ -770,6 +788,7 @@ public final class ModGameTests {
 
     private static void earlyLaunchToOrbit(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
         placeLaunchComplex(helper, player, new BlockPos(6, 1, 6));
         giveAssemblyParts(player);
         player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.PRESSURIZED_HELMET.get()));
@@ -780,10 +799,202 @@ public final class ModGameTests {
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EMERGENCY_ROCKET.get()));
 
         InteractionResult result = ModItems.EMERGENCY_ROCKET.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        EmergencyRocketEntity rocket = firstRocketNear(player);
+        helper.assertTrue(rocket != null, "Prepared Emergency Rocket use should place a launch vehicle");
+        helper.assertTrue(countRocketsNear(player) == 1, "Prepared Emergency Rocket use should place exactly one launch vehicle");
+        helper.assertTrue(player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty(), "Placing the rocket should consume the held rocket item");
+        helper.assertFalse(EchoTerminalProgress.get(player).lowOrbitReached(), "Placing the rocket should not mark Low Earth Orbit before countdown");
+        EchoTerminalSnapshot stagedSnapshot = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(stagedSnapshot.rocketStaged(), "Terminal snapshot should detect a nearby staged rocket");
+        helper.assertTrue("VEHICLE STAGED".equals(stagedSnapshot.rocketLaunchStatus()),
+                "Terminal launch status should report a staged empty vehicle");
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        helper.assertTrue(player.getVehicle() == rocket, "Right-clicking an empty rocket should board the player");
+        EchoTerminalSnapshot occupiedSnapshot = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(occupiedSnapshot.rocketOccupied(), "Terminal snapshot should detect an occupied cabin");
+        helper.assertTrue("CABIN OCCUPIED".equals(occupiedSnapshot.rocketLaunchStatus()),
+                "Terminal launch status should report the occupied cabin");
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        helper.assertTrue(rocket.launchState() == EmergencyRocketEntity.LaunchState.COUNTDOWN,
+                "Right-clicking while riding should start the launch countdown");
+        EchoTerminalSnapshot countdownSnapshot = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(countdownSnapshot.rocketCountingDown(), "Terminal snapshot should report countdown state");
+        helper.assertTrue(countdownSnapshot.rocketCountdownSeconds() == 5, "Countdown should begin at five seconds");
+        for (int i = 0; i < 20; i++) {
+            rocket.tick();
+        }
+        helper.assertTrue(EchoTerminalSnapshot.from(player).rocketCountdownSeconds() == 4,
+                "Terminal countdown seconds should decrease after one second");
+        for (int i = 0; i < 150; i++) {
+            rocket.tick();
+        }
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
-        helper.assertTrue(result == InteractionResult.SUCCESS_SERVER, "Prepared Emergency Rocket launch should succeed");
+        helper.assertTrue(result == InteractionResult.SUCCESS_SERVER, "Prepared Emergency Rocket placement should succeed");
         helper.assertTrue(progress.lowOrbitReached(), "Emergency Rocket launch should mark Low Earth Orbit reached");
         helper.assertTrue(progress.hasEarthReturnPoint(), "Emergency Rocket launch should save an Earth return vector");
+        helper.succeed();
+    }
+
+    private static void rocketVehiclePlacement(GameTestHelper helper) {
+        var unprepared = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(unprepared);
+        unprepared.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EMERGENCY_ROCKET.get()));
+        InteractionResult unpreparedResult = ModItems.EMERGENCY_ROCKET.get().use(helper.getLevel(), unprepared, InteractionHand.MAIN_HAND);
+        helper.assertTrue(unpreparedResult == InteractionResult.CONSUME, "Unprepared rocket placement should be blocked");
+        helper.assertTrue(countRocketsNear(unprepared) == 0, "Blocked placement should not spawn a rocket");
+        helper.assertTrue(count(unprepared.getInventory(), ModItems.EMERGENCY_ROCKET.get()) == 1,
+                "Blocked placement should not consume the rocket item");
+
+        var partialPad = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(partialPad);
+        BlockPos center = new BlockPos(6, 1, 6);
+        placeLaunchComplex(helper, partialPad, center);
+        helper.setBlock(center.offset(2, 0, 2), Blocks.AIR);
+        partialPad.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.PRESSURIZED_HELMET.get()));
+        partialPad.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.PRESSURIZED_CHESTPLATE.get()));
+        partialPad.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.PRESSURIZED_LEGGINGS.get()));
+        partialPad.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.MAGNETIC_BOOTS.get()));
+        partialPad.getInventory().add(new ItemStack(ModItems.OXYGEN_TANK.get()));
+        partialPad.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EMERGENCY_ROCKET.get()));
+        InteractionResult partialPadResult = ModItems.EMERGENCY_ROCKET.get().use(helper.getLevel(), partialPad, InteractionHand.MAIN_HAND);
+        helper.assertTrue(partialPadResult == InteractionResult.CONSUME, "Incomplete 5x5 launch platform should block placement");
+        helper.assertTrue(countRocketsNear(partialPad) == 0, "Incomplete launch platform should not spawn a rocket");
+        helper.assertTrue(count(partialPad.getInventory(), ModItems.EMERGENCY_ROCKET.get()) == 1,
+                "Incomplete launch platform should not consume the rocket item");
+
+        var prepared = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(prepared);
+        placeLaunchComplex(helper, prepared, center);
+        prepared.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.PRESSURIZED_HELMET.get()));
+        prepared.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.PRESSURIZED_CHESTPLATE.get()));
+        prepared.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.PRESSURIZED_LEGGINGS.get()));
+        prepared.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.MAGNETIC_BOOTS.get()));
+        prepared.getInventory().add(new ItemStack(ModItems.OXYGEN_TANK.get()));
+        EmergencyRocketEntity staged = ModEntities.EMERGENCY_ROCKET_VEHICLE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(staged != null, "Emergency Rocket vehicle should be spawnable for duplicate placement testing");
+        BlockPos absolute = helper.absolutePos(center);
+        staged.setLaunchPadPosition(absolute.getX() + 0.5D, absolute.getY() + 2.0D, absolute.getZ() + 0.5D, prepared.getYRot());
+        helper.getLevel().addFreshEntity(staged);
+        int stagedBefore = countRocketsNear(prepared);
+        prepared.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EMERGENCY_ROCKET.get()));
+        InteractionResult duplicatePlacement = ModItems.EMERGENCY_ROCKET.get().use(helper.getLevel(), prepared, InteractionHand.MAIN_HAND);
+        helper.assertTrue(duplicatePlacement == InteractionResult.CONSUME, "Duplicate rocket placement should be blocked");
+        helper.assertTrue(countRocketsNear(prepared) == stagedBefore, "Duplicate rocket placement should not spawn another staged vehicle");
+        helper.assertTrue(prepared.getItemInHand(InteractionHand.MAIN_HAND).getCount() == 1,
+                "Duplicate rocket placement should not consume the replacement rocket item");
+        staged.discard();
+
+        var creative = helper.makeMockPlayer(GameType.CREATIVE);
+        EchoTerminalProgress.reset(creative);
+        BlockPos creativeLocal = center.offset(0, 2, 0);
+        clearRocketVolume(helper, creativeLocal);
+        BlockPos creativePos = helper.absolutePos(creativeLocal);
+        if (creative instanceof ServerPlayer serverPlayer) {
+            serverPlayer.teleportTo(helper.getLevel(), creativePos.getX() + 0.5D, creativePos.getY(), creativePos.getZ() + 0.5D,
+                    Set.of(), creative.getYRot(), creative.getXRot(), false);
+        } else {
+            creative.setPos(creativePos.getX() + 0.5D, creativePos.getY(), creativePos.getZ() + 0.5D);
+        }
+        creative.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.EMERGENCY_ROCKET.get()));
+        int creativeRocketsBefore = countRocketsNear(helper.getLevel(), creative, 16.0D);
+        InteractionResult creativePlacement = ModItems.EMERGENCY_ROCKET.get().use(helper.getLevel(), creative, InteractionHand.MAIN_HAND);
+        helper.assertTrue(creativePlacement == InteractionResult.SUCCESS_SERVER,
+                "Creative/infinite materials should bypass launch readiness for staging, got " + creativePlacement);
+        int creativeRocketsAfter = countRocketsNear(helper.getLevel(), creative, 16.0D);
+        helper.assertTrue(creativeRocketsAfter == creativeRocketsBefore + 1,
+                "Creative bypass should spawn one rocket vehicle, found " + creativeRocketsBefore
+                        + " before and " + creativeRocketsAfter + " after within placement range");
+        helper.assertTrue(creative.getItemInHand(InteractionHand.MAIN_HAND).getCount() == 1,
+                "Creative bypass should not consume the rocket item");
+        helper.succeed();
+    }
+
+    private static void rocketCountdownAbort(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        BlockPos center = new BlockPos(6, 1, 6);
+        placeLaunchComplex(helper, player, center);
+        player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.PRESSURIZED_HELMET.get()));
+        player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.PRESSURIZED_CHESTPLATE.get()));
+        player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.PRESSURIZED_LEGGINGS.get()));
+        player.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.MAGNETIC_BOOTS.get()));
+        player.getInventory().add(new ItemStack(ModItems.OXYGEN_TANK.get()));
+        EmergencyRocketEntity rocket = ModEntities.EMERGENCY_ROCKET_VEHICLE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(rocket != null, "Emergency Rocket vehicle should be spawnable for abort testing");
+        BlockPos absolute = helper.absolutePos(center);
+        rocket.setLaunchPadPosition(absolute.getX() + 0.5D, absolute.getY() + 2.0D, absolute.getZ() + 0.5D, player.getYRot());
+        helper.getLevel().addFreshEntity(rocket);
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        helper.assertTrue(rocket.launchState() == EmergencyRocketEntity.LaunchState.COUNTDOWN,
+                "Rocket should be counting down before abort");
+        for (int i = 0; i < 20; i++) {
+            rocket.tick();
+        }
+        helper.assertTrue(EchoTerminalSnapshot.from(player).rocketCountdownSeconds() == 4,
+                "Countdown snapshot should tick down before abort");
+        player.stopRiding();
+        rocket.tick();
+        helper.assertTrue(rocket.launchState() == EmergencyRocketEntity.LaunchState.PLACED,
+                "Dismounting before ignition should abort the countdown");
+        EchoTerminalSnapshot abortedSnapshot = EchoTerminalSnapshot.from(player);
+        helper.assertTrue("VEHICLE STAGED".equals(abortedSnapshot.rocketLaunchStatus()),
+                "Aborted countdown should return terminal status to vehicle staged");
+        helper.assertFalse(EchoTerminalProgress.get(player).lowOrbitReached(), "Aborted countdown should not mark Low Earth Orbit reached");
+        helper.succeed();
+    }
+
+    private static void rocketIgnitionCommit(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        BlockPos center = new BlockPos(6, 1, 6);
+        placeLaunchComplex(helper, player, center);
+        player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.PRESSURIZED_HELMET.get()));
+        player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.PRESSURIZED_CHESTPLATE.get()));
+        player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.PRESSURIZED_LEGGINGS.get()));
+        player.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.MAGNETIC_BOOTS.get()));
+        player.getInventory().add(new ItemStack(ModItems.OXYGEN_TANK.get()));
+        EmergencyRocketEntity rocket = ModEntities.EMERGENCY_ROCKET_VEHICLE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(rocket != null, "Emergency Rocket vehicle should be spawnable for ignition commit testing");
+        BlockPos absolute = helper.absolutePos(center);
+        rocket.setLaunchPadPosition(absolute.getX() + 0.5D, absolute.getY() + 2.0D, absolute.getZ() + 0.5D, player.getYRot());
+        helper.getLevel().addFreshEntity(rocket);
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        for (int i = 0; i < EmergencyRocketEntity.COUNTDOWN_TICKS; i++) {
+            rocket.tick();
+        }
+        helper.assertTrue(rocket.launchState() == EmergencyRocketEntity.LaunchState.LAUNCHING,
+                "Rocket should enter committed ascent after countdown reaches zero");
+        EchoTerminalSnapshot ascentSnapshot = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(ascentSnapshot.rocketLaunching(), "Terminal snapshot should report ascent committed");
+        helper.assertTrue("ASCENT COMMITTED".equals(ascentSnapshot.rocketLaunchStatus()),
+                "Terminal launch status should name committed ascent");
+        player.stopRiding();
+        for (int i = 0; i < EmergencyRocketEntity.ASCENT_TICKS; i++) {
+            rocket.tick();
+        }
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.lowOrbitReached(), "Committed ignition should reach Low Earth Orbit even after dismount");
+        helper.assertTrue(progress.hasEarthReturnPoint(), "Committed ignition should preserve the Earth return vector");
+        helper.succeed();
+    }
+
+    private static void rocketDamageDrop(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        BlockPos center = new BlockPos(6, 1, 6);
+        placeLaunchComplex(helper, player, center);
+        EmergencyRocketEntity rocket = ModEntities.EMERGENCY_ROCKET_VEHICLE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(rocket != null, "Emergency Rocket vehicle should be spawnable for damage testing");
+        BlockPos absolute = helper.absolutePos(center);
+        rocket.setLaunchPadPosition(absolute.getX() + 0.5D, absolute.getY() + 2.0D, absolute.getZ() + 0.5D, player.getYRot());
+        helper.getLevel().addFreshEntity(rocket);
+        int dropsBefore = countRocketItemDropsNear(player);
+        rocket.hurtServer(helper.getLevel(), player.damageSources().playerAttack(player), 4.0F);
+        helper.assertTrue(rocket.isRemoved(), "Damaging a placed rocket before launch should remove the vehicle");
+        helper.assertTrue(countRocketItemDropsNear(player) == dropsBefore + 1,
+                "Damaging a placed rocket before launch should drop one Emergency Rocket item");
         helper.succeed();
     }
 
@@ -1195,8 +1406,26 @@ public final class ModGameTests {
         helper.setBlock(center.offset(-3, 1, 0), ModBlocks.OXYGEN_COMPRESSOR.get());
         helper.setBlock(center.offset(0, 1, 3), ModBlocks.NAVIGATION_CONSOLE.get());
         BlockPos absolute = helper.absolutePos(center);
-        player.setPos(absolute.getX() + 0.5D, absolute.getY() + 2.0D, absolute.getZ() + 0.5D);
+        double playerX = absolute.getX() + 0.5D;
+        double playerY = absolute.getY() + 2.0D;
+        double playerZ = absolute.getZ() + 0.5D;
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.teleportTo(helper.getLevel(), playerX, playerY, playerZ, Set.of(),
+                    player.getYRot(), player.getXRot(), false);
+        } else {
+            player.setPos(playerX, playerY, playerZ);
+        }
         return framePos;
+    }
+
+    private static void clearRocketVolume(GameTestHelper helper, BlockPos localBase) {
+        for (int x = -1; x <= 1; x++) {
+            for (int y = 0; y <= 4; y++) {
+                for (int z = -1; z <= 1; z++) {
+                    helper.setBlock(localBase.offset(x, y, z), Blocks.AIR);
+                }
+            }
+        }
     }
 
     private static void giveAssemblyParts(net.minecraft.world.entity.player.Player player) {
@@ -1222,6 +1451,47 @@ public final class ModGameTests {
             }
         }
         return total;
+    }
+
+    private static int countRocketsNear(net.minecraft.world.entity.player.Player player) {
+        return countRocketsNear(player.level(), player);
+    }
+
+    private static int countRocketsNear(net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player) {
+        return rocketsNear(level, player).size();
+    }
+
+    private static int countRocketsNear(net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player, double radius) {
+        return rocketsNear(level, player, radius).size();
+    }
+
+    private static EmergencyRocketEntity firstRocketNear(net.minecraft.world.entity.player.Player player) {
+        return rocketsNear(player).stream()
+                .filter(EmergencyRocketEntity.class::isInstance)
+                .map(EmergencyRocketEntity.class::cast)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static List<Entity> rocketsNear(net.minecraft.world.entity.player.Player player) {
+        return rocketsNear(player.level(), player);
+    }
+
+    private static List<Entity> rocketsNear(net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player) {
+        return rocketsNear(level, player, 4.0D);
+    }
+
+    private static List<Entity> rocketsNear(net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player, double radius) {
+        AABB area = new AABB(player.getX() - radius, player.getY() - radius, player.getZ() - radius,
+                player.getX() + radius, player.getY() + radius, player.getZ() + radius);
+        return level.getEntities((Entity) null, area, entity -> entity.getType() == ModEntities.EMERGENCY_ROCKET_VEHICLE.get());
+    }
+
+    private static int countRocketItemDropsNear(net.minecraft.world.entity.player.Player player) {
+        AABB area = new AABB(player.getX() - 4.0D, player.getY() - 4.0D, player.getZ() - 4.0D,
+                player.getX() + 4.0D, player.getY() + 4.0D, player.getZ() + 4.0D);
+        return player.level().getEntities((Entity) null, area,
+                entity -> entity instanceof ItemEntity item && item.getItem().is(ModItems.EMERGENCY_ROCKET.get())).size();
     }
 
     private static BlockPos sitePos(List<GroundRecoverySite> sites, GroundRecoverySiteType type) {

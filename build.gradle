@@ -202,7 +202,7 @@ idea {
 
 tasks.register('buildEchoWorkspace') {
     group = 'build'
-    description = 'Builds ECHO Core, ECHO Terminal, ECHO: Ashfall Protocol, and ECHO: Orbital Remnants.'
+    description = 'Builds ECHO Core, ECHO Terminal, Ashfall, and Orbital Remnants.'
     dependsOn ':echocore:build'
     dependsOn ':echoterminal:build'
     dependsOn tasks.named('build')
@@ -260,7 +260,7 @@ tasks.named('checkEchoRuntimeLogs') {
 
 tasks.register('verifyEchoRelease') {
     group = 'verification'
-    description = 'Runs release-hardening validators, workspace build, and both GameTest servers.'
+    description = 'Runs release-hardening validators, workspace build, and supported GameTest servers.'
     dependsOn tasks.named('validateEchoResources')
     dependsOn tasks.named('validateEchoGameplayData')
     dependsOn tasks.named('checkEchoPoiStructures')
@@ -279,6 +279,13 @@ def echoExpectedModJars = [
         [mod: mod_id.toString(), version: mod_version.toString()],
         [mod: project(':echoorbitalremnants').mod_id.toString(), version: project(':echoorbitalremnants').mod_version.toString()],
 ]
+def echoForbiddenModJarPrefixes = [
+        'echonexusprotocol',
+        'echoblackboxprotocol',
+        'echostationfall',
+        'echoindustrialnexus',
+        'echoindustrialrebirth',
+] as Set
 def echoExpectedModJarNames = echoExpectedModJars.collect { "${it.mod}-${it.version}.jar".toString() } as Set
 def echoSanityModsDir = project.findProperty('echoModpackModsDir')
         ? file(project.property('echoModpackModsDir'))
@@ -300,6 +307,16 @@ tasks.register('checkEchoModJarSet') {
                     && echoExpectedModJars.any { spec ->
                         jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-")
                     }
+        }
+        def forbidden = (modsDir.listFiles() ?: [] as File[]).findAll { jar ->
+            jar.isFile()
+                    && jar.name.endsWith('.jar')
+                    && echoForbiddenModJarPrefixes.any { prefix ->
+                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
+                    }
+        }
+        if (!forbidden.isEmpty()) {
+            throw new GradleException("Excluded ECHO addon jars in ${modsDir}: ${forbidden*.name}. Remove them before release testing.")
         }
 
         echoExpectedModJars.each { spec ->
@@ -349,10 +366,14 @@ tasks.register('copyEchoJarsToModpack', Copy) {
         def stale = (modpackModsDir.listFiles() ?: [] as File[]).findAll { jar ->
             jar.isFile()
                     && jar.name.endsWith('.jar')
-                    && echoExpectedModJars.any { spec ->
+                    && (echoExpectedModJars.any { spec ->
                         jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-")
-                    }
-                    && !echoExpectedModJarNames.contains(jar.name)
+                    } || echoForbiddenModJarPrefixes.any { prefix ->
+                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
+                    })
+                    && (!echoExpectedModJarNames.contains(jar.name) || echoForbiddenModJarPrefixes.any { prefix ->
+                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
+                    })
         }
         if (!stale.isEmpty()) {
             throw new GradleException("Stale ECHO jars in ${modpackModsDir}: ${stale*.name}. Remove them before copying release jars.")

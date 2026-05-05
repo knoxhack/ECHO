@@ -39,10 +39,13 @@ public final class TerminalUi {
 
     public static int sectionHeader(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             String title, String detail, int x, int y, int width, int color) {
-        line(context, graphics, title, x, y, width, color);
         if (detail != null && !detail.isBlank()) {
-            line(context, graphics, detail, x + Math.min(width - 24, Math.max(72, width / 3)), y,
-                    Math.max(24, width - Math.max(72, width / 3)), MUTED);
+            int detailWidth = Math.max(48, Math.min(160, width / 3));
+            int detailX = x + width - detailWidth;
+            line(context, graphics, title, x, y, Math.max(24, detailX - x - 8), color);
+            line(context, graphics, detail, detailX, y, detailWidth, MUTED);
+        } else {
+            line(context, graphics, title, x, y, width, color);
         }
         divider(graphics, x, y + 14, width, color);
         return y + 20;
@@ -60,27 +63,27 @@ public final class TerminalUi {
     }
 
     public static void flatHudPanel(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
-        graphics.fill(x, y, x + w, y + h, 0xF2071017);
-        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 22), 0x1A66E8FF);
-        graphics.outline(x, y, w, h, 0x7A2E8E9D);
+        graphics.fill(x, y, x + w, y + h, 0xE8071017);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 22), 0x1466E8FF);
+        graphics.outline(x, y, w, h, 0x5E2E8E9D);
         graphics.fill(x, y, x + Math.max(28, Math.min(w, w / 5)), y + 2, opaque(color));
         graphics.fill(x, y + h - 2, x + Math.max(24, Math.min(w, w / 7)), y + h, opaque(color));
-        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 26), 0x8855DDEF);
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 26), 0x5555DDEF);
         if (w > 56 && h > 26) {
-            graphics.fill(x + 8, y + 8, x + w - 8, y + 9, 0x2638DFF4);
+            graphics.fill(x + 8, y + 8, x + w - 8, y + 9, 0x1C38DFF4);
         }
     }
 
     public static void cinematicPanel(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
-        graphics.fill(x, y, x + w, y + h, 0xE0050C13);
-        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 26), 0x22163843);
-        graphics.outline(x, y, w, h, 0x7A2E8E9D);
+        graphics.fill(x, y, x + w, y + h, 0xD8050C13);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 26), 0x18163843);
+        graphics.outline(x, y, w, h, 0x5E2E8E9D);
         graphics.fill(x, y, x + Math.min(w, Math.max(42, w / 5)), y + 2, opaque(color));
         graphics.fill(x, y + h - 2, x + Math.min(w, Math.max(36, w / 6)), y + h, opaque(color));
-        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 32), 0xAA66E8FF);
-        graphics.fill(x + w - Math.min(w, 38), y + h - 2, x + w, y + h, 0x7766E8FF);
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 32), 0x6638DFF4);
+        graphics.fill(x + w - Math.min(w, 38), y + h - 2, x + w, y + h, 0x4438DFF4);
         if (w > 48 && h > 44) {
-            graphics.fill(x + 10, y + 10, x + w - 10, y + 11, 0x1E66E8FF);
+            graphics.fill(x + 10, y + 10, x + w - 10, y + 11, 0x1766E8FF);
             graphics.fill(x + 10, y + h - 11, x + w - 10, y + h - 10, 0x182E8E9D);
         }
     }
@@ -693,20 +696,20 @@ public final class TerminalUi {
 
     public static void button(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, String label, int color, boolean enabled, boolean hovered) {
-        int bg = enabled ? (hovered ? 0xFF163343 : 0xFF10232C) : 0xFF11161A;
+        int bg = enabled ? (hovered ? 0xEE163343 : 0xCC10232C) : 0xAA11161A;
         int accent = enabled ? color : CYAN_DIM;
         graphics.fill(x, y, x + w, y + 18, bg);
-        graphics.outline(x, y, w, 18, 0x5538DFF4);
+        graphics.outline(x, y, w, 18, enabled ? 0x4438DFF4 : 0x33244352);
         graphics.fill(x, y + 16, x + w, y + 18, accent);
         graphics.centeredText(font(context), trim(context, label, w - 8), x + w / 2, y + 5, enabled ? TEXT : MUTED);
     }
 
     public static void compactButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, String label, int color, boolean enabled, boolean hovered) {
-        int bg = enabled ? (hovered ? 0xFF163343 : 0xFF0D1D25) : 0xFF0B1116;
+        int bg = enabled ? (hovered ? 0xEE163343 : 0xCC0D1D25) : 0x990B1116;
         int accent = enabled ? color : CYAN_DIM;
         graphics.fill(x, y, x + w, y + 16, bg);
-        graphics.outline(x, y, w, 16, enabled ? 0x5538DFF4 : 0x3338DFF4);
+        graphics.outline(x, y, w, 16, enabled ? 0x4438DFF4 : 0x33244352);
         graphics.fill(x, y + 14, x + w, y + 16, accent);
         graphics.centeredText(font(context), trim(context, label, w - 8), x + w / 2, y + 4,
                 enabled ? TEXT : MUTED);
@@ -719,9 +722,9 @@ public final class TerminalUi {
 
     public static void primaryCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, String label, Identifier texture, int color, boolean hovered) {
-        int bg = hovered ? 0xFF1C6074 : 0xF20D3442;
+        int bg = hovered ? 0xEE1C6074 : 0xD80D3442;
         graphics.fill(x, y, x + w, y + h, bg);
-        graphics.outline(x, y, w, h, opaque(CYAN));
+        graphics.outline(x, y, w, h, 0xAA66E8FF);
         graphics.fill(x, y + h - 3, x + w, y + h, opaque(color));
         graphics.fill(x + 4, y + 4, x + 7, y + h - 4, opaque(color));
         if (hovered && h > 18) {
@@ -737,10 +740,10 @@ public final class TerminalUi {
 
     public static void disabledCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, String label, Identifier texture) {
-        graphics.fill(x, y, x + w, y + h, 0xE30A1117);
-        graphics.outline(x, y, w, h, 0x887F98A6);
-        graphics.fill(x + 4, y + 4, x + 7, y + h - 4, 0x997F98A6);
-        graphics.fill(x, y + h - 2, x + w, y + h, 0x887F98A6);
+        graphics.fill(x, y, x + w, y + h, 0xC80A1117);
+        graphics.outline(x, y, w, h, 0x667F98A6);
+        graphics.fill(x + 4, y + 4, x + 7, y + h - 4, 0x777F98A6);
+        graphics.fill(x, y + h - 2, x + w, y + h, 0x667F98A6);
         drawCommandLabel(context, graphics, x, y, w, h, label, texture, CYAN_DIM, 0xFFD8E8EE, false);
     }
 
@@ -913,12 +916,17 @@ public final class TerminalUi {
         graphics.fill(x + 12, y + 44, x + w - 12, y + 45, 0x5538DFF4);
         graphics.fill(x + 1, y + 1, x + w - 1, y + 14, 0x26163843);
         hybridIconBadge(graphics, TerminalVisualAssets.ICON_BRAND_ECHO, TerminalIcon.CORE, x + 18, y + 8, 34, color, true);
-        graphics.text(font, trim(font, title, Math.max(120, w / 2)), x + 58, y + 10, opaque(color), false);
-        graphics.text(font, trim(font, subtitle, Math.max(120, w / 2)), x + 58, y + 27, MUTED, false);
         String online = meta == null || meta.isBlank() ? "LINK: STANDBY  |  USER: OPERATOR  |  ONLINE" : meta;
-        String right = trim(font, online, Math.max(120, w / 3));
+        boolean offline = online.toUpperCase().contains("OFFLINE");
+        String rightSource = w < 640 ? (offline ? "OFFLINE" : "ONLINE") : online;
+        int rightMax = Math.max(64, Math.min(w - 110, w < 640 ? 86 : w / 3));
+        String right = trim(font, rightSource, rightMax);
         int rightColor = right.toUpperCase().contains("OFFLINE") ? RED : MUTED;
         int rightX = x + w - 26 - font.width(right);
+        int textX = x + 58;
+        int leftMax = Math.max(72, rightX - textX - 12);
+        graphics.text(font, trim(font, title, leftMax), textX, y + 10, opaque(color), false);
+        graphics.text(font, trim(font, subtitle, leftMax), textX, y + 27, MUTED, false);
         graphics.text(font, right, rightX, y + 22, rightColor, false);
         int dotColor = right.toUpperCase().contains("OFFLINE") ? RED : GREEN;
         graphics.fill(x + w - 18, y + 23, x + w - 12, y + 29, opaque(dotColor));
@@ -927,7 +935,10 @@ public final class TerminalUi {
     public static void bottomShortcutBar(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String left, String right, int color) {
         graphics.fill(x, y, x + w, y + 30, 0xDD020A10);
-        graphics.outline(x, y, w, 30, 0x4438DFF4);
+        graphics.outline(x, y, w, 30, 0x3338DFF4);
+        String r = trim(font, right == null ? "" : right, Math.max(80, Math.min(260, w / 3)));
+        int rightX = x + w - 16 - font.width(r);
+        int leftLimit = Math.max(x + 80, rightX - 18);
         int cx = x + 14;
         String[] tokens = left == null ? new String[0] : left.split("\\s{2,}");
         for (String token : tokens) {
@@ -938,20 +949,20 @@ public final class TerminalUi {
             String key = space <= 0 ? token : token.substring(0, space);
             String label = space <= 0 ? "" : token.substring(space + 1);
             int keyW = Math.max(22, font.width(key) + 8);
-            if (cx + keyW + font.width(label) + 18 > x + w - 250) {
+            if (cx + keyW + font.width(label) + 18 > leftLimit) {
                 break;
             }
             graphics.fill(cx, y + 7, cx + keyW, y + 23, 0xAA071017);
-            graphics.outline(cx, y + 7, keyW, 16, 0x5538DFF4);
+            graphics.outline(cx, y + 7, keyW, 16, 0x4438DFF4);
             graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, y + 12, opaque(color));
             cx += keyW + 7;
             if (!label.isBlank()) {
-                graphics.text(font, trim(font, label, 92), cx, y + 12, MUTED, false);
-                cx += Math.min(92, font.width(label)) + 18;
+                String shortLabel = trim(font, label, 82);
+                graphics.text(font, shortLabel, cx, y + 12, MUTED, false);
+                cx += font.width(shortLabel) + 18;
             }
         }
-        String r = trim(font, right == null ? "" : right, Math.max(80, w / 4));
-        graphics.text(font, r, x + w - 16 - font.width(r), y + 12, opaque(color), false);
+        graphics.text(font, r, rightX, y + 12, opaque(color), false);
     }
 
     public static void iconRailButton(GuiGraphicsExtractor graphics, Font font,
@@ -962,9 +973,9 @@ public final class TerminalUi {
     public static void iconRailButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label,
             boolean selected, boolean hovered, int color) {
-        int bg = selected ? 0xEE0B3440 : hovered ? 0xAA0D2530 : 0x66071117;
+        int bg = selected ? 0xD80B3440 : hovered ? 0x880D2530 : 0x52071117;
         graphics.fill(x, y, x + w, y + h, bg);
-        graphics.outline(x, y, w, h, selected ? opaque(color) : 0x334DBAF4);
+        graphics.outline(x, y, w, h, selected ? opaque(color) : 0x2C4DBAF4);
         if (selected) {
             graphics.fill(x, y, x + 3, y + h, opaque(color));
         }
@@ -991,9 +1002,9 @@ public final class TerminalUi {
 
     public static void commandStackPanel(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, int color) {
-        graphics.fill(x, y, x + w, y + h, 0xD7050B10);
-        graphics.fill(x, y, x + w, y + 34, 0x7A071923);
-        graphics.outline(x, y, w, h, 0x7838DFF4);
+        graphics.fill(x, y, x + w, y + h, 0xCF050B10);
+        graphics.fill(x, y, x + w, y + 34, 0x5E071923);
+        graphics.outline(x, y, w, h, 0x6238DFF4);
         graphics.fill(x, y, x + 3, y + h, opaque(color));
         graphics.fill(x, y, x + Math.max(48, w * 2 / 3), y + 2, opaque(color));
         graphics.fill(x + w - 2, y + 34, x + w, y + h - 16, 0x552E8E9D);
@@ -1021,15 +1032,15 @@ public final class TerminalUi {
     public static void commandStackGroupButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label,
             boolean selected, boolean hovered, int color) {
-        int bg = selected ? 0xDE0C3340 : hovered ? 0x99102630 : 0x66071117;
-        int border = selected ? opaque(color) : hovered ? 0x6638DFF4 : 0x2638DFF4;
+        int bg = selected ? 0xD00C3340 : hovered ? 0x82102630 : 0x52071117;
+        int border = selected ? opaque(color) : hovered ? 0x5538DFF4 : 0x2238DFF4;
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, border);
         graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : CYAN_DIM);
         if (selected) {
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
-            graphics.fill(x + Math.max(24, w / 3), y + h - 4, x + w - 8, y + h - 2, 0x99E9FBFF);
-            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1E66E8FF);
+            graphics.fill(x + Math.max(24, w / 3), y + h - 4, x + w - 8, y + h - 2, 0x77E9FBFF);
+            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1666E8FF);
         }
         int iconSize = Math.min(22, Math.max(16, h - 8));
         drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(3, (h - iconSize) / 2), iconSize,
@@ -1047,15 +1058,15 @@ public final class TerminalUi {
     public static void commandPageButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label, String summary,
             boolean selected, boolean hovered, int color) {
-        int bg = selected ? 0xE50B3440 : hovered ? 0xA00D2530 : 0x54071117;
-        int border = selected ? opaque(color) : hovered ? 0x6638DFF4 : 0x2638DFF4;
+        int bg = selected ? 0xD60B3440 : hovered ? 0x880D2530 : 0x48071117;
+        int border = selected ? opaque(color) : hovered ? 0x5538DFF4 : 0x2238DFF4;
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, border);
         if (selected) {
             graphics.fill(x, y, x + 3, y + h, opaque(color));
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
-            graphics.fill(x + Math.max(26, w / 3), y + h - 4, x + w - 10, y + h - 2, 0x99E9FBFF);
-            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1E66E8FF);
+            graphics.fill(x + Math.max(26, w / 3), y + h - 4, x + w - 10, y + h - 2, 0x77E9FBFF);
+            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1666E8FF);
         } else if (hovered) {
             graphics.fill(x, y + h - 1, x + w, y + h, 0x7738DFF4);
         }
@@ -1081,12 +1092,12 @@ public final class TerminalUi {
 
     public static void cinematicContentFrame(GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, int color) {
-        graphics.fill(x, y, x + w, y + h, 0x74050B10);
-        graphics.outline(x, y, w, h, 0x5538DFF4);
+        graphics.fill(x, y, x + w, y + h, 0x68050B10);
+        graphics.outline(x, y, w, h, 0x4438DFF4);
         graphics.fill(x, y, x + Math.max(44, Math.min(w, w / 7)), y + 2, opaque(color));
         graphics.fill(x, y + h - 2, x + Math.max(36, Math.min(w, w / 8)), y + h, opaque(color));
-        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), 0x8838DFF4);
-        graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, 0x5538DFF4);
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), 0x6638DFF4);
+        graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, 0x4438DFF4);
     }
 
     public static int dashboardCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,

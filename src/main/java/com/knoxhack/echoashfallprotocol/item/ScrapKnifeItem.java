@@ -1,11 +1,13 @@
 package com.knoxhack.echoashfallprotocol.item;
 
 import com.knoxhack.echoashfallprotocol.gameplay.AshfallInteractionRules;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.Weapon;
 import net.minecraft.world.item.component.TooltipDisplay;
 
 import java.util.function.Consumer;
@@ -18,7 +20,7 @@ public class ScrapKnifeItem extends Item {
     private static final float BASE_DAMAGE = 5.0f;
 
     public ScrapKnifeItem(Properties properties) {
-        super(properties.durability(90));
+        super(properties.durability(90).component(DataComponents.WEAPON, new Weapon(1)));
     }
 
     /**

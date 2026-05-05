@@ -86,6 +86,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
@@ -129,7 +130,9 @@ public final class AshfallTerminalIntegration {
         TerminalTabRegistry.register(new DroneTab());
         TerminalTabRegistry.register(new CodexTab());
         TerminalTabRegistry.register(new WorldTab());
-        TerminalTabRegistry.register(new NexusTab());
+        if (!nexusProtocolLoaded()) {
+            TerminalTabRegistry.register(new NexusTab());
+        }
 
         TerminalMissionActions.registerForTab(MISSIONS);
         TerminalMissionActions.registerForTab(SIDE_OPS);
@@ -137,10 +140,21 @@ public final class AshfallTerminalIntegration {
         TerminalActionRegistry.register(MISSIONS, CLAIM_REWARDS, (player, payload) -> EchoGuideManager.claimRewards(player));
         TerminalActionRegistry.register(DRONE, DRONE_COMMAND,
                 (player, payload) -> ModNetwork.handleDroneCommand(new DroneCommandPacket(payload), player));
-        TerminalActionRegistry.register(NEXUS, NEXUS_CHOICE, AshfallTerminalIntegration::chooseNexusPath);
-        TerminalActionRegistry.register(NEXUS, NEXUS_WARFRONT, AshfallTerminalIntegration::handleNexusWarfront);
+        if (!nexusProtocolLoaded()) {
+            TerminalActionRegistry.register(NEXUS, NEXUS_CHOICE, AshfallTerminalIntegration::chooseNexusPath);
+            TerminalActionRegistry.register(NEXUS, NEXUS_WARFRONT, AshfallTerminalIntegration::handleNexusWarfront);
+        }
 
         registerFieldManualEntries();
+    }
+
+    private static boolean nexusProtocolLoaded() {
+        try {
+            return ModList.get().isLoaded("echonexusprotocol");
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall terminal Nexus ownership check failed; keeping legacy Nexus terminal available.", exception);
+            return false;
+        }
     }
 
     private static void registerFieldManualEntries() {

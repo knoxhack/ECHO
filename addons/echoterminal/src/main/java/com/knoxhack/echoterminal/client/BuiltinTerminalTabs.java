@@ -70,7 +70,7 @@ public final class BuiltinTerminalTabs {
                 "OPEN",
                 List.of(
                         "Use this terminal as the command surface for installed ECHO chapters and survival routes.",
-                        "Tabs collect missions, field records, drone controls, route state, and chapter status when those systems are present.",
+                        "Channels collect missions, field records, drone controls, route state, and chapter status when those systems are present.",
                         "Progression stays sealed until the field route proves it; the terminal shows the clearest safe command view without opening records early."),
                 false));
         TerminalTabRegistry.register(new ArchivesTab());
@@ -409,7 +409,7 @@ public final class BuiltinTerminalTabs {
 
             int cy = TerminalUi.flatDataPanel(context, graphics,
                     x, y, listW - 8, boardH, "ECHO ADDON ROADMAP",
-                    chapters.size() + " registered", descriptor.accentColor()) + 6;
+                    chapters.size() + " linked", descriptor.accentColor()) + 6;
             lastListX = x;
             lastListY = cy;
             lastListW = listW - 8;
@@ -454,7 +454,7 @@ public final class BuiltinTerminalTabs {
             dy += 9;
             TerminalUi.wrap(context, graphics,
                     available
-                            ? "Chapter systems are online in their registered terminal tabs. ECHO will confirm the owning route before any field action is accepted."
+                            ? "Chapter systems are online in their terminal channels. ECHO will confirm the owning route before any field command is accepted."
                             : "Route preview only. Complete the listed requirement before commands wake up.",
                     detailX + 14, dy, detailW - 32, available ? TerminalUi.GREEN : TerminalUi.AMBER);
 
@@ -471,7 +471,7 @@ public final class BuiltinTerminalTabs {
                 TerminalUi.flatHudPanel(graphics, x, calloutY, w - 8, 64, descriptor.accentColor());
                 TerminalUi.line(context, graphics, "ROUTE AUTHORITY", x + 12, calloutY + 10, w - 32, descriptor.accentColor());
                 TerminalUi.wrap(context, graphics,
-                        "Installed chapters keep their own mission state, rewards, and command checks. ECHO presents their registered routes here.",
+                        "Installed chapters keep their own mission state, rewards, and command checks. ECHO presents their linked routes here.",
                         x + 12, calloutY + 27, w - 32, TerminalUi.TEXT);
             }
         }
@@ -529,7 +529,7 @@ public final class BuiltinTerminalTabs {
             }
             String summary = chapterSummary(chapter);
             String roadMap = chapterAvailable(chapter, context)
-                    ? "Chapter systems are online in their registered terminal tabs. ECHO will confirm the owning route before any field action is accepted."
+                    ? "Chapter systems are online in their terminal channels. ECHO will confirm the owning route before any field command is accepted."
                     : "Route preview only. Complete the listed requirement before commands wake up.";
             return Math.max(118,
                     72
@@ -701,7 +701,7 @@ public final class BuiltinTerminalTabs {
                     Math.max(130, context.contentHeight()), "MISSION GRAPH",
                     TerminalMissionRegistry.providers().size() + " source(s)", descriptor.accentColor()) + 8;
             if (TerminalMissionRegistry.providers().isEmpty()) {
-                TerminalUi.wrap(context, graphics, "No mission routes are registered yet.",
+                TerminalUi.wrap(context, graphics, "No mission routes are linked yet.",
                         x + 14, cy, w - 28, TerminalUi.MUTED);
                 return;
             }
@@ -845,7 +845,7 @@ public final class BuiltinTerminalTabs {
                     "ROUTE RECORDS", records.size() + " route(s)", descriptor.accentColor()) + 8;
             if (records.isEmpty()) {
                 TerminalUi.wrap(context, graphics,
-                        "No route records are registered yet. Scanner routes, recovery sites, surveys, and orbital paths appear here when chapter providers publish them.",
+                        "No route records are online yet. Scanner routes, recovery sites, surveys, and orbital paths appear here when chapters publish them.",
                         x + 14, cy, w - 28, TerminalUi.MUTED);
                 return;
             }
@@ -912,8 +912,8 @@ public final class BuiltinTerminalTabs {
             List<EchoFactionProfile> allProfiles = EchoCoreServices.factionProfiles(context.player());
             if (allProfiles.isEmpty()) {
                 TerminalUi.flatDataPanel(context, graphics, x, y, w, Math.min(140, Math.max(90, h / 4)),
-                        "FACTION ATLAS", "0 registered", descriptor.accentColor());
-                TerminalUi.line(context, graphics, "No faction signals are registered.",
+                        "FACTION ATLAS", "0 linked", descriptor.accentColor());
+                TerminalUi.line(context, graphics, "No faction signals are online.",
                         x + 14, y + 44, w - 28, TerminalUi.MUTED);
                 return;
             }

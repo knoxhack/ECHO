@@ -9,6 +9,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
@@ -37,9 +38,23 @@ public class DirtyWaterItem extends Item {
             var survivalData = player.getData(ModAttachments.SURVIVAL_DATA.get());
             survivalData.addHydration(20);
             player.setData(ModAttachments.SURVIVAL_DATA.get(), survivalData);
-            stack.shrink(1);
+            consumeBottle(player, hand, stack);
         }
 
         return InteractionResult.SUCCESS;
+    }
+
+    private static void consumeBottle(Player player, InteractionHand hand, ItemStack stack) {
+        if (player.getAbilities().instabuild) {
+            return;
+        }
+
+        stack.shrink(1);
+        ItemStack emptyBottle = new ItemStack(Items.GLASS_BOTTLE);
+        if (stack.isEmpty()) {
+            player.setItemInHand(hand, emptyBottle);
+        } else if (!player.getInventory().add(emptyBottle)) {
+            player.drop(emptyBottle, false);
+        }
     }
 }

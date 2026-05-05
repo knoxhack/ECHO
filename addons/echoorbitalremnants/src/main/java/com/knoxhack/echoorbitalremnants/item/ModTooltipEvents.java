@@ -18,7 +18,7 @@ public class ModTooltipEvents {
 
         String line = switch (id.getPath()) {
             case "echo_terminal" -> "Tracks objectives, route locks, suit diagnostics, factions, and ECHO memory.";
-            case "emergency_rocket" -> "Launches to Low Earth Orbit when launch readiness is complete; use in space to return to Earth.";
+            case "emergency_rocket" -> "Stage on a complete 5x5 Launch Platform, board the vehicle, then launch; use in space to return to Earth.";
             case "orbital_shuttle" -> "Travels to the Lunar Scar Zone; sneak-use in space to burn the saved return vector.";
             case "mars_transfer_window" -> "Travels to Mars Ash Basin after lunar Helium-3 telemetry is resolved.";
             case "europa_transfer_window" -> "Travels to Europa Cryo Ocean after Martian silica telemetry is resolved.";

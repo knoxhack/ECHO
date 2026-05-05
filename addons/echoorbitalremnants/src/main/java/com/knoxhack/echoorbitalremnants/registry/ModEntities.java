@@ -5,6 +5,7 @@ import com.knoxhack.echoorbitalremnants.entity.AbandonedCaptainEntity;
 import com.knoxhack.echoorbitalremnants.entity.CorruptedDockingAiEntity;
 import com.knoxhack.echoorbitalremnants.entity.BrokenAstronautEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoDefenseDroneEntity;
+import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
 import com.knoxhack.echoorbitalremnants.entity.LunarNexusHuskEntity;
@@ -19,6 +20,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModEntities {
     public static final DeferredRegister.Entities ENTITIES = DeferredRegister.createEntities(EchoOrbitalRemnants.MODID);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<EmergencyRocketEntity>> EMERGENCY_ROCKET_VEHICLE =
+            ENTITIES.registerEntityType("emergency_rocket_vehicle", EmergencyRocketEntity::new, MobCategory.MISC,
+                    builder -> builder.sized(1.4F, 3.5F).clientTrackingRange(12));
 
     public static final DeferredHolder<EntityType<?>, EntityType<EchoDefenseDroneEntity>> ECHO_DEFENSE_DRONE =
             ENTITIES.registerEntityType("echo_defense_drone", EchoDefenseDroneEntity::new, MobCategory.MONSTER,

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
@@ -20,7 +21,7 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
     }
 
     public static LaunchReadiness evaluateForLaunch(Player player) {
-        if (!Config.REQUIRE_FULL_LAUNCH_READINESS.get() || player.hasInfiniteMaterials()) {
+        if (!Config.REQUIRE_FULL_LAUNCH_READINESS.get() || bypassesReadiness(player)) {
             return new LaunchReadiness(true, List.of());
         }
 
@@ -36,7 +37,7 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
     }
 
     public static LaunchReadiness evaluateForAssembly(Player player) {
-        if (!Config.REQUIRE_FULL_LAUNCH_READINESS.get() || player.hasInfiniteMaterials()) {
+        if (!Config.REQUIRE_FULL_LAUNCH_READINESS.get() || bypassesReadiness(player)) {
             return new LaunchReadiness(true, List.of());
         }
 
@@ -66,7 +67,7 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
     }
 
     private static void requireInfrastructure(Player player, List<Component> missing) {
-        if (!hasLaunchPlatformGrid(player)) {
+        if (LaunchPadLocator.findNearbyPlatformCenter(player).isEmpty()) {
             missing.add(Component.literal("- complete nearby 5x5 Launch Platform grid"));
         }
         requireNearbyBlock(player, missing, ModBlocks.ROCKET_ASSEMBLY_FRAME.get(), "nearby Rocket Assembly Frame");
@@ -108,29 +109,11 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
         return false;
     }
 
-    private static boolean hasLaunchPlatformGrid(Player player) {
-        BlockPos center = player.blockPosition();
-        int radius = 12;
-        for (int y = center.getY() - 6; y <= center.getY() + 2; y++) {
-            for (int x = center.getX() - radius; x <= center.getX() + radius; x++) {
-                for (int z = center.getZ() - radius; z <= center.getZ() + radius; z++) {
-                    if (platformGridAt(player, new BlockPos(x, y, z))) {
-                        return true;
-                    }
-                }
-            }
+    public static boolean bypassesReadiness(Player player) {
+        if (player instanceof ServerPlayer serverPlayer && serverPlayer.gameMode.getGameModeForPlayer().isCreative()) {
+            return true;
         }
-        return false;
+        return player.hasInfiniteMaterials() || player.getAbilities().instabuild || player.isCreative();
     }
 
-    private static boolean platformGridAt(Player player, BlockPos center) {
-        for (int x = -2; x <= 2; x++) {
-            for (int z = -2; z <= 2; z++) {
-                if (player.level().getBlockState(center.offset(x, 0, z)).getBlock() != ModBlocks.LAUNCH_PLATFORM.get()) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
 }

@@ -38,6 +38,12 @@ public class EchoMainMenuScreen extends Screen {
             "Recovered ECHO terminals agree on one command: rebuild below, then listen above.",
             "The orbital channel is not a rescue signal. It is a door with memory on the other side."
     };
+    private static final int BUTTON_HEIGHT = 20;
+    private static final int BUTTON_TOP_OFFSET = 48;
+    private static final int BUTTON_BOTTOM_PADDING = 12;
+    private static final int BUTTON_COUNT = 5;
+    private static final int COMPACT_BUTTON_GAP = 23;
+    private static final int WIDE_BUTTON_GAP = 25;
 
     private int ticks;
 
@@ -50,18 +56,19 @@ public class EchoMainMenuScreen extends Screen {
         int menuWidth = commandWidth();
         int menuX = commandX(menuWidth);
         int menuY = commandY();
-        int gap = compactLayout() ? 23 : 25;
+        int gap = commandButtonGap();
+        int buttonY = menuY + BUTTON_TOP_OFFSET;
 
         this.addRenderableWidget(terminalButton("[ SINGLEPLAYER ]", button ->
-                this.minecraft.setScreen(new SelectWorldScreen(this)), menuX + 18, menuY + 48, menuWidth - 36));
+                this.minecraft.setScreen(new SelectWorldScreen(this)), menuX + 18, buttonY, menuWidth - 36));
         this.addRenderableWidget(terminalButton("[ MULTIPLAYER ]", button ->
-                this.minecraft.setScreen(new JoinMultiplayerScreen(this)), menuX + 18, menuY + 48 + gap, menuWidth - 36));
+                this.minecraft.setScreen(new JoinMultiplayerScreen(this)), menuX + 18, buttonY + gap, menuWidth - 36));
         this.addRenderableWidget(terminalButton("[ MODS ]", button ->
-                this.minecraft.setScreen(new ModListScreen(this)), menuX + 18, menuY + 48 + gap * 2, menuWidth - 36));
+                this.minecraft.setScreen(new ModListScreen(this)), menuX + 18, buttonY + gap * 2, menuWidth - 36));
         this.addRenderableWidget(terminalButton("[ OPTIONS ]", button ->
-                this.minecraft.setScreen(new OptionsScreen(this, this.minecraft.options, false)), menuX + 18, menuY + 48 + gap * 3, menuWidth - 36));
+                this.minecraft.setScreen(new OptionsScreen(this, this.minecraft.options, false)), menuX + 18, buttonY + gap * 3, menuWidth - 36));
         this.addRenderableWidget(terminalButton("[ QUIT ]", button ->
-                this.minecraft.stop(), menuX + 18, menuY + 58 + gap * 4, menuWidth - 36));
+                this.minecraft.stop(), menuX + 18, buttonY + gap * 4, menuWidth - 36));
     }
 
     @Override
@@ -109,6 +116,9 @@ public class EchoMainMenuScreen extends Screen {
         int bottom = compact ? Math.min(this.height - margin, commandY() - 10) : this.height - 42;
 
         if (bottom - top < 88) {
+            if (compact) {
+                return;
+            }
             bottom = Math.min(this.height - margin, top + 88);
         }
 
@@ -261,7 +271,10 @@ public class EchoMainMenuScreen extends Screen {
     }
 
     private int commandHeight() {
-        return compactLayout() ? 190 : 220;
+        int desired = compactLayout() ? 190 : 220;
+        int minimum = commandButtonAreaHeight();
+        int available = Math.max(minimum, this.height - margin() * 2);
+        return clamp(desired, minimum, available);
     }
 
     private int commandX(int commandWidth) {
@@ -272,10 +285,20 @@ public class EchoMainMenuScreen extends Screen {
     }
 
     private int commandY() {
-        if (compactLayout()) {
-            return Math.max(112, Math.min(this.height - commandHeight() - margin(), this.height / 2 - 38));
-        }
-        return Math.max(58, this.height / 2 - 108);
+        int desired = compactLayout() ? this.height / 2 - 38 : this.height / 2 - 108;
+        int minTop = margin();
+        int maxTop = Math.max(minTop, this.height - commandHeight() - margin());
+        return clamp(desired, minTop, maxTop);
+    }
+
+    private int commandButtonGap() {
+        int defaultGap = compactLayout() ? COMPACT_BUTTON_GAP : WIDE_BUTTON_GAP;
+        int available = Math.max(0, this.height - margin() * 2 - BUTTON_TOP_OFFSET - BUTTON_HEIGHT - BUTTON_BOTTOM_PADDING);
+        return clamp(available / Math.max(1, BUTTON_COUNT - 1), 18, defaultGap);
+    }
+
+    private int commandButtonAreaHeight() {
+        return BUTTON_TOP_OFFSET + commandButtonGap() * (BUTTON_COUNT - 1) + BUTTON_HEIGHT + BUTTON_BOTTOM_PADDING;
     }
 
     private int pulseColor(int low, int high, int period) {

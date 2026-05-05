@@ -152,13 +152,14 @@ public class EchoTerminalScreen extends Screen {
         drawStateLine(graphics, x, y, "Launch readiness", snapshot.launchReady());
         drawStateLine(graphics, x, y + 15, "Rocket assembly", snapshot.assemblyReady());
         drawStateLine(graphics, x, y + 30, "Earth return vector", snapshot.earthReturnSaved());
-        int listY = y + 52;
+        drawRocketStatus(graphics, x, y + 48, width);
+        int listY = y + 82;
         if (!snapshot.launchReady()) {
-            drawList(graphics, x, listY, "Missing launch systems", snapshot.launchMissing(), 5);
+            drawList(graphics, x, listY, "Missing launch systems", snapshot.launchMissing(), 4);
         } else if (!snapshot.assemblyReady()) {
-            drawList(graphics, x, listY, "Missing assembly parts", snapshot.assemblyMissing(), 5);
+            drawList(graphics, x, listY, "Missing assembly parts", snapshot.assemblyMissing(), 4);
         } else {
-            graphics.textWithWordWrap(font, Component.literal("Assembly and launch checks are green. Use the Emergency Rocket to reach Low Earth Orbit."), x, listY, width, 0xD8F6FF);
+            graphics.textWithWordWrap(font, Component.literal(snapshot.rocketLaunchDetail()), x, listY, width, 0xD8F6FF);
         }
     }
 
@@ -236,6 +237,21 @@ public class EchoTerminalScreen extends Screen {
 
     private void drawStateLine(GuiGraphicsExtractor graphics, int x, int y, String label, boolean ready) {
         graphics.text(font, Component.literal((ready ? "ONLINE  " : "LOCKED  ") + label), x, y, ready ? 0xA8F7C5 : 0xFFD166, false);
+    }
+
+    private void drawRocketStatus(GuiGraphicsExtractor graphics, int x, int y, int width) {
+        int statusColor = snapshot.rocketLaunching() ? 0xAA7B2E12
+                : snapshot.rocketCountingDown() ? 0xAA4E3D11
+                : snapshot.rocketStaged() ? 0xAA123241
+                : snapshot.launchReady() && snapshot.assemblyReady() ? 0xAA23573E : 0xAA392A13;
+        graphics.fill(x, y, x + Math.min(width, 184), y + 18, statusColor);
+        graphics.fill(x, y + 16, x + Math.min(width, 184), y + 18,
+                snapshot.rocketLaunching() ? 0xFFFF8A3D : snapshot.rocketCountingDown() ? 0xFFFFD166 : 0xFF66E8FF);
+        graphics.text(font, Component.literal(snapshot.rocketLaunchStatus()), x + 6, y + 5,
+                snapshot.rocketLaunching() ? 0xFFFFD8A8 : 0xE9FBFF, true);
+        if (snapshot.rocketCountdownSeconds() > 0) {
+            graphics.text(font, Component.literal(snapshot.rocketCountdownSeconds() + "s"), x + 154, y + 5, 0xFFFFFF, true);
+        }
     }
 
     private void drawRoute(GuiGraphicsExtractor graphics, int x, int y, String name, boolean open, String vessel) {

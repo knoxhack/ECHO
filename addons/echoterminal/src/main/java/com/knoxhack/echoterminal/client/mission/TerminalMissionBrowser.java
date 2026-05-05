@@ -111,15 +111,15 @@ public final class TerminalMissionBrowser {
         // Validator token retained for the previous wide mission readability gate: w >= 820.
         boolean wide = w >= 720;
         if (wide) {
-            int gap = 14;
-            int leftW = Math.max(300, Math.min(408, w * 38 / 100));
+            int gap = 12;
+            int leftW = Math.max(292, Math.min(388, w * 36 / 100));
             int detailX = x + leftW + gap;
             int detailW = Math.max(300, w - leftW - gap);
             drawRoadmapPane(context, graphics, state, x, y, leftW, h, mouseX, mouseY);
             drawDetailPane(context, graphics, selected, detailX, y, detailW, h, mouseX, mouseY, true);
         } else if (w >= 430) {
             int gap = w >= 560 ? 10 : 8;
-            int leftW = Math.max(w >= 560 ? 238 : 190, Math.min(w >= 560 ? 318 : 230, w * 43 / 100));
+            int leftW = Math.max(w >= 560 ? 224 : 176, Math.min(w >= 560 ? 300 : 220, w * 40 / 100));
             int detailX = x + leftW + gap;
             drawRoadmapPane(context, graphics, state, x, y, leftW, h, mouseX, mouseY);
             drawDetailPane(context, graphics, selected, detailX, y, Math.max(220, w - leftW - gap), h,
@@ -315,15 +315,15 @@ public final class TerminalMissionBrowser {
             MissionRenderState state, int x, int y, int w, int h, int mouseX, int mouseY) {
         TerminalMissionChapter chapter = chapter();
         TerminalUi.cinematicPanel(graphics, x, y, w, h, chapter.accentColor());
-        TerminalUi.line(context, graphics, "PROTOCOL ROADMAP", x + 10, y + 10, w - 20, chapter.accentColor());
+        TerminalUi.line(context, graphics, "PROTOCOL ROADMAP", x + 12, y + 10, w - 24, chapter.accentColor());
         TerminalUi.line(context, graphics, state.completedCount() + "/" + state.allRecords().size() + " complete",
                 x + w - 112, y + 10, 98, TerminalUi.MUTED);
-        TerminalUi.divider(graphics, x + 10, y + 26, w - 20, chapter.accentColor());
-        int innerX = x + 10;
-        int innerW = w - 20;
-        int listY = y + 36;
+        TerminalUi.divider(graphics, x + 12, y + 27, w - 24, chapter.accentColor());
+        int innerX = x + 12;
+        int innerW = w - 24;
+        int listY = y + 38;
         if (showExpandControls) {
-            int utilityY = y + 36;
+            int utilityY = y + 38;
             int utilityW = Math.max(1, (innerW - 4) / 2);
             int compactW = Math.max(1, innerW - utilityW - 4);
             drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND", true, mouseX, mouseY, () -> {
@@ -344,7 +344,7 @@ public final class TerminalMissionBrowser {
         lastTreeX = innerX;
         lastTreeY = listY;
         lastTreeW = innerW - 4;
-        lastTreeH = Math.max(68, h - (listY - y) - 10);
+        lastTreeH = Math.max(68, h - (listY - y) - 12);
         lastTreeContentH = treeRowsHeight(context, state);
         focusTreeOnSelection(state);
         treeScroll = TerminalUi.clampScroll(treeScroll, lastTreeContentH, lastTreeH);
@@ -545,9 +545,9 @@ public final class TerminalMissionBrowser {
         TerminalMissionSnapshot snapshot = record.snapshot();
         boolean selected = record.id().equals(selectedMissionId);
         int color = statusColor(snapshot.status());
-        int chipW = Math.max(84, Math.min(112, rowW / 4));
+        int chipW = Math.max(72, Math.min(98, rowW / 4));
         int chipX = rowX + rowW - chipW - 6;
-        int textX = rowX + 36;
+        int textX = rowX + 34;
         int titleW = Math.max(42, chipX - textX - 8);
         int progressW = Math.max(48, chipX - textX);
         boolean hovered = TerminalUi.inside(mouseX, mouseY, rowX, y, rowW, MISSION_ROW_HEIGHT - 4);
@@ -563,7 +563,7 @@ public final class TerminalMissionBrowser {
                 TerminalVisualAssets.missionIconArt(record.definition().id(), record.definition().category()),
                 rowX + 5, y + 2, 22, color,
                 selected || TerminalUi.inside(mouseX, mouseY, rowX + 5, y + 2, 22, 22));
-        String rolePrefix = record.role() == TerminalMissionRole.OPTIONAL ? "[OPT] " : "";
+        String rolePrefix = record.role() == TerminalMissionRole.OPTIONAL ? "OPT " : "";
         TerminalUi.line(context, graphics, rolePrefix + record.definition().missionOrder() + ". " + record.presentation().shortTitle(),
                 textX, y + 3, titleW, missionTitleColor(snapshot.status(), selected, color));
         TerminalUi.missionStatusPill(context, graphics, compactStatusLabel(snapshot), chipX, y + 3, chipW);
@@ -581,12 +581,12 @@ public final class TerminalMissionBrowser {
                     "Select Mission", "Choose a mission record from the command queue.", TerminalUi.MUTED);
             return;
         }
-        int bodyX = x + 10;
-        int bodyW = w - 24;
-        int bodyY = y + 10;
+        int bodyX = x + 12;
+        int bodyW = w - 30;
+        int bodyY = y + 12;
         int actionH = Math.min(ACTION_BAR_HEIGHT, Math.max(84, h / 5));
-        int actionY = y + h - actionH - 8;
-        int bodyH = Math.max(70, actionY - bodyY - 8);
+        int actionY = y + h - actionH - 10;
+        int bodyH = Math.max(70, actionY - bodyY - 10);
         lastDetailX = bodyX;
         lastDetailY = bodyY;
         lastDetailW = bodyW;
@@ -610,11 +610,11 @@ public final class TerminalMissionBrowser {
     private int drawDetailBody(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRecord record, int x, int y, int w, int mouseX, int mouseY) {
         int cy = drawBriefingHeader(context, graphics, record, x, y, w, mouseX, mouseY) + 8;
-        cy = drawNextStepCallout(context, graphics, record, x, cy, w);
+        cy = drawNextStepCallout(context, graphics, record, x, cy, w) + 2;
         TerminalUi.sectionHeader(context, graphics, "REQUIREMENTS", "", x, cy, w - 4, chapter().accentColor());
         cy += 20;
         if (record.definition().requirements().isEmpty()) {
-            TerminalUi.line(context, graphics, "No visible checklist. Server state tracks this protocol.",
+            TerminalUi.line(context, graphics, "No visible checklist. ECHO tracks this protocol in the field.",
                     x + 4, cy, w - 12, TerminalUi.MUTED);
             cy += 14;
         } else {
@@ -651,20 +651,24 @@ public final class TerminalMissionBrowser {
         int color = statusColor(record.snapshot().status());
         int height = briefingHeaderHeight(record);
         TerminalUi.flatHudPanel(graphics, x, y, w - 4, height, color);
+        int iconSize = w < 360 ? 38 : 46;
         TerminalUi.iconTextureBadge(graphics, TerminalVisualAssets.missionIconArt(record.definition().id(),
                         record.definition().category()),
-                x + 10, y + 14, 48, color, true);
-        int chipW = Math.max(104, Math.min(140, w / 5));
+                x + 10, y + 14, iconSize, color, true);
+        int chipW = Math.max(84, Math.min(124, w / 4));
+        int chipX = x + w - chipW - 14;
+        int textX = x + iconSize + 24;
+        int titleW = Math.max(40, chipX - textX - 10);
         TerminalUi.missionStatusPill(context, graphics, compactStatusLabel(record.snapshot()),
-                x + w - chipW - 14, y + 12, chipW);
+                chipX, y + 12, chipW);
         TerminalUi.miniStatusPill(context, graphics, roleChipLabel(record.role()),
-                x + w - chipW - 14, y + 30, chipW, color, false);
-        TerminalUi.line(context, graphics, record.presentation().shortTitle().toUpperCase(), x + 70, y + 20,
-                Math.max(40, w - chipW - 92), TerminalUi.TEXT);
+                chipX, y + 30, chipW, color, false);
+        TerminalUi.line(context, graphics, record.presentation().shortTitle().toUpperCase(), textX, y + 20,
+                titleW, TerminalUi.TEXT);
         TerminalUi.line(context, graphics, tagLine(record.definition(), record.presentation(), record.role()),
-                x + 70, y + 36, Math.max(40, w - chipW - 92), color);
+                textX, y + 36, titleW, color);
         TerminalUi.wrap(context, graphics, record.presentation().objectiveSummary(),
-                x + 70, y + 54, Math.max(48, w - 94), TerminalUi.TEXT);
+                textX, y + 54, Math.max(48, w - (textX - x) - 14), TerminalUi.TEXT);
         TerminalUi.progress(graphics, x + 10, y + height - 13, w - 24, 6, record.snapshot().progress(), color);
         return y + height;
     }
@@ -685,12 +689,15 @@ public final class TerminalMissionBrowser {
         TerminalUi.flatHudPanel(graphics, x, y, w, rowH - 4, color);
         TerminalUi.itemSlot(context, graphics, requirement.icon(), x + 6, y + 6, color,
                 TerminalUi.inside(mouseX, mouseY, x + 6, y + 6, 20, 20));
-        TerminalUi.line(context, graphics, requirement.label(), x + 32, y + 6, w - 154, color);
+        int chipW = Math.max(74, Math.min(92, w / 4));
+        int chipX = x + w - chipW - 10;
+        int textW = Math.max(38, chipX - (x + 32) - 8);
+        TerminalUi.line(context, graphics, requirement.label(), x + 32, y + 6, textW, color);
         String progress = requirement.need() > 0 ? requirement.have() + "/" + requirement.need() : "";
         TerminalUi.missionStatusPill(context, graphics, requirement.satisfied() ? "DONE" : "NEEDED",
-                x + w - 98, y + 6, 86);
+                chipX, y + 6, chipW);
         TerminalUi.wrap(context, graphics, requirement.detail().isBlank() ? progress : requirement.detail(),
-                x + 32, y + 20, w - 142, TerminalUi.MUTED);
+                x + 32, y + 20, Math.max(40, textW), TerminalUi.MUTED);
         return y + rowH;
     }
 
@@ -718,17 +725,20 @@ public final class TerminalMissionBrowser {
             MissionRecord record, int x, int y, int w, int h, int mouseX, int mouseY) {
         String summary = commandSummary(record.snapshot(), record.presentation());
         TerminalUi.flatHudPanel(graphics, x, y, w - 4, h, chapter().accentColor());
-        TerminalUi.line(context, graphics, "COMMAND", x + 8, y + 8, w - 20, chapter().accentColor());
+        TerminalUi.line(context, graphics, "NEXT COMMAND", x + 8, y + 8, w - 20, chapter().accentColor());
         TerminalUi.line(context, graphics, summary, x + 8, y + 21, w - 20, TerminalUi.TEXT);
         int buttonY = y + 43;
         List<TerminalMissionAction> actions = record.snapshot().actions();
         if (actions.isEmpty()) {
             TerminalUi.disabledReasonRow(context, graphics, x + 8, buttonY, w - 20,
-                    "No direct terminal action is available for this record.", TerminalUi.MUTED);
+                    "No command is available for this record.", TerminalUi.MUTED);
             return;
         }
         int buttonH = 22;
-        int buttonW = actions.size() == 1 ? Math.min(220, w - 20) : Math.max(104, (w - 28) / actions.size());
+        int gaps = Math.max(0, actions.size() - 1) * 8;
+        int buttonW = actions.size() == 1
+                ? Math.min(220, w - 20)
+                : Math.min(150, Math.max(72, (w - 16 - gaps) / actions.size()));
         int bx = x + 8;
         for (TerminalMissionAction action : actions) {
             boolean hover = action.enabled() && TerminalUi.inside(mouseX, mouseY, bx, buttonY, buttonW, buttonH);
@@ -754,10 +764,10 @@ public final class TerminalMissionBrowser {
 
     private void drawMissionModeChips(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int mouseX, int mouseY) {
-        int labelW = 34;
-        TerminalUi.line(context, graphics, "VIEW", x, y + 4, labelW, TerminalUi.MUTED);
+        int labelW = 38;
+        TerminalUi.line(context, graphics, "MODE", x, y + 4, labelW, TerminalUi.MUTED);
         int chipX = x + labelW + 4;
-        int chipW = Math.max(58, Math.min(82, (w - labelW - 12) / MissionViewMode.values().length));
+        int chipW = Math.max(54, Math.min(78, (w - labelW - 12) / MissionViewMode.values().length));
         for (MissionViewMode mode : MissionViewMode.values()) {
             boolean selected = mode == viewMode;
             boolean hover = TerminalUi.inside(mouseX, mouseY, chipX, y, chipW, 15);
@@ -842,14 +852,14 @@ public final class TerminalMissionBrowser {
     }
 
     private int briefingHeaderHeight(MissionRecord record) {
-        return viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets() ? 104 : 90;
+        return viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets() ? 108 : 92;
     }
 
     private int nextStepCalloutHeight(TerminalRenderContext context, MissionRecord record, int width) {
         String hint = record.presentation().nextStep().isBlank()
                 ? "This record is visible for planning."
                 : record.presentation().nextStep();
-        return Math.max(38, 25 + TerminalUi.wrappedHeight(context, hint, Math.max(40, width - 24))) + 5;
+        return Math.max(40, 27 + TerminalUi.wrappedHeight(context, hint, Math.max(40, width - 24))) + 5;
     }
 
     private int requirementHeight(TerminalRenderContext context, TerminalMissionRequirement requirement, int width) {
@@ -857,7 +867,8 @@ public final class TerminalMissionBrowser {
         if (requirement.need() > 0 && detail.isBlank()) {
             detail = requirement.have() + "/" + requirement.need();
         }
-        int detailH = TerminalUi.wrappedHeight(context, detail, Math.max(40, width - 114));
+        int chipW = Math.max(74, Math.min(92, width / 4));
+        int detailH = TerminalUi.wrappedHeight(context, detail, Math.max(40, width - chipW - 54));
         return Math.max(38, 24 + detailH) + 5;
     }
 
@@ -1092,7 +1103,7 @@ public final class TerminalMissionBrowser {
         return switch (snapshot.status()) {
             case CLAIMABLE -> "Reward cache is ready. Claim it here before moving on.";
             case COMPLETED, CLAIMED -> "Protocol complete. Any pending cache remains available here.";
-            case UNLOCKED -> "Follow the next step above. Turn-in unlocks after ECHO validation.";
+            case UNLOCKED -> "Follow the next step above. Turn-in unlocks after ECHO confirms the route.";
             case VIEW_ONLY -> "View-only record. Actions are disabled for this path.";
             case LOCKED -> presentation.nextStep();
         };

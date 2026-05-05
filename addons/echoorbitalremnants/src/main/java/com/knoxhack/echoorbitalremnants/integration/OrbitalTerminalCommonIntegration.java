@@ -41,7 +41,7 @@ public final class OrbitalTerminalCommonIntegration {
                 List.of(
                         "Orbital Remnants remains playable from its standalone ECHO-7 terminal item because orbit cannot assume any shared console survived the fall.",
                         "When ECHO Terminal is installed, shared tabs mirror route status and expose the same field SCAN channel used by the Orbital terminal.",
-                        "Treat the route as post-Nexus recovery: every launch, relay, and survey is ECHO-7 testing whether ECHO-0 still owns the sky."),
+                        "Treat the route as post-Nexus recovery: stage the Emergency Rocket on a real pad, then let every relay and survey test whether ECHO-0 still owns the sky."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 OrbitalTerminalIds.id("orbital_ashfall_handoff"),
@@ -49,9 +49,9 @@ public final class OrbitalTerminalCommonIntegration {
                 "Post-Nexus Orbital Handoff",
                 "OPEN",
                 List.of(
-                        "Orbital calibration waits for an ECHO: Ashfall Protocol Nexus choice when Ashfall is installed.",
-                        "Restore, Destroy, or Control all create the same field fact: Earth made a decision the quarantine must answer.",
-                        "After the choice, ECHO-7 can reopen the route from ruined Earth to Station ECHO debris and ask what fell before the pod did."),
+                        "Orbital calibration no longer waits for Ashfall's legacy Nexus choice; Chapter IV owns the Core route.",
+                        "Restore, Destroy, Control, or Merge now belong to ECHO: Nexus Protocol, while orbit remains the quarantine route between Ashfall and Stationfall.",
+                        "ECHO-7 can reopen the route from ruined Earth to Station ECHO debris and ask what fell before the pod did."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 OrbitalTerminalIds.id("echo_zero_quarantine_context"),

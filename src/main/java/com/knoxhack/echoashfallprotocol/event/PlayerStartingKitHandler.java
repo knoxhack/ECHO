@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.storage.LevelData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -58,7 +59,9 @@ public class PlayerStartingKitHandler {
         // Check if player has received starting kit (using persistent data)
         CompoundTag playerData = player.getPersistentData();
         if (playerData.getBoolean("ashes_of_tomorrow.received_kit").orElse(false)) {
-            rescueUndergroundStartingPod(player);
+            if (!rescueUndergroundStartingPod(player)) {
+                repairMissingDropPodRespawn(player);
+            }
             return; // Already received kit
         }
 
@@ -101,8 +104,7 @@ public class PlayerStartingKitHandler {
                     interior.getZ() + 0.5);
             player.setYRot(0f);
             player.setXRot(0f);
-            // NOTE: setRespawnPosition signature changed in the current target (now takes RespawnConfig).
-            // Skipping respawn anchor for now \u2014 player will respawn at world spawn.
+            setDropPodRespawn(player, level, interior, true);
             QuestData quest = player.getData(ModAttachments.QUEST_DATA.get());
             quest.setDropPodInitialized(true);
             player.setData(ModAttachments.QUEST_DATA.get(), quest);
@@ -131,32 +133,54 @@ public class PlayerStartingKitHandler {
                 && entry.interior().getY() >= MIN_STARTING_SURFACE_Y;
     }
 
-    private static void rescueUndergroundStartingPod(ServerPlayer player) {
+    private static boolean rescueUndergroundStartingPod(ServerPlayer player) {
         if (player.blockPosition().getY() >= MIN_STARTING_SURFACE_Y || !(player.level() instanceof ServerLevel level)) {
-            return;
+            return false;
         }
 
         StartingDropPodData podData = StartingDropPodData.get(level);
         if (podData.findForPlayer(player.getUUID()).filter(entry -> !isReusableStartingPod(entry)).isEmpty()) {
-            return;
+            return false;
         }
 
         BlockPos origin = findStartingPodOrigin(level, podData);
         BlockPos interior = ProceduralStructureGenerator.placeStartingDropPod(level, origin, level.getRandom());
         if (interior == null) {
-            return;
+            return false;
         }
 
         podData.addOrReplace(player.getUUID(), origin, interior);
         player.teleportTo(interior.getX() + 0.5, interior.getY(), interior.getZ() + 0.5);
         player.setYRot(0f);
         player.setXRot(0f);
+        setDropPodRespawn(player, level, interior, true);
         player.sendSystemMessage(Component.literal("\u00A7b[ECHO-7]\u00A7r Unsafe underground crash site detected. Relocating to surface pod."));
         EchoAshfallProtocol.LOGGER.warn(
                 "Relocated {} from invalid underground starting drop pod to {} from origin {}.",
                 player.getName().getString(),
                 interior,
                 origin);
+        return true;
+    }
+
+    private static void repairMissingDropPodRespawn(ServerPlayer player) {
+        if (player.getRespawnConfig() != null || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        StartingDropPodData.get(level).findForPlayer(player.getUUID())
+                .filter(PlayerStartingKitHandler::isReusableStartingPod)
+                .ifPresent(entry -> setDropPodRespawn(player, level, entry.interior(), false));
+    }
+
+    private static void setDropPodRespawn(ServerPlayer player, ServerLevel level, BlockPos interior, boolean overwriteExisting) {
+        if (interior == null || (!overwriteExisting && player.getRespawnConfig() != null)) {
+            return;
+        }
+
+        player.setRespawnPosition(
+                new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(level.dimension(), interior, 0.0F, 0.0F), true),
+                false);
     }
 
     private static BlockPos findStartingPodOrigin(ServerLevel level, StartingDropPodData podData) {

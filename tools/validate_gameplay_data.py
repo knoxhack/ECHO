@@ -1943,7 +1943,7 @@ def check_terminal_mission_browser_source_guards(errors: list[str]) -> None:
         screen + browser + ui + ashfall_terminal + orbital_terminal,
         (
             "sidebarNavigation",
-            "contentH = Math.max(170",
+            "footerTop - contentY - 8",
             "TerminalUi.densePanel",
             "TerminalUi.denseDataCard",
             "TerminalUi.compactButton",
