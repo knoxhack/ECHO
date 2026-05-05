@@ -6,8 +6,9 @@ Use this checklist before publishing a release jar.
 
 1. Run `.\gradlew.bat :echoorbitalremnants:build` from the ECHO workspace root.
 2. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` from the ECHO workspace root.
-3. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.4.0.jar`.
+3. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
 4. Confirm the `terminal_mission_cache_state` and `terminal_mission_integration` GameTests pass when the shared ECHO Terminal is present in the local runtime.
+5. Confirm Core/Terminal/Ashfall stack versions are aligned: ECHO Core `1.1.0`, ECHO Terminal `1.1.0`, Ashfall Protocol `1.3.0`, and Orbital Remnants `1.5.0`.
 
 ## Clean Survival Smoke Test
 
@@ -28,6 +29,7 @@ Use this checklist before publishing a release jar.
 4. Complete Earth calibration and confirm the Earth Calibration mission becomes claimable in Orbital ECHO.
 5. Claim the support cache once, verify utility items are delivered or stored through the Terminal reward service, and confirm a second claim does not duplicate rewards.
 6. Repeat before and after an Ashfall Nexus choice in the full stack to confirm the lock reason and unlock handoff stay clear.
+7. Confirm What Now shows Orbital blockers, Route Records lists Earth Recontact / Launch Chain / Route Worlds / ECHO-0 Quarantine, Vitals includes Orbital hazard telemetry while in route dimensions, Faction Atlas shows Orbital Remnant / Void Salvagers / Nexus Choir standings, and Reward Inbox agrees with standalone cache state.
 
 ## Creative Route Smoke Test
 
@@ -59,6 +61,6 @@ Use this checklist before publishing a release jar.
 ## Release Sanity
 
 1. Check `README.md`, `guide.md`, `CHANGELOG.md`, and `KNOWN_ISSUES.md` for the shipped version.
-2. Upload only the latest `1.4.0` jar.
+2. Upload only the latest `1.5.0` jar.
 3. Include the known issues and feedback link in the release notes.
 4. Record the manual smoke-test result in the release verification notes.

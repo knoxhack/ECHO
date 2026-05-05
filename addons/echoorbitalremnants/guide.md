@@ -2,7 +2,7 @@
 
 Earth made its choice below. Orbit still calls it quarantine.
 
-This guide describes the current terminal-led progression path for ECHO: Orbital Remnants.
+This guide describes the current `1.5.0` terminal-led progression path for ECHO: Orbital Remnants.
 
 ## Lore Spine
 
@@ -15,7 +15,7 @@ Core canon:
 - ECHO-7 is a damaged rescue fragment under ECHO-0's old authority, but it behaves as a field operator first.
 - Gridfall crossed orbit when ECHO-0 tried to contain a deep-space Nexus signal.
 - ECHO-0 quarantined Earth because it believes life below must stay silent to starve the Nexus.
-- Resolving ECHO-0 breaks the quarantine; the post-ECHO survey network is the aftermath and stabilization arc.
+- Resolving ECHO-0 breaks the quarantine; the post-ECHO-0 survey network is the aftermath and stabilization arc.
 
 ## Compatibility Model
 
@@ -23,7 +23,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 
 The first Earth orbital calibration stays locked until the player makes any ECHO: Ashfall Protocol Nexus choice: Restore, Destroy, or Control. After that, ECHO-7 progression behaves normally because the quarantine has a field fact to answer. The main ECHO terminal displays Orbital Remnants mission progress, archive logs, codex references, route flags, suit telemetry, station power, and faction standings.
 
-With ECHO: Terminal installed, Orbital Remnants registers three shared terminal surfaces: Orbital Command for the current route brief and SCAN action, Orbital Survey for repair/survey counts, and Orbital ECHO for mission records. These mission records can grant once-only utility support caches through the shared Terminal reward service. They never replace Orbital's standalone ECHO-7 item, scan authority, route rewards, boss rewards, or faction contract progression.
+With ECHO: Terminal installed, Orbital Remnants registers shared terminal surfaces for Orbital Command, Orbital Survey, and Orbital ECHO mission records. It also publishes ECHO Core route records, What Now diagnostics, hazard telemetry, Faction Atlas standing, and once-only utility support caches through the shared Terminal reward service. These surfaces never replace Orbital's standalone ECHO-7 item, scan authority, route rewards, encounter rewards, or faction contract progression.
 
 ## Quick Start
 
@@ -62,13 +62,13 @@ The terminal shows:
 - Faction standings
 - Active faction contract and requirement
 - Shared Terminal mission cache claim status when ECHO: Terminal is installed
-- ECHO HELP reminders for blocked scans, surveys, contracts, and final completion
+- ECHO NOTE reminders for blocked scans, surveys, contracts, and final completion
 - Lunar Signal and Deep Space Protocol state
 - A dedicated SURVEY tab with each route's repair chain, scan hook, local hazard, reward, and completion state
 
 If an older save already resolved ECHO-0, scanning with the terminal syncs the ECHO-0 Resolved advancement.
 
-Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO HELP line keeps the route practical: use SCAN when blocked, check SURVEY after ECHO-0, use Signal Analyzer shard recovery if Nexus landmarks are hard to find, and pledge to a faction for the final contract loop.
+Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO NOTE line keeps the route practical: use SCAN when blocked, check SURVEY after ECHO-0, use Signal Analyzer shard recovery if Nexus landmarks are hard to find, and pledge to a faction for the final contract loop.
 
 ## Earth Recovery Sites
 
@@ -88,7 +88,7 @@ Early fallback recipes keep the first launch out of Nether-gated materials: an E
 
 ## Mid-Game Route Objectives
 
-v1.4.0 completes the route repairs between the first orbital launch and ECHO-0. Each chain needs three unique generated sites. Stand near the objective block, carry the matching repair resource, and press SCAN. Survival scans consume one repair item; creative and infinite-material players bypass consumption. Duplicate sites report clearly and do not consume another repair item.
+The current route objective pass completes the route repairs between the first orbital launch and ECHO-0. Each chain needs three unique generated sites. Stand near the objective block, carry the matching repair resource, and press SCAN. Survival scans consume one repair item; creative and infinite-material players bypass consumption. Duplicate sites report clearly and do not consume another repair item.
 
 | Route | Objective Block | Repair Item | Completion Reward |
 |---|---|---|---|
@@ -318,7 +318,7 @@ On arrival:
 - Provides a final route cache with Nexus supplies and a Nexus Stabilizer Shard.
 - Spawns ECHO-0 and anomaly threats.
 - Resolving ECHO-0 breaks the quarantine, grants the ECHO-0 Resolved advancement, and delivers a faction-influenced reward bundle once.
-- After ECHO-0, scan three Nexus Anchor/Growth sites or Nexus Stabilizer Shards to complete the post-ECHO survey network, receive a Stabilized ECHO Core, and prepare the final network seal.
+- After ECHO-0, scan three Nexus Anchor/Growth sites or Nexus Stabilizer Shards to complete the post-ECHO-0 survey network, receive a Stabilized ECHO Core, and prepare the final network seal.
 
 Sneak-use route vessels from a space route to return to the saved docking vector.
 
@@ -333,10 +333,10 @@ Sneak-use route vessels from a space route to return to the saved docking vector
 | Corrupted Docking AI | Vents suit pressure and guards the first orbital deck. |
 | Lunar Nexus Husk | Spikes radiation and pressure in the lunar crater. |
 | The Abandoned Captain | Drains oxygen and pressure around the Mars habitat. |
-| Europa Cryo Warden | Mini-boss that destabilizes pressure near Europa arrays and rewards thermal prep. |
+| Europa Cryo Warden | Major encounter that destabilizes pressure near Europa arrays and rewards thermal prep. |
 | ECHO-0 | Final anomaly encounter; escalates through oxygen, pressure, and radiation phases. |
 
-Boss-tier encounters show boss bars. Defeating them sends a terminal report and may grant route-relevant rewards.
+Major encounters show command bars. Defeating them sends a terminal report and may grant route-relevant rewards.
 
 ## Weapons
 
@@ -354,15 +354,17 @@ Weapons are active right-click tools with cooldown and durability use.
 
 Faction pledge items are consumable alignment contracts. After pledging, the ECHO tab assigns a lightweight faction contract. Contracts are completed with SCAN, persist in the terminal progress data, and use a short cooldown so one scan cannot double-grant rewards. Blocked reports now distinguish wrong dimension, missing proof item, Nexus Choir before ECHO-0, cooldown, and no-pledge states.
 
+In the full ECHO stack, Orbital Remnant, Void Salvagers, and Nexus Choir standing is also mirrored into ECHO Core so the shared Faction Atlas can show service state, last contact, active contract context, and route affinity beside Ashfall factions.
+
 | Faction Item | Alignment | Pledge Reward | Contract Proof | Contract Reward Style |
 |---|---|---|---|---|
 | Orbital Remnant Badge | Orbital Remnant | Oxygen Booster and suit sealant support | Low Orbit Signal Relay or Orbit Survey Data | oxygen, canisters, and sealant |
 | Void Salvager Marker | Void Salvagers | Orbital alloy, vacuum circuits, and cargo upgrade materials | orbital salvage scan or Orbital Alloy plus Vacuum Circuit | machine inputs and navigation parts |
-| Nexus Choir Sigil | Nexus Choir | Nexus dust and risky endgame pulse weapon access | post-ECHO Nexus Anchor/Growth or Nexus Stabilizer Shard | Nexus dust, cryo support, and emergency oxygen |
+| Nexus Choir Sigil | Nexus Choir | Nexus dust and risky endgame pulse weapon access | post-ECHO-0 Nexus Anchor/Growth or Nexus Stabilizer Shard | Nexus dust, cryo support, and emergency oxygen |
 
-The Nexus Choir contract is locked behind ECHO-0 because it depends on post-ECHO anchor readings. Completing any faction contract grants the Faction Contract Complete advancement.
+The Nexus Choir contract is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any faction contract grants the Faction Contract Complete advancement.
 
-Inside ECHO: Ashfall Protocol, Orbital Remnant maps to Remnants-style recovery notes, Void Salvagers map to Salvager-style notes, and Nexus Choir remains an endgame archive/intel thread about forbidden post-ECHO anchor readings.
+Inside ECHO: Ashfall Protocol, Orbital Remnant maps to Remnants-style recovery notes, Void Salvagers map to Salvager-style notes, and Nexus Choir remains an endgame archive/intel thread about dangerous post-ECHO-0 anchor readings.
 
 ## Advancements
 
@@ -410,6 +412,7 @@ The generator creates deterministic pixel-art textures, item model definitions, 
 - Build or launch Orbital without the shared terminal addon and verify the standalone terminal item remains usable.
 - Run both before a Nexus choice and confirm orbital calibration is locked.
 - Make a Nexus choice and confirm Earth calibration opens.
+- Confirm What Now, Route Records, Vitals, Faction Atlas, and Reward Inbox mirror Orbital state without replacing standalone ECHO-7 progression.
 - Progress through orbit, Moon, Mars, Europa, Deep Space Protocol, and ECHO-0.
 - Complete at least one faction contract from the ECHO tab.
 - Seal the final survey network and confirm Orbital Remnants Complete appears in the ECHO tab.

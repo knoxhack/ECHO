@@ -54,9 +54,9 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
 
     public Component summary() {
         if (ready) {
-            return Component.literal("Launch Status: READY");
+            return Component.literal("Launch status: READY");
         }
-        return Component.literal("Launch Status: INCOMPLETE (" + missing.size() + " missing)");
+        return Component.literal("Launch status: HOLD (" + missing.size() + " missing)");
     }
 
     private static void require(Player player, List<Component> missing, ItemLike item, String name) {
@@ -67,7 +67,7 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
 
     private static void requireInfrastructure(Player player, List<Component> missing) {
         if (!hasLaunchPlatformGrid(player)) {
-            missing.add(Component.literal("- complete nearby 5x5 Launch Platform"));
+            missing.add(Component.literal("- complete nearby 5x5 Launch Platform grid"));
         }
         requireNearbyBlock(player, missing, ModBlocks.ROCKET_ASSEMBLY_FRAME.get(), "nearby Rocket Assembly Frame");
         requireNearbyBlock(player, missing, ModBlocks.FUEL_REFINERY.get(), "nearby Fuel Refinery");

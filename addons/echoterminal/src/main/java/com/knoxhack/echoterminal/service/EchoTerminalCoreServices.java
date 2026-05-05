@@ -54,7 +54,7 @@ public final class EchoTerminalCoreServices {
                 }
                 boolean stored = terminal.storeRewards(missionId, rewards);
                 if (stored) {
-                    player.sendSystemMessage(Component.literal("[ECHO-7] Rewards stored in terminal."), true);
+                    player.sendSystemMessage(Component.literal("[ECHO-7] Support cache stored in terminal."), true);
                 }
                 return stored;
             }
@@ -64,10 +64,16 @@ public final class EchoTerminalCoreServices {
                 EchoTerminalBlockEntity terminal = findOwnedTerminal(player);
                 return terminal != null && terminal.claimAllRewards(player);
             }
+
+            @Override
+            public int pendingRewardCount(Player player) {
+                EchoTerminalBlockEntity terminal = findOwnedTerminal(player);
+                return terminal == null ? 0 : terminal.getStoredRewardCount();
+            }
         });
     }
 
-    private static EchoTerminalBlockEntity findOwnedTerminal(ServerPlayer player) {
+    private static EchoTerminalBlockEntity findOwnedTerminal(Player player) {
         if (player == null) {
             return null;
         }

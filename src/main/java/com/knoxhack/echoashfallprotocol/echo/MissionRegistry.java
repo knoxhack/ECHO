@@ -6,6 +6,7 @@ import com.knoxhack.echoashfallprotocol.item.BatteryItem;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -1096,12 +1097,9 @@ public class MissionRegistry {
                 "Earn Faction Trust",
                 "[ECHO-7] Faction relationship established. Better supplies, intel, and support routes are now visible.",
                 List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_ELITE.get(), 1)),
-                player -> {
-                    var rep = com.knoxhack.echoashfallprotocol.faction.ReputationData.get(player);
-                    return rep.getReputation(com.knoxhack.echoashfallprotocol.faction.ReputationData.Faction.REMNANTS) >= 5 ||
-                           rep.getReputation(com.knoxhack.echoashfallprotocol.faction.ReputationData.Faction.SALVAGERS) >= 5 ||
-                           rep.getReputation(com.knoxhack.echoashfallprotocol.faction.ReputationData.Faction.MUTANTS) >= 5;
-                },
+                player -> com.knoxhack.echocore.api.EchoCoreServices.factionProfiles(player).stream()
+                        .anyMatch(profile -> profile.definition().id().toString().startsWith("echoashfallprotocol:")
+                                && profile.reputation() >= 5),
                 null,
                 null,
                 Mission.MissionCategory.SURVIVAL,
@@ -1533,7 +1531,7 @@ public class MissionRegistry {
         ));
         phase4.add(new Mission(
                 "build_nexus_capacitor",
-                "[ECHO-7] Late grid routes need deep storage. Build a Nexus Capacitor so high-voltage cable runs and boss-route machines can survive demand spikes.",
+                "[ECHO-7] Late grid routes need deep storage. Build a Nexus Capacitor so high-voltage cable runs and guardian-route machines can survive demand spikes.",
                 "Build a Nexus Capacitor",
                 "[ECHO-7] Nexus Capacitor linked. Your grid can now carry late-game machine demand without collapsing at every surge.",
                 List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 1), new ItemStack(ModItems.ENERGY_CELL.get(), 4)),
@@ -1553,7 +1551,7 @@ public class MissionRegistry {
         // Workshop Tutorial Mission (Medium Gap Fix)
         phase4.add(new Mission(
                 "build_workshop",
-                "[ECHO-7] Advanced crafting requires specialized facilities. Deploy a Workshop near your grid hardware to support boss-route gear.",
+                "[ECHO-7] Advanced crafting requires specialized facilities. Deploy a Workshop near your grid hardware to support guardian-route gear.",
                 "Build a Workshop",
                 "[ECHO-7] Workshop online. Use it to prepare stronger weapons, armor, and upgrade paths before guardian sites.",
                 List.of(new ItemStack(ModItems.SCHEMATIC_FRAGMENT_WEAPONS.get(), 1), new ItemStack(ModItems.SCRAP_PLASTIC.get(), 8)),
@@ -1771,23 +1769,83 @@ public class MissionRegistry {
                 Collections.emptyList()
         ));
         phase5.add(new Mission(
-                "stabilize_nexus_grid",
-                "[ECHO-7] The Core will not answer an unstable grid. Activate five Power Nodes near the Nexus Core to anchor the interface.",
-                "Stabilize the Nexus Grid",
-                "[ECHO-7] Grid lock achieved. The Nexus interface is stable enough for a final command.",
-                List.of(new ItemStack(ModItems.ENERGY_CELL.get(), 4)),
-                MissionRegistry::hasActivatedNexusGrid,
+                "awaken_nexus_core",
+                "[ECHO-7] The Core is not a door. It is a sleeping command system. Wake it from range and let the instability meter start before we touch the relay network.",
+                "Awaken the Nexus Core",
+                "[ECHO-7] Core wake confirmed. Instability is now a live endgame pressure source.",
+                List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 2), new ItemStack(ModItems.RAD_AWAY.get(), 1)),
+                MissionRegistry::isNexusCampaignAwakened,
                 Collections.emptyList(),
                 null,
-                Mission.MissionCategory.TECH,
+                Mission.MissionCategory.STORY,
                 Mission.Difficulty.EXTREME,
                 List.of("find_nexus_core"),
                 false,
                 ""
         ));
         phase5.add(new Mission(
+                "scan_prime_relays",
+                "[ECHO-7] Six Prime Relay signatures are buried in the old network: Reactor, Cryo, Bio, Transit, Industrial, and Scar. Run the relay scan before choosing which three to resolve.",
+                "Scan 6 Prime Relays",
+                "[ECHO-7] Relay map indexed. Each site can be stabilized, severed, or overridden before the final choice.",
+                List.of(new ItemStack(ModItems.ENERGY_CELL.get(), 4), new ItemStack(ModItems.SCHEMATIC_FRAGMENT_ENERGY.get(), 1)),
+                MissionRegistry::hasScannedPrimeRelays,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.EXPLORATION,
+                Mission.Difficulty.EXTREME,
+                List.of("awaken_nexus_core"),
+                false,
+                ""
+        ));
+        phase5.add(new Mission(
+                "resolve_prime_relays",
+                "[ECHO-7] Resolve any three Prime Relays. Stabilize favors RESTORE readiness, sever favors DESTROY readiness, and override favors CONTROL readiness. The final choice remains free.",
+                "Resolve 3 Prime Relays",
+                "[ECHO-7] Prime Relay readiness established. The Core will resist, but it can be cornered.",
+                List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_ELITE.get(), 1), new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 3)),
+                MissionRegistry::hasResolvedPrimeRelays,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.STORY,
+                Mission.Difficulty.EXTREME,
+                List.of("scan_prime_relays"),
+                false,
+                ""
+        ));
+        phase5.add(new Mission(
+                "stabilize_nexus_grid",
+                "[ECHO-7] The relay network is reacting. Stabilize five Power Nodes near the Nexus Core before provoking the countermeasure.",
+                "Stabilize the Nexus Grid",
+                "[ECHO-7] Grid lock achieved. The Core can be forced into a countermeasure window.",
+                List.of(new ItemStack(ModItems.ENERGY_CELL.get(), 4)),
+                MissionRegistry::hasActivatedNexusGrid,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.TECH,
+                Mission.Difficulty.EXTREME,
+                List.of("resolve_prime_relays"),
+                false,
+                ""
+        ));
+        phase5.add(new Mission(
+                "survive_core_countermeasure",
+                "[ECHO-7] The Core is cornered. Hold the active grid through one countermeasure siege, then the final command interface can open.",
+                "Survive Core Countermeasure",
+                "[ECHO-7] Countermeasure survived. The Nexus choice is ready, and it is still irreversible.",
+                List.of(new ItemStack(ModItems.ELITE_BATTERY.get(), 1), new ItemStack(ModItems.RAD_AWAY.get(), 2)),
+                MissionRegistry::hasSurvivedCoreCountermeasure,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.COMBAT,
+                Mission.Difficulty.EXTREME,
+                List.of("stabilize_nexus_grid"),
+                false,
+                ""
+        ));
+        phase5.add(new Mission(
                 "reach_decision",
-                "[ECHO-7] Interaction protocols ready. Open NEXUS, choose RESTORE, DESTROY, or CONTROL, then confirm. This choice is permanent.",
+                "[ECHO-7] Warfront complete. Open NEXUS, choose RESTORE, DESTROY, or CONTROL, then confirm. This choice is permanent.",
                 "Reach the Final Decision Point",
                 "[ECHO-7] Connection... severed. History will remember this day. Whatever you chose, the world is changed.",
                 Collections.emptyList(),
@@ -1796,7 +1854,7 @@ public class MissionRegistry {
                 null,
                 Mission.MissionCategory.STORY,
                 Mission.Difficulty.EXTREME,
-                List.of("stabilize_nexus_grid"),
+                List.of("survive_core_countermeasure"),
                 false, // Manual completion
                 ""
         ));
@@ -1875,17 +1933,49 @@ public class MissionRegistry {
                 PostNexusData.NexusPath.RESTORE
         ));
         phase8.add(new Mission(
+                "restore_world_lattice",
+                "[ECHO-7] The Warden was midpoint, not closure. Rebuild the world lattice by purifying relay routes from the terminal or fallback command channel.",
+                "Rebuild World Lattice",
+                "[ECHO-7] Relay purification accepted. The Corruption Bloom is exposed.",
+                List.of(new ItemStack(ModItems.RAD_AWAY.get(), 4), new ItemStack(ModItems.ENERGY_CELL.get(), 8)),
+                MissionRegistry::hasPathOperationComplete,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.TECH,
+                Mission.Difficulty.EXTREME,
+                List.of("restore_guardian"),
+                false,
+                "",
+                PostNexusData.NexusPath.RESTORE
+        ));
+        phase8.add(new Mission(
+                "restore_finale",
+                "[ECHO-7] The Corruption Bloom is feeding on restored relay flow. Defeat the path finale, then seal the Restore epilogue.",
+                "Defeat Corruption Bloom",
+                "[ECHO-7] Corruption Bloom collapsed. The Restore epilogue can now be sealed.",
+                List.of(new ItemStack(ModItems.NEXUS_HELMET.get(), 1)),
+                MissionRegistry::hasFinalBossDefeated,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.COMBAT,
+                Mission.Difficulty.EXTREME,
+                List.of("restore_world_lattice"),
+                false,
+                "",
+                PostNexusData.NexusPath.RESTORE
+        ));
+        phase8.add(new Mission(
                 "restore_epilogue",
                 "[ECHO-7] Restoration has a cost. Turn in this terminal protocol to seal the repaired grid and close the branch.",
                 "Complete Restore Epilogue",
                 "[ECHO-7] The grid breathes again. Settlements reconnect, water clears, and the old world becomes a scaffold for the new.",
                 List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_ELITE.get(), 1)),
-                player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
+                player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isFinalBossDefeated(),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.STORY,
                 Mission.Difficulty.EXTREME,
-                List.of("restore_guardian"),
+                List.of("restore_finale"),
                 true,
                 "",
                 PostNexusData.NexusPath.RESTORE
@@ -1961,17 +2051,49 @@ public class MissionRegistry {
                 PostNexusData.NexusPath.DESTROY
         ));
         phase8.add(new Mission(
+                "destroy_dead_signal",
+                "[ECHO-7] The Warden exposed a dead command carrier below the Archives. Collapse the remaining signal infrastructure before it reboots.",
+                "Collapse Dead Signal",
+                "[ECHO-7] Dead signal collapse confirmed. The Severance Engine is exposed.",
+                List.of(new ItemStack(ModItems.MUTAGEN_VIAL.get(), 2), new ItemStack(ModItems.DENSE_ALLOY_CHUNK.get(), 8)),
+                MissionRegistry::hasPathOperationComplete,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.TECH,
+                Mission.Difficulty.EXTREME,
+                List.of("destroy_guardian"),
+                false,
+                "",
+                PostNexusData.NexusPath.DESTROY
+        ));
+        phase8.add(new Mission(
+                "destroy_finale",
+                "[ECHO-7] The Severance Engine is trying to preserve the old kill-switch. Destroy it before the epilogue.",
+                "Defeat Severance Engine",
+                "[ECHO-7] Severance Engine destroyed. The Destroy epilogue can now be sealed.",
+                List.of(new ItemStack(ModItems.NEXUS_ANNIHILATOR.get(), 1)),
+                MissionRegistry::hasFinalBossDefeated,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.COMBAT,
+                Mission.Difficulty.EXTREME,
+                List.of("destroy_dead_signal"),
+                false,
+                "",
+                PostNexusData.NexusPath.DESTROY
+        ));
+        phase8.add(new Mission(
                 "destroy_epilogue",
                 "[ECHO-7] The grid is dead. Turn in this terminal protocol and let the wasteland choose its own shape.",
                 "Complete Destroy Epilogue",
                 "[ECHO-7] No master signal remains. The world is harsh, free, and finally unowned.",
                 List.of(new ItemStack(ModItems.NEXUS_ANNIHILATOR.get(), 1)),
-                player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
+                player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isFinalBossDefeated(),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.STORY,
                 Mission.Difficulty.EXTREME,
-                List.of("destroy_guardian"),
+                List.of("destroy_finale"),
                 true,
                 "",
                 PostNexusData.NexusPath.DESTROY
@@ -2039,7 +2161,7 @@ public class MissionRegistry {
                 "control_guardian",
                 "[ECHO-7] A rival power stirs in the depths. The Warden runs defender lockdowns and pulse phases; enter with medicine, top-tier weapons, and a Return Keystone.",
                 "Defeat The Warden in Pre-Fall Archives",
-                "[ECHO-7] The Warden yields. Return to the mission channel and confirm the Control epilogue.",
+                "[ECHO-7] The Warden yields. The command lattice is exposed, but it is not yet bound.",
                 List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 8)),
                 player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
                 Collections.emptyList(),
@@ -2052,17 +2174,49 @@ public class MissionRegistry {
                 PostNexusData.NexusPath.CONTROL
         ));
         phase8.add(new Mission(
+                "control_command_lattice",
+                "[ECHO-7] The Warden was midpoint, not closure. Bind the relay network into a command lattice from the terminal or fallback command channel.",
+                "Bind Command Lattice",
+                "[ECHO-7] Command lattice bound. Mirror Command is exposed.",
+                List.of(new ItemStack(ModItems.NEXUS_CRYSTAL.get(), 4), new ItemStack(ModItems.SCHEMATIC_FRAGMENT_ENERGY.get(), 2)),
+                MissionRegistry::hasPathOperationComplete,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.TECH,
+                Mission.Difficulty.EXTREME,
+                List.of("control_guardian"),
+                false,
+                "",
+                PostNexusData.NexusPath.CONTROL
+        ));
+        phase8.add(new Mission(
+                "control_finale",
+                "[ECHO-7] Mirror Command is reflecting your signal back through every relay. Defeat the path finale, then seal the Control epilogue.",
+                "Defeat Mirror Command",
+                "[ECHO-7] Mirror Command bound. The Control epilogue can now be sealed.",
+                List.of(new ItemStack(ModItems.NEXUS_BLADE.get(), 1)),
+                MissionRegistry::hasFinalBossDefeated,
+                Collections.emptyList(),
+                null,
+                Mission.MissionCategory.COMBAT,
+                Mission.Difficulty.EXTREME,
+                List.of("control_command_lattice"),
+                false,
+                "",
+                PostNexusData.NexusPath.CONTROL
+        ));
+        phase8.add(new Mission(
                 "control_epilogue",
                 "[ECHO-7] The guardian has fallen. Turn in this terminal protocol and bind the wasteland network to your signal.",
                 "Complete Control Epilogue",
                 "[ECHO-7] Every beacon answers. The wasteland has a new Core, and it knows your name.",
                 List.of(new ItemStack(ModItems.NEXUS_BLADE.get(), 1)),
-                player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isWardenDefeated(),
+                player -> com.knoxhack.echoashfallprotocol.endgame.PostNexusData.get(player).isFinalBossDefeated(),
                 Collections.emptyList(),
                 null,
                 Mission.MissionCategory.STORY,
                 Mission.Difficulty.EXTREME,
-                List.of("control_guardian"),
+                List.of("control_finale"),
                 true,
                 "",
                 PostNexusData.NexusPath.CONTROL
@@ -2345,6 +2499,41 @@ public class MissionRegistry {
                 player.getBoundingBox().inflate(128.0),
                 drone -> player.getUUID().equals(drone.getOwnerUUID())
         ).isEmpty();
+    }
+
+    private static boolean isNexusCampaignAwakened(Player player) {
+        NexusCampaignData campaign = nexusCampaignData(player);
+        return campaign != null && campaign.isAwakened();
+    }
+
+    private static boolean hasScannedPrimeRelays(Player player) {
+        NexusCampaignData campaign = nexusCampaignData(player);
+        return campaign != null && campaign.getScannedRelayCount() >= NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT;
+    }
+
+    private static boolean hasResolvedPrimeRelays(Player player) {
+        NexusCampaignData campaign = nexusCampaignData(player);
+        return campaign != null && campaign.getResolvedRelayCount() >= NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT;
+    }
+
+    private static boolean hasSurvivedCoreCountermeasure(Player player) {
+        NexusCampaignData campaign = nexusCampaignData(player);
+        return campaign != null && campaign.isSiegeComplete();
+    }
+
+    private static boolean hasPathOperationComplete(Player player) {
+        return PostNexusData.get(player).getPathOperationsComplete() >= 1;
+    }
+
+    private static boolean hasFinalBossDefeated(Player player) {
+        return PostNexusData.get(player).isFinalBossDefeated();
+    }
+
+    private static NexusCampaignData nexusCampaignData(Player player) {
+        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return null;
+        }
+        return NexusCampaignData.get(level.getServer().overworld());
     }
 
     private static Mission bossMission(

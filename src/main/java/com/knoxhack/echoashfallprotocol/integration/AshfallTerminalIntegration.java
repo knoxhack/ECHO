@@ -12,6 +12,7 @@ import com.knoxhack.echoashfallprotocol.echo.MissionRegistry;
 import com.knoxhack.echoashfallprotocol.echo.MissionUxSummary;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.endgame.NexusAccessRules;
+import com.knoxhack.echoashfallprotocol.endgame.NexusCampaignActions;
 import com.knoxhack.echoashfallprotocol.endgame.NexusChoiceService;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
@@ -104,6 +105,7 @@ public final class AshfallTerminalIntegration {
     private static final Identifier CLAIM_REWARDS = id("claim_terminal_rewards");
     private static final Identifier DRONE_COMMAND = id("drone_command");
     private static final Identifier NEXUS_CHOICE = id("nexus_choice");
+    private static final Identifier NEXUS_WARFRONT = id("nexus_warfront");
     private static final AshfallMissionProvider ASHFALL_MISSION_PROVIDER = new AshfallMissionProvider();
     private static final AshfallSideOpsProvider ASHFALL_SIDE_OPS_PROVIDER = new AshfallSideOpsProvider();
 
@@ -134,6 +136,7 @@ public final class AshfallTerminalIntegration {
         TerminalActionRegistry.register(DRONE, DRONE_COMMAND,
                 (player, payload) -> ModNetwork.handleDroneCommand(new DroneCommandPacket(payload), player));
         TerminalActionRegistry.register(NEXUS, NEXUS_CHOICE, AshfallTerminalIntegration::chooseNexusPath);
+        TerminalActionRegistry.register(NEXUS, NEXUS_WARFRONT, AshfallTerminalIntegration::handleNexusWarfront);
 
         registerFieldManualEntries();
     }
@@ -185,7 +188,7 @@ public final class AshfallTerminalIntegration {
                 "OPEN",
                 List.of(
                         "Nine biome guardian signals hold the old grid in place. Each one is buried beneath a region that still remembers how the world failed.",
-                        "Each guardian has a unique boss profile, surface entrance, arena route, defender set, and reward bundle. Scan, prepare, descend, and leave nothing unresolved."),
+                        "Each guardian has a unique threat profile, surface entrance, arena route, defender set, and reward bundle. Scan, prepare, descend, and leave nothing unresolved."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_drone_manual"),
@@ -203,7 +206,7 @@ public final class AshfallTerminalIntegration {
                 "Nexus Path Interface",
                 "OPEN",
                 List.of(
-                        "The Nexus Core can commit RESTORE, DESTROY, or CONTROL once the guardian chain is resolved and five Power Nodes are active.",
+                        "The Nexus Core can commit RESTORE, DESTROY, or CONTROL once the guardian chain, Warfront relays, countermeasure siege, and five Power Nodes are resolved.",
                         "RESTORE repairs what remains, DESTROY breaks the machine that broke the world, and CONTROL binds the grid to your signal. None of these routes are innocent.",
                         "The chosen path is mirrored through ECHO Core services so addon chapters can react without owning Ashfall's route state."),
                 false));
@@ -264,6 +267,10 @@ public final class AshfallTerminalIntegration {
 
     private static void chooseNexusPath(ServerPlayer player, String payload) {
         NexusChoiceService.applyChoice(player, payload);
+    }
+
+    private static void handleNexusWarfront(ServerPlayer player, String payload) {
+        NexusCampaignActions.handleTerminalAction(player, payload);
     }
 
     private abstract static class AshfallTab implements TerminalTab {
@@ -735,7 +742,7 @@ public final class AshfallTerminalIntegration {
             return new TerminalMissionChapter(
                     id("ashfall_protocol"),
                     "ECHO-7 PROTOCOL CHAIN",
-                    "Survival progression, drone repair, Nexus decisions, route data, and wasteland field operations.",
+                    "Required ECHO-7 field protocols for crash survival, route recovery, drone support, buried nodes, and the Nexus decision.",
                     10,
                     0xFF66D9FF,
                     true);
@@ -761,7 +768,8 @@ public final class AshfallTerminalIntegration {
             Mission mission = MissionRegistry.getMissionById(ashfallId);
             if (mission == null) {
                 return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F,
-                        "LOCKED", "Unknown Ashfall protocol.", "Unknown protocol record.", List.of());
+                        "LOCKED", "Ashfall protocol signal missing.",
+                        "ECHO-7 has no clean field record for this identifier. Reopen the protocol chain from a known objective.", List.of());
             }
             QuestData quest = QuestData.get(player);
             QuestData.MissionStatus status = quest.getMissionStatus(mission.id());
@@ -789,7 +797,7 @@ public final class AshfallTerminalIntegration {
                             : TerminalMissionAction.disabled(TURN_IN.getPath(), "TURN IN", turnInReason(player, quest, mission, status, current, completeNow, preview)),
                     pendingRewards
                             ? TerminalMissionAction.enabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS")
-                            : TerminalMissionAction.disabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS", "No pending reward cache for this protocol."));
+                            : TerminalMissionAction.disabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS", "No sealed support cache is waiting for this protocol."));
             String reason = terminalStatus == TerminalMissionStatus.LOCKED || terminalStatus == TerminalMissionStatus.VIEW_ONLY
                     ? unlockReason(player, quest, mission)
                     : "";
@@ -1079,7 +1087,7 @@ public final class AshfallTerminalIntegration {
                         2,
                         1,
                         "Identify the first living social signal in the wasteland.",
-                        "Remnants, Salvagers, and Mutant enclaves each read Gridfall differently. Contacting any faction proves the ruins are not empty; they are contested.",
+                        "Ten Ashfall factions now carry the living social signal, with old Remnant, Salvager, and Mutant channels bridged into Echo Core standing where legacy routes still speak that language.",
                         "Reach any faction job site and open first contact.",
                         "Crossband stable. ECHO can now separate military order, salvage economy, and biological adaptation threads.",
                         "first_faction_contact",
@@ -1111,7 +1119,7 @@ public final class AshfallTerminalIntegration {
                         "Resolve the first buried guardian signal and classify the node lattice.",
                         "Every guardian is a local scar with a system role: sentinel, colossus, stalker, juggernaut, hive, behemoth, overseer, warlord, or avatar. The first defeat proves the chain is physical, not just signal noise.",
                         "Neutralize any biome guardian through the main Ashfall route.",
-                        "Guardian lattice archived. The Nexus Core is defended by places, not just bosses.",
+                        "Guardian lattice archived. The Nexus Core is defended by places, not just weapons.",
                         "deploy_stationary_scanner",
                         SideOpCheck.ANY_GUARDIAN,
                         stack(Items.BEACON),
@@ -1153,7 +1161,7 @@ public final class AshfallTerminalIntegration {
             return new TerminalMissionChapter(
                     id("ashfall_side_ops"),
                     "ECHO-7 SIGNAL LEADS",
-                    "Optional lore, recon, and world-context objectives derived from existing Ashfall progress.",
+                    "Optional lore, recon, and world-context objectives: useful route context first, deeper Gridfall echoes underneath.",
                     20,
                     0xFFFFD166,
                     true);
@@ -1203,7 +1211,7 @@ public final class AshfallTerminalIntegration {
                     op.title(),
                     op.briefing(),
                     snapshot.actionHint(),
-                    op.phaseTitle() + " / optional lore",
+                    op.phaseTitle() + " / field recon",
                     snapshot.status() == TerminalMissionStatus.COMPLETED ? "success"
                             : snapshot.status() == TerminalMissionStatus.UNLOCKED ? "active" : "muted",
                     List.of("Optional", op.phaseTitle(), op.requirementLabel()),
@@ -1239,7 +1247,7 @@ public final class AshfallTerminalIntegration {
                     op.title(),
                     op.briefing(),
                     op.fieldGuide(),
-                    "Optional Lore",
+                    "Field Recon",
                     "Recon",
                     op.iconStack(),
                     List.of(op.unlockMissionId().isBlank() ? "No prerequisite" : objectiveName(op.unlockMissionId())),
@@ -1251,7 +1259,7 @@ public final class AshfallTerminalIntegration {
                             1,
                             complete)),
                     List.of(TerminalMissionReward.text("Archive Context",
-                            "Adds tactical lore context only; main progression and rewards stay unchanged.")));
+                            "Adds tactical field context only; required route progress and caches stay unchanged.")));
         }
 
         private static SideOp sideOp(Identifier id) {
@@ -2276,12 +2284,12 @@ public final class AshfallTerminalIntegration {
                     "Survive the opening crash by stabilizing water, food, shelter, filters, and the damaged ECHO terminal.",
                     "Use this as the baseline checklist whenever a route pushes into a harsher biome or a louder part of the old signal.",
                     "Keep clean water, cooked food, spare filters, and a safe return point.",
-                    "Current protocol: " + MissionUxSummary.current(state.player(), state.quest()).shortTitle(),
+                    "Active route: " + MissionUxSummary.current(state.player(), state.quest()).shortTitle(),
                     List.of("Stable early base", "Terminal reward flow", "Drone repair path"),
-                    List.of("Missions remain the source of truth for completion and rewards."),
+                    List.of("ECHO validates completion from field state before releasing sealed caches."),
                     "This protocol is always available.", "Open the terminal after the crash."));
             entries.add(entry(state, "start_missions", CodexCategory.START, CodexEntryType.PROTOCOL,
-                    "Mission And Reward Flow", "OPEN", CodexUnlockRule.ALWAYS, "",
+                    "Mission Route Flow", "OPEN", CodexUnlockRule.ALWAYS, "",
                     "ECHO missions unlock in order, verify progress against world state, and store many rewards in the terminal.",
                     "Use the mission browser for active objectives, then return here for context when the next order feels too quiet.",
                     "Claim pending rewards before crafting late-step machines or route items.",
@@ -2341,7 +2349,7 @@ public final class AshfallTerminalIntegration {
                     "Carry medicine before entering reactor basements or red-zone routes.",
                     "Visited radiation routes: " + countContains(state.quest().getVisitedBiomes(), "radiation"),
                     List.of("RadAway value", "Reactor cleanup rewards"),
-                    List.of("Radiation Behemoth turns this hazard into a boss mechanic."),
+                    List.of("Radiation Behemoth turns this hazard into an encounter rule."),
                     "Radiation records are locked.", "Enter or scan a radiation route."));
             entries.add(entry(state, "hazards_cold", CodexCategory.HAZARDS, CodexEntryType.HAZARD,
                     "Cryo Cold And Freeze Control", "HAZARD", CodexUnlockRule.VISITED_BIOME, "cryo",
@@ -2371,12 +2379,12 @@ public final class AshfallTerminalIntegration {
                     List.of("Guardian entrances are tracked separately once a guardian mission is active."),
                     "Exploration records are locked.", "Move beyond the crash site."));
             entries.add(entry(state, "exploration_guardian_sites", CodexCategory.EXPLORATION, CodexEntryType.SITE,
-                    "Guardian Entrances", "BOSS ROUTE", CodexUnlockRule.ANY_GUARDIAN_MISSION, "",
-                    "Each biome guardian has a surface entrance and an underground boss site. The entrance is the warning; the arena is the argument.",
-                    "Follow the compass before combat; once the boss is live, the HUD points to the boss instead.",
+                    "Guardian Entrances", "GUARDIAN ROUTE", CodexUnlockRule.ANY_GUARDIAN_MISSION, "",
+                    "Each biome guardian has a surface entrance and an underground threat site. The entrance is the warning; the arena is the argument.",
+                    "Follow the compass before combat; once the guardian is live, the HUD points to the active threat instead.",
                     "Clear side rooms, mark exits, and prepare counterplay before entering the arena.",
                     "Active guardian missions unlocked: " + unlockedGuardianMissionCount(state.quest()),
-                    List.of("Mission-smart compass", "Boss arena route", "Guardian reward bundle"),
+                    List.of("Mission-smart compass", "Guardian arena route", "Guardian reward bundle"),
                     List.of("Defeated sites stop providing compass targets."),
                     "Guardian site records are locked.", "Progress until ECHO identifies a biome guardian route."));
             for (BiomeGuardianProfile profile : BiomeGuardianProfiles.all()) {
@@ -2392,14 +2400,14 @@ public final class AshfallTerminalIntegration {
                     List.of("The chosen path is mirrored through ECHO Core services for addons."),
                     "Nexus Core records are locked.", "Neutralize all biome guardians."));
             entries.add(entry(state, "nexus_warden", CodexCategory.NEXUS, CodexEntryType.BOSS,
-                    "The Warden", "ARCHIVE BOSS", CodexUnlockRule.POST_NEXUS_CHOICE, "",
+                    "The Warden", "ARCHIVE THREAT", CodexUnlockRule.POST_NEXUS_CHOICE, "",
                     "The Warden guards the Pre-Fall Archives after a Nexus choice is made. It protects history from decay, theft, and anyone trying to write the ending alone.",
                     "Break defender lockdowns, survive archive pulses, and claim the final protocol route.",
                     "Bring endgame armor, medicine, sustained damage, and room to clear defenders.",
                     state.post().isWardenDefeated() ? "Warden defeated." : "Warden unresolved.",
                     List.of("Warden Archive Cipher", "Nexus crystals", "Dense alloy", "Energy cells", "Final protocol readiness"),
-                    List.of("The cinematic boss HUD uses Archive Lockdown as its warning line."),
-                    "Archive boss records are locked.", "Make a Nexus choice first."));
+                    List.of("The encounter HUD uses Archive Lockdown as its warning line."),
+                    "Archive threat records are locked.", "Make a Nexus choice first."));
             addOrbitalEntries(entries, state);
             return entries;
         }
@@ -2410,7 +2418,7 @@ public final class AshfallTerminalIntegration {
             boolean defeated = state.quest().getEntityKills(profile.entityId()) > 0
                     || state.quest().isMissionCompleted(profile.missionId());
             return entry(state, "guardian_" + profile.bossPath(), CodexCategory.GUARDIANS, CodexEntryType.BOSS,
-                    profile.title(), defeated ? "DEFEATED" : "BOSS SIGNAL",
+                    profile.title(), defeated ? "DEFEATED" : "GUARDIAN SIGNAL",
                     CodexUnlockRule.MISSION_UNLOCKED, profile.missionId(),
                     polish.codexSummary() + " " + profile.lore(),
                     profile.mechanicHint(),
@@ -2441,12 +2449,12 @@ public final class AshfallTerminalIntegration {
                     "Orbital records are locked.", "Make an Ashfall Nexus choice to unlock orbital calibration."));
             entries.add(entry(state, "orbital_suit", CodexCategory.ORBITAL, CodexEntryType.PROTOCOL,
                     "Suit Systems", "LIFE SUPPORT", CodexUnlockRule.POST_NEXUS_CHOICE, "",
-                    "Orbital bosses pressure oxygen, pressure seals, radiation, gravity, and thermal systems. In orbit, survival is not a health bar; it is a checklist with teeth.",
-                    "Treat suit health as a boss resource, not just travel flavor.",
+                    "Major orbital encounters pressure oxygen, pressure seals, radiation, gravity, and thermal systems. In orbit, survival is not a health bar; it is a checklist with teeth.",
+                    "Treat suit health as encounter-critical, not travel flavor.",
                     "Carry oxygen cells, sealant patches, thermal support, and route-specific parts.",
                     orbitalProgressLine(state),
                     List.of("Oxygen", "Pressure", "Radiation", "Thermal recovery"),
-                    List.of("Boss HUD subtitles name the suit system under pressure."),
+                    List.of("Encounter HUD subtitles name the suit system under pressure."),
                     "Suit telemetry is locked.", "Calibrate orbital contact or open the Orbital tab after Nexus."));
             entries.add(orbitalBossEntry(state, "orbital_docking_ai", "Corrupted Docking AI", "Docking AI",
                     "Airlock pressure and reserve drones turn Station ECHO safety systems hostile. The station is still trying to protect itself from the living.",
@@ -2462,21 +2470,21 @@ public final class AshfallTerminalIntegration {
                     "europa_cryo_ocean", "Thermal stabilizer and Europa probe array."));
             entries.add(orbitalBossEntry(state, "orbital_echo_zero", "ECHO-0", "ECHO-0",
                     "The final orbital quarantine fight attacks oxygen, pressure, radiation, and Nexus stabilization. ECHO-0 is not malfunctioning; it is obeying the worst order it ever received.",
-                    "Stabilize suit systems, survive quarantine pulses, and finish the post-ECHO network.",
+                    "Stabilize suit systems, survive quarantine pulses, and finish the post-ECHO-0 network.",
                     "nexus_anomaly_belt", "Nexus Drive Core and faction-sensitive final rewards."));
         }
 
         private CodexEntry orbitalBossEntry(CodexState state, String id, String title, String label,
                 String description, String prep, String milestone, String rewards) {
             return entry(state, id, CodexCategory.ORBITAL, CodexEntryType.BOSS,
-                    title, "ORBITAL BOSS", CodexUnlockRule.ORBITAL_INTEL, milestone,
+                    title, "ORBITAL THREAT", CodexUnlockRule.ORBITAL_INTEL, milestone,
                     description,
-                    "The cinematic boss HUD tracks this encounter as " + label + " during live combat.",
+                    "The encounter HUD tracks this threat as " + label + " during live combat.",
                     prep,
                     orbitalProgressLine(state),
                     List.of(rewards, "Orbital Black Box archive proof."),
-                    List.of("Orbital boss rewards and progress flags remain owned by the addon."),
-                    "Orbital boss records are locked.", "Advance Orbital Remnants until this route milestone is mirrored.");
+                    List.of("Orbital encounter rewards and progress flags remain owned by the addon."),
+                    "Orbital encounter records are locked.", "Advance Orbital Remnants until this route milestone is mirrored.");
         }
 
         private CodexEntry entry(CodexState state, String id, CodexCategory category, CodexEntryType type,
@@ -2577,9 +2585,9 @@ public final class AshfallTerminalIntegration {
             MACHINES("MACHINES", "Power, research, fabrication, and grid infrastructure."),
             HAZARDS("HAZARDS", "Environmental pressure and the counterplay that keeps routes survivable."),
             EXPLORATION("FIELD ROUTES", "POIs, entrances, route records, and field mapping."),
-            GUARDIANS("GUARDIANS", "Biome boss dossiers generated from guardian profiles."),
+            GUARDIANS("GUARDIANS", "Biome guardian dossiers generated from threat profiles."),
             NEXUS("NEXUS", "Core choice, Archive Warden, and endgame protocol state."),
-            ORBITAL("ECHO-0", "Mirrored addon route systems, suit pressure, and space boss intel.");
+            ORBITAL("ECHO-0", "Mirrored addon route systems, suit pressure, and orbital threat intel.");
 
             private final String label;
             private final String summary;
@@ -2604,7 +2612,7 @@ public final class AshfallTerminalIntegration {
             MACHINE("MACHINE"),
             HAZARD("HAZARD"),
             SITE("SITE"),
-            BOSS("BOSS"),
+            BOSS("THREAT"),
             ROUTE("ROUTE"),
             LORE("LORE");
 
@@ -2717,7 +2725,7 @@ public final class AshfallTerminalIntegration {
                     + " / Unread: " + intel.getUnreadCount(), x, y, w, TerminalUi.TEXT);
             MissionUxSummary summary = MissionUxSummary.current(context.player(), quest);
             int cy = y + 22;
-            line(context, graphics, "Current protocol: " + summary.shortTitle(), x, cy, w,
+            line(context, graphics, "Active route: " + summary.shortTitle(), x, cy, w,
                     summaryColor(summary));
             cy = wrap(context, graphics, "Next: " + summary.nextStep(), x, cy + 14, w,
                     summaryColor(summary)) + 6;
@@ -3155,6 +3163,23 @@ public final class AshfallTerminalIntegration {
             cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Guardians",
                     guardians.missingCount() == 0,
                     guardians.resolvedCount() + "/" + guardians.totalCount() + " resolved");
+            cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Core status",
+                    HudState.isNexusCampaignAwakened(),
+                    HudState.isNexusCampaignAwakened()
+                            ? "Instability " + HudState.getNexusInstability() + "%"
+                            : "Dormant");
+            cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Prime relays",
+                    HudState.getNexusRelaysResolved() >= 3,
+                    HudState.getNexusRelaysScanned() + "/6 scanned, "
+                            + HudState.getNexusRelaysResolved() + "/3 resolved");
+            cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Path readiness",
+                    HudState.getNexusRelaysResolved() >= 3,
+                    "R" + HudState.getNexusReadinessRestore()
+                            + " / D" + HudState.getNexusReadinessDestroy()
+                            + " / C" + HudState.getNexusReadinessControl());
+            cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "Siege status",
+                    HudState.isNexusSiegeComplete(),
+                    HudState.isNexusSiegeComplete() ? "Countermeasure survived" : "Core siege pending");
             cy = TerminalUi.checklistRow(context, graphics, x + 18, cy, panelW - 36, "World seal",
                     state == NexusWorldData.WorldState.NORMAL, sealed ? NexusAccessRules.stateLabel(state) : "Ready for first commitment");
 
@@ -3175,8 +3200,10 @@ public final class AshfallTerminalIntegration {
                                 ? (pendingChoice.isBlank()
                                         ? "Status: READY. Select a path once, then confirm; this choice is permanent."
                                         : "Confirm " + pendingChoice + " to seal this path. No second prompt follows.")
-                                : choiceBlockedReason(state, core, guardians),
+                                : choiceBlockedReason(state, post, core, guardians),
                         x + 18, summaryTextY, panelW - 36, ready ? TerminalUi.GREEN : TerminalUi.AMBER);
+                drawWarfrontCommands(context, graphics, x + 14, summaryY + summaryH - 48, panelW - 28,
+                        sealed, post, mouseX, mouseY);
             }
 
             drawPathBrief(context, graphics, briefX, briefY, briefW, topH, state, ready, core, guardians);
@@ -3207,15 +3234,28 @@ public final class AshfallTerminalIntegration {
             int cy = TerminalUi.flatDataPanel(context, graphics,
                     x, y, width, height, "PATH BRIEF", "", 0xFFC77DFF);
             cy += 7;
-            int rowH = Math.max(46, (height - (cy - y) - 24) / 3);
+            List<String> relayLines = HudState.getNexusRelaySummaryLines();
+            int rowH = relayLines.isEmpty()
+                    ? Math.max(46, (height - (cy - y) - 24) / 3)
+                    : Math.max(36, (height - (cy - y) - 88) / 3);
             pathRow(context, graphics, x + 18, cy, width - 36, rowH, TerminalIcon.STATUS,
-                    "RESTORE", "First: repair 3 Power Nodes. Archives, Warden, epilogue. Permanent route.", ready, TerminalUi.GREEN);
+                    "RESTORE", "Warfront, Archives/Warden, Corruption Bloom, purification seal. Permanent route.", ready, TerminalUi.GREEN);
             cy += rowH + 8;
             pathRow(context, graphics, x + 18, cy, width - 36, rowH, TerminalIcon.NEXUS,
-                    "DESTROY", "First: break 5 Power Nodes. Archives, Warden, epilogue. Permanent route.", ready, TerminalUi.RED);
+                    "DESTROY", "Warfront, Archives/Warden, Severance Engine, collapse seal. Permanent route.", ready, TerminalUi.RED);
             cy += rowH + 8;
             pathRow(context, graphics, x + 18, cy, width - 36, rowH, TerminalIcon.ENDGAME,
-                    "CONTROL", "First: place 3 beacons. Archives, Warden, epilogue. Permanent route.", ready, 0xFFC77DFF);
+                    "CONTROL", "Warfront, Archives/Warden, Mirror Command, command seal. Permanent route.", ready, 0xFFC77DFF);
+            if (!relayLines.isEmpty()) {
+                int relayY = cy + rowH + 9;
+                TerminalUi.line(context, graphics, "RELAY NETWORK", x + 18, relayY, width - 36, TerminalUi.AMBER);
+                relayY += 13;
+                int maxLines = Math.min(6, Math.max(1, (y + height - relayY - 4) / 11));
+                for (int i = 0; i < Math.min(maxLines, relayLines.size()); i++) {
+                    TerminalUi.line(context, graphics, relayLines.get(i), x + 20, relayY, width - 40, TerminalUi.MUTED);
+                    relayY += 11;
+                }
+            }
         }
 
         private static void pathRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -3263,7 +3303,7 @@ public final class AshfallTerminalIntegration {
             }
             String reason = ready
                     ? "Status: READY. Select a path once, then confirm; this choice is permanent."
-                    : choiceBlockedReason(state, core, guardians);
+                    : choiceBlockedReason(state, PostNexusData.get(context.player()), core, guardians);
             int checklistWidth = panelW - 16;
             int height = 10 + 14 + 4;
             height += checklistHeight(context, checklistWidth, core.nearbyCore() ? "Nearby" : "Stand near unresolved Nexus Core");
@@ -3272,6 +3312,8 @@ public final class AshfallTerminalIntegration {
                             ? core.activatedNodes() + "/" + NexusCoreBlock.REQUIRED_NODES + " active"
                             : "--/" + NexusCoreBlock.REQUIRED_NODES + " active");
             height += checklistHeight(context, checklistWidth, guardians.resolvedCount() + "/" + guardians.totalCount() + " resolved");
+            height += checklistHeight(context, checklistWidth, HudState.getNexusRelaysResolved() + "/3 resolved");
+            height += checklistHeight(context, checklistWidth, HudState.isNexusSiegeComplete() ? "Complete" : "Pending");
             height += checklistHeight(context, checklistWidth, "Ready for first commitment");
             height += 6;
             height += Math.max(23, TerminalUi.wrappedHeight(context, reason, panelW - 14) + 14) + 8;
@@ -3284,7 +3326,63 @@ public final class AshfallTerminalIntegration {
             return TerminalUi.wrappedHeight(context, detail, Math.max(24, width - split)) + 3;
         }
 
-        private static String choiceBlockedReason(NexusWorldData.WorldState state,
+        private void drawWarfrontCommands(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int width, boolean sealed, PostNexusData post, int mouseX, int mouseY) {
+            int gap = 6;
+            int buttonH = 18;
+            int rowW = Math.max(1, width);
+            int smallW = Math.max(62, (rowW - gap * 2) / 3);
+            boolean canPrep = !sealed && !HudState.isNexusWarfrontComplete();
+            boolean needsEncounter = canPrep
+                    && HudState.isNexusCampaignAwakened()
+                    && HudState.getNexusRelaysScanned() >= 6
+                    && HudState.getNexusRelaysResolved() < 3;
+            drawWarfrontCommand(context, graphics, x, y, smallW, buttonH, "WAKE", "awaken",
+                    canPrep && !HudState.isNexusCampaignAwakened(), mouseX, mouseY);
+            drawWarfrontCommand(context, graphics, x + smallW + gap, y, smallW, buttonH, "SCAN", "scan",
+                    canPrep && HudState.isNexusCampaignAwakened() && HudState.getNexusRelaysScanned() < 6, mouseX, mouseY);
+            drawWarfrontCommand(context, graphics, x + (smallW + gap) * 2, y,
+                    Math.max(62, rowW - (smallW + gap) * 2), buttonH,
+                    needsEncounter ? "FIGHT" : "SIEGE",
+                    needsEncounter ? "encounter" : "siege",
+                    needsEncounter || (canPrep && HudState.getNexusRelaysResolved() >= 3 && !HudState.isNexusSiegeComplete()),
+                    mouseX, mouseY);
+
+            int rowY = y + buttonH + 5;
+            drawWarfrontCommand(context, graphics, x, rowY, smallW, buttonH, "STABILIZE", "relay:stabilize",
+                    canPrep && HudState.getNexusRelaysResolved() < 3 && HudState.getNexusRelaysScanned() >= 6, mouseX, mouseY);
+            drawWarfrontCommand(context, graphics, x + smallW + gap, rowY, smallW, buttonH, "SEVER", "relay:sever",
+                    canPrep && HudState.getNexusRelaysResolved() < 3 && HudState.getNexusRelaysScanned() >= 6, mouseX, mouseY);
+            boolean finalAct = sealed && post.hasMadeChoice() && post.isWardenDefeated();
+            if (finalAct) {
+                boolean operationComplete = post.getPathOperationsComplete() >= 1;
+                drawWarfrontCommand(context, graphics, x + (smallW + gap) * 2, rowY,
+                        Math.max(62, rowW - (smallW + gap) * 2), buttonH,
+                        operationComplete ? "FINALE" : "OPERATION",
+                        operationComplete ? "finale" : "operation",
+                        !post.isFinalBossDefeated(), mouseX, mouseY);
+            } else {
+                drawWarfrontCommand(context, graphics, x + (smallW + gap) * 2, rowY,
+                        Math.max(62, rowW - (smallW + gap) * 2), buttonH, "OVERRIDE", "relay:override",
+                        canPrep && HudState.getNexusRelaysResolved() < 3 && HudState.getNexusRelaysScanned() >= 6,
+                        mouseX, mouseY);
+            }
+        }
+
+        private void drawWarfrontCommand(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int width, int height, String label, String payload,
+                boolean enabled, int mouseX, int mouseY) {
+            boolean hover = enabled && TerminalUi.inside(mouseX, mouseY, x, y, width, height);
+            if (enabled) {
+                TerminalUi.button(context, graphics, x, y, width, label, descriptor().accentColor(), true, hover);
+            } else {
+                TerminalUi.button(context, graphics, x, y, width, label, TerminalUi.MUTED, false, false);
+            }
+            addHitbox(x, y, width, height, enabled,
+                    () -> context.sendAction(NEXUS, NEXUS_WARFRONT, payload));
+        }
+
+        private static String choiceBlockedReason(NexusWorldData.WorldState state, PostNexusData post,
                 ClientCoreStatus core, ClientGuardianStatus guardians) {
             if (state != NexusWorldData.WorldState.NORMAL) {
                 return "Choice already committed for this world.";
@@ -3301,6 +3399,9 @@ public final class AshfallTerminalIntegration {
                 return "Restore " + (NexusCoreBlock.REQUIRED_NODES - core.activatedNodes())
                         + " more Power Nodes near the Core.";
             }
+            if (!warfrontReady(post)) {
+                return "Resolve three Prime Relays and survive the Core countermeasure siege.";
+            }
             return "Server validation required.";
         }
 
@@ -3309,7 +3410,16 @@ public final class AshfallTerminalIntegration {
             return clientWorldState(post) == NexusWorldData.WorldState.NORMAL
                     && core.nearbyCore()
                     && core.activatedNodes() >= NexusCoreBlock.REQUIRED_NODES
-                    && guardians.missingCount() == 0;
+                    && guardians.missingCount() == 0
+                    && warfrontReady(post);
+        }
+
+        private static boolean warfrontReady(PostNexusData post) {
+            return HudState.isNexusWarfrontComplete()
+                    || (HudState.isNexusCampaignAwakened()
+                            && HudState.getNexusRelaysResolved() >= 3
+                            && HudState.isNexusSiegeComplete())
+                    || (post.getRelaysResolved() >= 3 && post.getSiegesSurvived() >= 1);
         }
 
         private static boolean pendingChoiceExpired(Player player) {

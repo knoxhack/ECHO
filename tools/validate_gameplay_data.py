@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MODID = "echoashfallprotocol"
 KNOWN_NAMESPACES = {MODID, "minecraft"}
 JAVA_ROOT = ROOT / "src/main/java/com/knoxhack/echoashfallprotocol"
+CORE_JAVA_ROOT = ROOT / "core/echocore/src/main/java/com/knoxhack/echocore"
 ORBITAL_JAVA_ROOT = ROOT / "addons/echoorbitalremnants/src/main/java/com/knoxhack/echoorbitalremnants"
 TERMINAL_JAVA_ROOT = ROOT / "addons/echoterminal/src/main/java/com/knoxhack/echoterminal"
 DATA_ROOT = ROOT / f"src/main/resources/data/{MODID}"
@@ -920,6 +921,14 @@ def read_source(relative_path: str, errors: list[str]) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def read_core_source(relative_path: str, errors: list[str]) -> str:
+    path = CORE_JAVA_ROOT / relative_path
+    if not path.exists():
+        errors.append(f"MISSING_SOURCE_GUARD {path.relative_to(ROOT)}")
+        return ""
+    return path.read_text(encoding="utf-8")
+
+
 def read_orbital_source(relative_path: str, errors: list[str]) -> str:
     path = ORBITAL_JAVA_ROOT / relative_path
     if not path.exists():
@@ -940,6 +949,192 @@ def require_source_tokens(label: str, text: str, tokens: Iterable[str], errors: 
     for token in tokens:
         if token not in text:
             errors.append(f"MISSING_SOURCE_TOKEN {label}: {token}")
+
+
+def check_echo_core_faction_source_guards(errors: list[str]) -> None:
+    core_sources = "".join(
+        read_core_source(f"api/{name}.java", errors)
+        for name in (
+            "EchoFactionDefinition",
+            "EchoFactionStanding",
+            "EchoFactionProfile",
+            "EchoFactionContract",
+            "EchoFactionContractState",
+            "EchoFactionAction",
+            "EchoFactionActionResult",
+            "EchoFactionInteractionSnapshot",
+            "EchoFactionActionHandlerService",
+            "EchoDialogueTree",
+            "EchoNpcRole",
+            "EchoFactionPoiAffinity",
+            "EchoFactionRegistry",
+            "EchoFactionDataService",
+            "EchoCoreServices",
+        )
+    )
+    ashfall_factions = read_source("faction/AshfallBiomeFactions.java", errors)
+    ashfall_services = read_source("integration/AshfallCoreServices.java", errors)
+    ashfall_interactions = read_source("faction/AshfallFactionInteractionHandler.java", errors)
+    ashfall_contracts = read_source("faction/AshfallFactionContracts.java", errors)
+    ashfall_contract_progression = read_source("faction/AshfallFactionContractProgression.java", errors)
+    ashfall_contract_data = read_source("faction/AshfallFactionContractData.java", errors)
+    ashfall_services_runtime = read_source("faction/AshfallFactionServices.java", errors)
+    ashfall_npc = read_source("entity/faction/FactionNpcEntity.java", errors)
+    ashfall_dialogue = read_source("faction/FactionNpcDialogueService.java", errors)
+    ashfall_population = read_source("faction/FactionNpcPopulationHandler.java", errors)
+    ashfall_bridge = read_source("faction/AshfallFactionBridge.java", errors)
+    ashfall_mod_entities = read_source("entity/ModEntities.java", errors)
+    ashfall_client = read_source("EchoAshfallProtocolClient.java", errors)
+    faction_screen = read_source("client/screen/FactionDialogueScreen.java", errors)
+    faction_open_packet = read_source("network/FactionDialogueOpenPacket.java", errors)
+    faction_action_packet = read_source("network/FactionNpcActionPacket.java", errors)
+    mod_network = read_source("network/ModNetwork.java", errors)
+    migration = read_source("data/SaveMigrationHandler.java", errors)
+    reputation = read_source("faction/ReputationData.java", errors)
+    faction_quests = read_source("faction/FactionQuestData.java", errors)
+    orbital_factions = read_orbital_source("integration/OrbitalFactions.java", errors)
+    orbital_progress = read_orbital_source("progression/EchoTerminalProgress.java", errors)
+    orbital_services = read_orbital_source("integration/AshfallCompat.java", errors)
+    terminal_tabs = read_terminal_source("client/BuiltinTerminalTabs.java", errors)
+
+    require_source_tokens(
+        "Echo Core faction framework",
+        core_sources,
+        (
+            "record EchoFactionDefinition",
+            "enum EchoFactionStanding",
+            "record EchoFactionProfile",
+            "record EchoFactionContract",
+            "record EchoFactionContractState",
+            "record EchoFactionAction",
+            "record EchoFactionActionResult",
+            "record EchoFactionInteractionSnapshot",
+            "interface EchoFactionActionHandlerService",
+            "record EchoDialogueTree",
+            "record EchoNpcRole",
+            "record EchoFactionPoiAffinity",
+            "class EchoFactionRegistry",
+            "class EchoFactionDataService",
+            "echocore_factions",
+            "registerFaction(EchoFactionDefinition definition)",
+            "factionProfiles(Player player)",
+            "acceptFactionContract",
+            "completeFactionContract",
+            "factionContractState",
+            "syncFactionDataToClient",
+            "registerFactionActionHandler",
+            "performFactionAction",
+            "recordFactionInteraction",
+            "contact_count",
+            "last_interaction_tick",
+            "last_role_id",
+        ),
+        errors,
+    )
+
+    ashfall_ids = (
+        "survivor_network",
+        "ashland_rangers",
+        "dustline_freeholds",
+        "metro_archivists",
+        "rustworks_union",
+        "sporebound_sanctum",
+        "crashbreak_salvage",
+        "radwarden_compact",
+        "thawbound_collective",
+        "scarbound_conclave",
+    )
+    orbital_ids = ("orbital_remnants", "void_salvagers", "nexus_choir")
+    for faction_id in ashfall_ids:
+        if f'id("{faction_id}")' not in ashfall_factions and f'"{faction_id}"' not in ashfall_factions:
+            errors.append(f"MISSING_ASHFALL_CORE_FACTION {MODID}:{faction_id}")
+    if 'path + "_field_contract"' not in ashfall_factions + ashfall_contracts:
+        errors.append("MISSING_ASHFALL_FACTION_CONTRACT_FACTORY path + \"_field_contract\"")
+    for tier in ("_trusted_contract", "_aligned_contract"):
+        if tier not in ashfall_contracts:
+            errors.append(f"MISSING_ASHFALL_FACTION_CONTRACT_TIER {tier}")
+    for faction_id in orbital_ids:
+        if f'id("{faction_id}")' not in orbital_factions and f'"{faction_id}"' not in orbital_factions:
+            errors.append(f"MISSING_ORBITAL_CORE_FACTION echoorbitalremnants:{faction_id}")
+
+    require_source_tokens(
+        "Ashfall faction registration and legacy cleanup",
+        ashfall_factions + ashfall_services + migration + reputation + faction_quests + ashfall_bridge,
+        (
+            "AshfallBiomeFactions.register()",
+            "registerFactionActionHandler",
+            "Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID",
+            "resetLegacyProgress",
+            "clearLegacyFactionProgress",
+            "CURRENT_MIGRATION_VERSION = 2",
+            "Reset legacy Ashfall faction reputation and quests",
+            "coreFactionId(ReputationData.Faction faction)",
+            "EchoCoreServices.addFactionReputation",
+        ),
+        errors,
+    )
+    require_source_tokens(
+        "Playable Ashfall faction NPC interaction",
+        ashfall_interactions + ashfall_npc + ashfall_dialogue + ashfall_population
+        + ashfall_contracts + ashfall_contract_progression + ashfall_contract_data + ashfall_services_runtime
+        + faction_screen + faction_open_packet + faction_action_packet + mod_network
+        + ashfall_mod_entities + ashfall_client,
+        (
+            "class FactionNpcEntity",
+            "DATA_FACTION_ID",
+            "DATA_ROLE_ID",
+            "FactionNpcDialogueService.open",
+            "class FactionDialogueScreen",
+            "FactionDialogueOpenPacket",
+            "FactionNpcActionPacket",
+            "FACTION_NPC",
+            "FactionNpcRenderer",
+            "FactionNpcPopulationHandler",
+            "EchoFactionPoiAffinity",
+            "LOCAL_POI_HINT",
+            "handleFactionNpcAction",
+            "handleFactionDialogueOpen",
+            "ACCEPT_FACTION_CONTRACT_ACTION",
+            "COMPLETE_FACTION_CONTRACT_ACTION",
+            "AshfallFactionContractProgression",
+            "AshfallFactionContractData",
+            "progressLine",
+            "lockedReason",
+            "ServiceKind",
+        ),
+        errors,
+    )
+    require_source_tokens(
+        "Orbital faction mirror",
+        orbital_factions + orbital_progress + orbital_services,
+        (
+            "OrbitalFactions.register()",
+            "OrbitalFactions.sync(player, this)",
+            "Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID",
+            "orbitalRemnantStanding()",
+            "voidSalvagerStanding()",
+            "nexusChoirStanding()",
+            "setFactionReputation",
+            "markFactionContacted",
+        ),
+        errors,
+    )
+    require_source_tokens(
+        "Terminal faction atlas",
+        terminal_tabs,
+        (
+            "FactionAtlasTab",
+            "FACTION ATLAS",
+            "EchoCoreServices.factionProfiles",
+            "filterNamespace",
+            "NPC Roles",
+            "Service State",
+            "Last Contact",
+            "contactSummary(profile)",
+            "POI Affinity",
+        ),
+        errors,
+    )
 
 
 def check_top_risk_source_guards(errors: list[str]) -> None:
@@ -1846,6 +2041,7 @@ def main() -> int:
     check_item_definitions(registered, errors)
     check_structure_nbt_palettes(registered_blocks, errors)
     check_starting_drop_pod_templates(registered_blocks, errors)
+    check_echo_core_faction_source_guards(errors)
     check_top_risk_source_guards(errors)
     check_environmental_event_source_guards(errors)
     check_warden_arena_source_guards(errors)

@@ -1,5 +1,6 @@
 package com.knoxhack.echoterminal;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
@@ -40,6 +41,8 @@ public class EchoTerminal {
             EchoTerminalCoreServices.register();
             TerminalMissionRegistry.register(VanillaJourneyProvider.INSTANCE);
             TerminalMissionActions.registerForTab(VanillaJourneyProvider.TAB_ID);
+            LOGGER.info("ECHO platform providers after Terminal setup: {}",
+                    EchoCoreServices.platformProviderSummary());
         });
         LOGGER.info("ECHO: Terminal modular shell online.");
     }

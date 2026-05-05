@@ -1,18 +1,20 @@
 # ECHO: ASHFALL PROTOCOL - Modpack Overview
 
-ECHO: ASHFALL PROTOCOL is a post-apocalyptic survival overhaul for Minecraft 26.1.2 on NeoForge. It starts with a ruined drop pod, a damaged ECHO-7 AI, and a dead world full of toxic pockets, emergency water choices, unstable radiation, failed machines, hostile factions, and the still-running Nexus Core.
+ECHO: ASHFALL PROTOCOL is the main terrestrial chapter of the ECHO mod stack for Minecraft 26.1.2 on NeoForge. The current stack is `echocore` `1.1.0`, `echoterminal` `1.1.0`, `echoashfallprotocol` `1.3.0`, and optional `echoorbitalremnants` `1.5.0`.
 
-The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions while the records underneath imply a wider Gridfall quarantine story. `LORE_BIBLE.md` is the source of truth for mission wording, archive records, addon chapters, and future optional Signal Leads.
+Ashfall starts with a compact `20x10x20` armored drop pod, a damaged ECHO-7 AI, and a dead world full of toxic pockets, emergency water choices, unstable radiation, failed machines, faction pressure, and the still-running Nexus Core.
+
+The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions while the records underneath imply a wider Gridfall quarantine story. Mission wording, archive records, addon chapters, and optional Signal Leads all follow that same field-canon voice.
 
 ## Core Loop
 
 1. Survive the crash site.
-2. Scavenge debris, ruined vegetation, dead trees, and ruined machinery.
+2. Loot the visible pod lockers, secure the bed/ramp, then scavenge debris, ruined vegetation, dead trees, and ruined machinery.
 3. Build the first powered machine loop.
 4. Stabilize water, power, shelter, and expedition recovery tools.
 5. Explore POIs for substrates, schematics, faction intel, and power-node leads.
 6. Clear the nine buried biome guardian nodes that anchor the ruined regions.
-7. Restore enough grid infrastructure to access the Nexus Core.
+7. Wake the Nexus campaign, scan Prime Relays, resolve the warfront, and restore enough grid infrastructure to access the Nexus Core.
 8. Make the irreversible Nexus choice.
 9. Finish the chosen Restore, Destroy, or Control branch through the Pre-Fall Archives, The Warden, and the final epilogue.
 10. Continue into optional Orbital Remnants content if the addon is installed.
@@ -22,6 +24,8 @@ The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions w
 ECHO: Ashfall Protocol uses ECHO-7 missions as the main progression spine.
 
 The shared terminal also exposes **Signal Leads**: optional lore and recon records derived from existing progress. They explain crash telemetry, worldgen surface identity, POI signals, the POI Field Atlas, faction contact, drone memory, guardian nodes, Nexus choice context, and the ECHO-0 quarantine thread without blocking the main route or changing rewards.
+
+ECHO Core is the integration layer beneath that surface. It publishes pack mode, profile state, diagnostics, hazard telemetry, route records, reward inbox support, faction profiles/contracts/actions, POI affinity, terminal placement, intel mirrors, and Nexus campaign state so Ashfall, Terminal, and Orbital Remnants can share context without owning each other's save data.
 
 | Phase | Name | Focus |
 |---|---|---|
@@ -114,7 +118,7 @@ ECHO: Ashfall Protocol replaces peaceful overworld assumptions with ruined ecosy
 - **Cryogenic ruins:** cold-tech remnants and specialized threats.
 - **Nexus scars:** late-game anomalies tied to the Core.
 
-POIs include drop pods, survivor caches, wreck fields, bio labs, data centers, subway stations, military vaults, reactor ruins, relay sites, faction villages, industrial shells, scavenger camps, cryogenic ruins, and Nexus structures. Guardian POIs use visible surface entrances such as hatches, bunker doors, sinkholes, shafts, and breaches, then route the player into underground procedural arenas with access tunnels, loot rooms, hazard pockets, defenders, and a boss chamber.
+POIs include drop pods, survivor caches, wreck fields, bio labs, data centers, subway stations, military vaults, reactor ruins, relay sites, faction villages, industrial shells, scavenger camps, cryogenic ruins, and Nexus structures. Guardian POIs use visible surface entrances such as hatches, bunker doors, sinkholes, shafts, and breaches, then route the player into underground procedural control nodes with access tunnels, loot rooms, hazard pockets, defenders, and a final guardian chamber.
 
 ## Factions and Intel
 
@@ -128,17 +132,19 @@ The wasteland has three major social pressures:
 
 Reputation affects hostility, trade, patrol behavior, faction quests, village safety, and diplomacy. Factions can drift through alliance, truce, tension, skirmish, or open war. Raids and patrols make faction choices visible in the world.
 
-ECHO intelligence is gathered through drones, faction proximity, intercepted transmissions, dossiers, historical records, and tactical reports. The ECHO terminal exposes these through Field Archive, Route Map, Survival Index, and faction-related panels.
+ECHO intelligence is gathered through drones, faction proximity, faction NPC conversations, accepted contracts, POI affinity, intercepted transmissions, dossiers, historical records, and tactical reports. The ECHO terminal exposes these through Field Archive, Route Map, Survival Index, Faction Atlas, and faction-related panels.
+
+Faction NPCs use ECHO Core roles and dialogue snapshots. Ashfall registers Remnant, Salvager, and Mutant-side field contacts; Orbital Remnants mirrors Orbital Remnant, Void Salvagers, and Nexus Choir standings after the post-Nexus handoff.
 
 ## ECHO-7 Terminal
 
 The ECHO terminal is the player-facing command surface.
 
-- **PROTOCOL:** Command Deck, Protocol Roadmap, and Signal Leads for active route control, required objectives, and optional recon.
-- **FIELD:** Route Map, POI Atlas, Field Archive, Survival Index, and Baseline for routes, records, template recognition, recipes, and recovered Minecraft tasks.
-- **SYSTEMS:** Vitals Scan and Companion Link for hazard telemetry, mutation/research state, and drone commands.
-- **NEXUS:** Nexus Core for the final path interface and permanent choice confirmation.
-- **ORBITAL:** Orbital Command, Route Survey, and ECHO-0 Records when the optional addon is installed.
+- **PROTOCOL:** Command Deck, What Now, Mission Graph, Protocol Roadmap, and Signal Leads for active route control, required objectives, diagnostics, and optional recon.
+- **FIELD:** Route Map, POI Atlas, Route Records, Field Archive, Faction Atlas, Survival Index, and Baseline for routes, records, template recognition, faction state, recipes, and recovered Minecraft tasks.
+- **SYSTEMS:** Vitals, Companion Link, and Reward Inbox for hazard telemetry, mutation/research state, drone commands, and terminal-stored rewards.
+- **NEXUS:** Nexus Core for Prime Relay warfront prep, Core countermeasure siege readiness, final path interface, and permanent choice confirmation.
+- **ORBITAL:** Orbital Command, Route Survey, ECHO-0 Records, route records, diagnostics, support caches, and orbital faction standings when the optional addon is installed.
 
 The terminal should answer one practical question at all times: what should I stabilize, craft, scan, repair, or explore next?
 
@@ -168,7 +174,7 @@ Elite Salvager reputation unlocks a Rare Tech Schematic trade. Four generic Sche
 
 The Nexus Core is the final ECHO: Ashfall Protocol decision point. Before the Core route opens, all nine biome guardians must be defeated. They are buried Gridfall control nodes: Wasteland Sentinel, Plains Warlord, City Ruin Stalker, Industrial Juggernaut, Toxic Hive Matriarch, Crash Zone Colossus, Radiation Behemoth, Cryogenic Overseer, and Nexus Scar Avatar.
 
-Once the guardian chain and enough grid infrastructure are restored, the player chooses one path:
+Once the guardian chain is clear, the current warfront pass adds a final readiness layer: wake the Nexus campaign, scan six Prime Relays, resolve three relays by stabilizing/severing/overriding them, survive the Core countermeasure siege, and prepare the chosen path. Once that chain and enough grid infrastructure are restored, the player chooses one path:
 
 - **Restore:** rebuild the grid and pursue stabilization.
 - **Destroy:** end the Core permanently and free the ruins from its control.
@@ -182,20 +188,20 @@ When ECHO: Orbital Remnants is installed with ECHO: Ashfall Protocol, it becomes
 
 - Before any Nexus choice, Earth orbital calibration is locked by the quarantine handoff.
 - After any Nexus choice, Orbital Command can calibrate contact and continue the launch chain.
-- The ECHO terminal displays ECHO-0 Route Chain objectives, field records, Survival Index references, route flags, suit telemetry, station power, and orbital faction standings.
+- The ECHO terminal displays ECHO-0 Route Chain objectives, What Now diagnostics, route records, field records, Survival Index references, route flags, suit telemetry, station power, support caches, and orbital faction standings.
 - Orbital Remnants progress is not merged into the main Ashfall turn-in system; it is rendered as owned ORBITAL channels.
 
 Lore continuity: Gridfall breaks Earth, the pod fell from Station ECHO, ECHO-7 survives as a damaged field operator under ECHO-0's old authority, the Nexus choice reopens deep protocols, and Orbital Remnants follows the signal back into a quarantine system that still thinks silence is safety.
 
-## 1.2.0 Full Endgame Smoke Notes
+## 1.3.0 Full Stack Smoke Notes
 
 Recommended fresh-world checks:
 
-- First-night survival without relying on vanilla forests.
+- First-night survival inside the compact pod without relying on vanilla forests.
 - JEI visibility for custom machine/process recipes.
-- ECHO terminal guidance across Command Deck, Protocol Roadmap, Signal Leads, Route Map, Survival Index, Vitals Scan, Companion Link, Nexus Core, and ORBITAL.
+- ECHO terminal guidance across Command Deck, What Now, Mission Graph, Protocol Roadmap, Signal Leads, Route Map, POI Atlas, Route Records, Survival Index, Faction Atlas, Vitals, Companion Link, Reward Inbox, Nexus Core, and ORBITAL.
 - Drone repair/mode commands and Scout Drone fallback behavior.
-- Faction standings, trader rewards, POI cache identity, scanner route profiles, underground guardian routes, Nexus path objectives, Warden reward-once behavior, and post-Nexus Orbital Remnants presentation.
+- Faction NPC dialogue/contracts, faction standings, trader rewards, POI cache identity, scanner route profiles, underground guardian routes, Prime Relay warfront prep, Nexus path objectives, Warden reward-once behavior, and post-Nexus Orbital Remnants presentation.
 
 Known constraints:
 

@@ -1,5 +1,6 @@
 package com.knoxhack.echoterminal.client.mission;
 
+import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.api.TerminalRenderCache;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
 import com.knoxhack.echoterminal.api.TerminalUi;
@@ -44,6 +45,7 @@ public final class TerminalMissionBrowser {
     private final List<Hitbox> hitboxes = new ArrayList<>();
     private final Set<String> expandedPhases = new LinkedHashSet<>();
     private final Set<String> collapsedPhases = new LinkedHashSet<>();
+    private final Set<String> warnedProviderSurfaces = new LinkedHashSet<>();
 
     private boolean allExpanded;
     private MissionFilter filterMode = MissionFilter.ALL;
@@ -92,7 +94,7 @@ public final class TerminalMissionBrowser {
         MissionRenderState state = buildState(context);
         normalizeSelection(state);
         syncDetailScrollWithSelection();
-        TerminalMissionChapter chapter = provider.chapter();
+        TerminalMissionChapter chapter = chapter();
         int x = context.contentX();
         int y = context.contentY();
         int w = context.contentWidth();
@@ -183,7 +185,8 @@ public final class TerminalMissionBrowser {
         if (cachedState != null && cachedStateFrame == frame) {
             return cachedState;
         }
-        List<TerminalMissionDefinition> definitions = provider.missions(context.player()).stream()
+        List<TerminalMissionDefinition> definitions = safeMissions(context).stream()
+                .filter(definition -> definition != null)
                 .sorted(Comparator
                         .comparingInt(TerminalMissionDefinition::phaseOrder)
                         .thenComparingInt(TerminalMissionDefinition::missionOrder)
@@ -191,10 +194,10 @@ public final class TerminalMissionBrowser {
                 .toList();
         List<MissionRecord> records = new ArrayList<>();
         for (TerminalMissionDefinition definition : definitions) {
-            TerminalMissionSnapshot snapshot = provider.snapshot(context.player(), definition.id());
-            TerminalMissionPresentation presentation = provider.presentation(context.player(), definition, snapshot);
-            TerminalMissionVisuals visuals = provider.visuals(context.player(), definition, snapshot);
-            TerminalMissionRole role = provider.role(context.player(), definition, snapshot);
+            TerminalMissionSnapshot snapshot = safeSnapshot(context, definition);
+            TerminalMissionPresentation presentation = safePresentation(context, definition, snapshot);
+            TerminalMissionVisuals visuals = safeVisuals(context, definition, snapshot);
+            TerminalMissionRole role = safeRole(context, definition, snapshot);
             records.add(new MissionRecord(definition, snapshot, presentation, visuals, role));
         }
         List<MissionRecord> visible = records.stream()
@@ -212,9 +215,105 @@ public final class TerminalMissionBrowser {
         return cachedState;
     }
 
+    private TerminalMissionChapter chapter() {
+        try {
+            TerminalMissionChapter chapter = provider == null ? null : provider.chapter();
+            return chapter == null ? fallbackChapter() : chapter;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("chapter", exception);
+            return fallbackChapter();
+        }
+    }
+
+    private TerminalMissionChapter fallbackChapter() {
+        Identifier id = tabId == null ? Identifier.fromNamespaceAndPath("echoterminal", "unknown_missions") : tabId;
+        return new TerminalMissionChapter(id, "Mission Records", "Mission provider unavailable.", Integer.MAX_VALUE,
+                0xFF66D9FF, true);
+    }
+
+    private List<TerminalMissionDefinition> safeMissions(TerminalRenderContext context) {
+        try {
+            List<TerminalMissionDefinition> missions = provider == null
+                    ? List.of()
+                    : provider.missions(context == null ? null : context.player());
+            return missions == null ? List.of() : missions;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission list", exception);
+            return List.of();
+        }
+    }
+
+    private TerminalMissionSnapshot safeSnapshot(TerminalRenderContext context, TerminalMissionDefinition definition) {
+        try {
+            TerminalMissionSnapshot snapshot = provider.snapshot(context == null ? null : context.player(), definition.id());
+            return snapshot == null ? fallbackSnapshot(definition) : snapshot;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission snapshot", exception);
+            return fallbackSnapshot(definition);
+        }
+    }
+
+    private TerminalMissionSnapshot fallbackSnapshot(TerminalMissionDefinition definition) {
+        return new TerminalMissionSnapshot(
+                definition.id(),
+                TerminalMissionStatus.LOCKED,
+                0.0F,
+                "LOCKED",
+                "Mission provider unavailable.",
+                "Open What Now? diagnostics or reload this chapter later.",
+                List.of());
+    }
+
+    private TerminalMissionPresentation safePresentation(TerminalRenderContext context,
+            TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+        try {
+            TerminalMissionPresentation presentation = provider.presentation(
+                    context == null ? null : context.player(), definition, snapshot);
+            return presentation == null
+                    ? TerminalMissionPresentation.fallback(definition, snapshot)
+                    : presentation;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission presentation", exception);
+            return TerminalMissionPresentation.fallback(definition, snapshot);
+        }
+    }
+
+    private TerminalMissionVisuals safeVisuals(TerminalRenderContext context,
+            TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+        try {
+            TerminalMissionVisuals visuals = provider.visuals(context == null ? null : context.player(), definition, snapshot);
+            return visuals == null ? TerminalMissionVisuals.fallback(definition, snapshot) : visuals;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission visuals", exception);
+            return TerminalMissionVisuals.fallback(definition, snapshot);
+        }
+    }
+
+    private TerminalMissionRole safeRole(TerminalRenderContext context,
+            TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+        try {
+            TerminalMissionRole role = provider.role(context == null ? null : context.player(), definition, snapshot);
+            return role == null ? TerminalMissionRole.fallback(definition, snapshot) : role;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission role", exception);
+            return TerminalMissionRole.fallback(definition, snapshot);
+        }
+    }
+
+    private void warnProviderFailure(String surface, RuntimeException exception) {
+        if (warnedProviderSurfaces.add(surface)) {
+            EchoTerminal.LOGGER.warn("Terminal mission provider {} failed while building {}; rendering fallback.",
+                    providerName(), surface, exception);
+        }
+    }
+
+    private String providerName() {
+        return provider == null ? "<null>" : provider.getClass().getName();
+    }
+
     private void drawRoadmapPane(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRenderState state, int x, int y, int w, int h, int mouseX, int mouseY) {
-        TerminalMissionChapter chapter = provider.chapter();
+        TerminalMissionChapter chapter = chapter();
         TerminalUi.cinematicPanel(graphics, x, y, w, h, chapter.accentColor());
         TerminalUi.line(context, graphics, "PROTOCOL ROADMAP", x + 10, y + 10, w - 20, chapter.accentColor());
         TerminalUi.line(context, graphics, state.completedCount() + "/" + state.allRecords().size() + " complete",
@@ -227,12 +326,12 @@ public final class TerminalMissionBrowser {
             int utilityY = y + 36;
             int utilityW = Math.max(1, (innerW - 4) / 2);
             int compactW = Math.max(1, innerW - utilityW - 4);
-            drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND ALL", true, mouseX, mouseY, () -> {
+            drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND", true, mouseX, mouseY, () -> {
                 allExpanded = true;
                 expandedPhases.clear();
                 collapsedPhases.clear();
             });
-            drawCompactButton(context, graphics, innerX + utilityW + 4, utilityY, compactW, "COLLAPSE ALL", true,
+            drawCompactButton(context, graphics, innerX + utilityW + 4, utilityY, compactW, "COMPACT", true,
                     mouseX, mouseY, () -> {
                         allExpanded = false;
                         expandedPhases.clear();
@@ -273,7 +372,7 @@ public final class TerminalMissionBrowser {
         if (viewMode == MissionViewMode.GUIDED) {
             cy = drawGuidedLanes(context, graphics, state, x, cy, w, viewportY, viewportH, mouseX, mouseY);
             cy += 4;
-            TerminalUi.missionLaneHeader(context, graphics, x, cy, w - 8, "ROADMAP", "all records", provider.chapter().accentColor());
+            TerminalUi.missionLaneHeader(context, graphics, x, cy, w - 8, "ROADMAP", "all records", chapter().accentColor());
             cy += 20;
         }
         for (PhaseGroup phase : phases(state.visibleRecords())) {
@@ -281,7 +380,7 @@ public final class TerminalMissionBrowser {
             int complete = completedCount(phaseAll);
             int total = phaseAll.size();
             boolean expanded = isPhaseExpanded(phase);
-            int phaseColor = complete == total ? TerminalUi.GREEN : provider.chapter().accentColor();
+            int phaseColor = complete == total ? TerminalUi.GREEN : chapter().accentColor();
             boolean hover = TerminalUi.inside(mouseX, mouseY, x, cy, w - 8, PHASE_ROW_HEIGHT - 2);
             graphics.fill(x, cy, x + w - 8, cy + PHASE_ROW_HEIGHT - 2, hover ? 0xFF102630 : 0xAA0A151C);
             graphics.fill(x, cy, x + 3, cy + PHASE_ROW_HEIGHT - 2, phaseColor);
@@ -321,7 +420,7 @@ public final class TerminalMissionBrowser {
                 .limit(3)
                 .toList();
         cy = drawLane(context, graphics, "ECHO-7 PROTOCOL", main, state.focusRecord() == null ? List.of() : List.of(state.focusRecord()),
-                x, cy, w, viewportY, viewportH, mouseX, mouseY, provider.chapter().accentColor());
+                x, cy, w, viewportY, viewportH, mouseX, mouseY, chapter().accentColor());
         cy = drawLane(context, graphics, "READY TO CLAIM", ready, List.of(),
                 x, cy, w, viewportY, viewportH, mouseX, mouseY, TerminalUi.GREEN);
         cy = drawLane(context, graphics, "SIGNAL LEADS", optional, List.of(),
@@ -349,7 +448,7 @@ public final class TerminalMissionBrowser {
 
     private void drawMissionSideRail(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRenderState state, int x, int y, int w, int h, int mouseX, int mouseY) {
-        int accent = provider.chapter().accentColor();
+        int accent = chapter().accentColor();
         int gap = 10;
         int optionalH = Math.max(138, Math.min(218, h * 35 / 100));
         int readyH = Math.max(90, Math.min(132, h * 20 / 100));
@@ -476,7 +575,7 @@ public final class TerminalMissionBrowser {
 
     private void drawDetailPane(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRecord record, int x, int y, int w, int h, int mouseX, int mouseY, boolean scrollable) {
-        TerminalUi.cinematicPanel(graphics, x, y, w - 4, h, provider.chapter().accentColor());
+        TerminalUi.cinematicPanel(graphics, x, y, w - 4, h, chapter().accentColor());
         if (record == null) {
             TerminalUi.emptyState(context, graphics, x + 10, y + 12, w - 24,
                     "Select Mission", "Choose a mission record from the command queue.", TerminalUi.MUTED);
@@ -503,7 +602,7 @@ public final class TerminalMissionBrowser {
         if (scissor) {
             graphics.disableScissor();
             TerminalUi.scrollbar(graphics, x + w - 9, bodyY, bodyH,
-                    detailScroll, Math.max(0, lastDetailContentH - bodyH), provider.chapter().accentColor());
+                    detailScroll, Math.max(0, lastDetailContentH - bodyH), chapter().accentColor());
         }
         drawStickyActions(context, graphics, record, bodyX, actionY, bodyW, actionH, mouseX, mouseY);
     }
@@ -512,7 +611,7 @@ public final class TerminalMissionBrowser {
             MissionRecord record, int x, int y, int w, int mouseX, int mouseY) {
         int cy = drawBriefingHeader(context, graphics, record, x, y, w, mouseX, mouseY) + 8;
         cy = drawNextStepCallout(context, graphics, record, x, cy, w);
-        TerminalUi.sectionHeader(context, graphics, "REQUIREMENTS", "", x, cy, w - 4, provider.chapter().accentColor());
+        TerminalUi.sectionHeader(context, graphics, "REQUIREMENTS", "", x, cy, w - 4, chapter().accentColor());
         cy += 20;
         if (record.definition().requirements().isEmpty()) {
             TerminalUi.line(context, graphics, "No visible checklist. Server state tracks this protocol.",
@@ -525,20 +624,20 @@ public final class TerminalMissionBrowser {
         }
         cy += 4;
         cy = drawRewards(context, graphics, record, x, cy, w, mouseX, mouseY);
-        TerminalUi.sectionHeader(context, graphics, "FIELD GUIDE", "", x, cy, w - 4, provider.chapter().accentColor());
+        TerminalUi.sectionHeader(context, graphics, "FIELD GUIDE", "", x, cy, w - 4, chapter().accentColor());
         cy += 20;
         String guide = record.definition().fieldGuide().isBlank()
                 ? record.definition().briefing()
                 : record.definition().fieldGuide();
         cy = TerminalUi.wrap(context, graphics, guide, x + 2, cy, w - 12, TerminalUi.TEXT) + 9;
         if (!record.presentation().relatedIntelKey().isBlank()) {
-            TerminalUi.sectionHeader(context, graphics, "RELATED INTEL", "", x, cy, w - 4, provider.chapter().accentColor());
+            TerminalUi.sectionHeader(context, graphics, "RELATED INTEL", "", x, cy, w - 4, chapter().accentColor());
             cy += 20;
             cy = TerminalUi.wrap(context, graphics, intelLabel(record.presentation().relatedIntelKey()),
                     x + 2, cy, w - 12, TerminalUi.MUTED) + 8;
         }
         if (!record.definition().prerequisites().isEmpty()) {
-            TerminalUi.sectionHeader(context, graphics, "PREREQUISITES", "", x, cy, w - 4, provider.chapter().accentColor());
+            TerminalUi.sectionHeader(context, graphics, "PREREQUISITES", "", x, cy, w - 4, chapter().accentColor());
             cy += 20;
             for (String prerequisite : record.definition().prerequisites()) {
                 cy = TerminalUi.wrap(context, graphics, "- " + prerequisite, x + 2, cy, w - 12, TerminalUi.MUTED) + 2;
@@ -558,6 +657,8 @@ public final class TerminalMissionBrowser {
         int chipW = Math.max(104, Math.min(140, w / 5));
         TerminalUi.missionStatusPill(context, graphics, compactStatusLabel(record.snapshot()),
                 x + w - chipW - 14, y + 12, chipW);
+        TerminalUi.miniStatusPill(context, graphics, roleChipLabel(record.role()),
+                x + w - chipW - 14, y + 30, chipW, color, false);
         TerminalUi.line(context, graphics, record.presentation().shortTitle().toUpperCase(), x + 70, y + 20,
                 Math.max(40, w - chipW - 92), TerminalUi.TEXT);
         TerminalUi.line(context, graphics, tagLine(record.definition(), record.presentation(), record.role()),
@@ -595,14 +696,14 @@ public final class TerminalMissionBrowser {
 
     private int drawRewards(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRecord record, int x, int y, int w, int mouseX, int mouseY) {
-        TerminalUi.sectionHeader(context, graphics, "REWARDS", "", x, y, w - 4, provider.chapter().accentColor());
+        TerminalUi.sectionHeader(context, graphics, "REWARDS", "", x, y, w - 4, chapter().accentColor());
         int cy = y + 20;
         List<ItemStack> stacks = record.definition().rewards().stream()
                 .map(TerminalMissionReward::stack)
                 .filter(stack -> !stack.isEmpty())
                 .toList();
         cy = TerminalUi.itemGrid(context, graphics, stacks, x + 2, cy, w - 12,
-                provider.chapter().accentColor(), mouseX, mouseY) + 3;
+                chapter().accentColor(), mouseX, mouseY) + 3;
         for (TerminalMissionReward reward : record.definition().rewards()) {
             if (!reward.stack().isEmpty()) {
                 continue;
@@ -616,8 +717,8 @@ public final class TerminalMissionBrowser {
     private void drawStickyActions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRecord record, int x, int y, int w, int h, int mouseX, int mouseY) {
         String summary = commandSummary(record.snapshot(), record.presentation());
-        TerminalUi.flatHudPanel(graphics, x, y, w - 4, h, provider.chapter().accentColor());
-        TerminalUi.line(context, graphics, "COMMAND", x + 8, y + 8, w - 20, provider.chapter().accentColor());
+        TerminalUi.flatHudPanel(graphics, x, y, w - 4, h, chapter().accentColor());
+        TerminalUi.line(context, graphics, "COMMAND", x + 8, y + 8, w - 20, chapter().accentColor());
         TerminalUi.line(context, graphics, summary, x + 8, y + 21, w - 20, TerminalUi.TEXT);
         int buttonY = y + 43;
         List<TerminalMissionAction> actions = record.snapshot().actions();
@@ -633,7 +734,7 @@ public final class TerminalMissionBrowser {
             boolean hover = action.enabled() && TerminalUi.inside(mouseX, mouseY, bx, buttonY, buttonW, buttonH);
             if (action.enabled()) {
                 TerminalUi.primaryCommandButton(context, graphics, bx, buttonY, buttonW, buttonH, action.label(),
-                        actionIcon(action), provider.chapter().accentColor(), hover);
+                        actionIcon(action), chapter().accentColor(), hover);
             } else {
                 TerminalUi.disabledCommandButton(context, graphics, bx, buttonY, buttonW, buttonH,
                         action.label(), actionIcon(action));
@@ -642,7 +743,7 @@ public final class TerminalMissionBrowser {
             addHitbox(bx, buttonY, buttonW, buttonH, action.enabled(), () -> context.sendAction(
                     tabId,
                     TerminalMissionActions.MISSION_ACTION,
-                    TerminalMissionActions.payload(provider.chapter().id(), record.definition().id(), hitAction.id())));
+                        TerminalMissionActions.payload(chapter().id(), record.definition().id(), hitAction.id())));
             bx += buttonW + 8;
         }
         String reason = firstDisabledReason(actions);
@@ -661,7 +762,7 @@ public final class TerminalMissionBrowser {
             boolean selected = mode == viewMode;
             boolean hover = TerminalUi.inside(mouseX, mouseY, chipX, y, chipW, 15);
             TerminalUi.filterChip(context, graphics, chipX, y, chipW, mode.label(), selected, true,
-                    provider.chapter().accentColor(), hover);
+                    chapter().accentColor(), hover);
             addHitbox(chipX, y, chipW, 15, true, () -> {
                 viewMode = mode;
                 detailScroll = 0;
@@ -682,7 +783,7 @@ public final class TerminalMissionBrowser {
     private void drawCompactButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, String label, boolean enabled, int mouseX, int mouseY, Runnable action) {
         boolean hover = enabled && TerminalUi.inside(mouseX, mouseY, x, y, w, 16);
-        TerminalUi.compactButton(context, graphics, x, y, w, label, provider.chapter().accentColor(), enabled, hover);
+        TerminalUi.compactButton(context, graphics, x, y, w, label, chapter().accentColor(), enabled, hover);
         addHitbox(x, y, w, 16, enabled, action);
     }
 
@@ -1021,6 +1122,14 @@ public final class TerminalMissionBrowser {
             case MAIN -> "Main progression";
             case OPTIONAL -> "Optional / nonblocking";
             case REFERENCE -> "Reference";
+        };
+    }
+
+    private static String roleChipLabel(TerminalMissionRole role) {
+        return switch (role) {
+            case MAIN -> "MAIN";
+            case OPTIONAL -> "OPTIONAL";
+            case REFERENCE -> "REFERENCE";
         };
     }
 

@@ -86,6 +86,52 @@ ALLOWED_PIXEL_TEXTURE_SIZES = {
     (16, 16),
     (144, 144),
 }
+REQUIRED_16X16_BLOCK_TEXTURES = {
+    "acid_mud",
+    "acidic_sludge",
+    "ash_bush",
+    "ash_layer",
+    "ash_stone",
+    "ashen_wasteland_dirt",
+    "burnt_fern",
+    "burnt_wasteland_soil",
+    "concrete_chunk",
+    "concrete_rubble",
+    "contaminated_soil",
+    "cracked_asphalt",
+    "cracked_earth",
+    "crash_slag",
+    "cryogenic_fractured_stone",
+    "debris_block",
+    "deep_ash",
+    "fallout_dust",
+    "industrial_aggregate",
+    "irradiated_cactus",
+    "irradiated_crust",
+    "mutated_wasteland_grass_block",
+    "nexus_cracked_soil",
+    "oil_stained_concrete",
+    "permafrost",
+    "radioactive_sludge",
+    "riftstone",
+    "rubble",
+    "rusted_metal_debris",
+    "rusted_metal_sheet",
+    "rusty_wheat",
+    "scorched_ash",
+    "toxic_moss",
+    "toxic_puddle",
+    "toxic_slagstone",
+    "toxic_wasteland_grass_block",
+    "twisted_metal",
+    "wasteland_dirt",
+    "wasteland_grass",
+    "wasteland_grass_block",
+    "wasteland_reed",
+    "wasteland_stone",
+    "wasteland_tall_grass",
+    "wasteland_trace_rubble",
+}
 TERMINAL_GUI_TEXTURE_SIZES = {
     (1920, 1080),
     (2048, 1024),
@@ -536,6 +582,9 @@ def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[st
                 expected = " or ".join(f"{w}x{h}" for w, h in sorted(ALLOWED_PIXEL_TEXTURE_SIZES))
                 errors.append(f"BAD_PIXEL_TEXTURE_SIZE {rel(path)}: {width}x{height}, expected {expected}")
 
+            if folder == "block" and path.stem in REQUIRED_16X16_BLOCK_TEXTURES and (width, height) != (16, 16):
+                errors.append(f"BAD_TERRAIN_TEXTURE_SIZE {rel(path)}: {width}x{height}, expected 16x16")
+
             if modid != "echoashfallprotocol" or folder != "block":
                 continue
 
@@ -549,6 +598,29 @@ def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[st
                 errors.append(f"LOW_DETAIL_BLOCK_TEXTURE {rel(path)}: {len(opaque_colors)} opaque colors, expected at least 5")
 
 
+def check_ashfall_block_model_texture_namespaces(errors: list[str]) -> None:
+    model_root = ROOT / "src/main/resources/assets/echoashfallprotocol/models/block"
+    if not model_root.exists():
+        return
+
+    for path in sorted(model_root.rglob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            errors.append(f"BAD_JSON {rel(path)}: {exc}")
+            continue
+
+        for node in walk(data):
+            if not isinstance(node, dict):
+                continue
+            textures_obj = node.get("textures")
+            if not isinstance(textures_obj, dict):
+                continue
+            for key, texture in textures_obj.items():
+                if isinstance(texture, str) and texture.startswith("minecraft:"):
+                    errors.append(f"VANILLA_BLOCK_MODEL_TEXTURE {rel(path)}: {key} -> {texture}")
+
+
 def main() -> int:
     errors: list[str] = []
     for modid, resources, java_root in MODS:
@@ -560,6 +632,7 @@ def main() -> int:
     check_worldgen_resource_polish(errors)
     check_required_texture_sizes(errors)
     check_terminal_visual_assets(errors)
+    check_ashfall_block_model_texture_namespaces(errors)
 
     if errors:
         for error in errors:

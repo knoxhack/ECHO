@@ -86,12 +86,12 @@ public class SuitEvents {
     private static void tryAutoRecovery(Player player, SuitState state) {
         if (state.oxygen() <= 20 && state.backupAirAvailable() && consume(player, ModItems.EMERGENCY_OXYGEN_CELL.get())) {
             state.useEmergencyOxygen();
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("ECHO-7 // Backup air cartridge engaged."));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("ECHO-7 // Backup air cartridge engaged. Breathe, then move."));
         }
 
         if (state.pressure() <= 25 && state.autoSealAvailable() && consume(player, ModItems.SUIT_SEALANT_PATCH.get())) {
             state.applySealantPatch();
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("ECHO-7 // Auto-seal patch applied. Suit pressure recovering."));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("ECHO-7 // Auto-seal patch applied. Pressure recovering; do not test it."));
         }
     }
 

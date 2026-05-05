@@ -3,6 +3,7 @@ package com.knoxhack.echoashfallprotocol.world;
 import com.knoxhack.echoashfallprotocol.echo.Mission;
 import com.knoxhack.echoashfallprotocol.echo.MissionRegistry;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
@@ -50,6 +51,10 @@ public final class POIScannerService {
         ScanHit guardianHit = scanActiveGuardianSite(level, origin, player);
         if (guardianHit != null) {
             return guardianHit;
+        }
+        ScanHit relayHit = NexusRelaySiteService.scanActiveRelaySite(level, origin, player).orElse(null);
+        if (relayHit != null) {
+            return relayHit;
         }
 
         HolderSet.Named<Structure> poiSet;
@@ -164,6 +169,12 @@ public final class POIScannerService {
                 quest.addToArchive("[GUARDIAN] " + hit.displayName()
                         + " surface entrance archived. " + hit.intelLine());
             }
+        } else if (siteId.startsWith("nexus_relay_")) {
+            quest.visitLocation("special", "nexus:relay_site:" + siteId.substring("nexus_relay_".length()));
+            if (!alreadyDiscovered) {
+                quest.addToArchive("[NEXUS RELAY] " + hit.displayName()
+                        + " site archived. Objective: " + hit.objective());
+            }
         }
 
         ExplorationSiteRegistry.SiteProfile profile = ExplorationSiteRegistry.getOrFallback(siteId);
@@ -172,7 +183,7 @@ public final class POIScannerService {
             quest.visitLocation("poi", "faction_hub");
         }
 
-        if (!alreadyDiscovered && !siteId.startsWith("guardian_")) {
+        if (!alreadyDiscovered && !siteId.startsWith("guardian_") && !siteId.startsWith("nexus_relay_")) {
             quest.addToArchive("[SCAN] " + hit.displayName() + " archived. Hazard: "
                     + hit.hazardProfile() + ". Prep: " + hit.prepHint() + ".");
         }
@@ -199,6 +210,9 @@ public final class POIScannerService {
     public static int getChunkRadius(@Nullable ServerPlayer player) {
         int range = BASE_SCAN_CHUNK_RADIUS;
         if (player != null && PostNexusData.get(player).isPath(PostNexusData.NexusPath.CONTROL)) {
+            range += 12;
+        }
+        if (player != null && NexusRelaySiteService.hasRelayScannerLens(player)) {
             range += 12;
         }
         return range;

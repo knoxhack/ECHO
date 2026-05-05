@@ -296,7 +296,7 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.STABILIZED_ECHO_CORE.get(), 1);
                 give(player, ModItems.NEXUS_DUST.get(), 8);
             }
-            String report = result.report("Nexus anchors stabilized. Post-ECHO survey network is complete.");
+            String report = result.report("Nexus anchors stabilized. Post-ECHO-0 survey network is complete.");
             if (result.newlyComplete() && EchoTerminalProgress.get(player).finalNetworkSealed()) {
                 report = EchoTerminalProgress.get(player).lastTerminalReport();
             }

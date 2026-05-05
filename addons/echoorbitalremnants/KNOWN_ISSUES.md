@@ -1,14 +1,15 @@
-# ECHO: Orbital Remnants 1.4.0 Tester Known Issues
+# ECHO: Orbital Remnants 1.5.0 Tester Known Issues
 
 This file tracks intentional release limits and areas that need playtest feedback.
 
 ## Current Release Limits
 
-- Hostile and boss entities use tuned vanilla-model renderers instead of bespoke animated models.
-- Factions now have pledge rewards and terminal contracts, but not vendors, quest chains, or faction bases.
+- Hostile and major encounter entities use tuned vanilla-model renderers instead of bespoke animated models.
+- Factions now publish ECHO Core standing, Faction Atlas entries, pledge rewards, and terminal contracts, but not vendors, long quest chains, or faction bases.
 - Living Route Worlds deepen the existing five routes; there are no extra planets in this release.
 - Route terrain uses deterministic compact feature generation, not a large multichunk structure system.
 - Balance numbers for arrival supplies, hazard drain, and deep-site threats are expected to change after player feedback.
+- Shared Terminal integration mirrors Orbital state through Core services; the standalone ECHO-7 terminal remains the progression authority when the shared terminal is absent.
 
 ## Playtest Focus
 
@@ -16,12 +17,13 @@ This file tracks intentional release limits and areas that need playtest feedbac
 - Do arrival caches support first visits without skipping too much crafting?
 - Do deep-site hazards feel dangerous but recoverable?
 - Do faction contracts feel worth doing after pledging?
-- Does Nexus stabilization feel like a clear post-ECHO objective?
+- Does Nexus stabilization feel like a clear post-ECHO-0 objective?
+- Do What Now diagnostics, Route Records, Vitals, Faction Atlas, and Reward Inbox support caches make the full stack easier to read without replacing the standalone Orbital flow?
 
 ## What Feedback We Need
 
 - Balance: oxygen, pressure, radiation, cache support, and machine pacing.
-- Soft-locks: any item, route, scan, return vector, or boss drop that can halt survival progression.
+- Soft-locks: any item, route, scan, return vector, or encounter drop that can halt survival progression.
 - Route readability: whether deep sites, caches, landmarks, and objective blocks are easy to recognize.
 - Contract usefulness: whether faction contract rewards feel worth the trip without replacing crafting.
 - Hazard pressure: whether route danger is meaningful, readable, and recoverable.

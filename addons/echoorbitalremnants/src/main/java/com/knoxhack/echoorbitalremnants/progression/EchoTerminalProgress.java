@@ -596,7 +596,7 @@ public class EchoTerminalProgress {
         }
         save(player);
         AshfallCompat.mirrorMilestone(player, "orbital_remnants_complete", "Orbital Remnants arc complete",
-                "ECHO-0 is resolved, the post-ECHO survey network is stabilized, and orbit no longer commands Earth from quarantine.");
+                "ECHO-0 is resolved, the post-ECHO-0 survey network is stabilized, and orbit no longer commands Earth from quarantine.");
         return true;
     }
 

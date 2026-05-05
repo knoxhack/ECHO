@@ -1,22 +1,25 @@
 # Changelog
 
-## Unreleased - Orbital Cohesion Polish
+## 1.5.0 - Orbital Cohesion Polish
 
 - Added richer optional ECHO Terminal integration with Orbital Command, Survey, and ECHO mission surfaces.
 - Added shared Terminal mission records and once-only utility support caches backed by Orbital progress save data.
 - Moved Orbital shared-Terminal action and mission registration to common setup so server-side actions work on dedicated servers.
 - Expanded Orbital archive handoff notes and tester coverage for Terminal mission cache state and action registration.
+- Added ECHO Core route records for Earth Recontact, Launch Chain, Route Worlds, and ECHO-0 Quarantine.
+- Added ECHO Core diagnostics, hazard telemetry, and Faction Atlas integration for Orbital Remnant, Void Salvagers, and Nexus Choir standings.
+- Synced docs to the full Echo stack versions: Core `1.1.0`, Terminal `1.1.0`, Ashfall `1.3.0`, and Orbital `1.5.0`.
 
 ## 1.4.0 - Full Endgame
 
 - Completed the official Earth-to-Nexus arc through ECHO-0, post-ECHO surveys, faction contracts, and final network sealing.
 - Upgraded ECHO-0 with phase pressure, oxygen, radiation, quarantine-motive dialogue, one-time rewards, and final protocol reporting.
 - Added the Orbital Remnants Complete advancement, final network reward flow, Ashes milestone mirroring, and `/echo7route` QA commands.
-- Replaced stale release-candidate wording in player-facing terminal and guide copy with ECHO HELP, MISSION, and Orbital Remnants completion language.
+- Replaced stale release-candidate wording in player-facing terminal and guide copy with ECHO NOTE, MISSION, and Orbital Remnants completion language.
 
 ## 1.3.1 - Mid-Game Hardening
 
-- Hardened mid-game terminal guidance with visible repair counts, consistent ECHO HELP wording, duplicate-site clarity, and old-save bypass status in the SURVEY tab.
+- Hardened mid-game terminal guidance with visible repair counts, consistent ECHO NOTE wording, duplicate-site clarity, and old-save bypass status in the SURVEY tab.
 - Made deep-site cache markers easier to notice without adding new block ids.
 - Synced release docs, tester checklist, RC notes, and expected jar references for the hardened mid-game release.
 - Added focused GameTest coverage for mid-game terminal repair-count guidance.
@@ -26,24 +29,24 @@
 - Added four route objective chains between launch and ECHO-0: Station Relay Nodes, Helium Extractor Nodes, Mars Pressure Consoles, and Europa Thermal Arrays.
 - Added mid-game route resources, caches, machine recipes, terminal guidance, progress keys, manual advancements, and compatibility-safe gates.
 - Added route objective blocks to arrival sites and repeatable deep-site families.
-- Added the Europa Cryo Warden mini-boss with terminal defeat messaging and Europa prep rewards.
-- Expanded GameTests for mid-game objective chains, route gates, recipes, sites, and the new mini-boss.
+- Added the Europa Cryo Warden encounter with terminal defeat messaging and Europa prep rewards.
+- Expanded GameTests for mid-game objective chains, route gates, recipes, sites, and the new encounter.
 
 ## 1.2.1-beta.5 - Final Upload Candidate
 
-- Synced terminal ECHO HELP wording across code, guide, and release notes.
+- Synced terminal ECHO NOTE wording across code, guide, and release notes.
 - Updated final beta upload references to the beta.5 jar.
 - Locked deferred items and tester feedback asks as intentional beta limits.
 
 ## 1.2.1-beta.4 - Beta Polish Candidate
 
-- Tightened ECHO Terminal ECHO HELP and final end-state wording for small-screen readability.
+- Tightened ECHO Terminal ECHO NOTE and final end-state wording for small-screen readability.
 - Gave deep-site caches clearer route markers and beta support scaling without adding new ids.
 - Updated beta release docs, test plan, and RC notes for the polished candidate jar.
 
 ## 1.2.1-beta.3 - Beta Release Candidate Completion
 
-- Added ECHO Terminal ECHO HELP guidance for blocked scans, post-ECHO surveys, faction contracts, and final arc completion.
+- Added ECHO Terminal ECHO NOTE guidance for blocked scans, post-ECHO-0 surveys, faction contracts, and final arc completion.
 - Hardened faction contract blocked reports for wrong dimension, missing proof, Nexus Choir pre-ECHO lock, cooldown, and no-pledge states.
 - Expanded GameTests with independent Orbital Remnant, Void Salvager, and Nexus Choir contract coverage.
 - Updated tester docs, test plan, known issues, and release notes for the release-candidate pass.
@@ -93,5 +96,5 @@
 - Added menu-driven machines with data-driven orbital processing recipes.
 - Added suit oxygen, pressure, radiation, gravity, recovery tools, and orbital HUD.
 - Added Low Earth Orbit, Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, and Nexus Anomaly Belt routes.
-- Added generated arrival structures, route caches, hostile entities, boss bars, and ECHO-0 final protocol.
+- Added generated arrival structures, route caches, hostile entities, encounter bars, and ECHO-0 final protocol.
 - Added faction pledge paths, reward bundles, custom weapons, recipes, loot, advancements, docs, CI, and GameTests.

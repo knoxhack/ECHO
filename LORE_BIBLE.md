@@ -9,6 +9,7 @@ This guide keeps the official ECHO stack aligned across missions, terminal tabs,
 - **Crash pod:** The opening is not a heroic landing. It is a failed rescue fragment from above Earth, leaving the player with shelter, a damaged signal, and a first outpost problem.
 - **Nexus Core:** The active terrestrial grid intelligence. It is not merely a final boss; it is the decision point for whether the world is restored, severed, or controlled.
 - **ECHO-0:** The orbital quarantine authority and source of the post-Nexus Orbital Remnants arc. ECHO-0 believes Earth must remain contained to starve the Nexus signal.
+- **ECHO Core:** The shared service layer. In fiction it is the surviving protocol bus between ECHO chapters; in writing it should feel like diagnostics, route records, faction memory, rewards, and Nexus state being reconciled by one damaged but disciplined system.
 
 ## World Identity
 
@@ -28,6 +29,13 @@ This guide keeps the official ECHO stack aligned across missions, terminal tabs,
 - Signal Leads are optional lore and recon records. They may reveal context and route meaning, but they must never block the main route or grant main progression rewards.
 - Baseline is neutral Minecraft task guidance. It should not contradict Ashfall, but it can remain a broader survival mastery track.
 - ECHO-0 Route Chain is the post-Nexus continuation when Orbital Remnants is installed. It is optional, but its lore should treat the Nexus choice as the terrestrial handoff into ECHO-0's quarantine story.
+- What Now, Mission Graph, Route Records, Faction Atlas, Vitals, and Reward Inbox are command surfaces, not lore dumps. They can be eerie, but their first duty is to name blockers, risks, routes, contacts, and claimable rewards clearly.
+
+## Nexus Campaign
+
+- The Nexus choice is no longer only a button at the end of the guardian chain. Prime Relays, countermeasure siege pressure, path readiness, and the final Restore/Destroy/Control commitment are the last proof that the player can survive command of the grid.
+- Prime Relays are field scars of the Nexus network. Stabilizing, severing, or overriding them should sound like tactical work with moral weight, not abstract puzzle text.
+- Once a path is sealed, addon chapters may read it through ECHO Core, but they should not rewrite Ashfall's choice or offer a second version of the decision.
 
 ## Factions
 
@@ -37,6 +45,14 @@ This guide keeps the official ECHO stack aligned across missions, terminal tabs,
 - **Orbital Remnant:** Recovery discipline carried into orbit.
 - **Void Salvagers:** Salvage culture pushed into vacuum and debris fields.
 - **Nexus Choir:** Post-ECHO anomaly worship, forbidden readings, and risky endgame contracts.
+
+Faction writing should treat standing, contracts, NPC roles, local POI affinity, and last contact as field memory. A faction contact is a person in a ruined logistics chain, not a menu wearing a name.
+
+## Drop Pod Opening
+
+- The current starting pod is compact, armored, and intentionally useful: a small sci-fi outpost with lockers, a bed nook, an ECHO control wall, and a ramp into danger.
+- Starter supplies should feel discovered in the pod rather than gifted by a clean inventory. The first lesson is to read the room, open lockers, and trust the ECHO terminal only after checking the hull.
+- The pod should read as intact enough to survive inside, but damaged enough to explain the wider crash site and ECHO-7's memory loss.
 
 ## Writing Rules
 

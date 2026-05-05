@@ -10,17 +10,19 @@ This guide walks a new player from drop-pod wakeup to the Nexus choice. For a sy
 - Back up important worlds before reaching the Nexus Core; the final choice is meant to matter.
 - Install JEI if you want recipe-viewer support for ECHO machines, locked schematics, and custom process categories.
 
-## 1.2.0 Player Checklist
+## 1.3.0 Player Checklist
 
 Use this checklist for a clean first report:
 
-1. Spawn fresh and confirm the drop pod area gives enough salvage for sticks/fiber, a first weapon, and shelter planning.
-2. Open the ECHO terminal and confirm the current mission tells you what to do next.
-3. Build the first powered loop: Hand Recycler, Micro Generator, Filter Workbench, Water Purifier, and Battery Bank.
-4. Use JEI to inspect ECHO custom machine categories and confirm locked recipes explain their schematic requirements.
-5. Deploy a Scout Drone or repair the ECHO companion drone, then test Drone tab commands.
-6. Scan at least one POI and confirm the readout names the actual site, route, hazard profile, prep kit, objective, distance, direction, and likely supplies; then check Route Map -> POI Atlas for the grouped template signals behind that scanner profile.
-7. Push toward biome guardian entrances, Power Nodes, the Nexus choice, the Pre-Fall Archives, The Warden, and the final epilogue; then test optional Orbital Remnants unlock if ECHO-7 is installed.
+1. Spawn fresh inside the compact `20x10x20` drop pod and confirm the spawn bay is clear at template `(9, 3, 12)`.
+2. Check the bed at `(5, 3, 10)` / `(5, 3, 11)`, the door/ramp, side windows, roof beacons, landing struts, and labeled pod lockers.
+3. Open the ECHO terminal and confirm the current mission plus What Now diagnostics tell you what to stabilize next.
+4. Build the first powered loop: Hand Recycler, Micro Generator, Filter Workbench, Water Purifier, and Battery Bank.
+5. Use JEI to inspect ECHO custom machine categories and confirm locked recipes explain their schematic requirements.
+6. Deploy a Scout Drone or repair the ECHO companion drone, then test Drone tab commands.
+7. Scan at least one POI and confirm the readout names the actual site, route, hazard profile, prep kit, objective, distance, direction, and likely supplies; then check Route Map -> POI Atlas for the grouped template signals behind that scanner profile.
+8. Check Mission Graph, Route Records, Vitals, Reward Inbox, Faction Atlas, and Field Archive against the same save state.
+9. Push toward biome guardian entrances, Prime Relays, Power Nodes, the Nexus choice, the Pre-Fall Archives, The Warden, and the final epilogue; then test optional Orbital Remnants unlock if ECHO: Orbital Remnants is installed.
 
 Report bugs with mod list, seed, coordinates, biome/POI, expected behavior, actual behavior, reproduction steps, and screenshots or crash reports.
 
@@ -33,14 +35,15 @@ Known notes:
 
 ## First Ten Minutes
 
-1. Stay near the crashed drop pod.
-2. Break debris and ruined material for scrap metal, scrap wire, scrap circuits, and scrap plastic.
-3. Scavenge ash bushes, dry grass, wasteland grass, reeds, and mutated leaves for sticks and plant fiber.
-4. Break dead or charred trees for ruined logs; each log crafts into 4 oak planks.
-5. Craft an early weapon and basic tools before picking fights.
-6. Open the ECHO terminal and follow the first mission prompts.
-7. Find or build shelter before night.
-8. Avoid toxic zones until you have a gas mask and filters.
+1. Stay near the compact drop pod and use it as the first shelter, not just as wreckage.
+2. Open visible lockers for the scanner, water, filters, rations, meds, bottles, torches, basic weapon support, campfire/chest support, and salvage.
+3. Use the south-facing door/ramp to scout the immediate landing scar, then return before night.
+4. Break debris and ruined material for scrap metal, scrap wire, scrap circuits, and scrap plastic.
+5. Scavenge ash bushes, dry grass, wasteland grass, reeds, and mutated leaves for sticks and plant fiber.
+6. Break dead or charred trees for ruined logs; each log crafts into 4 oak planks.
+7. Craft an early weapon and basic tools before picking fights.
+8. Open the ECHO terminal, read What Now if blocked, and follow the first mission prompts.
+9. Avoid toxic zones until you have a gas mask and filters.
 
 Early survival is about restraint. Ordinary travel is stable; do not wander into distant POIs or marked hazard zones until you can manage water, radiation, and toxic pockets.
 
@@ -53,7 +56,7 @@ ECHO: Ashfall Protocol does not assume you spawn beside a healthy vanilla forest
 - **Planks:** craft Dead Wood Logs or Charred Wood Logs into 4 Oak Planks.
 - **Renewable wood:** mutated leaves can drop Mutated Saplings, which grow only on ruined soils such as wasteland, toxic, mutated, burnt, ashen, or contaminated ground.
 - **Healthy saplings:** vanilla saplings are rare pre-Gridfall recovery items found later in bio labs, data centers, survivor caches, Remnant/Salvager caches, or Salvager trader deals.
-- **Starter salvage:** drop pod scrap includes sticks, planks, plant fiber, scrap metal, scrap wire, and early survival supplies.
+- **Starter salvage:** pod lockers and landing debris include sticks, planks, plant fiber, scrap metal, scrap wire, and first-night supplies. The starter inventory stays intentionally minimal; the pod itself teaches the survival loop.
 
 ## Recovered Biome Goods
 
@@ -97,9 +100,10 @@ Mutations can help, but side effects stack. The Field Med Bay becomes important 
 
 Goal: survive the crash site.
 
-- Scavenge debris.
+- Loot the labeled pod lockers before wandering.
+- Scavenge immediate landing debris.
 - Craft a first weapon.
-- Shelter before night.
+- Use the pod bed, ramp, lighting, and hull as your first shelter before night.
 - Let ECHO-7 establish the mission chain.
 
 ### Phase 1: Wilderness
@@ -122,7 +126,7 @@ Goal: stand up your first powered base.
 
 Goal: turn exploration into planned routes.
 
-- Contact faction job sites and complete starter tasks.
+- Contact faction job sites, speak with faction NPCs, and complete starter tasks or contracts.
 - Build the Research Lab and Factory Controller.
 - Craft the Portable Signal Scanner, pack expedition supplies, scan POIs, use the Route Map POI Atlas to recognize template variants, follow the hazard-specific prep readout, recover logs/caches, and repair drone scouting support.
 
@@ -147,7 +151,7 @@ Goal: leave basic salvage and process real materials.
 Goal: reactivate the broken power network.
 
 - Deploy scanners, Scout Drones, Power Nodes, Workshops, and Relay Stations.
-- Treat biome guardians as underground route bosses. The scanner points to a visible surface entrance, but the arena is buried below as a Gridfall control node.
+- Treat biome guardians as buried route encounters. The scanner points to a visible surface entrance, but the arena is below as a Gridfall control node.
 - Clear each node in sequence from Wasteland Sentinel through Nexus Scar Avatar before expecting the Nexus Core route to open.
 - Use ECHO terminal status, world telemetry, faction intel, and scanner risk readouts before committing.
 
@@ -155,7 +159,9 @@ Goal: reactivate the broken power network.
 
 Goal: reach the Nexus Core and choose the future.
 
-The Core route is locked behind all nine guardian missions. If the terminal still points you at a guardian, scan for its entrance, descend, defeat the boss, and return with the dossier complete before searching for the Core.
+The Core route is locked behind all nine guardian missions plus the current Nexus campaign readiness chain. If the terminal still points you at a guardian, scan for its entrance, descend, resolve the encounter, and return with the dossier complete before searching for the Core.
+
+Before the final commitment, use the Nexus Core interface to wake the campaign, scan six Prime Relays, resolve three relays, and survive the Core countermeasure siege. The terminal shows readiness for Restore, Destroy, and Control and mirrors the sealed path through ECHO Core so addon chapters can react.
 
 The Nexus choice is the capstone decision:
 
@@ -184,6 +190,8 @@ Reputation is not cosmetic. Factions change trade, patrol hostility, raids, vill
 
 Helping one side can anger another. Use the terminal's World and Archives sections to read faction state, dossiers, and intercepted intel.
 
+The current stack also exposes faction state through ECHO Core, so the shared Faction Atlas can show registered factions, standing, NPC roles, service state, last contact, POI affinity, and active contracts. Orbital Remnants adds Orbital Remnant, Void Salvagers, and Nexus Choir signals after the post-Nexus handoff.
+
 ## Drone Use
 
 Repair your ECHO companion drone as soon as you can.
@@ -199,12 +207,14 @@ Scout mode is especially useful because it can gather faction intel and flag eme
 
 Open the ECHO terminal often.
 
-- Missions tell you what ECHO-7 currently expects.
-- Codex explains recipes, machines, survival tools, and endgame systems.
-- Status shows survival and research state.
-- Drone shows repair, mode, and capability state.
-- World tracks environment, factions, and route context.
-- Archives collect lore and recovered logs.
+- Command Deck summarizes chapters, diagnostics, route records, and pending rewards.
+- What Now ranks blockers and next actions across installed ECHO chapters.
+- Mission Graph and Protocol Roadmap show the required route spine.
+- Route Records and Route Map collect scanner routes, POI Atlas template signals, recovery sites, and orbital paths.
+- Vitals shows hazard telemetry, weather/event pressure, suit/health context, and counter guidance.
+- Faction Atlas shows standing, contracts, NPC roles, POI affinity, and last contact.
+- Reward Inbox claims terminal-stored mission and support-cache rewards.
+- Field Archive, Survival Index, Baseline, Drone, World, and Nexus tabs explain recipes, lore, machines, survival tools, faction state, drone modes, and endgame systems.
 
 If ECHO: Orbital Remnants is installed, the same terminal also displays the post-Nexus orbital addon after your Nexus choice.
 
@@ -226,4 +236,4 @@ The ECHO terminal will show Orbital Remnants progress, but the addon keeps its o
 - Build machines close enough to power sources or power distribution.
 - Do not let faction hostility surprise you; hostile patrols can turn travel into a fight.
 - Keep schematic fragments organized by branch.
-- Prepare for guardian and Nexus sites like boss arenas, not like normal ruins.
+- Prepare for guardian and Nexus sites like sealed control nodes, not like normal ruins.

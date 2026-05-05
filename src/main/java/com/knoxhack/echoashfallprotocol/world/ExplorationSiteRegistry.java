@@ -256,7 +256,7 @@ public final class ExplorationSiteRegistry {
                 "A damaged signal node that extends scanner range, supports distant outposts, and sometimes repeats voices it should not have.",
                 SiteKind.RELAY, POIData.DangerLevel.MEDIUM, HazardProfile.SAFE,
                 "bring repair parts, power cells, water, and a weapon",
-                "Utility", "circuit boards, antenna parts, energy cells, routing packets",
+                "Utility", "circuit boards, scrap circuits, energy cells, routing packets",
                 "Repair the relay and archive the routing packet.",
                 "relay_station_cache", null, 15, true,
                 List.of("relay_station"),

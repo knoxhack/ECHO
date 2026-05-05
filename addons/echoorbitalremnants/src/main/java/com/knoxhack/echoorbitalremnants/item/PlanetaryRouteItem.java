@@ -39,16 +39,16 @@ public class PlanetaryRouteItem extends Item {
                     returnLevel = serverPlayer.level().getServer().overworld();
                 }
                 serverPlayer.teleportTo(returnLevel, progress.returnX(), progress.returnY(), progress.returnZ(), Set.of(), player.getYRot(), player.getXRot(), false);
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return vector burned."));
+                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return vector committed."));
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && player.isShiftKeyDown() && !progress.hasReturnPoint()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return denied. No docking vector is saved."));
+                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return denied. No docking vector is saved; mark one before drifting farther."));
                 return InteractionResult.CONSUME;
             }
 
             if (Config.DIMENSION_UNLOCKS_ENABLED.get() && !target.unlocked(progress) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " route locked. Terminal telemetry incomplete."));
+                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " route locked. Terminal telemetry lacks the handoff proof."));
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !target.midGameReady(progress) && !player.hasInfiniteMaterials()) {
@@ -56,7 +56,7 @@ public class PlanetaryRouteItem extends Item {
                 return InteractionResult.CONSUME;
             }
             if (!SuitEvents.isOrbitalExposure(player) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " requires orbital staging. Launch to Low Earth Orbit first."));
+                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " requires orbital staging. Launch to Low Earth Orbit before burning this route."));
                 return InteractionResult.CONSUME;
             }
 
@@ -92,7 +92,7 @@ public class PlanetaryRouteItem extends Item {
 
             @Override
             String midGameLockMessage() {
-                return "Restore three Helium Extractor Nodes before Mars transfer reliability is safe.";
+                return "Restore three Helium Extractor Nodes before Mars transfer stops guessing.";
             }
 
             @Override
@@ -126,7 +126,7 @@ public class PlanetaryRouteItem extends Item {
 
             @Override
             String midGameLockMessage() {
-                return "Repair three Mars Pressure Consoles before Europa prep is stable.";
+                return "Repair three Mars Pressure Consoles before Europa prep stops bleeding pressure.";
             }
 
             @Override

@@ -515,7 +515,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                 "Story", "Endgame"),
         SURVEY_NETWORK("survey_network", "ROUTE SURVEY", 6, 0,
                 "Survey Network",
-                "Map the route worlds and stabilize the post-ECHO Nexus anchors before the old quarantine reinterprets silence.",
+                "Map the route worlds and stabilize the post-ECHO-0 Nexus anchors before the old quarantine reinterprets silence.",
                 "Use the Survey tab to finish each route's three unique logs. Evidence is the countermeasure now.",
                 "Survey", "Endgame"),
         FACTION_CONTRACT("faction_contract", "ROUTE SURVEY", 6, 1,

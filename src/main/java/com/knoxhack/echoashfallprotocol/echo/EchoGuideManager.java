@@ -1038,7 +1038,7 @@ public class EchoGuideManager {
 
         List<ItemStack> rewards = buildRewardStacks(player, mission);
         if (EchoCoreServices.storeTerminalRewards(player, mission.id(), rewards)) {
-            player.sendSystemMessage(Component.literal("\u00A76[ECHO-7]\u00A7r Rewards stored in terminal. Claim them before crafting the next mission step."));
+            player.sendSystemMessage(Component.literal("\u00A76[ECHO-7]\u00A7r Support cache sealed in terminal. Claim it before building the next route step."));
         } else {
             awardRewards(player, rewards);
         }
@@ -1072,14 +1072,14 @@ public class EchoGuideManager {
      */
     public static void claimRewards(ServerPlayer player) {
         if (!EchoCoreServices.claimTerminalRewards(player)) {
-            player.sendSystemMessage(Component.literal("\u00A77[ECHO-7]\u00A7r No terminal rewards available."));
+            player.sendSystemMessage(Component.literal("\u00A77[ECHO-7]\u00A7r No sealed terminal caches are waiting."));
         }
     }
 
     private static void awardRewards(ServerPlayer player, List<ItemStack> rewards) {
         if (rewards.isEmpty()) return;
 
-        player.sendSystemMessage(Component.literal("§6[REWARD RECEIVED]§r"));
+        player.sendSystemMessage(Component.literal("\u00A76[SUPPORT CACHE CLAIMED]\u00A7r"));
         for (ItemStack stack : rewards) {
             ItemStack copy = stack.copy();
             player.sendSystemMessage(Component.literal("  + " + copy.getCount() + "x ").append(copy.getHoverName()));
@@ -1158,7 +1158,7 @@ public class EchoGuideManager {
             player.sendSystemMessage(Component.literal(chatMessage), true);
         } else if (isCritical) {
             // Screen Titles for critical alerts
-            player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("§c[ALERT]")));
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal("\u00A7c[ECHO ALERT]")));
             player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(Component.literal(chatMessage)));
             player.sendSystemMessage(Component.literal(chatMessage));
         } else {

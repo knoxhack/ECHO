@@ -2,7 +2,7 @@
 
 Earth made its choice below. Orbit still calls it quarantine.
 
-ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol built on the bundled 26.1.2 NeoForge setup. It adds a terminal-led progression arc from Earth recovery sites to explorable Low Earth Orbit, Station ECHO debris, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, and the ECHO-0 quarantine protocol.
+ECHO: Orbital Remnants `1.5.0` is a post-Nexus addon chapter for the ECHO stack built on the bundled 26.1.2 NeoForge setup. It follows ECHO-7 along the pod's broken fall path from Earth recovery sites to Low Earth Orbit, Station ECHO debris, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, and the ECHO-0 quarantine protocol.
 
 ## Chapter Flow
 
@@ -14,7 +14,7 @@ After any ECHO: Ashfall Protocol Nexus choice, ECHO-7 controls orbital progressi
 - Build suit gear, oxygen support, launch infrastructure, and rocket parts.
 - Assemble the Emergency Rocket and reach orbit.
 - Restore Station ECHO systems, repair route networks, unlock later route vessels, survive hostile anomalies, and resolve ECHO-0.
-- Continue into the Living Route Worlds loop: explore deep route sites, map landmarks, stabilize hazards, finish post-ECHO Nexus anchors, complete one faction contract, and seal the final survey network.
+- Continue into the Living Route Worlds loop: explore deep route sites, map landmarks, stabilize hazards, finish post-ECHO-0 Nexus anchors, complete one faction contract, and seal the final survey network.
 - Use the terminal's Next Step, SCAN, SURVEY, and faction contract reports whenever progression is blocked; ECHO guidance names missing hooks directly.
 
 ## Modular ECHO Integration
@@ -23,13 +23,14 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 
 - Before an ECHO: Ashfall Protocol Nexus choice, Earth orbital calibration is locked by the quarantine handoff.
 - After any Nexus choice, the normal ECHO-7 launch-site scan path opens.
-- The main ECHO terminal shows Orbital Command, Survey, and ECHO mission records with route flags, suit telemetry, station power, faction standings, and optional utility support caches.
+- The main ECHO terminal shows Orbital Command, Survey, ECHO mission records, route records, What Now diagnostics, suit telemetry, station power, faction standings, and optional utility support caches.
 - Without the shared ECHO Terminal, Orbital Remnants keeps its standalone terminal item flow as the fallback command surface.
+- ECHO Core services publish Earth Recontact, Launch Chain, Route Worlds, and ECHO-0 Quarantine route records; launch-readiness and suit-critical diagnostics; orbital hazard telemetry; Orbital Remnant, Void Salvagers, and Nexus Choir faction standing; and terminal reward-cache state.
 
 ## Core Systems
 
 - **Terminal progression:** Next Step guidance, scan requirement, last report, launch readiness, route locks, ECHO memory, faction standing, and active faction contract.
-- **Shared Terminal polish:** optional Terminal-installed mission records and once-only support caches that mirror Orbital progress without replacing standalone ECHO-7 progression.
+- **Shared Terminal polish:** Terminal mission records, What Now blockers, Route Records, Vitals telemetry, Faction Atlas entries, and once-only support caches that mirror Orbital progress without replacing standalone ECHO-7 progression.
 - **Launch chain:** Launch Platform, Rocket Assembly Frame, Fuel Refinery, Oxygen Compressor, pressure suit, oxygen tank, and six rocket assembly parts.
 - **Suit survival:** oxygen, pressure, helmet seal, suit leak state, radiation, gravity, station power, emergency oxygen cells, suit sealant, and suit modules.
 - **Orbital machines:** one-input/one-output machines with processing progress and internal charge.
@@ -39,7 +40,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 - **Mid-game route objectives:** three-site repair chains for the Station Network, Lunar Helium Extractors, Mars Pressure Consoles, and Europa Thermal Arrays.
 - **Deep sites:** three repeatable site families per route with fixed caches, objective blocks, traversal hooks, and local hazard pressure.
 - **Factions:** Orbital Remnant, Void Salvagers, and Nexus Choir alignment rewards plus terminal-driven contracts.
-- **Threats:** ECHO drones, Vacuum Wraiths, Broken Astronaut Suits, Nexus Husks, route bosses, and ECHO-0.
+- **Threats:** ECHO drones, Vacuum Wraiths, Broken Astronaut Suits, Nexus Husks, major route encounters, and ECHO-0.
 
 ## Progression
 
@@ -93,7 +94,7 @@ The built jar is produced in `addons/echoorbitalremnants/build/libs/`.
 5. With ECHO: Terminal installed, confirm Orbital Command, Survey, and ECHO mission tabs render and that optional support caches claim once.
 6. Complete at least one faction pledge and terminal contract.
 7. Run the automated build and GameTest server before packaging.
-8. Expected jar: `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.4.0.jar`.
+8. Expected jar: `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
 
 ## Documentation
 

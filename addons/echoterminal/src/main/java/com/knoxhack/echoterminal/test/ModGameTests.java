@@ -51,6 +51,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_mission_action_routing", () -> ModGameTests::terminalMissionActionRouting);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_LORE_TAXONOMY =
             TEST_FUNCTIONS.register("terminal_lore_taxonomy", () -> ModGameTests::terminalLoreTaxonomy);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_EMPTY_PROVIDER_CONTRACTS =
+            TEST_FUNCTIONS.register("terminal_empty_provider_contracts", () -> ModGameTests::terminalEmptyProviderContracts);
 
     private ModGameTests() {
     }
@@ -66,6 +68,7 @@ public final class ModGameTests {
         register(event, environment, "terminal_mission_registry", TERMINAL_MISSION_REGISTRY.getId());
         register(event, environment, "terminal_mission_action_routing", TERMINAL_MISSION_ACTION_ROUTING.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
+        register(event, environment, "terminal_empty_provider_contracts", TERMINAL_EMPTY_PROVIDER_CONTRACTS.getId());
     }
 
     private static void terminalApiIds(GameTestHelper helper) {
@@ -77,6 +80,11 @@ public final class ModGameTests {
             helper.assertTrue(TerminalActionRegistry.handle(null, id("test_tab"), id("test_action"), ""),
                     "Registered terminal action should be routed");
             helper.assertTrue(handled.get(), "Registered terminal action handler should run");
+            TerminalActionRegistry.register(id("test_tab"), id("failing_action"), (player, payload) -> {
+                throw new IllegalStateException("test terminal action failure");
+            });
+            helper.assertFalse(TerminalActionRegistry.handle(null, id("test_tab"), id("failing_action"), ""),
+                    "Failing terminal action handlers should be logged and ignored");
         });
         helper.succeed();
     }
@@ -108,6 +116,9 @@ public final class ModGameTests {
                     "Mission provider registry should expose registered providers");
             helper.assertTrue(TerminalMissionRegistry.providers().get(0).chapter().id().equals(id("alpha_chapter")),
                     "Mission providers should sort by order and id");
+            TerminalMissionRegistry.register(new ThrowingChapterProvider());
+            helper.assertTrue(TerminalMissionRegistry.providers().size() == 2,
+                    "Mission providers with failing chapter metadata should be ignored");
 
             boolean duplicateRejected = false;
             try {
@@ -181,6 +192,21 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void terminalEmptyProviderContracts(GameTestHelper helper) {
+        TerminalMissionRegistry.withClearedForTests(() -> {
+            TerminalMissionRegistry.register(new EmptyMissionProvider(id("empty_chapter"), 1));
+            helper.assertTrue(TerminalMissionRegistry.providers().size() == 1,
+                    "Terminal mission registry should keep empty providers registered");
+            helper.assertTrue(TerminalMissionRegistry.providers().get(0).missions(null).isEmpty(),
+                    "Empty mission providers should be valid for standalone installs");
+            TerminalMissionSnapshot snapshot = TerminalMissionRegistry.providers().get(0)
+                    .snapshot(null, id("missing_mission"));
+            helper.assertTrue(snapshot.status() == TerminalMissionStatus.LOCKED,
+                    "Empty provider snapshots should return stable locked state");
+        });
+        helper.succeed();
+    }
+
     private record DummyTab(TerminalTabDescriptor descriptor) implements TerminalTab {
         DummyTab(Identifier id, String title, int order) {
             this(new TerminalTabDescriptor(id, title, order, 0xFF66D9FF));
@@ -233,6 +259,54 @@ public final class ModGameTests {
         public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
             handled.set(true);
             return true;
+        }
+    }
+
+    private record EmptyMissionProvider(Identifier chapterId, int order) implements TerminalMissionProvider {
+        @Override
+        public TerminalMissionChapter chapter() {
+            return new TerminalMissionChapter(chapterId, chapterId.getPath(), "Empty provider", order, 0xFF66D9FF, true);
+        }
+
+        @Override
+        public List<TerminalMissionDefinition> missions(Player player) {
+            return List.of();
+        }
+
+        @Override
+        public TerminalMissionSnapshot snapshot(Player player, Identifier missionId) {
+            return new TerminalMissionSnapshot(
+                    missionId,
+                    TerminalMissionStatus.LOCKED,
+                    0.0F,
+                    "LOCKED",
+                    "No mission records registered.",
+                    "Install or enable a chapter provider.",
+                    List.of());
+        }
+    }
+
+    private record ThrowingChapterProvider() implements TerminalMissionProvider {
+        @Override
+        public TerminalMissionChapter chapter() {
+            throw new IllegalStateException("test terminal mission chapter failure");
+        }
+
+        @Override
+        public List<TerminalMissionDefinition> missions(Player player) {
+            return List.of();
+        }
+
+        @Override
+        public TerminalMissionSnapshot snapshot(Player player, Identifier missionId) {
+            return new TerminalMissionSnapshot(
+                    missionId,
+                    TerminalMissionStatus.LOCKED,
+                    0.0F,
+                    "LOCKED",
+                    "Provider failed.",
+                    "Retry later.",
+                    List.of());
         }
     }
 

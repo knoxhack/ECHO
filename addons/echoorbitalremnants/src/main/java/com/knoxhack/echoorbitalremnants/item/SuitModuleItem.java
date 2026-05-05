@@ -28,7 +28,7 @@ public class SuitModuleItem extends Item {
             switch (module) {
                 case OXYGEN_BOOSTER -> {
                     state.boostOxygen(25);
-                    player.sendSystemMessage(Component.literal("ECHO-7 // Oxygen booster cycled. Reserve capacity flushed into suit loop."));
+                    player.sendSystemMessage(Component.literal("ECHO-7 // Oxygen booster cycled. Reserve air flushed into suit loop."));
                 }
                 case RADIATION_VISOR -> {
                     state.reduceRadiation(20);
@@ -50,14 +50,14 @@ public class SuitModuleItem extends Item {
                     }
                 }
                 case SCANNER -> {
-                    player.sendSystemMessage(Component.literal("ECHO-7 SCANNER // " + level.dimension().identifier()));
+                    player.sendSystemMessage(Component.literal("ECHO-7 // SCANNER // " + level.dimension().identifier()));
                     player.sendSystemMessage(Component.literal("Low Orbit: " + (progress.lowOrbitReached() ? "MAPPED" : "UNKNOWN")
                             + " | Lunar: " + (progress.lunarSignalUnlocked() ? "RESOLVED" : "WEAK")
                             + " | Mars: " + (progress.marsRouteUnlocked() ? "OPEN" : "LOCKED")
                             + " | Europa: " + (progress.europaRouteUnlocked() ? "OPEN" : "LOCKED")
                             + " | Deep Space: " + (progress.deepSpaceProtocolUnlocked() ? "OPEN" : "SEALED")));
                     if (ModDimensions.isSpaceLevel(level)) {
-                        player.sendSystemMessage(Component.literal("Suit: O2 " + state.oxygen() + "% | Pressure " + state.pressure()
+                        player.sendSystemMessage(Component.literal("Suit loop: O2 " + state.oxygen() + "% | Pressure " + state.pressure()
                                 + "% | Radiation " + state.radiation() + "%"));
                     }
                 }

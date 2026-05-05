@@ -20,7 +20,7 @@ public final class ModNetwork {
             return;
         }
         if (!TerminalActionRegistry.handle(player, packet.tabId(), packet.actionId(), packet.payload())) {
-            player.sendSystemMessage(Component.literal("[ECHO-7] Unknown terminal action."), true);
+            player.sendSystemMessage(Component.literal("[ECHO-7] Terminal action signal unknown. Reopen the tab and try again."), true);
         }
     }
 }

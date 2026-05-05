@@ -61,10 +61,12 @@ Guardian mode adds a biome-specific surface landmark, themed descent route, and 
 - **Features:** Glowing core, radiation hazards
 
 ### 5. Drop Pod
-- **Size:** 7-14 blocks
-- **Rooms:** 1-3
+- **Template size:** `20x10x20`
+- **Main body:** roughly `12x12` with chamfered/clipped corners inside the 20-block site
+- **Rooms:** 1 compact starter bay with wall zones
 - **Biomes:** Crash Zone
-- **Features:** Emergency shelter, starter supplies
+- **Features:** armored sci-fi shell, slimmer landing struts, south-facing door/ramp, side windows, roof hatch, beacon posts, pipe/cable runs, labeled lockers, bed nook, ECHO control core, embedded lights, and reduced landing debris
+- **Contracts:** player spawn at template `(9, 3, 12)`; white bed foot/head at `(5, 3, 10)` and `(5, 3, 11)`; mirrored NBTs must stay byte-equivalent by generated palette signature under both `structure/drop_pod.nbt` and `structure/global/drop_pod.nbt`
 
 ## POI Field Atlas Catalog
 
@@ -144,6 +146,16 @@ Regenerate and validate the committed surface POI template assets from the canon
 ```
 
 The offline generator writes the runtime `structure` resources and keeps the legacy plural mirror in sync. In-game structure commands remain useful for exporting hand-built templates and testing procedural placements, but `/modstructures generate` now points back to the offline generator instead of writing POI assets itself.
+
+For the starter pod only, use the focused generator target:
+
+```powershell
+python tools\structure_generator\generator.py --target drop_pod
+python tools\structure_generator\generator.py --check --target drop_pod
+python tools\validate_gameplay_data.py
+```
+
+The drop pod check expects a compact `20x10x20` template, the spawn/bed contract above, visible locker/container coverage, mirrored `structure` and `structures` outputs, and only the reviewed foundation warnings from hidden deepslate support.
 
 ```
 # Teleport to nearest bio lab

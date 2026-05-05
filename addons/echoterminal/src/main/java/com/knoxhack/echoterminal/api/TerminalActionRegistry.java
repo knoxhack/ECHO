@@ -1,5 +1,6 @@
 package com.knoxhack.echoterminal.api;
 
+import com.knoxhack.echoterminal.EchoTerminal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,9 +23,21 @@ public final class TerminalActionRegistry {
     }
 
     public static boolean handle(ServerPlayer player, Identifier tabId, Identifier actionId, String payload) {
+        if (tabId == null || actionId == null) {
+            return false;
+        }
         Optional<TerminalActionHandler> handler = Optional.ofNullable(HANDLERS.get(new Key(tabId, actionId)));
-        handler.ifPresent(value -> value.handle(player, payload));
-        return handler.isPresent();
+        if (handler.isEmpty()) {
+            return false;
+        }
+        try {
+            handler.get().handle(player, payload);
+            return true;
+        } catch (RuntimeException exception) {
+            EchoTerminal.LOGGER.warn("Terminal action {}:{} failed; ignoring action.",
+                    tabId, actionId, exception);
+            return false;
+        }
     }
 
     public static void clearForTests() {
