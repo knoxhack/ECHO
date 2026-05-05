@@ -277,6 +277,95 @@ SOFT_WHITE_REPLACEMENTS = {
     "minecraft:scattered_bones": ["echoashfallprotocol:scattered_bones"],
 }
 
+SUPPORT_SENSITIVE_EXACT_BLOCKS = {
+    "minecraft:barrel",
+    "minecraft:campfire",
+    "minecraft:chest",
+    "minecraft:dead_bush",
+    "minecraft:grass",
+    "minecraft:gravel",
+    "minecraft:hay_block",
+    "minecraft:lantern",
+    "minecraft:lily_pad",
+    "minecraft:magma_block",
+    "minecraft:redstone_torch",
+    "minecraft:snow",
+    "minecraft:torch",
+    "minecraft:trapped_chest",
+    "echoashfallprotocol:acidic_sludge",
+    "echoashfallprotocol:ash_bush",
+    "echoashfallprotocol:ash_layer",
+    "echoashfallprotocol:burnt_fern",
+    "echoashfallprotocol:cable_bundle",
+    "echoashfallprotocol:concrete_chunk",
+    "echoashfallprotocol:concrete_rubble",
+    "echoashfallprotocol:deep_ash",
+    "echoashfallprotocol:dry_grass",
+    "echoashfallprotocol:fallout_dust",
+    "echoashfallprotocol:item_pipe",
+    "echoashfallprotocol:power_cable",
+    "echoashfallprotocol:rubble",
+    "echoashfallprotocol:rusted_metal_debris",
+    "echoashfallprotocol:rusted_metal_sheet",
+    "echoashfallprotocol:scattered_bones",
+    "echoashfallprotocol:toxic_moss",
+    "echoashfallprotocol:toxic_puddle",
+    "echoashfallprotocol:wasteland_trace_rubble",
+}
+
+SUPPORT_SENSITIVE_TOKENS = (
+    "barrel",
+    "bush",
+    "cactus",
+    "campfire",
+    "cache",
+    "crate",
+    "debris",
+    "dirt",
+    "dust",
+    "fern",
+    "fungus",
+    "grass",
+    "lantern",
+    "moss",
+    "mud",
+    "puddle",
+    "reed",
+    "rubble",
+    "sapling",
+    "sludge",
+    "soil",
+    "wheat",
+)
+
+TERRAIN_BLEND_TOKENS = (
+    "aggregate",
+    "ash",
+    "crust",
+    "dirt",
+    "dust",
+    "gravel",
+    "moss",
+    "mud",
+    "permafrost",
+    "puddle",
+    "rubble",
+    "slag",
+    "sludge",
+    "soil",
+    "stone",
+)
+
+PIPE_AND_CABLE_TOKENS = (
+    "cable",
+    "conduit",
+    "pipe",
+)
+
+INTENTIONAL_FLOATING_TEMPLATE_NAMES = {
+    "floating_obelisk_cluster",
+}
+
 
 def _bounds(blocks: BlockList) -> Optional[tuple[int, int, int, int, int, int]]:
     solid = [(x, y, z) for x, y, z, block_id, _ in blocks if block_id != "minecraft:air"]
@@ -304,6 +393,46 @@ def _edge_positions(footprint: set[Tuple[int, int]]) -> set[Tuple[int, int]]:
             if neighbor not in footprint:
                 edges.add(neighbor)
     return edges
+
+
+def is_support_sensitive_block(block_id: str) -> bool:
+    """Return true for loose/grounded blocks that should never float."""
+    if block_id == "minecraft:air":
+        return False
+    if block_id in SUPPORT_SENSITIVE_EXACT_BLOCKS:
+        return True
+    if any(token in block_id for token in SUPPORT_SENSITIVE_TOKENS):
+        return True
+    return block_id.startswith("echoashfallprotocol:") and any(token in block_id for token in PIPE_AND_CABLE_TOKENS)
+
+
+def is_terrain_blend_block(block_id: str) -> bool:
+    """Return true for blocks used as terrain apron or low blending material."""
+    if block_id == "minecraft:air":
+        return False
+    if block_id in {"minecraft:coarse_dirt", "minecraft:gravel", "minecraft:snow", "minecraft:snow_block"}:
+        return True
+    return any(token in block_id for token in TERRAIN_BLEND_TOKENS)
+
+
+def _is_pipe_or_cable(block_id: str) -> bool:
+    return any(token in block_id for token in PIPE_AND_CABLE_TOKENS)
+
+
+def _is_vegetation(block_id: str) -> bool:
+    return any(token in block_id for token in ("bush", "fern", "grass", "sapling", "fungus", "cactus", "reed", "wheat"))
+
+
+def _support_block_for(category: str, block_id: str, rng: random.Random) -> str:
+    foundation = FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])
+    retaining = RETAINING_PALETTES.get(category, RETAINING_PALETTES["global"])
+    if _is_pipe_or_cable(block_id):
+        return rng.choice(retaining)
+    if _is_vegetation(block_id) or is_terrain_blend_block(block_id):
+        return rng.choice(foundation)
+    if "barrel" in block_id or "crate" in block_id or "chest" in block_id or block_id.endswith("station"):
+        return rng.choice(foundation)
+    return rng.choice(retaining if rng.random() < 0.35 else foundation)
 
 
 def normalize_visual_blocks(blocks: BlockList, category: str, rng: random.Random) -> BlockList:
@@ -457,6 +586,169 @@ def add_terrain_apron(blocks: BlockList, rng: random.Random, category: str, inte
     return result
 
 
+def soften_bottom_outline(blocks: BlockList, rng: random.Random, category: str) -> BlockList:
+    """Nibble perfectly flat apron edges without removing load-bearing cells."""
+    deduped = _dedupe_blocks(blocks)
+    bounds = _bounds(deduped)
+    if not bounds:
+        return deduped
+
+    min_x, max_x, min_y, _, min_z, max_z = bounds
+    width = max_x - min_x + 1
+    depth = max_z - min_z + 1
+    if width < 10 or depth < 10:
+        return deduped
+
+    by_pos = {(x, y, z): (block_id, props) for x, y, z, block_id, props in deduped}
+    bottom = {
+        (x, z)
+        for x, y, z, block_id, _ in deduped
+        if y == min_y and block_id != "minecraft:air"
+    }
+    if len(bottom) < 32:
+        return deduped
+
+    removable: set[Tuple[int, int]] = set()
+    for x, z in bottom:
+        block_id, _ = by_pos[(x, min_y, z)]
+        if not is_terrain_blend_block(block_id):
+            continue
+        if (x, min_y + 1, z) in by_pos and by_pos[(x, min_y + 1, z)][0] != "minecraft:air":
+            continue
+        exposed_neighbors = sum(
+            1
+            for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]
+            if (x + dx, z + dz) not in bottom
+        )
+        on_outer_line = x in (min_x, max_x) or z in (min_z, max_z)
+        if exposed_neighbors or on_outer_line:
+            chance = 0.12 + (0.12 if on_outer_line else 0.0) + min(0.12, exposed_neighbors * 0.03)
+            if rng.random() < chance:
+                removable.add((x, z))
+
+    if not removable:
+        return deduped
+
+    result = [
+        (x, y, z, block_id, props)
+        for x, y, z, block_id, props in deduped
+        if not (y == min_y and (x, z) in removable)
+    ]
+
+    foundation = FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])
+    for x, z in sorted(removable):
+        if rng.random() < 0.45:
+            for dx, dz in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                if (x + dx, z + dz) in bottom and (x + dx, z + dz) not in removable:
+                    result.append((x, min_y, z, rng.choice(foundation), None))
+                    break
+
+    return _dedupe_blocks(result)
+
+
+def apply_grounding_pass(
+    blocks: BlockList,
+    category: str,
+    seed: int,
+    name: str = "",
+    soften_outline: bool = True,
+) -> BlockList:
+    """Add final supports and irregular terrain grounding to generated POIs."""
+    rng = random.Random(seed + 4242)
+    result = soften_bottom_outline(blocks, rng, category) if soften_outline else _dedupe_blocks(blocks)
+    bounds = _bounds(result)
+    if not bounds:
+        return result
+
+    _, _, min_y, _, _, _ = bounds
+    intentional_float = name in INTENTIONAL_FLOATING_TEMPLATE_NAMES
+    air_positions = {
+        (x, y, z)
+        for x, y, z, block_id, _ in result
+        if block_id == "minecraft:air"
+    }
+    occupied: Dict[Tuple[int, int, int], Tuple[str, Optional[Dict[str, str]]]] = {
+        (x, y, z): (block_id, props)
+        for x, y, z, block_id, props in result
+        if block_id != "minecraft:air"
+    }
+
+    def add_support(
+        x: int,
+        y: int,
+        z: int,
+        support_for: str,
+        props: Optional[Dict[str, str]] = None,
+        allow_air_override: bool = False,
+    ) -> None:
+        if (x, y, z) in occupied or ((x, y, z) in air_positions and not allow_air_override):
+            return
+        block_id = _support_block_for(category, support_for, rng)
+        result.append((x, y, z, block_id, props))
+        occupied[(x, y, z)] = (block_id, props)
+
+    def support_column(x: int, y: int, z: int, support_for: str, allow_air_override: bool = False) -> None:
+        for sy in range(min_y, y):
+            add_support(x, sy, z, support_for, allow_air_override=allow_air_override)
+
+    # Ground any low visible mass and every loose/detail block. This catches the
+    # obvious "floating rubble/plant/cache" cases while preserving high ruined silhouettes.
+    for (x, y, z), (block_id, _) in list(occupied.items()):
+        if y <= min_y:
+            continue
+        has_below = (x, y - 1, z) in occupied
+        if has_below:
+            continue
+        low_mass = y <= min_y + (3 if not intentional_float else 2)
+        sensitive = is_support_sensitive_block(block_id)
+        if sensitive or low_mass:
+            support_column(x, y, z, block_id)
+
+    # Add sparse posts under elevated pipes/cables and broad platforms so they read
+    # as built objects, not loose blocks suspended over the terrain.
+    for (x, y, z), (block_id, _) in list(occupied.items()):
+        if y <= min_y + 1:
+            continue
+        if not _is_pipe_or_cable(block_id):
+            continue
+        if (x + z + seed) % 3 == 0 or (x, y - 1, z) not in occupied:
+            support_column(x, y, z, block_id)
+
+    # Rebuild occupancy after support posts, then prune decorative singletons that
+    # still cannot be grounded because an intentional air carve-out is below them.
+    result = _dedupe_blocks(result)
+    occupied = {
+        (x, y, z): (block_id, props)
+        for x, y, z, block_id, props in result
+        if block_id != "minecraft:air"
+    }
+    cleaned: BlockList = []
+    for x, y, z, block_id, props in result:
+        if block_id != "minecraft:air" and y > min_y and (x, y - 1, z) not in occupied:
+            has_supported_detail_above = (x, y + 1, z) in occupied
+            if (
+                is_support_sensitive_block(block_id)
+                and (_is_vegetation(block_id) or is_terrain_blend_block(block_id))
+                and not has_supported_detail_above
+            ):
+                continue
+        cleaned.append((x, y, z, block_id, props))
+
+    result = _dedupe_blocks(cleaned)
+    occupied = {
+        (x, y, z): (block_id, props)
+        for x, y, z, block_id, props in result
+        if block_id != "minecraft:air"
+    }
+    # Final strict pass: if a loose detail still floats above an intentional air
+    # carve-out, prefer a small rubble/support post over leaving it suspended.
+    for (x, y, z), (block_id, _) in list(occupied.items()):
+        if y > min_y and (x, y - 1, z) not in occupied and is_support_sensitive_block(block_id):
+            support_column(x, y, z, block_id, allow_air_override=True)
+
+    return _dedupe_blocks(result)
+
+
 def add_story_elements(
     blocks: BlockList,
     rng: random.Random,
@@ -539,8 +831,14 @@ def add_loot_containers(
     return result
 
 
-def add_access_path(blocks: BlockList, rng: random.Random, category: str) -> BlockList:
-    """Add a small readable approach path without a ruler-straight footprint."""
+def add_access_path(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    route_count: int = 1,
+    route_length: int = 7,
+) -> BlockList:
+    """Add readable approach paths without ruler-straight footprints."""
     bounds = _bounds(blocks)
     if not bounds:
         return blocks
@@ -549,25 +847,48 @@ def add_access_path(blocks: BlockList, rng: random.Random, category: str) -> Blo
     cz = (min_z + max_z) // 2
     path_block = PATH_BLOCKS.get(category, PATH_BLOCKS["global"])
     result = blocks[:]
-    from_south = rng.random() < 0.5
-    if from_south:
-        for step, z in enumerate(range(max_z + 1, max_z + rng.randint(5, 8))):
+
+    directions = ["south", "west", "north", "east"]
+    rng.shuffle(directions)
+    foundation = FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])
+    for direction in directions[:max(1, route_count)]:
+        length = max(5, route_length + rng.randint(-1, 2))
+        for step in range(length):
             drift = rng.choice([-1, 0, 0, 1])
-            for dx in (-1, 0, 1):
-                if abs(dx) == 1 and rng.random() < 0.35:
+            if direction == "south":
+                x, z = cx + drift, max_z + 1 + step
+                cross_axis = "x"
+            elif direction == "north":
+                x, z = cx + drift, min_z - 1 - step
+                cross_axis = "x"
+            elif direction == "east":
+                x, z = max_x + 1 + step, cz + drift
+                cross_axis = "z"
+            else:
+                x, z = min_x - 1 - step, cz + drift
+                cross_axis = "z"
+
+            for offset in (-1, 0, 1):
+                if abs(offset) == 1 and rng.random() < 0.35:
                     continue
-                result.append((cx + dx + drift, min_y, z, path_block, None))
+                px, pz = (x + offset, z) if cross_axis == "x" else (x, z + offset)
+                result.append((px, min_y, pz, path_block, None))
+
             if step % 2 == 0:
-                result.append((cx + drift + rng.choice([-2, 2]), min_y, z, rng.choice(FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])), None))
-    else:
-        for step, x in enumerate(range(min_x - rng.randint(5, 8), min_x)):
-            drift = rng.choice([-1, 0, 0, 1])
-            for dz in (-1, 0, 1):
-                if abs(dz) == 1 and rng.random() < 0.35:
-                    continue
-                result.append((x, min_y, cz + dz + drift, path_block, None))
-            if step % 2 == 0:
-                result.append((x, min_y, cz + drift + rng.choice([-2, 2]), rng.choice(FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])), None))
+                edge_offset = rng.choice([-2, 2])
+                px, pz = (x + edge_offset, z) if cross_axis == "x" else (x, z + edge_offset)
+                result.append((px, min_y, pz, rng.choice(foundation), None))
+
+        # Put a small marker at the point where the route meets the structure.
+        if direction == "south":
+            marker_x, marker_z = cx, max_z
+        elif direction == "north":
+            marker_x, marker_z = cx, min_z
+        elif direction == "east":
+            marker_x, marker_z = max_x, cz
+        else:
+            marker_x, marker_z = min_x, cz
+        result.append((marker_x, min_y + 1, marker_z, rng.choice(LIGHTING_NODES.get(category, LIGHTING_NODES["global"])), None))
     return result
 
 
@@ -731,6 +1052,248 @@ def add_category_signature(
     return result
 
 
+def _profile_value(profile: Optional[Dict[str, object]], key: str, fallback: str) -> str:
+    if not profile:
+        return fallback
+    value = profile.get(key)
+    return str(value) if value is not None else fallback
+
+
+def _profile_bool(profile: Optional[Dict[str, object]], key: str) -> bool:
+    if not profile:
+        return False
+    return bool(profile.get(key))
+
+
+def _interior_floor_positions(blocks: BlockList) -> List[Tuple[int, int]]:
+    occupied = {(x, y, z) for x, y, z, bid, _ in blocks if bid != "minecraft:air"}
+    return [
+        (x, z)
+        for x, y, z, bid, _ in blocks
+        if y == 0 and bid != "minecraft:air" and (x, 1, z) not in occupied
+    ]
+
+
+def add_route_role_set_piece(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    name: str,
+    profile: Optional[Dict[str, object]] = None,
+) -> BlockList:
+    """Add a readable set piece tied to category and route role."""
+    bounds = _bounds(blocks)
+    if not bounds:
+        return blocks
+    min_x, max_x, min_y, max_y, min_z, max_z = bounds
+    cx = (min_x + max_x) // 2
+    cz = (min_z + max_z) // 2
+    base_y = min_y + 1
+    role = _profile_value(profile, "route_role", "route")
+    result = blocks[:]
+
+    def add(x: int, y: int, z: int, block: str, props: Optional[Dict[str, str]] = None) -> None:
+        result.append((x, y, z, block, props))
+
+    def line(start_x: int, start_z: int, dx: int, dz: int, length: int, block: str, y: int = base_y) -> None:
+        for step in range(length):
+            add(start_x + dx * step, y, start_z + dz * step, block)
+
+    if category == "crash_zone_wasteland":
+        rib_x = min(max_x - 2, cx + 2)
+        for y in range(base_y, base_y + 4):
+            add(rib_x, y, cz - 2, "echoashfallprotocol:drop_pod_hull")
+            add(rib_x, y, cz + 2, "echoashfallprotocol:drop_pod_hull")
+        for z in range(cz - 2, cz + 3):
+            add(rib_x, base_y + 4, z, "echoashfallprotocol:rusted_metal_sheet")
+        line(min_x + 1, cz, 1, 0, max(4, min(10, max_x - min_x - 1)), "echoashfallprotocol:power_cable", base_y)
+        add(cx - 2, base_y, cz + 2, "echoashfallprotocol:supply_crate")
+    elif category == "ruined_plains":
+        line(cx - 3, max_z - 1, 1, 0, 7, "minecraft:gravel", min_y)
+        for x in range(cx - 2, cx + 3, 2):
+            add(x, base_y, max_z - 2, "minecraft:campfire", {"lit": "false", "facing": "north", "signal_fire": "false", "waterlogged": "false"})
+        add(cx + 2, base_y, cz, "echoashfallprotocol:rain_collector")
+        add(cx - 2, base_y, cz, "echoashfallprotocol:map_table")
+    elif category == "ruined_cityscape":
+        stair_x = min_x + 2
+        for step in range(5):
+            add(stair_x + step, base_y + step, min_z + 2, "minecraft:stone_brick_stairs", {"facing": "east", "half": "bottom", "shape": "straight", "waterlogged": "false"})
+            add(stair_x + step, base_y + step - 1, min_z + 2, "echoashfallprotocol:concrete_rubble")
+        line(cx - 4, cz, 1, 0, 9, "echoashfallprotocol:power_cable", min(max_y, base_y + 3))
+        add(max_x - 2, base_y, cz + 1, "echoashfallprotocol:signal_scanner")
+    elif category == "industrial_ruins":
+        gantry_y = min(max_y + 1, base_y + 5)
+        line(min_x + 1, cz, 1, 0, max(6, max_x - min_x - 1), "minecraft:iron_bars", gantry_y)
+        for x in range(min_x + 1, max_x, 4):
+            for y in range(base_y, gantry_y):
+                add(x, y, cz, "echoashfallprotocol:rusted_metal_sheet")
+        add(cx, base_y, cz - 2, "echoashfallprotocol:factory_controller")
+        add(cx + 2, base_y, cz - 1, "echoashfallprotocol:scrap_press")
+    elif category == "toxic_swamp":
+        line(min_x + 1, cz, 1, 0, max(6, max_x - min_x - 1), "minecraft:oak_planks", min_y)
+        for x in range(min_x + 2, max_x, 4):
+            add(x, base_y, cz - 1, "echoashfallprotocol:corroded_pipe")
+            add(x, base_y, cz + 1, "echoashfallprotocol:corroded_pipe")
+        add(cx, min_y, cz + 3, "echoashfallprotocol:acidic_sludge")
+        add(cx + 1, min_y, cz + 3, "echoashfallprotocol:toxic_puddle")
+    elif category == "radiation_zone":
+        for dx, dz in [(-3, -3), (3, -3), (-3, 3), (3, 3)]:
+            add(cx + dx, base_y, cz + dz, "echoashfallprotocol:radiation_block")
+            add(cx + dx, base_y + 1, cz + dz, "minecraft:redstone_torch", {"lit": "true"})
+        for x in range(cx - 4, cx + 5):
+            if abs(x - cx) in (0, 4) or rng.random() < 0.45:
+                add(x, min_y, cz, "echoashfallprotocol:fallout_dust")
+        add(cx, base_y, cz, "echoashfallprotocol:toxic_waste_barrel")
+    elif category == "cryogenic_ruins":
+        for y in range(base_y, base_y + 6):
+            add(cx - 2, y, cz, "echoashfallprotocol:frozen_conduit")
+            add(cx + 2, y, cz, "echoashfallprotocol:frozen_conduit")
+        for x in range(cx - 3, cx + 4):
+            add(x, min_y, cz + 2, rng.choice(["minecraft:blue_ice", "minecraft:packed_ice"]))
+        add(cx, base_y, cz, "echoashfallprotocol:thermal_array")
+    elif category == "nexus_scar":
+        radius = 4
+        for dx, dz in [(-radius, 0), (radius, 0), (0, -radius), (0, radius), (-3, -3), (3, 3)]:
+            add(cx + dx, min_y, cz + dz, "echoashfallprotocol:energized_fissure")
+        for y in range(base_y, base_y + 7):
+            add(cx, y, cz, "minecraft:crying_obsidian")
+        add(cx, base_y + 7, cz, "echoashfallprotocol:echo_crystal")
+    elif category == "faction":
+        pad_block = "minecraft:smooth_stone" if name.startswith("remnant_outpost/") else "minecraft:gravel"
+        if name.startswith("mutant_sanctuary/"):
+            pad_block = "echoashfallprotocol:toxic_moss"
+        for dx in range(-2, 3):
+            for dz in range(-1, 2):
+                if rng.random() < 0.85:
+                    add(cx + dx, min_y, cz + dz, pad_block)
+        add(cx - 2, base_y, cz, "echoashfallprotocol:map_table")
+        add(cx, base_y, cz, "echoashfallprotocol:trade_counter")
+        add(cx + 2, base_y, cz, "echoashfallprotocol:weapon_rack")
+        if _profile_bool(profile, "faction"):
+            add(cx, base_y, cz + 2, "echoashfallprotocol:power_node")
+    else:
+        add(cx, base_y, cz, "echoashfallprotocol:supply_crate")
+        add(cx + 2, base_y, cz, "echoashfallprotocol:rain_collector")
+
+    if role in {"hub", "faction_hub", "camp"}:
+        add(cx, base_y, max_z - 2, "echoashfallprotocol:map_table")
+    elif role in {"cache", "salvage"}:
+        add(cx, base_y, max(min_z + 1, cz - 2), "echoashfallprotocol:supply_crate")
+    elif role in {"hazard", "anomaly"}:
+        add(cx + 1, base_y, cz + 1, "minecraft:redstone_torch", {"lit": "true"})
+
+    return result
+
+
+def add_hazard_pockets(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    hazard_tier: str = "low",
+) -> BlockList:
+    """Place hazards as readable risk/reward pockets instead of random noise."""
+    if hazard_tier in {"none", "safe"}:
+        return blocks
+    bounds = _bounds(blocks)
+    if not bounds:
+        return blocks
+    min_x, max_x, min_y, _, min_z, max_z = bounds
+    cx = (min_x + max_x) // 2
+    cz = (min_z + max_z) // 2
+    result = blocks[:]
+
+    palettes = {
+        "crash_zone_wasteland": ["minecraft:magma_block", "echoashfallprotocol:scorched_ash"],
+        "industrial_ruins": ["echoashfallprotocol:oil_stained_concrete", "echoashfallprotocol:rusted_metal_debris"],
+        "ruined_cityscape": ["echoashfallprotocol:oil_stained_concrete", "echoashfallprotocol:concrete_rubble"],
+        "radiation_zone": ["echoashfallprotocol:fallout_dust", "echoashfallprotocol:radiation_block"],
+        "toxic_swamp": ["echoashfallprotocol:acidic_sludge", "echoashfallprotocol:toxic_puddle"],
+        "cryogenic_ruins": ["minecraft:blue_ice", "minecraft:powder_snow"],
+        "nexus_scar": ["echoashfallprotocol:riftstone", "echoashfallprotocol:energized_fissure"],
+    }
+    palette = palettes.get(category)
+    if not palette:
+        return blocks
+
+    cluster_counts = {"low": 1, "medium": 2, "high": 3, "extreme": 4, "anomaly": 4}
+    clusters = cluster_counts.get(hazard_tier, 1)
+    anchors = [
+        (min_x + 2, min_z + 2),
+        (max_x - 2, min_z + 2),
+        (min_x + 2, max_z - 2),
+        (max_x - 2, max_z - 2),
+        (cx + 3, cz),
+        (cx - 3, cz),
+    ]
+    rng.shuffle(anchors)
+    for ax, az in anchors[:clusters]:
+        radius = 1 if hazard_tier in {"low", "medium"} else 2
+        for dx in range(-radius, radius + 1):
+            for dz in range(-radius, radius + 1):
+                if abs(dx) + abs(dz) > radius + 1 or rng.random() < 0.18:
+                    continue
+                result.append((ax + dx, min_y, az + dz, rng.choice(palette), None))
+        if category in {"radiation_zone", "toxic_swamp"}:
+            result.append((ax, min_y + 1, az, "echoashfallprotocol:toxic_waste_barrel", None))
+        elif category == "nexus_scar":
+            result.append((ax, min_y + 1, az, "echoashfallprotocol:echo_crystal", None))
+        elif category == "cryogenic_ruins":
+            result.append((ax, min_y + 1, az, "echoashfallprotocol:blue_ice_crystal", None))
+
+    return result
+
+
+def add_sheltered_cache_pads(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    loot_tier: str = "low",
+    route_role: str = "route",
+) -> BlockList:
+    """Place caches on visible supported pads with a small bit of shelter."""
+    bounds = _bounds(blocks)
+    if not bounds:
+        return blocks
+    min_x, max_x, min_y, _, min_z, max_z = bounds
+    floor_positions = _interior_floor_positions(blocks)
+    if not floor_positions:
+        floor_positions = [
+            (x, z)
+            for x, y, z, bid, _ in blocks
+            if y == min_y and bid != "minecraft:air"
+        ]
+    if not floor_positions:
+        return blocks
+
+    tier_counts = {"low": 1, "medium": 2, "high": 3, "landmark": 3, "faction": 2}
+    count = tier_counts.get(loot_tier, 1)
+    if route_role in {"landmark", "anomaly"}:
+        count = max(count, 2)
+    rng.shuffle(floor_positions)
+    result = blocks[:]
+    foundation = FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])
+    shelter_block = rng.choice(RETAINING_PALETTES.get(category, RETAINING_PALETTES["global"]))
+    containers = ["minecraft:chest", "minecraft:barrel"]
+    if category == "faction":
+        containers = ["echoashfallprotocol:supply_crate", "minecraft:barrel"]
+
+    placed = 0
+    for x, z in floor_positions:
+        near_edge = x <= min_x + 2 or x >= max_x - 2 or z <= min_z + 2 or z >= max_z - 2
+        if not near_edge and placed == 0 and rng.random() < 0.65:
+            continue
+        result.append((x, min_y, z, rng.choice(foundation), None))
+        result.append((x, min_y + 1, z, rng.choice(containers), None))
+        for dx, dz in [(-1, 0), (1, 0), (0, -1)]:
+            if rng.random() < 0.7:
+                result.append((x + dx, min_y + 1, z + dz, shelter_block, None))
+        placed += 1
+        if placed >= count:
+            break
+
+    return result
+
+
 def apply_detail_pass(
     blocks: BlockList,
     category: str,
@@ -738,6 +1301,7 @@ def apply_detail_pass(
     seed: int,
     structure_size: str = "small",
     name: str = "",
+    profile: Optional[Dict[str, object]] = None,
 ) -> BlockList:
     """Apply complete detail pass to structure.
 
@@ -746,15 +1310,21 @@ def apply_detail_pass(
         category: Structure category (e.g., "ruined_plains", "crash_zone")
         biome: Biome type for vegetation
         seed: Random seed
-        structure_size: "small", "medium", or "big" - affects detail intensity
+        structure_size: "small", "medium", "big", or "landmark" - affects detail intensity
     """
     rng = random.Random(seed + 999)  # Offset seed for detail pass
+    if profile:
+        structure_size = _profile_value(profile, "size", structure_size)
+    route_role = _profile_value(profile, "route_role", "route")
+    loot_tier = _profile_value(profile, "loot_tier", "low")
+    hazard_tier = _profile_value(profile, "hazard_tier", "low")
 
     # Adjust intensity by size
     size_multipliers = {
         "small": 0.7,
         "medium": 1.0,
         "big": 1.3,
+        "landmark": 1.55,
     }
     multiplier = size_multipliers.get(structure_size, 1.0)
 
@@ -776,10 +1346,17 @@ def apply_detail_pass(
     rubble_count = int(10 * multiplier)
     result = scatter_rubble(result, rng, category, count=rubble_count)
 
-    # Add readable approach paths and skyline anchors.
-    result = add_access_path(result, rng, category)
+    # Add readable approach paths, skyline anchors, and role-specific set pieces.
+    route_count = 1
+    if structure_size in {"medium", "big", "landmark"}:
+        route_count += 1
+    if route_role in {"hub", "faction_hub", "landmark", "anomaly"}:
+        route_count += 1
+    result = add_access_path(result, rng, category, route_count=min(route_count, 3), route_length=max(6, int(7 * multiplier)))
     result = add_silhouette_polish(result, rng, category)
     result = add_category_signature(result, rng, category, name)
+    result = add_route_role_set_piece(result, rng, category, name, profile)
+    result = add_hazard_pockets(result, rng, category, hazard_tier=hazard_tier)
     result = add_lighting_nodes(result, rng, category, count=max(2, int(3 * multiplier)))
 
     # Determine story type from category
@@ -797,8 +1374,11 @@ def apply_detail_pass(
     story_count = int(3 * multiplier)
     result = add_story_elements(result, rng, story_type, count=story_count)
 
-    # Add loot containers (more for larger structures)
+    # Add loot containers (more for larger structures) and make at least one cache visibly sheltered.
     loot_count = int(2 * multiplier)
     result = add_loot_containers(result, rng, container_count=loot_count)
+    result = add_sheltered_cache_pads(result, rng, category, loot_tier=loot_tier, route_role=route_role)
+
+    result = apply_grounding_pass(result, category, seed, name)
 
     return _dedupe_blocks(result)

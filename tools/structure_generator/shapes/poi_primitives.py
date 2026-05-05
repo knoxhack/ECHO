@@ -365,16 +365,18 @@ def pipe_run(
     support_spacing: int = 3,
 ) -> None:
     line(blocks, start, end, pipe_block)
-    x1, _, z1 = start
-    x2, _, z2 = end
+    x1, y1, z1 = start
+    x2, y2, z2 = end
     steps = max(abs(x2 - x1), abs(z2 - z1))
     if steps == 0:
         return
     for step in range(0, steps + 1, max(1, support_spacing)):
         t = step / steps
         x = round(x1 + (x2 - x1) * t)
+        y = round(y1 + (y2 - y1) * t)
         z = round(z1 + (z2 - z1) * t)
-        blocks.append((x, 0, z, support_block, None))
+        for sy in range(0, max(1, y)):
+            blocks.append((x, sy, z, support_block, None))
 
 
 def add_supply_cluster(
@@ -392,6 +394,7 @@ def add_supply_cluster(
     rng.shuffle(slots)
     for idx, (px, pz) in enumerate(slots[: max(containers + 2, 4)]):
         if idx < containers:
+            blocks.append((px, 0, pz, rng.choice(clutter_palette), None))
             blocks.append((px, 1, pz, "minecraft:barrel" if idx % 2 == 0 else "minecraft:chest", None))
         else:
             blocks.append((px, 0, pz, rng.choice(clutter_palette), None))
@@ -416,6 +419,11 @@ def add_debris_scatter(
     y: int = 0,
 ) -> None:
     """Scatter low debris/hazard props without replacing the readable structure."""
+    if y > 0:
+        for _ in range(max(1, count // 2)):
+            sx = rng.randint(x1, x2)
+            sz = rng.randint(z1, z2)
+            blocks.append((sx, y - 1, sz, rng.choice(palette), None))
     scatter(blocks, rng, x1, z1, x2, z2, count, palette, y=y)
 
 
@@ -448,6 +456,7 @@ def add_machine_cluster(
     rng.shuffle(chosen)
     for idx, block_id in enumerate(chosen[:3]):
         px = x + idx
+        blocks.append((px, 0, z, "echoashfallprotocol:oil_stained_concrete", None))
         blocks.append((px, 1, z, block_id, None))
         if idx > 0:
             blocks.append((px - 1, 0, z, cable_block, None))
@@ -456,6 +465,7 @@ def add_machine_cluster(
 def add_faction_station(blocks: BlockList, x: int, z: int, station_block: str, support_block: str) -> None:
     blocks.append((x, 0, z, support_block, None))
     blocks.append((x, 1, z, station_block, None))
+    blocks.append((x + 1, 0, z, support_block, None))
     blocks.append((x + 1, 1, z, "minecraft:barrel", None))
 
 
@@ -470,7 +480,10 @@ def add_biome_vegetation(
     count: int,
 ) -> None:
     for _ in range(count):
-        blocks.append((rng.randint(x1, x2), 1, rng.randint(z1, z2), rng.choice(palette), None))
+        x = rng.randint(x1, x2)
+        z = rng.randint(z1, z2)
+        blocks.append((x, 0, z, "minecraft:coarse_dirt", None))
+        blocks.append((x, 1, z, rng.choice(palette), None))
 
 
 def footprint(blocks: BlockList) -> Tuple[int, int, int]:
@@ -673,12 +686,21 @@ def elevated_platform(
     # Platform surface
     fill(blocks, x, height, z, x + width, height, z + depth, platform_block)
 
-    # Support pillars at corners
-    corners = [
+    # Support pillars at corners and a sparse grid under larger spans.
+    support_points = {
         (x, z), (x + width, z),
         (x, z + depth), (x + width, z + depth)
-    ]
-    for px, pz in corners:
+    }
+    if width >= 6 or depth >= 6:
+        for px in range(x + 3, x + width, 4):
+            support_points.add((px, z))
+            support_points.add((px, z + depth))
+        for pz in range(z + 3, z + depth, 4):
+            support_points.add((x, pz))
+            support_points.add((x + width, pz))
+        support_points.add((x + width // 2, z + depth // 2))
+
+    for px, pz in sorted(support_points):
         for y in range(height):
             add_block(blocks, px, y, pz, support_block)
 
