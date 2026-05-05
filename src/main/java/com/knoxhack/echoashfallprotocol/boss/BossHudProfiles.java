@@ -1,6 +1,8 @@
 package com.knoxhack.echoashfallprotocol.boss;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echoashfallprotocol.endgame.NexusFinalBossProfile;
+import com.knoxhack.echoashfallprotocol.endgame.NexusFinalBossProfiles;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 
@@ -71,6 +73,20 @@ public final class BossHudProfiles {
                 0.60F,
                 0.30F
         ));
+        for (NexusFinalBossProfile profile : NexusFinalBossProfiles.all()) {
+            register(new BossHudProfile(
+                    profile.entityId(),
+                    profile.title(),
+                    profile.subtitle(),
+                    profile.accentColor(),
+                    "Finale",
+                    "FINAL PROTOCOL",
+                    profile.counterplay(),
+                    BossHudProfile.BossCategory.WARDEN,
+                    0.66F,
+                    0.33F
+            ));
+        }
         register(new BossHudProfile(
                 ORBITAL_MODID + ":corrupted_docking_ai",
                 "Corrupted Docking AI",

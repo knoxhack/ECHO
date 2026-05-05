@@ -3,6 +3,8 @@ package com.knoxhack.echoashfallprotocol.client.hud;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventStatus;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
+import java.util.Arrays;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -24,6 +26,18 @@ public final class HudState {
     private static NexusWorldData.WorldState nexusState = NexusWorldData.WorldState.NORMAL;
     private static String nexusPlayer = "";
     private static int nexusX = 0, nexusY = 0, nexusZ = 0;
+    private static boolean nexusCampaignAwakened = false;
+    private static int nexusInstability = 0;
+    private static int nexusRelaysScanned = 0;
+    private static int nexusRelaysResolved = 0;
+    private static int nexusReadinessRestore = 0;
+    private static int nexusReadinessDestroy = 0;
+    private static int nexusReadinessControl = 0;
+    private static boolean nexusSiegeComplete = false;
+    private static boolean nexusWarfrontComplete = false;
+    private static boolean nexusWardenDefeated = false;
+    private static boolean nexusFinaleComplete = false;
+    private static String nexusRelaySummaryPayload = "";
     private static BossTarget bossTarget = null;
     private static long bossTargetUpdatedAtTick = 0L;
     private static final long BOSS_TARGET_TIMEOUT_TICKS = 80L;
@@ -51,6 +65,46 @@ public final class HudState {
     public static int getNexusY() { return nexusY; }
     public static int getNexusZ() { return nexusZ; }
     public static void setNexusPos(int x, int y, int z) { nexusX = x; nexusY = y; nexusZ = z; }
+    public static boolean isNexusCampaignAwakened() { return nexusCampaignAwakened; }
+    public static int getNexusInstability() { return nexusInstability; }
+    public static int getNexusRelaysScanned() { return nexusRelaysScanned; }
+    public static int getNexusRelaysResolved() { return nexusRelaysResolved; }
+    public static int getNexusReadinessRestore() { return nexusReadinessRestore; }
+    public static int getNexusReadinessDestroy() { return nexusReadinessDestroy; }
+    public static int getNexusReadinessControl() { return nexusReadinessControl; }
+    public static boolean isNexusSiegeComplete() { return nexusSiegeComplete; }
+    public static boolean isNexusWarfrontComplete() { return nexusWarfrontComplete; }
+    public static boolean isNexusWardenDefeated() { return nexusWardenDefeated; }
+    public static boolean isNexusFinaleComplete() { return nexusFinaleComplete; }
+    public static String getNexusRelaySummaryPayload() { return nexusRelaySummaryPayload; }
+    public static List<String> getNexusRelaySummaryLines() {
+        if (nexusRelaySummaryPayload == null || nexusRelaySummaryPayload.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(nexusRelaySummaryPayload.split("\\n"))
+                .map(String::trim)
+                .filter(line -> !line.isBlank())
+                .toList();
+    }
+    public static void setNexusRelaySummaryPayload(String payload) {
+        nexusRelaySummaryPayload = payload == null ? "" : payload;
+    }
+    public static void setNexusCampaign(boolean awakened, int instability, int relaysScanned, int relaysResolved,
+                                        int readinessRestore, int readinessDestroy, int readinessControl,
+                                        boolean siegeComplete, boolean warfrontComplete,
+                                        boolean wardenDefeated, boolean finaleComplete) {
+        nexusCampaignAwakened = awakened;
+        nexusInstability = Math.max(0, Math.min(100, instability));
+        nexusRelaysScanned = Math.max(0, relaysScanned);
+        nexusRelaysResolved = Math.max(0, relaysResolved);
+        nexusReadinessRestore = Math.max(0, readinessRestore);
+        nexusReadinessDestroy = Math.max(0, readinessDestroy);
+        nexusReadinessControl = Math.max(0, readinessControl);
+        nexusSiegeComplete = siegeComplete;
+        nexusWarfrontComplete = warfrontComplete;
+        nexusWardenDefeated = wardenDefeated;
+        nexusFinaleComplete = finaleComplete;
+    }
 
     public static void setBossTarget(BossTarget target) {
         bossTarget = target != null && target.active() ? target : null;

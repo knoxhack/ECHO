@@ -2,6 +2,7 @@ package com.knoxhack.echoashfallprotocol.event;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.world.BiomeGuardianSiteData;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -55,6 +56,7 @@ public class MissionProgressEventHandler {
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(killed.getType()).toString();
         QuestData quest = QuestData.get(player);
         quest.recordEntityKill(entityId);
+        NexusRelaySiteService.recordPressureMobKill(player, killed);
 
         var guardianProfile = BiomeGuardianProfiles.byEntityId(entityId);
         if (BIOME_BOSS_IDS.contains(entityId) || guardianProfile.isPresent()) {

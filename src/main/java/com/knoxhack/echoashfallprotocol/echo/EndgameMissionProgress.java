@@ -7,9 +7,11 @@ import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -45,7 +47,11 @@ public final class EndgameMissionProgress {
                             : "Stand near the unresolved Nexus Core.",
                     new ItemStack(ModBlocks.NEXUS_CORE_ITEM.get()),
                     "Stand near the unresolved Nexus Core.")));
+            case "awaken_nexus_core" -> Optional.of(awakenCoreSnapshot(player, completed));
+            case "scan_prime_relays" -> Optional.of(scanPrimeRelaysSnapshot(player, completed));
+            case "resolve_prime_relays" -> Optional.of(resolvePrimeRelaysSnapshot(player, completed));
             case "stabilize_nexus_grid" -> Optional.of(nexusGridSnapshot(player, completed));
+            case "survive_core_countermeasure" -> Optional.of(coreCountermeasureSnapshot(player, post, completed));
             case "reach_decision" -> Optional.of(reachDecisionSnapshot(player, quest, post, completed));
             case "restore_repair_nodes" -> Optional.of(snapshot(line(
                     "Power Nodes activated",
@@ -67,6 +73,10 @@ public final class EndgameMissionProgress {
                     Optional.of(archivesEntrySnapshot(quest, post, completed));
             case "restore_guardian", "destroy_guardian", "control_guardian" ->
                     Optional.of(wardenSnapshot(post, completed));
+            case "restore_world_lattice", "destroy_dead_signal", "control_command_lattice" ->
+                    Optional.of(pathOperationSnapshot(mission, post, completed));
+            case "restore_finale", "destroy_finale", "control_finale" ->
+                    Optional.of(finalBossSnapshot(mission, post, completed));
             case "restore_epilogue", "destroy_epilogue", "control_epilogue" ->
                     Optional.of(epilogueSnapshot(mission, post, completed));
             case "destroy_scorched_earth" -> Optional.of(snapshot(line(
@@ -99,6 +109,61 @@ public final class EndgameMissionProgress {
         };
     }
 
+    private static Snapshot awakenCoreSnapshot(Player player, boolean completed) {
+        NexusCampaignData campaign = campaignData(player);
+        boolean awakened = completed || (campaign != null && campaign.isAwakened());
+        int instability = campaign == null ? 0 : campaign.getInstability();
+        return snapshot(line(
+                "Core awakened",
+                awakened,
+                awakened ? 1 : 0,
+                1,
+                awakened ? "Instability " + instability + "%" : "Core still dormant",
+                new ItemStack(ModBlocks.NEXUS_CORE_ITEM.get()),
+                "Use the NEXUS tab or /nexus awaken near the unresolved Core."));
+    }
+
+    private static Snapshot scanPrimeRelaysSnapshot(Player player, boolean completed) {
+        NexusCampaignData campaign = campaignData(player);
+        int scanned = completed ? NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT
+                : campaign == null ? 0 : campaign.getScannedRelayCount();
+        return snapshot(line(
+                "Prime relays scanned",
+                completed || scanned >= NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT,
+                scanned,
+                NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT,
+                scanned + "/" + NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT + " relay signatures indexed",
+                new ItemStack(ModBlocks.SIGNAL_SCANNER_ITEM.get()),
+                "Use SCAN in the NEXUS tab or /nexus scan to index all Prime Relays."));
+    }
+
+    private static Snapshot resolvePrimeRelaysSnapshot(Player player, boolean completed) {
+        NexusCampaignData campaign = campaignData(player);
+        int resolved = completed ? NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT
+                : campaign == null ? 0 : campaign.getResolvedRelayCount();
+        int restore = campaign == null ? 0 : campaign.getReadinessRestore();
+        int destroy = campaign == null ? 0 : campaign.getReadinessDestroy();
+        int control = campaign == null ? 0 : campaign.getReadinessControl();
+        return snapshot(
+                line(
+                        "Prime relays resolved",
+                        completed || resolved >= NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT,
+                        resolved,
+                        NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT,
+                        resolved + "/" + NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT + " resolved",
+                        new ItemStack(ModItems.NEXUS_CRYSTAL.get()),
+                        "Use STABILIZE, SEVER, or OVERRIDE in the NEXUS tab or /nexus relay <action>."),
+                line(
+                        "Readiness bias",
+                        completed || resolved >= NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT,
+                        resolved,
+                        NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT,
+                        "RESTORE " + restore + " / DESTROY " + destroy + " / CONTROL " + control,
+                        new ItemStack(ModItems.SCHEMATIC_FRAGMENT_ENERGY.get()),
+                        "Resolve " + remaining(NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT, resolved)
+                                + " more relay routes."));
+    }
+
     private static Snapshot nexusGridSnapshot(Player player, boolean completed) {
         CoreStatus core = coreStatus(player);
         int have = completed ? NexusCoreBlock.REQUIRED_NODES : core.activatedNodes();
@@ -120,6 +185,7 @@ public final class EndgameMissionProgress {
     private static Snapshot reachDecisionSnapshot(Player player, QuestData quest, PostNexusData post, boolean completed) {
         CoreStatus core = coreStatus(player);
         GuardianStatus guardians = guardianStatus(quest);
+        NexusCampaignData campaign = campaignData(player);
         Entry guardianEntry = line(
                 "Guardian signals resolved",
                 completed || guardians.resolved() >= guardians.total(),
@@ -141,6 +207,19 @@ public final class EndgameMissionProgress {
                 core.nearby()
                         ? "Activate " + remaining(NexusCoreBlock.REQUIRED_NODES, core.activatedNodes()) + " more Power Nodes near the Core."
                         : "Stand near the unresolved Nexus Core.");
+        int warfrontHave = campaign == null ? 0
+                : Math.min(3, campaign.getResolvedRelayCount()) + (campaign.isSiegeComplete() ? 1 : 0);
+        Entry warfrontEntry = line(
+                "Nexus Warfront cleared",
+                completed || (campaign != null && campaign.isWarfrontComplete()),
+                completed ? 4 : warfrontHave,
+                4,
+                campaign == null
+                        ? "Warfront sync pending"
+                        : campaign.getResolvedRelayCount() + "/3 relays, siege "
+                                + (campaign.isSiegeComplete() ? "complete" : "pending"),
+                new ItemStack(ModItems.NEXUS_CRYSTAL.get()),
+                "Resolve three Prime Relays and survive the Core countermeasure siege.");
         Entry choiceEntry = line(
                 "Permanent path confirmed",
                 completed || post.hasMadeChoice(),
@@ -150,7 +229,21 @@ public final class EndgameMissionProgress {
                         : "Open the NEXUS tab, select a path, then confirm.",
                 new ItemStack(ModBlocks.NEXUS_CORE_ITEM.get()),
                 "Open the NEXUS tab and confirm RESTORE, DESTROY, or CONTROL. This is permanent.");
-        return snapshot(guardianEntry, gridEntry, choiceEntry);
+        return snapshot(guardianEntry, gridEntry, warfrontEntry, choiceEntry);
+    }
+
+    private static Snapshot coreCountermeasureSnapshot(Player player, PostNexusData post, boolean completed) {
+        NexusCampaignData campaign = campaignData(player);
+        boolean siegeComplete = completed || post.getSiegesSurvived() >= 1
+                || (campaign != null && campaign.isSiegeComplete());
+        return snapshot(line(
+                "Core siege survived",
+                siegeComplete,
+                siegeComplete ? 1 : 0,
+                1,
+                siegeComplete ? "Countermeasure survived" : "Siege credit pending",
+                new ItemStack(ModItems.ELITE_BATTERY.get()),
+                "Use SIEGE in the NEXUS tab or /nexus siege after relays and Power Nodes are ready."));
     }
 
     private static Snapshot archivesEntrySnapshot(QuestData quest, PostNexusData post, boolean completed) {
@@ -178,18 +271,59 @@ public final class EndgameMissionProgress {
                 "Enter the Archives with a Return Keystone; prepare for defender lockdowns and pulse phases."));
     }
 
+    private static Snapshot pathOperationSnapshot(Mission mission, PostNexusData post, boolean completed) {
+        boolean ready = completed || post.getPathOperationsComplete() >= 1;
+        String label = switch (mission.id()) {
+            case "restore_world_lattice" -> "World lattice rebuilt";
+            case "destroy_dead_signal" -> "Dead signal collapsed";
+            case "control_command_lattice" -> "Command lattice bound";
+            default -> "Path operation complete";
+        };
+        return snapshot(line(
+                label,
+                ready,
+                ready ? 1 : 0,
+                1,
+                ready ? "Finale exposed" : "Operation pending",
+                new ItemStack(ModItems.SCHEMATIC_FRAGMENT_ENERGY.get()),
+                "Use OPERATION in the NEXUS tab or /nexus operation after The Warden falls."));
+    }
+
+    private static Snapshot finalBossSnapshot(Mission mission, PostNexusData post, boolean completed) {
+        boolean defeated = completed || post.isFinalBossDefeated();
+        String label = switch (mission.id()) {
+            case "restore_finale" -> "Corruption Bloom defeated";
+            case "destroy_finale" -> "Severance Engine defeated";
+            case "control_finale" -> "Mirror Command defeated";
+            default -> "Path finale contained";
+        };
+        ItemStack icon = switch (mission.id()) {
+            case "destroy_finale" -> new ItemStack(ModItems.NEXUS_ANNIHILATOR.get());
+            case "control_finale" -> new ItemStack(ModItems.NEXUS_BLADE.get());
+            default -> new ItemStack(ModItems.NEXUS_HELMET.get());
+        };
+        return snapshot(line(
+                label,
+                defeated,
+                defeated ? 1 : 0,
+                1,
+                defeated ? "Path finale down" : "Finale pending",
+                icon,
+                "Use FINALE in the NEXUS tab or /nexus finale after the path operation."));
+    }
+
     private static Snapshot epilogueSnapshot(Mission mission, PostNexusData post, boolean completed) {
-        boolean ready = completed || post.isWardenDefeated();
+        boolean ready = completed || post.isFinalBossDefeated();
         String path = mission.requiredPath() == null ? "final" : mission.requiredPath().name();
         return snapshot(line(
                 path + " epilogue confirmation",
                 ready,
                 ready ? 1 : 0,
                 1,
-                ready ? "Ready for terminal turn-in" : "Defeat The Warden first",
+                ready ? "Ready for terminal turn-in" : "Defeat the path finale first",
                 new ItemStack(ModBlocks.NEXUS_CORE_ITEM.get()),
                 ready ? "Return the epilogue through the mission channel."
-                        : "Defeat The Warden, then confirm the epilogue in the mission channel."));
+                        : "Complete the post-Warden operation and path finale, then confirm the epilogue."));
     }
 
     private static Snapshot controlResourcesSnapshot(Player player, PostNexusData post, boolean completed) {
@@ -251,6 +385,13 @@ public final class EndgameMissionProgress {
             }
         }
         return new CoreStatus(sawCore, bestNodes);
+    }
+
+    private static NexusCampaignData campaignData(Player player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        return NexusCampaignData.get(level.getServer().overworld());
     }
 
     private static GuardianStatus guardianStatus(QuestData quest) {

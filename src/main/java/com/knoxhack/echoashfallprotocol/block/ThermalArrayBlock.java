@@ -80,7 +80,7 @@ public class ThermalArrayBlock extends BaseEntityBlock implements MachineStatePr
                         wearData.repair(pos, 150);
                         heldItem.shrink(1);
                         player.sendSystemMessage(Component.literal(
-                                "§a[ECHO-7]§r Thermal Array repaired. Wear reduced."));
+                                "\u00A7a[ECHO-7]\u00A7r Thermal Array patched. Heat curve back inside tolerances."));
                         return InteractionResult.SUCCESS;
                     }
                 }

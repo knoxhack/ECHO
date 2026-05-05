@@ -20,10 +20,19 @@ import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
 import com.knoxhack.echoashfallprotocol.entity.ModEntities;
 import com.knoxhack.echoashfallprotocol.entity.ScoutDrone;
 import com.knoxhack.echoashfallprotocol.entity.boss.BiomeBossEntity;
+import com.knoxhack.echoashfallprotocol.entity.boss.NexusFinalBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.WardenBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.faction.SalvagerTrader;
 import com.knoxhack.echoashfallprotocol.endgame.NexusAccessRules;
 import com.knoxhack.echoashfallprotocol.endgame.NexusChoiceService;
+import com.knoxhack.echoashfallprotocol.endgame.NexusFinalBossProfile;
+import com.knoxhack.echoashfallprotocol.endgame.NexusFinalBossProfiles;
+import com.knoxhack.echoashfallprotocol.endgame.NexusPressureMobProfiles;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelayProfile;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelayProfiles;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelayState;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
+import com.knoxhack.echoashfallprotocol.endgame.NexusRelayType;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.endgame.PrefallArchivesArenaService;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventProfiles;
@@ -34,6 +43,8 @@ import com.knoxhack.echoashfallprotocol.event.PostNexusEventHandler;
 import com.knoxhack.echoashfallprotocol.faction.FactionQuest;
 import com.knoxhack.echoashfallprotocol.faction.FactionQuestRegistry;
 import com.knoxhack.echoashfallprotocol.faction.ReputationData;
+import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionInteractionHandler;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.item.RareTechSchematicItem;
@@ -48,6 +59,7 @@ import com.knoxhack.echoashfallprotocol.research.PerkRegistry;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
 import com.knoxhack.echoashfallprotocol.world.BiomeGuardianSiteData;
 import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import com.knoxhack.echoashfallprotocol.worldgen.ProceduralStructureGenerator;
 import io.netty.buffer.Unpooled;
@@ -108,6 +120,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("boss_hud_navigation", () -> ModGameTests::bossHudNavigation);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_ACCESS_RULES =
             TEST_FUNCTIONS.register("nexus_access_rules", () -> ModGameTests::nexusAccessRules);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_CAMPAIGN_DATA =
+            TEST_FUNCTIONS.register("nexus_campaign_data", () -> ModGameTests::nexusCampaignData);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_WARFRONT_CONTENT =
+            TEST_FUNCTIONS.register("nexus_warfront_content", () -> ModGameTests::nexusWarfrontContent);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WARDEN_ARENA_SERVICE =
             TEST_FUNCTIONS.register("warden_arena_service", () -> ModGameTests::wardenArenaService);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RARE_SCHEMATIC_RESEARCH =
@@ -138,6 +154,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("exploration_site_profiles", () -> ModGameTests::explorationSiteProfiles);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTION_QUEST_BALANCE =
             TEST_FUNCTIONS.register("faction_quest_balance", () -> ModGameTests::factionQuestBalance);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASHFALL_FACTION_CORE_CONTRACTS =
+            TEST_FUNCTIONS.register("ashfall_faction_core_contracts", () -> ModGameTests::ashfallFactionCoreContracts);
 
     private ModGameTests() {
     }
@@ -155,6 +173,8 @@ public final class ModGameTests {
         register(event, environment, "guardian_site_state", GUARDIAN_SITE_STATE.getId());
         register(event, environment, "boss_hud_navigation", BOSS_HUD_NAVIGATION.getId());
         register(event, environment, "nexus_access_rules", NEXUS_ACCESS_RULES.getId());
+        register(event, environment, "nexus_campaign_data", NEXUS_CAMPAIGN_DATA.getId());
+        register(event, environment, "nexus_warfront_content", NEXUS_WARFRONT_CONTENT.getId());
         register(event, environment, "warden_arena_service", WARDEN_ARENA_SERVICE.getId());
         register(event, environment, "rare_schematic_research", RARE_SCHEMATIC_RESEARCH.getId());
         register(event, environment, "research_perk_graph", RESEARCH_PERK_GRAPH.getId());
@@ -170,6 +190,7 @@ public final class ModGameTests {
         register(event, environment, "first_night_route_safety", FIRST_NIGHT_ROUTE_SAFETY.getId());
         register(event, environment, "exploration_site_profiles", EXPLORATION_SITE_PROFILES.getId());
         register(event, environment, "faction_quest_balance", FACTION_QUEST_BALANCE.getId());
+        register(event, environment, "ashfall_faction_core_contracts", ASHFALL_FACTION_CORE_CONTRACTS.getId());
     }
 
     private static void entityAttributeHardening(GameTestHelper helper) {
@@ -532,6 +553,8 @@ public final class ModGameTests {
         QuestData quest = new QuestData();
         NexusWorldData.get(level.getServer().overworld())
                 .setChoice(NexusWorldData.WorldState.NORMAL, BlockPos.ZERO, "GameTest reset");
+        NexusCampaignData campaign = NexusCampaignData.get(level.getServer().overworld());
+        campaign.resetForTests();
         for (BlockPos nodePos : List.copyOf(NexusWorldData.get(level).getActiveNodePositions())) {
             NexusWorldData.get(level).removePowerNode(nodePos);
         }
@@ -565,8 +588,20 @@ public final class ModGameTests {
             NexusWorldData.get(level).recordPowerNodeActivated(nodePos);
         }
 
+        NexusAccessRules.Status warfrontLocked = NexusAccessRules.evaluate(quest, level, core);
+        helper.assertFalse(warfrontLocked.allowed(),
+                "Nexus should deny after guardians and nodes until Warfront is complete");
+
+        campaign.awaken(corePos);
+        campaign.scanRelays();
+        campaign.resolveRelay(NexusRelayType.REACTOR, NexusRelayState.STABILIZED);
+        campaign.resolveRelay(NexusRelayType.CRYO, NexusRelayState.SEVERED);
+        campaign.resolveRelay(NexusRelayType.BIO, NexusRelayState.OVERRIDDEN);
+        campaign.markSiegeComplete();
+
         NexusAccessRules.Status ready = NexusAccessRules.evaluate(quest, level, core);
-        helper.assertTrue(ready.allowed(), "Nexus should allow after guardians and five nodes are ready");
+        helper.assertTrue(ready.allowed(),
+                "Nexus should allow after guardians, five nodes, three relays, and the siege are ready");
         helper.assertTrue(ready.activatedNodes() >= NexusCoreBlock.REQUIRED_NODES,
                 "Nexus status should report active node count");
 
@@ -586,9 +621,141 @@ public final class ModGameTests {
                 "Control choice should parse case-insensitively");
 
         worldData.setChoice(NexusWorldData.WorldState.NORMAL, BlockPos.ZERO, "");
+        campaign.resetForTests();
         for (BlockPos nodePos : NexusWorldData.get(level).getActiveNodePositions()) {
             NexusWorldData.get(level).removePowerNode(nodePos);
         }
+        helper.succeed();
+    }
+
+    private static void nexusCampaignData(GameTestHelper helper) {
+        NexusCampaignData data = NexusCampaignData.get(helper.getLevel().getServer().overworld());
+        data.resetForTests();
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 2, 1));
+
+        helper.assertFalse(data.isAwakened(), "Campaign should start dormant after reset");
+        data.awaken(pos);
+        helper.assertTrue(data.isAwakened(), "Awakening should persist");
+        helper.assertTrue(data.getInstability() >= 25, "Awakening should start instability pressure");
+
+        data.scanRelays();
+        helper.assertTrue(data.getScannedRelayCount() == NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT,
+                "Scan should reveal all Prime Relays");
+        data.resolveRelay(NexusRelayType.REACTOR, NexusRelayState.STABILIZED);
+        int restoreReadiness = data.getReadinessRestore();
+        helper.assertFalse(data.resolveRelay(NexusRelayType.REACTOR, NexusRelayState.SEVERED),
+                "Resolved relay outcome should be immutable");
+        helper.assertTrue(data.getRelayState(NexusRelayType.REACTOR) == NexusRelayState.STABILIZED
+                        && data.getReadinessRestore() == restoreReadiness,
+                "Rejected relay outcome changes must not alter readiness");
+        data.resolveRelay(NexusRelayType.CRYO, NexusRelayState.SEVERED);
+        data.resolveRelay(NexusRelayType.BIO, NexusRelayState.OVERRIDDEN);
+        helper.assertTrue(data.getResolvedRelayCount() == NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT,
+                "Three resolved relays should satisfy relay count");
+        helper.assertFalse(data.isWarfrontComplete(), "Warfront should still require the countermeasure siege");
+
+        helper.assertTrue(data.markSiegeComplete(), "First siege credit should change campaign state");
+        helper.assertFalse(data.markSiegeComplete(), "Duplicate siege credit should be ignored");
+        helper.assertTrue(data.isWarfrontComplete(), "Siege completion should finish Warfront readiness");
+        data.markWardenDefeated();
+        data.markFinaleComplete();
+        helper.assertTrue(data.isWardenDefeated() && data.isFinaleComplete(),
+                "Post-choice midpoint and finale flags should persist");
+        data.markFinalBossSummoned(PostNexusData.NexusPath.CONTROL);
+        helper.assertTrue(data.isFinalBossSummonedFor(PostNexusData.NexusPath.CONTROL),
+                "Final boss summon path should persist");
+        data.clearFinalBossSummoned();
+        helper.assertFalse(data.isFinalBossSummoned(), "Final boss recovery flag should clear after finale credit");
+
+        data.resetForTests();
+        helper.succeed();
+    }
+
+    private static void nexusWarfrontContent(GameTestHelper helper) {
+        var level = helper.getLevel().getServer().overworld();
+        NexusCampaignData data = NexusCampaignData.get(level);
+        data.resetForTests();
+
+        helper.assertTrue(BiomeGuardianProfiles.all().size() == 9,
+                "Warfront content must not change the nine biome guardian profiles");
+        helper.assertTrue(NexusRelayProfiles.hasCoverage(), "Every Prime Relay type needs a content profile");
+        helper.assertTrue(NexusPressureMobProfiles.registryMatchesEntities(), "Pressure mob profiles must map to registered entities");
+        helper.assertTrue(NexusFinalBossProfiles.hasCoverage(), "All three Nexus paths need finale boss profiles");
+
+        data.awaken(helper.absolutePos(new BlockPos(3, 2, 3)));
+        data.scanRelays();
+        helper.assertFalse(data.hasRelaySite(NexusRelayType.REACTOR),
+                "Old-save Warfront data should start without relay positions");
+        NexusRelaySiteService.ensureSitesAssignedAndGenerated(level, data, helper.absolutePos(new BlockPos(3, 2, 3)));
+        for (NexusRelayProfile profile : NexusRelayProfiles.all()) {
+            helper.assertTrue(data.hasRelaySite(profile.type()), "Relay scan should assign site: " + profile.type());
+            helper.assertTrue(data.isRelayGenerated(profile.type()), "Relay scan should generate objective shell: " + profile.type());
+            helper.assertTrue(NexusRelaySiteService.objectiveShellExists(level, data, profile.type()),
+                    "Relay objective shell should be non-empty: " + profile.type());
+            helper.assertTrue(profile.requiredPressureKills() > 0, "Relay profile needs pressure objective: " + profile.type());
+            helper.assertTrue(!profile.objective().isBlank(), "Relay profile objective text missing: " + profile.type());
+        }
+
+        data.resetForTests();
+        BlockPos near = helper.absolutePos(new BlockPos(8, 2, 8));
+        data.awaken(near);
+        data.scanRelays();
+        for (NexusRelayType type : NexusRelayType.values()) {
+            data.assignRelaySite(type, helper.absolutePos(new BlockPos(4 + type.ordinal() * 2, 2, 10)));
+        }
+        NexusRelaySiteService.ensureSitesAssignedAndGenerated(level, data, near);
+        helper.assertTrue(data.firstEncounterCompleteUnresolvedRelay() == null,
+                "Relay resolution queue should reject relays before encounter completion");
+        NexusRelayProfile reactor = NexusRelayProfiles.byType(NexusRelayType.REACTOR).orElseThrow();
+        data.markRelayEncounterStarted(NexusRelayType.REACTOR);
+        for (int i = 0; i < reactor.requiredPressureKills(); i++) {
+            data.incrementRelayPressureKill(NexusRelayType.REACTOR);
+        }
+        helper.assertFalse(data.isRelayObjectiveSatisfied(NexusRelayType.REACTOR, reactor),
+                "Commander relay should still require the commander after pressure kills");
+        data.markRelayCommanderDefeated(NexusRelayType.REACTOR);
+        helper.assertTrue(data.isRelayObjectiveSatisfied(NexusRelayType.REACTOR, reactor),
+                "Relay objective should pass after pressure kills and commander defeat");
+        data.markRelayEncounterComplete(NexusRelayType.REACTOR);
+        helper.assertTrue(data.firstEncounterCompleteUnresolvedRelay() == NexusRelayType.REACTOR,
+                "Completed relay encounter should enter the resolution queue");
+        helper.assertTrue(data.resolveRelay(NexusRelayType.REACTOR, NexusRelayState.STABILIZED),
+                "Encounter-complete relay should accept a resolved outcome in saved state");
+        helper.assertFalse(data.resolveRelay(NexusRelayType.REACTOR, NexusRelayState.SEVERED),
+                "Resolved relay should reject a second outcome");
+        helper.assertTrue(data.relaySummaryPayload().contains("Final Boss:")
+                        && data.relaySummaryPayload().contains("Reactor Relay"),
+                "Relay summary payload should include final boss and relay state text");
+
+        Player scannerPlayer = helper.makeMockPlayer(GameType.SURVIVAL);
+        helper.assertFalse(NexusRelaySiteService.hasRelayScannerLens(scannerPlayer),
+                "Scanner lens should not be active without the lens item");
+        scannerPlayer.getInventory().add(new ItemStack(ModItems.PORTABLE_SIGNAL_SCANNER.get()));
+        helper.assertFalse(NexusRelaySiteService.hasRelayScannerLens(scannerPlayer),
+                "Portable scanner alone should not count as the relay lens upgrade");
+        scannerPlayer.getInventory().add(new ItemStack(ModItems.RELAY_SCANNER_LENS.get()));
+        helper.assertTrue(NexusRelaySiteService.hasRelayScannerLens(scannerPlayer),
+                "Relay scanner lens should activate from the passive lens item");
+
+        smokeEntity(helper, ModEntities.GRIDBOUND_HUSK.get());
+        smokeEntity(helper, ModEntities.RELAY_WARDEN.get());
+        smokeEntity(helper, ModEntities.SIGNAL_LEECH.get());
+        smokeEntity(helper, ModEntities.NEXUS_NULLIFIER.get());
+        for (NexusFinalBossProfile profile : NexusFinalBossProfiles.all()) {
+            NexusFinalBossEntity boss = profile.entityType().get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+            helper.assertTrue(boss != null, "Finale boss should spawn: " + profile.entityPath());
+            if (boss != null) {
+                boss.setPos(near.getX() + 0.5D, near.getY(), near.getZ() + 0.5D);
+                helper.getLevel().addFreshEntity(boss);
+                boss.tick();
+                helper.assertTrue(boss.path() == profile.path(), "Finale boss path should match profile: " + profile.path());
+                helper.assertTrue(boss.getAttribute(Attributes.ATTACK_DAMAGE) != null,
+                        "Finale boss needs attack damage: " + profile.entityPath());
+                boss.discard();
+            }
+        }
+
+        data.resetForTests();
         helper.succeed();
     }
 
@@ -949,6 +1116,10 @@ public final class ModGameTests {
                 ModEntities.REMNANT_SOLDIER.get(),
                 ModEntities.SALVAGER_TRADER.get(),
                 ModEntities.MUTANT_CREATURE.get(),
+                ModEntities.GRIDBOUND_HUSK.get(),
+                ModEntities.RELAY_WARDEN.get(),
+                ModEntities.SIGNAL_LEECH.get(),
+                ModEntities.NEXUS_NULLIFIER.get(),
                 ModEntities.WARDEN_BOSS.get(),
                 ModEntities.WASTELAND_SENTINEL.get(),
                 ModEntities.CRASH_ZONE_COLOSSUS.get(),
@@ -958,8 +1129,30 @@ public final class ModGameTests {
                 ModEntities.RADIATION_BEHEMOTH.get(),
                 ModEntities.CITY_RUIN_STALKER.get(),
                 ModEntities.PLAINS_WARLORD.get(),
-                ModEntities.TOXIC_HIVE_MATRIARCH.get()
+                ModEntities.TOXIC_HIVE_MATRIARCH.get(),
+                ModEntities.CORRUPTION_BLOOM.get(),
+                ModEntities.SEVERANCE_ENGINE.get(),
+                ModEntities.MIRROR_COMMAND.get()
         );
+    }
+
+    private static void smokeEntity(GameTestHelper helper, EntityType<? extends Entity> type) {
+        Entity entity = type.create(helper.getLevel(), EntitySpawnReason.EVENT);
+        Identifier entityId = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        helper.assertTrue(entity != null, "Entity should spawn for smoke test: " + entityId);
+        if (entity != null) {
+            BlockPos pos = helper.absolutePos(new BlockPos(6, 2, 6));
+            entity.setPos(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D);
+            helper.getLevel().addFreshEntity(entity);
+            entity.tick();
+            if (entity instanceof Mob mob) {
+                helper.assertTrue(mob.getAttribute(Attributes.MAX_HEALTH) != null,
+                        "Smoke mob should have health attribute: " + entityId);
+                helper.assertTrue(mob.getAttribute(Attributes.ATTACK_DAMAGE) != null,
+                        "Smoke mob should have attack damage attribute: " + entityId);
+            }
+            entity.discard();
+        }
     }
 
     private static List<EntityType<? extends Entity>> attackingTypes() {
@@ -982,6 +1175,10 @@ public final class ModGameTests {
                 ModEntities.REMNANT_SOLDIER.get(),
                 ModEntities.SALVAGER_TRADER.get(),
                 ModEntities.MUTANT_CREATURE.get(),
+                ModEntities.GRIDBOUND_HUSK.get(),
+                ModEntities.RELAY_WARDEN.get(),
+                ModEntities.SIGNAL_LEECH.get(),
+                ModEntities.NEXUS_NULLIFIER.get(),
                 ModEntities.WARDEN_BOSS.get(),
                 ModEntities.WASTELAND_SENTINEL.get(),
                 ModEntities.CRASH_ZONE_COLOSSUS.get(),
@@ -991,7 +1188,10 @@ public final class ModGameTests {
                 ModEntities.RADIATION_BEHEMOTH.get(),
                 ModEntities.CITY_RUIN_STALKER.get(),
                 ModEntities.PLAINS_WARLORD.get(),
-                ModEntities.TOXIC_HIVE_MATRIARCH.get()
+                ModEntities.TOXIC_HIVE_MATRIARCH.get(),
+                ModEntities.CORRUPTION_BLOOM.get(),
+                ModEntities.SEVERANCE_ENGINE.get(),
+                ModEntities.MIRROR_COMMAND.get()
         );
     }
 
@@ -1092,6 +1292,46 @@ public final class ModGameTests {
         helper.assertTrue(!PostNexusEventHandler.isDestroyRouteStormCreditEvent(
                         EnvironmentalEventType.TOXIC_STORM, false),
                 "Destroy storm mission should not credit unrelated clear-weather events");
+
+        NexusCampaignData campaign = NexusCampaignData.get(helper.getLevel().getServer().overworld());
+        campaign.resetForTests();
+        campaign.awaken(helper.absolutePos(new BlockPos(1, 2, 1)));
+        campaign.scanRelays();
+        EndgameMissionProgress.Snapshot relayScan = EndgameMissionProgress
+                .forMission(player, quest, requireMission(helper, "scan_prime_relays"))
+                .orElseThrow(() -> new IllegalStateException("Prime Relay scan progress should be exposed"));
+        helper.assertTrue(relayScan.entries().get(0).have() == NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT,
+                "Prime Relay scan progress should read world campaign data");
+
+        campaign.resolveRelay(NexusRelayType.REACTOR, NexusRelayState.STABILIZED);
+        campaign.resolveRelay(NexusRelayType.CRYO, NexusRelayState.SEVERED);
+        EndgameMissionProgress.Snapshot relayResolve = EndgameMissionProgress
+                .forMission(player, quest, requireMission(helper, "resolve_prime_relays"))
+                .orElseThrow(() -> new IllegalStateException("Prime Relay resolve progress should be exposed"));
+        helper.assertTrue(relayResolve.entries().get(0).have() == 2,
+                "Prime Relay resolution progress should expose resolved relay count");
+
+        campaign.resolveRelay(NexusRelayType.BIO, NexusRelayState.OVERRIDDEN);
+        campaign.markSiegeComplete();
+        EndgameMissionProgress.Snapshot siege = EndgameMissionProgress
+                .forMission(player, quest, requireMission(helper, "survive_core_countermeasure"))
+                .orElseThrow(() -> new IllegalStateException("Core siege progress should be exposed"));
+        helper.assertTrue(siege.entries().get(0).satisfied(),
+                "Core siege progress should read world campaign siege credit");
+
+        post.incrementPathOperationsComplete();
+        EndgameMissionProgress.Snapshot operation = EndgameMissionProgress
+                .forMission(player, quest, requireMission(helper, "control_command_lattice"))
+                .orElseThrow(() -> new IllegalStateException("Path operation progress should be exposed"));
+        helper.assertTrue(operation.entries().get(0).satisfied(),
+                "Post-Warden path operation should expose player counter credit");
+        post.setFinalBossDefeated(true);
+        EndgameMissionProgress.Snapshot finale = EndgameMissionProgress
+                .forMission(player, quest, requireMission(helper, "control_finale"))
+                .orElseThrow(() -> new IllegalStateException("Path finale progress should be exposed"));
+        helper.assertTrue(finale.entries().get(0).satisfied(),
+                "Path finale should expose final boss credit");
+        campaign.resetForTests();
         helper.succeed();
     }
 
@@ -1306,6 +1546,47 @@ public final class ModGameTests {
 
         helper.assertTrue("industrial_factory".equals(ExplorationSiteRegistry.normalize("derelict_workshop")),
                 "Legacy derelict workshop alias should still resolve to industrial factory profile");
+        helper.succeed();
+    }
+
+    private static void ashfallFactionCoreContracts(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        com.knoxhack.echocore.api.EchoFactionRegistry.withClearedForTests(() -> {
+            com.knoxhack.echocore.api.EchoCoreServices.registerFactionActionHandler(AshfallFactionInteractionHandler.INSTANCE);
+            AshfallBiomeFactions.register();
+            List<com.knoxhack.echocore.api.EchoFactionDefinition> definitions =
+                    com.knoxhack.echocore.api.EchoFactionRegistry.byModId(EchoAshfallProtocol.MODID);
+            helper.assertTrue(definitions.size() == 10,
+                    "Ashfall should register 10 Echo Core factions, found " + definitions.size());
+            for (com.knoxhack.echocore.api.EchoFactionDefinition definition : definitions) {
+                helper.assertTrue(definition.contracts().size() == 3,
+                        "Ashfall faction should expose field/trusted/aligned contracts: " + definition.id());
+                List<Integer> required = definition.contracts().stream()
+                        .map(com.knoxhack.echocore.api.EchoFactionContract::requiredReputation)
+                        .sorted()
+                        .toList();
+                helper.assertTrue(required.equals(List.of(0, 35, 75)),
+                        "Ashfall contract ladder should be 0/35/75 for " + definition.id() + ": " + required);
+
+                com.knoxhack.echocore.api.EchoFactionContract field = definition.contracts().stream()
+                        .filter(contract -> contract.id().getPath().endsWith("_field_contract"))
+                        .findFirst()
+                        .orElseThrow();
+                com.knoxhack.echocore.api.EchoFactionContractState available =
+                        com.knoxhack.echocore.api.EchoCoreServices.factionContractState(
+                                player, definition.id(), field.id(), "contact");
+                helper.assertTrue(available.canAccept(), "Field contract should be acceptable at neutral standing: " + field.id());
+                helper.assertTrue(!available.canComplete(), "Field contract should not complete before acceptance: " + field.id());
+                helper.assertTrue(com.knoxhack.echocore.api.EchoCoreServices.acceptFactionContract(
+                        player, definition.id(), field.id()), "Field contract should accept through Echo Core: " + field.id());
+                com.knoxhack.echocore.api.EchoFactionContractState active =
+                        com.knoxhack.echocore.api.EchoCoreServices.factionContractState(
+                                player, definition.id(), field.id(), "contact");
+                helper.assertTrue(!active.canComplete(),
+                        "Ashfall field contract should require objective progress before completion: " + field.id());
+                com.knoxhack.echocore.api.EchoFactionDataService.resetFaction(player, definition.id());
+            }
+        });
         helper.succeed();
     }
 

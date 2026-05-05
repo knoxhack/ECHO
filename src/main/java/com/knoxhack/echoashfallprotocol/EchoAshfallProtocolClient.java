@@ -19,6 +19,8 @@ import com.knoxhack.echoashfallprotocol.client.renderer.GuardianBossModel;
 import com.knoxhack.echoashfallprotocol.client.renderer.IrradiatedWolfRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.MutatedCrawlerRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.MutantCreatureRenderer;
+import com.knoxhack.echoashfallprotocol.client.renderer.NexusFinalBossRenderer;
+import com.knoxhack.echoashfallprotocol.client.renderer.NexusPressureMobRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.RadZombieRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.RemnantSoldierRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.RustWalkerRenderer;
@@ -199,6 +201,10 @@ public class EchoAshfallProtocolClient {
             event.registerEntityRenderer(ModEntities.GLOWING_GHOUL.get(), GlowingGhoulRenderer::new);
             event.registerEntityRenderer(ModEntities.ASH_WRAITH.get(), AshWraithRenderer::new);
             event.registerEntityRenderer(ModEntities.TOXIC_SLIME.get(), ToxicSlimeRenderer::new);
+            event.registerEntityRenderer(ModEntities.GRIDBOUND_HUSK.get(), NexusPressureMobRenderer::new);
+            event.registerEntityRenderer(ModEntities.RELAY_WARDEN.get(), NexusPressureMobRenderer::new);
+            event.registerEntityRenderer(ModEntities.SIGNAL_LEECH.get(), NexusPressureMobRenderer::new);
+            event.registerEntityRenderer(ModEntities.NEXUS_NULLIFIER.get(), NexusPressureMobRenderer::new);
             event.registerEntityRenderer(ModEntities.CITY_STALKER.get(), CityStalkerRenderer::new);
             event.registerEntityRenderer(ModEntities.RUST_WALKER.get(), RustWalkerRenderer::new);
             event.registerEntityRenderer(ModEntities.STEAM_WRAITH.get(), SteamWraithRenderer::new);
@@ -221,6 +227,9 @@ public class EchoAshfallProtocolClient {
             event.registerEntityRenderer(ModEntities.CITY_RUIN_STALKER.get(), BiomeBossRenderer::new);
             event.registerEntityRenderer(ModEntities.PLAINS_WARLORD.get(), BiomeBossRenderer::new);
             event.registerEntityRenderer(ModEntities.TOXIC_HIVE_MATRIARCH.get(), BiomeBossRenderer::new);
+            event.registerEntityRenderer(ModEntities.CORRUPTION_BLOOM.get(), NexusFinalBossRenderer::new);
+            event.registerEntityRenderer(ModEntities.SEVERANCE_ENGINE.get(), NexusFinalBossRenderer::new);
+            event.registerEntityRenderer(ModEntities.MIRROR_COMMAND.get(), NexusFinalBossRenderer::new);
         }
 
         @SubscribeEvent

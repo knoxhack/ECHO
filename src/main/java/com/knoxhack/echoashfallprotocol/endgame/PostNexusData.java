@@ -21,6 +21,10 @@ public class PostNexusData implements ValueIOSerializable {
 
     private NexusPath selectedPath = NexusPath.NONE;
     private int missionProgress = 0; // 0-5 branch progress marker
+    private int relaysResolved = 0;
+    private int siegesSurvived = 0;
+    private int pathOperationsComplete = 0;
+    private boolean finalBossDefeated = false;
     
     // RESTORE path tracking
     private int nodesRepaired = 0;
@@ -83,6 +87,10 @@ public class PostNexusData implements ValueIOSerializable {
         buf.writeDouble(data.archivesReturnY);
         buf.writeDouble(data.archivesReturnZ);
         buf.writeLong(data.choiceTimestamp);
+        buf.writeVarInt(data.relaysResolved);
+        buf.writeVarInt(data.siegesSurvived);
+        buf.writeVarInt(data.pathOperationsComplete);
+        buf.writeBoolean(data.finalBossDefeated);
     }
 
     private static PostNexusData readSync(RegistryFriendlyByteBuf buf) {
@@ -113,6 +121,10 @@ public class PostNexusData implements ValueIOSerializable {
         data.archivesReturnY = buf.readDouble();
         data.archivesReturnZ = buf.readDouble();
         data.choiceTimestamp = buf.readLong();
+        data.relaysResolved = buf.readVarInt();
+        data.siegesSurvived = buf.readVarInt();
+        data.pathOperationsComplete = buf.readVarInt();
+        data.finalBossDefeated = buf.readBoolean();
         return data;
     }
 
@@ -126,6 +138,18 @@ public class PostNexusData implements ValueIOSerializable {
     public int getMissionProgress() { return missionProgress; }
     public void setMissionProgress(int progress) { this.missionProgress = Math.min(5, Math.max(0, progress)); }
     public void advanceMission() { this.missionProgress = Math.min(5, missionProgress + 1); }
+
+    public int getRelaysResolved() { return relaysResolved; }
+    public void setRelaysResolved(int count) { this.relaysResolved = Math.max(0, count); }
+    public void incrementRelaysResolved() { this.relaysResolved++; }
+    public int getSiegesSurvived() { return siegesSurvived; }
+    public void setSiegesSurvived(int count) { this.siegesSurvived = Math.max(0, count); }
+    public void incrementSiegesSurvived() { this.siegesSurvived++; }
+    public int getPathOperationsComplete() { return pathOperationsComplete; }
+    public void setPathOperationsComplete(int count) { this.pathOperationsComplete = Math.max(0, count); }
+    public void incrementPathOperationsComplete() { this.pathOperationsComplete++; }
+    public boolean isFinalBossDefeated() { return finalBossDefeated; }
+    public void setFinalBossDefeated(boolean defeated) { this.finalBossDefeated = defeated; }
 
     // RESTORE tracking
     public int getNodesRepaired() { return nodesRepaired; }
@@ -209,7 +233,7 @@ public class PostNexusData implements ValueIOSerializable {
     // Utility methods
     public boolean hasMadeChoice() { return selectedPath != NexusPath.NONE; }
     public boolean isPath(NexusPath path) { return selectedPath == path; }
-    public boolean isFinalProtocolComplete() { return wardenDefeated && epilogueComplete; }
+    public boolean isFinalProtocolComplete() { return wardenDefeated && finalBossDefeated && epilogueComplete; }
     
     public boolean isMission1Complete() {
         return switch (selectedPath) {
@@ -257,6 +281,10 @@ public class PostNexusData implements ValueIOSerializable {
         output.putDouble("archivesReturnY", archivesReturnY);
         output.putDouble("archivesReturnZ", archivesReturnZ);
         output.putLong("choiceTimestamp", choiceTimestamp);
+        output.putInt("relaysResolved", relaysResolved);
+        output.putInt("siegesSurvived", siegesSurvived);
+        output.putInt("pathOperationsComplete", pathOperationsComplete);
+        output.putBoolean("finalBossDefeated", finalBossDefeated);
     }
 
     @Override
@@ -288,6 +316,10 @@ public class PostNexusData implements ValueIOSerializable {
         this.archivesReturnY = input.getDoubleOr("archivesReturnY", 70.0D);
         this.archivesReturnZ = input.getDoubleOr("archivesReturnZ", 0.5D);
         this.choiceTimestamp = input.getLongOr("choiceTimestamp", 0);
+        this.relaysResolved = input.getIntOr("relaysResolved", 0);
+        this.siegesSurvived = input.getIntOr("siegesSurvived", 0);
+        this.pathOperationsComplete = input.getIntOr("pathOperationsComplete", 0);
+        this.finalBossDefeated = input.getBooleanOr("finalBossDefeated", false);
     }
 
     public static PostNexusData get(Player player) {

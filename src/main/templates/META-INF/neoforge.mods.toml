@@ -9,9 +9,10 @@ displayURL="https://github.com/knoxhack/Echo"
 credits="Built with NeoForge"
 authors="KnoxHack"
 description='''
-ECHO: Ashfall Protocol is a post-Gridfall survival overhaul.
-Guided by ECHO-7, rebuild from a ruined drop pod through factions,
-hazards, machines, biome guardian nodes, and the Nexus choice.
+ECHO: Ashfall Protocol is a post-Gridfall survival overhaul led by ECHO-7,
+a useful emergency operator with damaged memory and practical priorities.
+Rebuild from a ruined drop pod through water, shelter, factions, machines,
+buried guardian nodes, and the Nexus choice that still listens beneath the ash.
 '''
 
 [[mixins]]
@@ -35,7 +36,7 @@ config="echoashfallprotocol.mixins.json"
     modId="echocore"
     type="required"
     reason="Provides shared ECHO service APIs used by Ashfall and ECHO addons."
-    versionRange="[1.0.0,)"
+    versionRange="[1.1.0,)"
     ordering="AFTER"
     side="BOTH"
 
@@ -43,7 +44,7 @@ config="echoashfallprotocol.mixins.json"
     modId="echoterminal"
     type="optional"
     reason="Provides the modular ECHO Terminal UI and terminal block."
-    versionRange="[1.0.0,)"
+    versionRange="[1.1.0,)"
     ordering="AFTER"
     side="BOTH"
 

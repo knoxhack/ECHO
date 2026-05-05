@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "echoashfallprotocol:block/oil_stained_concrete"
+    "all": "echoashfallprotocol:block/cracked_asphalt"
   }
 }

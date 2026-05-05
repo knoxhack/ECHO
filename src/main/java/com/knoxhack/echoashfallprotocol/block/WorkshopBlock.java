@@ -45,29 +45,29 @@ public class WorkshopBlock extends Block {
     }
 
     private void showWorkshopStatus(Player player, BlockPos workshopPos) {
-        player.sendSystemMessage(Component.literal("=== WORKSHOP STATUS ===")
+        player.sendSystemMessage(Component.literal("WORKSHOP FIELD STATUS")
             .withStyle(ChatFormatting.BOLD, ChatFormatting.GOLD));
         
         // Count machines in workshop
         int machineCount = countMachinesInWorkshop(player.level(), workshopPos);
         
-        player.sendSystemMessage(Component.literal("Active Machines: " + machineCount)
+        player.sendSystemMessage(Component.literal("Linked machines in range: " + machineCount)
             .withStyle(ChatFormatting.YELLOW));
-        player.sendSystemMessage(Component.literal("Speed Bonus: +" + (int)(SPEED_BONUS*100) + "%")
+        player.sendSystemMessage(Component.literal("Throughput bonus: +" + (int)(SPEED_BONUS*100) + "%")
             .withStyle(ChatFormatting.GREEN));
-        player.sendSystemMessage(Component.literal("Power Reduction: -" + (int)(POWER_REDUCTION*100) + "%")
+        player.sendSystemMessage(Component.literal("Power draw reduction: -" + (int)(POWER_REDUCTION*100) + "%")
             .withStyle(ChatFormatting.GREEN));
         if (player instanceof ServerPlayer serverPlayer) {
             float perkBonus = PerkEffectHandler.getMachineSpeedMultiplier(serverPlayer);
             if (perkBonus > 1.0F) {
                 player.sendSystemMessage(Component.literal(
-                    "Operator Perk Boost: x" + String.format(java.util.Locale.ROOT, "%.2f", perkBonus)
+                    "Operator training multiplier: x" + String.format(java.util.Locale.ROOT, "%.2f", perkBonus)
                 ).withStyle(ChatFormatting.AQUA));
             }
             float pathBonus = MachineGameplayHelper.getPathSpeedMultiplier(serverPlayer);
             if (pathBonus > 1.0F) {
                 player.sendSystemMessage(Component.literal(
-                    "Nexus Automation Boost: x" + String.format(java.util.Locale.ROOT, "%.2f", pathBonus)
+                    "Nexus automation multiplier: x" + String.format(java.util.Locale.ROOT, "%.2f", pathBonus)
                 ).withStyle(ChatFormatting.LIGHT_PURPLE));
             }
         }
@@ -103,7 +103,7 @@ public class WorkshopBlock extends Block {
     
     private void showLinkedMachines(Player player, BlockPos workshopPos) {
         // Show machine linking status
-        player.sendSystemMessage(Component.literal("Machine Links: (Max 4)")
+        player.sendSystemMessage(Component.literal("Machine links: max 4")
             .withStyle(ChatFormatting.YELLOW));
         // Would display linked machine chains
     }

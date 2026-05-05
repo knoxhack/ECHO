@@ -1057,7 +1057,7 @@ public final class BuiltinTerminalTabs {
             cy = TerminalUi.keyValue(context, graphics, x + 14, cy, w - 32,
                     "Service State", serviceState(definition, profile), TerminalUi.AMBER);
             cy = TerminalUi.keyValue(context, graphics, x + 14, cy, w - 32,
-                    "Contact Roles", definition.roles().isEmpty() ? "None"
+                    "NPC Roles", definition.roles().isEmpty() ? "None"
                             : String.join(", ", definition.roles().stream().map(role -> role.displayName()).toList()),
                     TerminalUi.TEXT);
             cy = TerminalUi.keyValue(context, graphics, x + 14, cy, w - 32,

@@ -107,6 +107,10 @@ public class ModCreativeTabs {
                         output.accept(ModItems.REMNANT_SOLDIER_SPAWN_EGG.get());
                         output.accept(ModItems.SALVAGER_TRADER_SPAWN_EGG.get());
                         output.accept(ModItems.MUTANT_CREATURE_SPAWN_EGG.get());
+                        output.accept(ModItems.GRIDBOUND_HUSK_SPAWN_EGG.get());
+                        output.accept(ModItems.RELAY_WARDEN_SPAWN_EGG.get());
+                        output.accept(ModItems.SIGNAL_LEECH_SPAWN_EGG.get());
+                        output.accept(ModItems.NEXUS_NULLIFIER_SPAWN_EGG.get());
                         output.accept(ModItems.WARDEN_BOSS_SPAWN_EGG.get());
                         output.accept(ModItems.WASTELAND_SENTINEL_SPAWN_EGG.get());
                         output.accept(ModItems.CRASH_ZONE_COLOSSUS_SPAWN_EGG.get());
@@ -117,6 +121,9 @@ public class ModCreativeTabs {
                         output.accept(ModItems.CITY_RUIN_STALKER_SPAWN_EGG.get());
                         output.accept(ModItems.PLAINS_WARLORD_SPAWN_EGG.get());
                         output.accept(ModItems.TOXIC_HIVE_MATRIARCH_SPAWN_EGG.get());
+                        output.accept(ModItems.CORRUPTION_BLOOM_SPAWN_EGG.get());
+                        output.accept(ModItems.SEVERANCE_ENGINE_SPAWN_EGG.get());
+                        output.accept(ModItems.MIRROR_COMMAND_SPAWN_EGG.get());
                         output.accept(ModItems.WILD_DOG_SPAWN_EGG.get());
                         output.accept(ModItems.FERAL_HUMAN_SPAWN_EGG.get());
                         output.accept(ModItems.CRASH_SURVIVOR_SPAWN_EGG.get());
@@ -254,6 +261,9 @@ public class ModCreativeTabs {
                         output.accept(ModItems.WARDEN_ARCHIVE_CIPHER.get());
                         output.accept(ModItems.PREFALL_ARCHIVES_KEY.get());
                         output.accept(ModItems.RETURN_KEYSTONE.get());
+                        output.accept(ModItems.INSTABILITY_DAMPENER.get());
+                        output.accept(ModItems.RELAY_SCANNER_LENS.get());
+                        output.accept(ModItems.RETURN_BEACON.get());
                         output.accept(ModBlocks.POWER_NODE_ITEM.get());
                         output.accept(ModBlocks.NEXUS_CAPACITOR_ITEM.get());
                         output.accept(ModBlocks.NEXUS_CORE_ITEM.get());

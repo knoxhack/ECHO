@@ -1,9 +1,12 @@
 package com.knoxhack.echoashfallprotocol.event;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echoashfallprotocol.endgame.NexusCampaignActions;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.monster.Monster;
@@ -23,12 +26,34 @@ public class NexusWorldEffects {
     @SubscribeEvent
     public static void onWorldTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (level.getGameTime() % EFFECT_INTERVAL != 0) return;
+        if (level.dimension() != Level.OVERWORLD) return;
 
         NexusWorldData data = NexusWorldData.get(level);
+        NexusCampaignData campaign = NexusCampaignData.get(level);
+        if (level.getGameTime() % 1200L == 0L && campaign.tickInstability(level, data.hasChoiceBeenMade())) {
+            NexusCampaignActions.syncCampaignState(level);
+        }
+        if (data.getState() == NexusWorldData.WorldState.NORMAL && campaign.isAwakened()
+                && level.getGameTime() % EFFECT_INTERVAL == 0L) {
+            applyInstabilityPressure(level, campaign);
+        }
+        if (level.getGameTime() % EFFECT_INTERVAL != 0) return;
         if (data.getState() == NexusWorldData.WorldState.NORMAL) return;
 
         applyPeriodicEffects(level, data.getState());
+    }
+
+    private static void applyInstabilityPressure(ServerLevel level, NexusCampaignData campaign) {
+        for (ServerPlayer player : level.players()) {
+            if (campaign.getInstability() >= 70) {
+                player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 300, 0, false, false));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        "§5[NEXUS INSTABILITY]§r Core pressure is interfering with scanner and combat telemetry."), true);
+            } else if (campaign.getInstability() >= 40) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        "§d[NEXUS INSTABILITY]§r Relay activity rising. Resolve relays or prepare for surge pressure."), true);
+            }
+        }
     }
 
     private static void applyPeriodicEffects(ServerLevel level, NexusWorldData.WorldState state) {

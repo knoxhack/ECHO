@@ -142,6 +142,10 @@ public class ModItems {
     public static final DeferredItem<Item> REMNANT_SOLDIER_SPAWN_EGG = registerSpawnEgg("remnant_soldier_spawn_egg", ModEntities.REMNANT_SOLDIER::get);
     public static final DeferredItem<Item> SALVAGER_TRADER_SPAWN_EGG = registerSpawnEgg("salvager_trader_spawn_egg", ModEntities.SALVAGER_TRADER::get);
     public static final DeferredItem<Item> MUTANT_CREATURE_SPAWN_EGG = registerSpawnEgg("mutant_creature_spawn_egg", ModEntities.MUTANT_CREATURE::get);
+    public static final DeferredItem<Item> GRIDBOUND_HUSK_SPAWN_EGG = registerSpawnEgg("gridbound_husk_spawn_egg", ModEntities.GRIDBOUND_HUSK::get);
+    public static final DeferredItem<Item> RELAY_WARDEN_SPAWN_EGG = registerSpawnEgg("relay_warden_spawn_egg", ModEntities.RELAY_WARDEN::get);
+    public static final DeferredItem<Item> SIGNAL_LEECH_SPAWN_EGG = registerSpawnEgg("signal_leech_spawn_egg", ModEntities.SIGNAL_LEECH::get);
+    public static final DeferredItem<Item> NEXUS_NULLIFIER_SPAWN_EGG = registerSpawnEgg("nexus_nullifier_spawn_egg", ModEntities.NEXUS_NULLIFIER::get);
     
     // Boss Spawn Eggs
     public static final DeferredItem<Item> WARDEN_BOSS_SPAWN_EGG = registerSpawnEgg("warden_boss_spawn_egg", ModEntities.WARDEN_BOSS::get);
@@ -154,6 +158,9 @@ public class ModItems {
     public static final DeferredItem<Item> CITY_RUIN_STALKER_SPAWN_EGG = registerSpawnEgg("city_ruin_stalker_spawn_egg", ModEntities.CITY_RUIN_STALKER::get);
     public static final DeferredItem<Item> PLAINS_WARLORD_SPAWN_EGG = registerSpawnEgg("plains_warlord_spawn_egg", ModEntities.PLAINS_WARLORD::get);
     public static final DeferredItem<Item> TOXIC_HIVE_MATRIARCH_SPAWN_EGG = registerSpawnEgg("toxic_hive_matriarch_spawn_egg", ModEntities.TOXIC_HIVE_MATRIARCH::get);
+    public static final DeferredItem<Item> CORRUPTION_BLOOM_SPAWN_EGG = registerSpawnEgg("corruption_bloom_spawn_egg", ModEntities.CORRUPTION_BLOOM::get);
+    public static final DeferredItem<Item> SEVERANCE_ENGINE_SPAWN_EGG = registerSpawnEgg("severance_engine_spawn_egg", ModEntities.SEVERANCE_ENGINE::get);
+    public static final DeferredItem<Item> MIRROR_COMMAND_SPAWN_EGG = registerSpawnEgg("mirror_command_spawn_egg", ModEntities.MIRROR_COMMAND::get);
 
     // === TRACE FRAGMENTS (Tier 1 extraction inputs) ===
     public static final DeferredItem<Item> IRON_SHARD = ITEMS.registerSimpleItem("iron_shard");
@@ -218,6 +225,15 @@ public class ModItems {
     public static final DeferredItem<Item> RETURN_KEYSTONE = register("return_keystone",
             com.knoxhack.echoashfallprotocol.item.ReturnKeystoneItem::new, new Item.Properties().stacksTo(16),
             AshfallTooltip.of("return_keystone"));
+    public static final DeferredItem<Item> INSTABILITY_DAMPENER = register("instability_dampener",
+            InstabilityDampenerItem::new, new Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE),
+            AshfallTooltip.of("instability_dampener"));
+    public static final DeferredItem<Item> RELAY_SCANNER_LENS = register("relay_scanner_lens",
+            RelayScannerLensItem::new, new Item.Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE),
+            AshfallTooltip.of("relay_scanner_lens"));
+    public static final DeferredItem<Item> RETURN_BEACON = register("return_beacon",
+            ReturnBeaconItem::new, new Item.Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC),
+            AshfallTooltip.of("return_beacon"));
 
     // === ALLOY ARMOR (Tier 2) ===
     public static final DeferredItem<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet", id ->

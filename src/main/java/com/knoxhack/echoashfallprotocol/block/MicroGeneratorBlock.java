@@ -80,7 +80,7 @@ public class MicroGeneratorBlock extends BaseEntityBlock implements MachineState
                         wearData.repair(pos, 200);
                         heldItem.shrink(1);
                         player.sendSystemMessage(Component.literal(
-                                "§a[ECHO-7]§r Generator repaired. Wear reduced."));
+                                "\u00A7a[ECHO-7]\u00A7r Micro Generator patched. Wear reduced; listen for the next cough."));
                         return InteractionResult.SUCCESS;
                     }
                 }

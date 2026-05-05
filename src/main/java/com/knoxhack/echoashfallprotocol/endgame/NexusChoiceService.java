@@ -10,6 +10,7 @@ import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModEffects;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.registry.ModSounds;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import java.util.Locale;
 import net.minecraft.core.BlockPos;
@@ -75,7 +76,8 @@ public final class NexusChoiceService {
             player.sendSystemMessage(access.denialMessage());
             if (access.worldResolved()) {
                 NexusWorldData resolvedData = NexusWorldData.get(level.getServer().overworld());
-                PacketDistributor.sendToPlayer(player, NexusStatePacket.fromWorldData(resolvedData));
+                PacketDistributor.sendToPlayer(player, NexusStatePacket.fromWorldData(
+                        resolvedData, NexusCampaignData.get(level.getServer().overworld())));
                 PostNexusEventHandler.syncPlayerToWorldChoice(player);
             }
             return false;
@@ -113,7 +115,7 @@ public final class NexusChoiceService {
     }
 
     private static void syncWorldState(ServerLevel level, NexusWorldData worldData) {
-        NexusStatePacket packet = NexusStatePacket.fromWorldData(worldData);
+        NexusStatePacket packet = NexusStatePacket.fromWorldData(worldData, NexusCampaignData.get(level.getServer().overworld()));
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             PacketDistributor.sendToPlayer(player, packet);
         }

@@ -5,6 +5,7 @@ import com.knoxhack.echoashfallprotocol.block.entity.NexusCoreBlockEntity;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -75,10 +76,25 @@ public final class NexusAccessRules {
                     statusText);
         }
 
+        NexusCampaignData campaign = NexusCampaignData.get(level.getServer().overworld());
+        if (!campaign.isWarfrontComplete()
+                && questData.isMissionCompleted("find_nexus_core")
+                && questData.isMissionCompleted("stabilize_nexus_grid")) {
+            campaign.bootstrapWarfrontComplete(core.getBlockPos());
+        }
+        if (!campaign.isWarfrontComplete()) {
+            String statusText = "LOCKED: Warfront "
+                    + campaign.getResolvedRelayCount() + "/" + NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT
+                    + " relays, siege " + (campaign.isSiegeComplete() ? "complete" : "pending") + ".";
+            return Status.denied(false, NexusWorldData.WorldState.NORMAL, "", activatedNodes, 0, "",
+                    Component.literal("[ECHO-7] Nexus Warfront unresolved. Resolve three Prime Relays and survive the Core Countermeasure Siege."),
+                    statusText);
+        }
+
         return new Status(true, false, NexusWorldData.WorldState.NORMAL, "", activatedNodes,
                 NexusCoreBlock.REQUIRED_NODES, 0, "", Component.empty(),
                 "READY: " + activatedNodes + "/" + NexusCoreBlock.REQUIRED_NODES
-                        + " Power Nodes active. All guardian signals resolved.");
+                        + " Power Nodes active. All guardian signals and Warfront checks resolved.");
     }
 
     public static boolean hasDefeatedAllGuardians(ServerPlayer player) {

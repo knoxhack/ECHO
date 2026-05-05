@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "echoashfallprotocol:block/concrete_rubble"
+    "all": "echoashfallprotocol:block/industrial_aggregate"
   }
 }

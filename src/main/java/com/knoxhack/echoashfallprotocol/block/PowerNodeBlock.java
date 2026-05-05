@@ -68,7 +68,7 @@ public class PowerNodeBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide()) {
             if (state.getValue(ACTIVE)) {
-                player.sendSystemMessage(Component.literal("[ECHO-7] Power node already active. Grid contribution confirmed."));
+                player.sendSystemMessage(Component.literal("[ECHO-7] Power Node already active. Grid contribution confirmed."));
                 return InteractionResult.CONSUME;
             }
 
@@ -85,11 +85,12 @@ public class PowerNodeBlock extends BaseEntityBlock {
                         EchoMessages.getMessage(EchoMessages.Context.POWER_NODE_ACTIVATED)));
                 if (player instanceof ServerPlayer serverPlayer) {
                     FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.REPAIR, "relay", ReputationData.Faction.REMNANTS, 1);
+                    com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractProgression.progressRepair(serverPlayer, "power_node");
                     PostNexusEventHandler.recordPowerNodeActivated(serverPlayer, pos);
                 }
             } else {
                 player.sendSystemMessage(Component.literal(
-                        "[ECHO-7] Power node requires an Energy Cell to reactivate. Scan complete."));
+                        "[ECHO-7] Power Node dormant. Insert an Energy Cell to wake the local grid anchor."));
             }
         }
         return InteractionResult.SUCCESS;

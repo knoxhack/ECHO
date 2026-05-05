@@ -3,10 +3,12 @@ package com.knoxhack.echoashfallprotocol.event;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.dimension.ModDimensions;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
+import com.knoxhack.echoashfallprotocol.endgame.NexusCampaignActions;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData.NexusPath;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import java.util.Collections;
 import net.minecraft.core.BlockPos;
@@ -132,6 +134,7 @@ public class PostNexusEventHandler {
         if (player.tickCount % 100 != 0) return;
 
         syncPlayerToWorldChoice(player);
+        NexusCampaignActions.syncCampaignState(player);
 
         PostNexusData data = PostNexusData.get(player);
         if (!data.hasMadeChoice()) return;
@@ -257,7 +260,9 @@ public class PostNexusEventHandler {
 
     public static void completeFinalProtocol(ServerPlayer player, String missionId) {
         PostNexusData data = PostNexusData.get(player);
-        if (!data.hasMadeChoice() || !data.isWardenDefeated()) {
+        if (!data.hasMadeChoice() || !data.isWardenDefeated() || !data.isFinalBossDefeated()) {
+            player.sendSystemMessage(Component.literal(
+                    "[ECHO-7] Final epilogue locked until the path finale boss is defeated."));
             return;
         }
 
@@ -283,8 +288,20 @@ public class PostNexusEventHandler {
         if (!quest.isMissionCompleted("find_nexus_core")) {
             quest.completeMission(player, "find_nexus_core", Collections.emptyList());
         }
+        if (!quest.isMissionCompleted("awaken_nexus_core")) {
+            quest.completeMission(player, "awaken_nexus_core", Collections.emptyList());
+        }
+        if (!quest.isMissionCompleted("scan_prime_relays")) {
+            quest.completeMission(player, "scan_prime_relays", Collections.emptyList());
+        }
+        if (!quest.isMissionCompleted("resolve_prime_relays")) {
+            quest.completeMission(player, "resolve_prime_relays", Collections.emptyList());
+        }
         if (!quest.isMissionCompleted("stabilize_nexus_grid")) {
             quest.completeMission(player, "stabilize_nexus_grid", Collections.emptyList());
+        }
+        if (!quest.isMissionCompleted("survive_core_countermeasure")) {
+            quest.completeMission(player, "survive_core_countermeasure", Collections.emptyList());
         }
         if (!quest.isMissionCompleted("reach_decision")) {
             quest.completeMission(player, "reach_decision", Collections.emptyList());
@@ -307,6 +324,7 @@ public class PostNexusEventHandler {
             if (!candidateData.hasMadeChoice() || candidateData.isWardenDefeated()) continue;
 
             candidateData.setWardenDefeated(true);
+            NexusCampaignData.get(level.getServer().overworld()).markWardenDefeated();
             if (!candidateData.isWardenRewardClaimed()) {
                 grantWardenReward(candidate, candidateData.getSelectedPath());
                 candidateData.setWardenRewardClaimed(true);
@@ -317,6 +335,9 @@ public class PostNexusEventHandler {
                             : "[ECHO-7] Guardian defeat confirmed. Your final protocol is ready at the terminal."));
             commitProgress(candidate, candidateData);
             credited++;
+        }
+        if (credited > 0) {
+            NexusCampaignActions.syncCampaignState(level);
         }
         return credited;
     }

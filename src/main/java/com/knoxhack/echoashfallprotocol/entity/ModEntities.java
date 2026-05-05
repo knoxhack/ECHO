@@ -2,6 +2,8 @@ package com.knoxhack.echoashfallprotocol.entity;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.entity.boss.BiomeBossEntity;
+import com.knoxhack.echoashfallprotocol.entity.boss.NexusFinalBossEntity;
+import com.knoxhack.echoashfallprotocol.entity.boss.NexusFinalBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.boss.WardenBossEntity;
 import com.knoxhack.echoashfallprotocol.entity.faction.FactionNpcEntity;
 import com.knoxhack.echoashfallprotocol.entity.faction.MutantCreature;
@@ -106,6 +108,23 @@ public class ModEntities {
             ENTITIES.registerEntityType("faction_npc", FactionNpcEntity::new, MobCategory.CREATURE,
                     builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(64));
 
+    // Nexus Warfront pressure mobs
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusPressureMobEntity>> GRIDBOUND_HUSK =
+            ENTITIES.registerEntityType("gridbound_husk", NexusPressureMobEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(80));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusPressureMobEntity>> RELAY_WARDEN =
+            ENTITIES.registerEntityType("relay_warden", NexusPressureMobEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(0.9F, 2.4F).clientTrackingRange(88).fireImmune());
+
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusPressureMobEntity>> SIGNAL_LEECH =
+            ENTITIES.registerEntityType("signal_leech", NexusPressureMobEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(0.55F, 1.45F).clientTrackingRange(80));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusPressureMobEntity>> NEXUS_NULLIFIER =
+            ENTITIES.registerEntityType("nexus_nullifier", NexusPressureMobEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(0.8F, 2.3F).clientTrackingRange(96).fireImmune());
+
     // Boss Entities
     public static final DeferredHolder<EntityType<?>, EntityType<WardenBossEntity>> WARDEN_BOSS =
             ENTITIES.registerEntityType("warden_boss", WardenBossEntity::new, MobCategory.MONSTER,
@@ -147,6 +166,18 @@ public class ModEntities {
             ENTITIES.registerEntityType("toxic_hive_matriarch", BiomeBossEntity::new, MobCategory.MONSTER,
                     builder -> builder.sized(1.2F, 2.5F).clientTrackingRange(96));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusFinalBossEntity>> CORRUPTION_BLOOM =
+            ENTITIES.registerEntityType("corruption_bloom", NexusFinalBossEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(1.35F, 2.9F).clientTrackingRange(128).fireImmune());
+
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusFinalBossEntity>> SEVERANCE_ENGINE =
+            ENTITIES.registerEntityType("severance_engine", NexusFinalBossEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(1.45F, 3.0F).clientTrackingRange(128).fireImmune());
+
+    public static final DeferredHolder<EntityType<?>, EntityType<NexusFinalBossEntity>> MIRROR_COMMAND =
+            ENTITIES.registerEntityType("mirror_command", NexusFinalBossEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(1.25F, 2.85F).clientTrackingRange(128).fireImmune());
+
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(RAD_ZOMBIE.get(), RadZombie.createAttributes().build());
         event.put(SCAVENGER_BANDIT.get(), ScavengerBandit.createAttributes().build());
@@ -157,6 +188,10 @@ public class ModEntities {
         event.put(GLOWING_GHOUL.get(), GlowingGhoul.createAttributes().build());
         event.put(ASH_WRAITH.get(), AshWraith.createAttributes().build());
         event.put(TOXIC_SLIME.get(), ToxicSlime.createAttributes().build());
+        event.put(GRIDBOUND_HUSK.get(), NexusPressureMobEntity.createAttributes().build());
+        event.put(RELAY_WARDEN.get(), NexusPressureMobEntity.createAttributes().build());
+        event.put(SIGNAL_LEECH.get(), NexusPressureMobEntity.createAttributes().build());
+        event.put(NEXUS_NULLIFIER.get(), NexusPressureMobEntity.createAttributes().build());
         event.put(CITY_STALKER.get(), CityStalker.createAttributes().build());
         event.put(RUST_WALKER.get(), RustWalker.createAttributes().build());
         event.put(STEAM_WRAITH.get(), SteamWraith.createAttributes().build());
@@ -182,6 +217,9 @@ public class ModEntities {
         event.put(CITY_RUIN_STALKER.get(), BiomeBossEntity.createAttributes().build());
         event.put(PLAINS_WARLORD.get(), BiomeBossEntity.createAttributes().build());
         event.put(TOXIC_HIVE_MATRIARCH.get(), BiomeBossEntity.createAttributes().build());
+        event.put(CORRUPTION_BLOOM.get(), NexusFinalBossEntity.createAttributes().build());
+        event.put(SEVERANCE_ENGINE.get(), NexusFinalBossEntity.createAttributes().build());
+        event.put(MIRROR_COMMAND.get(), NexusFinalBossEntity.createAttributes().build());
     }
 
     public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
@@ -192,6 +230,10 @@ public class ModEntities {
         registerMonsterSpawn(event, GLOWING_GHOUL);
         registerMonsterSpawn(event, ASH_WRAITH);
         registerMonsterSpawn(event, TOXIC_SLIME);
+        registerMonsterSpawn(event, GRIDBOUND_HUSK);
+        registerMonsterSpawn(event, RELAY_WARDEN);
+        registerMonsterSpawn(event, SIGNAL_LEECH);
+        registerMonsterSpawn(event, NEXUS_NULLIFIER);
         registerMonsterSpawn(event, CITY_STALKER);
         registerMonsterSpawn(event, RUST_WALKER);
         registerMonsterSpawn(event, STEAM_WRAITH);
@@ -212,6 +254,9 @@ public class ModEntities {
         registerGroundMobSpawn(event, CITY_RUIN_STALKER);
         registerGroundMobSpawn(event, PLAINS_WARLORD);
         registerGroundMobSpawn(event, TOXIC_HIVE_MATRIARCH);
+        registerGroundMobSpawn(event, CORRUPTION_BLOOM);
+        registerGroundMobSpawn(event, SEVERANCE_ENGINE);
+        registerGroundMobSpawn(event, MIRROR_COMMAND);
 
         registerGroundMobSpawn(event, CRASH_SURVIVOR);
         registerNoRestrictionSpawn(event, SCOUT_DRONE);

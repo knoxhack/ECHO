@@ -52,7 +52,7 @@ public class DataLogItem extends Item {
             }
 
             // Send message to player
-            player.sendSystemMessage(Component.literal("§b[ECHO-7]§r Data log archived. " + loreTitle + " added to intelligence database."));
+            player.sendSystemMessage(Component.literal("\u00A7b[ECHO-7]\u00A7r Data log archived. " + loreTitle + " added to the Field Archive."));
             
             // Consume the item
             if (!player.getAbilities().instabuild) {

@@ -40,6 +40,11 @@ public final class ClientNetworkHandlers {
             HudState.setNexusState(packet.getState());
             HudState.setNexusPlayer(packet.playerName());
             HudState.setNexusPos(packet.nexusX(), packet.nexusY(), packet.nexusZ());
+            HudState.setNexusCampaign(packet.campaignAwakened(), packet.nexusInstability(),
+                    packet.relaysScanned(), packet.relaysResolved(), packet.readinessRestore(),
+                    packet.readinessDestroy(), packet.readinessControl(), packet.siegeComplete(),
+                    packet.warfrontComplete(), packet.wardenDefeated(), packet.finaleComplete());
+            HudState.setNexusRelaySummaryPayload(packet.relaySummaryPayload());
         });
     }
 

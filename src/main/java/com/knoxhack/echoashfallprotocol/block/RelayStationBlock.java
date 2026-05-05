@@ -57,9 +57,9 @@ public class RelayStationBlock extends Block {
                 return InteractionResult.SUCCESS;
             } else {
                 discoverStation(player, pos);
-                player.sendSystemMessage(Component.literal("This station needs repairs!")
+                player.sendSystemMessage(Component.literal("[ECHO-7] Relay Station unsealed but unrepaired.")
                     .withStyle(ChatFormatting.RED));
-                player.sendSystemMessage(Component.literal("Required: Power Cell, Circuit Board, Antenna Parts")
+                player.sendSystemMessage(Component.literal("Required: Power Cell, Circuit Board, 2 Scrap Circuits.")
                     .withStyle(ChatFormatting.GRAY));
                 return InteractionResult.SUCCESS;
             }
@@ -71,9 +71,9 @@ public class RelayStationBlock extends Block {
                 activateStation(level, pos, state, player);
                 return InteractionResult.SUCCESS;
             } else {
-                player.sendSystemMessage(Component.literal("Station repaired but needs activation!")
+                player.sendSystemMessage(Component.literal("[ECHO-7] Relay hardware repaired. Activation cell missing.")
                     .withStyle(ChatFormatting.YELLOW));
-                player.sendSystemMessage(Component.literal("Required: Power Cell")
+                player.sendSystemMessage(Component.literal("Required: Power Cell.")
                     .withStyle(ChatFormatting.GRAY));
                 return InteractionResult.SUCCESS;
             }
@@ -110,7 +110,7 @@ public class RelayStationBlock extends Block {
         if (!consumeItem(player, ModItems.POWER_CELL.get(), 1) ||
             !consumeItem(player, ModItems.CIRCUIT_BOARD.get(), 1) ||
             !consumeItem(player, ModItems.SCRAP_CIRCUIT.get(), 2)) {
-            player.sendSystemMessage(Component.literal("Failed to consume materials!")
+            player.sendSystemMessage(Component.literal("[ECHO-7] Repair failed. Required materials desynced during handoff.")
                 .withStyle(ChatFormatting.RED));
             return;
         }
@@ -118,9 +118,9 @@ public class RelayStationBlock extends Block {
         level.setBlock(pos, state.setValue(REPAIRED, true), 3);
         discoverStation(player, pos);
         
-        player.sendSystemMessage(Component.literal("Station repaired!")
+        player.sendSystemMessage(Component.literal("[ECHO-7] Relay Station repaired. Radio spine is listening.")
             .withStyle(ChatFormatting.GREEN));
-        player.sendSystemMessage(Component.literal("Activate with a Power Cell to enable fast travel.")
+        player.sendSystemMessage(Component.literal("Activate with a Power Cell to open the route network.")
             .withStyle(ChatFormatting.YELLOW));
         
         // Award research points
@@ -130,6 +130,7 @@ public class RelayStationBlock extends Block {
             research.addPoints(15);
             com.knoxhack.echoashfallprotocol.research.ResearchData.saveAndSync(serverPlayer, research);
             FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.REPAIR, "relay", ReputationData.Faction.REMNANTS, 1);
+            com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractProgression.progressRepair(serverPlayer, "relay");
         }
     }
     
@@ -148,7 +149,7 @@ public class RelayStationBlock extends Block {
     
     private void activateStation(Level level, BlockPos pos, BlockState state, Player player) {
         if (!consumeItem(player, ModItems.POWER_CELL.get(), 1)) {
-            player.sendSystemMessage(Component.literal("Failed to consume Power Cell!")
+            player.sendSystemMessage(Component.literal("[ECHO-7] Activation failed. Power Cell missing during handoff.")
                 .withStyle(ChatFormatting.RED));
             return;
         }
@@ -156,7 +157,7 @@ public class RelayStationBlock extends Block {
         level.setBlock(pos, state.setValue(ACTIVE, true), 3);
         activateStationForPlayer(player, pos);
         
-        player.sendSystemMessage(Component.literal("Station activated! Radio route added to your network.")
+        player.sendSystemMessage(Component.literal("[ECHO-7] Relay Station active. Radio route added to your network.")
             .withStyle(ChatFormatting.GREEN));
         
         // Reveal map area
@@ -169,13 +170,14 @@ public class RelayStationBlock extends Block {
             research.addPoints(10);
             com.knoxhack.echoashfallprotocol.research.ResearchData.saveAndSync(serverPlayer, research);
             FactionQuestProgression.progress(serverPlayer, FactionQuest.ObjectiveType.REPAIR, "relay", ReputationData.Faction.REMNANTS, 1);
+            com.knoxhack.echoashfallprotocol.faction.AshfallFactionContractProgression.progressRepair(serverPlayer, "relay");
         }
     }
     
     private void openFastTravelUI(Player player, BlockPos currentPos) {
         activateStationForPlayer(player, currentPos);
 
-        player.sendSystemMessage(Component.literal("ECHO Radio Network online.")
+        player.sendSystemMessage(Component.literal("[ECHO-7] Radio network online.")
             .withStyle(ChatFormatting.AQUA));
         
         // List available destinations
@@ -183,9 +185,9 @@ public class RelayStationBlock extends Block {
         var destinations = network.getAvailableDestinations(currentPos);
         
         if (destinations.isEmpty()) {
-            player.sendSystemMessage(Component.literal("No other active stations found.")
+            player.sendSystemMessage(Component.literal("[ECHO-7] No other active relay stations found.")
                 .withStyle(ChatFormatting.RED));
-            player.sendSystemMessage(Component.literal("Activate another Relay Station to create a route.")
+            player.sendSystemMessage(Component.literal("Activate another Relay Station to create a return route.")
                 .withStyle(ChatFormatting.GRAY));
         } else {
             if (player.isShiftKeyDown()) {
@@ -198,7 +200,7 @@ public class RelayStationBlock extends Block {
                 }
             }
 
-            player.sendSystemMessage(Component.literal("Available destinations:")
+            player.sendSystemMessage(Component.literal("Available relay destinations:")
                 .withStyle(ChatFormatting.GREEN));
             for (var dest : destinations) {
                 int distance = (int) Math.sqrt(dest.getPosition().distSqr(currentPos));

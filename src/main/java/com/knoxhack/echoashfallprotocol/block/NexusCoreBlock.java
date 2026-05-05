@@ -83,10 +83,10 @@ public class NexusCoreBlock extends BaseEntityBlock {
             player.sendSystemMessage(Component.literal("[NEXUS CORE] " + access.statusText()));
             if (ModList.get().isLoaded("echoterminal")) {
                 player.sendSystemMessage(Component.literal(
-                        "[ECHO-7] Nexus interface ready in the ECHO Terminal NEXUS tab. /nexus restore|destroy|control remains available."));
+                        "[ECHO-7] Nexus interface armed in the ECHO Terminal NEXUS tab. Fallback commands remain: /nexus restore|destroy|control."));
             } else {
                 player.sendSystemMessage(Component.literal(
-                        "[ECHO-7] Nexus interface ready. Use /nexus restore, /nexus destroy, or /nexus control."));
+                        "[ECHO-7] Nexus interface armed. Use /nexus restore, /nexus destroy, or /nexus control when you are ready to make history permanent."));
             }
         }
         return InteractionResult.SUCCESS;

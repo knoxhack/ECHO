@@ -73,6 +73,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
+            gameDirectory = project.file('run-gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -240,17 +241,84 @@ tasks.register('checkEchoPoiStructures', Exec) {
     commandLine echoPythonExecutable, 'tools/structure_generator/generator.py', '--check'
 }
 
+tasks.register('checkEchoRuntimeLogs', Exec) {
+    group = 'verification'
+    description = 'Scans recent run*/logs and crash-reports for fresh ECHO startup crash signatures.'
+    workingDir = projectDir
+    commandLine echoPythonExecutable,
+            'tools/check_echo_runtime_logs.py',
+            '--max-age-minutes',
+            (project.findProperty('echoRuntimeLogMaxAgeMinutes') ?: '180').toString()
+}
+
+tasks.named('checkEchoRuntimeLogs') {
+    mustRunAfter ':echocore:runGameTestServer'
+    mustRunAfter ':echoterminal:runGameTestServer'
+    mustRunAfter tasks.named('runGameTestServer')
+    mustRunAfter ':echoorbitalremnants:runGameTestServer'
+}
+
 tasks.register('verifyEchoRelease') {
     group = 'verification'
     description = 'Runs release-hardening validators, workspace build, and both GameTest servers.'
     dependsOn tasks.named('validateEchoResources')
     dependsOn tasks.named('validateEchoGameplayData')
     dependsOn tasks.named('checkEchoPoiStructures')
+    dependsOn 'checkEchoModJarSet'
+    dependsOn tasks.named('checkEchoRuntimeLogs')
     dependsOn tasks.named('buildEchoWorkspace')
     dependsOn ':echocore:runGameTestServer'
     dependsOn ':echoterminal:runGameTestServer'
     dependsOn tasks.named('runGameTestServer')
     dependsOn ':echoorbitalremnants:runGameTestServer'
+}
+
+def echoExpectedModJars = [
+        [mod: project(':echocore').mod_id.toString(), version: project(':echocore').mod_version.toString()],
+        [mod: project(':echoterminal').mod_id.toString(), version: project(':echoterminal').mod_version.toString()],
+        [mod: mod_id.toString(), version: mod_version.toString()],
+        [mod: project(':echoorbitalremnants').mod_id.toString(), version: project(':echoorbitalremnants').mod_version.toString()],
+]
+def echoExpectedModJarNames = echoExpectedModJars.collect { "${it.mod}-${it.version}.jar".toString() } as Set
+def echoSanityModsDir = project.findProperty('echoModpackModsDir')
+        ? file(project.property('echoModpackModsDir'))
+        : file('C:/Users/Ivan/curseforge/minecraft/Instances/Axes of Tomorrow/mods')
+
+tasks.register('checkEchoModJarSet') {
+    group = 'verification'
+    description = 'Fails when a target modpack mods folder mixes stale or duplicate ECHO jars.'
+
+    doLast {
+        def modsDir = echoSanityModsDir
+        if (!modsDir.exists()) {
+            throw new GradleException("Modpack mods folder not found: ${modsDir}. Pass -PechoModpackModsDir=<path>.")
+        }
+
+        def echoJars = (modsDir.listFiles() ?: [] as File[]).findAll { jar ->
+            jar.isFile()
+                    && jar.name.endsWith('.jar')
+                    && echoExpectedModJars.any { spec ->
+                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-")
+                    }
+        }
+
+        echoExpectedModJars.each { spec ->
+            def matches = echoJars.findAll { it.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-") }
+            if (matches.size() != 1) {
+                throw new GradleException("Expected exactly one ${spec.mod} jar in ${modsDir}, found ${matches*.name}.")
+            }
+            def expectedName = "${spec.mod}-${spec.version}.jar"
+            if (matches[0].name != expectedName) {
+                throw new GradleException("Stale ${spec.mod} jar in ${modsDir}: found ${matches[0].name}, expected ${expectedName}.")
+            }
+        }
+
+        def stale = echoJars.findAll { !echoExpectedModJarNames.contains(it.name) }
+        if (!stale.isEmpty()) {
+            throw new GradleException("Stale ECHO jars in ${modsDir}: ${stale*.name}. Remove old jars before release testing.")
+        }
+        logger.lifecycle("ECHO mod jar set clean in ${modsDir}: ${echoExpectedModJarNames.sort()}")
+    }
 }
 
 tasks.register('copyEchoJarsToModpack', Copy) {
@@ -277,6 +345,17 @@ tasks.register('copyEchoJarsToModpack', Copy) {
     doFirst {
         if (!modpackModsDir.exists()) {
             throw new GradleException("Modpack mods folder not found: ${modpackModsDir}")
+        }
+        def stale = (modpackModsDir.listFiles() ?: [] as File[]).findAll { jar ->
+            jar.isFile()
+                    && jar.name.endsWith('.jar')
+                    && echoExpectedModJars.any { spec ->
+                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-")
+                    }
+                    && !echoExpectedModJarNames.contains(jar.name)
+        }
+        if (!stale.isEmpty()) {
+            throw new GradleException("Stale ECHO jars in ${modpackModsDir}: ${stale*.name}. Remove them before copying release jars.")
         }
     }
 }
