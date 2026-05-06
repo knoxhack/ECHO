@@ -6,6 +6,9 @@ import com.knoxhack.echocore.api.TerminalRewardService;
 import com.knoxhack.echoterminal.block.entity.EchoTerminalBlockEntity;
 import com.knoxhack.echoterminal.registry.ModBlocks;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,8 +19,16 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class EchoTerminalCoreServices {
     private static final int TERMINAL_SEARCH_RADIUS = 48;
+    private static final int TERMINAL_VERTICAL_SEARCH_RADIUS = 16;
+    private static final Map<UUID, BlockPos> TERMINAL_CACHE = new ConcurrentHashMap<>();
 
     private EchoTerminalCoreServices() {
+    }
+
+    public static void rememberTerminal(Player player, BlockPos pos) {
+        if (player != null && pos != null) {
+            TERMINAL_CACHE.put(player.getUUID(), pos.immutable());
+        }
     }
 
     public static void register() {
@@ -30,6 +41,7 @@ public final class EchoTerminalCoreServices {
                 level.setBlockAndUpdate(pos, ModBlocks.ECHO_TERMINAL_BLOCK.get().defaultBlockState());
                 if (level.getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal && owner != null) {
                     terminal.setOwnerIfMissing(owner);
+                    rememberTerminal(owner, pos);
                 }
                 return true;
             }
@@ -48,7 +60,7 @@ public final class EchoTerminalCoreServices {
         EchoCoreServices.registerTerminalRewardService(new TerminalRewardService() {
             @Override
             public boolean storeRewards(ServerPlayer player, String missionId, List<ItemStack> rewards) {
-                EchoTerminalBlockEntity terminal = findOwnedTerminal(player);
+                EchoTerminalBlockEntity terminal = findOwnedTerminal(player, true);
                 if (terminal == null) {
                     return false;
                 }
@@ -61,34 +73,55 @@ public final class EchoTerminalCoreServices {
 
             @Override
             public boolean claimRewards(ServerPlayer player) {
-                EchoTerminalBlockEntity terminal = findOwnedTerminal(player);
+                EchoTerminalBlockEntity terminal = findOwnedTerminal(player, true);
                 return terminal != null && terminal.claimAllRewards(player);
             }
 
             @Override
             public int pendingRewardCount(Player player) {
-                EchoTerminalBlockEntity terminal = findOwnedTerminal(player);
+                EchoTerminalBlockEntity terminal = findOwnedTerminal(player, false);
                 return terminal == null ? 0 : terminal.getStoredRewardCount();
             }
         });
     }
 
-    private static EchoTerminalBlockEntity findOwnedTerminal(Player player) {
+    private static EchoTerminalBlockEntity findOwnedTerminal(Player player, boolean allowSearch) {
         if (player == null) {
             return null;
         }
+        EchoTerminalBlockEntity cached = cachedTerminal(player);
+        if (cached != null) {
+            return cached;
+        }
+        if (!allowSearch) {
+            return null;
+        }
         BlockPos center = player.blockPosition();
-        for (int dy = -16; dy <= 16; dy++) {
+        for (int dy = -TERMINAL_VERTICAL_SEARCH_RADIUS; dy <= TERMINAL_VERTICAL_SEARCH_RADIUS; dy++) {
             for (int dx = -TERMINAL_SEARCH_RADIUS; dx <= TERMINAL_SEARCH_RADIUS; dx++) {
                 for (int dz = -TERMINAL_SEARCH_RADIUS; dz <= TERMINAL_SEARCH_RADIUS; dz++) {
                     BlockPos pos = center.offset(dx, dy, dz);
                     if (player.level().getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal
                             && terminal.isOwner(player)) {
+                        rememberTerminal(player, pos);
                         return terminal;
                     }
                 }
             }
         }
+        return null;
+    }
+
+    private static EchoTerminalBlockEntity cachedTerminal(Player player) {
+        BlockPos cachedPos = TERMINAL_CACHE.get(player.getUUID());
+        if (cachedPos == null) {
+            return null;
+        }
+        if (player.level().getBlockEntity(cachedPos) instanceof EchoTerminalBlockEntity terminal
+                && terminal.isOwner(player)) {
+            return terminal;
+        }
+        TERMINAL_CACHE.remove(player.getUUID(), cachedPos);
         return null;
     }
 }

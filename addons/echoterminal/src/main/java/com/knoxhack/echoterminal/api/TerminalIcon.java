@@ -26,6 +26,15 @@ public enum TerminalIcon {
     DEFAULT;
 
     public static TerminalIcon fromGroup(String group) {
+        if (TerminalNavigationSection.TERMINAL.key().equals(group)) {
+            return CORE;
+        }
+        if (TerminalNavigationSection.CORE.key().equals(group)) {
+            return FIELD;
+        }
+        if (TerminalNavigationSection.CHAPTERS.key().equals(group)) {
+            return ADDONS;
+        }
         if (TerminalTabChrome.GROUP_PROTOCOL.equals(group)) {
             return CORE;
         }

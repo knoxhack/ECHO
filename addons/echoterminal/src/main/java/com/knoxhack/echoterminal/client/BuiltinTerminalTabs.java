@@ -14,6 +14,8 @@ import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
 import com.knoxhack.echoterminal.api.TerminalIcon;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
 import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
@@ -29,6 +31,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
+import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
 import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -52,15 +55,15 @@ public final class BuiltinTerminalTabs {
         if (!REGISTERED.compareAndSet(false, true)) {
             return;
         }
-        TerminalTabRegistry.register(new OverviewTab());
-        TerminalTabRegistry.register(new DiagnosticsTab());
-        TerminalTabRegistry.register(new MissionGraphTab());
-        TerminalTabRegistry.register(new RouteRecordsTab());
-        TerminalTabRegistry.register(new FactionAtlasTab());
-        TerminalTabRegistry.register(new VitalsTab());
-        TerminalTabRegistry.register(new RewardInboxTab());
-        TerminalTabRegistry.register(new VanillaJourneyTab());
-        TerminalTabRegistry.register(new AddonsTab());
+        registerTab(new OverviewTab(), TerminalNavigationProfile.terminal(0));
+        registerTab(new DiagnosticsTab(), TerminalNavigationProfile.terminal(80));
+        registerTab(new MissionGraphTab(), TerminalNavigationProfile.terminal(120));
+        registerTab(new RouteRecordsTab(), TerminalNavigationProfile.core(125));
+        registerTab(new FactionAtlasTab(), TerminalNavigationProfile.core(128));
+        registerTab(new VitalsTab(), TerminalNavigationProfile.terminal(130));
+        registerTab(new RewardInboxTab(), TerminalNavigationProfile.terminal(140));
+        registerTab(new MainSurvivalRouteTab(), TerminalNavigationProfile.core(170));
+        registerTab(new AddonsTab(), TerminalNavigationProfile.chaptersHub(0));
         TerminalActionRegistry.register(REWARD_INBOX, CLAIM_REWARDS,
                 (player, payload) -> EchoCoreServices.claimTerminalRewards(player));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
@@ -73,11 +76,16 @@ public final class BuiltinTerminalTabs {
                         "Channels collect missions, field records, drone controls, route state, and chapter status when those systems are present.",
                         "Progression stays sealed until the field route proves it; the terminal shows the clearest safe command view without opening records early."),
                 false));
-        TerminalTabRegistry.register(new ArchivesTab());
+        registerTab(new ArchivesTab(), TerminalNavigationProfile.terminal(950));
     }
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(EchoTerminal.MODID, path);
+    }
+
+    private static void registerTab(TerminalTab tab, TerminalNavigationProfile profile) {
+        TerminalTabRegistry.register(tab);
+        TerminalNavigationProfiles.register(tab.descriptor().id(), profile);
     }
 
     private static List<EchoAddonChapter> addonChapters() {
@@ -162,14 +170,14 @@ public final class BuiltinTerminalTabs {
         }
     }
 
-    private static final class VanillaJourneyTab implements TerminalTab {
+    private static final class MainSurvivalRouteTab implements TerminalTab {
         private final TerminalTabDescriptor descriptor =
-                new TerminalTabDescriptor(VanillaJourneyProvider.TAB_ID, "BASELINE", 170, 0xFF92F7A6);
+                new TerminalTabDescriptor(MainSurvivalQuestProvider.TAB_ID, "SURVIVAL ROUTE", 170, 0xFF92F7A6);
         private final TerminalTabChrome chrome =
-                TerminalTabChrome.of("Baseline", TerminalTabChrome.GROUP_FIELD, "BL", "Recovered Minecraft tasks",
-                        170);
+                TerminalTabChrome.of("Survival Route", TerminalTabChrome.GROUP_FIELD, "SR",
+                        "Main survival quest line", 170);
         private final TerminalMissionBrowser browser =
-                new TerminalMissionBrowser(VanillaJourneyProvider.INSTANCE, descriptor.id(), true);
+                new TerminalMissionBrowser(MainSurvivalQuestProvider.INSTANCE, descriptor.id(), true);
 
         @Override
         public TerminalTabDescriptor descriptor() {
@@ -547,7 +555,7 @@ public final class BuiltinTerminalTabs {
     }
 
     private static final class DiagnosticsTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 58;
+        private static final int ROW_HEIGHT = 54;
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(id("diagnostics"), "WHAT NOW", 80, 0xFFFFD166);
         private final TerminalTabChrome chrome =
@@ -583,11 +591,12 @@ public final class BuiltinTerminalTabs {
             for (EchoDiagnosticBlocker blocker : diagnostics) {
                 int color = severityColor(blocker.severity());
                 TerminalUi.dataListRow(context, graphics, x + 10, cy, w - 20, ROW_HEIGHT - 6,
-                        blocker.title(), "Reason: " + blocker.detail(), blocker.severity().name(),
+                        blocker.title(), blocker.detail(), blocker.severity().name(),
                         false, TerminalUi.inside(mouseX, mouseY, x + 10, cy, w - 20, ROW_HEIGHT - 6),
                         descriptor.accentColor(), color);
                 if (!blocker.nextAction().isBlank()) {
-                    TerminalUi.line(context, graphics, "Next: " + blocker.nextAction(), x + 20, cy + 39, w - 40, TerminalUi.TEXT);
+                    TerminalUi.line(context, graphics, "Command: " + blocker.nextAction(),
+                            x + 20, cy + 36, w - 40, TerminalUi.TEXT);
                 }
                 cy += ROW_HEIGHT;
             }
@@ -698,7 +707,8 @@ public final class BuiltinTerminalTabs {
             int y = context.contentY();
             int w = context.contentWidth();
             int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w,
-                    Math.max(130, context.contentHeight()), "MISSION GRAPH",
+                    Math.max(130, Math.min(context.contentHeight(), 78
+                            + Math.max(1, TerminalMissionRegistry.providers().size()) * 66)), "MISSION GRAPH",
                     TerminalMissionRegistry.providers().size() + " source(s)", descriptor.accentColor()) + 8;
             if (TerminalMissionRegistry.providers().isEmpty()) {
                 TerminalUi.wrap(context, graphics, "No mission routes are linked yet.",
@@ -784,7 +794,8 @@ public final class BuiltinTerminalTabs {
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
-            int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w, Math.max(190, context.contentHeight()),
+            int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w,
+                    Math.max(190, Math.min(context.contentHeight(), 232)),
                     "VITALS TELEMETRY", telemetry.warning() ? "WARNING" : "NOMINAL", descriptor.accentColor()) + 8;
             cy = meter(context, graphics, x + 14, cy, w - 28, "HYDRATION", telemetry.hydration(), true, TerminalUi.CYAN);
             cy = meter(context, graphics, x + 14, cy, w - 28, "RADIATION", telemetry.radiation(), false, TerminalUi.AMBER);
@@ -800,7 +811,7 @@ public final class BuiltinTerminalTabs {
 
         @Override
         public int contentHeight(TerminalRenderContext context) {
-            return Math.max(context.contentHeight(), 270);
+            return Math.max(context.contentHeight(), 244);
         }
 
         private static int meter(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -816,7 +827,7 @@ public final class BuiltinTerminalTabs {
     }
 
     private static final class RouteRecordsTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 58;
+        private static final int ROW_HEIGHT = 54;
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(id("route_records"), "ROUTE RECORDS", 125, 0xFF9FD1FF);
         private final TerminalTabChrome chrome =
@@ -841,7 +852,7 @@ public final class BuiltinTerminalTabs {
             int w = context.contentWidth();
             List<EchoRouteRecord> records = EchoCoreServices.routeRecords(context.player());
             int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w,
-                    Math.max(130, Math.min(context.contentHeight(), 72 + Math.max(1, records.size()) * ROW_HEIGHT)),
+                    Math.max(118, Math.min(context.contentHeight(), 68 + Math.max(1, records.size()) * ROW_HEIGHT)),
                     "ROUTE RECORDS", records.size() + " route(s)", descriptor.accentColor()) + 8;
             if (records.isEmpty()) {
                 TerminalUi.wrap(context, graphics,
@@ -855,8 +866,9 @@ public final class BuiltinTerminalTabs {
                 TerminalUi.dataListRow(context, graphics, x + 10, cy, w - 20, ROW_HEIGHT - 6,
                         record.title(), record.dimensionHint(), record.status(),
                         false, hovered, descriptor.accentColor(), color);
+                int summaryW = w < 420 ? w - 40 : w - 210;
                 TerminalUi.line(context, graphics, record.category() + " / " + record.summary(),
-                        x + 20, cy + 34, w - 40, TerminalUi.MUTED);
+                        x + 20, cy + 32, Math.max(80, summaryW), TerminalUi.MUTED);
                 cy += ROW_HEIGHT;
             }
         }
@@ -1211,7 +1223,8 @@ public final class BuiltinTerminalTabs {
             int y = context.contentY();
             int w = context.contentWidth();
             int pending = EchoCoreServices.pendingTerminalRewardCount(context.player());
-            int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w, Math.max(140, context.contentHeight() / 2),
+            int panelH = Math.max(132, Math.min(190, context.contentHeight() - 12));
+            int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w, panelH,
                     "REWARD INBOX", pending + " item(s)", descriptor.accentColor()) + 8;
             TerminalUi.wrap(context, graphics,
                     "Ashfall rewards, Orbital support caches, faction payouts, and future ECHO chapter caches can use this shared terminal inbox.",

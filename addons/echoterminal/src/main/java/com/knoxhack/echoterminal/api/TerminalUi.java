@@ -217,12 +217,12 @@ public final class TerminalUi {
     public static void dataListRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, String title, String detail, String status,
             boolean selected, boolean hovered, int color, int statusColor) {
-        int bg = selected ? 0xE5123241 : hovered ? 0xAA102630 : 0x74071117;
+        int bg = selected ? 0xCC123241 : hovered ? 0x8A102630 : 0x5E071117;
         graphics.fill(x, y, x + w, y + h, bg);
-        graphics.outline(x, y, w, h, selected ? opaque(color) : 0x2638DFF4);
-        graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : 0x552E8E9D);
+        graphics.outline(x, y, w, h, selected ? 0xCC66E8FF : 0x2238DFF4);
+        graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : 0x442E8E9D);
         if (selected) {
-            graphics.fill(x + Math.max(28, w / 3), y + h - 3, x + w - 8, y + h - 1, 0x88E9FBFF);
+            graphics.fill(x + Math.max(28, w / 3), y + h - 3, x + w - 8, y + h - 1, 0x66E9FBFF);
         }
         int pillW = status == null || status.isBlank() ? 0 : Math.max(68, Math.min(112, w / 3));
         line(context, graphics, title, x + 10, y + Math.max(5, h >= 30 ? 7 : (h - 8) / 2),
@@ -240,12 +240,12 @@ public final class TerminalUi {
             Identifier texture, TerminalIcon fallback, int x, int y, int w, int h,
             String title, String detail, String status, boolean selected, boolean hovered,
             int color, int statusColor, boolean iconActive) {
-        int bg = selected ? 0xE5123241 : hovered ? 0xAA102630 : 0x74071117;
+        int bg = selected ? 0xCC123241 : hovered ? 0x8A102630 : 0x5E071117;
         graphics.fill(x, y, x + w, y + h, bg);
-        graphics.outline(x, y, w, h, selected ? opaque(color) : 0x2638DFF4);
-        graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : 0x552E8E9D);
+        graphics.outline(x, y, w, h, selected ? 0xCC66E8FF : 0x2238DFF4);
+        graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : 0x442E8E9D);
         if (selected) {
-            graphics.fill(x + Math.max(34, w / 3), y + h - 3, x + w - 8, y + h - 1, 0x88E9FBFF);
+            graphics.fill(x + Math.max(34, w / 3), y + h - 3, x + w - 8, y + h - 1, 0x66E9FBFF);
         }
         int iconSize = Math.min(18, Math.max(12, h - 8));
         hybridIcon(graphics, texture, fallback, x + 8, y + Math.max(4, (h - iconSize) / 2),
@@ -408,26 +408,26 @@ public final class TerminalUi {
         int text;
         switch (value) {
             case "READY", "DONE", "OPEN", "AVAILABLE" -> {
-                bg = GREEN;
-                border = GREEN;
-                rail = 0xFFE9FBFF;
-                text = 0xFF04140B;
+                bg = 0xCC0B2A18;
+                border = 0xAA92F7A6;
+                rail = GREEN;
+                text = GREEN;
             }
             case "ACTIVE", "NEEDED", "NEED" -> {
-                bg = AMBER;
-                border = AMBER;
-                rail = 0xFFFFF1B8;
-                text = 0xFF171105;
+                bg = 0xCC2B2209;
+                border = 0xAAFFD166;
+                rail = AMBER;
+                text = AMBER;
             }
             case "LOCKED", "VIEW" -> {
-                bg = 0xFF111A21;
-                border = 0xFF7F98A6;
-                rail = 0xFF3E5663;
+                bg = 0xCC111A21;
+                border = 0x887F98A6;
+                rail = 0xAA3E5663;
                 text = 0xFFD3E5EC;
             }
             default -> {
-                bg = 0xFF10232C;
-                border = opaque(CYAN);
+                bg = 0xCC10232C;
+                border = 0xAA66E8FF;
                 rail = opaque(CYAN_DIM);
                 text = TEXT;
             }
@@ -435,7 +435,7 @@ public final class TerminalUi {
         int safeHeight = Math.max(14, height);
         graphics.fill(x, y, x + width, y + safeHeight, bg);
         graphics.outline(x, y, width, safeHeight, border);
-        graphics.fill(x + 2, y + 2, x + width - 2, y + 3, 0x55E9FBFF);
+        graphics.fill(x + 2, y + 2, x + width - 2, y + 3, 0x24E9FBFF);
         graphics.fill(x, y + safeHeight - 2, x + width, y + safeHeight, rail);
         graphics.centeredText(font(context), trim(context, value, width - 14), x + width / 2,
                 y + Math.max(2, (safeHeight - 8) / 2), text);
@@ -912,9 +912,9 @@ public final class TerminalUi {
 
     public static void topMetaBar(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String title, String subtitle, String meta, int color) {
-        graphics.fill(x, y, x + w, y + 52, 0xE2020A10);
-        graphics.fill(x + 12, y + 44, x + w - 12, y + 45, 0x5538DFF4);
-        graphics.fill(x + 1, y + 1, x + w - 1, y + 14, 0x26163843);
+        graphics.fill(x, y, x + w, y + 52, 0xDE020A10);
+        graphics.fill(x + 12, y + 44, x + w - 12, y + 45, 0x3E38DFF4);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + 14, 0x1C163843);
         hybridIconBadge(graphics, TerminalVisualAssets.ICON_BRAND_ECHO, TerminalIcon.CORE, x + 18, y + 8, 34, color, true);
         String online = meta == null || meta.isBlank() ? "LINK: STANDBY  |  USER: OPERATOR  |  ONLINE" : meta;
         boolean offline = online.toUpperCase().contains("OFFLINE");
@@ -934,9 +934,9 @@ public final class TerminalUi {
 
     public static void bottomShortcutBar(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String left, String right, int color) {
-        graphics.fill(x, y, x + w, y + 30, 0xDD020A10);
-        graphics.outline(x, y, w, 30, 0x3338DFF4);
-        String r = trim(font, right == null ? "" : right, Math.max(80, Math.min(260, w / 3)));
+        graphics.fill(x, y, x + w, y + 30, 0xD8020A10);
+        graphics.outline(x, y, w, 30, 0x2838DFF4);
+        String r = trimBreadcrumb(font, right == null ? "" : right, Math.max(110, Math.min(420, w * 38 / 100)));
         int rightX = x + w - 16 - font.width(r);
         int leftLimit = Math.max(x + 80, rightX - 18);
         int cx = x + 14;
@@ -952,8 +952,8 @@ public final class TerminalUi {
             if (cx + keyW + font.width(label) + 18 > leftLimit) {
                 break;
             }
-            graphics.fill(cx, y + 7, cx + keyW, y + 23, 0xAA071017);
-            graphics.outline(cx, y + 7, keyW, 16, 0x4438DFF4);
+            graphics.fill(cx, y + 7, cx + keyW, y + 23, 0x88071117);
+            graphics.outline(cx, y + 7, keyW, 16, 0x3438DFF4);
             graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, y + 12, opaque(color));
             cx += keyW + 7;
             if (!label.isBlank()) {
@@ -1032,15 +1032,15 @@ public final class TerminalUi {
     public static void commandStackGroupButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label,
             boolean selected, boolean hovered, int color) {
-        int bg = selected ? 0xD00C3340 : hovered ? 0x82102630 : 0x52071117;
-        int border = selected ? opaque(color) : hovered ? 0x5538DFF4 : 0x2238DFF4;
+        int bg = selected ? 0xC40C3340 : hovered ? 0x76102630 : 0x46071117;
+        int border = selected ? 0xCC66E8FF : hovered ? 0x4A38DFF4 : 0x1E38DFF4;
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, border);
         graphics.fill(x, y, x + 3, y + h, selected ? opaque(color) : CYAN_DIM);
         if (selected) {
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
-            graphics.fill(x + Math.max(24, w / 3), y + h - 4, x + w - 8, y + h - 2, 0x77E9FBFF);
-            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1666E8FF);
+            graphics.fill(x + Math.max(24, w / 3), y + h - 4, x + w - 8, y + h - 2, 0x5CE9FBFF);
+            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1066E8FF);
         }
         int iconSize = Math.min(22, Math.max(16, h - 8));
         drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(3, (h - iconSize) / 2), iconSize,
@@ -1058,17 +1058,17 @@ public final class TerminalUi {
     public static void commandPageButton(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label, String summary,
             boolean selected, boolean hovered, int color) {
-        int bg = selected ? 0xD60B3440 : hovered ? 0x880D2530 : 0x48071117;
-        int border = selected ? opaque(color) : hovered ? 0x5538DFF4 : 0x2238DFF4;
+        int bg = selected ? 0xBE0B3440 : hovered ? 0x760D2530 : 0x3E071117;
+        int border = selected ? 0xCC66E8FF : hovered ? 0x4A38DFF4 : 0x1E38DFF4;
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, border);
         if (selected) {
             graphics.fill(x, y, x + 3, y + h, opaque(color));
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
-            graphics.fill(x + Math.max(26, w / 3), y + h - 4, x + w - 10, y + h - 2, 0x77E9FBFF);
-            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1666E8FF);
+            graphics.fill(x + Math.max(26, w / 3), y + h - 4, x + w - 10, y + h - 2, 0x5CE9FBFF);
+            graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), 0x1066E8FF);
         } else if (hovered) {
-            graphics.fill(x, y + h - 1, x + w, y + h, 0x7738DFF4);
+            graphics.fill(x, y + h - 1, x + w, y + h, 0x5538DFF4);
         }
         drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(4, (h - 20) / 2),
                 Math.min(24, Math.max(16, h - 10)), selected ? color : CYAN_DIM, selected);
@@ -1092,12 +1092,12 @@ public final class TerminalUi {
 
     public static void cinematicContentFrame(GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, int color) {
-        graphics.fill(x, y, x + w, y + h, 0x68050B10);
-        graphics.outline(x, y, w, h, 0x4438DFF4);
+        graphics.fill(x, y, x + w, y + h, 0x5E050B10);
+        graphics.outline(x, y, w, h, 0x3438DFF4);
         graphics.fill(x, y, x + Math.max(44, Math.min(w, w / 7)), y + 2, opaque(color));
         graphics.fill(x, y + h - 2, x + Math.max(36, Math.min(w, w / 8)), y + h, opaque(color));
-        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), 0x6638DFF4);
-        graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, 0x4438DFF4);
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), 0x4A38DFF4);
+        graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, 0x3438DFF4);
     }
 
     public static int dashboardCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -1205,6 +1205,33 @@ public final class TerminalUi {
 
     public static String trim(Font font, String text, int maxWidth) {
         return TerminalRenderCache.current().trim(font, text, maxWidth);
+    }
+
+    private static String trimBreadcrumb(Font font, String text, int maxWidth) {
+        String value = text == null ? "" : text.strip();
+        if (font.width(value) <= maxWidth) {
+            return value;
+        }
+        int divider = value.indexOf('|');
+        String prefix = divider >= 0 ? value.substring(0, divider + 1).strip() + " " : "";
+        String path = divider >= 0 ? value.substring(divider + 1).strip() : value;
+        String[] parts = path.split("\\s*/\\s*");
+        if (parts.length > 1) {
+            for (int keep = Math.min(3, parts.length); keep >= 1; keep--) {
+                StringBuilder candidate = new StringBuilder(prefix).append("... / ");
+                for (int i = parts.length - keep; i < parts.length; i++) {
+                    if (i > parts.length - keep) {
+                        candidate.append(" / ");
+                    }
+                    candidate.append(parts[i]);
+                }
+                String compact = candidate.toString();
+                if (font.width(compact) <= maxWidth) {
+                    return compact;
+                }
+            }
+        }
+        return trim(font, value, maxWidth);
     }
 
     public static int wrappedHeight(TerminalRenderContext context, String text, int maxWidth) {

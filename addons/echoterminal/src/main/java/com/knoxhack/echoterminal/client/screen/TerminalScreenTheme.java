@@ -30,7 +30,7 @@ public record TerminalScreenTheme(
         return new TerminalScreenTheme(
                 "ECHO-7 MODULAR TERMINAL",
                 minecraft -> "LINK ONLINE",
-                "M / ESC closes | arrows cycle tabs | up/down groups | wheel/page scrolls",
+                "ESC/M close | tabs | sections | wheel/page scroll",
                 0xEE050B10,
                 0xF20A1218,
                 0xDD071017,

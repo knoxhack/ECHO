@@ -1,5 +1,6 @@
 package com.knoxhack.echoterminal.mission;
 
+import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.registry.ModAttachments;
 import java.util.Collection;
 import java.util.HashSet;
@@ -53,7 +54,11 @@ public class VanillaJourneyData implements ValueIOSerializable {
 
     public static void saveAndSync(ServerPlayer player, VanillaJourneyData data) {
         player.setData(ModAttachments.VANILLA_JOURNEY_DATA.get(), data);
-        player.syncData(ModAttachments.VANILLA_JOURNEY_DATA.get());
+        try {
+            player.syncData(ModAttachments.VANILLA_JOURNEY_DATA.get());
+        } catch (RuntimeException exception) {
+            EchoTerminal.LOGGER.debug("Vanilla journey data saved without client sync.", exception);
+        }
     }
 
     private static void writeSync(RegistryFriendlyByteBuf buf, VanillaJourneyData data) {

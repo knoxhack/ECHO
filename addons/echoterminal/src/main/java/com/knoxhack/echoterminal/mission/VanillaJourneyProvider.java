@@ -1,5 +1,6 @@
 package com.knoxhack.echoterminal.mission;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionAction;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionChapter;
@@ -15,6 +16,7 @@ import java.util.List;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -152,11 +154,12 @@ public final class VanillaJourneyProvider implements TerminalMissionProvider {
             VanillaJourneyData.saveAndSync(player, data);
             return false;
         }
-        for (ItemStack stack : rewards(mission.type())) {
-            ItemStack copy = stack.copy();
-            if (!player.getInventory().add(copy)) {
-                player.drop(copy, false);
-            }
+        List<ItemStack> rewardStacks = rewards(mission.type());
+        if (!EchoCoreServices.storeTerminalRewards(player, mission.id().toString(), rewardStacks)) {
+            player.sendSystemMessage(Component.literal(
+                    "[ECHO-7] No owned terminal cache found. Place or open your ECHO Terminal, then claim again."), true);
+            VanillaJourneyData.saveAndSync(player, data);
+            return false;
         }
         data.markClaimed(mission.id());
         VanillaJourneyData.saveAndSync(player, data);

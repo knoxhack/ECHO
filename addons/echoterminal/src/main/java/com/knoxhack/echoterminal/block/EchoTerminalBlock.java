@@ -2,12 +2,14 @@ package com.knoxhack.echoterminal.block;
 
 import com.knoxhack.echoterminal.block.entity.EchoTerminalBlockEntity;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
+import com.knoxhack.echoterminal.service.EchoTerminalCoreServices;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -30,13 +32,17 @@ public class EchoTerminalBlock extends Block implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        EchoTerminalCoreServices.rememberTerminal(player, pos);
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal) {
                 terminal.setOwnerIfMissing(player);
                 terminal.recordActivity();
             }
             MenuProvider menuProvider = new SimpleMenuProvider(
-                    (containerId, playerInventory, p) -> new EchoTerminalMenu(containerId, playerInventory),
+                    (containerId, playerInventory, p) -> new EchoTerminalMenu(
+                            containerId,
+                            playerInventory,
+                            ContainerLevelAccess.create(level, pos)),
                     CONTAINER_TITLE);
             player.openMenu(menuProvider);
         }

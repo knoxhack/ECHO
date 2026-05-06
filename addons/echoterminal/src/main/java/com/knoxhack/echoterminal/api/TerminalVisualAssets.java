@@ -100,6 +100,15 @@ public final class TerminalVisualAssets {
     }
 
     public static Identifier terminalGroupIcon(String group) {
+        if (TerminalNavigationSection.TERMINAL.key().equals(group)) {
+            return ICON_GROUP_PROTOCOL;
+        }
+        if (TerminalNavigationSection.CORE.key().equals(group)) {
+            return ICON_GROUP_FIELD;
+        }
+        if (TerminalNavigationSection.CHAPTERS.key().equals(group)) {
+            return ICON_GROUP_CHAPTERS;
+        }
         if (TerminalTabChrome.GROUP_PROTOCOL.equals(group) || TerminalTabChrome.GROUP_CORE.equals(group)) {
             return ICON_GROUP_PROTOCOL;
         }

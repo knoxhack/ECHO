@@ -3,6 +3,7 @@ package com.knoxhack.echoterminal;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
+import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
 import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
 import com.knoxhack.echoterminal.network.ModNetwork;
 import com.knoxhack.echoterminal.registry.ModBlockEntities;
@@ -39,7 +40,9 @@ public class EchoTerminal {
     private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             EchoTerminalCoreServices.register();
+            TerminalMissionRegistry.register(MainSurvivalQuestProvider.INSTANCE);
             TerminalMissionRegistry.register(VanillaJourneyProvider.INSTANCE);
+            TerminalMissionActions.registerForTab(MainSurvivalQuestProvider.TAB_ID);
             TerminalMissionActions.registerForTab(VanillaJourneyProvider.TAB_ID);
             LOGGER.info("ECHO platform providers after Terminal setup: {}",
                     EchoCoreServices.platformProviderSummary());

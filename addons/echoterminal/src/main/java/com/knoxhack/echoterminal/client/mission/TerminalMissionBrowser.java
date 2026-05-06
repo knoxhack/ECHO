@@ -31,6 +31,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 
 public final class TerminalMissionBrowser {
     private static final int MODE_ROW_HEIGHT = 18;
@@ -50,6 +51,8 @@ public final class TerminalMissionBrowser {
     private boolean allExpanded;
     private MissionFilter filterMode = MissionFilter.ALL;
     private MissionViewMode viewMode = MissionViewMode.VISUAL_RPG;
+    private String searchQuery = "";
+    private boolean searchFocused;
     private Identifier selectedMissionId;
     private Identifier lastDetailMissionId;
     private boolean pendingTreeFocus;
@@ -80,6 +83,8 @@ public final class TerminalMissionBrowser {
         collapsedPhases.clear();
         filterMode = MissionFilter.ALL;
         viewMode = MissionViewMode.fromClientDefault();
+        searchQuery = "";
+        searchFocused = false;
         treeScroll = 0;
         detailScroll = 0;
         invalidateStateCache();
@@ -138,9 +143,12 @@ public final class TerminalMissionBrowser {
             return false;
         }
         for (Hitbox hitbox : List.copyOf(hitboxes)) {
-            if (TerminalUi.inside(mouseX, mouseY, hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())
-                    && hitbox.enabled()) {
-                hitbox.action().run();
+            if (TerminalUi.inside(mouseX, mouseY, hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())) {
+                if (hitbox.enabled()) {
+                    hitbox.action().run();
+                } else {
+                    context.playRejectedSound();
+                }
                 return true;
             }
         }
@@ -148,11 +156,88 @@ public final class TerminalMissionBrowser {
     }
 
     public boolean keyPressed(TerminalRenderContext context, KeyEvent event) {
+        int key = event.key();
+        boolean control = (event.modifiers() & GLFW.GLFW_MOD_CONTROL) != 0
+                || (event.modifiers() & GLFW.GLFW_MOD_SUPER) != 0;
+        if (control && key == GLFW.GLFW_KEY_F) {
+            searchFocused = true;
+            return true;
+        }
+        if (searchFocused) {
+            if (key == GLFW.GLFW_KEY_ESCAPE) {
+                if (!searchQuery.isBlank()) {
+                    searchQuery = "";
+                    invalidateStateCache();
+                    normalizeSelection(buildState(context));
+                    pendingTreeFocus = true;
+                    return true;
+                }
+                searchFocused = false;
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_BACKSPACE && !searchQuery.isEmpty()) {
+                searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+                invalidateStateCache();
+                normalizeSelection(buildState(context));
+                pendingTreeFocus = true;
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_ENTER) {
+                searchFocused = false;
+                return true;
+            }
+        }
+        MissionRenderState state = buildState(context);
+        normalizeSelection(state);
+        if (key == GLFW.GLFW_KEY_UP || key == GLFW.GLFW_KEY_W) {
+            return selectRelative(state, -1);
+        }
+        if (key == GLFW.GLFW_KEY_DOWN || key == GLFW.GLFW_KEY_S) {
+            return selectRelative(state, 1);
+        }
+        if (key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_A) {
+            filterMode = MissionFilter.previous(filterMode);
+            invalidateStateCache();
+            normalizeSelection(buildState(context));
+            pendingTreeFocus = true;
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_RIGHT || key == GLFW.GLFW_KEY_D) {
+            filterMode = MissionFilter.next(filterMode);
+            invalidateStateCache();
+            normalizeSelection(buildState(context));
+            pendingTreeFocus = true;
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_SPACE) {
+            return activateSelectedAction(context, state);
+        }
+        if (key == GLFW.GLFW_KEY_ESCAPE && (!searchQuery.isBlank() || filterMode != MissionFilter.ALL)) {
+            searchQuery = "";
+            searchFocused = false;
+            filterMode = MissionFilter.ALL;
+            invalidateStateCache();
+            normalizeSelection(buildState(context));
+            pendingTreeFocus = true;
+            return true;
+        }
         return false;
     }
 
     public boolean charTyped(TerminalRenderContext context, CharacterEvent event) {
-        return false;
+        if (!event.isAllowedChatCharacter()) {
+            return false;
+        }
+        String value = event.codepointAsString();
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        searchFocused = true;
+        searchQuery = (searchQuery + value).stripLeading();
+        invalidateStateCache();
+        normalizeSelection(buildState(context));
+        pendingTreeFocus = true;
+        return true;
     }
 
     public boolean mouseScrolled(TerminalRenderContext context, double mouseX, double mouseY, double delta) {
@@ -200,10 +285,12 @@ public final class TerminalMissionBrowser {
             TerminalMissionRole role = safeRole(context, definition, snapshot);
             records.add(new MissionRecord(definition, snapshot, presentation, visuals, role));
         }
+        String query = normalizedSearchQuery();
         List<MissionRecord> visible = records.stream()
                 .filter(filterMode::matches)
+                .filter(record -> matchesSearch(record, query))
                 .toList();
-        MissionRecord focus = focusRecord(records);
+        MissionRecord focus = focusRecord(visible);
         int completed = 0;
         for (MissionRecord record : records) {
             if (isDone(record.snapshot().status())) {
@@ -322,8 +409,12 @@ public final class TerminalMissionBrowser {
         int innerX = x + 12;
         int innerW = w - 24;
         int listY = y + 38;
+        TerminalUi.searchBox(graphics, context.minecraft().font,
+                innerX, listY, innerW - 4, searchLabel(), searchFocused ? chapter.accentColor() : TerminalUi.MUTED);
+        listY += 22;
+        listY = drawFilterChips(context, graphics, innerX, listY, innerW - 4, mouseX, mouseY) + 4;
         if (showExpandControls) {
-            int utilityY = y + 38;
+            int utilityY = listY;
             int utilityW = Math.max(1, (innerW - 4) / 2);
             int compactW = Math.max(1, innerW - utilityW - 4);
             drawCompactButton(context, graphics, innerX, utilityY, utilityW, "EXPAND", true, mouseX, mouseY, () -> {
@@ -364,8 +455,11 @@ public final class TerminalMissionBrowser {
     private void drawTreeRows(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             MissionRenderState state, int x, int y, int w, int viewportY, int viewportH, int mouseX, int mouseY) {
         if (state.visibleRecords().isEmpty()) {
+            String detail = searchQuery.isBlank()
+                    ? "No mission records match the " + filterMode.label() + " filter."
+                    : "No mission records match \"" + searchQuery + "\" in the " + filterMode.label() + " filter.";
             TerminalUi.emptyState(context, graphics, x + 2, y + 4, Math.max(80, w - 12),
-                    "No Matches", "No mission records match the " + filterMode.label() + " filter.", TerminalUi.MUTED);
+                    "No Matches", detail, TerminalUi.MUTED);
             return;
         }
         int cy = y;
@@ -725,7 +819,7 @@ public final class TerminalMissionBrowser {
             MissionRecord record, int x, int y, int w, int h, int mouseX, int mouseY) {
         String summary = commandSummary(record.snapshot(), record.presentation());
         TerminalUi.flatHudPanel(graphics, x, y, w - 4, h, chapter().accentColor());
-        TerminalUi.line(context, graphics, "NEXT COMMAND", x + 8, y + 8, w - 20, chapter().accentColor());
+        TerminalUi.line(context, graphics, "COMMAND", x + 8, y + 8, w - 20, chapter().accentColor());
         TerminalUi.line(context, graphics, summary, x + 8, y + 21, w - 20, TerminalUi.TEXT);
         int buttonY = y + 43;
         List<TerminalMissionAction> actions = record.snapshot().actions();
@@ -784,10 +878,37 @@ public final class TerminalMissionBrowser {
         }
     }
 
-    // Retained for validation continuity; the cinematic roadmap no longer draws filter chips.
-    @SuppressWarnings("unused")
-    private void drawFilterChips(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+    private int drawFilterChips(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int mouseX, int mouseY) {
+        int labelW = 38;
+        TerminalUi.line(context, graphics, "SHOW", x, y + 4, labelW, TerminalUi.MUTED);
+        int chipX = x + labelW + 4;
+        int chipY = y;
+        int chipW = Math.max(52, Math.min(74, (w - labelW - 8) / MissionFilter.values().length - 3));
+        for (MissionFilter filter : MissionFilter.values()) {
+            boolean selected = filter == filterMode;
+            boolean hover = TerminalUi.inside(mouseX, mouseY, chipX, chipY, chipW, 15);
+            TerminalUi.filterChip(context, graphics, chipX, chipY, chipW, filter.label(), selected, true,
+                    chapter().accentColor(), hover);
+            addHitbox(chipX, chipY, chipW, 15, true, () -> {
+                filterMode = filter;
+                detailScroll = 0;
+                treeScroll = 0;
+                pendingTreeFocus = true;
+                invalidateStateCache();
+            });
+            chipX += chipW + 3;
+            if (chipX + chipW > x + w && filter.ordinal() + 1 < MissionFilter.values().length) {
+                chipX = x + labelW + 4;
+                chipY += 18;
+            }
+        }
+        int modeY = chipY + 19;
+        if (w >= 230) {
+            drawMissionModeChips(context, graphics, x, modeY, w, mouseX, mouseY);
+            return modeY + 18;
+        }
+        return modeY;
     }
 
     private void drawCompactButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -798,7 +919,9 @@ public final class TerminalMissionBrowser {
     }
 
     private int treePaneHeight(TerminalRenderContext context, MissionRenderState state, int width) {
-        return 20 + 22 + 23 + treeRowsHeight(context, state);
+        int filterRows = Math.max(1, (MissionFilter.values().length + Math.max(1, width / 70) - 1)
+                / Math.max(1, width / 70));
+        return 20 + 22 + 23 + filterRows * 18 + 22 + treeRowsHeight(context, state);
     }
 
     private int treeRowsHeight(TerminalRenderContext context, MissionRenderState state) {
@@ -903,8 +1026,52 @@ public final class TerminalMissionBrowser {
         if (selectedMissionId != null && state.visibleRecords().stream().anyMatch(record -> record.id().equals(selectedMissionId))) {
             return;
         }
-        MissionRecord focus = state.focusRecord() == null ? state.visibleRecords().get(0) : state.focusRecord();
+        MissionRecord focus = state.focusRecord() == null
+                || state.visibleRecords().stream().noneMatch(record -> record.id().equals(state.focusRecord().id()))
+                        ? state.visibleRecords().get(0)
+                        : state.focusRecord();
         selectedMissionId = focus.id();
+    }
+
+    private boolean selectRelative(MissionRenderState state, int offset) {
+        List<MissionRecord> rows = navigationRecords(state);
+        if (rows.isEmpty()) {
+            return false;
+        }
+        int index = 0;
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i).id().equals(selectedMissionId)) {
+                index = i;
+                break;
+            }
+        }
+        selectMission(rows.get(Math.floorMod(index + offset, rows.size())).id(), true);
+        return true;
+    }
+
+    private boolean activateSelectedAction(TerminalRenderContext context, MissionRenderState state) {
+        MissionRecord selected = selectedRecord(state);
+        if (selected == null) {
+            return false;
+        }
+        for (TerminalMissionAction action : selected.snapshot().actions()) {
+            if (action.enabled()) {
+                context.sendAction(tabId, TerminalMissionActions.MISSION_ACTION,
+                        TerminalMissionActions.payload(chapter().id(), selected.definition().id(), action.id()));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<MissionRecord> navigationRecords(MissionRenderState state) {
+        List<MissionRecord> rows = new ArrayList<>();
+        for (PhaseGroup phase : phases(state.visibleRecords())) {
+            if (isPhaseExpanded(phase)) {
+                rows.addAll(phase.records());
+            }
+        }
+        return rows.isEmpty() ? state.visibleRecords() : rows;
     }
 
     private MissionRecord selectedRecord(MissionRenderState state) {
@@ -912,6 +1079,7 @@ public final class TerminalMissionBrowser {
             return null;
         }
         return state.allRecords().stream()
+                .filter(record -> state.visibleRecords().stream().anyMatch(visible -> visible.id().equals(record.id())))
                 .filter(record -> record.id().equals(selectedMissionId))
                 .findFirst()
                 .orElse(null);
@@ -1103,7 +1271,7 @@ public final class TerminalMissionBrowser {
         return switch (snapshot.status()) {
             case CLAIMABLE -> "Reward cache is ready. Claim it here before moving on.";
             case COMPLETED, CLAIMED -> "Protocol complete. Any pending cache remains available here.";
-            case UNLOCKED -> "Follow the next step above. Turn-in unlocks after ECHO confirms the route.";
+            case UNLOCKED -> "Command unlocks after ECHO confirms the route.";
             case VIEW_ONLY -> "View-only record. Actions are disabled for this path.";
             case LOCKED -> presentation.nextStep();
         };
@@ -1206,6 +1374,35 @@ public final class TerminalMissionBrowser {
         return value == null || value.isBlank() ? fallback : value;
     }
 
+    private String searchLabel() {
+        if (searchQuery.isBlank()) {
+            return searchFocused ? "TYPE TO SEARCH" : "SEARCH MISSIONS";
+        }
+        return "SEARCH: " + searchQuery;
+    }
+
+    private String normalizedSearchQuery() {
+        return searchQuery == null ? "" : searchQuery.strip().toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean matchesSearch(MissionRecord record, String query) {
+        if (query == null || query.isBlank()) {
+            return true;
+        }
+        String haystack = String.join(" ",
+                record.definition().id().toString(),
+                record.definition().title(),
+                record.definition().phaseTitle(),
+                record.definition().category(),
+                record.definition().difficulty(),
+                record.presentation().shortTitle(),
+                record.presentation().objectiveSummary(),
+                record.presentation().nextStep(),
+                record.presentation().tags().toString(),
+                record.snapshot().statusLabel()).toLowerCase(Locale.ROOT);
+        return haystack.contains(query);
+    }
+
     private void addHitbox(int x, int y, int w, int h, boolean enabled, Runnable action) {
         hitboxes.add(new Hitbox(x, y, w, h, enabled, action));
     }
@@ -1292,6 +1489,16 @@ public final class TerminalMissionBrowser {
                 case LOCKED -> status == TerminalMissionStatus.LOCKED || status == TerminalMissionStatus.VIEW_ONLY;
                 case COMPLETED -> status == TerminalMissionStatus.COMPLETED || status == TerminalMissionStatus.CLAIMED;
             };
+        }
+
+        static MissionFilter next(MissionFilter current) {
+            MissionFilter[] values = values();
+            return values[Math.floorMod((current == null ? ALL.ordinal() : current.ordinal()) + 1, values.length)];
+        }
+
+        static MissionFilter previous(MissionFilter current) {
+            MissionFilter[] values = values();
+            return values[Math.floorMod((current == null ? ALL.ordinal() : current.ordinal()) - 1, values.length)];
         }
     }
 }

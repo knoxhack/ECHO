@@ -1,31 +1,36 @@
 package com.knoxhack.echoterminal.client.screen;
 
+import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
+import com.knoxhack.echoterminal.api.TerminalNavigationSection;
 import com.knoxhack.echoterminal.api.TerminalTab;
-import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 final class TerminalNavigationModel {
-    static final List<String> GROUP_ORDER = List.of(
-            TerminalTabChrome.GROUP_PROTOCOL,
-            TerminalTabChrome.GROUP_FIELD,
-            TerminalTabChrome.GROUP_SYSTEMS,
-            TerminalTabChrome.GROUP_NEXUS,
-            TerminalTabChrome.GROUP_ORBITAL,
-            TerminalTabChrome.GROUP_ADDONS,
-            TerminalTabChrome.GROUP_CORE,
-            TerminalTabChrome.GROUP_ENDGAME);
+    private static final List<TerminalNavigationSection> SECTION_ORDER = List.of(
+            TerminalNavigationSection.TERMINAL,
+            TerminalNavigationSection.CORE,
+            TerminalNavigationSection.CHAPTERS);
 
     private final List<TerminalTab> tabs;
+    private final List<IndexedTab> indexedTabs;
     private final List<String> groups;
     private final Map<String, List<IndexedTab>> tabsByGroup;
+    private final Map<String, List<IndexedTab>> directTabsByGroup;
+    private final Map<String, List<ChapterGroup>> chaptersByGroup;
 
     private TerminalNavigationModel(List<TerminalTab> tabs) {
         this.tabs = List.copyOf(tabs);
-        this.groups = collectGroups(tabs);
-        this.tabsByGroup = collectTabsByGroup(tabs, groups);
+        this.indexedTabs = collectIndexedTabs(tabs);
+        this.groups = collectGroups(indexedTabs);
+        this.tabsByGroup = collectTabsByGroup(indexedTabs, groups);
+        this.directTabsByGroup = collectDirectTabsByGroup(indexedTabs, groups);
+        this.chaptersByGroup = collectChaptersByGroup(indexedTabs, groups);
     }
 
     static TerminalNavigationModel of(List<TerminalTab> tabs) {
@@ -44,18 +49,65 @@ final class TerminalNavigationModel {
         return tabsByGroup.getOrDefault(group, List.of());
     }
 
-    String activeGroup(int activeTab) {
-        if (tabs.isEmpty() || activeTab < 0 || activeTab >= tabs.size()) {
-            return TerminalTabChrome.GROUP_PROTOCOL;
+    List<IndexedTab> visibleTabsInGroup(String group, int activeTab) {
+        List<IndexedTab> visible = new ArrayList<>(directTabsInGroup(group));
+        String activeChapter = activeChapterId(activeTab);
+        for (ChapterGroup chapter : chaptersInGroup(group)) {
+            if (chapter.id().equals(activeChapter)) {
+                visible.addAll(chapter.tabs());
+            }
         }
-        return tabs.get(activeTab).chrome().group();
+        return List.copyOf(visible);
+    }
+
+    List<IndexedTab> directTabsInGroup(String group) {
+        return directTabsByGroup.getOrDefault(group, List.of());
+    }
+
+    List<ChapterGroup> chaptersInGroup(String group) {
+        return chaptersByGroup.getOrDefault(group, List.of());
+    }
+
+    String activeGroup(int activeTab) {
+        IndexedTab entry = indexed(activeTab);
+        if (entry == null) {
+            return TerminalNavigationSection.TERMINAL.key();
+        }
+        return entry.profile().section().key();
+    }
+
+    String activeChapterId(int activeTab) {
+        IndexedTab entry = indexed(activeTab);
+        return entry == null ? "" : entry.profile().chapterId();
+    }
+
+    String activePathLabel(int activeTab) {
+        IndexedTab entry = indexed(activeTab);
+        if (entry == null) {
+            return TerminalNavigationSection.TERMINAL.label();
+        }
+        String section = groupLabel(entry.profile().section().key());
+        if (entry.profile().hasChapter()) {
+            return section + " / " + chapterLabel(entry.profile()) + " / " + entry.tab().chrome().shortTitle();
+        }
+        return section + " / " + entry.tab().chrome().shortTitle();
     }
 
     int firstTabInGroup(String group) {
-        for (IndexedTab entry : tabsInGroup(group)) {
-            return entry.index();
+        List<IndexedTab> direct = directTabsInGroup(group);
+        if (!direct.isEmpty()) {
+            return direct.get(0).index();
+        }
+        for (ChapterGroup chapter : chaptersInGroup(group)) {
+            if (!chapter.tabs().isEmpty()) {
+                return chapter.tabs().get(0).index();
+            }
         }
         return tabs.isEmpty() ? 0 : Math.min(0, tabs.size() - 1);
+    }
+
+    int firstTabInChapter(ChapterGroup chapter) {
+        return chapter == null || chapter.tabs().isEmpty() ? 0 : chapter.tabs().get(0).index();
     }
 
     int groupAccent(String group, int fallback) {
@@ -65,29 +117,53 @@ final class TerminalNavigationModel {
         return fallback;
     }
 
-    String groupLabel(String group) {
-        return switch (group) {
-            case TerminalTabChrome.GROUP_PROTOCOL -> "Protocol";
-            case TerminalTabChrome.GROUP_CORE -> "Core";
-            case TerminalTabChrome.GROUP_FIELD -> "Field";
-            case TerminalTabChrome.GROUP_SYSTEMS -> "Systems";
-            case TerminalTabChrome.GROUP_NEXUS -> "Nexus";
-            case TerminalTabChrome.GROUP_ENDGAME -> "Endgame";
-            case TerminalTabChrome.GROUP_ORBITAL -> "Orbital";
-            case TerminalTabChrome.GROUP_ADDONS -> "Chapters";
-            default -> group;
-        };
-    }
-
-    private static List<String> collectGroups(List<TerminalTab> tabs) {
-        List<String> result = new ArrayList<>();
-        for (String group : GROUP_ORDER) {
-            if (containsGroup(tabs, group)) {
-                result.add(group);
+    int visibleRowCount(String group, int activeTab) {
+        int rows = directTabsInGroup(group).size() + chaptersInGroup(group).size();
+        String activeChapter = activeChapterId(activeTab);
+        for (ChapterGroup chapter : chaptersInGroup(group)) {
+            if (chapter.id().equals(activeChapter)) {
+                rows += chapter.tabs().size();
+                break;
             }
         }
-        for (TerminalTab tab : tabs) {
-            String group = tab.chrome().group();
+        return Math.max(1, rows);
+    }
+
+    String groupLabel(String group) {
+        for (TerminalNavigationSection section : SECTION_ORDER) {
+            if (section.key().equals(group)) {
+                return section.label();
+            }
+        }
+        return group;
+    }
+
+    private IndexedTab indexed(int activeTab) {
+        if (activeTab < 0 || activeTab >= indexedTabs.size()) {
+            return null;
+        }
+        return indexedTabs.get(activeTab);
+    }
+
+    private static List<IndexedTab> collectIndexedTabs(List<TerminalTab> tabs) {
+        List<IndexedTab> result = new ArrayList<>();
+        for (int i = 0; i < tabs.size(); i++) {
+            TerminalTab tab = tabs.get(i);
+            String chromeGroup = tab.chrome() == null ? "" : tab.chrome().group();
+            result.add(new IndexedTab(i, tab, TerminalNavigationProfiles.profileFor(tab)));
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<String> collectGroups(List<IndexedTab> tabs) {
+        List<String> result = new ArrayList<>();
+        for (TerminalNavigationSection section : SECTION_ORDER) {
+            if (containsGroup(tabs, section.key())) {
+                result.add(section.key());
+            }
+        }
+        for (IndexedTab tab : tabs) {
+            String group = tab.profile().section().key();
             if (!result.contains(group)) {
                 result.add(group);
             }
@@ -95,29 +171,120 @@ final class TerminalNavigationModel {
         return List.copyOf(result);
     }
 
-    private static Map<String, List<IndexedTab>> collectTabsByGroup(List<TerminalTab> tabs, List<String> groups) {
-        Map<String, List<IndexedTab>> result = new LinkedHashMap<>();
-        for (String group : groups) {
-            result.put(group, new ArrayList<>());
-        }
-        for (int i = 0; i < tabs.size(); i++) {
-            TerminalTab tab = tabs.get(i);
-            result.computeIfAbsent(tab.chrome().group(), ignored -> new ArrayList<>())
-                    .add(new IndexedTab(i, tab));
+    private static Map<String, List<IndexedTab>> collectTabsByGroup(List<IndexedTab> tabs, List<String> groups) {
+        Map<String, List<IndexedTab>> result = emptyGroupMap(groups);
+        for (IndexedTab entry : sortedEntries(tabs)) {
+            result.computeIfAbsent(entry.profile().section().key(), ignored -> new ArrayList<>()).add(entry);
         }
         result.replaceAll((group, entries) -> List.copyOf(entries));
         return Map.copyOf(result);
     }
 
-    private static boolean containsGroup(List<TerminalTab> tabs, String group) {
-        for (TerminalTab tab : tabs) {
-            if (tab.chrome().group().equals(group)) {
+    private static Map<String, List<IndexedTab>> collectDirectTabsByGroup(List<IndexedTab> tabs, List<String> groups) {
+        Map<String, List<IndexedTab>> result = emptyGroupMap(groups);
+        for (IndexedTab entry : sortedEntries(tabs)) {
+            if (!entry.profile().hasChapter()) {
+                result.computeIfAbsent(entry.profile().section().key(), ignored -> new ArrayList<>()).add(entry);
+            }
+        }
+        result.replaceAll((group, entries) -> List.copyOf(entries));
+        return Map.copyOf(result);
+    }
+
+    private static Map<String, List<ChapterGroup>> collectChaptersByGroup(List<IndexedTab> tabs, List<String> groups) {
+        Map<String, Map<String, ChapterBuilder>> buildersByGroup = new LinkedHashMap<>();
+        for (String group : groups) {
+            buildersByGroup.put(group, new LinkedHashMap<>());
+        }
+        for (IndexedTab entry : sortedEntries(tabs)) {
+            TerminalNavigationProfile profile = entry.profile();
+            if (!profile.hasChapter()) {
+                continue;
+            }
+            buildersByGroup
+                    .computeIfAbsent(profile.section().key(), ignored -> new LinkedHashMap<>())
+                    .computeIfAbsent(profile.chapterId(), ignored -> new ChapterBuilder(profile))
+                    .add(entry);
+        }
+        Map<String, List<ChapterGroup>> result = new LinkedHashMap<>();
+        for (String group : groups) {
+            List<ChapterGroup> chapters = buildersByGroup.getOrDefault(group, Map.of()).values().stream()
+                    .map(ChapterBuilder::build)
+                    .sorted(Comparator
+                            .comparingInt(ChapterGroup::order)
+                            .thenComparing(ChapterGroup::title)
+                            .thenComparing(ChapterGroup::id))
+                    .toList();
+            result.put(group, chapters);
+        }
+        return Map.copyOf(result);
+    }
+
+    private static List<IndexedTab> sortedEntries(List<IndexedTab> tabs) {
+        return tabs.stream()
+                .sorted(Comparator
+                        .comparingInt((IndexedTab entry) -> entry.profile().order())
+                        .thenComparing(entry -> entry.tab().descriptor().id().toString()))
+                .toList();
+    }
+
+    private static Map<String, List<IndexedTab>> emptyGroupMap(List<String> groups) {
+        Map<String, List<IndexedTab>> result = new LinkedHashMap<>();
+        for (String group : groups) {
+            result.put(group, new ArrayList<>());
+        }
+        return result;
+    }
+
+    private static boolean containsGroup(List<IndexedTab> tabs, String group) {
+        for (IndexedTab tab : tabs) {
+            if (tab.profile().section().key().equals(group)) {
                 return true;
             }
         }
         return false;
     }
 
-    record IndexedTab(int index, TerminalTab tab) {
+    private static String chapterLabel(TerminalNavigationProfile profile) {
+        return profile.chapterTitle().isBlank() ? profile.chapterId() : profile.chapterTitle();
+    }
+
+    record IndexedTab(int index, TerminalTab tab, TerminalNavigationProfile profile) {
+    }
+
+    record ChapterGroup(String id, String title, String iconLabel, int order, int accent, List<IndexedTab> tabs) {
+    }
+
+    private static final class ChapterBuilder {
+        private final String id;
+        private final String title;
+        private final String iconLabel;
+        private final int order;
+        private final List<IndexedTab> tabs = new ArrayList<>();
+
+        private ChapterBuilder(TerminalNavigationProfile profile) {
+            this.id = profile.chapterId();
+            this.title = chapterLabel(profile);
+            this.iconLabel = profile.chapterIcon().isBlank() ? fallbackIcon(title) : profile.chapterIcon();
+            this.order = profile.order();
+        }
+
+        private void add(IndexedTab tab) {
+            tabs.add(tab);
+        }
+
+        private ChapterGroup build() {
+            List<IndexedTab> sortedTabs = sortedEntries(tabs);
+            int accent = sortedTabs.isEmpty() ? 0xFF66D9FF : sortedTabs.get(0).tab().descriptor().accentColor();
+            return new ChapterGroup(id, title, iconLabel, order, accent, List.copyOf(sortedTabs));
+        }
+    }
+
+    private static String fallbackIcon(String title) {
+        String cleaned = title == null ? "" : title.replaceAll("[^A-Za-z0-9]", "");
+        if (cleaned.length() >= 2) {
+            return cleaned.substring(0, 2).toUpperCase(Locale.ROOT);
+        }
+        return cleaned.isBlank() ? "CH" : cleaned.toUpperCase(Locale.ROOT);
     }
 }
