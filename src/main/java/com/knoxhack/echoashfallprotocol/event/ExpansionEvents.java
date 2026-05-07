@@ -13,16 +13,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
-import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Event handlers for exploration, Echo Core faction, and research progression.
+ * Legacy event handlers for exploration, Echo Core faction, and research progression.
+ *
+ * <p>This class is intentionally not self-registering. Several of these hooks have active
+ * replacements elsewhere, and registering the whole legacy bundle can double-award rewards or
+ * run stale survival ticks. Keep it quarantined until individual behavior is migrated on purpose.
  */
-public class ExpansionEvents {
+public final class ExpansionEvents {
     
-    public ExpansionEvents() {
-        NeoForge.EVENT_BUS.register(this);
+    private ExpansionEvents() {
     }
     
     /**

@@ -7,7 +7,10 @@ import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
 import com.knoxhack.echoorbitalremnants.world.NexusAnomalyBelt;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -33,8 +36,11 @@ public class NexusDriveVesselItem extends Item {
                 if (returnLevel == null) {
                     returnLevel = serverPlayer.level().getServer().overworld();
                 }
+                playNexusFeedback(serverPlayer.level(), player.blockPosition(), 0.8F);
                 serverPlayer.teleportTo(returnLevel, progress.returnX(), progress.returnY(), progress.returnZ(), Set.of(), player.getYRot(), player.getXRot(), false);
+                playNexusFeedback(returnLevel, BlockPos.containing(progress.returnX(), progress.returnY(), progress.returnZ()), 1.5F);
                 player.sendSystemMessage(Component.literal("ECHO-7 // Nexus return vector held. Somehow."));
+                sendStatus(player, "Nexus return vector burned.");
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && player.isShiftKeyDown() && !progress.hasReturnPoint()) {
@@ -46,7 +52,15 @@ public class NexusDriveVesselItem extends Item {
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.europaArrayGateOpen() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Calibrate three Europa Thermal Arrays before Deep Space Protocol can hold."));
+                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Complete Europa Thermal Array repairs before Nexus entry can hold."));
+                return InteractionResult.CONSUME;
+            }
+            if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.saturnRelayGateOpen() && !player.hasInfiniteMaterials()) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Complete Saturn Ring Relay repairs before Nexus entry can hold."));
+                return InteractionResult.CONSUME;
+            }
+            if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.titanPumpGateOpen() && !player.hasInfiniteMaterials()) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Complete Titan Methane Pump repairs before Nexus entry can hold."));
                 return InteractionResult.CONSUME;
             }
             if (!SuitEvents.isOrbitalExposure(player) && !player.hasInfiniteMaterials()) {
@@ -63,11 +77,28 @@ public class NexusDriveVesselItem extends Item {
                 NexusAnomalyBelt.seedEntrySite(targetLevel, target);
                 spawnAnomalyThreats(targetLevel, target);
                 progress.markAnomalyBeltEntered(player);
+                playNexusFeedback(serverLevel, player.blockPosition(), 0.65F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);
+                playNexusFeedback(targetLevel, target, 1.9F);
                 player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Anomaly Belt entered. Geometry no longer agrees with itself."));
+                sendStatus(player, "Nexus entry committed. Return vector saved.");
             }
         }
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    private static void sendStatus(Player player, String message) {
+        Component component = Component.literal("ECHO-7 // " + message);
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(component, true);
+        } else {
+            player.sendSystemMessage(component);
+        }
+    }
+
+    private static void playNexusFeedback(ServerLevel level, BlockPos pos, float pitch) {
+        level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS, 0.8F, pitch);
+        level.sendParticles(ParticleTypes.REVERSE_PORTAL, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, 42, 0.65D, 0.85D, 0.65D, 0.05D);
     }
 
     private static void spawnAnomalyThreats(ServerLevel level, BlockPos target) {

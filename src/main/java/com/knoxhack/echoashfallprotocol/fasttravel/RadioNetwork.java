@@ -38,6 +38,9 @@ public class RadioNetwork implements ValueIOSerializable {
     
     // Activated stations (available for fast travel)
     private final Set<String> activatedStations = new HashSet<>();
+
+    // Player-owned dynamic relay stations discovered in this save.
+    private final Map<String, StationInfo> dynamicStations = new HashMap<>();
     
     // Last fast travel time (for cooldown)
     private long lastFastTravelTick = 0;
@@ -55,6 +58,11 @@ public class RadioNetwork implements ValueIOSerializable {
     public void discoverStation(String stationId) {
         discoveredStations.add(stationId);
     }
+
+    public void discoverStation(StationInfo station) {
+        rememberDynamicStation(station);
+        discoverStation(station.getId());
+    }
     
     /**
      * Activate a station (available for fast travel)
@@ -62,6 +70,11 @@ public class RadioNetwork implements ValueIOSerializable {
     public void activateStation(String stationId) {
         discoveredStations.add(stationId);
         activatedStations.add(stationId);
+    }
+
+    public void activateStation(StationInfo station) {
+        rememberDynamicStation(station);
+        activateStation(station.getId());
     }
     
     /**
@@ -91,6 +104,18 @@ public class RadioNetwork implements ValueIOSerializable {
     public Set<String> getActivatedStations() {
         return new HashSet<>(activatedStations);
     }
+
+    public Map<String, StationInfo> getDynamicStations() {
+        return Collections.unmodifiableMap(dynamicStations);
+    }
+
+    public StationInfo getStationInfo(String stationId) {
+        StationInfo staticStation = StationRegistry.getStation(stationId);
+        if (staticStation != null) {
+            return staticStation;
+        }
+        return dynamicStations.get(stationId);
+    }
     
     /**
      * Get count of activated stations
@@ -106,7 +131,7 @@ public class RadioNetwork implements ValueIOSerializable {
         List<StationInfo> destinations = new ArrayList<>();
         
         for (String stationId : activatedStations) {
-            StationInfo info = StationRegistry.getStation(stationId);
+            StationInfo info = getStationInfo(stationId);
             if (info != null && !info.getPosition().equals(fromPos)) {
                 destinations.add(info);
             }
@@ -158,7 +183,7 @@ public class RadioNetwork implements ValueIOSerializable {
             return false;
         }
 
-        StationInfo dest = StationRegistry.getStation(destinationId);
+        StationInfo dest = getStationInfo(destinationId);
         if (dest != null) {
             BlockPos safePos = findSafeLanding(player.level(), dest.getPosition());
             if (safePos == null) {
@@ -244,6 +269,17 @@ public class RadioNetwork implements ValueIOSerializable {
     public int getFastTravelCount() {
         return fastTravelCount;
     }
+
+    private void rememberDynamicStation(StationInfo station) {
+        if (station == null || !isDynamicStationId(station.getId())) {
+            return;
+        }
+        dynamicStations.put(station.getId(), station);
+    }
+
+    private boolean isDynamicStationId(String stationId) {
+        return stationId.startsWith("relay_") && !stationId.startsWith("relay_station_");
+    }
     
     @Override
     public void serialize(ValueOutput output) {
@@ -257,6 +293,17 @@ public class RadioNetwork implements ValueIOSerializable {
         i = 0;
         for (String station : activatedStations) {
             output.putString("activated_" + i++, station);
+        }
+
+        output.putInt("dynamicStationCount", dynamicStations.size());
+        i = 0;
+        for (StationInfo station : dynamicStations.values()) {
+            output.putString("dynamicStation_" + i + "_id", station.getId());
+            output.putString("dynamicStation_" + i + "_name", station.getName());
+            output.putInt("dynamicStation_" + i + "_x", station.getPosition().getX());
+            output.putInt("dynamicStation_" + i + "_y", station.getPosition().getY());
+            output.putInt("dynamicStation_" + i + "_z", station.getPosition().getZ());
+            i++;
         }
         
         output.putLong("lastFastTravel", lastFastTravelTick);
@@ -278,9 +325,51 @@ public class RadioNetwork implements ValueIOSerializable {
             String station = input.getStringOr("activated_" + i, "");
             if (!station.isEmpty()) activatedStations.add(station);
         }
+
+        dynamicStations.clear();
+        int dynamicStationCount = input.getIntOr("dynamicStationCount", 0);
+        for (int i = 0; i < dynamicStationCount; i++) {
+            String id = input.getStringOr("dynamicStation_" + i + "_id", "");
+            String name = input.getStringOr("dynamicStation_" + i + "_name", "");
+            if (id.isEmpty() || name.isEmpty()) {
+                continue;
+            }
+            BlockPos pos = new BlockPos(
+                    input.getIntOr("dynamicStation_" + i + "_x", 0),
+                    input.getIntOr("dynamicStation_" + i + "_y", 64),
+                    input.getIntOr("dynamicStation_" + i + "_z", 0));
+            rememberDynamicStation(new StationInfo(id, name, pos));
+        }
+        restoreLegacyDynamicStations();
         
         lastFastTravelTick = input.getLongOr("lastFastTravel", 0);
         fastTravelCount = input.getIntOr("fastTravelCount", 0);
+    }
+
+    private void restoreLegacyDynamicStations() {
+        Set<String> stationIds = new HashSet<>(discoveredStations);
+        stationIds.addAll(activatedStations);
+        for (String stationId : stationIds) {
+            if (getStationInfo(stationId) == null) {
+                parseLegacyDynamicStation(stationId).ifPresent(this::rememberDynamicStation);
+            }
+        }
+    }
+
+    private Optional<StationInfo> parseLegacyDynamicStation(String stationId) {
+        String[] parts = stationId.split("_");
+        if (parts.length != 4 || !"relay".equals(parts[0])) {
+            return Optional.empty();
+        }
+        try {
+            BlockPos pos = new BlockPos(
+                    Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2]),
+                    Integer.parseInt(parts[3]));
+            return Optional.of(new StationInfo(stationId, "Relay " + pos.getX() + ", " + pos.getZ(), pos));
+        } catch (NumberFormatException ignored) {
+            return Optional.empty();
+        }
     }
     
     /**

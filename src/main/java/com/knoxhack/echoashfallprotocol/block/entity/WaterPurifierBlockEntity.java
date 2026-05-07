@@ -4,10 +4,9 @@ import com.knoxhack.echoashfallprotocol.block.WaterPurifierBlock;
 import com.knoxhack.echoashfallprotocol.capability.EnergyStorage;
 import com.knoxhack.echoashfallprotocol.capability.IEnergyStorage;
 import com.knoxhack.echoashfallprotocol.energy.EnergyAccess;
-import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventHandler;
-import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
 import com.knoxhack.echoashfallprotocol.gameplay.MachineGameplayHelper;
 import com.knoxhack.echoashfallprotocol.machine.MachineWearData;
+import com.knoxhack.echoashfallprotocol.power.PowerNetwork;
 import com.knoxhack.echoashfallprotocol.registry.ModBlockEntities;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import net.minecraft.core.BlockPos;
@@ -105,27 +104,31 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
     }
 
     private boolean tryExtractPower(Level level, BlockPos pos) {
-        if (EnvironmentalEventHandler.isEventActive(level, EnvironmentalEventType.BLACKOUT)) {
-            return false;
-        }
-
         int energyCost = MachineGameplayHelper.getAdjustedPowerCost(level, pos, ENERGY_PER_PURIFY);
-        if (energyStorage.extractEnergy(energyCost, true) >= energyCost) {
-            energyStorage.extractEnergy(energyCost, false);
-            setChanged();
-            return true;
-        }
+        return EnergyAccess.tryConsumeLocalOrNetworkPower(this, level, pos, energyCost)
+                || tryConsumeOneHopRelayPower(level, pos, energyCost);
+    }
 
-        for (Direction dir : Direction.values()) {
-            BlockEntity neighbor = level.getBlockEntity(pos.relative(dir));
-            if (neighbor instanceof ThermalBurnerBlockEntity burner) {
-                if (burner.getEnergy() >= energyCost) {
-                    burner.extractEnergy(energyCost);
-                    return true;
+    private static boolean tryConsumeOneHopRelayPower(Level level, BlockPos pos, int amount) {
+        for (Direction direction : Direction.values()) {
+            BlockPos relayPos = pos.relative(direction);
+            BlockEntity relay = level.getBlockEntity(relayPos);
+            if (!PowerNetwork.isRelay(relay)) {
+                continue;
+            }
+            if (EnergyAccess.simulateExtractBlockEnergy(level, relayPos, null, amount) >= amount) {
+                EnergyAccess.extractBlockEnergy(level, relayPos, null, amount);
+                return true;
+            }
+            for (Direction sourceDirection : Direction.values()) {
+                BlockPos sourcePos = relayPos.relative(sourceDirection);
+                if (sourcePos.equals(pos)) {
+                    continue;
                 }
-            } else if (neighbor instanceof MicroGeneratorBlockEntity generator) {
-                if (generator.getEnergy() >= energyCost && !generator.isFailed()) {
-                    generator.extractEnergy(energyCost);
+                BlockEntity source = level.getBlockEntity(sourcePos);
+                if (PowerNetwork.canSupplyNetwork(source)
+                        && EnergyAccess.simulateExtractBlockEnergy(level, sourcePos, null, amount) >= amount) {
+                    EnergyAccess.extractBlockEnergy(level, sourcePos, null, amount);
                     return true;
                 }
             }

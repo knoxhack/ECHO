@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Water Purifier — converts dirty water + filter to clean water.
- * Requires power from adjacent generator.
+ * Requires local or wired network power.
  */
 public class WaterPurifierBlock extends BaseEntityBlock implements MachineStateProvider {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");

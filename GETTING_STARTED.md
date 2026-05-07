@@ -5,6 +5,7 @@ This guide walks a new player from drop-pod wakeup to the Nexus choice. For a sy
 ## Before You Start
 
 - Use Minecraft 26.1.2, NeoForge 26.1.2.29-beta or newer, and Java 25+.
+- Public release testing uses the full ECHO stack: Core, Terminal, Ashfall, Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol.
 - Start a fresh world so wasteland biomes and POIs generate cleanly.
 - Normal or Hard difficulty best matches the survival tuning.
 - Back up important worlds before reaching the Nexus Core; the final choice is meant to matter.
@@ -22,7 +23,7 @@ Use this checklist for a clean first report:
 6. Deploy a Scout Drone or repair the ECHO companion drone, then test Drone tab commands.
 7. Scan at least one POI and confirm the readout names the actual site, route, hazard profile, prep kit, objective, distance, direction, and likely supplies; then check Route Map -> POI Atlas for the grouped template signals behind that scanner profile.
 8. Check Mission Graph, Route Records, Vitals, Reward Inbox, Faction Atlas, and Field Archive against the same save state.
-9. Push toward biome guardian entrances, Prime Relays, Power Nodes, the Nexus choice, the Pre-Fall Archives, The Warden, and the final epilogue; then test optional Orbital Remnants unlock if ECHO: Orbital Remnants is installed.
+9. Push toward biome guardian entrances, Prime Relays, Power Nodes, the Nexus choice, the Pre-Fall Archives, The Warden, and the final epilogue; then test Orbital Remnants unlock plus Stationfall, Nexus, Industrial, and Blackbox chapter entry visibility.
 
 Report bugs with mod list, seed, coordinates, biome/POI, expected behavior, actual behavior, reproduction steps, and screenshots or crash reports.
 
@@ -169,7 +170,7 @@ The Nexus choice is the capstone decision:
 - Destroy the Core.
 - Control the Core.
 
-Treat this as a save-defining choice. After it, post-Nexus branch objectives, the Pre-Fall Archives, The Warden, the final epilogue, and optional Orbital Remnants expansion content can open.
+Treat this as a save-defining choice. After it, post-Nexus branch objectives, the Pre-Fall Archives, The Warden, the final epilogue, and the release addon chain can open.
 
 ### Phase 8: Post-Nexus Endgame
 
@@ -190,7 +191,7 @@ Reputation is not cosmetic. Factions change trade, patrol hostility, raids, vill
 
 Helping one side can anger another. Use the terminal's World and Archives sections to read faction state, dossiers, and intercepted intel.
 
-The current stack also exposes faction state through ECHO Core, so the shared Faction Atlas can show registered factions, standing, NPC roles, service state, last contact, POI affinity, and active contracts. Orbital Remnants adds Orbital Remnant, Void Salvagers, and Nexus Choir signals after the post-Nexus handoff.
+The current stack also exposes faction state through ECHO Core, so the shared Faction Atlas can show registered factions, standing, NPC roles, service state, last contact, POI affinity, and active contracts. Addon chapters register their own state through ECHO Core and render it through ECHO Terminal rather than taking over another chapter's save data.
 
 ## Drone Use
 
@@ -215,10 +216,11 @@ Open the ECHO terminal often.
 - Faction Atlas shows standing, contracts, NPC roles, POI affinity, and last contact.
 - Reward Inbox claims terminal-stored mission and support-cache rewards.
 - Field Archive, Survival Index, Baseline, Drone, World, and Nexus tabs explain recipes, lore, machines, survival tools, faction state, drone modes, and endgame systems.
+- Addon chapter sections use the shared terminal navigation API so Orbital, Stationfall, Nexus, Industrial, and Blackbox surfaces stay grouped by owning chapter.
 
-If ECHO: Orbital Remnants is installed, the same terminal also displays the post-Nexus orbital addon after your Nexus choice.
+The same terminal displays the post-Nexus addon chain after your Nexus choice.
 
-## Optional Orbital Remnants Start
+## Addon Chapter Starts
 
 After choosing Restore, Destroy, or Control at the Nexus Core:
 
@@ -229,6 +231,13 @@ After choosing Restore, Destroy, or Control at the Nexus Core:
 5. Assemble the Emergency Rocket and reach Low Earth Orbit.
 
 The ECHO terminal will show Orbital Remnants progress, but the addon keeps its own route authority and scan actions.
+
+From there, smoke each public addon entry:
+
+- Stationfall: confirm station route state, station power, panic pressure, and crew logs surface.
+- Nexus Protocol: confirm Nexus charge, corruption stabilization, and research/memory route state surface.
+- Industrial Nexus: confirm Thermal Flux, industrial machines, salvage automation, and filter-support records surface.
+- Blackbox Protocol: confirm memory fragments, archive dungeons, boss proofs, and final directives surface.
 
 ## Practical Tips
 

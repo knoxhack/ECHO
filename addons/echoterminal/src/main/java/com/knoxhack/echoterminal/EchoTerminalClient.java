@@ -4,6 +4,7 @@ import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.client.BuiltinTerminalTabs;
 import com.knoxhack.echoterminal.client.TerminalEventHandler;
 import com.knoxhack.echoterminal.client.screen.EchoTerminalScreens;
+import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
 import com.knoxhack.echoterminal.registry.ModMenus;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -35,6 +36,7 @@ public class EchoTerminalClient {
 
     public EchoTerminalClient(ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        TerminalClientOptions.load();
         BuiltinTerminalTabs.register();
         NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onKeyInput);
         NeoForge.EVENT_BUS.register(new TerminalEventHandler());

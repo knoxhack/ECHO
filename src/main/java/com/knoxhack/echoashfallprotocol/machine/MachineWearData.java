@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.machine;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
@@ -17,55 +18,63 @@ public class MachineWearData {
     public static final int JAM_THRESHOLD = 800; // 80% wear = chance to jam
     public static final int BROKEN_THRESHOLD = 950; // 95% wear = high failure rate
     
-    // Per-world storage using dimension-based map
-    private static final Map<String, Map<String, Integer>> worldMachineWear = new HashMap<>();
-    private static final Map<String, Map<String, Boolean>> worldMachineJammed = new HashMap<>();
-    
-    private final String worldKey;
-    private final Map<String, Integer> machineWear;
-    private final Map<String, Boolean> machineJammed;
+    private final MachineWearSavedData savedData;
+    private final Map<String, Integer> fallbackWear = new HashMap<>();
+    private final Map<String, Boolean> fallbackJammed = new HashMap<>();
     
     public MachineWearData(Level level) {
-        this.worldKey = level.dimension().toString();
-        this.machineWear = worldMachineWear.computeIfAbsent(worldKey, k -> new HashMap<>());
-        this.machineJammed = worldMachineJammed.computeIfAbsent(worldKey, k -> new HashMap<>());
+        this.savedData = level instanceof ServerLevel serverLevel ? MachineWearSavedData.get(serverLevel) : null;
     }
     
     public int getWear(BlockPos pos) {
-        String key = getKey(pos);
-        return machineWear.getOrDefault(key, 0);
+        if (savedData != null) {
+            return savedData.getWear(pos);
+        }
+        return fallbackWear.getOrDefault(getKey(pos), 0);
     }
     
     public void addWear(BlockPos pos, int amount, RandomSource random) {
-        String key = getKey(pos);
-        int current = machineWear.getOrDefault(key, 0);
+        int current = getWear(pos);
         int newWear = Math.min(MAX_WEAR, current + amount);
-        machineWear.put(key, newWear);
+        setWear(pos, newWear);
         
         // Check for jam at threshold
-        if (newWear >= JAM_THRESHOLD && !machineJammed.getOrDefault(key, false)) {
+        if (newWear >= JAM_THRESHOLD && !isJammed(pos)) {
             if (random.nextFloat() < 0.3f) { // 30% chance to jam when crossing threshold
-                machineJammed.put(key, true);
+                setJammed(pos, true);
             }
         }
     }
     
     public void repair(BlockPos pos, int amount) {
-        String key = getKey(pos);
-        int current = machineWear.getOrDefault(key, 0);
+        int current = getWear(pos);
         int newWear = Math.max(0, current - amount);
-        machineWear.put(key, newWear);
-        machineJammed.put(key, false); // Repair clears jam
+        setWear(pos, newWear);
+        setJammed(pos, false); // Repair clears jam
     }
     
     public boolean isJammed(BlockPos pos) {
-        String key = getKey(pos);
-        return machineJammed.getOrDefault(key, false);
+        if (savedData != null) {
+            return savedData.isJammed(pos);
+        }
+        return fallbackJammed.getOrDefault(getKey(pos), false);
     }
     
     public void setJammed(BlockPos pos, boolean jammed) {
-        String key = getKey(pos);
-        machineJammed.put(key, jammed);
+        if (savedData != null) {
+            savedData.setJammed(pos, jammed);
+        } else {
+            fallbackJammed.put(getKey(pos), jammed);
+        }
+    }
+
+    public void setWear(BlockPos pos, int wear) {
+        int clamped = Math.max(0, Math.min(MAX_WEAR, wear));
+        if (savedData != null) {
+            savedData.setWear(pos, clamped);
+        } else {
+            fallbackWear.put(getKey(pos), clamped);
+        }
     }
     
     public float getWearPercent(BlockPos pos) {

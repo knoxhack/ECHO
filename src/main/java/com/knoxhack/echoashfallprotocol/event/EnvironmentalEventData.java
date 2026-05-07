@@ -35,13 +35,13 @@ public class EnvironmentalEventData extends SavedData {
     // Main codec for EnvironmentalEventData
     public static final Codec<EnvironmentalEventData> CODEC = RecordCodecBuilder.create(instance ->
         instance.group(
-            EVENT_TYPE_CODEC.fieldOf("currentEvent").forGetter(d -> d.currentEvent),
-            Codec.LONG.fieldOf("eventStartTime").forGetter(d -> d.eventStartTime),
-            Codec.INT.fieldOf("eventDuration").forGetter(d -> d.eventDuration),
-            Codec.INT.fieldOf("timeSinceLastEvent").forGetter(d -> d.timeSinceLastEvent),
-            Codec.INT.fieldOf("radStormsSurvived").forGetter(d -> d.radStormsSurvived),
-            Codec.INT.fieldOf("toxicStormsSurvived").forGetter(d -> d.toxicStormsSurvived),
-            Codec.INT.fieldOf("blackoutsSurvived").forGetter(d -> d.blackoutsSurvived),
+            EVENT_TYPE_CODEC.optionalFieldOf("currentEvent", EnvironmentalEventType.NONE).forGetter(d -> d.currentEvent),
+            Codec.LONG.optionalFieldOf("eventStartTime", 0L).forGetter(d -> d.eventStartTime),
+            Codec.INT.optionalFieldOf("eventDuration", 0).forGetter(d -> d.eventDuration),
+            Codec.INT.optionalFieldOf("timeSinceLastEvent", 0).forGetter(d -> d.timeSinceLastEvent),
+            Codec.INT.optionalFieldOf("radStormsSurvived", 0).forGetter(d -> d.radStormsSurvived),
+            Codec.INT.optionalFieldOf("toxicStormsSurvived", 0).forGetter(d -> d.toxicStormsSurvived),
+            Codec.INT.optionalFieldOf("blackoutsSurvived", 0).forGetter(d -> d.blackoutsSurvived),
             Codec.BOOL.optionalFieldOf("weatherSnapshotValid", false).forGetter(d -> d.weatherSnapshotValid),
             Codec.BOOL.optionalFieldOf("forcedWeatherEvent", false).forGetter(d -> d.forcedWeatherEvent),
             Codec.BOOL.optionalFieldOf("previousRaining", false).forGetter(d -> d.previousRaining),

@@ -115,7 +115,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
     public int getSpawnHeight(LevelHeightAccessor level) {
         return switch (route) {
             case ORBIT, NEXUS -> 96;
-            case MOON, MARS, EUROPA -> 72;
+            case MOON, MARS, EUROPA, SATURN, TITAN -> 72;
         };
     }
 
@@ -155,6 +155,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> Math.max(60, 65 + wave / 2 - (scarTrench(x, z) ? 4 : radial % 5 == 0 ? 2 : 0));
             case MARS -> Math.max(60, 66 + wave + (basaltRidge(x, z) ? 4 : 0) - (pressureCavern(x, z) ? 2 : 0));
             case EUROPA -> Math.max(60, 64 + wave / 2 + (thermalPocket(x, z) ? 2 : 0) - (iceFracture(x, z) ? 2 : 0));
+            case SATURN -> saturnRingPlate(x, z) ? Math.max(62, 67 + wave / 2 + (ringSpoke(x, z) ? 3 : 0)) : BASE_Y - 1;
+            case TITAN -> Math.max(60, 65 + wave / 2 + (methaneRidge(x, z) ? 2 : 0) - (methaneSink(x, z) ? 3 : 0));
             case NEXUS -> nexusIsland(x, z) || nexusBridge(x, z) ? 78 + wave + (nexusBridge(x, z) ? -2 : 0) : BASE_Y - 1;
         };
     }
@@ -165,6 +167,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> ModBlocks.SURVEY_MARKER.get().defaultBlockState();
             case MARS -> ModBlocks.SIGNAL_RELAY.get().defaultBlockState();
             case EUROPA -> ModBlocks.THERMAL_VENT.get().defaultBlockState();
+            case SATURN -> ModBlocks.SATURN_RING_RELAY.get().defaultBlockState();
+            case TITAN -> ModBlocks.TITAN_METHANE_PUMP.get().defaultBlockState();
             case NEXUS -> ModBlocks.NEXUS_ANCHOR.get().defaultBlockState();
         };
     }
@@ -175,6 +179,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> ModBlocks.HELIUM_EXTRACTOR_NODE.get().defaultBlockState();
             case MARS -> ModBlocks.MARS_PRESSURE_CONSOLE.get().defaultBlockState();
             case EUROPA -> ModBlocks.EUROPA_THERMAL_ARRAY.get().defaultBlockState();
+            case SATURN -> ModBlocks.SATURN_RING_RELAY.get().defaultBlockState();
+            case TITAN -> ModBlocks.TITAN_METHANE_PUMP.get().defaultBlockState();
             case NEXUS -> ModBlocks.NEXUS_ANCHOR.get().defaultBlockState();
         };
     }
@@ -188,7 +194,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
         return switch (route) {
             case ORBIT -> switch (normalized) {
                 case 1 -> List.of(new ItemStack(ModItems.ORBIT_SURVEY_DATA.get()), new ItemStack(ModItems.STATION_RELAY_FUSE.get()), new ItemStack(ModItems.NAVIGATION_CHIP.get()), new ItemStack(ModItems.OXYGEN_CANISTER.get(), 2), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
-                case 2 -> List.of(new ItemStack(ModItems.ORBIT_SURVEY_DATA.get()), new ItemStack(ModItems.STATION_RELAY_FUSE.get()), new ItemStack(ModBlocks.BROKEN_SOLAR_PANEL.get(), 3), new ItemStack(ModItems.VACUUM_CIRCUIT.get()));
+                case 2 -> List.of(new ItemStack(ModItems.ORBIT_SURVEY_DATA.get()), new ItemStack(ModItems.STATION_RELAY_FUSE.get()), new ItemStack(ModBlocks.BROKEN_SOLAR_PANEL.get(), 3), new ItemStack(ModItems.VACUUM_CIRCUIT.get()), new ItemStack(ModItems.OXYGEN_CANISTER.get()));
                 default -> List.of(new ItemStack(ModItems.ORBIT_SURVEY_DATA.get()), new ItemStack(ModItems.STATION_RELAY_FUSE.get()), new ItemStack(ModItems.VACUUM_CIRCUIT.get(), 2), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get(), 2));
             };
             case MOON -> switch (normalized) {
@@ -198,16 +204,26 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             };
             case MARS -> switch (normalized) {
                 case 1 -> List.of(new ItemStack(ModItems.MARTIAN_PRESSURE_VALVE.get()), new ItemStack(ModItems.PRESSURE_REGULATOR.get()), new ItemStack(ModItems.OXYGEN_BOOSTER.get()), new ItemStack(ModItems.MARTIAN_SILICA.get()), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get()));
-                case 2 -> List.of(new ItemStack(ModItems.MARTIAN_PRESSURE_VALVE.get()), new ItemStack(ModItems.PRESSURE_REGULATOR.get()), new ItemStack(ModItems.MARTIAN_SILICA.get(), 3), new ItemStack(ModBlocks.OXYGEN_PIPE.get(), 2));
-                default -> List.of(new ItemStack(ModItems.MARTIAN_PRESSURE_VALVE.get()), new ItemStack(ModItems.PRESSURE_REGULATOR.get()), new ItemStack(ModItems.MARTIAN_SILICA.get(), 2), new ItemStack(ModBlocks.BROKEN_SOLAR_PANEL.get()));
+                case 2 -> List.of(new ItemStack(ModItems.MARTIAN_PRESSURE_VALVE.get()), new ItemStack(ModItems.PRESSURE_REGULATOR.get()), new ItemStack(ModItems.MARTIAN_SILICA.get(), 3), new ItemStack(ModBlocks.OXYGEN_PIPE.get(), 2), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get()));
+                default -> List.of(new ItemStack(ModItems.MARTIAN_PRESSURE_VALVE.get()), new ItemStack(ModItems.PRESSURE_REGULATOR.get()), new ItemStack(ModItems.MARTIAN_SILICA.get(), 2), new ItemStack(ModBlocks.BROKEN_SOLAR_PANEL.get()), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get()));
             };
             case EUROPA -> switch (normalized) {
-                case 1 -> List.of(new ItemStack(ModItems.EUROPA_THERMAL_PROBE.get()), new ItemStack(ModItems.EUROPA_PROBE_ARRAY.get()), new ItemStack(ModItems.CRYO_BATTERY.get()), new ItemStack(ModItems.CRYO_CRYSTAL.get()));
-                case 2 -> List.of(new ItemStack(ModItems.EUROPA_THERMAL_PROBE.get()), new ItemStack(ModItems.EUROPA_PROBE_ARRAY.get()), new ItemStack(ModItems.THERMAL_SPACE_LINER.get()), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
+                case 1 -> List.of(new ItemStack(ModItems.EUROPA_THERMAL_PROBE.get()), new ItemStack(ModItems.EUROPA_PROBE_ARRAY.get()), new ItemStack(ModItems.CRYO_BATTERY.get()), new ItemStack(ModItems.CRYO_CRYSTAL.get()), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
+                case 2 -> List.of(new ItemStack(ModItems.EUROPA_THERMAL_PROBE.get()), new ItemStack(ModItems.EUROPA_PROBE_ARRAY.get()), new ItemStack(ModItems.THERMAL_SPACE_LINER.get()), new ItemStack(ModItems.CRYO_CRYSTAL.get()), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
                 default -> List.of(new ItemStack(ModItems.EUROPA_THERMAL_PROBE.get()), new ItemStack(ModItems.EUROPA_PROBE_ARRAY.get()), new ItemStack(ModItems.CRYO_CRYSTAL.get(), 2), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
             };
+            case SATURN -> switch (normalized) {
+                case 1 -> List.of(new ItemStack(ModItems.SATURN_RING_FRAGMENT.get()), new ItemStack(ModItems.SATURN_RELAY_LENS.get()), new ItemStack(ModItems.TITAN_TRANSFER_WINDOW.get()), new ItemStack(ModItems.OXYGEN_CANISTER.get(), 2), new ItemStack(ModItems.ORBITAL_ALLOY.get()));
+                case 2 -> List.of(new ItemStack(ModItems.SATURN_RING_FRAGMENT.get(), 2), new ItemStack(ModItems.SATURN_RELAY_LENS.get()), new ItemStack(ModItems.VACUUM_CIRCUIT.get(), 2), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 2));
+                default -> List.of(new ItemStack(ModItems.SATURN_RING_FRAGMENT.get()), new ItemStack(ModItems.SATURN_RELAY_LENS.get()), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get(), 2), new ItemStack(ModItems.ORBITAL_ALLOY.get(), 2));
+            };
+            case TITAN -> switch (normalized) {
+                case 1 -> List.of(new ItemStack(ModItems.TITAN_METHANE_CELL.get()), new ItemStack(ModItems.TITAN_SURVEY_CORE.get()), new ItemStack(ModItems.NEXUS_DRIVE_CORE.get()), new ItemStack(ModItems.THERMAL_STABILIZER.get()), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get(), 2));
+                case 2 -> List.of(new ItemStack(ModItems.TITAN_METHANE_CELL.get(), 2), new ItemStack(ModItems.TITAN_SURVEY_CORE.get()), new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get(), 2), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 2));
+                default -> List.of(new ItemStack(ModItems.TITAN_METHANE_CELL.get()), new ItemStack(ModItems.TITAN_SURVEY_CORE.get()), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get(), 3), new ItemStack(ModItems.CRYO_BATTERY.get()));
+            };
             case NEXUS -> switch (normalized) {
-                case 1 -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.LUNAR_CORE_FRAGMENT.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 3));
+                case 1 -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.LUNAR_CORE_FRAGMENT.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 3), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
                 case 2 -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 6), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 2));
                 default -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 4), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
             };
@@ -249,6 +265,16 @@ public class RouteTerrainGenerator extends ChunkGenerator {
                 case 2 -> "cryo vault vent";
                 default -> "thermal array lab";
             };
+            case SATURN -> switch (normalized) {
+                case 1 -> "ring relay rib";
+                case 2 -> "salvager trade spine";
+                default -> "Saturn ice breaker yard";
+            };
+            case TITAN -> switch (normalized) {
+                case 1 -> "methane pump field";
+                case 2 -> "tholin survey dome";
+                default -> "Titan pressure shelf";
+            };
             case NEXUS -> switch (normalized) {
                 case 1 -> "folded station bridge";
                 case 2 -> "Nexus growth cluster";
@@ -264,6 +290,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> (normalized == 1 ? ModBlocks.LUNAR_TITANIUM_BLOCK : ModBlocks.NEXUS_TOUCHED_STONE).get().defaultBlockState();
             case MARS -> (normalized == 1 ? ModBlocks.OXYGEN_PIPE : ModBlocks.MARTIAN_DUST).get().defaultBlockState();
             case EUROPA -> (normalized == 1 ? ModBlocks.CRYO_CRYSTAL_BLOCK : ModBlocks.PACKED_CRYO_ICE).get().defaultBlockState();
+            case SATURN -> (normalized == 1 ? ModBlocks.SATURN_RING_RELAY : ModBlocks.SATURN_ICE_RUBBLE).get().defaultBlockState();
+            case TITAN -> (normalized == 1 ? ModBlocks.METHANE_ICE : ModBlocks.TITAN_THOLIN_DUST).get().defaultBlockState();
             case NEXUS -> (normalized == 1 ? ModBlocks.ORBITAL_PLATING : ModBlocks.NEXUS_GROWTH).get().defaultBlockState();
         };
     }
@@ -278,6 +306,10 @@ public class RouteTerrainGenerator extends ChunkGenerator {
                     : (Math.floorMod(x - z, 13) == 0 ? ModBlocks.MARTIAN_SILICA_BLOCK : ModBlocks.MARTIAN_BASALT).get().defaultBlockState();
             case EUROPA -> surface ? ModBlocks.CRYO_ICE.get().defaultBlockState()
                     : (Math.floorMod(x * x + z * z, 17) == 0 ? ModBlocks.CRYO_CRYSTAL_BLOCK : ModBlocks.PACKED_CRYO_ICE).get().defaultBlockState();
+            case SATURN -> surface ? ModBlocks.SATURN_ICE_RUBBLE.get().defaultBlockState()
+                    : (Math.floorMod(x + z * 3, 11) == 0 ? ModBlocks.ORBITAL_PLATING : ModBlocks.STATION_WALL_PANEL).get().defaultBlockState();
+            case TITAN -> surface ? ModBlocks.TITAN_THOLIN_DUST.get().defaultBlockState()
+                    : (Math.floorMod(x * 2 + z, 13) == 0 ? ModBlocks.METHANE_ICE : ModBlocks.SATURN_ICE_RUBBLE).get().defaultBlockState();
             case NEXUS -> surface ? ModBlocks.NEXUS_GROWTH.get().defaultBlockState()
                     : (Math.floorMod(x + y + z, 9) == 0 ? ModBlocks.NEXUS_DUST_BLOCK : ModBlocks.NEXUS_TOUCHED_STONE).get().defaultBlockState();
         };
@@ -371,6 +403,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> placeMoonSite(chunk, variant, localX, localZ, y);
             case MARS -> placeMarsSite(chunk, variant, localX, localZ, y);
             case EUROPA -> placeEuropaSite(chunk, variant, localX, localZ, y);
+            case SATURN -> placeSaturnSite(chunk, variant, localX, localZ, y);
+            case TITAN -> placeTitanSite(chunk, variant, localX, localZ, y);
             case NEXUS -> placeNexusSite(chunk, variant, localX, localZ, y);
         }
     }
@@ -507,6 +541,71 @@ public class RouteTerrainGenerator extends ChunkGenerator {
         }
     }
 
+    private static void placeSaturnSite(ChunkAccess chunk, int variant, int x, int z, int y) {
+        BlockState rubble = ModBlocks.SATURN_ICE_RUBBLE.get().defaultBlockState();
+        BlockState plating = ModBlocks.ORBITAL_PLATING.get().defaultBlockState();
+        BlockState wall = ModBlocks.STATION_WALL_PANEL.get().defaultBlockState();
+        if (variant == 0) {
+            lineLocal(chunk, x - 6, y - 1, z, x + 6, y - 1, z, rubble);
+            lineLocal(chunk, x - 6, y - 1, z - 2, x + 6, y - 1, z - 2, plating);
+            lineLocal(chunk, x - 6, y - 1, z + 2, x + 6, y - 1, z + 2, plating);
+            lineLocal(chunk, x - 4, y, z - 2, x + 4, y, z + 2, wall);
+            lineLocal(chunk, x - 4, y, z + 2, x + 4, y, z - 2, wall);
+            setSafe(chunk, x, y, z, ModBlocks.SATURN_RING_RELAY.get().defaultBlockState());
+            setSafe(chunk, x + 2, y, z + 2, ModBlocks.FACTION_RELAY_HUB.get().defaultBlockState());
+            setSafe(chunk, x - 3, y, z, hazardBlock(Route.SATURN, variant));
+            placeCache(chunk, x + 3, y, z - 3, Route.SATURN, variant);
+        } else if (variant == 1) {
+            rectFrame(chunk, x - 5, z - 4, x + 5, z + 4, y - 1, plating);
+            ribPairs(chunk, x, z, y, wall, 4);
+            lineLocal(chunk, x - 5, y, z - 1, x + 5, y, z - 1, rubble);
+            lineLocal(chunk, x - 5, y, z + 1, x + 5, y, z + 1, rubble);
+            setSafe(chunk, x, y, z, ModBlocks.SATURN_RING_RELAY.get().defaultBlockState());
+            setSafe(chunk, x - 2, y, z + 2, ModBlocks.FACTION_VENDOR_KIOSK.get().defaultBlockState());
+            setSafe(chunk, x + 3, y, z, hazardBlock(Route.SATURN, variant));
+            placeCache(chunk, x - 3, y, z - 3, Route.SATURN, variant);
+        } else {
+            ring(chunk, x, z, y - 1, 5, rubble);
+            ring(chunk, x, z, y, 3, plating);
+            pillar(chunk, x, z, y, 4, ModBlocks.SATURN_RING_RELAY.get().defaultBlockState());
+            setSafe(chunk, x - 2, y, z + 1, ModBlocks.FACTION_RELAY_HUB.get().defaultBlockState());
+            setSafe(chunk, x + 2, y, z - 1, hazardBlock(Route.SATURN, variant));
+            placeCache(chunk, x + 3, y, z + 2, Route.SATURN, variant);
+        }
+    }
+
+    private static void placeTitanSite(ChunkAccess chunk, int variant, int x, int z, int y) {
+        BlockState dust = ModBlocks.TITAN_THOLIN_DUST.get().defaultBlockState();
+        BlockState ice = ModBlocks.METHANE_ICE.get().defaultBlockState();
+        BlockState pipe = ModBlocks.OXYGEN_PIPE.get().defaultBlockState();
+        if (variant == 0) {
+            rectFill(chunk, x - 4, z - 3, x + 4, z + 3, y - 1, dust);
+            rectFrame(chunk, x - 5, z - 4, x + 5, z + 4, y, ice);
+            lineLocal(chunk, x - 5, y, z, x + 5, y, z, pipe);
+            lineLocal(chunk, x, y, z - 4, x, y, z + 4, pipe);
+            setSafe(chunk, x, y, z, ModBlocks.TITAN_METHANE_PUMP.get().defaultBlockState());
+            setSafe(chunk, x + 2, y, z + 2, ModBlocks.FACTION_VENDOR_KIOSK.get().defaultBlockState());
+            setSafe(chunk, x - 3, y, z, hazardBlock(Route.TITAN, variant));
+            placeCache(chunk, x + 3, y, z - 3, Route.TITAN, variant);
+        } else if (variant == 1) {
+            ring(chunk, x, z, y - 1, 5, ice);
+            ring(chunk, x, z, y, 3, dust);
+            for (int dz = -4; dz <= 4; dz += 2) {
+                lineLocal(chunk, x - 4, y, z + dz, x + 4, y, z + dz, pipe);
+            }
+            setSafe(chunk, x, y, z, ModBlocks.TITAN_METHANE_PUMP.get().defaultBlockState());
+            setSafe(chunk, x - 2, y, z + 2, ModBlocks.FACTION_RELAY_HUB.get().defaultBlockState());
+            placeCache(chunk, x - 3, y, z - 3, Route.TITAN, variant);
+        } else {
+            rectFrame(chunk, x - 5, z - 5, x + 5, z + 5, y - 1, ice);
+            rectFill(chunk, x - 3, z - 3, x + 3, z + 3, y, dust);
+            pillar(chunk, x, z, y, 4, ModBlocks.TITAN_METHANE_PUMP.get().defaultBlockState());
+            setSafe(chunk, x + 2, y, z, ModBlocks.FACTION_VENDOR_KIOSK.get().defaultBlockState());
+            setSafe(chunk, x - 3, y, z, hazardBlock(Route.TITAN, variant));
+            placeCache(chunk, x + 3, y, z + 2, Route.TITAN, variant);
+        }
+    }
+
     private static void placeNexusSite(ChunkAccess chunk, int variant, int x, int z, int y) {
         BlockState touched = ModBlocks.NEXUS_TOUCHED_STONE.get().defaultBlockState();
         BlockState growth = ModBlocks.NEXUS_GROWTH.get().defaultBlockState();
@@ -599,10 +698,11 @@ public class RouteTerrainGenerator extends ChunkGenerator {
 
     private static void placeTraversalHook(ChunkAccess chunk, Route route, int variant, int localX, int localZ, int y) {
         BlockState hook = switch (route) {
-            case ORBIT, NEXUS -> ModBlocks.STATION_WALL_PANEL.get().defaultBlockState();
+            case ORBIT, SATURN, NEXUS -> ModBlocks.STATION_WALL_PANEL.get().defaultBlockState();
             case MOON -> ModBlocks.LUNAR_ROCK.get().defaultBlockState();
             case MARS -> ModBlocks.OXYGEN_PIPE.get().defaultBlockState();
             case EUROPA -> ModBlocks.FROZEN_CABLE.get().defaultBlockState();
+            case TITAN -> ModBlocks.METHANE_ICE.get().defaultBlockState();
         };
         int length = variant == 1 ? 5 : 3;
         for (int i = 1; i <= length; i++) {
@@ -616,6 +716,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> scarTrench(x, z) ? ModBlocks.NEXUS_TOUCHED_STONE.get().defaultBlockState() : ModBlocks.LUNAR_TITANIUM_BLOCK.get().defaultBlockState();
             case MARS -> pressureCavern(x, z) ? ModBlocks.MARTIAN_BASALT.get().defaultBlockState() : ModBlocks.MARTIAN_SILICA_BLOCK.get().defaultBlockState();
             case EUROPA -> thermalPocket(x, z) ? ModBlocks.THERMAL_VENT.get().defaultBlockState() : ModBlocks.FROZEN_CABLE.get().defaultBlockState();
+            case SATURN -> ringSpoke(x, z) ? ModBlocks.SATURN_RING_RELAY.get().defaultBlockState() : ModBlocks.SATURN_ICE_RUBBLE.get().defaultBlockState();
+            case TITAN -> methaneSink(x, z) ? ModBlocks.METHANE_ICE.get().defaultBlockState() : ModBlocks.TITAN_THOLIN_DUST.get().defaultBlockState();
             case NEXUS -> nexusBridge(x, z) ? ModBlocks.ORBITAL_PLATING.get().defaultBlockState() : ModBlocks.NEXUS_DUST_BLOCK.get().defaultBlockState();
         };
     }
@@ -652,6 +754,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case MOON -> ModBlocks.LUNAR_TITANIUM_BLOCK.get().defaultBlockState();
             case MARS -> ModBlocks.OXYGEN_PIPE.get().defaultBlockState();
             case EUROPA -> ModBlocks.FROZEN_CABLE.get().defaultBlockState();
+            case SATURN -> ModBlocks.SATURN_RING_RELAY.get().defaultBlockState();
+            case TITAN -> ModBlocks.METHANE_ICE.get().defaultBlockState();
             case NEXUS -> ModBlocks.NEXUS_DUST_BLOCK.get().defaultBlockState();
         };
     }
@@ -676,6 +780,12 @@ public class RouteTerrainGenerator extends ChunkGenerator {
         }
         if (anchor.is(ModBlocks.NEXUS_ANCHOR.get())) {
             return ModBlocks.NEXUS_TOUCHED_STONE.get().defaultBlockState();
+        }
+        if (anchor.is(ModBlocks.SATURN_RING_RELAY.get())) {
+            return ModBlocks.SATURN_ICE_RUBBLE.get().defaultBlockState();
+        }
+        if (anchor.is(ModBlocks.TITAN_METHANE_PUMP.get())) {
+            return ModBlocks.METHANE_ICE.get().defaultBlockState();
         }
         if (anchor.is(ModBlocks.SURVEY_MARKER.get())) {
             return ModBlocks.LUNAR_ROCK.get().defaultBlockState();
@@ -725,11 +835,28 @@ public class RouteTerrainGenerator extends ChunkGenerator {
         return Math.abs(Math.floorMod(x + z, 47) - 23) < 2 || Math.abs(Math.floorMod(x - z, 47) - 23) < 2;
     }
 
+    private static boolean saturnRingPlate(int x, int z) {
+        return Math.abs(Math.floorMod(z, 41) - 20) < 8 || Math.abs(Math.floorMod(x + z, 67) - 33) < 3;
+    }
+
+    private static boolean ringSpoke(int x, int z) {
+        return Math.abs(Math.floorMod(x * 2 - z, 59) - 29) < 3;
+    }
+
+    private static boolean methaneRidge(int x, int z) {
+        return Math.abs(Math.floorMod(x + z * 2, 61) - 30) < 4;
+    }
+
+    private static boolean methaneSink(int x, int z) {
+        return Math.floorMod(x * x + z * 11, 73) < 8;
+    }
+
     private static boolean carvePocket(Route route, int x, int z) {
         return switch (route) {
             case MOON -> scarTrench(x, z) && Math.floorMod(x + z, 4) == 0;
             case MARS -> pressureCavern(x, z);
             case EUROPA -> iceFracture(x, z) || thermalPocket(x, z);
+            case TITAN -> methaneSink(x, z);
             default -> false;
         };
     }
@@ -743,6 +870,8 @@ public class RouteTerrainGenerator extends ChunkGenerator {
         MOON("moon"),
         MARS("mars"),
         EUROPA("europa"),
+        SATURN("saturn"),
+        TITAN("titan"),
         NEXUS("nexus");
 
         public static final Codec<Route> CODEC = StringRepresentable.fromEnum(Route::values);

@@ -35,9 +35,18 @@ import com.knoxhack.echoashfallprotocol.world.ExplorationPoiCatalog;
 import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
+import com.knoxhack.echoterminal.api.TerminalAddonGuide;
+import com.knoxhack.echoterminal.api.TerminalAddonInfo;
+import com.knoxhack.echoterminal.api.TerminalAddonInfoProvider;
+import com.knoxhack.echoterminal.api.TerminalAddonInfoRegistry;
+import com.knoxhack.echoterminal.api.TerminalAddonLink;
+import com.knoxhack.echoterminal.api.TerminalAddonMetric;
+import com.knoxhack.echoterminal.api.TerminalAddonSection;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
 import com.knoxhack.echoterminal.api.TerminalIcon;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
 import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
@@ -94,8 +103,10 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  */
 public final class AshfallTerminalIntegration {
     private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
+    private static final boolean LEGACY_NEXUS_TERMINAL_ENABLED = false;
+    private static final String ASHFALL_CHAPTER_ID = "ashfall_protocol";
 
-    private static final Identifier OVERVIEW = Identifier.fromNamespaceAndPath("echoterminal", "overview");
+    private static final Identifier OVERVIEW = id("overview");
     private static final Identifier MISSIONS = id("missions");
     private static final Identifier SIDE_OPS = id("side_ops");
     private static final Identifier ARCHIVES = Identifier.fromNamespaceAndPath("echoterminal", "archives");
@@ -122,16 +133,18 @@ public final class AshfallTerminalIntegration {
 
         TerminalMissionRegistry.register(ASHFALL_MISSION_PROVIDER);
         TerminalMissionRegistry.register(ASHFALL_SIDE_OPS_PROVIDER);
-        TerminalTabRegistry.register(new OverviewTab());
-        TerminalTabRegistry.register(new MissionBrowserTab(ASHFALL_MISSION_PROVIDER));
-        TerminalTabRegistry.register(MissionBrowserTab.sideOps(ASHFALL_SIDE_OPS_PROVIDER));
-        TerminalTabRegistry.register(new StatusTab());
-        TerminalTabRegistry.register(new ArchivesTab());
-        TerminalTabRegistry.register(new DroneTab());
-        TerminalTabRegistry.register(new CodexTab());
-        TerminalTabRegistry.register(new WorldTab());
-        if (!nexusProtocolLoaded()) {
+        TerminalAddonInfoRegistry.register(new AshfallAddonInfoProvider());
+        registerTab(new OverviewTab(), ashfallProfile(90));
+        registerTab(new MissionBrowserTab(ASHFALL_MISSION_PROVIDER), ashfallProfile(100));
+        registerTab(MissionBrowserTab.sideOps(ASHFALL_SIDE_OPS_PROVIDER), ashfallProfile(110));
+        registerTab(new StatusTab(), ashfallProfile(180));
+        registerTab(new ArchivesTab(), TerminalNavigationProfile.terminal(140));
+        registerTab(new DroneTab(), ashfallProfile(190));
+        registerTab(new CodexTab(), ashfallProfile(150));
+        registerTab(new WorldTab(), ashfallProfile(130));
+        if (LEGACY_NEXUS_TERMINAL_ENABLED && !nexusProtocolLoaded()) {
             TerminalTabRegistry.register(new NexusTab());
+            TerminalNavigationProfiles.register(NEXUS, ashfallProfile(220));
         }
 
         TerminalMissionActions.registerForTab(MISSIONS);
@@ -140,12 +153,79 @@ public final class AshfallTerminalIntegration {
         TerminalActionRegistry.register(MISSIONS, CLAIM_REWARDS, (player, payload) -> EchoGuideManager.claimRewards(player));
         TerminalActionRegistry.register(DRONE, DRONE_COMMAND,
                 (player, payload) -> ModNetwork.handleDroneCommand(new DroneCommandPacket(payload), player));
-        if (!nexusProtocolLoaded()) {
+        if (LEGACY_NEXUS_TERMINAL_ENABLED && !nexusProtocolLoaded()) {
             TerminalActionRegistry.register(NEXUS, NEXUS_CHOICE, AshfallTerminalIntegration::chooseNexusPath);
             TerminalActionRegistry.register(NEXUS, NEXUS_WARFRONT, AshfallTerminalIntegration::handleNexusWarfront);
         }
 
         registerFieldManualEntries();
+    }
+
+    private static void registerTab(TerminalTab tab, TerminalNavigationProfile profile) {
+        TerminalTabRegistry.register(tab);
+        TerminalNavigationProfiles.register(tab.descriptor().id(), profile);
+    }
+
+    private static TerminalNavigationProfile ashfallProfile(int order) {
+        return TerminalNavigationProfile.chapter("ashfall", "Chapter 1: Ashfall Protocol", "C1", order);
+    }
+
+    private static final class AshfallAddonInfoProvider implements TerminalAddonInfoProvider {
+        @Override
+        public String chapterId() {
+            return ASHFALL_CHAPTER_ID;
+        }
+
+        @Override
+        public TerminalAddonInfo info(Player player) {
+            if (player == null) {
+                return new TerminalAddonInfo(
+                        "Chapter 1 survival route, terminal repair, field safety, drone support, and early route intel.",
+                        List.of(new TerminalAddonMetric("Signal", "OFFLINE", "waiting for player telemetry", 0xFF66D9FF)),
+                        List.of(new TerminalAddonSection("Start Feed",
+                                List.of("Open Ashfall Command after player telemetry is available."))),
+                        links(),
+                        guide());
+            }
+            QuestData quest = QuestData.get(player);
+            SurvivalData survival = player.getData(ModAttachments.SURVIVAL_DATA.get());
+            MissionUxSummary current = MissionUxSummary.current(player, quest);
+            return new TerminalAddonInfo(
+                    "Chapter 1 survival route, terminal repair, field safety, drone support, and early route intel.",
+                    List.of(
+                            new TerminalAddonMetric("Phase", String.valueOf(quest.getCurrentPhase() + 1),
+                                    "active Ashfall route phase", TerminalUi.GREEN),
+                            new TerminalAddonMetric("Mission", String.valueOf(quest.getCurrentMissionIndex() + 1),
+                                    current.shortTitle(), TerminalUi.CYAN),
+                            new TerminalAddonMetric("Hydration", survival.getHydration() + "%",
+                                    "field survival reserve", survival.getHydration() <= 30 ? TerminalUi.AMBER : TerminalUi.GREEN),
+                            new TerminalAddonMetric("Filter", Math.round(survival.getFilterPercent() * 100.0F) + "%",
+                                    survival.hasMask() ? "mask equipped" : "mask not confirmed",
+                                    survival.getFilterPercent() <= 0.25F ? TerminalUi.AMBER : TerminalUi.CYAN)),
+                    List.of(new TerminalAddonSection("Start Feed", List.of(
+                            current.objectiveSummary(),
+                            current.nextStep(),
+                            survival.isSafeZone() ? "Safe zone detected." : "No safe zone detected yet."))),
+                    links(),
+                    guide());
+        }
+
+        private static TerminalAddonGuide guide() {
+            return TerminalAddonGuide.mainline(1, 10, "Start here",
+                    "Begin with Ashfall to learn survival basics, repair the terminal, stabilize camp, and open the first route signals.",
+                    List.of(
+                            "Secure water, shelter, food, and filters before long trips.",
+                            "Open Ashfall Command or Protocol Roadmap for the next mission.",
+                            "Use Survival Route when you want the complete roadmap."));
+        }
+
+        private static List<TerminalAddonLink> links() {
+            return List.of(
+                    new TerminalAddonLink(OVERVIEW, "Ashfall Command", "Chapter 1 field dashboard", 0xFF66D9FF),
+                    new TerminalAddonLink(MISSIONS, "Protocol Roadmap", "Active Ashfall mission chain", 0xFF92F7A6),
+                    new TerminalAddonLink(WORLD, "Route Map", "POIs, routes, and field map", 0xFFC09BFF),
+                    new TerminalAddonLink(CODEX, "Survival Index", "Intel and recipe planning", 0xFFFFD166));
+        }
     }
 
     private static boolean nexusProtocolLoaded() {
@@ -165,7 +245,7 @@ public final class AshfallTerminalIntegration {
                 "OPEN",
                 List.of(
                         "Gridfall did not leave a normal wilderness behind. The safe route is water, shelter, food, filters, and a powered outpost before distance.",
-                        "Mission records are tactical briefings, not shortcuts. ECHO-7 can show the road ahead, but the server still validates every turn-in and reward.",
+                        "Mission records are tactical briefings, not shortcuts. ECHO-7 can show the road ahead, but field validation still confirms every turn-in and reward.",
                         "Hazards stack quickly: toxic air, radiation, cold, acid contact, storms, and Nexus anomalies each need a different countermeasure."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
@@ -195,7 +275,7 @@ public final class AshfallTerminalIntegration {
                 "OPEN",
                 List.of(
                         "Locked missions are visible for planning, but completion, rewards, and phase advancement remain gated by QuestData.",
-                        "Post-Nexus missions are path-restricted. Non-selected path entries stay visible as VIEW ONLY context."),
+                        "Public beta route guidance ends at Orbital handoff. Legacy Nexus save state remains readable, but Ashfall no longer owns the finale terminal."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_threat_manual"),
@@ -506,9 +586,9 @@ public final class AshfallTerminalIntegration {
 
     private static final class OverviewTab extends AshfallTab {
         private OverviewTab() {
-            super(OVERVIEW, "COMMAND DECK", 0, 0xFF66D9FF,
-                    TerminalTabChrome.of("Command Deck", TerminalTabChrome.GROUP_PROTOCOL, "CD",
-                            "Active protocol dashboard", 0));
+            super(OVERVIEW, "ASHFALL COMMAND", 90, 0xFF66D9FF,
+                    TerminalTabChrome.of("Ashfall Command", TerminalTabChrome.GROUP_PROTOCOL, "AC",
+                            "Active Ashfall protocol", 90));
         }
 
         @Override
@@ -1262,7 +1342,7 @@ public final class AshfallTerminalIntegration {
         public TerminalMissionVisuals visuals(Player player, TerminalMissionDefinition definition,
                 TerminalMissionSnapshot snapshot) {
             return new TerminalMissionVisuals(
-                    TerminalVisualAssets.MISSION_SIDE_OPS,
+                    TerminalVisualAssets.missionHeroArt(definition == null ? null : definition.id(), "Field Recon"),
                     "side_ops",
                     "lore",
                     snapshot.status() == TerminalMissionStatus.COMPLETED ? "success"

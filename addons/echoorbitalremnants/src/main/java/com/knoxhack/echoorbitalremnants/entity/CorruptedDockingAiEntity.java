@@ -2,6 +2,10 @@ package com.knoxhack.echoorbitalremnants.entity;
 
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
 import com.knoxhack.echoorbitalremnants.suit.SuitState;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +26,7 @@ public class CorruptedDockingAiEntity extends EchoDefenseDroneEntity {
     private final ServerBossEvent bossEvent = BossEncounterSupport.bossBar(this,
             "Corrupted Docking AI", BossEvent.BossBarColor.RED);
     private int phase = 1;
+    private boolean announced;
 
     public CorruptedDockingAiEntity(EntityType<? extends Vex> type, Level level) {
         super(type, level);
@@ -42,6 +47,16 @@ public class CorruptedDockingAiEntity extends EchoDefenseDroneEntity {
         }
         updatePhaseCue();
         int pulseRate = phase == 3 ? 45 : phase == 2 ? 60 : 80;
+        if (tickCount % pulseRate == Math.max(1, pulseRate - 12) && getTarget() instanceof Player player && distanceToSqr(player) < 100.0D) {
+            if (!announced) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // First contact: Corrupted Docking AI. Red spark buildup means pressure shear is next."));
+                announced = true;
+            }
+            if (level() instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(null, blockPosition(), SoundEvents.NOTE_BLOCK_BIT.value(), SoundSource.HOSTILE, 0.7F, 0.62F + phase * 0.12F);
+                serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 0.5D, getZ(), 14 + phase * 3, 0.45D, 0.35D, 0.45D, 0.02D);
+            }
+        }
         if (tickCount % pulseRate == 0 && getTarget() instanceof Player player && distanceToSqr(player) < 100.0D) {
             SuitState state = SuitState.get(player);
             state.compromisePressure(6 + phase * 4);

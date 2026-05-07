@@ -13,6 +13,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,6 +32,15 @@ public final class VanillaJourneyProvider implements TerminalMissionProvider {
             Identifier.fromNamespaceAndPath(EchoTerminal.MODID, "vanilla_journey_refresh");
     private static final String ACTION_REFRESH = "refresh";
     private static final String ACTION_CLAIM = "claim_reward";
+    private static final Set<Identifier> WASTELAND_UNSAFE_OPTIONAL = Set.of(
+            Identifier.withDefaultNamespace("husbandry/breed_an_animal"),
+            Identifier.withDefaultNamespace("husbandry/tame_an_animal"),
+            Identifier.withDefaultNamespace("husbandry/safely_harvest_honey"),
+            Identifier.withDefaultNamespace("husbandry/balanced_diet"),
+            Identifier.withDefaultNamespace("adventure/hero_of_the_village"),
+            Identifier.withDefaultNamespace("adventure/kill_all_mobs"),
+            Identifier.withDefaultNamespace("nether/all_potions"),
+            Identifier.withDefaultNamespace("nether/all_effects"));
 
     private static final List<VanillaMission> MISSIONS = List.of(
             root("story/root", "Minecraft", "The overworld survival path.", "Punch trees, craft tools, mine stone, and push toward the End.", "Story", 0, Items.GRASS_BLOCK),
@@ -174,6 +184,9 @@ public final class VanillaJourneyProvider implements TerminalMissionProvider {
         }
         if (mission.type() == RewardTier.ROOT) {
             return TerminalMissionRole.REFERENCE;
+        }
+        if (WASTELAND_UNSAFE_OPTIONAL.contains(mission.id())) {
+            return TerminalMissionRole.OPTIONAL;
         }
         return switch (mission.phase()) {
             case "Adventure", "Husbandry" -> TerminalMissionRole.OPTIONAL;

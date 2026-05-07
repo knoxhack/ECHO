@@ -1,12 +1,10 @@
 package com.knoxhack.echoashfallprotocol.item;
 
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -22,16 +20,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 @EventBusSubscriber(modid = com.knoxhack.echoashfallprotocol.EchoAshfallProtocol.MODID)
 public class GearUpgradeHandler {
 
-    private static final String UPGRADE_TAG = "echo_upgrade_level";
     private static final int MAX_UPGRADE = 5;
     private static final float DAMAGE_BONUS_PER_LEVEL = 1.0f;
-
-    // Upgradeable items
-    private static final boolean[] UPGRADEABLE_ITEMS = new boolean[10000]; // Simplified check
-
-    static {
-        // Mark upgradeable items - we'll check by item instance in methods
-    }
 
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
@@ -73,11 +63,7 @@ public class GearUpgradeHandler {
      * Get current upgrade level of an item
      */
     public static int getUpgradeLevel(ItemStack stack) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            return customData.copyTag().getIntOr(UPGRADE_TAG, 0);
-        }
-        return 0;
+        return com.knoxhack.echoashfallprotocol.item.upgrade.GearUpgradeHandler.getUpgradeLevel(stack);
     }
 
     /**
@@ -107,7 +93,7 @@ public class GearUpgradeHandler {
 
         // Apply upgrade
         int newLevel = currentLevel + 1;
-        setUpgradeLevel(item, newLevel);
+        com.knoxhack.echoashfallprotocol.item.upgrade.GearUpgradeHandler.setUpgradeLevel(item, newLevel);
 
         // Notify player
         player.sendSystemMessage(Component.literal(
@@ -124,22 +110,6 @@ public class GearUpgradeHandler {
                 "§6Your weapon reaches maximum power! A particle trail follows your strikes."
             ));
         }
-    }
-
-    /**
-     * Set upgrade level on an item
-     */
-    private static void setUpgradeLevel(ItemStack stack, int level) {
-        stack.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, data -> {
-            net.minecraft.nbt.CompoundTag tag = data.copyTag();
-            tag.putInt(UPGRADE_TAG, level);
-            return CustomData.of(tag);
-        });
-
-        // Update display name to show upgrade level
-        Component baseName = stack.getItem().getName(stack);
-        stack.set(DataComponents.CUSTOM_NAME, 
-            Component.literal("§r" + baseName.getString() + " §a[+" + level + "]"));
     }
 
     /**

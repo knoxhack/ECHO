@@ -5,8 +5,8 @@ This file tracks intentional release limits and areas that need playtest feedbac
 ## Current Release Limits
 
 - Hostile and major encounter entities use tuned vanilla-model renderers instead of bespoke animated models.
-- Factions now publish ECHO Core standing, Faction Atlas entries, pledge rewards, and terminal contracts, but not vendors, long quest chains, or faction bases.
-- Living Route Worlds deepen the existing five routes; there are no extra planets in this release.
+- Factions now publish ECHO Core standing, Faction Atlas entries, pledge rewards, terminal contracts, and beta support/barter kiosks or relay hubs. Full NPC vendors, long quest chains, and faction bases remain deferred.
+- Living Route Worlds now cover the expanded Earth-through-Nexus arc with Saturn Ring Graveyard and Titan Methane Shelf. No additional planets or open-ended route worlds are included in this beta.
 - Route terrain uses deterministic compact feature generation, not a large multichunk structure system.
 - Balance numbers for arrival supplies, hazard drain, and deep-site threats are expected to change after player feedback.
 - Shared Terminal integration mirrors Orbital state through Core services; the standalone ECHO-7 terminal remains the progression authority when the shared terminal is absent.
@@ -16,13 +16,13 @@ This file tracks intentional release limits and areas that need playtest feedbac
 - Can a blind survival player understand the terminal's Next Step and blocked-scan messages?
 - Do arrival caches support first visits without skipping too much crafting?
 - Do deep-site hazards feel dangerous but recoverable?
-- Do faction contracts feel worth doing after pledging?
+- Do faction contracts and beta faction support/barter hubs feel worth doing after pledging?
 - Does Nexus stabilization feel like a clear post-ECHO-0 objective?
 - Do What Now diagnostics, Route Records, Vitals, Faction Atlas, and Reward Inbox support caches make the full stack easier to read without replacing the standalone Orbital flow?
 
 ## What Feedback We Need
 
-- Balance: oxygen, pressure, radiation, cache support, and machine pacing.
+- Balance: oxygen, pressure, radiation, Saturn/Titan route drains, cache support, and machine pacing.
 - Soft-locks: any item, route, scan, return vector, or encounter drop that can halt survival progression.
 - Route readability: whether deep sites, caches, landmarks, and objective blocks are easy to recognize.
 - Contract usefulness: whether faction contract rewards feel worth the trip without replacing crafting.

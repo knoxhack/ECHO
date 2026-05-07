@@ -8,7 +8,9 @@ advancement/entity translation keys, and invalid custom packet namespaces.
 
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path, PurePosixPath
@@ -31,7 +33,14 @@ MODS = (
         ROOT / "addons/echoorbitalremnants/src/main/resources",
         ROOT / "addons/echoorbitalremnants/src/main/java/com/knoxhack/echoorbitalremnants",
     ),
+    (
+        "echostationfall",
+        ROOT / "addons/echostationfall/src/main/resources",
+        ROOT / "addons/echostationfall/src/main/java/com/knoxhack/echostationfall",
+    ),
 )
+BETA_MOD_IDS = {"echocore", "echoterminal", "echoashfallprotocol", "echoorbitalremnants"}
+ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
 SKIPPED_SCAN_DIRS = {".git", ".gradle", "build", "run", "__pycache__"}
 TEXT_SCAN_SUFFIXES = {".gradle", ".java", ".json", ".md", ".properties", ".py", ".toml", ".yaml", ".yml"}
 RELEASE_POLISH_SCAN_ROOTS = (
@@ -40,6 +49,7 @@ RELEASE_POLISH_SCAN_ROOTS = (
     ROOT / "core/echocore/src/main",
     ROOT / "addons/echoterminal/src/main",
     ROOT / "addons/echoorbitalremnants/src/main",
+    ROOT / "addons/echostationfall/src/main",
     ROOT / ".github",
     ROOT / "README.md",
     ROOT / "GETTING_STARTED.md",
@@ -76,6 +86,7 @@ MODID_CONSTANTS = {
     "EchoTerminal.MODID": "echoterminal",
     "EchoAshfallProtocol.MODID": "echoashfallprotocol",
     "EchoOrbitalRemnants.MODID": "echoorbitalremnants",
+    "EchoStationfall.MODID": "echostationfall",
 }
 LOW_DETAIL_BLOCK_EXEMPTIONS = {
     "ash_layer",
@@ -171,6 +182,47 @@ ASHFALL_FULL_SURFACE_GRASS_BLOCKS = {
     "echoashfallprotocol:toxic_wasteland_grass_block",
     "echoashfallprotocol:mutated_wasteland_grass_block",
 }
+STATIONFALL_REQUIRED_ITEMS = {
+    "station_access_card",
+    "pressure_seal_kit",
+    "emergency_oxygen_pack",
+    "station_battery",
+    "hull_cutter",
+    "crew_log_tablet",
+    "ai_override_chip",
+    "signal_panic_dampener",
+    "stationfall_blackbox",
+    "ai_override_core",
+    "orbital_memory_fragment",
+    "hollow_crewman_spawn",
+    "eva_stalker_spawn",
+    "medical_husk_spawn",
+    "hydroponic_growth_spawn",
+    "maintenance_drone_spawn",
+    "screaming_signal_spawn",
+    "station_mimic_spawn",
+    "suit_without_body_spawn",
+    "station_mother_spawn",
+}
+STATIONFALL_REQUIRED_BLOCKS = {
+    "stationfall_plating",
+    "stationfall_wall_panel",
+    "station_power_node",
+    "pressure_door",
+    "damaged_airlock",
+    "hull_breach",
+    "crew_log_terminal",
+    "data_core_terminal",
+    "command_console",
+    "cracked_observation_glass",
+    "corrupted_hydroponic_growth",
+    "containment_pod",
+}
+STATIONFALL_REQUIRED_CHEST_LOOT = {
+    "station_salvage_power",
+    "station_salvage_common",
+    "station_salvage_command",
+}
 
 
 def expected_terminal_gui_size(file_name: str) -> tuple[int, int] | None:
@@ -187,6 +239,34 @@ def expected_terminal_gui_size(file_name: str) -> tuple[int, int] | None:
 
 def rel(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--addon-set",
+        choices=("beta", "all"),
+        default="beta",
+        help="Addon validation set. beta excludes unfinished future chapters.",
+    )
+    return parser.parse_args()
+
+
+def configure_addon_set(addon_set: str) -> None:
+    global ACTIVE_MOD_IDS
+    global MODS
+    global RELEASE_POLISH_SCAN_ROOTS
+
+    if addon_set == "all":
+        ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
+        return
+
+    ACTIVE_MOD_IDS = set(BETA_MOD_IDS)
+    MODS = tuple(mod for mod in MODS if mod[0] in ACTIVE_MOD_IDS)
+    RELEASE_POLISH_SCAN_ROOTS = tuple(
+        root for root in RELEASE_POLISH_SCAN_ROOTS
+        if "echostationfall" not in root.parts
+    )
 
 
 def load_json(path: Path, errors: list[str]) -> Any | None:
@@ -326,7 +406,7 @@ def check_packet_namespaces(modid: str, java_root: Path, errors: list[str]) -> N
 
 def iter_repo_text_files() -> Iterable[Path]:
     validator_path = Path(__file__).resolve()
-    for path in ROOT.rglob("*"):
+    for path in iter_files_under(ROOT):
         if not path.is_file():
             continue
         if path.resolve() == validator_path:
@@ -334,9 +414,23 @@ def iter_repo_text_files() -> Iterable[Path]:
         relative_parts = path.relative_to(ROOT).parts
         if any(part in SKIPPED_SCAN_DIRS for part in relative_parts):
             continue
+        if len(relative_parts) >= 2 and relative_parts[0] == "addons":
+            addon_modid = relative_parts[1]
+            if addon_modid not in ACTIVE_MOD_IDS:
+                continue
         if path.suffix.lower() not in TEXT_SCAN_SUFFIXES:
             continue
         yield path
+
+
+def iter_files_under(root: Path) -> Iterable[Path]:
+    if root.is_file():
+        yield root
+        return
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [name for name in dirnames if name not in SKIPPED_SCAN_DIRS]
+        for filename in filenames:
+            yield Path(dirpath) / filename
 
 
 def iter_release_polish_files() -> Iterable[Path]:
@@ -345,7 +439,7 @@ def iter_release_polish_files() -> Iterable[Path]:
         if root.is_file():
             files = (root,)
         elif root.is_dir():
-            files = root.rglob("*")
+            files = iter_files_under(root)
         else:
             continue
 
@@ -363,6 +457,10 @@ def iter_release_polish_files() -> Iterable[Path]:
             relative_parts = path.relative_to(ROOT).parts
             if any(part in SKIPPED_SCAN_DIRS for part in relative_parts):
                 continue
+            if len(relative_parts) >= 2 and relative_parts[0] == "addons":
+                addon_modid = relative_parts[1]
+                if addon_modid not in ACTIVE_MOD_IDS:
+                    continue
             if path.suffix.lower() not in TEXT_SCAN_SUFFIXES:
                 continue
             yield path
@@ -378,6 +476,10 @@ def check_uppercase_resource_namespaces(errors: list[str]) -> None:
         "data\\EchoOrbitalRemnants": "data\\echoorbitalremnants",
         "assets/EchoOrbitalRemnants": "assets/echoorbitalremnants",
         "assets\\EchoOrbitalRemnants": "assets\\echoorbitalremnants",
+        "data/EchoStationfall": "data/echostationfall",
+        "data\\EchoStationfall": "data\\echostationfall",
+        "assets/EchoStationfall": "assets/echostationfall",
+        "assets\\EchoStationfall": "assets\\echostationfall",
         "data/EchoCore": "data/echocore",
         "data\\EchoCore": "data\\echocore",
         "assets/EchoCore": "assets/echocore",
@@ -388,7 +490,7 @@ def check_uppercase_resource_namespaces(errors: list[str]) -> None:
         "assets\\EchoTerminal": "assets\\echoterminal",
     }
     api_pattern = re.compile(
-        r"(?:Identifier|ResourceLocation)\.fromNamespaceAndPath\(\s*\"(EchoAshfallProtocol|EchoOrbitalRemnants|EchoCore|EchoTerminal)\""
+        r"(?:Identifier|ResourceLocation)\.fromNamespaceAndPath\(\s*\"(EchoAshfallProtocol|EchoOrbitalRemnants|EchoStationfall|EchoCore|EchoTerminal)\""
     )
 
     for path in iter_repo_text_files():
@@ -554,6 +656,103 @@ def check_terminal_visual_assets(errors: list[str]) -> None:
                 errors.append(f"BAD_TERMINAL_GUI_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected {expected[0]}x{expected[1]}")
 
 
+def expected_terminal_mission_ids() -> set[tuple[str, str]]:
+    expected: list[tuple[str, str]] = []
+
+    ashfall = ROOT / "src/main/java/com/knoxhack/echoashfallprotocol/echo/MissionRegistry.java"
+    if ashfall.exists():
+        text = ashfall.read_text(encoding="utf-8", errors="ignore")
+        expected.extend(("echoashfallprotocol", path) for path in re.findall(r'new Mission\(\s*"([^"]+)"', text))
+
+    ashfall_terminal = ROOT / "src/main/java/com/knoxhack/echoashfallprotocol/integration/AshfallTerminalIntegration.java"
+    if ashfall_terminal.exists():
+        text = ashfall_terminal.read_text(encoding="utf-8", errors="ignore")
+        expected.extend(("echoashfallprotocol", path) for path in re.findall(r'new SideOp\(\s*"([^"]+)"', text))
+
+    vanilla = ROOT / "addons/echoterminal/src/main/java/com/knoxhack/echoterminal/mission/VanillaJourneyProvider.java"
+    if vanilla.exists():
+        text = vanilla.read_text(encoding="utf-8", errors="ignore")
+        expected.extend(("minecraft", path) for path in re.findall(r'(?:root|task|goal|challenge)\(\s*"([^"]+)"', text))
+
+    industrial = ROOT / "addons/echoindustrialnexus/src/main/java/com/knoxhack/echoindustrialnexus/integration/IndustrialMissionProvider.java"
+    if industrial.exists():
+        text = industrial.read_text(encoding="utf-8", errors="ignore")
+        expected.extend(
+            ("echoindustrialnexus", "mission/" + path)
+            for path in re.findall(r'mission\(\s*"([^"]+)"', text)
+        )
+
+    enum_providers = (
+        (
+            "echoblackboxprotocol",
+            ROOT / "addons/echoblackboxprotocol/src/main/java/com/knoxhack/echoblackboxprotocol/integration/BlackboxMissionProvider.java",
+        ),
+        (
+            "echonexusprotocol",
+            ROOT / "addons/echonexusprotocol/src/main/java/com/knoxhack/echonexusprotocol/integration/NexusTerminalMissionProvider.java",
+        ),
+    )
+    for namespace, path in enum_providers:
+        if path.exists():
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            expected.extend(
+                (namespace, mission_path)
+                for mission_path in re.findall(r'\b[A-Z_]+\(\s*"([a-z0-9_/]+)"\s*,\s*"', text)
+            )
+
+    folder_providers = (
+        ("echostationfall", ROOT / "addons/echostationfall/src/main/java"),
+        ("echoorbitalremnants", ROOT / "addons/echoorbitalremnants/src/main/java"),
+    )
+    for namespace, java_root in folder_providers:
+        if not java_root.exists():
+            continue
+        for path in java_root.rglob("*.java"):
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if "TerminalMissionDefinition" not in text:
+                continue
+            expected.extend(
+                (namespace, mission_path)
+                for mission_path in re.findall(r'\b[A-Z_]+\(\s*"([a-z0-9_/]+)"\s*,\s*"', text)
+            )
+            expected.extend(
+                (namespace, mission_path)
+                for mission_path in re.findall(r'mission\(\s*"([a-z0-9_/]+)"', text)
+            )
+
+    return set(expected)
+
+
+def check_terminal_mission_visual_assets(errors: list[str]) -> None:
+    gui_root = ROOT / "addons/echoterminal/src/main/resources/assets/echoterminal/textures/gui"
+    expected = expected_terminal_mission_ids()
+    if not expected:
+        errors.append("MISSING_TERMINAL_MISSION_VISUAL_MANIFEST")
+        return
+
+    for namespace, mission_path in sorted(expected):
+        icon = gui_root / "mission_icons" / namespace / f"{mission_path}.png"
+        hero = gui_root / "mission_heroes" / namespace / f"{mission_path}.png"
+        for path, expected_size, label in ((icon, (128, 128), "ICON"), (hero, (1024, 512), "HERO")):
+            if not path.exists():
+                errors.append(f"MISSING_TERMINAL_MISSION_{label} {rel(path)}")
+                continue
+            try:
+                with Image.open(path) as image:
+                    size = image.size
+                    mode = image.mode
+            except Exception as exc:  # noqa: BLE001 - report corrupt or unreadable assets.
+                errors.append(f"BAD_TERMINAL_MISSION_{label} {rel(path)}: {exc}")
+                continue
+            if size != expected_size:
+                errors.append(
+                    f"BAD_TERMINAL_MISSION_{label}_SIZE {rel(path)}: "
+                    f"{size[0]}x{size[1]}, expected {expected_size[0]}x{expected_size[1]}"
+                )
+            if label == "ICON" and mode not in {"RGB", "RGBA"}:
+                errors.append(f"BAD_TERMINAL_MISSION_ICON_MODE {rel(path)}: {mode}, expected RGB or RGBA")
+
+
 def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[str]) -> None:
     if modid != "echoashfallprotocol":
         return
@@ -621,7 +820,52 @@ def check_ashfall_block_model_texture_namespaces(errors: list[str]) -> None:
                     errors.append(f"VANILLA_BLOCK_MODEL_TEXTURE {rel(path)}: {key} -> {texture}")
 
 
+def check_stationfall_resource_completeness(errors: list[str]) -> None:
+    root = ROOT / "addons/echostationfall/src/main/resources"
+    asset_root = root / "assets/echostationfall"
+    data_root = root / "data/echostationfall"
+
+    required_paths: list[Path] = []
+    for item in sorted(STATIONFALL_REQUIRED_ITEMS | STATIONFALL_REQUIRED_BLOCKS):
+        required_paths.extend(
+            [
+                asset_root / f"items/{item}.json",
+                asset_root / f"models/item/{item}.json" if item in STATIONFALL_REQUIRED_ITEMS else asset_root / f"models/block/{item}.json",
+                asset_root / f"textures/item/{item}.png" if item in STATIONFALL_REQUIRED_ITEMS else asset_root / f"textures/block/{item}.png",
+            ]
+        )
+
+    for block in sorted(STATIONFALL_REQUIRED_BLOCKS):
+        required_paths.extend(
+            [
+                asset_root / f"blockstates/{block}.json",
+                asset_root / f"models/block/{block}.json",
+                asset_root / f"textures/block/{block}.png",
+                data_root / f"loot_table/blocks/{block}.json",
+            ]
+        )
+
+    for loot_table in sorted(STATIONFALL_REQUIRED_CHEST_LOOT):
+        required_paths.append(data_root / f"loot_table/chests/{loot_table}.json")
+
+    for path in required_paths:
+        if not path.exists():
+            errors.append(f"MISSING_STATIONFALL_RESOURCE {rel(path)}")
+            continue
+        if path.suffix == ".png":
+            try:
+                with Image.open(path) as image:
+                    size = image.size
+            except Exception as exc:  # noqa: BLE001 - report corrupt or unreadable assets.
+                errors.append(f"BAD_STATIONFALL_TEXTURE {rel(path)}: {exc}")
+                continue
+            if size != (16, 16):
+                errors.append(f"BAD_STATIONFALL_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected 16x16")
+
+
 def main() -> int:
+    args = parse_args()
+    configure_addon_set(args.addon_set)
     errors: list[str] = []
     for modid, resources, java_root in MODS:
         check_assets(modid, resources, errors)
@@ -632,7 +876,10 @@ def main() -> int:
     check_worldgen_resource_polish(errors)
     check_required_texture_sizes(errors)
     check_terminal_visual_assets(errors)
+    check_terminal_mission_visual_assets(errors)
     check_ashfall_block_model_texture_namespaces(errors)
+    if "echostationfall" in ACTIVE_MOD_IDS:
+        check_stationfall_resource_completeness(errors)
 
     if errors:
         for error in errors:

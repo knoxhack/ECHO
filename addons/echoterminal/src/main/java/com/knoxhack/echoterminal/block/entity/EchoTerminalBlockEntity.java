@@ -39,20 +39,39 @@ public class EchoTerminalBlockEntity extends BlockEntity {
         return player != null && (ownerUUID == null || ownerUUID.equals(player.getUUID()));
     }
 
+    public boolean isExplicitOwner(Player player) {
+        return player != null && ownerUUID != null && ownerUUID.equals(player.getUUID());
+    }
+
     public void recordActivity() {
         lastActivityTick = level == null ? 0L : level.getGameTime();
         setChanged();
     }
 
     public boolean storeRewards(String missionId, List<ItemStack> rewards) {
+        NonNullList<ItemStack> simulatedRewards = NonNullList.withSize(storedRewards.size(), ItemStack.EMPTY);
+        for (int i = 0; i < storedRewards.size(); i++) {
+            simulatedRewards.set(i, storedRewards.get(i).copy());
+        }
+        if (!insertRewards(simulatedRewards, rewards)) {
+            return false;
+        }
+        for (int i = 0; i < storedRewards.size(); i++) {
+            storedRewards.set(i, simulatedRewards.get(i));
+        }
+        setChanged();
+        return true;
+    }
+
+    private static boolean insertRewards(NonNullList<ItemStack> slots, List<ItemStack> rewards) {
         boolean storedAny = false;
         for (ItemStack reward : rewards) {
             ItemStack remaining = reward.copy();
             if (remaining.isEmpty()) {
                 continue;
             }
-            for (int i = 0; i < storedRewards.size(); i++) {
-                ItemStack existing = storedRewards.get(i);
+            for (int i = 0; i < slots.size(); i++) {
+                ItemStack existing = slots.get(i);
                 if (!existing.isEmpty() && ItemStack.isSameItemSameComponents(existing, remaining)) {
                     int moved = Math.min(remaining.getCount(), existing.getMaxStackSize() - existing.getCount());
                     if (moved > 0) {
@@ -65,16 +84,16 @@ public class EchoTerminalBlockEntity extends BlockEntity {
                     break;
                 }
             }
-            for (int i = 0; i < storedRewards.size() && !remaining.isEmpty(); i++) {
-                if (storedRewards.get(i).isEmpty()) {
-                    storedRewards.set(i, remaining.copy());
+            for (int i = 0; i < slots.size() && !remaining.isEmpty(); i++) {
+                if (slots.get(i).isEmpty()) {
+                    slots.set(i, remaining.copy());
                     remaining.setCount(0);
                     storedAny = true;
                 }
             }
-        }
-        if (storedAny) {
-            setChanged();
+            if (!remaining.isEmpty()) {
+                return false;
+            }
         }
         return storedAny;
     }

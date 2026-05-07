@@ -9,6 +9,7 @@ import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalMissionProvider;
+import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIds;
 import com.knoxhack.echoorbitalremnants.item.FactionPledgeItem;
 import com.knoxhack.echoorbitalremnants.menu.OrbitalMachineMenu;
 import com.knoxhack.echoorbitalremnants.network.EchoTerminalSnapshot;
@@ -32,11 +33,20 @@ import com.knoxhack.echoorbitalremnants.world.OrbitalDebrisField;
 import com.knoxhack.echoorbitalremnants.world.RouteTerrainGenerator;
 import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
+import com.knoxhack.echoterminal.api.TerminalNavigationSection;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -53,6 +63,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
@@ -142,6 +153,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_mission_integration", () -> ModGameTests::terminalMissionIntegration);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_LORE_TAXONOMY =
             TEST_FUNCTIONS.register("terminal_lore_taxonomy", () -> ModGameTests::terminalLoreTaxonomy);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_RC_POLISH =
+            TEST_FUNCTIONS.register("beta_rc_polish", () -> ModGameTests::betaRcPolish);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSET_COMPLETENESS =
+            TEST_FUNCTIONS.register("asset_completeness", () -> ModGameTests::assetCompleteness);
 
     private ModGameTests() {
     }
@@ -186,6 +201,8 @@ public final class ModGameTests {
         register(event, environment, "terminal_mission_cache_state", TERMINAL_MISSION_CACHE_STATE.getId());
         register(event, environment, "terminal_mission_integration", TERMINAL_MISSION_INTEGRATION.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
+        register(event, environment, "beta_rc_polish", BETA_RC_POLISH.getId());
+        register(event, environment, "asset_completeness", ASSET_COMPLETENESS.getId());
     }
 
     private static void machineProcessing(GameTestHelper helper) {
@@ -368,6 +385,11 @@ public final class ModGameTests {
                 "Europa arrival should place a Cryo resource cache");
         helper.assertTrue(hasCacheWith(level, new BlockPos(180, 10, 20), ModItems.LUNAR_CORE_FRAGMENT.get()),
                 "Nexus arrival should place a final anomaly cache");
+        assertArrivalCadence(helper, level, new BlockPos(20, 10, 20), RouteTerrainGenerator.Route.ORBIT);
+        assertArrivalCadence(helper, level, new BlockPos(60, 10, 20), RouteTerrainGenerator.Route.MOON);
+        assertArrivalCadence(helper, level, new BlockPos(100, 10, 20), RouteTerrainGenerator.Route.MARS);
+        assertArrivalCadence(helper, level, new BlockPos(140, 10, 20), RouteTerrainGenerator.Route.EUROPA);
+        assertArrivalCadence(helper, level, new BlockPos(180, 10, 20), RouteTerrainGenerator.Route.NEXUS);
         helper.succeed();
     }
 
@@ -380,10 +402,18 @@ public final class ModGameTests {
                 "Mars route terrain should generate ash basin terrain");
         helper.assertTrue(RouteTerrainGenerator.topHeight(RouteTerrainGenerator.Route.EUROPA, 0, 0) > 58,
                 "Europa route terrain should generate ice shelves");
+        helper.assertTrue(RouteTerrainGenerator.topHeight(RouteTerrainGenerator.Route.SATURN, 16, 16) > 58,
+                "Saturn route terrain should generate ring graveyard platforms");
+        helper.assertTrue(RouteTerrainGenerator.topHeight(RouteTerrainGenerator.Route.TITAN, 0, 0) > 58,
+                "Titan route terrain should generate methane shelf terrain");
         helper.assertTrue(RouteTerrainGenerator.topHeight(RouteTerrainGenerator.Route.NEXUS, 23, 23) > 58,
                 "Nexus route terrain should generate anomaly islands");
         helper.assertTrue(RouteTerrainGenerator.landmarkBlock(RouteTerrainGenerator.Route.NEXUS).is(ModBlocks.NEXUS_ANCHOR.get()),
                 "Nexus terrain landmarks should expose anchor objective blocks");
+        helper.assertTrue(RouteTerrainGenerator.landmarkBlock(RouteTerrainGenerator.Route.SATURN).is(ModBlocks.SATURN_RING_RELAY.get()),
+                "Saturn repeatable landmarks should expose Ring Relays");
+        helper.assertTrue(RouteTerrainGenerator.landmarkBlock(RouteTerrainGenerator.Route.TITAN).is(ModBlocks.TITAN_METHANE_PUMP.get()),
+                "Titan repeatable landmarks should expose Methane Pumps");
         helper.assertTrue(RouteTerrainGenerator.routeObjectiveBlock(RouteTerrainGenerator.Route.ORBIT).is(ModBlocks.STATION_RELAY_NODE.get()),
                 "Orbit terrain should expose station relay repair nodes");
         helper.assertTrue(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.ORBIT).stream().anyMatch(stack -> stack.is(ModItems.ORBIT_SURVEY_DATA.get())),
@@ -422,7 +452,7 @@ public final class ModGameTests {
     private static void surveyHardening(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.CREATIVE);
         EchoTerminalSnapshot snapshot = EchoTerminalSnapshot.from(player);
-        helper.assertTrue(snapshot.surveyLines().size() >= 9, "Terminal snapshot should expose route objectives plus all five survey rows");
+        helper.assertTrue(snapshot.surveyLines().size() >= 9, "Terminal snapshot should expose route objectives plus all route survey rows");
         helper.assertTrue(snapshot.surveyLines().stream().anyMatch(line -> line.contains("Orbit") && line.contains("Signal Relay")),
                 "Terminal survey rows should name scan hooks");
         helper.assertTrue(snapshot.surveyLines().stream().anyMatch(line -> line.contains("Station Relay Node")),
@@ -453,6 +483,13 @@ public final class ModGameTests {
                         route.getSerializedName() + " variant should expose a hazard block");
                 helper.assertTrue(RouteTerrainGenerator.cacheItems(route, variant).size() >= 3,
                         route.getSerializedName() + " variant should expose a conservative route cache");
+                List<ItemStack> cacheItems = RouteTerrainGenerator.cacheItems(route, variant);
+                helper.assertTrue(hasProgressionValue(route, cacheItems),
+                        route.getSerializedName() + " beta cache should include route progression value");
+                helper.assertTrue(hasCraftingSupport(cacheItems),
+                        route.getSerializedName() + " beta cache should include crafting support");
+                helper.assertTrue(hasRecoverabilitySupport(cacheItems),
+                        route.getSerializedName() + " beta cache should include oxygen or seal support");
                 helper.assertTrue(RouteTerrainGenerator.landmarkBlock(route).getBlock() != Blocks.AIR,
                         route.getSerializedName() + " should expose an objective block");
                 helper.assertTrue(RouteTerrainGenerator.routeObjectiveBlock(route).getBlock() != Blocks.AIR,
@@ -525,6 +562,14 @@ public final class ModGameTests {
                 "Europa thermal probes should have generated-cache recovery");
         helper.assertTrue(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.EUROPA).stream().anyMatch(stack -> stack.is(ModItems.EUROPA_PROBE_ARRAY.get())),
                 "Europa probe arrays should have generated-cache recovery");
+        helper.assertTrue(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.SATURN).stream().anyMatch(stack -> stack.is(ModItems.SATURN_RELAY_LENS.get())),
+                "Saturn relay lenses should have generated-cache recovery");
+        helper.assertTrue(hasRecoverabilitySupport(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.SATURN)),
+                "Saturn generated caches should include beta recoverability support");
+        helper.assertTrue(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.TITAN).stream().anyMatch(stack -> stack.is(ModItems.TITAN_METHANE_CELL.get())),
+                "Titan methane cells should have generated-cache recovery");
+        helper.assertTrue(hasRecoverabilitySupport(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.TITAN)),
+                "Titan generated caches should include beta recoverability support");
         helper.assertTrue(RouteTerrainGenerator.cacheItems(RouteTerrainGenerator.Route.NEXUS).stream().anyMatch(stack -> stack.is(ModItems.NEXUS_STABILIZER_SHARD.get())),
                 "Nexus stabilizer shards should have generated-cache recovery");
         helper.succeed();
@@ -562,6 +607,39 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).markMarsAshBasinVisited(player);
         EchoTerminalProgress.get(player).unlockEuropaRoute(player);
         EchoTerminalProgress.get(player).markEuropaCryoOceanVisited(player);
+        EchoTerminalSnapshot europaBlocked = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(europaBlocked.nextObjective().contains("Europa Thermal Arrays")
+                        && europaBlocked.nextObjective().contains("Saturn"),
+                "Europa guidance should clearly name Saturn as the next outer route");
+        EchoTerminalProgress.get(player).repairEuropaThermalArray(player, "europa:a");
+        EchoTerminalProgress.get(player).repairEuropaThermalArray(player, "europa:b");
+        EchoTerminalProgress.get(player).repairEuropaThermalArray(player, "europa:c");
+        EchoTerminalSnapshot saturnOpen = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(saturnOpen.saturnOpen(), "Terminal snapshot should expose the Saturn route gate");
+        helper.assertTrue(saturnOpen.nextObjective().contains("Saturn Transfer Window"),
+                "Terminal guidance should tell players to use the Saturn Transfer Window");
+        EchoTerminalProgress.get(player).markSaturnRingGraveyardVisited(player);
+        EchoTerminalSnapshot saturnVisited = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(saturnVisited.saturnVisited(), "Terminal snapshot should expose Saturn visited state");
+        helper.assertTrue(saturnVisited.nextObjective().contains("Saturn Ring Relays")
+                        && saturnVisited.nextObjective().contains("Titan"),
+                "Saturn guidance should clearly name Titan descent");
+        EchoTerminalProgress.get(player).repairSaturnRingRelay(player, "saturn:a");
+        EchoTerminalProgress.get(player).repairSaturnRingRelay(player, "saturn:b");
+        EchoTerminalProgress.get(player).repairSaturnRingRelay(player, "saturn:c");
+        EchoTerminalSnapshot titanOpen = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(titanOpen.titanOpen(), "Terminal snapshot should expose the Titan route gate");
+        helper.assertTrue(titanOpen.nextObjective().contains("Titan Transfer Window"),
+                "Terminal guidance should tell players to use the Titan Transfer Window");
+        EchoTerminalProgress.get(player).markTitanMethaneShelfVisited(player);
+        EchoTerminalSnapshot titanVisited = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(titanVisited.titanVisited(), "Terminal snapshot should expose Titan visited state");
+        helper.assertTrue(titanVisited.nextObjective().contains("Titan Methane Pumps")
+                        && titanVisited.nextObjective().contains("Deep Space Protocol"),
+                "Titan guidance should clearly name Deep Space Protocol");
+        EchoTerminalProgress.get(player).repairTitanMethanePump(player, "titan:a");
+        EchoTerminalProgress.get(player).repairTitanMethanePump(player, "titan:b");
+        EchoTerminalProgress.get(player).repairTitanMethanePump(player, "titan:c");
         EchoTerminalProgress.get(player).unlockDeepSpaceProtocol(player);
         EchoTerminalProgress.get(player).markAnomalyBeltEntered(player);
         EchoTerminalSnapshot beforeEchoZero = EchoTerminalSnapshot.from(player);
@@ -597,6 +675,12 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).recordEuropaSurvey(player, "europa:a");
         EchoTerminalProgress.get(player).recordEuropaSurvey(player, "europa:b");
         EchoTerminalProgress.get(player).recordEuropaSurvey(player, "europa:c");
+        EchoTerminalProgress.get(player).recordSaturnSurvey(player, "saturn:a");
+        EchoTerminalProgress.get(player).recordSaturnSurvey(player, "saturn:b");
+        EchoTerminalProgress.get(player).recordSaturnSurvey(player, "saturn:c");
+        EchoTerminalProgress.get(player).recordTitanSurvey(player, "titan:a");
+        EchoTerminalProgress.get(player).recordTitanSurvey(player, "titan:b");
+        EchoTerminalProgress.get(player).recordTitanSurvey(player, "titan:c");
         EchoTerminalProgress.get(player).recordNexusStabilization(player, "nexus:c");
         EchoTerminalSnapshot needsContract = EchoTerminalSnapshot.from(player);
         helper.assertTrue(needsContract.nextObjective().contains("faction contract"),
@@ -608,10 +692,13 @@ public final class ModGameTests {
         EchoTerminalSnapshot activeContract = EchoTerminalSnapshot.from(player);
         helper.assertTrue(activeContract.nextObjective().contains("Orbital Alloy"),
                 "Active faction contract guidance should name the missing proof");
-        player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
-        player.getInventory().add(new ItemStack(ModItems.ORBITAL_ALLOY.get()));
-        player.getInventory().add(new ItemStack(ModItems.VACUUM_CIRCUIT.get()));
-        com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
+        EchoTerminalProgress.get(player).completeFactionContract(player);
+        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
+        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
+        EchoTerminalProgress.get(player).completeFactionContract(player);
+        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
+        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
+        EchoTerminalProgress.get(player).completeFactionContract(player);
         EchoTerminalSnapshot finalSnapshot = EchoTerminalSnapshot.from(player);
         helper.assertTrue(finalSnapshot.nextObjective().contains("Orbital Remnants arc complete"),
                 "Final terminal state should clearly name completed surveys and a faction contract");
@@ -667,7 +754,7 @@ public final class ModGameTests {
             markAshfallNexusChoice(helper, player);
             Identifier earthCalibration = id("earth_calibration");
             List<?> missions = (List<?>) missionsMethod.invoke(provider, player);
-            helper.assertTrue(missions.size() == 12, "Orbital Terminal provider should expose all planned mission records");
+            helper.assertTrue(missions.size() == 14, "Orbital Terminal provider should expose all planned mission records");
             Object freshSnapshot = snapshotMethod.invoke(provider, player, earthCalibration);
             helper.assertTrue("UNLOCKED".equals(snapshotStatus(freshSnapshot)),
                     "Earth calibration mission should be active before contact");
@@ -718,7 +805,171 @@ public final class ModGameTests {
         assertOrbitalTabChrome(helper,
                 "com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIntegration$OrbitalEchoTab",
                 "ECHO-0 Records");
+        assertOrbitalNavigationProfiles(helper);
         helper.succeed();
+    }
+
+    private static void betaRcPolish(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        progress.markLowOrbitReached(player);
+        progress.markLunarSignalInvestigated(player);
+        progress.unlockMarsRoute(player);
+        progress.repairLunarExtractor(player, "moon:a");
+        progress.repairLunarExtractor(player, "moon:b");
+        progress.repairLunarExtractor(player, "moon:c");
+        player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.MARS_TRANSFER_WINDOW.get()));
+        int routeKeys = count(player.getInventory(), ModItems.MARS_TRANSFER_WINDOW.get()) + player.getMainHandItem().getCount();
+        InteractionResult result = ModItems.MARS_TRANSFER_WINDOW.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(result == InteractionResult.SUCCESS_SERVER,
+                "Reusable Mars route key should perform the route burn from orbital exposure");
+        int routeKeysAfter = count(player.getInventory(), ModItems.MARS_TRANSFER_WINDOW.get()) + player.getMainHandItem().getCount();
+        helper.assertTrue(routeKeysAfter == routeKeys,
+                "Reusable route keys should not be consumed by successful route burns");
+
+        String nexusSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/NexusDriveVesselItem.java");
+        helper.assertTrue(nexusSource.contains("Europa Thermal Array repairs before Nexus entry can hold")
+                        && nexusSource.contains("Saturn Ring Relay repairs before Nexus entry can hold")
+                        && nexusSource.contains("Titan Methane Pump repairs before Nexus entry can hold"),
+                "Nexus Drive lock copy should frame Europa/Saturn/Titan repairs as Nexus-entry blockers");
+        String suitSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/suit/SuitEvents.java");
+        helper.assertFalse(suitSource.contains("SATELLITE_PLATING.get()) ? 2 : 2"),
+                "Low Orbit satellite-plating hazard tuning should not contain a no-op ternary");
+        String terminalSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/EchoTerminalItem.java");
+        helper.assertTrue(terminalSource.contains("No pledge detected")
+                        && terminalSource.contains("already serviced at this hub")
+                        && terminalSource.contains("Vendor cache is paused")
+                        && terminalSource.contains("aligned support cache authorized"),
+                "Faction hub scan copy should distinguish no pledge, serviced, active-contract, and authorized-cache states");
+        helper.assertTrue(terminalSource.contains("Cache role confirmed: route proof, crafting support, and survival recovery"),
+                "Survey/cache scan feedback should explain why route caches are worth opening");
+        String suitSourceForFeedback = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/suit/SuitEvents.java");
+        helper.assertTrue(suitSourceForFeedback.contains("Recovery cache opened: route proof, crafting support, and survival recovery stock")
+                        && suitSourceForFeedback.contains("BlockScanCache")
+                        && suitSourceForFeedback.contains("pulseNearbyRouteObjective"),
+                "Route cache, objective affordance, and cached block scan feedback should remain wired");
+        helper.assertTrue(sourceText("src/main/java/com/knoxhack/echoorbitalremnants/entity/CorruptedDockingAiEntity.java").contains("First contact: Corrupted Docking AI")
+                        && sourceText("src/main/java/com/knoxhack/echoorbitalremnants/entity/EuropaCryoWardenEntity.java").contains("First contact: Europa Cryo Warden")
+                        && sourceText("src/main/java/com/knoxhack/echoorbitalremnants/entity/EchoZeroEntity.java").contains("First contact: ECHO-0"),
+                "Major encounters should keep first-contact readability tells");
+        helper.succeed();
+    }
+
+    private static void assetCompleteness(GameTestHelper helper) {
+        String lang = resourceText("assets/echoorbitalremnants/lang/en_us.json");
+        ModItems.creativeItems().forEach(item -> {
+            Identifier id = BuiltInRegistries.ITEM.getKey(item.get());
+            if (!EchoOrbitalRemnants.MODID.equals(id.getNamespace())) {
+                return;
+            }
+            helper.assertTrue(lang.contains("\"item." + EchoOrbitalRemnants.MODID + "." + id.getPath() + "\"")
+                            || lang.contains("\"block." + EchoOrbitalRemnants.MODID + "." + id.getPath() + "\""),
+                    id + " should have item or block lang coverage");
+            helper.assertTrue(hasResource("assets/echoorbitalremnants/items/" + id.getPath() + ".json")
+                            || hasResource("assets/echoorbitalremnants/models/item/" + id.getPath() + ".json"),
+                    id + " should have an item definition or item model");
+        });
+        ModBlocks.ALL_BLOCKS.forEach(block -> {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block.get());
+            helper.assertTrue(lang.contains("\"block." + EchoOrbitalRemnants.MODID + "." + id.getPath() + "\""),
+                    id + " should have block lang coverage");
+            helper.assertTrue(hasResource("assets/echoorbitalremnants/blockstates/" + id.getPath() + ".json"),
+                    id + " should have blockstate coverage");
+            helper.assertTrue(hasResource("assets/echoorbitalremnants/models/block/" + id.getPath() + ".json"),
+                    id + " should have block model coverage");
+        });
+        List.of(
+                ModEntities.EMERGENCY_ROCKET_VEHICLE.get(),
+                ModEntities.ECHO_DEFENSE_DRONE.get(),
+                ModEntities.VACUUM_WRAITH.get(),
+                ModEntities.BROKEN_ASTRONAUT.get(),
+                ModEntities.NEXUS_HUSK.get(),
+                ModEntities.CORRUPTED_DOCKING_AI.get(),
+                ModEntities.LUNAR_NEXUS_HUSK.get(),
+                ModEntities.ABANDONED_CAPTAIN.get(),
+                ModEntities.ECHO_ZERO.get(),
+                ModEntities.EUROPA_CRYO_WARDEN.get(),
+                ModEntities.SATURN_RELAY_SENTINEL.get(),
+                ModEntities.TITAN_METHANE_STALKER.get()
+        ).forEach(type -> {
+            Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+            helper.assertTrue(lang.contains("\"entity." + EchoOrbitalRemnants.MODID + "." + id.getPath() + "\""),
+                    id + " should have entity lang coverage");
+            if (type != ModEntities.EMERGENCY_ROCKET_VEHICLE.get()) {
+                helper.assertTrue(hasResource("data/echoorbitalremnants/loot_table/entities/" + id.getPath() + ".json"),
+                        id + " should have entity loot table coverage");
+            }
+        });
+        String build = sourceText("build.gradle");
+        String modToml = sourceText("src/main/templates/META-INF/neoforge.mods.toml");
+        String deferredAnimationLib = "gecko" + "lib";
+        helper.assertFalse(build.toLowerCase(java.util.Locale.ROOT).contains(deferredAnimationLib)
+                        || modToml.toLowerCase(java.util.Locale.ROOT).contains(deferredAnimationLib),
+                "Deferred animation library should remain absent from build metadata");
+        String commonIntegration = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/integration/OrbitalTerminalCommonIntegration.java");
+        helper.assertFalse(commonIntegration.contains(".client."),
+                "Common terminal integration should not import client-only terminal classes");
+        String modEntry = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/EchoOrbitalRemnants.java");
+        helper.assertTrue(modEntry.contains("ModList.get().isLoaded(\"echoterminal\")"),
+                "Optional ECHO Terminal registration should remain ModList-gated");
+        Path industrialCompat = projectPath("src/main/java/com/knoxhack/echoorbitalremnants/integration/OrbitalIndustrialCompat.java");
+        if (industrialAddonIncluded()) {
+            helper.assertTrue(Files.exists(industrialCompat),
+                    "Industrial compat bridge should ship once Industrial Nexus is included");
+        }
+        helper.succeed();
+    }
+
+    private static boolean industrialAddonIncluded() {
+        String addonSet = System.getProperty("echoAddonSet", "beta").trim().toLowerCase(java.util.Locale.ROOT);
+        return addonSet.equals("all") || addonSet.contains("industrial");
+    }
+
+    private static String sourceText(String relativePath) {
+        Path path = projectPath(relativePath);
+        try {
+            return Files.readString(path, StandardCharsets.UTF_8);
+        } catch (IOException ignored) {
+            return "";
+        }
+    }
+
+    private static String resourceText(String relativePath) {
+        Path path = projectPath("src/main/resources/" + relativePath);
+        try {
+            if (Files.exists(path)) {
+                return Files.readString(path, StandardCharsets.UTF_8);
+            }
+            try (InputStream stream = ModGameTests.class.getClassLoader().getResourceAsStream(relativePath)) {
+                return stream == null ? "" : new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        } catch (IOException ignored) {
+            return "";
+        }
+    }
+
+    private static boolean hasResource(String relativePath) {
+        return Files.exists(projectPath("src/main/resources/" + relativePath))
+                || ModGameTests.class.getClassLoader().getResource(relativePath) != null;
+    }
+
+    private static Path projectPath(String relativePath) {
+        Path current = Path.of("").toAbsolutePath();
+        while (current != null) {
+            Path addonPath = current.resolve(Path.of("addons", "echoorbitalremnants", relativePath));
+            if (Files.exists(addonPath)) {
+                return addonPath;
+            }
+            Path directPath = current.resolve(relativePath);
+            if (Files.exists(directPath) && current.getFileName() != null
+                    && "echoorbitalremnants".equals(current.getFileName().toString())) {
+                return directPath;
+            }
+            current = current.getParent();
+        }
+        return Path.of(relativePath);
     }
 
     private static void assertOrbitalTabChrome(GameTestHelper helper, String className, String title) {
@@ -737,7 +988,51 @@ public final class ModGameTests {
         }
     }
 
+    private static void assertOrbitalNavigationProfiles(GameTestHelper helper) {
+        try {
+            TerminalNavigationProfiles.withClearedForTests(() -> {
+                try {
+                    Class<?> integration = Class.forName("com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIntegration");
+                    java.lang.reflect.Field registeredField = integration.getDeclaredField("REGISTERED");
+                    registeredField.setAccessible(true);
+                    ((AtomicBoolean) registeredField.get(null)).set(false);
+                    integration.getMethod("register").invoke(null);
+                } catch (ReflectiveOperationException error) {
+                    throw new IllegalStateException(error);
+                }
+                assertOrbitalNavigationProfile(helper, OrbitalTerminalIds.COMMAND_TAB, 300);
+                assertOrbitalNavigationProfile(helper, OrbitalTerminalIds.SURVEY_TAB, 310);
+                assertOrbitalNavigationProfile(helper, OrbitalTerminalIds.ECHO_TAB, 320);
+            });
+        } catch (RuntimeException error) {
+            helper.assertTrue(false, "Orbital terminal navigation profile registration failed: " + error.getMessage());
+        }
+    }
+
+    private static void assertOrbitalNavigationProfile(GameTestHelper helper, Identifier tabId, int order) {
+        TerminalNavigationProfile profile = TerminalNavigationProfiles.profile(tabId).orElse(null);
+        helper.assertTrue(profile != null, tabId + " should register a Terminal navigation profile");
+        helper.assertTrue(profile.section() == TerminalNavigationSection.CHAPTERS,
+                tabId + " should live in the terminal Chapters section");
+        helper.assertTrue(OrbitalTerminalIds.CHAPTER_ID.toString().equals(profile.chapterId()),
+                tabId + " should use the shared Orbital chapter id");
+        helper.assertTrue("Orbital Remnants".equals(profile.chapterTitle()),
+                tabId + " should use the Orbital Remnants chapter title");
+        helper.assertTrue("OR".equals(profile.chapterIcon()),
+                tabId + " should use the OR chapter badge");
+        helper.assertTrue(profile.order() == order,
+                tabId + " should preserve tab ordering in the Orbital Remnants chapter");
+    }
+
     private static void betaCacheSupport(GameTestHelper helper) {
+        helper.assertTrue(Config.DEFAULT_HAZARD_DRAIN_MULTIPLIER == 75,
+                "Public beta pacing should default hazard drain to 75 percent");
+        helper.assertTrue(Config.DEFAULT_ORBITAL_EVENT_FREQUENCY == 3000,
+                "Public beta pacing should space orbital event pressure to 3000 ticks");
+        helper.assertTrue(Config.DEFAULT_MACHINE_BASE_DURATION == 140,
+                "Public beta pacing should reduce machine base duration");
+        helper.assertTrue(Config.DEFAULT_MACHINE_CHARGE_REGEN_TICKS == 16,
+                "Public beta pacing should reduce machine charge regen wait");
         var level = helper.getLevel();
         List<GroundRecoverySite> sites = GroundRecoverySites.seedStarterSites(level, new BlockPos(20, 10, 70));
         helper.assertTrue(sites.size() == 5, "Starter calibration should seed five critical Earth recovery sites");
@@ -758,6 +1053,21 @@ public final class ModGameTests {
         MarsAshBasin.seedLandingSite(level, new BlockPos(120, 10, 70));
         helper.assertTrue(hasCacheWith(level, new BlockPos(120, 10, 70), ModItems.SUIT_SEALANT_PATCH.get()),
                 "Mars arrival should include pressure recovery support");
+        com.knoxhack.echoorbitalremnants.world.SaturnRingGraveyard.seedLandingSite(level, new BlockPos(160, 10, 70));
+        helper.assertTrue(hasCacheWith(level, new BlockPos(160, 10, 70), ModItems.EMERGENCY_OXYGEN_CELL.get())
+                        || hasCacheWith(level, new BlockPos(160, 10, 70), ModItems.SUIT_SEALANT_PATCH.get())
+                        || hasCacheWith(level, new BlockPos(160, 10, 70), ModItems.OXYGEN_CANISTER.get()),
+                "Saturn arrival should include beta recoverability support");
+        assertArrivalCadence(helper, level, new BlockPos(160, 10, 70), RouteTerrainGenerator.Route.SATURN);
+        com.knoxhack.echoorbitalremnants.world.TitanMethaneShelf.seedLandingSite(level, new BlockPos(200, 10, 70));
+        helper.assertTrue(hasCacheWith(level, new BlockPos(200, 10, 70), ModItems.EMERGENCY_OXYGEN_CELL.get())
+                        || hasCacheWith(level, new BlockPos(200, 10, 70), ModItems.SUIT_SEALANT_PATCH.get())
+                        || hasCacheWith(level, new BlockPos(200, 10, 70), ModItems.OXYGEN_CANISTER.get()),
+                "Titan arrival should include beta recoverability support");
+        assertArrivalCadence(helper, level, new BlockPos(200, 10, 70), RouteTerrainGenerator.Route.TITAN);
+        String deferredAnimationLib = "geo" + "ckolib";
+        helper.assertFalse(net.neoforged.fml.ModList.get().isLoaded(deferredAnimationLib),
+                "Deferred animation library should remain absent from the Orbital Remnants beta runtime");
         helper.succeed();
     }
 
@@ -1115,9 +1425,22 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).repairEuropaThermalArray(player, "europa:array:a");
         EchoTerminalProgress.get(player).repairEuropaThermalArray(player, "europa:array:b");
         EchoTerminalProgress.get(player).repairEuropaThermalArray(player, "europa:array:c");
-        helper.assertTrue(EchoTerminalProgress.get(player).europaArrayCalibrated(), "Three Europa array repairs should calibrate Deep Space prep");
-        helper.assertTrue(EchoTerminalProgress.get(player).deepSpaceProtocolUnlocked(), "Europa array completion should unlock Deep Space Protocol");
-        helper.assertTrue(EchoTerminalProgress.get(player).allMidGameObjectivesComplete(), "All four mid-game route chains should complete together");
+        helper.assertTrue(EchoTerminalProgress.get(player).europaArrayCalibrated(), "Three Europa array repairs should calibrate Saturn prep");
+        helper.assertTrue(EchoTerminalProgress.get(player).saturnRouteUnlocked(), "Europa array completion should unlock Saturn routing");
+        helper.assertFalse(EchoTerminalProgress.get(player).deepSpaceProtocolUnlocked(), "Europa array completion should not skip Saturn and Titan prep");
+
+        EchoTerminalProgress.get(player).repairSaturnRingRelay(player, "saturn:relay:a");
+        EchoTerminalProgress.get(player).repairSaturnRingRelay(player, "saturn:relay:b");
+        EchoTerminalProgress.get(player).repairSaturnRingRelay(player, "saturn:relay:c");
+        helper.assertTrue(EchoTerminalProgress.get(player).saturnRelaysRestored(), "Three Saturn relay repairs should stabilize Titan descent");
+        helper.assertTrue(EchoTerminalProgress.get(player).titanRouteUnlocked(), "Saturn relay completion should unlock Titan routing");
+
+        EchoTerminalProgress.get(player).repairTitanMethanePump(player, "titan:pump:a");
+        EchoTerminalProgress.get(player).repairTitanMethanePump(player, "titan:pump:b");
+        EchoTerminalProgress.get(player).repairTitanMethanePump(player, "titan:pump:c");
+        helper.assertTrue(EchoTerminalProgress.get(player).titanPumpsPressurized(), "Three Titan pump repairs should pressurize methane telemetry");
+        helper.assertTrue(EchoTerminalProgress.get(player).deepSpaceProtocolUnlocked(), "Titan pump completion should unlock Deep Space Protocol");
+        helper.assertTrue(EchoTerminalProgress.get(player).allMidGameObjectivesComplete(), "All six mid-game route chains should complete together");
         helper.succeed();
     }
 
@@ -1386,6 +1709,16 @@ public final class ModGameTests {
                 case 2 -> "cryo vault vent";
                 default -> "thermal array lab";
             };
+            case SATURN -> switch (normalized) {
+                case 1 -> "ring relay rib";
+                case 2 -> "salvager trade spine";
+                default -> "Saturn ice breaker yard";
+            };
+            case TITAN -> switch (normalized) {
+                case 1 -> "methane pump field";
+                case 2 -> "tholin survey dome";
+                default -> "Titan pressure shelf";
+            };
             case NEXUS -> switch (normalized) {
                 case 1 -> "folded station bridge";
                 case 2 -> "Nexus growth cluster";
@@ -1529,4 +1862,77 @@ public final class ModGameTests {
         }
         return false;
     }
+
+    private static void assertArrivalCadence(GameTestHelper helper, net.minecraft.server.level.ServerLevel level,
+            BlockPos center, RouteTerrainGenerator.Route route) {
+        List<ItemStack> stacks = cacheStacksNear(level, center);
+        helper.assertTrue(!stacks.isEmpty(), route.getSerializedName() + " arrival should place a cache");
+        helper.assertTrue(hasProgressionValue(route, stacks),
+                route.getSerializedName() + " arrival should include progression value");
+        helper.assertTrue(hasCraftingSupport(stacks),
+                route.getSerializedName() + " arrival should include crafting support");
+        helper.assertTrue(hasRecoverabilitySupport(stacks),
+                route.getSerializedName() + " arrival should include survival recovery");
+    }
+
+    private static List<ItemStack> cacheStacksNear(net.minecraft.server.level.ServerLevel level, BlockPos center) {
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-18, -8, -18), center.offset(18, 8, 18))) {
+            if (level.getBlockState(pos).is(Blocks.CHEST) && level.getBlockEntity(pos) instanceof Container container) {
+                java.util.ArrayList<ItemStack> stacks = new java.util.ArrayList<>();
+                for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                    ItemStack stack = container.getItem(slot);
+                    if (!stack.isEmpty()) {
+                        stacks.add(stack.copy());
+                    }
+                }
+                return List.copyOf(stacks);
+            }
+        }
+        return List.of();
+    }
+
+    private static boolean hasProgressionValue(RouteTerrainGenerator.Route route, List<ItemStack> stacks) {
+        return switch (route) {
+            case ORBIT -> hasAny(stacks, ModItems.ORBIT_SURVEY_DATA.get(), ModItems.STATION_RELAY_FUSE.get());
+            case MOON -> hasAny(stacks, ModItems.LUNAR_CORE_SAMPLE.get(), ModItems.HELIUM_EXTRACTOR_CORE.get());
+            case MARS -> hasAny(stacks, ModItems.MARTIAN_PRESSURE_VALVE.get(), ModItems.PRESSURE_REGULATOR.get());
+            case EUROPA -> hasAny(stacks, ModItems.EUROPA_THERMAL_PROBE.get(), ModItems.EUROPA_PROBE_ARRAY.get());
+            case SATURN -> hasAny(stacks, ModItems.SATURN_RING_FRAGMENT.get(), ModItems.SATURN_RELAY_LENS.get(), ModItems.TITAN_TRANSFER_WINDOW.get());
+            case TITAN -> hasAny(stacks, ModItems.TITAN_METHANE_CELL.get(), ModItems.TITAN_SURVEY_CORE.get(), ModItems.NEXUS_DRIVE_CORE.get());
+            case NEXUS -> hasAny(stacks, ModItems.NEXUS_STABILIZER_SHARD.get(), ModItems.LUNAR_CORE_FRAGMENT.get());
+        };
+    }
+
+    private static boolean hasCraftingSupport(List<ItemStack> stacks) {
+        return hasAny(stacks,
+                ModItems.NAVIGATION_CHIP.get(),
+                ModItems.VACUUM_CIRCUIT.get(),
+                ModItems.ORBITAL_ALLOY.get(),
+                ModItems.LUNAR_TITANIUM.get(),
+                ModItems.HELIUM_3_CELL.get(),
+                ModItems.NEXUS_DUST.get(),
+                ModItems.MARTIAN_SILICA.get(),
+                ModItems.CRYO_CRYSTAL.get(),
+                ModItems.CRYO_BATTERY.get(),
+                ModItems.THERMAL_STABILIZER.get(),
+                ModItems.NEXUS_STABILIZER_SHARD.get())
+                || stacks.stream().anyMatch(stack -> stack.is(ModBlocks.BROKEN_SOLAR_PANEL.get().asItem())
+                        || stack.is(ModBlocks.OXYGEN_PIPE.get().asItem()));
+    }
+
+    private static boolean hasAny(List<ItemStack> stacks, Item... items) {
+        for (Item item : items) {
+            if (stacks.stream().anyMatch(stack -> stack.is(item))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasRecoverabilitySupport(List<ItemStack> stacks) {
+        return stacks.stream().anyMatch(stack -> stack.is(ModItems.EMERGENCY_OXYGEN_CELL.get())
+                || stack.is(ModItems.SUIT_SEALANT_PATCH.get())
+                || stack.is(ModItems.OXYGEN_CANISTER.get()));
+    }
+
 }

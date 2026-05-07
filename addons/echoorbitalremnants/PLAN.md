@@ -2,7 +2,7 @@
 
 ## v1.4.0 Full Endgame Scope
 
-ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth recovery through route repair chains, explorable Low Earth Orbit, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, ECHO-0, post-ECHO-0 surveys, faction contracts, and the final survey network seal.
+ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth recovery through route repair chains, explorable Low Earth Orbit, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, the Nexus Anomaly Belt, ECHO-0, post-ECHO-0 surveys, faction contracts, and the final survey network seal.
 
 ## Implemented Systems
 
@@ -11,11 +11,11 @@ ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth
 - Menu-driven orbital machines with input/output slots, progress, charge, status text, and data-driven `orbital_processing` recipes.
 - Suit survival with oxygen, pressure, helmet seal, leaks, radiation, gravity, station power, recovery items, modules, and orbital HUD.
 - Generated Earth recovery sites and generated route arrival sites with readable landmarks and fixed survival caches.
-- Deterministic route terrain for all five existing dimensions, including debris belts, cratered lunar ground, Martian ash/basalt, Europa cryo shelves, and Nexus anomaly islands.
-- Terminal-led route surveys for Orbit, Moon, Mars, Europa, and post-ECHO-0 Nexus stabilization.
+- Deterministic route terrain for Orbit, Moon, Mars, Europa, Saturn, Titan, and Nexus, including debris belts, cratered lunar ground, Martian ash/basalt, Europa cryo shelves, Saturn ring platforms, Titan methane shelves, and Nexus anomaly islands.
+- Terminal-led route surveys for Orbit, Moon, Mars, Europa, Saturn, Titan, and post-ECHO-0 Nexus stabilization.
 - Route repair chains with compatibility-safe gates, repair resources, visible terminal counts, and old-save bypass handling.
 - Hostile orbital/deep-space mobs, major encounters with command bars, route-relevant rewards, and ECHO-0 final protocol completion.
-- Final network completion after ECHO-0, all route surveys, Nexus stabilization, and one faction contract.
+- Final network completion after ECHO-0, all route surveys, Nexus stabilization, and three faction contracts.
 - Faction pledge items, reward bundles, custom weapons, loot tables, advancements, docs, CI, and GameTests.
 
 ## Release Checks

@@ -168,9 +168,11 @@ public class EchoTerminalScreen extends Screen {
         drawRoute(graphics, x, y + 23, "Lunar Scar Zone", snapshot.lunarOpen(), "Orbital Shuttle");
         drawRoute(graphics, x, y + 46, "Mars Ash Basin", snapshot.marsOpen(), "Mars Transfer Window");
         drawRoute(graphics, x, y + 69, "Europa Cryo Ocean", snapshot.europaOpen(), "Europa Transfer Window");
-        drawRoute(graphics, x, y + 92, "Nexus Anomaly Belt", snapshot.nexusOpen(), "Nexus Drive Vessel");
-        graphics.text(font, Component.literal("Docking vector: " + (snapshot.routeReturnSaved() ? "SAVED" : "NONE")), x, y + 115, 0xCBEFFF, false);
-        graphics.textWithWordWrap(font, Component.literal(snapshot.localHazard()), x + 170, y + 108, width - 170, 0xA8C6CE);
+        drawRoute(graphics, x, y + 92, "Saturn Ring Graveyard", snapshot.saturnOpen(), "Saturn Transfer Window");
+        drawRoute(graphics, x, y + 115, "Titan Methane Shelf", snapshot.titanOpen(), "Titan Transfer Window");
+        drawRoute(graphics, x, y + 138, "Nexus Anomaly Belt", snapshot.nexusOpen(), "Nexus Drive Vessel");
+        graphics.text(font, Component.literal("Docking vector: " + (snapshot.routeReturnSaved() ? "SAVED" : "NONE")), x, y + 161, 0xCBEFFF, false);
+        graphics.textWithWordWrap(font, Component.literal(snapshot.localHazard()), x + 170, y + 154, width - 170, 0xA8C6CE);
     }
 
     private void drawEcho(GuiGraphicsExtractor graphics, int x, int y, int width) {
@@ -179,9 +181,10 @@ public class EchoTerminalScreen extends Screen {
         drawStateLine(graphics, x, y + 33, "Lunar signal investigated", snapshot.lunarInvestigated());
         drawStateLine(graphics, x, y + 48, "Mars visited", snapshot.marsVisited());
         drawStateLine(graphics, x, y + 63, "Europa visited", snapshot.europaVisited());
-        drawStateLine(graphics, x, y + 78, "Anomaly entered", snapshot.anomalyEntered());
-        drawStateLine(graphics, x, y + 93, "ECHO-0 contact", snapshot.echoZero());
-        drawStateLine(graphics, x, y + 108, "Final protocol", snapshot.finalComplete());
+        drawStateLine(graphics, x, y + 78, "Saturn visited", snapshot.saturnVisited());
+        drawStateLine(graphics, x, y + 93, "Titan visited", snapshot.titanVisited());
+        drawStateLine(graphics, x, y + 108, "Anomaly entered", snapshot.anomalyEntered());
+        drawStateLine(graphics, x, y + 123, "ECHO-0 contact", snapshot.echoZero());
         int rightX = x + width / 2 + 12;
         int rightWidth = width - (rightX - x);
         graphics.text(font, Component.literal("FACTION RELAY"), rightX, y + 18, 0x66E8FF, true);

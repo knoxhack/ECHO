@@ -10,6 +10,8 @@ import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
 import com.knoxhack.echoorbitalremnants.entity.LunarNexusHuskEntity;
 import com.knoxhack.echoorbitalremnants.entity.NexusHuskEntity;
+import com.knoxhack.echoorbitalremnants.entity.SaturnRelaySentinelEntity;
+import com.knoxhack.echoorbitalremnants.entity.TitanMethaneStalkerEntity;
 import com.knoxhack.echoorbitalremnants.entity.VacuumWraithEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -61,6 +63,14 @@ public final class ModEntities {
             ENTITIES.registerEntityType("europa_cryo_warden", EuropaCryoWardenEntity::new, MobCategory.MONSTER,
                     builder -> builder.sized(0.7F, 1.0F).clientTrackingRange(10));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<SaturnRelaySentinelEntity>> SATURN_RELAY_SENTINEL =
+            ENTITIES.registerEntityType("saturn_relay_sentinel", SaturnRelaySentinelEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(0.85F, 1.15F).clientTrackingRange(10));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<TitanMethaneStalkerEntity>> TITAN_METHANE_STALKER =
+            ENTITIES.registerEntityType("titan_methane_stalker", TitanMethaneStalkerEntity::new, MobCategory.MONSTER,
+                    builder -> builder.sized(0.7F, 2.05F).clientTrackingRange(10));
+
     private ModEntities() {
     }
 
@@ -78,5 +88,7 @@ public final class ModEntities {
         event.put(ABANDONED_CAPTAIN.get(), AbandonedCaptainEntity.createAttributes().build());
         event.put(ECHO_ZERO.get(), EchoZeroEntity.createAttributes().build());
         event.put(EUROPA_CRYO_WARDEN.get(), EuropaCryoWardenEntity.createAttributes().build());
+        event.put(SATURN_RELAY_SENTINEL.get(), SaturnRelaySentinelEntity.createAttributes().build());
+        event.put(TITAN_METHANE_STALKER.get(), TitanMethaneStalkerEntity.createAttributes().build());
     }
 }

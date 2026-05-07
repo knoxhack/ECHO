@@ -5,7 +5,7 @@ import net.minecraft.world.level.Level;
 
 /**
  * Global difficulty profile that scales survival and machine gameplay.
- * Can be set via config (default) or overridden by gamerule.
+ * Config-only for this release.
  */
 public enum DifficultyProfile {
     CASUAL(0.5F, 0.5F, 0.5F, 0.5F, "Casual - Relaxed survival, reduced radiation, faster machines"),
@@ -35,14 +35,9 @@ public enum DifficultyProfile {
     public String getDescription() { return description; }
 
     /**
-     * Gets the effective difficulty for a level.
-     * Uses config default (gamerule override disabled - GameRules.BooleanValue/IntegerValue 
-     * inner classes are obfuscated in the current NeoForge line and cannot be accessed directly).
+     * Gets the effective difficulty for a level from the pack config.
      */
     public static DifficultyProfile getEffective(Level level) {
-        // NOTE: Gamerule integration disabled - GameRules inner classes obfuscated in the current target
-        // Would require: GameRules.register("difficultyProfile", Category.MISC, GameRules.IntegerValue.create(1))
-        // But BooleanValue/IntegerValue are not accessible at compile time
         return Config.DEFAULT_DIFFICULTY.get();
     }
 

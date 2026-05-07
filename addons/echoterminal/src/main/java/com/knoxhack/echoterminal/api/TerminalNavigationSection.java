@@ -1,6 +1,7 @@
 package com.knoxhack.echoterminal.api;
 
 import java.util.Locale;
+import java.util.List;
 
 /**
  * Top-level command areas for the terminal shell.
@@ -28,6 +29,10 @@ public enum TerminalNavigationSection {
 
     public int order() {
         return order;
+    }
+
+    public static List<TerminalNavigationSection> storyFirstOrder() {
+        return List.of(CHAPTERS, TERMINAL, CORE);
     }
 
     public static TerminalNavigationSection fromKey(String key) {

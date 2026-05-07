@@ -39,10 +39,12 @@ With ECHO: Terminal installed, Orbital Remnants registers shared terminal surfac
 10. Restore three Helium Extractor Nodes on the Moon with Helium Extractor Cores.
 11. Repair three Mars Pressure Consoles with Pressure Regulators.
 12. Calibrate three Europa Thermal Arrays with Europa Probe Arrays.
-13. Recover Cryo Crystal on Europa and unlock Deep Space Protocol.
-14. Build the Nexus Drive Vessel, enter the Nexus Anomaly Belt, and resolve ECHO-0.
-15. Explore Living Route Worlds, complete three survey logs in each current dimension, and stabilize three distinct Nexus Anchor/Growth sites after ECHO-0.
-16. Complete one faction contract and press SCAN to seal the final survey network.
+13. Calibrate Europa Thermal Arrays and use Cryo Crystal telemetry to unlock the Saturn Transfer Window.
+14. Restore three Saturn Ring Relays with Saturn Relay Lenses, then use Saturn ring fragments to unlock Titan.
+15. Pressurize three Titan Methane Pumps with Titan Methane Cells, then use Titan telemetry to unlock Deep Space Protocol.
+16. Build the Nexus Drive Vessel, enter the Nexus Anomaly Belt, and resolve ECHO-0.
+17. Explore Living Route Worlds, complete three survey logs in each current dimension, and stabilize three distinct Nexus Anchor/Growth sites after ECHO-0.
+18. Complete three faction contracts and press SCAN to seal the final survey network.
 
 ## ECHO-7 Terminal
 
@@ -68,7 +70,7 @@ The terminal shows:
 
 If an older save already resolved ECHO-0, scanning with the terminal syncs the ECHO-0 Resolved advancement.
 
-Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO NOTE line keeps the route practical: use SCAN when blocked, check SURVEY after ECHO-0, use Signal Analyzer shard recovery if Nexus landmarks are hard to find, and pledge to a faction for the final contract loop.
+Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Saturn Ring Fragment, Saturn Relay Lens, Titan Methane Cell, Titan Survey Core, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO NOTE line keeps the route practical: Europa thermal work unlocks Saturn, Saturn relay work unlocks Titan, Titan methane telemetry unlocks Deep Space Protocol, SURVEY checks the post-ECHO-0 network, Signal Analyzer shard recovery helps if Nexus landmarks are hard to find, and faction pledges feed the final three-contract loop.
 
 ## Earth Recovery Sites
 
@@ -96,6 +98,8 @@ The current route objective pass completes the route repairs between the first o
 | Lunar Scar Zone | Helium Extractor Node | Helium Extractor Core | Lunar Pressure Map and Mars reliability |
 | Mars Ash Basin | Mars Pressure Console | Pressure Regulator | Martian Habitat Key and Europa prep |
 | Europa Cryo Ocean | Europa Thermal Array | Europa Probe Array | Thermal Stabilizer and Deep Space Protocol support |
+| Saturn Ring Graveyard | Saturn Ring Relay | Saturn Relay Lens | Titan Transfer Window and ring telemetry support |
+| Titan Methane Shelf | Titan Methane Pump | Titan Methane Cell | Titan Survey Core and Deep Space Protocol support |
 
 Existing saves that had already pushed beyond a route are migrated forward when progress is read; the SURVEY tab shows these compatibility gates as bypassed. The config value `progression.midGameObjectivesEnabled` can disable these mid-game gates for testing or relaxed packs.
 
@@ -109,13 +113,15 @@ After routes open, each existing dimension has deterministic terrain, deep-site 
 | Lunar Scar Zone | Survey crater trenches and helium telemetry | Survey Marker or Lunar Core Sample | Mars route reliability and valve prep |
 | Mars Ash Basin | Repair pressure systems in buried habitats | Signal Relay or Martian Pressure Valve | Pressure relief and Europa prep |
 | Europa Cryo Ocean | Deploy probes at thermal vents | Thermal Vent or Europa Thermal Probe | Thermal route data and Nexus stabilizer prep |
+| Saturn Ring Graveyard | Map ring relays and salvage ribs | Saturn Ring Relay or Saturn Ring Fragment | Titan transfer reliability and relay support |
+| Titan Methane Shelf | Pressurize methane shelf pumps | Titan Methane Pump or Titan Survey Core | Deep Space Protocol telemetry and Nexus prep |
 | Nexus Anomaly Belt | Stabilize anchors after ECHO-0 | Nexus Anchor, Nexus Growth, or Nexus Stabilizer Shard | Stabilized ECHO Core and final survey state |
 
-The ECHO Terminal reports survey progress as `O/M/R/E/N` counts, names the active local hazard, and warns when a landmark has already been logged. Landmark scans are tracked by site, so scanning the same relay, marker, vent, anchor, or growth repeatedly will not advance the survey. Item-based scans consume one matching survey item in survival and do not consume in creative.
+The ECHO Terminal reports survey progress across Orbit, Moon, Mars, Europa, Saturn, Titan, and Nexus, names the active local hazard, and warns when a landmark has already been logged. Landmark scans are tracked by site, so scanning the same relay, marker, pump, vent, anchor, or growth repeatedly will not advance the survey. Item-based scans consume one matching survey item in survival and do not consume in creative.
 
 ## Living Route Worlds
 
-v1.3 expands the route spaces with repair objectives inside the existing deterministic deep-site families. Each route has three site families with a survey objective block, repair objective block, fixed cache, traversal hook, and hazard clue.
+The expanded beta route spaces carry repair objectives inside deterministic deep-site families. Each route has three site families with a survey objective block, repair objective block, fixed cache, traversal hook, and hazard clue.
 
 | Route | Deep Site Families |
 |---|---|
@@ -123,17 +129,21 @@ v1.3 expands the route spaces with repair objectives inside the existing determi
 | Lunar Scar Zone | Helium extractor camps, scar drill cairns, Nexus impact survey pits |
 | Mars Ash Basin | Buried habitat wings, pressure pipe yards, dust-shield pylons |
 | Europa Cryo Ocean | Thermal array labs, frozen cable substations, cryo vault vents |
+| Saturn Ring Graveyard | Saturn ice breaker yards, ring relay ribs, salvager trade spines |
+| Titan Methane Shelf | Titan pressure shelves, methane pump fields, tholin survey domes |
 | Nexus Anomaly Belt | Nexus anchor islands, folded station bridges, Nexus growth clusters |
 
 Feature-heavy zones can attract ambient threats when `events.featureThreatsEnabled` is true. `worldgen.routeFeatureDensity` tunes deep-site density, and `worldgen.deepSiteCachesEnabled` controls generated deep-site caches.
 
-Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, and `balance.deepSiteThreatChance` for quick pack tuning. Defaults favor recoverable survival pressure: first-arrival caches include extra oxygen/seal support, route hazards remain dangerous, and deep-site threats are less than guaranteed.
+Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, `balance.deepSiteThreatChance`, `events.orbitalEventFrequency`, `machines.baseDuration`, and `machines.chargeRegenTicks` for quick pack tuning across the longer Saturn/Titan route arc. The public beta Adventure preset should feel recoverable but tense: first-arrival and deep-site caches include progression value, crafting support, and oxygen/seal recovery; route hazards remain dangerous without forcing emergency recovery every minute; route surveys reduce local pressure once a dimension is mapped.
+
+Public beta promise: Orbital Remnants is currently a route survival adventure with deterministic hubs, compact faction contracts, and beta support/barter kiosks. It is intentionally not a full planetary RPG or NPC settlement expansion yet.
 
 ## After ECHO-0: Stabilizing the Survey Network
 
 Resolving ECHO-0 opens the aftermath survey state. Return to the Nexus Anomaly Belt, find three distinct Nexus Anchor/Growth sites, and scan each site from the terminal SURVEY tab. Nexus Stabilizer Shards can substitute for a landmark scan when you need a recovery path; Signal Analyzer processing can turn Nexus Dust into shards, and survival scans spend one shard per log.
 
-Completing Nexus stabilization grants the Nexus Stabilized advancement, a Stabilized ECHO Core, and Nexus supplies. The full finale then requires one faction pledge and one completed ECHO-tab contract; pressing SCAN after the survey network and contract are complete seals the final network once, grants the Orbital Remnants Complete advancement, and mirrors the completed state into ECHO: Ashfall Protocol. The point is not that orbit becomes safe. The point is that orbit stops being quarantine command.
+Completing Nexus stabilization grants the Nexus Stabilized advancement, a Stabilized ECHO Core, and Nexus supplies. The full finale then requires faction pledge support and three completed ECHO-tab contracts; pressing SCAN after the survey network and contracts are complete seals the final network once, grants the Orbital Remnants Complete advancement, and mirrors the completed state into ECHO: Ashfall Protocol. The point is not that orbit becomes safe. The point is that orbit stops being quarantine command.
 
 ## Launch Readiness
 
@@ -210,7 +220,7 @@ Helpful supplies:
 
 Emergency Oxygen Cells and Suit Sealant Patches can be used manually and may auto-consume during critical suit states. Oxygen Boosters slow oxygen loss and can refill a small amount. Radiation Visors reduce radiation gain and can recalibrate. Thermal Space Liners protect against Europa cryo pressure loss. Jet Burst Modules provide short movement bursts in low gravity at oxygen cost. Scanner Visors report route, dimension, and suit diagnostics.
 
-Dimension surveys reduce route pressure over time. Unmapped lunar scars add radiation, Mars dust compromises pressure without valves, Europa cryo drains suit reserves away from vents, and unstabilized Nexus anchors remain dangerous after ECHO-0.
+Dimension surveys reduce route pressure over time. Unmapped lunar scars add radiation, Mars dust compromises pressure without valves, Europa cryo drains suit reserves away from vents, Saturn ring exposure taxes oxygen, Titan methane pressure compromises seals, and unstabilized Nexus anchors remain dangerous after ECHO-0.
 
 ## Machines
 
@@ -305,9 +315,37 @@ On arrival:
 - Provides a route cache with cryo resources, a Europa Thermal Probe, and thermal support.
 - Spawns Vacuum Wraiths, Nexus Husks, and ECHO drone threats.
 
+### Saturn Ring Graveyard
+
+Unlocked by the Saturn Transfer Window after Europa Thermal Arrays resolve ring telemetry.
+
+On arrival:
+
+- Generates a broken ring-relay shelf.
+- Surrounding terrain includes Saturn ice rubble, station plating, relay ribs, salvage spines, and ring-spoke hazards.
+- Deep terrain includes Saturn ice breaker yards, ring relay ribs, and salvager trade spines.
+- Places Saturn Ring Relays and beta faction support/barter hubs.
+- Provides a route cache with Saturn Ring Fragments, Saturn Relay Lenses, Titan transfer support, and recoverability supplies.
+- Spawns the Saturn Relay Sentinel and supporting orbital threats.
+- Restoring three Saturn Ring Relays stabilizes Titan descent.
+
+### Titan Methane Shelf
+
+Unlocked by the Titan Transfer Window after Saturn Ring Relays stabilize descent.
+
+On arrival:
+
+- Generates a methane pressure shelf.
+- Surrounding terrain includes tholin dust, methane ice, pump fields, pressure shelves, and survey domes.
+- Deep terrain includes Titan pressure shelves, methane pump fields, and tholin survey domes.
+- Places Titan Methane Pumps and beta faction support/barter hubs.
+- Provides a route cache with Titan Methane Cells, Titan Survey Cores, Nexus prep materials, and recoverability supplies.
+- Spawns the Titan Methane Stalker and supporting pressure threats.
+- Pressurizing three Titan Methane Pumps unlocks Deep Space Protocol and Nexus routing.
+
 ### Nexus Anomaly Belt
 
-Unlocked by the Nexus Drive Vessel after Deep Space Protocol is available.
+Unlocked by the Nexus Drive Vessel after Titan methane telemetry confirms Deep Space Protocol.
 
 On arrival:
 
@@ -334,6 +372,8 @@ Sneak-use route vessels from a space route to return to the saved docking vector
 | Lunar Nexus Husk | Spikes radiation and pressure in the lunar crater. |
 | The Abandoned Captain | Drains oxygen and pressure around the Mars habitat. |
 | Europa Cryo Warden | Major encounter that destabilizes pressure near Europa arrays and rewards thermal prep. |
+| Saturn Relay Sentinel | Bends return signals around Saturn relay ribs and rewards Titan prep. |
+| Titan Methane Stalker | Pressures suit seals around methane shelf pump fields and rewards Nexus prep. |
 | ECHO-0 | Final anomaly encounter; escalates through oxygen, pressure, and radiation phases. |
 
 Major encounters show command bars. Defeating them sends a terminal report and may grant route-relevant rewards.
@@ -352,7 +392,7 @@ Weapons are active right-click tools with cooldown and durability use.
 
 ## Factions
 
-Faction pledge items are consumable alignment contracts. After pledging, the ECHO tab assigns a lightweight faction contract. Contracts are completed with SCAN, persist in the terminal progress data, and use a short cooldown so one scan cannot double-grant rewards. Blocked reports now distinguish wrong dimension, missing proof item, Nexus Choir before ECHO-0, cooldown, and no-pledge states.
+Faction pledge items are consumable alignment contracts. After pledging, the ECHO tab assigns lightweight faction contracts. Saturn/Titan deep sites can include Faction Vendor Kiosks and Faction Relay Hubs; in this beta they are deterministic support/barter caches and contract relays, not full NPC shops or settlements. Contracts are completed with SCAN, persist in the terminal progress data, and use a short cooldown so one scan cannot double-grant rewards. Blocked reports distinguish no pledge, already-serviced hubs, active contract chains, authorized cache rewards, wrong dimension, missing proof item, Nexus Choir before ECHO-0, and cooldown states.
 
 In the full ECHO stack, Orbital Remnant, Void Salvagers, and Nexus Choir standing is also mirrored into ECHO Core so the shared Faction Atlas can show service state, last contact, active contract context, and route affinity beside Ashfall factions.
 
@@ -362,7 +402,7 @@ In the full ECHO stack, Orbital Remnant, Void Salvagers, and Nexus Choir standin
 | Void Salvager Marker | Void Salvagers | Orbital alloy, vacuum circuits, and cargo upgrade materials | orbital salvage scan or Orbital Alloy plus Vacuum Circuit | machine inputs and navigation parts |
 | Nexus Choir Sigil | Nexus Choir | Nexus dust and risky endgame pulse weapon access | post-ECHO-0 Nexus Anchor/Growth or Nexus Stabilizer Shard | Nexus dust, cryo support, and emergency oxygen |
 
-The Nexus Choir contract is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any faction contract grants the Faction Contract Complete advancement.
+The Nexus Choir contract is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any faction contract grants the Faction Contract Complete advancement; the final network seal requires three completed faction contracts.
 
 Inside ECHO: Ashfall Protocol, Orbital Remnant maps to Remnants-style recovery notes, Void Salvagers map to Salvager-style notes, and Nexus Choir remains an endgame archive/intel thread about dangerous post-ECHO-0 anchor readings.
 
@@ -387,11 +427,15 @@ Advancements mirror major milestones, but the terminal remains the main progress
 - Lunar Survey Complete
 - Mars Survey Complete
 - Europa Survey Complete
+- Saturn Survey Complete
+- Titan Survey Complete
 - Nexus Stabilized
 - Orbit Deep Site
 - Moon Deep Site
 - Mars Deep Site
 - Europa Deep Site
+- Saturn Deep Site
+- Titan Deep Site
 - Nexus Deep Site
 - Faction Contract Complete
 
@@ -413,7 +457,9 @@ The generator creates deterministic pixel-art textures, item model definitions, 
 - Run both before a Nexus choice and confirm orbital calibration is locked.
 - Make a Nexus choice and confirm Earth calibration opens.
 - Confirm What Now, Route Records, Vitals, Faction Atlas, and Reward Inbox mirror Orbital state without replacing standalone ECHO-7 progression.
-- Progress through orbit, Moon, Mars, Europa, Deep Space Protocol, and ECHO-0.
-- Complete at least one faction contract from the ECHO tab.
+- Progress through orbit, Moon, Mars, Europa, Saturn, Titan, Deep Space Protocol, and ECHO-0.
+- Complete three faction contracts from the ECHO tab and beta faction relay hubs.
+- For each route, spend 3-5 minutes exploring, repair one objective, open one cache, and confirm Adventure pacing stays tense without chaining emergency recovery.
+- Confirm route vessels give sound/particle/action-bar feedback, reusable route keys are not consumed unexpectedly, objective scans visibly pulse, and Saturn/Titan feel distinct before public upload.
 - Seal the final survey network and confirm Orbital Remnants Complete appears in the ECHO tab.
 - Confirm terminal missions, archives, codex, status, faction standing, and faction contract state update in the addon and main terminal integration.

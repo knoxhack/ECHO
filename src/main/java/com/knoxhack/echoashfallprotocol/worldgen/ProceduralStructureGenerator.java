@@ -518,6 +518,7 @@ public class ProceduralStructureGenerator {
 
         try {
             template.placeInWorld(level, placePos, placePos, settings, random, 2);
+            removeInvalidBlockEntities(level, placePos, size);
             EchoAshfallProtocol.LOGGER.info("Placed drop pod from NBT at {}", placePos);
             return true;
         } catch (Exception e) {
@@ -611,7 +612,7 @@ public class ProceduralStructureGenerator {
                     BlockPos pos = placePos.offset(x, y, z);
                     BlockState state = level.getBlockState(pos);
                     if (!state.isAir() && !state.is(Blocks.BEDROCK)) {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                        clearBlockEntityAndSetAir(level, pos);
                     }
                 }
             }
@@ -642,7 +643,7 @@ public class ProceduralStructureGenerator {
 
         BlockState floor = level.getBlockState(pos.below());
         if ((floor.isAir() || !AshfallInteractionRules.supportsPlacement(floor)) && repairFloor && !floor.is(Blocks.BEDROCK)) {
-            level.setBlock(pos.below(), ModBlocks.DROP_POD_HULL.get().defaultBlockState(), 2);
+            setStructureBlock(level, pos.below(), ModBlocks.DROP_POD_HULL.get().defaultBlockState(), 2);
         }
 
         return isSafePlayerSpawn(level, pos);
@@ -705,8 +706,44 @@ public class ProceduralStructureGenerator {
 
     private static void clearBlockForStartingSpawn(ServerLevel level, BlockPos pos) {
         if (!level.getBlockState(pos).is(Blocks.BEDROCK)) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            clearBlockEntityAndSetAir(level, pos);
         }
+    }
+
+    private static void clearBlockEntityAndSetAir(ServerLevel level, BlockPos pos) {
+        if (level.getBlockState(pos).is(Blocks.BEDROCK)) {
+            return;
+        }
+        if (level.getBlockEntity(pos) != null) {
+            level.removeBlockEntity(pos);
+        }
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+    }
+
+    public static int removeInvalidBlockEntities(ServerLevel level, BlockPos placePos, Vec3i size) {
+        int removed = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    BlockPos pos = placePos.offset(x, y, z);
+                    BlockEntity be = level.getBlockEntity(pos);
+                    if (be == null) {
+                        continue;
+                    }
+                    BlockState state = level.getBlockState(pos);
+                    if (state.isAir() || !state.hasBlockEntity()) {
+                        level.removeBlockEntity(pos);
+                        removed++;
+                    }
+                }
+            }
+        }
+        if (removed > 0) {
+            EchoAshfallProtocol.LOGGER.warn(
+                    "Removed {} invalid block entities after drop pod placement at {}.",
+                    removed, placePos);
+        }
+        return removed;
     }
 
     /**

@@ -54,6 +54,8 @@ public final class Echo7RouteCommandHandler {
                 + " moon=" + progress.lunarSignalInvestigated()
                 + " mars=" + progress.marsAshBasinVisited()
                 + " europa=" + progress.europaCryoOceanVisited()
+                + " saturn=" + progress.saturnRingGraveyardVisited()
+                + " titan=" + progress.titanMethaneShelfVisited()
                 + " nexus=" + progress.anomalyBeltEntered()
                 + " echo0=" + progress.echoZeroEncountered()
                 + " reward=" + progress.echoZeroRewardClaimed()
@@ -100,13 +102,27 @@ public final class Echo7RouteCommandHandler {
                 progress.unlockEuropaRoute(player);
                 progress.markEuropaCryoOceanVisited(player);
             }
+            case "saturn" -> {
+                progress.unlockEuropaRoute(player);
+                progress.markEuropaCryoOceanVisited(player);
+                progress.unlockSaturnRoute(player);
+                progress.markSaturnRingGraveyardVisited(player);
+            }
+            case "titan" -> {
+                progress.unlockSaturnRoute(player);
+                progress.markSaturnRingGraveyardVisited(player);
+                progress.unlockTitanRoute(player);
+                progress.markTitanMethaneShelfVisited(player);
+            }
             case "nexus" -> {
+                progress.unlockTitanRoute(player);
+                progress.markTitanMethaneShelfVisited(player);
                 progress.unlockDeepSpaceProtocol(player);
                 progress.markAnomalyBeltEntered(player);
             }
             case "echo0", "echo-0" -> progress.markEchoZeroEncountered(player);
             default -> {
-                tell(player, "Use orbit, station, moon, mars, europa, nexus, or echo0.", ChatFormatting.RED);
+                tell(player, "Use orbit, station, moon, mars, europa, saturn, titan, nexus, or echo0.", ChatFormatting.RED);
                 return 0;
             }
         }

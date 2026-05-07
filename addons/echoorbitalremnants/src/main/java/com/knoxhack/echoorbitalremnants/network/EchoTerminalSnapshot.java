@@ -46,12 +46,16 @@ public record EchoTerminalSnapshot(
         boolean lunarOpen,
         boolean marsOpen,
         boolean europaOpen,
+        boolean saturnOpen,
+        boolean titanOpen,
         boolean nexusOpen,
         boolean lowOrbitReached,
         boolean stationCoordinates,
         boolean lunarInvestigated,
         boolean marsVisited,
         boolean europaVisited,
+        boolean saturnVisited,
+        boolean titanVisited,
         boolean anomalyEntered,
         boolean echoZero,
         boolean finalComplete,
@@ -109,12 +113,16 @@ public record EchoTerminalSnapshot(
                 progress.lunarSignalUnlocked(),
                 progress.marsRouteUnlocked(),
                 progress.europaRouteUnlocked(),
+                progress.saturnRouteUnlocked(),
+                progress.titanRouteUnlocked(),
                 progress.deepSpaceProtocolUnlocked(),
                 progress.lowOrbitReached(),
                 progress.stationCoordinatesRecovered(),
                 progress.lunarSignalInvestigated(),
                 progress.marsAshBasinVisited(),
                 progress.europaCryoOceanVisited(),
+                progress.saturnRingGraveyardVisited(),
+                progress.titanMethaneShelfVisited(),
                 progress.anomalyBeltEntered(),
                 progress.echoZeroEncountered(),
                 progress.finalNetworkSealed(),
@@ -172,6 +180,10 @@ public record EchoTerminalSnapshot(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readInt(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
@@ -216,12 +228,16 @@ public record EchoTerminalSnapshot(
         buffer.writeBoolean(lunarOpen);
         buffer.writeBoolean(marsOpen);
         buffer.writeBoolean(europaOpen);
+        buffer.writeBoolean(saturnOpen);
+        buffer.writeBoolean(titanOpen);
         buffer.writeBoolean(nexusOpen);
         buffer.writeBoolean(lowOrbitReached);
         buffer.writeBoolean(stationCoordinates);
         buffer.writeBoolean(lunarInvestigated);
         buffer.writeBoolean(marsVisited);
         buffer.writeBoolean(europaVisited);
+        buffer.writeBoolean(saturnVisited);
+        buffer.writeBoolean(titanVisited);
         buffer.writeBoolean(anomalyEntered);
         buffer.writeBoolean(echoZero);
         buffer.writeBoolean(finalComplete);

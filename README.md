@@ -1,6 +1,6 @@
 # ECHO Mod Stack
 
-The ECHO stack is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. It is built from four coordinated mods: `echocore` for shared services, `echoterminal` for the common command surface, `echoashfallprotocol` for the terrestrial survival campaign, and optional `echoorbitalremnants` for the post-Nexus orbital chapter.
+The ECHO stack is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. The public release is built from `echocore`, the shared `echoterminal`, the main `echoashfallprotocol` campaign, and five addon chapters: `echoorbitalremnants`, `echostationfall`, `echonexusprotocol`, `echoindustrialnexus`, and `echoblackboxprotocol`.
 
 ECHO: Ashfall Protocol starts in a compact armored drop pod with ECHO-7, a damaged emergency operator that is useful before it is comforting. The opening is no longer a wide crash capsule: the current `20x10x20` pod is a small starter outpost with a clear spawn bay, bed nook, ECHO control core, labeled lockers, ramp, struts, side windows, roof beacons, and discoverable first-night supplies.
 
@@ -13,7 +13,11 @@ The world is not just hostile. It reacts. Radiation mutates after sustained seve
 | `echocore` | `1.1.0` | Shared ECHO service registry, profile ledger, diagnostics, hazards, route records, factions, rewards, terminal placement, and Nexus campaign mirrors. |
 | `echoterminal` | `1.1.0` | Common terminal shell with Command Deck, What Now, Mission Graph, Route Records, Faction Atlas, Vitals, Reward Inbox, Archives, Baseline, and Addons surfaces. |
 | `echoashfallprotocol` | `1.3.0` | Main Earth survival campaign: drop pod start, wasteland systems, factions/NPCs, guardians, Prime Relays, Nexus warfront, and finale. |
-| `echoorbitalremnants` | `1.5.0` | Optional orbital continuation: launch chain, route worlds, ECHO-0, orbital factions, route records, diagnostics, and support caches. |
+| `echoorbitalremnants` | `1.5.0` | Post-Nexus orbital continuation: launch chain, route worlds, ECHO-0, orbital factions, route records, diagnostics, and support caches. |
+| `echostationfall` | `1.1.0` | Station ECHO horror chapter with station power, panic pressure, crew logs, station route state, and terminal handoff. |
+| `echonexusprotocol` | `1.0.0` | Nexus corruption chapter for charge control, stabilized fields, memory recovery, matter rewriting, and Core-state escalation. |
+| `echoindustrialnexus` | `0.1.0` | Industrial automation chapter for Thermal Flux, rusted machines, automated filters, salvage processing, and factory recovery. |
+| `echoblackboxprotocol` | `1.0.0` | Late-game Blackbox finale with memory fragments, archive dungeons, hostile recordings, boss proofs, and final outcome directives. |
 
 ## Core Features
 
@@ -27,11 +31,11 @@ The world is not just hostile. It reacts. Radiation mutates after sustained seve
 - **World exploration:** scanner-led POI routes across wasteland biomes, toxic swamps, ruined cities, radiation zones, crash scars, cryogenic ruins, Nexus scars, faction hubs, procedural landmarks, and underground guardian arenas with visible surface entrances.
 - **ECHO terminal:** Command Deck, What Now, Mission Graph, Protocol Roadmap, Signal Leads, Route Map, POI Atlas, Route Records, Field Archive, Survival Index, Faction Atlas, Baseline, Vitals, Companion Link, Reward Inbox, Nexus Core, and ORBITAL channels collect lore, objectives, telemetry, faction reports, route state, and optional expansion status.
 
-## Optional Endgame Expansion
+## Addon Chapter Chain
 
-If `echoorbitalremnants` is installed, ECHO: Orbital Remnants unlocks after any ECHO: Ashfall Protocol Nexus choice. Before that choice, orbital calibration is locked by the post-Nexus quarantine handoff. After the choice, the ECHO terminal opens the ORBITAL route records, diagnostics, support caches, Orbital Command, Route Survey, and ECHO-0 Records.
+The release stack ships the full chapter chain. ECHO: Ashfall Protocol remains the entry campaign; ECHO: Orbital Remnants opens after any Ashfall Nexus choice; Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol extend the shared ECHO state through their own route, machine, archive, and terminal surfaces.
 
-The addon is optional. ECHO: Ashfall Protocol can run without Orbital Remnants installed; with it, ECHO-7 follows the pod's broken fall path back toward Station ECHO, where the quarantine has a name: ECHO-0.
+Addons communicate through `echocore` and `echoterminal` instead of reaching into another chapter's save data. The shared terminal navigation profile API is public addon-facing surface: `TerminalNavigationProfile`, `TerminalNavigationProfiles`, and `TerminalNavigationSection`.
 
 ## Quick Start
 
@@ -42,7 +46,7 @@ The addon is optional. ECHO: Ashfall Protocol can run without Orbital Remnants i
 5. Use the Portable Signal Scanner to find a POI, read its route/hazard/prep report, then open Route Map -> POI Atlas to compare that scanner profile against the concrete template signals it can represent.
 6. Clear the nine biome guardians by scanning surface entrances and descending into their buried Gridfall nodes.
 7. Wake the Nexus campaign, scan six Prime Relays, resolve three relays, survive the Core countermeasure siege, then restore enough grid infrastructure to reach the Nexus Core and choose Restore, Destroy, or Control.
-8. If Orbital Remnants is installed, use ORBITAL / Orbital Command to begin the post-Nexus quarantine expansion.
+8. Use ORBITAL / Orbital Command to begin the post-Nexus quarantine expansion, then smoke the Stationfall, Nexus, Industrial, and Blackbox chapter entries from the shared terminal.
 
 ## Requirements
 
@@ -55,7 +59,11 @@ Official release stack:
 - `echocore` `1.1.0` - required shared API and service mod.
 - `echoterminal` `1.1.0` - shared ECHO Terminal addon.
 - `echoashfallprotocol` `1.3.0` - main gameplay mod.
-- `echoorbitalremnants` `1.5.0` - optional post-Nexus expansion.
+- `echoorbitalremnants` `1.5.0` - post-Nexus orbital expansion.
+- `echostationfall` `1.1.0` - Station ECHO horror chapter.
+- `echonexusprotocol` `1.0.0` - Nexus corruption chapter.
+- `echoindustrialnexus` `0.1.0` - industrial automation chapter.
+- `echoblackboxprotocol` `1.0.0` - late-game Blackbox finale.
 
 Build all release jars from the workspace root:
 
@@ -75,7 +83,7 @@ Copy the verified jars into the local CurseForge profile:
 .\gradlew.bat copyEchoJarsToModpack
 ```
 
-Override the destination with `-PechoModpackModsDir="C:/path/to/mods"` if your local profile uses a different folder.
+The canonical local release profile is `C:\Users\Ivan\curseforge\minecraft\Instances\Axes of Tomorrow\mods`. Override the destination with `-PechoModpackModsDir="C:/path/to/mods"` only for ad hoc testing.
 
 Release artifacts:
 
@@ -83,6 +91,10 @@ Release artifacts:
 - `core/echocore/build/libs/echocore-1.1.0.jar`
 - `addons/echoterminal/build/libs/echoterminal-1.1.0.jar`
 - `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`
+- `addons/echostationfall/build/libs/echostationfall-1.1.0.jar`
+- `addons/echonexusprotocol/build/libs/echonexusprotocol-1.0.0.jar`
+- `addons/echoindustrialnexus/build/libs/echoindustrialnexus-0.1.0.jar`
+- `addons/echoblackboxprotocol/build/libs/echoblackboxprotocol-1.0.0.jar`
 
 Verification commands:
 
@@ -93,12 +105,18 @@ python tools\validate_gameplay_data.py
 .\gradlew.bat verifyEchoRelease --warning-mode all
 ```
 
-Expected verification result: every required GameTest task reports clean completion. The latest root Ashfall game-test gate reports `59` required tests passing.
+Expected verification result: every required GameTest task reports clean completion across Core, Terminal, Ashfall, Orbital, Stationfall, Nexus, Industrial, and Blackbox. If `checkEchoModJarSet` fails, run `.\gradlew.bat copyEchoJarsToModpack` first so the `Axes of Tomorrow` profile contains exactly one current jar for every ECHO module.
 `validate_resources.py` also runs the release-polish checks for mojibake, stale terminal/drone references, plural structure resource paths, placeholder markers, and uppercase real resource namespaces.
 
 ## ECHO Core Integration Contract
 
 Addons should communicate through `echocore` instead of reaching directly into another chapter's save data. Current shared services cover pack mode/profile state, progress ledgers, diagnostics, hazard telemetry, route records, faction definitions/profiles/standing/contracts/actions, POI affinity, NPC dialogue roles, recovery hooks, terminal placement, terminal reward storage, intel mirroring, and Nexus path/campaign status. Providers are expected to be tolerant: duplicate IDs are ignored, failed providers are logged, and the owning mod remains responsible for validating actions and rewards server-side.
+
+Terminal addons should register navigation through the public `echoterminal` profile types rather than special-casing the screen. A chapter owns its actions, rewards, and persistence; Terminal owns presentation and routing.
+
+## Release Operations
+
+`tools/echo-release-terminal` is a private local release-ops dashboard. It is useful for QA state and release drafting, but it is not part of the published mod artifact set. Keep it buildable with `npm.cmd run build` before public release.
 
 ## Documentation
 
@@ -119,7 +137,7 @@ What to test first:
 - Scanner loop: Portable Signal Scanner reports the actual site, hazard profile, prep kit, reward track, distance, direction, and field-log status.
 - Terminal loop: What Now, Mission Graph, Route Records, Faction Atlas, Vitals, Reward Inbox, Archives, and Addons should agree with the owning chapter state.
 - Factions and drones: Scout Drone fallback, ECHO companion repair/modes, faction NPC dialogue, contracts, standing, trader rewards, raids, and intel reports.
-- Nexus path: buried guardian nodes, Prime Relays, Core countermeasure siege, Power Nodes, final choice, path objectives, Archives arena entry/return, Warden defeat, final epilogue, and optional Orbital Remnants unlock if the addon is installed.
+- Nexus path: buried guardian nodes, Prime Relays, Core countermeasure siege, Power Nodes, final choice, path objectives, Archives arena entry/return, Warden defeat, final epilogue, Orbital unlock, and Stationfall/Nexus/Industrial/Blackbox chapter entry visibility.
 
 Known 1.3.0 watchpoints:
 
@@ -142,6 +160,6 @@ Coordinates / biome / POI:
 
 ## Compatibility
 
-- **ECHO: Orbital Remnants:** optional post-Nexus addon chapter.
+- **ECHO addon chapters:** Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol are included in the public release stack and surface through ECHO Core plus ECHO Terminal.
 - **Multiplayer:** supported; Nexus decisions are shared through the world state.
 - **Recipe viewers:** JEI support is optional and includes custom ECHO categories for hardcoded machine/process recipes. Normal crafting/smelting recipes still appear through vanilla recipe data.

@@ -112,6 +112,10 @@ public class EchoOrbitalRemnantsClient {
                 context -> new TintedZombieRenderer(context, entityTexture("echo_zero"), 0xFFFF5AF7, 1.35F, 0.9F));
         event.registerEntityRenderer(ModEntities.EUROPA_CRYO_WARDEN.get(),
                 context -> new TintedVexRenderer(context, entityTexture("europa_cryo_warden"), 0xFF7FE8FF, 1.45F, 0.58F));
+        event.registerEntityRenderer(ModEntities.SATURN_RELAY_SENTINEL.get(),
+                context -> new TintedVexRenderer(context, entityTexture("saturn_relay_sentinel"), 0xFFFFE2B8, 1.55F, 0.6F));
+        event.registerEntityRenderer(ModEntities.TITAN_METHANE_STALKER.get(),
+                context -> new TintedZombieRenderer(context, entityTexture("titan_methane_stalker"), 0xFFE58A45, 1.18F, 0.66F));
     }
 
     private static Identifier entityTexture(String name) {

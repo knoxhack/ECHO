@@ -11,12 +11,15 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
 
 public final class MainSurvivalQuestProvider implements TerminalMissionProvider {
@@ -26,6 +29,12 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
     public static final Identifier TAB_ID =
             Identifier.fromNamespaceAndPath(EchoTerminal.MODID, "main_survival_route");
     private static final int ACCENT = 0xFF92F7A6;
+    private static final int CACHE_REFRESH_TICKS = 40;
+    private static final int MAX_ROUTE_RECORDS = 250;
+    private static final Identifier OVERFLOW_ID =
+            Identifier.fromNamespaceAndPath(EchoTerminal.MODID, "main_survival_route_overflow");
+    private static final UUID NULL_PLAYER_ID = new UUID(0L, 0L);
+    private final Map<RouteCacheKey, RouteSnapshot> routeCache = new HashMap<>();
 
     private MainSurvivalQuestProvider() {
     }
@@ -35,7 +44,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         return new TerminalMissionChapter(
                 CHAPTER_ID,
                 "Survival Route",
-                "One authored field route that mirrors vanilla survival, ECHO chapter progress, and remaining registered mission signals.",
+                "One authored field route for installed ECHO chapter progress and remaining registered addon mission signals.",
                 45,
                 ACCENT,
                 true);
@@ -43,20 +52,22 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
 
     @Override
     public List<TerminalMissionDefinition> missions(Player player) {
-        return records(player).stream()
-                .map(MainSurvivalQuestProvider::definition)
-                .toList();
+        return routeSnapshot(player).definitions();
     }
 
     @Override
     public TerminalMissionSnapshot snapshot(Player player, Identifier missionId) {
-        SourceRecord record = record(player, missionId);
+        if (OVERFLOW_ID.equals(missionId)) {
+            RouteSnapshot snapshot = routeSnapshot(player);
+            return overflowSnapshot(snapshot.overflowCount());
+        }
+        SourceRecord record = routeSnapshot(player).sourceById().get(missionId);
         if (record == null) {
             return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F,
                     "MISSING", "Survival route signal not found.",
                     "Reopen the terminal after installed ECHO chapters finish registering.", List.of());
         }
-        TerminalMissionSnapshot child = record.snapshot();
+        TerminalMissionSnapshot child = safeSnapshot(record.provider(), player, record.definition());
         return new TerminalMissionSnapshot(
                 missionId,
                 child.status(),
@@ -72,17 +83,28 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
             Player player,
             TerminalMissionDefinition definition,
             TerminalMissionSnapshot snapshot) {
-        SourceRecord record = record(player, definition == null ? null : definition.id());
+        if (definition != null && OVERFLOW_ID.equals(definition.id())) {
+            return new TerminalMissionPresentation(
+                    "More Signals Available",
+                    "Additional installed mission signals are hidden to keep the Survival Route responsive.",
+                    "Open the owning chapter tabs for the remaining detailed records.",
+                    "Performance guard",
+                    "reference",
+                    List.of("Survival Route", "Overflow", "Performance Guard"),
+                    null);
+        }
+        SourceRecord record = routeSnapshot(player).sourceById().get(definition == null ? null : definition.id());
         if (record == null) {
             return TerminalMissionPresentation.fallback(definition, snapshot);
         }
-        TerminalMissionPresentation child = record.presentation();
+        TerminalMissionSnapshot childSnapshot = usableSnapshot(snapshot, record);
+        TerminalMissionPresentation child = safePresentation(record.provider(), player, record.definition(), childSnapshot);
         List<String> tags = new ArrayList<>(child.tags());
         tags.add("Source: " + record.chapter().title());
         return new TerminalMissionPresentation(
                 child.shortTitle(),
                 child.objectiveSummary(),
-                guideHint(record, record.snapshot()),
+                guideHint(record, childSnapshot),
                 "Source: " + record.chapter().title(),
                 child.statusTone(),
                 tags,
@@ -91,8 +113,21 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
 
     @Override
     public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
-        SourceRecord record = record(player, definition == null ? null : definition.id());
-        return record == null ? TerminalMissionRole.REFERENCE : record.role();
+        if (definition != null && OVERFLOW_ID.equals(definition.id())) {
+            return TerminalMissionRole.REFERENCE;
+        }
+        SourceRecord record = routeSnapshot(player).sourceById().get(definition == null ? null : definition.id());
+        return record == null
+                ? TerminalMissionRole.REFERENCE
+                : safeRole(record.provider(), player, record.definition(), usableSnapshot(snapshot, record));
+    }
+
+    public static int maxRouteRecordsForTests() {
+        return MAX_ROUTE_RECORDS;
+    }
+
+    public void clearCacheForTests() {
+        routeCache.clear();
     }
 
     private static TerminalMissionDefinition definition(SourceRecord record) {
@@ -116,14 +151,54 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
                 child.rewards());
     }
 
-    private static SourceRecord record(Player player, Identifier missionId) {
-        if (missionId == null) {
-            return null;
+    private RouteSnapshot routeSnapshot(Player player) {
+        RouteCacheKey key = cacheKey(player);
+        RouteSnapshot cached = routeCache.get(key);
+        if (cached != null) {
+            return cached;
         }
-        return records(player).stream()
-                .filter(record -> missionId.equals(record.definition().id()))
-                .findFirst()
-                .orElse(null);
+        RouteSnapshot snapshot = buildRouteSnapshot(player);
+        routeCache.clear();
+        routeCache.put(key, snapshot);
+        return snapshot;
+    }
+
+    private RouteCacheKey cacheKey(Player player) {
+        UUID playerId = player == null ? NULL_PLAYER_ID : player.getUUID();
+        long gameTime = player == null || player.level() == null ? 0L : player.level().getGameTime();
+        long refreshBucket = Math.max(0L, gameTime / CACHE_REFRESH_TICKS);
+        return new RouteCacheKey(playerId, refreshBucket, providerFingerprint());
+    }
+
+    private static String providerFingerprint() {
+        StringBuilder builder = new StringBuilder();
+        for (TerminalMissionProvider provider : TerminalMissionRegistry.providers()) {
+            if (provider != null && provider != INSTANCE) {
+                builder.append(provider.getClass().getName())
+                        .append('@')
+                        .append(System.identityHashCode(provider))
+                        .append(';');
+            }
+        }
+        return builder.toString();
+    }
+
+    private static RouteSnapshot buildRouteSnapshot(Player player) {
+        List<SourceRecord> records = records(player);
+        int overflowCount = Math.max(0, records.size() - MAX_ROUTE_RECORDS);
+        if (overflowCount > 0) {
+            records = List.copyOf(records.subList(0, MAX_ROUTE_RECORDS));
+        }
+        Map<Identifier, SourceRecord> sourceById = new HashMap<>();
+        List<TerminalMissionDefinition> definitions = new ArrayList<>();
+        for (SourceRecord record : records) {
+            sourceById.put(record.definition().id(), record);
+            definitions.add(definition(record));
+        }
+        if (overflowCount > 0) {
+            definitions.add(overflowDefinition(overflowCount));
+        }
+        return new RouteSnapshot(List.copyOf(records), Map.copyOf(sourceById), List.copyOf(definitions), overflowCount);
     }
 
     private static List<SourceRecord> records(Player player) {
@@ -139,7 +214,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         for (SourceCandidate candidate : candidates) {
             if (!seen.contains(candidate.key()) && visibleInOtherSignals(candidate.role())
                     && seen.add(candidate.key())) {
-                selected.add(candidate.withPhase(RoutePhase.OTHER_SIGNALS));
+                selected.add(candidate.withPhase(RoutePhase.PHASE_09));
             }
         }
         Map<RoutePhase, Integer> phaseCounts = new EnumMap<>(RoutePhase.class);
@@ -152,6 +227,36 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         return List.copyOf(records);
     }
 
+    private static TerminalMissionDefinition overflowDefinition(int overflowCount) {
+        return new TerminalMissionDefinition(
+                OVERFLOW_ID,
+                CHAPTER_ID,
+                RoutePhase.PHASE_09.id(),
+                RoutePhase.PHASE_09.title(),
+                RoutePhase.PHASE_09.order(),
+                MAX_ROUTE_RECORDS + 1,
+                "More Signals Available",
+                overflowCount + " additional mission records are available in installed chapter tabs.",
+                "The aggregate Survival Route is showing priority records to keep the terminal responsive.",
+                "Performance Guard",
+                "Reference",
+                ItemStack.EMPTY,
+                List.of(),
+                List.of(),
+                List.of());
+    }
+
+    private static TerminalMissionSnapshot overflowSnapshot(int overflowCount) {
+        return new TerminalMissionSnapshot(
+                OVERFLOW_ID,
+                TerminalMissionStatus.VIEW_ONLY,
+                0.0F,
+                "BOUNDED",
+                overflowCount + " additional installed mission records are hidden from this aggregate view.",
+                "Open installed chapter tabs for full mission lists.",
+                List.of());
+    }
+
     private static List<SourceCandidate> candidates(Player player) {
         List<SourceCandidate> candidates = new ArrayList<>();
         for (TerminalMissionProvider provider : TerminalMissionRegistry.providers()) {
@@ -159,20 +264,27 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
                 continue;
             }
             TerminalMissionChapter chapter = safeChapter(provider);
-            if (chapter == null || CHAPTER_ID.equals(chapter.id())) {
+            if (chapter == null || CHAPTER_ID.equals(chapter.id())
+                    || VanillaJourneyProvider.CHAPTER_ID.equals(chapter.id())) {
                 continue;
             }
             for (TerminalMissionDefinition definition : safeMissions(provider, player)) {
                 if (definition == null) {
                     continue;
                 }
-                TerminalMissionSnapshot snapshot = safeSnapshot(provider, player, definition);
-                TerminalMissionRole role = safeRole(provider, player, definition, snapshot);
-                TerminalMissionPresentation presentation = safePresentation(provider, player, definition, snapshot);
+                TerminalMissionSnapshot snapshot = lightweightSnapshot(definition);
+                TerminalMissionRole role = TerminalMissionRole.fallback(definition, snapshot);
+                TerminalMissionPresentation presentation = TerminalMissionPresentation.fallback(definition, snapshot);
                 candidates.add(new SourceCandidate(provider, chapter, definition, snapshot, presentation, role, null));
             }
         }
         return candidates;
+    }
+
+    private static TerminalMissionSnapshot lightweightSnapshot(TerminalMissionDefinition definition) {
+        return new TerminalMissionSnapshot(definition.id(), TerminalMissionStatus.LOCKED, 0.0F,
+                "ROUTE", "Open this route to evaluate live progress.", "Open the owning chapter for actions.",
+                List.of());
     }
 
     private static RoutePhase authoredPhase(SourceCandidate candidate) {
@@ -184,51 +296,82 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         String phase = definition.phaseTitle().toLowerCase(Locale.ROOT);
         String title = definition.title().toLowerCase(Locale.ROOT);
 
-        if (VanillaJourneyProvider.CHAPTER_ID.equals(chapter.id())) {
-            return vanillaPhase(path);
-        }
         if (chapterId.contains("echoashfallprotocol:ashfall_protocol")
                 || "echoashfallprotocol".equals(namespace)) {
-            if (definition.phaseOrder() <= 0) {
-                return RoutePhase.SURVIVE;
+            String signal = path + " " + phase + " " + title;
+            if (containsAny(signal, "aftermath", "seal", "survey", "faction", "mastery")) {
+                return RoutePhase.PHASE_09;
             }
-            if (definition.phaseOrder() <= 2) {
-                return RoutePhase.STABILIZE;
+            if (containsAny(signal, "nexus", "ending", "guardian", "echo-0", "echo_zero", "core")) {
+                return RoutePhase.PHASE_08;
             }
-            return phase.contains("nexus") || title.contains("nexus") || title.contains("ending")
-                    ? RoutePhase.CONTAINMENT
-                    : RoutePhase.ROUTE;
+            if (containsAny(signal, "biohazard", "deep", "radiation", "cryo", "lab", "vault", "boss")) {
+                return RoutePhase.PHASE_07;
+            }
+            if (containsAny(signal, "grid", "relay", "station", "industrial", "infrastructure")
+                    || definition.phaseOrder() == 6) {
+                return RoutePhase.PHASE_06;
+            }
+            return switch (definition.phaseOrder()) {
+                case 0 -> RoutePhase.PHASE_00;
+                case 1 -> RoutePhase.PHASE_01;
+                case 2 -> RoutePhase.PHASE_02;
+                case 3 -> RoutePhase.PHASE_03;
+                default -> RoutePhase.PHASE_07;
+            };
         }
         if (chapterId.contains("echoorbitalremnants") || namespace.equals("echoorbitalremnants")) {
-            return path.contains("deep_space") || path.contains("echo_zero") || path.contains("final")
-                    || path.contains("seal")
-                            ? RoutePhase.CONTAINMENT
-                            : RoutePhase.ROUTE;
+            String signal = path + " " + phase + " " + title;
+            if (containsAny(signal, "seal", "survey", "faction", "mastery")) {
+                return RoutePhase.PHASE_09;
+            }
+            if (containsAny(signal, "echo_zero", "echo-0", "final", "core", "guardian")) {
+                return RoutePhase.PHASE_08;
+            }
+            return containsAny(signal, "deep_space", "deep space", "radiation", "cryo", "lab", "vault")
+                    ? RoutePhase.PHASE_07
+                    : RoutePhase.PHASE_06;
         }
         if (chapterId.contains("echostationfall") || chapterId.endsWith(":stationfall")
                 || namespace.equals("echostationfall")) {
-            return RoutePhase.ROUTE;
+            String signal = path + " " + phase + " " + title;
+            if (containsAny(signal, "boss", "blackbox", "black box", "ai_core", "ai core", "guardian")) {
+                return RoutePhase.PHASE_08;
+            }
+            if (containsAny(signal, "deep", "radiation", "cryo", "lab", "vault", "reactor")) {
+                return RoutePhase.PHASE_07;
+            }
+            return definition.phaseOrder() <= 0 ? RoutePhase.PHASE_03 : RoutePhase.PHASE_06;
         }
         if (chapterId.contains("echoindustrialnexus") || namespace.equals("echoindustrialnexus")) {
-            return RoutePhase.INFRASTRUCTURE;
+            String signal = path + " " + phase + " " + title;
+            if (containsAny(signal, "survived", "radiation", "cryo", "lab", "vault", "boss")) {
+                return RoutePhase.PHASE_07;
+            }
+            return containsAny(signal, "filter", "metal", "grind", "reclaim_power", "power")
+                            ? RoutePhase.PHASE_02
+                            : RoutePhase.PHASE_06;
         }
         if (chapterId.contains("echonexusprotocol") || namespace.equals("echonexusprotocol")
                 || chapterId.contains("echoblackboxprotocol") || namespace.equals("echoblackboxprotocol")) {
-            return RoutePhase.CONTAINMENT;
+            String signal = path + " " + phase + " " + title;
+            if (containsAny(signal, "aftermath", "seal", "survey", "faction", "mastery")) {
+                return RoutePhase.PHASE_09;
+            }
+            return containsAny(signal, "ending", "guardian", "echo_zero", "echo-0", "core", "decision")
+                            ? RoutePhase.PHASE_08
+                            : RoutePhase.PHASE_07;
         }
         return null;
     }
 
-    private static RoutePhase vanillaPhase(String path) {
-        return switch (path) {
-            case "story/root", "story/mine_stone", "story/upgrade_tools", "story/smelt_iron", "story/iron_tools",
-                    "adventure/kill_a_mob", "adventure/sleep_in_bed", "husbandry/plant_seed" -> RoutePhase.SURVIVE;
-            case "husbandry/breed_an_animal", "husbandry/tame_an_animal", "adventure/trade",
-                    "adventure/shoot_arrow", "story/lava_bucket", "story/mine_diamond", "story/enchant_item" ->
-                    RoutePhase.STABILIZE;
-            case "story/enter_the_nether", "story/follow_ender_eye", "story/enter_the_end" -> RoutePhase.ROUTE;
-            default -> path.startsWith("nether/") || path.startsWith("end/") ? RoutePhase.ROUTE : null;
-        };
+    private static boolean containsAny(String value, String... needles) {
+        for (String needle : needles) {
+            if (value.contains(needle)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean visibleInOtherSignals(TerminalMissionRole role) {
@@ -240,6 +383,10 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         String source = "Source: " + record.chapter().title()
                 + ". Use that chapter tab for rewards and chapter-specific commands.";
         return childHint == null || childHint.isBlank() ? source : childHint + " " + source;
+    }
+
+    private static TerminalMissionSnapshot usableSnapshot(TerminalMissionSnapshot snapshot, SourceRecord record) {
+        return snapshot != null && record.definition().id().equals(snapshot.missionId()) ? snapshot : record.snapshot();
     }
 
     private static TerminalMissionChapter safeChapter(TerminalMissionProvider provider) {
@@ -308,12 +455,16 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
     }
 
     private enum RoutePhase {
-        SURVIVE("survive", "Survive", 0),
-        STABILIZE("stabilize", "Stabilize", 1),
-        ROUTE("route", "Route", 2),
-        INFRASTRUCTURE("infrastructure", "Infrastructure", 3),
-        CONTAINMENT("containment", "Containment", 4),
-        OTHER_SIGNALS("other_signals", "Other Signals", 5);
+        PHASE_00("phase_00", "Phase 00", 0),
+        PHASE_01("phase_01", "Phase 01", 1),
+        PHASE_02("phase_02", "Phase 02", 2),
+        PHASE_03("phase_03", "Phase 03", 3),
+        PHASE_04("phase_04", "Phase 04", 4),
+        PHASE_05("phase_05", "Phase 05", 5),
+        PHASE_06("phase_06", "Phase 06", 6),
+        PHASE_07("phase_07", "Phase 07", 7),
+        PHASE_08("phase_08", "Phase 08", 8),
+        PHASE_09("phase_09", "Phase 09", 9);
 
         private final String id;
         private final String title;
@@ -364,5 +515,15 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
             TerminalMissionRole role,
             RoutePhase phase,
             int order) {
+    }
+
+    private record RouteCacheKey(UUID playerId, long refreshBucket, String providerFingerprint) {
+    }
+
+    private record RouteSnapshot(
+            List<SourceRecord> records,
+            Map<Identifier, SourceRecord> sourceById,
+            List<TerminalMissionDefinition> definitions,
+            int overflowCount) {
     }
 }

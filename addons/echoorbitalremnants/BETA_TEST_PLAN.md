@@ -34,19 +34,37 @@ Use this checklist before publishing a release jar.
 ## Creative Route Smoke Test
 
 1. Open every machine menu and confirm progress, charge, blocked-output, and bad-input text still update.
-2. Travel through Low Earth Orbit, Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, and Nexus Anomaly Belt.
+2. Travel through Low Earth Orbit, Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, and Nexus Anomaly Belt.
 3. Confirm each arrival site has a readable landmark and at least one useful cache.
-4. Repair three Station Relay Nodes, three Helium Extractor Nodes, three Mars Pressure Consoles, and three Europa Thermal Arrays.
-5. Spawn or encounter Corrupted Docking AI, Lunar Nexus Husk, Abandoned Captain, Europa Cryo Warden, and ECHO-0.
+4. Repair three Station Relay Nodes, three Helium Extractor Nodes, three Mars Pressure Consoles, three Europa Thermal Arrays, three Saturn Ring Relays, and three Titan Methane Pumps.
+5. Spawn or encounter Corrupted Docking AI, Lunar Nexus Husk, Abandoned Captain, Europa Cryo Warden, Saturn Relay Sentinel, Titan Methane Stalker, and ECHO-0.
 6. Defeat ECHO-0 and confirm the terminal reports quarantine resolution and grants the final-protocol reward once.
-7. Confirm Nexus stabilization is locked before ECHO-0, then complete three unique survey logs for Orbit, Moon, Mars, Europa, and Nexus.
+7. Confirm Nexus stabilization is locked before ECHO-0, then complete three unique survey logs for Orbit, Moon, Mars, Europa, Saturn, Titan, and Nexus.
 8. Confirm Nexus 0/3 through 2/3 guidance names Anchor/Growth sites and Nexus Stabilizer Shard recovery, and that stabilization grants the survey reward once.
-9. Complete one faction contract, press SCAN to seal the final survey network, and repeat SCAN to confirm only completion guidance refreshes.
+9. Complete three faction contracts, press SCAN to seal the final survey network, and repeat SCAN to confirm only completion guidance refreshes.
+
+## Route Pacing Smoke Test
+
+1. Use the default Adventure preset.
+2. On each route, arrive, explore for 3-5 minutes, repair one objective, and open one arrival or deep-site cache.
+3. Confirm caches provide route progression value, one crafting support stack, and oxygen/seal recovery.
+4. Confirm hazards remain readable and tense without forcing emergency oxygen or sealant recovery every minute.
+5. Complete the route survey and confirm the terminal reports reduced local pressure for that route.
+
+## Full Earth-To-Nexus Manual Route Pass
+
+1. Start from a survival-oriented setup after an ECHO: Ashfall Protocol Nexus choice.
+2. Run Earth -> Low Earth Orbit -> Moon -> Mars -> Europa -> Saturn -> Titan -> Nexus in order.
+3. At every route handoff, confirm the route item gives action-bar feedback, sound/particles, clear lock text when blocked, and does not consume the reusable vessel/key.
+4. At every route site, confirm the objective block is visually discoverable, SCAN feedback is audible/visible, and one cache feels worth opening.
+5. At Saturn and Titan, confirm the route identities read differently: Saturn relay ribs/salvage lanes, Titan methane/tholin pressure cues.
+6. During encounters, confirm special attacks have a readable tell before pressure/oxygen/radiation effects land.
+7. Confirm terminal next-step text, return vectors, faction hub wording, ECHO-0 guidance, Nexus stabilization, and final seal all match the automated route state.
 
 ## Faction Contract Smoke Test
 
 1. Use each pledge item: Orbital Remnant Badge, Void Salvager Marker, and Nexus Choir Sigil.
-2. Confirm the ECHO tab shows the current faction contract.
+2. Confirm the ECHO tab shows the current faction contract and beta faction hub scans distinguish no pledge, already-serviced hubs, active contract chains, and authorized cache rewards.
 3. Complete an Orbital Remnant contract by scanning a Low Orbit relay or spending Orbit Survey Data.
 4. Complete a Void Salvager contract by scanning salvage or turning in Orbital Alloy plus Vacuum Circuit.
 5. Complete a Nexus Choir contract after ECHO-0 by scanning Nexus growth/anchors or spending a Nexus Stabilizer Shard.

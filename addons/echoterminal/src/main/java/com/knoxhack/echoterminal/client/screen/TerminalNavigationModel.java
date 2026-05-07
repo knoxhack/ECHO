@@ -12,10 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 
 final class TerminalNavigationModel {
-    private static final List<TerminalNavigationSection> SECTION_ORDER = List.of(
-            TerminalNavigationSection.TERMINAL,
-            TerminalNavigationSection.CORE,
-            TerminalNavigationSection.CHAPTERS);
+    private static final List<TerminalNavigationSection> SECTION_ORDER = TerminalNavigationSection.storyFirstOrder();
 
     private final List<TerminalTab> tabs;
     private final List<IndexedTab> indexedTabs;

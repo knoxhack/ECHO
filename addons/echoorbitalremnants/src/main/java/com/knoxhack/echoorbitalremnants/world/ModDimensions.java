@@ -13,6 +13,8 @@ public final class ModDimensions {
     public static final ResourceKey<Level> LUNAR_SCAR_ZONE = key("lunar_scar_zone");
     public static final ResourceKey<Level> MARS_ASH_BASIN = key("mars_ash_basin");
     public static final ResourceKey<Level> EUROPA_CRYO_OCEAN = key("europa_cryo_ocean");
+    public static final ResourceKey<Level> SATURN_RING_GRAVEYARD = key("saturn_ring_graveyard");
+    public static final ResourceKey<Level> TITAN_METHANE_SHELF = key("titan_methane_shelf");
     public static final ResourceKey<Level> NEXUS_ANOMALY_BELT = key("nexus_anomaly_belt");
 
     private ModDimensions() {
@@ -24,6 +26,8 @@ public final class ModDimensions {
                 || dimension == LUNAR_SCAR_ZONE
                 || dimension == MARS_ASH_BASIN
                 || dimension == EUROPA_CRYO_OCEAN
+                || dimension == SATURN_RING_GRAVEYARD
+                || dimension == TITAN_METHANE_SHELF
                 || dimension == NEXUS_ANOMALY_BELT;
     }
 

@@ -7,9 +7,14 @@ import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.world.EuropaCryoOcean;
 import com.knoxhack.echoorbitalremnants.world.MarsAshBasin;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
+import com.knoxhack.echoorbitalremnants.world.SaturnRingGraveyard;
+import com.knoxhack.echoorbitalremnants.world.TitanMethaneShelf;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -38,8 +43,11 @@ public class PlanetaryRouteItem extends Item {
                 if (returnLevel == null) {
                     returnLevel = serverPlayer.level().getServer().overworld();
                 }
+                playRouteFeedback(serverPlayer.level(), player.blockPosition(), ParticleTypes.CLOUD, 12, 1.35F);
                 serverPlayer.teleportTo(returnLevel, progress.returnX(), progress.returnY(), progress.returnZ(), Set.of(), player.getYRot(), player.getXRot(), false);
+                playRouteFeedback(returnLevel, BlockPos.containing(progress.returnX(), progress.returnY(), progress.returnZ()), ParticleTypes.CLOUD, 10, 1.6F);
                 player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return vector committed."));
+                sendStatus(player, target.displayName + " return vector burned.");
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && player.isShiftKeyDown() && !progress.hasReturnPoint()) {
@@ -70,11 +78,28 @@ public class PlanetaryRouteItem extends Item {
                 target.seed(targetLevel, arrival);
                 target.spawnThreats(targetLevel, arrival);
                 target.mark(progress, player);
+                playRouteFeedback(serverLevel, player.blockPosition(), ParticleTypes.PORTAL, 28, 0.75F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);
+                playRouteFeedback(targetLevel, arrival, target.particle(), 36, target.pitch());
                 player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " route acquired. " + target.arrivalMessage));
+                sendStatus(player, target.displayName + " route burn complete. Return vector saved.");
             }
         }
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    private static void sendStatus(Player player, String message) {
+        Component component = Component.literal("ECHO-7 // " + message);
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(component, true);
+        } else {
+            player.sendSystemMessage(component);
+        }
+    }
+
+    private static void playRouteFeedback(ServerLevel level, BlockPos pos, net.minecraft.core.particles.ParticleOptions particle, int count, float pitch) {
+        level.playSound(null, pos, SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.7F, pitch);
+        level.sendParticles(particle, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, count, 0.55D, 0.65D, 0.55D, 0.04D);
     }
 
     public enum Target {
@@ -146,6 +171,74 @@ public class PlanetaryRouteItem extends Item {
             void mark(EchoTerminalProgress progress, Player player) {
                 progress.markEuropaCryoOceanVisited(player);
             }
+        },
+        SATURN("Saturn Ring Graveyard", ModDimensions.SATURN_RING_GRAVEYARD, -2240.0D, -768.0D,
+                "Old relay ribs are tumbling through the ring plane.") {
+            @Override
+            boolean unlocked(EchoTerminalProgress progress) {
+                return progress.saturnRouteUnlocked();
+            }
+
+            @Override
+            boolean midGameReady(EchoTerminalProgress progress) {
+                return progress.europaArrayGateOpen();
+            }
+
+            @Override
+            String midGameLockMessage() {
+                return "Calibrate three Europa Thermal Arrays before the Saturn transfer geometry stops shearing.";
+            }
+
+            @Override
+            void seed(ServerLevel level, BlockPos arrival) {
+                SaturnRingGraveyard.seedLandingSite(level, arrival);
+            }
+
+            @Override
+            void spawnThreats(ServerLevel level, BlockPos arrival) {
+                spawn(level, arrival.offset(-7, 1, 4), ModEntities.ECHO_DEFENSE_DRONE.get());
+                spawn(level, arrival.offset(6, 1, -5), ModEntities.VACUUM_WRAITH.get());
+                spawn(level, arrival.offset(2, 1, 8), ModEntities.SATURN_RELAY_SENTINEL.get());
+            }
+
+            @Override
+            void mark(EchoTerminalProgress progress, Player player) {
+                progress.markSaturnRingGraveyardVisited(player);
+            }
+        },
+        TITAN("Titan Methane Shelf", ModDimensions.TITAN_METHANE_SHELF, 2560.0D, -1024.0D,
+                "Methane shelf pressure is barely civil, and the survey dome is still blinking.") {
+            @Override
+            boolean unlocked(EchoTerminalProgress progress) {
+                return progress.titanRouteUnlocked();
+            }
+
+            @Override
+            boolean midGameReady(EchoTerminalProgress progress) {
+                return progress.saturnRelayGateOpen();
+            }
+
+            @Override
+            String midGameLockMessage() {
+                return "Restore three Saturn Ring Relays before Titan descent can keep a return vector.";
+            }
+
+            @Override
+            void seed(ServerLevel level, BlockPos arrival) {
+                TitanMethaneShelf.seedLandingSite(level, arrival);
+            }
+
+            @Override
+            void spawnThreats(ServerLevel level, BlockPos arrival) {
+                spawn(level, arrival.offset(-5, 1, -7), ModEntities.TITAN_METHANE_STALKER.get());
+                spawn(level, arrival.offset(6, 1, 5), ModEntities.NEXUS_HUSK.get());
+                spawn(level, arrival.offset(0, 1, 9), ModEntities.VACUUM_WRAITH.get());
+            }
+
+            @Override
+            void mark(EchoTerminalProgress progress, Player player) {
+                progress.markTitanMethaneShelfVisited(player);
+            }
         };
 
         private final String displayName;
@@ -173,6 +266,24 @@ public class PlanetaryRouteItem extends Item {
         abstract void spawnThreats(ServerLevel level, BlockPos arrival);
 
         abstract void mark(EchoTerminalProgress progress, Player player);
+
+        net.minecraft.core.particles.ParticleOptions particle() {
+            return switch (this) {
+                case MARS -> ParticleTypes.SMOKE;
+                case EUROPA -> ParticleTypes.SNOWFLAKE;
+                case SATURN -> ParticleTypes.CLOUD;
+                case TITAN -> ParticleTypes.LARGE_SMOKE;
+            };
+        }
+
+        float pitch() {
+            return switch (this) {
+                case MARS -> 0.95F;
+                case EUROPA -> 1.25F;
+                case SATURN -> 1.45F;
+                case TITAN -> 0.82F;
+            };
+        }
 
         private static void spawn(ServerLevel level, BlockPos pos, net.minecraft.world.entity.EntityType<?> type) {
             Entity entity = type.create(level, EntitySpawnReason.EVENT);

@@ -68,7 +68,7 @@ public class EchoAshfallProtocol {
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("=== ECHO: Ashfall Protocol ===");
         LOGGER.info("Initializing survival systems...");
-        LOGGER.info("Loading Nexus + Orbital Endgame v1.3.0...");
+        LOGGER.info("Loading Ashfall + Orbital public beta route v1.3.0...");
 
         event.enqueueWork(() -> {
             AshfallCoreServices.register();

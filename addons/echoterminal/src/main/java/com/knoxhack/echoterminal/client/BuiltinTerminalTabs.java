@@ -7,10 +7,15 @@ import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echocore.api.EchoFactionProfile;
 import com.knoxhack.echocore.api.EchoHazardTelemetry;
-import com.knoxhack.echocore.api.EchoPackMode;
 import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
+import com.knoxhack.echoterminal.api.TerminalAddonGuide;
+import com.knoxhack.echoterminal.api.TerminalAddonInfo;
+import com.knoxhack.echoterminal.api.TerminalAddonInfoRegistry;
+import com.knoxhack.echoterminal.api.TerminalAddonLink;
+import com.knoxhack.echoterminal.api.TerminalAddonMetric;
+import com.knoxhack.echoterminal.api.TerminalAddonSection;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
 import com.knoxhack.echoterminal.api.TerminalIcon;
@@ -23,16 +28,19 @@ import com.knoxhack.echoterminal.api.TerminalTabDescriptor;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.api.TerminalUi;
 import com.knoxhack.echoterminal.api.TerminalVisualAssets;
-import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
+import com.knoxhack.echoterminal.api.theme.TerminalIconKey;
+import com.knoxhack.echoterminal.api.theme.TerminalTheme;
+import com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionChapter;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
+import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
-import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +62,67 @@ public final class BuiltinTerminalTabs {
     private static final Identifier ADDONS = id("addons");
     private static final Identifier ARCHIVES = id("archives");
     private static final Identifier CLAIM_REWARDS = id("claim_rewards");
+    private static final Map<String, TerminalAddonGuide> FALLBACK_GUIDES = Map.ofEntries(
+            Map.entry("ashfall", TerminalAddonGuide.mainline(1, 10, "Start here",
+                    "Begin with Ashfall to learn survival basics, repair the terminal, stabilize camp, and open the first route signals.",
+                    List.of(
+                            "Secure water, shelter, food, and filters before long trips.",
+                            "Open Ashfall Command or Protocol Roadmap for the next mission.",
+                            "Use Survival Route when you want the complete roadmap."))),
+            Map.entry("ashfall_protocol", TerminalAddonGuide.mainline(1, 10, "Start here",
+                    "Begin with Ashfall to learn survival basics, repair the terminal, stabilize camp, and open the first route signals.",
+                    List.of(
+                            "Secure water, shelter, food, and filters before long trips.",
+                            "Open Ashfall Command or Protocol Roadmap for the next mission.",
+                            "Use Survival Route when you want the complete roadmap."))),
+            Map.entry("orbital_remnants", TerminalAddonGuide.mainline(2, 20, "After Ashfall",
+                    "Start Orbital Remnants after Ashfall gives you enough supplies and route confidence to leave the ground network.",
+                    List.of(
+                            "Open Orbital Command and review launch readiness.",
+                            "Scan the launch site and fill missing launch systems.",
+                            "Use Route Survey to track route worlds and ECHO-0 records."))),
+            Map.entry("stationfall", TerminalAddonGuide.mainline(3, 30, "After Orbital",
+                    "Start Stationfall once Orbital route progress exposes the dead station and you can support suit hazards.",
+                    List.of(
+                            "Board only after station coordinates or network restoration are ready.",
+                            "Restore station sections before pushing deep objectives.",
+                            "Recover crew logs and the Stationfall Blackbox handoff."))),
+            Map.entry("nexus", TerminalAddonGuide.mainline(4, 40, "Late story",
+                    "Start Nexus Protocol after Stationfall has exposed the blackbox handoff and the world can support field instability.",
+                    List.of(
+                            "Open Nexus Protocol to review research chain readiness.",
+                            "Watch Nexus Field before running risky charge systems.",
+                            "Use Field Map to avoid collapsed or critical chunks."))),
+            Map.entry("nexus_protocol", TerminalAddonGuide.mainline(4, 40, "Late story",
+                    "Start Nexus Protocol after Stationfall has exposed the blackbox handoff and the world can support field instability.",
+                    List.of(
+                            "Open Nexus Protocol to review research chain readiness.",
+                            "Watch Nexus Field before running risky charge systems.",
+                            "Use Field Map to avoid collapsed or critical chunks."))),
+            Map.entry("blackbox", TerminalAddonGuide.mainline(5, 50, "Final chapter",
+                    "Start Blackbox Protocol after late-story handoffs are complete and you are ready to resolve memory archives and endings.",
+                    List.of(
+                            "Open Blackbox Access to confirm route availability.",
+                            "Decode memory archives before committing to final proof.",
+                            "Use Truth Engine only when ending readiness is clear."))),
+            Map.entry("blackbox_protocol", TerminalAddonGuide.mainline(5, 50, "Final chapter",
+                    "Start Blackbox Protocol after late-story handoffs are complete and you are ready to resolve memory archives and endings.",
+                    List.of(
+                            "Open Blackbox Access to confirm route availability.",
+                            "Decode memory archives before committing to final proof.",
+                            "Use Truth Engine only when ending readiness is clear."))),
+            Map.entry("industrial", TerminalAddonGuide.optional(600, "Side route",
+                    "Industrial Nexus is optional factory progression; start it when your base can support heat, power, and machine recovery.",
+                    List.of(
+                            "Open Industrial Nexus and scan factory route telemetry.",
+                            "Build toward scrubbers and safe-zone support.",
+                            "Treat Furnace Warden progress as production survival, not a main saga gate."))),
+            Map.entry("industrial_nexus", TerminalAddonGuide.optional(600, "Side route",
+                    "Industrial Nexus is optional factory progression; start it when your base can support heat, power, and machine recovery.",
+                    List.of(
+                            "Open Industrial Nexus and scan factory route telemetry.",
+                            "Build toward scrubbers and safe-zone support.",
+                            "Treat Furnace Warden progress as production survival, not a main saga gate."))));
 
     private BuiltinTerminalTabs() {
     }
@@ -68,8 +137,8 @@ public final class BuiltinTerminalTabs {
         registerTab(new FactionAtlasTab(), TerminalNavigationProfile.core(128));
         registerTab(new VitalsTab(), TerminalNavigationProfile.terminal(130));
         registerTab(new RewardInboxTab(), TerminalNavigationProfile.terminal(140));
-        registerTab(new MainSurvivalRouteTab(), TerminalNavigationProfile.core(170));
-        registerTab(new AddonsTab(), TerminalNavigationProfile.chaptersHub(0));
+        registerTab(new MainSurvivalRouteTab(), TerminalNavigationProfile.chaptersHub(0));
+        registerTab(new AddonsTab(), TerminalNavigationProfile.core(150));
         TerminalActionRegistry.register(REWARD_INBOX, CLAIM_REWARDS,
                 (player, payload) -> EchoCoreServices.claimTerminalRewards(player));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
@@ -96,25 +165,59 @@ public final class BuiltinTerminalTabs {
 
     public static Identifier commandDeckPriorityTabForTests(
             boolean hasBlockers, int pendingRewards, boolean hasIncompleteRoute, int chapterCount) {
-        return commandDeckPriorityTab(hasBlockers, pendingRewards, hasIncompleteRoute, chapterCount);
+        return commandDeckPriorityTab(false, pendingRewards, hasBlockers, false, hasIncompleteRoute,
+                true, chapterCount);
+    }
+
+    public static Identifier commandDeckPriorityTabForTests(
+            boolean hasBlockers, int pendingRewards, boolean hasIncompleteRoute,
+            boolean survivalRouteAvailable, int chapterCount) {
+        return commandDeckPriorityTab(false, pendingRewards, hasBlockers, false, hasIncompleteRoute,
+                survivalRouteAvailable, chapterCount);
+    }
+
+    public static Identifier commandDeckPriorityTabForTests(
+            boolean vitalsWarning, boolean hasBlockers, int pendingRewards,
+            boolean hasActiveSurvivalObjective, boolean hasIncompleteRoute,
+            boolean survivalRouteAvailable, int chapterCount) {
+        return commandDeckPriorityTab(vitalsWarning, pendingRewards, hasBlockers, hasActiveSurvivalObjective,
+                hasIncompleteRoute, survivalRouteAvailable, chapterCount);
     }
 
     public static Identifier commandDeckRewardActionForTests() {
         return CLAIM_REWARDS;
     }
 
+    public static List<String> addonGuideOrderForTests(List<EchoAddonChapter> chapters) {
+        return addonChapterEntries(chapters, null).stream()
+                .map(entry -> entry.guide().label() + "|" + chapterId(entry.chapter()))
+                .toList();
+    }
+
+    public static TerminalAddonGuide addonGuideForTests(String chapterId) {
+        return fallbackGuide(chapterId, "ECHO Chapter");
+    }
+
     private static Identifier commandDeckPriorityTab(
-            boolean hasBlockers, int pendingRewards, boolean hasIncompleteRoute, int chapterCount) {
-        if (hasBlockers) {
-            return DIAGNOSTICS;
+            boolean vitalsWarning, int pendingRewards, boolean hasBlockers,
+            boolean hasActiveSurvivalObjective, boolean hasIncompleteRoute,
+            boolean survivalRouteAvailable, int chapterCount) {
+        if (vitalsWarning) {
+            return VITALS;
         }
         if (pendingRewards > 0) {
             return REWARD_INBOX;
         }
+        if (hasActiveSurvivalObjective && survivalRouteAvailable) {
+            return MainSurvivalQuestProvider.TAB_ID;
+        }
         if (hasIncompleteRoute) {
             return ROUTE_RECORDS;
         }
-        if (chapterCount > 0) {
+        if (hasBlockers) {
+            return DIAGNOSTICS;
+        }
+        if (survivalRouteAvailable) {
             return MainSurvivalQuestProvider.TAB_ID;
         }
         return ADDONS;
@@ -126,6 +229,77 @@ public final class BuiltinTerminalTabs {
         } catch (RuntimeException exception) {
             EchoTerminal.LOGGER.warn("Terminal addon chapter list failed; rendering empty chapter list.", exception);
             return List.of();
+        }
+    }
+
+    private static List<AddonChapterEntry> addonChapterEntries(TerminalRenderContext context) {
+        return addonChapterEntries(addonChapters(), context);
+    }
+
+    private static List<AddonChapterEntry> addonChapterEntries(
+            List<EchoAddonChapter> chapters, TerminalRenderContext context) {
+        List<AddonChapterEntry> entries = new ArrayList<>();
+        for (EchoAddonChapter chapter : chapters == null ? List.<EchoAddonChapter>of() : chapters) {
+            TerminalAddonInfo info = addonInfo(chapter, context);
+            entries.add(new AddonChapterEntry(chapter, info, guideFor(chapter, info)));
+        }
+        return entries.stream()
+                .sorted(java.util.Comparator
+                        .comparingInt((AddonChapterEntry entry) -> entry.guide().sortOrder())
+                        .thenComparing(entry -> entry.guide().mainline() ? 0 : 1)
+                        .thenComparing(entry -> chapterGuideTitle(entry.chapter()))
+                        .thenComparing(entry -> chapterId(entry.chapter())))
+                .toList();
+    }
+
+    private static TerminalAddonGuide guideFor(EchoAddonChapter chapter, TerminalAddonInfo info) {
+        TerminalAddonGuide provided = info == null ? TerminalAddonGuide.empty() : info.guide();
+        if (provided != null && !provided.isEmpty()) {
+            return provided;
+        }
+        return fallbackGuide(chapterId(chapter), chapterGuideTitle(chapter));
+    }
+
+    private static TerminalAddonGuide fallbackGuide(String chapterId, String title) {
+        String key = cleanKey(chapterId);
+        TerminalAddonGuide guide = FALLBACK_GUIDES.get(key);
+        if (guide == null && key.contains(":")) {
+            guide = FALLBACK_GUIDES.get(key.substring(key.indexOf(':') + 1));
+        }
+        if (guide != null) {
+            return guide;
+        }
+        return TerminalAddonGuide.optional(9000, "Addon content",
+                "This addon is installed, but it has not published chapter guide metadata yet.",
+                List.of(
+                        "Check its status and availability below.",
+                        "Open linked terminal pages if they are registered.",
+                        "Use the owning addon's records for first mission details."));
+    }
+
+    private static String chapterGuideTitle(EchoAddonChapter chapter) {
+        String title = chapterDisplayName(chapter);
+        if (title.regionMatches(true, 0, "ECHO:", 0, 5)) {
+            title = title.substring(5).strip();
+        }
+        return title.isBlank() ? "ECHO Chapter" : title;
+    }
+
+    private static String chapterGuideHeading(EchoAddonChapter chapter, TerminalAddonGuide guide) {
+        String label = guide == null || guide.label().isBlank() ? "Optional" : guide.label();
+        return label + ": " + chapterGuideTitle(chapter);
+    }
+
+    private static String cleanKey(String value) {
+        return value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static TerminalAddonInfo addonInfo(EchoAddonChapter chapter, TerminalRenderContext context) {
+        try {
+            return TerminalAddonInfoRegistry.info(chapterId(chapter), context == null ? null : context.player());
+        } catch (RuntimeException exception) {
+            EchoTerminal.LOGGER.warn("Terminal addon info lookup failed for {}.", chapterId(chapter), exception);
+            return TerminalAddonInfo.empty();
         }
     }
 
@@ -202,6 +376,12 @@ public final class BuiltinTerminalTabs {
         }
     }
 
+    private record AddonChapterEntry(
+            EchoAddonChapter chapter,
+            TerminalAddonInfo info,
+            TerminalAddonGuide guide) {
+    }
+
     private static final class MainSurvivalRouteTab implements TerminalTab {
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(MainSurvivalQuestProvider.TAB_ID, "SURVIVAL ROUTE", 170, 0xFF92F7A6);
@@ -209,7 +389,7 @@ public final class BuiltinTerminalTabs {
                 TerminalTabChrome.of("Survival Route", TerminalTabChrome.GROUP_FIELD, "SR",
                         "Main survival quest line", 170);
         private final TerminalMissionBrowser browser =
-                new TerminalMissionBrowser(MainSurvivalQuestProvider.INSTANCE, descriptor.id(), true);
+                new TerminalMissionBrowser(MainSurvivalQuestProvider.INSTANCE, descriptor.id(), true, 40);
 
         @Override
         public TerminalTabDescriptor descriptor() {
@@ -224,11 +404,6 @@ public final class BuiltinTerminalTabs {
         @Override
         public void onSelected(TerminalRenderContext context) {
             browser.onSelected(context);
-            context.sendAction(descriptor.id(), TerminalMissionActions.MISSION_ACTION,
-                    TerminalMissionActions.payload(
-                            VanillaJourneyProvider.CHAPTER_ID,
-                            id("vanilla_journey_refresh"),
-                            "refresh"));
         }
 
         @Override
@@ -296,60 +471,67 @@ public final class BuiltinTerminalTabs {
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
-            int h = context.contentHeight();
-            EchoPackMode packMode = EchoCoreServices.packMode(context.player());
             List<EchoDiagnosticBlocker> diagnostics = EchoCoreServices.diagnostics(context.player());
             List<EchoRouteRecord> routes = EchoCoreServices.routeRecords(context.player());
+            EchoHazardTelemetry telemetry = EchoCoreServices.hazardTelemetry(context.player());
             List<EchoAddonChapter> chapters = addonChapters();
             int pendingRewards = EchoCoreServices.pendingTerminalRewardCount(context.player());
             EchoRouteRecord route = firstIncompleteRoute(routes);
-            DeckAction priority = priorityAction(diagnostics, route, pendingRewards, chapters.size());
-            List<DeckAction> shortcuts = readyActions(diagnostics, route, pendingRewards, chapters.size());
-            List<DeckAction> metrics = metricActions(packMode, diagnostics, routes, pendingRewards, chapters.size());
-            lastActions = deckActions(priority, shortcuts, metrics);
+            SurvivalObjective objective = survivalObjective(context);
+            List<DeckAction> tasks = survivalTasks(context, telemetry, diagnostics, objective, route, pendingRewards, chapters.size());
+            DeckAction next = tasks.isEmpty()
+                    ? navigateAction(context, "Open Survival Route", "Guide", "Open the route and choose the next field objective.",
+                            TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID)
+                    : tasks.get(0);
+            List<DeckAction> followups = tasks.stream().skip(1).limit(3).toList();
+            List<DeckAction> commands = commandActions(context, diagnostics, routes, pendingRewards, chapters.size());
+            List<DeckAction> themeActions = themeActions();
+            lastActions = deckActions(next, followups, commands, themeActions);
             actionRenderIndex = 0;
             if (selectedActionIndex >= lastActions.size()) {
                 selectedActionIndex = -1;
             }
 
-            int heroH = Math.min(54, Math.max(40, h / 7));
-            TerminalUi.imagePanel(context, graphics, TerminalVisualAssets.OVERVIEW_PROTOCOL_DASHBOARD,
-                    x, y, w, heroH, descriptor.accentColor(), 0.62F, true, TerminalUi.ImageFit.COVER);
-            y += heroH + 8;
-            TerminalUi.sectionHeader(context, graphics, "COMMAND DECK", packMode.displayName(), x, y, w, descriptor.accentColor());
-            int cy = y + 20;
-
-            int topGap = w >= 620 ? 12 : 8;
-            if (w >= 620) {
-                int priorityW = Math.max(310, w * 52 / 100);
-                int pulseX = x + priorityW + topGap;
-                int pulseW = w - priorityW - topGap;
-                drawPriorityPanel(context, graphics, priority, x, cy, priorityW, 104, mouseX, mouseY);
-                drawPulsePanel(context, graphics, packMode, diagnostics, routes, pendingRewards, chapters.size(),
-                        pulseX, cy, pulseW, 104);
-                cy += 114;
+            int cy = TerminalUi.sectionHeader(context, graphics,
+                    "SURVIVAL COMMAND", survivalHeaderStatus(telemetry, pendingRewards, diagnostics), x, y, w,
+                    descriptor.accentColor());
+            boolean wide = w >= 680;
+            int gap = wide ? 12 : 8;
+            if (wide) {
+                int nextW = Math.max(360, w * 58 / 100);
+                drawNextStepPanel(context, graphics, next, x, cy, nextW, 108, mouseX, mouseY);
+                drawVitalsPanel(context, graphics, telemetry, x + nextW + gap, cy,
+                        Math.max(220, w - nextW - gap), 108);
+                cy += 120;
+                int tasksW = Math.max(360, w * 58 / 100);
+                int lowerY = cy;
+                drawTaskList(context, graphics, followups, x, cy, tasksW, mouseX, mouseY);
+                drawCommandGrid(context, graphics, commands, x + tasksW + gap, cy,
+                        Math.max(220, w - tasksW - gap), mouseX, mouseY);
+                int lowerH = Math.max(followups.isEmpty() ? 74 : 18 + followups.size() * 54,
+                        18 + ((commands.size() + commandColumns(Math.max(220, w - tasksW - gap)) - 1)
+                                / commandColumns(Math.max(220, w - tasksW - gap))) * 38);
+                drawThemeSelector(context, graphics, themeActions, x, lowerY + lowerH + 10, w, mouseX, mouseY);
             } else {
-                drawPriorityPanel(context, graphics, priority, x, cy, w, 100, mouseX, mouseY);
-                cy += 108;
-                drawPulsePanel(context, graphics, packMode, diagnostics, routes, pendingRewards, chapters.size(),
-                        x, cy, w, 96);
-                cy += 106;
+                drawNextStepPanel(context, graphics, next, x, cy, w, 104, mouseX, mouseY);
+                cy += 112;
+                drawVitalsPanel(context, graphics, telemetry, x, cy, w, 96);
+                cy += 104;
+                cy = drawTaskList(context, graphics, followups, x, cy, w, mouseX, mouseY) + 10;
+                drawCommandGrid(context, graphics, commands, x, cy, w, mouseX, mouseY);
+                cy += 18 + ((commands.size() + commandColumns(w) - 1) / commandColumns(w)) * 38 + 10;
+                drawThemeSelector(context, graphics, themeActions, x, cy, w, mouseX, mouseY);
             }
-
-            cy = drawReadyRow(context, graphics, shortcuts, x, cy, w, mouseX, mouseY) + 10;
-            drawMetricGrid(context, graphics, metrics, x, cy, w, mouseX, mouseY);
         }
 
         @Override
         public int contentHeight(TerminalRenderContext context) {
             int w = context.contentWidth();
-            int readyColumns = w >= 640 ? 3 : w >= 410 ? 2 : 1;
-            int readyRows = (3 + readyColumns - 1) / readyColumns;
-            int metricRows = (int) Math.ceil(7.0D / dashboardColumns(w));
-            int readyHeight = 18 + readyRows * 42 + 10;
-            int base = w >= 620
-                    ? 54 + 114 + readyHeight + 18 + metricRows * 52
-                    : 54 + 108 + 106 + readyHeight + 18 + metricRows * 52;
+            int commandRows = w >= 680 ? 2 : (4 + commandColumns(w) - 1) / commandColumns(w);
+            int lower = Math.max(18 + 3 * 54, 18 + commandRows * 38);
+            int base = w >= 680
+                    ? 20 + 120 + lower + 86
+                    : 20 + 112 + 104 + 18 + 3 * 54 + 10 + commandRows * 38 + 86;
             return Math.max(context.contentHeight(), base + 20);
         }
 
@@ -381,93 +563,100 @@ public final class BuiltinTerminalTabs {
                     return true;
                 }
             }
-            if (selectedActionIndex >= 0 && !lastActions.isEmpty()
-                    && (key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_UP
-                            || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_W)) {
-                selectedActionIndex = Math.floorMod(selectedActionIndex - 1, lastActions.size());
+            if (!lastActions.isEmpty() && (key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_UP)) {
+                selectedActionIndex = selectedActionIndex < 0
+                        ? 0
+                        : Math.floorMod(selectedActionIndex - 1, lastActions.size());
                 context.playCommandSound();
                 return true;
             }
-            if (selectedActionIndex >= 0 && !lastActions.isEmpty()
-                    && (key == GLFW.GLFW_KEY_RIGHT || key == GLFW.GLFW_KEY_DOWN
-                            || key == GLFW.GLFW_KEY_D || key == GLFW.GLFW_KEY_S)) {
-                selectedActionIndex = Math.floorMod(selectedActionIndex + 1, lastActions.size());
+            if (!lastActions.isEmpty() && (key == GLFW.GLFW_KEY_RIGHT || key == GLFW.GLFW_KEY_DOWN)) {
+                selectedActionIndex = selectedActionIndex < 0
+                        ? 0
+                        : Math.floorMod(selectedActionIndex + 1, lastActions.size());
                 context.playCommandSound();
                 return true;
             }
             return false;
         }
 
-        private void drawPriorityPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+        private void drawNextStepPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 DeckAction action, int x, int y, int w, int h, int mouseX, int mouseY) {
             int actionIndex = registerHitbox(x, y, w, h, mouseX, mouseY);
             boolean hovered = TerminalUi.inside(mouseX, mouseY, x, y, w, h);
             boolean selected = actionIndex == selectedActionIndex;
-            TerminalUi.densePanel(graphics, x, y, w, h, hovered || selected ? action.color() : descriptor.accentColor());
-            TerminalUi.line(context, graphics, "PRIORITY ACTION", x + 12, y + 10, w - 24, action.color());
-            TerminalUi.line(context, graphics, action.label(), x + 12, y + 30, Math.max(70, w - 118), TerminalUi.TEXT);
+            TerminalUi.flatHudPanel(context, graphics, x, y, w, h,
+                    hovered || selected ? action.color() : descriptor.accentColor());
+            TerminalUi.hybridIconBadge(graphics, action.icon(context), TerminalIcon.DEFAULT,
+                    x + 12, y + 30, 34, action.color(), hovered || selected);
+            TerminalUi.line(context, graphics, "NEXT STEP", x + 12, y + 10, w - 24, action.color());
+            TerminalUi.line(context, graphics, action.label(), x + 54, y + 32, Math.max(70, w - 166), TerminalUi.TEXT);
             int pillW = Math.min(104, Math.max(76, w / 4));
             TerminalUi.miniStatusPill(context, graphics, action.value(), x + w - pillW - 12,
-                    y + 28, pillW, action.color(), hovered || selected);
-            TerminalUi.wrap(context, graphics, action.detail(), x + 12, y + 52, w - 24,
+                    y + 30, pillW, action.color(), hovered || selected);
+            TerminalUi.wrap(context, graphics, action.detail(), x + 54, y + 56, w - 66,
                     action.enabled() ? TerminalUi.MUTED : TerminalUi.RED);
         }
 
-        private static void drawPulsePanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                EchoPackMode packMode, List<EchoDiagnosticBlocker> diagnostics, List<EchoRouteRecord> routes,
-                int pendingRewards, int chapterCount, int x, int y, int w, int h) {
-            TerminalUi.panel(graphics, x, y, w, h);
-            TerminalUi.line(context, graphics, "SYSTEM PULSE", x + 12, y + 10, w - 24, TerminalUi.CYAN);
-            int rows = Math.max(14, (h - 32) / 4);
-            pulseLine(context, graphics, "Mode", modeChip(packMode), x + 12, y + 30, w - 24, TerminalUi.CYAN);
-            pulseLine(context, graphics, "Diagnostics", diagnostics.isEmpty() ? "Clear" : diagnostics.size() + " blocker(s)",
-                    x + 12, y + 30 + rows, w - 24,
-                    diagnostics.isEmpty() ? TerminalUi.GREEN : DiagnosticsTab.severityColor(diagnostics.get(0).severity()));
-            pulseLine(context, graphics, "Routes", completedRoutes(routes) + "/" + routes.size() + " complete",
-                    x + 12, y + 30 + rows * 2, w - 24, routes.isEmpty() ? TerminalUi.MUTED : TerminalUi.GREEN);
-            pulseLine(context, graphics, "Inbox / Chapters", pendingRewards + " item(s) / " + chapterCount,
-                    x + 12, y + 30 + rows * 3, w - 24, pendingRewards > 0 ? TerminalUi.AMBER : TerminalUi.MUTED);
+        private static void drawVitalsPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                EchoHazardTelemetry telemetry, int x, int y, int w, int h) {
+            TerminalUi.flatHudPanel(context, graphics, x, y, w, h,
+                    telemetry.warning() ? TerminalUi.AMBER : TerminalUi.GREEN);
+            TerminalUi.line(context, graphics, "SURVIVAL STATUS", x + 12, y + 10, w - 24,
+                    telemetry.warning() ? TerminalUi.AMBER : TerminalUi.GREEN);
+            TerminalUi.wrap(context, graphics, survivalWarning(telemetry), x + 12, y + 28, w - 24,
+                    telemetry.warning() ? TerminalUi.AMBER : TerminalUi.MUTED);
+            int chipY = y + h - 24;
+            int chipGap = 6;
+            int chipW = Math.max(56, (w - 24 - chipGap * 2) / 3);
+            drawVitalChip(context, graphics, "Water", telemetry.hydration(), true, x + 12, chipY, chipW);
+            drawVitalChip(context, graphics, "Air", telemetry.oxygen(), true, x + 12 + chipW + chipGap, chipY, chipW);
+            drawVitalChip(context, graphics, "Hazard", highestHazard(telemetry), false,
+                    x + 12 + (chipW + chipGap) * 2, chipY, Math.max(44, w - 24 - (chipW + chipGap) * 2));
         }
 
-        private static void pulseLine(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                String label, String value, int x, int y, int w, int color) {
-            int labelW = Math.min(106, Math.max(62, w / 2));
-            TerminalUi.line(context, graphics, label, x, y, labelW, TerminalUi.MUTED);
-            TerminalUi.line(context, graphics, value, x + labelW, y, Math.max(40, w - labelW), color);
+        private static void drawVitalChip(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                String label, int value, boolean highGood, int x, int y, int w) {
+            int danger = highGood ? 100 - value : value;
+            int color = danger >= 70 ? TerminalUi.RED : danger >= 40 ? TerminalUi.AMBER : TerminalUi.GREEN;
+            graphics.fill(x, y, x + w, y + 16, 0xAA071017);
+            graphics.outline(x, y, w, 16, 0x33244352);
+            TerminalUi.line(context, graphics, label, x + 5, y + 4, Math.max(20, w - 34), TerminalUi.MUTED);
+            TerminalUi.line(context, graphics, value + "%", x + w - 30, y + 4, 28, color);
         }
 
-        private int drawReadyRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+        private int drawTaskList(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 List<DeckAction> actions, int x, int y, int w, int mouseX, int mouseY) {
-            TerminalUi.section(context, graphics, "READY NOW", x, y, descriptor.accentColor());
+            TerminalUi.section(context, graphics, "FIELD CHECKLIST", x, y, descriptor.accentColor());
             int cy = y + 18;
-            int columns = w >= 640 ? 3 : w >= 410 ? 2 : 1;
-            int gap = 8;
-            int cardW = Math.max(120, (w - gap * (columns - 1)) / columns);
-            for (int i = 0; i < actions.size(); i++) {
-                int col = i % columns;
-                int row = i / columns;
-                int cx = x + col * (cardW + gap);
-                int actionY = cy + row * 42;
-                int cw = col == columns - 1 ? Math.max(120, w - col * (cardW + gap)) : cardW;
-                drawActionButton(context, graphics, actions.get(i), cx, actionY, cw, 34, mouseX, mouseY);
+            if (actions.isEmpty()) {
+                TerminalUi.panel(context, graphics, x, cy, w, 48);
+                TerminalUi.line(context, graphics, "No extra field tasks queued.", x + 10, cy + 10, w - 20, TerminalUi.GREEN);
+                TerminalUi.wrap(context, graphics, "Open the Survival Route when you want the full roadmap.",
+                        x + 10, cy + 26, w - 20, TerminalUi.MUTED);
+                return cy + 56;
             }
-            return cy + ((actions.size() + columns - 1) / columns) * 42;
+            for (DeckAction action : actions) {
+                drawTaskCard(context, graphics, action, x, cy, w, 46, mouseX, mouseY);
+                cy += 54;
+            }
+            return cy;
         }
 
-        private void drawMetricGrid(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                List<DeckAction> metrics, int x, int y, int width, int mouseX, int mouseY) {
-            TerminalUi.section(context, graphics, "COMMAND SHORTCUTS", x, y, descriptor.accentColor());
-            int columns = dashboardColumns(width);
-            int gap = 8;
-            int cardW = Math.max(84, (width - gap * (columns - 1)) / columns);
+        private void drawCommandGrid(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                List<DeckAction> commands, int x, int y, int width, int mouseX, int mouseY) {
+            TerminalUi.section(context, graphics, "USEFUL COMMANDS", x, y, descriptor.accentColor());
+            int columns = commandColumns(width);
+            int gap = 6;
+            int cardW = Math.max(96, (width - gap * (columns - 1)) / columns);
             int cy = y + 18;
-            for (int i = 0; i < metrics.size(); i++) {
+            for (int i = 0; i < commands.size(); i++) {
                 int col = i % columns;
                 int row = i / columns;
                 int cx = x + col * (cardW + gap);
-                int cardY = cy + row * 52;
-                int cw = col == columns - 1 ? Math.max(84, width - col * (cardW + gap)) : cardW;
-                drawMetricCard(context, graphics, metrics.get(i), cx, cardY, cw, 44, mouseX, mouseY);
+                int cardY = cy + row * 38;
+                int cw = col == columns - 1 ? Math.max(96, width - col * (cardW + gap)) : cardW;
+                drawActionButton(context, graphics, commands.get(i), cx, cardY, cw, 30, mouseX, mouseY);
             }
         }
 
@@ -477,21 +666,43 @@ public final class BuiltinTerminalTabs {
             boolean hovered = TerminalUi.inside(mouseX, mouseY, x, y, w, h);
             boolean selected = actionIndex == selectedActionIndex;
             if (action.enabled()) {
-                TerminalUi.primaryCommandButton(context, graphics, x, y, w, h, action.label(), null,
+                TerminalUi.primaryCommandButton(context, graphics, x, y, w, h, action.label(), action.icon(context),
                         action.color(), hovered || selected);
             } else {
-                TerminalUi.disabledCommandButton(context, graphics, x, y, w, h, action.label());
+                TerminalUi.disabledCommandButton(context, graphics, x, y, w, h, action.label(), action.icon(context));
             }
         }
 
-        private void drawMetricCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+        private void drawThemeSelector(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                List<DeckAction> themes, int x, int y, int width, int mouseX, int mouseY) {
+            TerminalUi.section(context, graphics, "APPEARANCE", x, y, descriptor.accentColor());
+            int columns = Math.max(1, Math.min(2, themes.size()));
+            int gap = 8;
+            int cardW = Math.max(128, (width - gap * Math.max(0, columns - 1)) / columns);
+            int cy = y + 18;
+            for (int i = 0; i < themes.size(); i++) {
+                int col = i % columns;
+                int row = i / columns;
+                int cx = x + col * (cardW + gap);
+                int cardY = cy + row * 36;
+                int cw = col == columns - 1 ? Math.max(128, width - col * (cardW + gap)) : cardW;
+                drawActionButton(context, graphics, themes.get(i), cx, cardY, cw, 28, mouseX, mouseY);
+            }
+        }
+
+        private void drawTaskCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 DeckAction action, int x, int y, int w, int h, int mouseX, int mouseY) {
             int actionIndex = registerHitbox(x, y, w, h, mouseX, mouseY);
             boolean hovered = TerminalUi.inside(mouseX, mouseY, x, y, w, h);
-            TerminalUi.densePanel(graphics, x, y, w, h,
-                    hovered || actionIndex == selectedActionIndex ? action.color() : TerminalUi.CYAN_DIM);
-            TerminalUi.line(context, graphics, action.label(), x + 8, y + 7, w - 16, TerminalUi.MUTED);
-            TerminalUi.line(context, graphics, action.value(), x + 8, y + 22, w - 16, action.color());
+            boolean selected = actionIndex == selectedActionIndex;
+            TerminalUi.densePanel(context, graphics, x, y, w, h,
+                    hovered || selected ? action.color() : TerminalUi.CYAN_DIM);
+            TerminalUi.hybridIcon(graphics, action.icon(context), TerminalIcon.DEFAULT, x + 9, y + 8, 18,
+                    action.color(), hovered || selected);
+            TerminalUi.line(context, graphics, action.label(), x + 34, y + 7, Math.max(80, w - 136), TerminalUi.TEXT);
+            TerminalUi.line(context, graphics, action.value(), x + w - 92, y + 7, 82, action.color());
+            TerminalUi.line(context, graphics, action.detail(), x + 34, y + 24, w - 44,
+                    action.enabled() ? TerminalUi.MUTED : TerminalUi.RED);
         }
 
         private int registerHitbox(int x, int y, int w, int h, int mouseX, int mouseY) {
@@ -506,86 +717,114 @@ public final class BuiltinTerminalTabs {
             return -1;
         }
 
-        private static List<DeckAction> deckActions(DeckAction priority, List<DeckAction> shortcuts, List<DeckAction> metrics) {
+        private static List<DeckAction> deckActions(DeckAction priority, List<DeckAction> followups,
+                List<DeckAction> commands, List<DeckAction> themes) {
             List<DeckAction> actions = new ArrayList<>();
             actions.add(priority);
-            actions.addAll(shortcuts);
-            actions.addAll(metrics);
+            actions.addAll(followups);
+            actions.addAll(commands);
+            actions.addAll(themes);
             return List.copyOf(actions);
         }
 
-        private static List<DeckAction> readyActions(List<EchoDiagnosticBlocker> diagnostics,
-                EchoRouteRecord route, int pendingRewards, int chapterCount) {
+        private static List<DeckAction> themeActions() {
+            Identifier selected = TerminalClientOptions.selectedThemeId();
+            return TerminalThemeRegistry.all().stream()
+                    .map(theme -> DeckAction.theme(theme, selected.equals(theme.id())))
+                    .toList();
+        }
+
+        private static List<DeckAction> survivalTasks(TerminalRenderContext context, EchoHazardTelemetry telemetry,
+                List<EchoDiagnosticBlocker> diagnostics, SurvivalObjective objective, EchoRouteRecord route,
+                int pendingRewards, int chapterCount) {
             List<DeckAction> actions = new ArrayList<>();
-            if (pendingRewards > 0) {
-                actions.add(DeckAction.reward("Claim Rewards", pendingRewards + " item(s)",
-                        "Move all stored support caches into inventory.", TerminalUi.AMBER, true));
+            if (telemetry.warning()) {
+                addUnique(actions, vitalAction(context, telemetry));
             }
-            if (!diagnostics.isEmpty()) {
-                actions.add(blockerAction(diagnostics.get(0)));
+            if (pendingRewards > 0) {
+                addUnique(actions, DeckAction.reward("Claim Rewards", pendingRewards + " ready",
+                        "Move support caches into your inventory before heading out.", TerminalUi.AMBER, true));
+            }
+            if (objective != null) {
+                addUnique(actions, survivalObjectiveAction(context, objective));
             }
             if (route != null) {
-                actions.add(routeAction(route));
+                addUnique(actions, routeAction(context, route));
             }
-            actions.add(navigateAction("Open Survival Route", "Guide", "Open the aggregate survival route.",
-                    TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
+            if (!diagnostics.isEmpty()) {
+                addUnique(actions, blockerAction(context, diagnostics.get(0)));
+            }
+            addUnique(actions, navigateAction(context, "Open Survival Route", "Guide",
+                    "Review the full survival roadmap and pick the next mission.", TerminalUi.GREEN,
+                    MainSurvivalQuestProvider.TAB_ID));
             if (chapterCount > 0) {
-                actions.add(navigateAction("Review Chapters", chapterCount + " linked",
-                        "Inspect installed chapter status and availability.", TerminalUi.AMBER, ADDONS));
+                addUnique(actions, navigateAction(context, "Chapter Guide", "Linked",
+                        "Check installed chapter order, status, and linked terminal pages.", TerminalUi.CYAN, ADDONS));
             }
-            return actions.stream().limit(3).toList();
+            return actions.stream().limit(4).toList();
         }
 
-        private static DeckAction priorityAction(List<EchoDiagnosticBlocker> diagnostics,
-                EchoRouteRecord route, int pendingRewards, int chapterCount) {
-            Identifier priorityTab = commandDeckPriorityTab(!diagnostics.isEmpty(), pendingRewards, route != null, chapterCount);
-            if (DIAGNOSTICS.equals(priorityTab)) {
-                return blockerAction(diagnostics.get(0));
-            }
-            if (REWARD_INBOX.equals(priorityTab)) {
-                return DeckAction.reward("Claim Rewards", pendingRewards + " ready",
-                        "Reward Inbox has support cache item(s) ready to claim.", TerminalUi.AMBER, true);
-            }
-            if (ROUTE_RECORDS.equals(priorityTab)) {
-                return routeAction(route);
-            }
-            if (MainSurvivalQuestProvider.TAB_ID.equals(priorityTab)) {
-                return navigateAction("Open Survival Route", "Route", "Continue through the aggregate survival guide.",
-                        TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID);
-            }
-            return navigateAction("Review Chapters", "No addons",
-                    "Install or enable an ECHO chapter to populate missions and field systems.", TerminalUi.AMBER, ADDONS);
-        }
-
-        private static List<DeckAction> metricActions(EchoPackMode packMode, List<EchoDiagnosticBlocker> diagnostics,
+        private static List<DeckAction> commandActions(TerminalRenderContext context, List<EchoDiagnosticBlocker> diagnostics,
                 List<EchoRouteRecord> routes, int pendingRewards, int chapterCount) {
-            int blockerColor = diagnostics.isEmpty() ? TerminalUi.GREEN : DiagnosticsTab.severityColor(diagnostics.get(0).severity());
-            return List.of(
-                    navigateAction("Blockers", String.valueOf(diagnostics.size()), "Open diagnostics.", blockerColor, DIAGNOSTICS),
-                    navigateAction("Inbox", pendingRewards + " item(s)", "Open support cache inbox.",
-                            pendingRewards > 0 ? TerminalUi.AMBER : TerminalUi.MUTED, REWARD_INBOX),
-                    navigateAction("Routes", completedRoutes(routes) + "/" + routes.size(), "Open route records.",
-                            routes.isEmpty() ? TerminalUi.MUTED : TerminalUi.GREEN, ROUTE_RECORDS),
-                    navigateAction("Vitals", modeChip(packMode), "Open shared hazard telemetry.", TerminalUi.CYAN, VITALS),
-                    navigateAction("Archives", "Records", "Open field archive records.", TerminalUi.CYAN, ARCHIVES),
-                    navigateAction("Chapters", String.valueOf(chapterCount), "Open installed chapter status.",
-                            chapterCount > 0 ? TerminalUi.AMBER : TerminalUi.MUTED, ADDONS),
-                    navigateAction("Survival", "Route", "Open the aggregate survival route.",
-                            TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
+            List<DeckAction> commands = new ArrayList<>();
+            addUnique(commands, DeckAction.themeCycle());
+            addUnique(commands, navigateAction(context, "Survival Route", "Guide",
+                    "Open the full survival roadmap.", TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
+            if (pendingRewards > 0) {
+                addUnique(commands, DeckAction.reward("Claim Rewards", pendingRewards + " ready",
+                        "Collect support caches now.", TerminalUi.AMBER, true));
+            }
+            addUnique(commands, navigateAction(context, "Vitals", "Status", "Open hydration and hazard telemetry.",
+                    TerminalUi.CYAN, VITALS));
+            if (!routes.isEmpty()) {
+                addUnique(commands, navigateAction(context, "Routes", completedRoutes(routes) + "/" + routes.size(),
+                        "Open route records.", TerminalUi.GREEN, ROUTE_RECORDS));
+            }
+            if (!diagnostics.isEmpty() && commands.size() < 4) {
+                addUnique(commands, navigateAction(context, "Fix Blockers", String.valueOf(diagnostics.size()),
+                        "Open What Now diagnostics.", DiagnosticsTab.severityColor(diagnostics.get(0).severity()), DIAGNOSTICS));
+            }
+            if (chapterCount > 0 && commands.size() < 4) {
+                addUnique(commands, navigateAction(context, "Chapter Guide", String.valueOf(chapterCount),
+                        "Review chapter order and linked addon pages.", TerminalUi.CYAN, ADDONS));
+            }
+            return commands.stream().limit(4).toList();
         }
 
-        private static DeckAction blockerAction(EchoDiagnosticBlocker blocker) {
+        private static DeckAction blockerAction(TerminalRenderContext context, EchoDiagnosticBlocker blocker) {
             String action = blocker.nextAction().isBlank() ? blocker.detail() : blocker.nextAction();
-            return navigateAction("Resolve Blocker", blocker.severity().name(),
+            return navigateAction(context, "Fix Blocker", blocker.severity().name(),
                     blocker.title() + ". " + action, DiagnosticsTab.severityColor(blocker.severity()), DIAGNOSTICS);
         }
 
-        private static DeckAction routeAction(EchoRouteRecord route) {
-            return navigateAction("Continue Route", route.title(), route.status(), TerminalUi.GREEN, ROUTE_RECORDS);
+        private static DeckAction routeAction(TerminalRenderContext context, EchoRouteRecord route) {
+            return navigateAction(context, "Continue Route", route.title(),
+                    route.status() + ". " + route.summary(), TerminalUi.GREEN, ROUTE_RECORDS);
         }
 
-        private static DeckAction navigateAction(String label, String value, String detail, int color, Identifier tabId) {
-            return new DeckAction(label, value, detail, color, tabId, false, true);
+        private static DeckAction navigateAction(TerminalRenderContext context,
+                String label, String value, String detail, int color, Identifier tabId) {
+            boolean enabled = context != null && context.canNavigateToTab(tabId);
+            return new DeckAction(label, value, detail, color, tabId, false, null, "open", enabled);
+        }
+
+        private static DeckAction vitalAction(TerminalRenderContext context, EchoHazardTelemetry telemetry) {
+            return navigateAction(context, "Stabilize Vitals", "WARNING", survivalWarning(telemetry),
+                    TerminalUi.AMBER, VITALS);
+        }
+
+        private static DeckAction survivalObjectiveAction(TerminalRenderContext context, SurvivalObjective objective) {
+            return navigateAction(context, "Continue Survival", objective.statusLabel(),
+                    objective.title() + ". " + objective.nextStep(), objective.color(), MainSurvivalQuestProvider.TAB_ID);
+        }
+
+        private static void addUnique(List<DeckAction> actions, DeckAction action) {
+            for (DeckAction existing : actions) {
+                if (existing.sameDestination(action)) {
+                    return;
+                }
+            }
+            actions.add(action);
         }
 
         private static EchoRouteRecord firstIncompleteRoute(List<EchoRouteRecord> routes) {
@@ -596,37 +835,206 @@ public final class BuiltinTerminalTabs {
             return (int) routes.stream().filter(EchoRouteRecord::complete).count();
         }
 
-        private static int dashboardColumns(int width) {
-            if (width >= 720) {
-                return 4;
+        private static int commandColumns(int width) {
+            if (width >= 620) {
+                return 2;
             }
-            if (width >= 520) {
-                return 3;
-            }
-            return 2;
+            return width >= 360 ? 2 : 1;
         }
 
-        private static String modeChip(EchoPackMode packMode) {
-            return switch (packMode) {
-                case ASHFALL_STANDALONE -> "ASHFALL";
-                case ORBITAL_STANDALONE -> "ORBITAL";
-                case FULL_SAGA -> "FULL SAGA";
-                case UNKNOWN -> "UNKNOWN";
+        private static String survivalHeaderStatus(EchoHazardTelemetry telemetry, int pendingRewards,
+                List<EchoDiagnosticBlocker> diagnostics) {
+            if (telemetry.warning()) {
+                return "Vitals need attention";
+            }
+            if (pendingRewards > 0) {
+                return pendingRewards + " reward(s) ready";
+            }
+            if (!diagnostics.isEmpty()) {
+                return diagnostics.size() + " blocker(s)";
+            }
+            return "Ready";
+        }
+
+        private static String survivalWarning(EchoHazardTelemetry telemetry) {
+            if (telemetry.hydration() <= 35) {
+                return "Drink water soon. Hydration is " + telemetry.hydration() + "%.";
+            }
+            if (telemetry.oxygen() <= 35) {
+                return "Find breathable air. Oxygen is " + telemetry.oxygen() + "%.";
+            }
+            if (telemetry.pressure() <= 35) {
+                return "Pressure is unstable. Check suit or shelter before pushing ahead.";
+            }
+            if (telemetry.radiation() >= 50) {
+                return "Radiation is elevated. Reduce exposure or leave the hot zone.";
+            }
+            if (telemetry.toxicAir() >= 50) {
+                return "Toxic air detected. Use protection or relocate.";
+            }
+            if (telemetry.cold() >= 50) {
+                return "Cold exposure is climbing. Warm up before traveling.";
+            }
+            if (telemetry.heat() >= 50) {
+                return "Heat exposure is climbing. Cool down before traveling.";
+            }
+            if (telemetry.exposure() >= 50) {
+                return "Environmental exposure is high. Find cover or stabilize gear.";
+            }
+            return telemetry.statusLine();
+        }
+
+        private static int highestHazard(EchoHazardTelemetry telemetry) {
+            return Math.max(Math.max(telemetry.radiation(), telemetry.toxicAir()),
+                    Math.max(Math.max(telemetry.cold(), telemetry.heat()), telemetry.exposure()));
+        }
+
+        private static SurvivalObjective survivalObjective(TerminalRenderContext context) {
+            SurvivalObjective best = null;
+            for (TerminalMissionDefinition definition : safeSurvivalMissions(context)) {
+                TerminalMissionSnapshot snapshot = safeSurvivalSnapshot(context, definition);
+                if (isClaimed(snapshot.status())) {
+                    continue;
+                }
+                TerminalMissionPresentation presentation = safeSurvivalPresentation(context, definition, snapshot);
+                SurvivalObjective candidate = new SurvivalObjective(
+                        presentation.shortTitle(),
+                        snapshot.statusLabel(),
+                        emptyFallback(presentation.nextStep(), presentation.objectiveSummary()),
+                        statusColor(snapshot.status()),
+                        survivalScore(snapshot.status()));
+                if (best == null || candidate.score() < best.score()) {
+                    best = candidate;
+                }
+            }
+            return best;
+        }
+
+        private static List<TerminalMissionDefinition> safeSurvivalMissions(TerminalRenderContext context) {
+            try {
+                List<TerminalMissionDefinition> missions = MainSurvivalQuestProvider.INSTANCE
+                        .missions(context == null ? null : context.player());
+                return missions == null ? List.of() : missions;
+            } catch (RuntimeException exception) {
+                return List.of();
+            }
+        }
+
+        private static TerminalMissionSnapshot safeSurvivalSnapshot(
+                TerminalRenderContext context, TerminalMissionDefinition definition) {
+            try {
+                TerminalMissionSnapshot snapshot = MainSurvivalQuestProvider.INSTANCE
+                        .snapshot(context == null ? null : context.player(), definition.id());
+                return snapshot == null
+                        ? new TerminalMissionSnapshot(definition.id(), TerminalMissionStatus.LOCKED, 0.0F,
+                                "LOCKED", "", "Open Survival Route for details.", List.of())
+                        : snapshot;
+            } catch (RuntimeException exception) {
+                return new TerminalMissionSnapshot(definition.id(), TerminalMissionStatus.LOCKED, 0.0F,
+                        "LOCKED", "", "Open Survival Route for details.", List.of());
+            }
+        }
+
+        private static TerminalMissionPresentation safeSurvivalPresentation(
+                TerminalRenderContext context, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+            try {
+                TerminalMissionPresentation presentation = MainSurvivalQuestProvider.INSTANCE
+                        .presentation(context == null ? null : context.player(), definition, snapshot);
+                return presentation == null
+                        ? TerminalMissionPresentation.fallback(definition, snapshot)
+                        : presentation;
+            } catch (RuntimeException exception) {
+                return TerminalMissionPresentation.fallback(definition, snapshot);
+            }
+        }
+
+        private static boolean isClaimed(TerminalMissionStatus status) {
+            return status == TerminalMissionStatus.CLAIMED || status == TerminalMissionStatus.COMPLETED;
+        }
+
+        private static int survivalScore(TerminalMissionStatus status) {
+            return switch (status) {
+                case CLAIMABLE -> 0;
+                case UNLOCKED -> 1;
+                case LOCKED, VIEW_ONLY -> 2;
+                case COMPLETED, CLAIMED -> 3;
             };
+        }
+
+        private static int statusColor(TerminalMissionStatus status) {
+            return switch (status) {
+                case CLAIMABLE -> TerminalUi.AMBER;
+                case UNLOCKED -> TerminalUi.GREEN;
+                case LOCKED, VIEW_ONLY -> TerminalUi.MUTED;
+                case COMPLETED, CLAIMED -> TerminalUi.CYAN;
+            };
+        }
+
+        private static String emptyFallback(String value, String fallback) {
+            return value == null || value.isBlank() ? fallback : value;
         }
 
         private record DeckHitbox(int x, int y, int w, int h, int index) {
         }
 
+        private record SurvivalObjective(String title, String statusLabel, String nextStep, int color, int score) {
+        }
+
         private record DeckAction(String label, String value, String detail, int color, Identifier tabId,
-                boolean rewardClaim, boolean enabled) {
+                boolean rewardClaim, Identifier themeId, String iconKey, boolean enabled) {
             static DeckAction reward(String label, String value, String detail, int color, boolean enabled) {
-                return new DeckAction(label, value, detail, color, REWARD_INBOX, true, enabled);
+                return new DeckAction(label, value, detail, color, REWARD_INBOX, true, null, "claim", enabled);
+            }
+
+            static DeckAction theme(TerminalTheme theme, boolean selected) {
+                return new DeckAction(theme.displayName(), selected ? "ACTIVE" : "AVAILABLE",
+                        selected ? "Current terminal skin and icon set." : "Switch terminal skin and icon set.",
+                        selected ? TerminalUi.GREEN : theme.tokens().colors().accent(),
+                        null, false, theme.id(), "settings", true);
+            }
+
+            static DeckAction themeCycle() {
+                List<TerminalTheme> themes = TerminalThemeRegistry.all();
+                if (themes.isEmpty()) {
+                    return new DeckAction("Theme", "DEFAULT", "Theme registry is using the fallback console skin.",
+                            TerminalUi.CYAN, null, false, TerminalClientOptions.selectedThemeId(), "cycle", true);
+                }
+                Identifier current = TerminalClientOptions.selectedThemeId();
+                int index = 0;
+                for (int i = 0; i < themes.size(); i++) {
+                    if (themes.get(i).id().equals(current)) {
+                        index = i;
+                        break;
+                    }
+                }
+                TerminalTheme next = themes.get(Math.floorMod(index + 1, themes.size()));
+                return new DeckAction("Theme", next.displayName(), "Cycle terminal skin and icon set.",
+                        next.tokens().colors().accent(), null, false, next.id(), "cycle", true);
+            }
+
+            boolean sameDestination(DeckAction other) {
+                return other != null && rewardClaim == other.rewardClaim
+                        && java.util.Objects.equals(tabId, other.tabId)
+                        && java.util.Objects.equals(themeId, other.themeId);
+            }
+
+            Identifier icon(TerminalRenderContext context) {
+                if (themeId != null) {
+                    return TerminalUi.themedIcon(context, TerminalIconKey.theme(iconKey), TerminalVisualAssets.ICON_GROUP_SYSTEMS);
+                }
+                Identifier fallback = rewardClaim ? TerminalVisualAssets.ICON_ACTION_CLAIM : TerminalVisualAssets.ICON_ACTION_OPEN_ROADMAP;
+                return TerminalUi.themedActionIcon(context, iconKey, fallback);
             }
 
             void execute(TerminalRenderContext context) {
                 if (!enabled) {
                     context.playRejectedSound();
+                    return;
+                }
+                if (themeId != null) {
+                    TerminalClientOptions.selectTheme(themeId);
+                    TerminalUi.applyThemeGlobals(TerminalClientOptions.currentTheme());
+                    context.playCommandSound();
                     return;
                 }
                 if (rewardClaim) {
@@ -639,11 +1047,14 @@ public final class BuiltinTerminalTabs {
     }
 
     private static final class AddonsTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 62;
+        private static final int ROW_HEIGHT = 56;
+        private static final int LINK_HEIGHT = 34;
         private final TerminalTabDescriptor descriptor =
-                new TerminalTabDescriptor(id("addons"), "ADDONS", 900, 0xFFFFD166);
+                new TerminalTabDescriptor(ADDONS, "CHAPTER GUIDE", 150, 0xFFFFD166);
         private final TerminalTabChrome chrome =
-                TerminalTabChrome.of("Chapters", TerminalTabChrome.GROUP_ADDONS, "AD", "Installed chapter status", 900);
+                TerminalTabChrome.of("Chapter Guide", TerminalTabChrome.GROUP_CORE, "CH",
+                        "Numbered chapter guide", 150);
+        private final List<AddonLinkHitbox> linkHitboxes = new ArrayList<>();
         private String selectedChapterId = "";
         private int lastListX;
         private int lastListY;
@@ -662,112 +1073,154 @@ public final class BuiltinTerminalTabs {
 
         @Override
         public void onSelected(TerminalRenderContext context) {
-            normalizeSelection(addonChapters());
+            normalizeSelection(addonChapterEntries(context));
+            linkHitboxes.clear();
         }
 
         @Override
         public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            linkHitboxes.clear();
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
             int h = context.contentHeight();
-            List<EchoAddonChapter> chapters = addonChapters();
-            if (chapters.isEmpty()) {
+            List<AddonChapterEntry> entries = addonChapterEntries(context);
+            if (entries.isEmpty()) {
                 TerminalUi.flatDataPanel(context, graphics,
-                        x, y, w, Math.min(140, Math.max(90, h / 4)), "ECHO ADDON ROADMAP", "",
+                        x, y, w, Math.min(150, Math.max(96, h / 4)), "CHAPTER GUIDE", "",
                         descriptor.accentColor());
-                TerminalUi.line(context, graphics, "No addon chapters detected.", x + 14, y + 44,
-                        w - 28, TerminalUi.MUTED);
+                TerminalUi.wrap(context, graphics,
+                        "No addon chapters detected. Installed ECHO chapter guidance appears here after core chapter metadata registers.",
+                        x + 14, y + 44, w - 28, TerminalUi.MUTED);
                 return;
             }
-            normalizeSelection(chapters);
-            boolean wide = w >= 640;
-            int listW = wide ? Math.max(260, Math.min(420, w * 42 / 100)) : w;
+            normalizeSelection(entries);
+            boolean wide = w >= 700;
+            int listW = wide ? Math.max(280, Math.min(400, w * 34 / 100)) : w;
             int detailX = wide ? x + listW + 14 : x;
-            int boardH = wide ? Math.max(280, Math.min(Math.max(280, h - 154), Math.max(280, chapters.size() * ROW_HEIGHT + 100)))
-                    : Math.max(180, chapters.size() * ROW_HEIGHT + 46);
+            int desiredBoardH = Math.max(250, entries.size() * ROW_HEIGHT + 66);
+            int boardH = wide
+                    ? Math.max(260, Math.min(Math.max(260, h), desiredBoardH))
+                    : Math.max(168, entries.size() * ROW_HEIGHT + 52);
             int detailY = wide ? y : y + boardH + 12;
             int detailW = wide ? Math.max(220, w - listW - 18) : w;
+            long mainlineCount = entries.stream().filter(entry -> entry.guide().mainline()).count();
+            long optionalCount = entries.size() - mainlineCount;
 
             int cy = TerminalUi.flatDataPanel(context, graphics,
-                    x, y, listW - 8, boardH, "ECHO ADDON ROADMAP",
-                    chapters.size() + " linked", descriptor.accentColor()) + 6;
+                    x, y, listW - 8, boardH, "CHAPTER GUIDE",
+                    mainlineCount + " story / " + optionalCount + " optional", descriptor.accentColor()) + 6;
             lastListX = x;
             lastListY = cy;
             lastListW = listW - 8;
             lastListH = Math.max(1, boardH - (cy - y) - 12);
-            for (EchoAddonChapter chapter : chapters) {
+            for (AddonChapterEntry entry : entries) {
+                EchoAddonChapter chapter = entry.chapter();
+                TerminalAddonGuide guide = entry.guide();
                 boolean available = chapterAvailable(chapter, context);
                 boolean selected = chapterId(chapter).equals(selectedChapterId);
                 boolean hovered = TerminalUi.inside(mouseX, mouseY, x, cy, listW - 8, ROW_HEIGHT - 8);
-                int color = available ? 0xFF92F7A6 : 0xFF8D96A3;
-                TerminalUi.dataListRow(context, graphics, x + 10, cy, listW - 28, ROW_HEIGHT - 8,
-                        chapterDisplayName(chapter), chapterStatusLine(chapter, context),
-                        available ? "AVAILABLE" : "LOCKED", selected, hovered, descriptor.accentColor(), color);
-                TerminalUi.line(context, graphics, chapterSummary(chapter), x + 20, cy + 38,
-                        listW - 42, selected ? TerminalUi.TEXT : TerminalUi.MUTED);
+                TerminalRenderContext chapterContext = context.withChapterTheme(chapterModId(chapter),
+                        chapterGuideTitle(chapter), chapterModId(chapter));
+                int rowAccent = available
+                        ? TerminalUi.chapterAccent(chapterContext, guide.mainline() ? TerminalUi.CYAN : TerminalUi.AMBER)
+                        : TerminalUi.MUTED;
+                int statusColor = available ? TerminalUi.GREEN : TerminalUi.MUTED;
+                TerminalUi.dataListRow(chapterContext, graphics, x + 10, cy, listW - 28, ROW_HEIGHT - 8,
+                        chapterGuideHeading(chapter, guide), guide.stageLabel(),
+                        available ? "AVAILABLE" : "LOCKED", selected, hovered, rowAccent, statusColor);
                 cy += ROW_HEIGHT;
             }
 
-            EchoAddonChapter selected = selectedChapter(chapters);
-            if (selected == null) {
+            AddonChapterEntry selectedEntry = selectedEntry(entries);
+            if (selectedEntry == null) {
                 return;
             }
+            EchoAddonChapter selected = selectedEntry.chapter();
+            TerminalAddonInfo info = selectedEntry.info();
+            TerminalAddonGuide guide = selectedEntry.guide();
             boolean available = chapterAvailable(selected, context);
-            int color = available ? TerminalUi.GREEN : TerminalUi.MUTED;
-            int detailPanelH = wide ? boardH : addonDetailHeight(context, selected, detailW - 8);
-            int dy = TerminalUi.flatDataPanel(context, graphics,
+            AddonSignals signals = addonSignals(selected, context);
+            List<TerminalAddonMetric> metrics = addonMetrics(info, signals, available);
+            List<TerminalAddonSection> sections = addonSections(info, selected, context, signals, available);
+            List<TerminalAddonLink> links = addonLinks(info, selected);
+            TerminalRenderContext selectedContext = context.withChapterTheme(chapterModId(selected),
+                    chapterGuideTitle(selected), chapterModId(selected));
+            int color = available
+                    ? TerminalUi.chapterAccent(selectedContext, guide.mainline() ? TerminalUi.GREEN : TerminalUi.AMBER)
+                    : TerminalUi.MUTED;
+            int detailPanelH = wide
+                    ? Math.max(boardH,
+                            addonDetailHeight(context, selected, info, guide, metrics, sections, links, detailW - 8))
+                    : addonDetailHeight(context, selected, info, guide, metrics, sections, links, detailW - 8);
+            int dy = TerminalUi.flatDataPanel(selectedContext, graphics,
                     detailX, detailY, detailW - 8, detailPanelH, "CHAPTER DETAIL", "",
-                    descriptor.accentColor()) + 2;
-            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_CHAPTERS, TerminalIcon.ADDONS,
-                    detailX + 14, dy + 2, 42, descriptor.accentColor(), true);
-            TerminalUi.line(context, graphics, chapterDisplayName(selected), detailX + 66, dy + 8,
+                    color) + 2;
+            Identifier banner = TerminalUi.chapterBanner(selectedContext);
+            if (TerminalClientOptions.useVisualAssets() && banner != null && detailW > 340) {
+                TerminalUi.imagePanel(selectedContext, graphics, banner, detailX + 12, dy + 2,
+                        detailW - 32, Math.min(70, Math.max(46, detailPanelH / 6)), color, 0.70F, true,
+                        TerminalUi.ImageFit.COVER);
+            }
+            TerminalUi.hybridIconBadge(selectedContext, graphics,
+                    TerminalUi.themedIcon(selectedContext, TerminalIconKey.chapter(chapterModId(selected)),
+                            TerminalVisualAssets.ICON_PAGE_CHAPTERS),
+                    TerminalIcon.ADDONS,
+                    detailX + 14, dy + 2, 42, color, true);
+            TerminalUi.line(selectedContext, graphics, chapterGuideHeading(selected, guide), detailX + 66, dy + 8,
                     detailW - 178, available ? TerminalUi.GREEN : TerminalUi.MUTED);
-            TerminalUi.miniStatusPill(context, graphics, available ? "AVAILABLE" : "LOCKED",
+            TerminalUi.miniStatusPill(selectedContext, graphics, available ? "AVAILABLE" : "LOCKED",
                     detailX + detailW - 102, dy + 7, 82, color, available);
             dy += 56;
+            dy = TerminalUi.keyValue(context, graphics, detailX + 14, dy, detailW - 32,
+                    "Stage", guide.stageLabel(), guide.mainline() ? TerminalUi.GREEN : TerminalUi.AMBER);
+            if (!guide.startHint().isBlank()) {
+                dy = TerminalUi.wrap(context, graphics, guide.startHint(), detailX + 14, dy + 4,
+                        detailW - 32, TerminalUi.TEXT) + 8;
+            }
+            dy = drawGuideSteps(context, graphics, guide, detailX + 14, dy, detailW - 32);
+            TerminalUi.divider(graphics, detailX + 14, dy, detailW - 32, descriptor.accentColor());
+            dy += 10;
             dy = TerminalUi.keyValue(context, graphics, detailX + 14, dy, detailW - 32,
                     "Signal", chapterModId(selected), TerminalUi.TEXT);
             dy = TerminalUi.keyValue(context, graphics, detailX + 14, dy, detailW - 32,
                     "Status", chapterStatusLine(selected, context), color);
-            dy = TerminalUi.wrap(context, graphics, chapterSummary(selected), detailX + 14, dy + 4,
+            String summary = chapterSummary(selected);
+            dy = TerminalUi.wrap(context, graphics, summary, detailX + 14, dy + 4,
                     detailW - 32, TerminalUi.TEXT) + 8;
-            TerminalUi.divider(graphics, detailX + 14, dy, detailW - 32, descriptor.accentColor());
-            dy += 9;
-            TerminalUi.wrap(context, graphics,
-                    available
-                            ? "Chapter systems are online in their terminal channels. ECHO will confirm the owning route before any field command is accepted."
-                            : "Route preview only. Complete the listed requirement before commands wake up.",
-                    detailX + 14, dy, detailW - 32, available ? TerminalUi.GREEN : TerminalUi.AMBER);
-
-            int tileY = wide ? y + boardH + 12 : detailY + detailPanelH + 12;
-            int tileW = Math.max(90, (w - 16) / 3);
-            summaryCard(context, graphics, x, tileY, tileW, "TABS", String.valueOf(TerminalTabRegistry.tabs().size()),
-                    "terminal pages", TerminalUi.CYAN);
-            summaryCard(context, graphics, x + tileW + 8, tileY, tileW, "CHAPTERS",
-                    String.valueOf(chapters.size()), "available chapters", TerminalUi.AMBER);
-            summaryCard(context, graphics, x + (tileW + 8) * 2, tileY, Math.max(90, w - (tileW + 8) * 2),
-                    "RECORDS", String.valueOf(TerminalArchiveRegistry.entries().size()), "shared archive entries", TerminalUi.GREEN);
-            int calloutY = tileY + 82;
-            if (wide && calloutY + 70 <= y + h) {
-                TerminalUi.flatHudPanel(graphics, x, calloutY, w - 8, 64, descriptor.accentColor());
-                TerminalUi.line(context, graphics, "ROUTE AUTHORITY", x + 12, calloutY + 10, w - 32, descriptor.accentColor());
-                TerminalUi.wrap(context, graphics,
-                        "Installed chapters keep their own mission state, rewards, and command checks. ECHO presents their linked routes here.",
-                        x + 12, calloutY + 27, w - 32, TerminalUi.TEXT);
+            if (!info.summary().isBlank() && !info.summary().equals(summary)) {
+                dy = TerminalUi.wrap(context, graphics, info.summary(), detailX + 14, dy,
+                        detailW - 32, TerminalUi.MUTED) + 8;
             }
+            TerminalUi.divider(graphics, detailX + 14, dy, detailW - 32, descriptor.accentColor());
+            dy = drawMetrics(context, graphics, metrics, detailX + 14, dy + 10, detailW - 32);
+            dy = drawSections(context, graphics, sections, detailX + 14, dy + 6, detailW - 32);
+            drawLinks(context, graphics, guide, links, detailX + 14, dy + 8, detailW - 32, mouseX, mouseY);
         }
 
         @Override
         public boolean mouseClicked(TerminalRenderContext context, double mouseX, double mouseY, int button) {
-            if (button != 0 || !TerminalUi.inside(mouseX, mouseY, lastListX, lastListY, lastListW, lastListH)) {
+            if (button != 0) {
                 return false;
             }
-            List<EchoAddonChapter> chapters = addonChapters();
-            int index = (int) ((mouseY - lastListY) / ROW_HEIGHT);
-            if (index >= 0 && index < chapters.size()) {
-                selectedChapterId = chapterId(chapters.get(index));
-                return true;
+            if (TerminalUi.inside(mouseX, mouseY, lastListX, lastListY, lastListW, lastListH)) {
+                List<AddonChapterEntry> entries = addonChapterEntries(context);
+                int index = (int) ((mouseY - lastListY) / ROW_HEIGHT);
+                if (index >= 0 && index < entries.size()) {
+                    selectedChapterId = chapterId(entries.get(index).chapter());
+                    context.playCommandSound();
+                    return true;
+                }
+            }
+            for (AddonLinkHitbox hitbox : List.copyOf(linkHitboxes)) {
+                if (TerminalUi.inside(mouseX, mouseY, hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())) {
+                    if (context.canNavigateToTab(hitbox.link().targetTabId())) {
+                        context.navigateToTab(hitbox.link().targetTabId());
+                    } else {
+                        context.playRejectedSound();
+                    }
+                    return true;
+                }
             }
             return false;
         }
@@ -775,56 +1228,322 @@ public final class BuiltinTerminalTabs {
         @Override
         public int contentHeight(TerminalRenderContext context) {
             int w = context.contentWidth();
-            boolean wide = w >= 640;
-            int listW = wide ? Math.max(260, Math.min(420, w * 42 / 100)) : w;
+            boolean wide = w >= 700;
+            int listW = wide ? Math.max(280, Math.min(400, w * 34 / 100)) : w;
             int detailW = wide ? Math.max(220, w - listW - 18) : w;
-            int boardH = wide ? Math.max(230, Math.min(Math.max(230, context.contentHeight() - 94),
-                    Math.max(280, addonChapters().size() * ROW_HEIGHT + 100)))
-                    : Math.max(180, addonChapters().size() * ROW_HEIGHT + 46);
-            int rows = addonChapters().size() * ROW_HEIGHT;
-            EchoAddonChapter selected = selectedChapter(addonChapters());
-            int detailHeight = selected == null ? 40 : addonDetailHeight(context, selected, detailW - 8) + 28;
+            List<AddonChapterEntry> entries = addonChapterEntries(context);
+            int boardH = wide ? Math.max(260, Math.min(Math.max(260, context.contentHeight()),
+                    Math.max(250, entries.size() * ROW_HEIGHT + 66)))
+                    : Math.max(180, entries.size() * ROW_HEIGHT + 46);
+            AddonChapterEntry selectedEntry = selectedEntry(entries);
+            EchoAddonChapter selected = selectedEntry == null ? null : selectedEntry.chapter();
+            TerminalAddonInfo info = selectedEntry == null ? TerminalAddonInfo.empty() : selectedEntry.info();
+            TerminalAddonGuide guide = selectedEntry == null ? TerminalAddonGuide.empty() : selectedEntry.guide();
+            AddonSignals signals = selected == null ? AddonSignals.empty() : addonSignals(selected, context);
+            boolean available = selected != null && chapterAvailable(selected, context);
+            List<TerminalAddonMetric> metrics = selected == null ? List.of() : addonMetrics(info, signals, available);
+            List<TerminalAddonSection> sections = selected == null ? List.of()
+                    : addonSections(info, selected, context, signals, available);
+            List<TerminalAddonLink> links = selected == null ? List.of() : addonLinks(info, selected);
+            int detailHeight = selected == null ? 120
+                    : addonDetailHeight(context, selected, info, guide, metrics, sections, links, detailW - 8);
             if (wide) {
-                return Math.max(context.contentHeight(), boardH + 158);
+                return Math.max(context.contentHeight(), Math.max(boardH, detailHeight) + 32);
             }
-            return Math.max(context.contentHeight(), boardH + detailHeight + 94);
+            return Math.max(context.contentHeight(), boardH + detailHeight + 32);
         }
 
-        private void normalizeSelection(List<EchoAddonChapter> chapters) {
-            if (chapters.stream().anyMatch(chapter -> chapterId(chapter).equals(selectedChapterId))) {
+        private void normalizeSelection(List<AddonChapterEntry> entries) {
+            if (entries.stream().anyMatch(entry -> chapterId(entry.chapter()).equals(selectedChapterId))) {
                 return;
             }
-            selectedChapterId = chapters.isEmpty() ? "" : chapterId(chapters.get(0));
+            selectedChapterId = entries.isEmpty() ? "" : chapterId(entries.get(0).chapter());
         }
 
-        private EchoAddonChapter selectedChapter(List<EchoAddonChapter> chapters) {
-            normalizeSelection(chapters);
-            return chapters.stream()
-                    .filter(chapter -> chapterId(chapter).equals(selectedChapterId))
+        private AddonChapterEntry selectedEntry(List<AddonChapterEntry> entries) {
+            normalizeSelection(entries);
+            return entries.stream()
+                    .filter(entry -> chapterId(entry.chapter()).equals(selectedChapterId))
                     .findFirst()
                     .orElse(null);
         }
 
-        private static int addonDetailHeight(TerminalRenderContext context, EchoAddonChapter chapter, int width) {
-            if (chapter == null) {
-                return 80;
+        private static AddonSignals addonSignals(EchoAddonChapter chapter, TerminalRenderContext context) {
+            String chapterId = chapterId(chapter);
+            String modId = chapterModId(chapter);
+            int missions = 0;
+            for (TerminalMissionProvider provider : TerminalMissionRegistry.providers()) {
+                TerminalMissionChapter missionChapter = missionChapter(provider);
+                if (matchesChapterKey(missionChapter.id().toString(), chapterId, modId)) {
+                    missions += safeMissionCount(provider, context);
+                }
             }
-            String summary = chapterSummary(chapter);
-            String roadMap = chapterAvailable(chapter, context)
-                    ? "Chapter systems are online in their terminal channels. ECHO will confirm the owning route before any field command is accepted."
-                    : "Route preview only. Complete the listed requirement before commands wake up.";
-            return Math.max(118,
-                    72
-                            + TerminalUi.wrappedHeight(context, summary, width - 16)
-                            + TerminalUi.wrappedHeight(context, roadMap, width - 16));
+            int routes = 0;
+            for (EchoRouteRecord record : EchoCoreServices.routeRecords(context == null ? null : context.player())) {
+                if (record != null && matchesChapterKey(record.chapterId(), chapterId, modId)) {
+                    routes++;
+                }
+            }
+            int diagnostics = 0;
+            for (EchoDiagnosticBlocker blocker : EchoCoreServices.diagnostics(context == null ? null : context.player())) {
+                if (blocker != null && matchesChapterKey(blocker.chapterId(), chapterId, modId)) {
+                    diagnostics++;
+                }
+            }
+            int archives = 0;
+            for (TerminalArchiveEntry entry : TerminalArchiveRegistry.entries()) {
+                if (entry != null && (entry.id().getNamespace().equals(modId)
+                        || matchesLooseText(entry.group(), chapterId, modId))) {
+                    archives++;
+                }
+            }
+            return new AddonSignals(missions, routes, diagnostics, archives);
         }
 
-        private static void summaryCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                int x, int y, int width, String label, String value, String detail, int color) {
-            TerminalUi.flatHudPanel(graphics, x, y, width, 70, color);
-            TerminalUi.line(context, graphics, label, x + 10, y + 10, width - 20, color);
-            TerminalUi.line(context, graphics, value, x + 10, y + 30, width - 20, TerminalUi.TEXT);
-            TerminalUi.line(context, graphics, detail, x + 10, y + 47, width - 20, TerminalUi.MUTED);
+        private static int safeMissionCount(TerminalMissionProvider provider, TerminalRenderContext context) {
+            try {
+                List<TerminalMissionDefinition> missions = provider.missions(context == null ? null : context.player());
+                return missions == null ? 0 : (int) missions.stream().filter(mission -> mission != null).count();
+            } catch (RuntimeException exception) {
+                EchoTerminal.LOGGER.warn("Terminal addon mission count failed; treating provider as empty.", exception);
+                return 0;
+            }
+        }
+
+        private static List<TerminalAddonMetric> addonMetrics(
+                TerminalAddonInfo info, AddonSignals signals, boolean available) {
+            List<TerminalAddonMetric> metrics = new ArrayList<>();
+            metrics.add(new TerminalAddonMetric("State", available ? "ONLINE" : "LOCKED",
+                    available ? "chapter commands can expose their own checks" : "chapter preview remains read-only",
+                    available ? TerminalUi.GREEN : TerminalUi.AMBER));
+            metrics.add(new TerminalAddonMetric("Missions", String.valueOf(signals.missions()),
+                    "registered terminal objectives", TerminalUi.CYAN));
+            metrics.add(new TerminalAddonMetric("Routes", String.valueOf(signals.routes()),
+                    "core route records", TerminalUi.GREEN));
+            metrics.add(new TerminalAddonMetric("Diagnostics", String.valueOf(signals.diagnostics()),
+                    "active blockers", signals.diagnostics() > 0 ? TerminalUi.AMBER : TerminalUi.MUTED));
+            metrics.add(new TerminalAddonMetric("Archives", String.valueOf(signals.archives()),
+                    "shared records", TerminalUi.AMBER));
+            metrics.addAll(info.metrics());
+            return List.copyOf(metrics);
+        }
+
+        private static List<TerminalAddonSection> addonSections(
+                TerminalAddonInfo info, EchoAddonChapter chapter, TerminalRenderContext context,
+                AddonSignals signals, boolean available) {
+            List<TerminalAddonSection> sections = new ArrayList<>();
+            sections.add(new TerminalAddonSection("Live Signal", List.of(
+                    chapterStatusLine(chapter, context),
+                    available
+                            ? "Linked terminal pages can be opened from this info page."
+                            : "Route preview only; the owning addon decides when commands become available.",
+                    signals.routes() + " route record(s), " + signals.diagnostics() + " diagnostic blocker(s).")));
+            sections.addAll(info.sections());
+            return List.copyOf(sections);
+        }
+
+        private static List<TerminalAddonLink> addonLinks(TerminalAddonInfo info, EchoAddonChapter chapter) {
+            Map<String, TerminalAddonLink> links = new LinkedHashMap<>();
+            for (TerminalAddonLink link : info.links()) {
+                links.putIfAbsent(link.targetTabId().toString(), link);
+            }
+            for (TerminalAddonLink link : inferredLinks(chapter)) {
+                links.putIfAbsent(link.targetTabId().toString(), link);
+            }
+            return List.copyOf(links.values());
+        }
+
+        private static List<TerminalAddonLink> inferredLinks(EchoAddonChapter chapter) {
+            String chapterId = chapterId(chapter);
+            String modId = chapterModId(chapter);
+            List<TerminalAddonLink> links = new ArrayList<>();
+            for (TerminalTab tab : TerminalTabRegistry.tabs()) {
+                if (tab == null || tab.descriptor() == null || tab.descriptor().id().equals(ADDONS)) {
+                    continue;
+                }
+                TerminalNavigationProfile profile = TerminalNavigationProfiles.profileFor(tab);
+                boolean related = matchesChapterKey(profile.chapterId(), chapterId, modId)
+                        || tab.descriptor().id().getNamespace().equals(modId);
+                if (related) {
+                    TerminalTabChrome chrome = tab.chrome();
+                    String label = chrome == null ? tab.descriptor().title() : chrome.shortTitle();
+                    String detail = chrome == null ? "" : chrome.summary();
+                    links.add(new TerminalAddonLink(tab.descriptor().id(), label, detail, tab.descriptor().accentColor()));
+                }
+            }
+            return links.stream().limit(6).toList();
+        }
+
+        private static int drawGuideSteps(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                TerminalAddonGuide guide, int x, int y, int width) {
+            if (guide == null || guide.starterSteps().isEmpty()) {
+                return y;
+            }
+            TerminalUi.line(context, graphics, "Start Steps", x, y, width, TerminalUi.CYAN);
+            TerminalUi.divider(graphics, x, y + 14, width, TerminalUi.CYAN);
+            int cy = y + 22;
+            for (String step : guide.starterSteps()) {
+                cy = TerminalUi.wrap(context, graphics, "- " + step, x + 6, cy,
+                        Math.max(40, width - 6), TerminalUi.TEXT) + 4;
+            }
+            return cy + 6;
+        }
+
+        private static int drawMetrics(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                List<TerminalAddonMetric> metrics, int x, int y, int width) {
+            if (metrics.isEmpty()) {
+                return y;
+            }
+            TerminalUi.line(context, graphics, "Metrics", x, y, width, TerminalUi.CYAN);
+            int cy = y + 16;
+            int columns = width >= 420 ? 2 : 1;
+            int gap = 8;
+            int cardW = columns == 1 ? width : Math.max(120, (width - gap) / 2);
+            int rowH = 0;
+            for (int i = 0; i < metrics.size(); i++) {
+                TerminalAddonMetric metric = metrics.get(i);
+                int column = i % columns;
+                int cx = x + column * (cardW + gap);
+                int cardH = TerminalUi.denseDataCard(context, graphics, cx, cy, cardW,
+                        metric.label(), metric.value(), metric.detail(), metric.color());
+                rowH = Math.max(rowH, cardH);
+                if (column == columns - 1 || i == metrics.size() - 1) {
+                    cy += rowH + gap;
+                    rowH = 0;
+                }
+            }
+            return cy;
+        }
+
+        private static int drawSections(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                List<TerminalAddonSection> sections, int x, int y, int width) {
+            int cy = y;
+            for (TerminalAddonSection section : sections) {
+                if (section.lines().isEmpty()) {
+                    continue;
+                }
+                TerminalUi.line(context, graphics, section.title(), x, cy, width, TerminalUi.CYAN);
+                TerminalUi.divider(graphics, x, cy + 14, width, TerminalUi.CYAN);
+                cy += 22;
+                for (String line : section.lines()) {
+                    cy = TerminalUi.wrap(context, graphics, "- " + line, x + 6, cy,
+                            Math.max(40, width - 6), TerminalUi.TEXT) + 4;
+                }
+                cy += 6;
+            }
+            return cy;
+        }
+
+        private void drawLinks(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                TerminalAddonGuide guide, List<TerminalAddonLink> links, int x, int y, int width,
+                int mouseX, int mouseY) {
+            TerminalUi.line(context, graphics, "Linked Pages", x, y, width, TerminalUi.CYAN);
+            TerminalUi.divider(graphics, x, y + 14, width, TerminalUi.CYAN);
+            int cy = y + 22;
+            if (links.isEmpty()) {
+                TerminalUi.wrap(context, graphics,
+                        "No addon terminal pages are registered. Core records and diagnostics still appear above.",
+                        x, cy, width, TerminalUi.MUTED);
+                return;
+            }
+            for (TerminalAddonLink link : links) {
+                boolean enabled = context.canNavigateToTab(link.targetTabId());
+                boolean hovered = TerminalUi.inside(mouseX, mouseY, x, cy, width, LINK_HEIGHT - 4);
+                int color = enabled ? link.color() : TerminalUi.MUTED;
+                TerminalUi.dataListRow(context, graphics, x, cy, width, LINK_HEIGHT - 4,
+                        linkLabel(guide, link), link.detail(), enabled ? "OPEN" : "MISSING",
+                        false, hovered, descriptor.accentColor(), color);
+                linkHitboxes.add(new AddonLinkHitbox(x, cy, width, LINK_HEIGHT - 4, link));
+                cy += LINK_HEIGHT;
+            }
+        }
+
+        private static String linkLabel(TerminalAddonGuide guide, TerminalAddonLink link) {
+            String label = link.label();
+            if (guide == null || guide.label().isBlank() || label.startsWith(guide.label())) {
+                return label;
+            }
+            return guide.label() + " / " + label;
+        }
+
+        private static int addonDetailHeight(TerminalRenderContext context, EchoAddonChapter chapter,
+                TerminalAddonInfo info, TerminalAddonGuide guide, List<TerminalAddonMetric> metrics,
+                List<TerminalAddonSection> sections, List<TerminalAddonLink> links, int width) {
+            if (chapter == null) {
+                return 120;
+            }
+            int wrapWidth = Math.max(80, width - 32);
+            String summary = chapterSummary(chapter);
+            int columns = wrapWidth >= 420 ? 2 : 1;
+            int metricRows = (metrics.size() + columns - 1) / columns;
+            int guideHeight = 20;
+            if (guide != null) {
+                if (!guide.startHint().isBlank()) {
+                    guideHeight += TerminalUi.wrappedHeight(context, guide.startHint(), wrapWidth) + 8;
+                }
+                if (!guide.starterSteps().isEmpty()) {
+                    guideHeight += 28;
+                    for (String step : guide.starterSteps()) {
+                        guideHeight += TerminalUi.wrappedHeight(context, "- " + step, wrapWidth - 6) + 4;
+                    }
+                    guideHeight += 6;
+                }
+            }
+            int sectionHeight = 0;
+            for (TerminalAddonSection section : sections) {
+                if (section.lines().isEmpty()) {
+                    continue;
+                }
+                sectionHeight += 28;
+                for (String line : section.lines()) {
+                    sectionHeight += TerminalUi.wrappedHeight(context, "- " + line, wrapWidth - 6) + 4;
+                }
+                sectionHeight += 6;
+            }
+            int providerSummary = info.summary().isBlank() || info.summary().equals(summary)
+                    ? 0
+                    : TerminalUi.wrappedHeight(context, info.summary(), wrapWidth) + 8;
+            int linkHeight = 26 + Math.max(1, links.size()) * LINK_HEIGHT;
+            return Math.max(220,
+                    98
+                            + guideHeight
+                            + TerminalUi.wrappedHeight(context, summary, wrapWidth)
+                            + providerSummary
+                            + metricRows * 76
+                            + sectionHeight
+                            + linkHeight
+                            + 24);
+        }
+
+        private static boolean matchesChapterKey(String value, String chapterId, String modId) {
+            String normalized = cleanKey(value);
+            String chapter = cleanKey(chapterId);
+            String mod = cleanKey(modId);
+            return !chapter.isBlank() && (normalized.equals(chapter)
+                    || normalized.endsWith(":" + chapter)
+                    || (!mod.isBlank() && normalized.equals(mod + ":" + chapter))
+                    || (!mod.isBlank() && normalized.equals(mod)));
+        }
+
+        private static boolean matchesLooseText(String value, String chapterId, String modId) {
+            String normalized = cleanKey(value).replace(' ', '_');
+            String chapter = cleanKey(chapterId).replace(' ', '_');
+            String mod = cleanKey(modId).replace(' ', '_');
+            return (!chapter.isBlank() && normalized.contains(chapter))
+                    || (!mod.isBlank() && normalized.contains(mod));
+        }
+
+        private static String cleanKey(String value) {
+            return value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT);
+        }
+
+        private record AddonSignals(int missions, int routes, int diagnostics, int archives) {
+            static AddonSignals empty() {
+                return new AddonSignals(0, 0, 0, 0);
+            }
+        }
+
+        private record AddonLinkHitbox(int x, int y, int w, int h, TerminalAddonLink link) {
         }
     }
 
@@ -1006,7 +1725,7 @@ public final class BuiltinTerminalTabs {
                         active++;
                     }
                 }
-                TerminalUi.flatHudPanel(graphics, x + 10, cy, w - 20, 58, descriptor.accentColor());
+                TerminalUi.flatHudPanel(context, graphics, x + 10, cy, w - 20, 58, descriptor.accentColor());
                 TerminalMissionChapter chapter = missionChapter(provider);
                 TerminalUi.line(context, graphics, chapter.title(), x + 22, cy + 9, w - 44, TerminalUi.TEXT);
                 TerminalUi.line(context, graphics, chapter.summary(), x + 22, cy + 25, w - 44, TerminalUi.MUTED);
@@ -1320,7 +2039,10 @@ public final class BuiltinTerminalTabs {
             EchoFactionDefinition definition = profile.definition();
             int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w, h,
                     "FACTION DETAIL", definition.modId(), descriptor.accentColor()) + 4;
-            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.ICON_PAGE_ROUTE_MAP, TerminalIcon.WORLD,
+            TerminalUi.hybridIconBadge(graphics,
+                    TerminalUi.themedIcon(context, TerminalIconKey.chapter(definition.modId()),
+                            TerminalVisualAssets.ICON_PAGE_ROUTE_MAP),
+                    TerminalIcon.WORLD,
                     x + 14, cy + 2, 42, definition.accentColor(), true);
             TerminalUi.line(context, graphics, definition.displayName(), x + 66, cy + 8,
                     w - 170, TerminalUi.TEXT);
@@ -1517,7 +2239,8 @@ public final class BuiltinTerminalTabs {
             boolean hovered = TerminalUi.inside(mouseX, mouseY, claimX, claimY, claimW, 24);
             if (enabled) {
                 TerminalUi.primaryCommandButton(context, graphics, claimX, claimY, claimW, 24,
-                        "CLAIM ALL", TerminalVisualAssets.ICON_ACTION_CLAIM, descriptor.accentColor(), hovered);
+                        "CLAIM ALL", TerminalUi.themedActionIcon(context, "claim", TerminalVisualAssets.ICON_ACTION_CLAIM),
+                        descriptor.accentColor(), hovered);
             } else {
                 TerminalUi.miniStatusPill(context, graphics, "INBOX EMPTY", claimX, claimY + 4, claimW,
                         TerminalUi.MUTED, false);
@@ -1606,7 +2329,7 @@ public final class BuiltinTerminalTabs {
                 boolean hovered = TerminalUi.inside(mouseX, mouseY, x, cy, listW - 8, ROW_HEIGHT - 4);
                 boolean locked = locked(context, entry);
                 int color = locked ? TerminalUi.MUTED : TerminalUi.TEXT;
-                TerminalUi.selectableRow(graphics, x, cy, listW - 8, ROW_HEIGHT - 4,
+                TerminalUi.selectableRow(context, graphics, x, cy, listW - 8, ROW_HEIGHT - 4,
                         selected, hovered, descriptor.accentColor());
                 TerminalUi.line(context, graphics, entry.title(), x + 6, cy + 4, listW - 90, color);
                 TerminalUi.miniStatusPill(context, graphics, entry.status(), x + listW - 78, cy + 3, 64, color, selected);

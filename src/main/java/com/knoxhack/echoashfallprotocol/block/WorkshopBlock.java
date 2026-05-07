@@ -17,7 +17,6 @@ import net.minecraft.ChatFormatting;
 /**
  * Workshop Designation Block - Creates a 9x9x3 workshop area.
  * Machines within this area get 20% faster processing and 10% reduced power consumption.
- * Allows linking up to 4 machines for automated workflows.
  */
 public class WorkshopBlock extends Block {
     
@@ -51,7 +50,7 @@ public class WorkshopBlock extends Block {
         // Count machines in workshop
         int machineCount = countMachinesInWorkshop(player.level(), workshopPos);
         
-        player.sendSystemMessage(Component.literal("Linked machines in range: " + machineCount)
+        player.sendSystemMessage(Component.literal("Machines in range: " + machineCount)
             .withStyle(ChatFormatting.YELLOW));
         player.sendSystemMessage(Component.literal("Throughput bonus: +" + (int)(SPEED_BONUS*100) + "%")
             .withStyle(ChatFormatting.GREEN));
@@ -72,8 +71,7 @@ public class WorkshopBlock extends Block {
             }
         }
 
-        // Show linked machines
-        showLinkedMachines(player, workshopPos);
+        showCoverageSummary(player);
     }
     
     private int countMachinesInWorkshop(Level level, BlockPos workshopPos) {
@@ -101,11 +99,13 @@ public class WorkshopBlock extends Block {
         return MachineGameplayHelper.isMachineBlock(level.getBlockState(pos));
     }
     
-    private void showLinkedMachines(Player player, BlockPos workshopPos) {
-        // Show machine linking status
-        player.sendSystemMessage(Component.literal("Machine links: max 4")
-            .withStyle(ChatFormatting.YELLOW));
-        // Would display linked machine chains
+    private void showCoverageSummary(Player player) {
+        player.sendSystemMessage(coverageSummaryMessage());
+    }
+
+    public static Component coverageSummaryMessage() {
+        return Component.literal("Coverage: machines inside the field receive passive efficiency bonuses")
+            .withStyle(ChatFormatting.YELLOW);
     }
     
     /**

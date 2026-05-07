@@ -23,6 +23,9 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> MOON_GLASS = glass("moon_glass", MapColor.TERRACOTTA_WHITE);
     public static final DeferredBlock<Block> MARTIAN_SILICA_BLOCK = stone("martian_silica_block", MapColor.COLOR_RED);
     public static final DeferredBlock<Block> CRYO_CRYSTAL_BLOCK = glass("cryo_crystal_block", MapColor.ICE);
+    public static final DeferredBlock<Block> SATURN_ICE_RUBBLE = stone("saturn_ice_rubble", MapColor.TERRACOTTA_LIGHT_GRAY);
+    public static final DeferredBlock<Block> TITAN_THOLIN_DUST = dust("titan_tholin_dust", MapColor.TERRACOTTA_ORANGE);
+    public static final DeferredBlock<Block> METHANE_ICE = glass("methane_ice", MapColor.COLOR_LIGHT_BLUE);
     public static final DeferredBlock<Block> NEXUS_DUST_BLOCK = stone("nexus_dust_block", MapColor.COLOR_PURPLE);
 
     public static final DeferredBlock<Block> LAUNCH_PLATFORM = metal("launch_platform", MapColor.COLOR_BLACK);
@@ -46,6 +49,10 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> HELIUM_EXTRACTOR_NODE = metal("helium_extractor_node", MapColor.COLOR_LIGHT_GRAY);
     public static final DeferredBlock<Block> MARS_PRESSURE_CONSOLE = metal("mars_pressure_console", MapColor.COLOR_ORANGE);
     public static final DeferredBlock<Block> EUROPA_THERMAL_ARRAY = metal("europa_thermal_array", MapColor.COLOR_LIGHT_BLUE);
+    public static final DeferredBlock<Block> SATURN_RING_RELAY = metal("saturn_ring_relay", MapColor.TERRACOTTA_LIGHT_GRAY);
+    public static final DeferredBlock<Block> TITAN_METHANE_PUMP = metal("titan_methane_pump", MapColor.TERRACOTTA_ORANGE);
+    public static final DeferredBlock<Block> FACTION_RELAY_HUB = metal("faction_relay_hub", MapColor.COLOR_GREEN);
+    public static final DeferredBlock<Block> FACTION_VENDOR_KIOSK = metal("faction_vendor_kiosk", MapColor.COLOR_YELLOW);
 
     public static final DeferredBlock<Block> MOON_DUST = dust("moon_dust", MapColor.COLOR_LIGHT_GRAY);
     public static final DeferredBlock<Block> LUNAR_ROCK = stone("lunar_rock", MapColor.STONE);
@@ -65,12 +72,14 @@ public final class ModBlocks {
     public static final List<DeferredBlock<Block>> ALL_BLOCKS = List.of(
             ORBITAL_ALLOY_BLOCK, SATELLITE_PLATING, SOLAR_GLASS, VACUUM_CIRCUIT_BLOCK,
             LUNAR_TITANIUM_BLOCK, MOON_GLASS, MARTIAN_SILICA_BLOCK, CRYO_CRYSTAL_BLOCK,
+            SATURN_ICE_RUBBLE, TITAN_THOLIN_DUST, METHANE_ICE,
             NEXUS_DUST_BLOCK, LAUNCH_PLATFORM, ROCKET_ASSEMBLY_FRAME, FUEL_REFINERY,
             OXYGEN_COMPRESSOR, HEAT_SHIELD_FABRICATOR, ORBITAL_FABRICATOR, VACUUM_SMELTER,
             SOLAR_RECLAIMER, SUIT_CHARGING_STATION, NAVIGATION_CONSOLE, DOCKING_BEACON,
             STATION_LIFE_SUPPORT_CORE, SIGNAL_ANALYZER, SURVEY_MARKER, SIGNAL_RELAY,
             THERMAL_VENT, NEXUS_ANCHOR, STATION_RELAY_NODE, HELIUM_EXTRACTOR_NODE,
-            MARS_PRESSURE_CONSOLE, EUROPA_THERMAL_ARRAY, MOON_DUST, LUNAR_ROCK, ORBITAL_PLATING,
+            MARS_PRESSURE_CONSOLE, EUROPA_THERMAL_ARRAY, SATURN_RING_RELAY, TITAN_METHANE_PUMP,
+            FACTION_RELAY_HUB, FACTION_VENDOR_KIOSK, MOON_DUST, LUNAR_ROCK, ORBITAL_PLATING,
             STATION_WALL_PANEL, BROKEN_SOLAR_PANEL, OXYGEN_PIPE, FROZEN_CABLE,
             MARTIAN_DUST, CRYO_ICE, NEXUS_TOUCHED_STONE, LUNAR_REGOLITH,
             MARTIAN_BASALT, PACKED_CRYO_ICE, NEXUS_GROWTH);

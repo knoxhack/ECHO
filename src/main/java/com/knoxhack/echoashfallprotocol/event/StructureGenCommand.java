@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -37,6 +38,7 @@ public class StructureGenCommand {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
             Commands.literal("genpoi")
+                .requires(StructureGenCommand::hasCommandPermission)
                 .then(Commands.literal("bio_lab")
                     .executes(ctx -> {
                         if (ctx.getSource().getEntity() instanceof ServerPlayer player) {
@@ -136,6 +138,10 @@ public class StructureGenCommand {
                             return 0;
                         })))
         );
+    }
+
+    public static boolean hasCommandPermission(net.minecraft.commands.CommandSourceStack source) {
+        return source != null && source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
     }
 
     private static int generateProcedural(ServerPlayer player, String typeName) {

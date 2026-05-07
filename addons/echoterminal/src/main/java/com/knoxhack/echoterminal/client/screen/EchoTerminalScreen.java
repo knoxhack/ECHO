@@ -9,7 +9,7 @@ import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.api.TerminalUi;
-import com.knoxhack.echoterminal.api.TerminalVisualAssets;
+import com.knoxhack.echoterminal.api.theme.TerminalThemeContext;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +80,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         ticks++;
+        TerminalUi.applyThemeGlobals(TerminalClientOptions.currentTheme());
         TerminalRenderCache.beginFrame();
         layout();
         List<TerminalTab> tabs = tabs();
@@ -203,10 +204,9 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         if (chrome != null && !chrome.summary().isBlank()) {
             meta += "  |  " + chrome.summary();
         }
-        TerminalUi.appShellBackdrop(graphics, TerminalVisualAssets.TERMINAL_FRAME_BACKDROP,
-                panelX, panelY, panelW, panelH, chromeColor(tab),
-                TerminalClientOptions.useVisualAssets(), TerminalClientOptions.reduceMotion());
-        TerminalUi.topMetaBar(graphics, font, panelX, panelY, panelW,
+        TerminalRenderContext chromeContext = contextFor(tab, tab == null ? 0 : scrollFor(tab));
+        TerminalUi.appShellBackdrop(chromeContext, graphics, panelX, panelY, panelW, panelH, chromeColor(tab));
+        TerminalUi.topMetaBar(chromeContext, graphics, font, panelX, panelY, panelW,
                 theme.title(), status, meta, chromeColor(tab));
 
         drawSidebarNavigation(graphics, tabs, mouseX, mouseY);
@@ -223,7 +223,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             drawCollapsedCommandStack(graphics, tabs, mouseX, mouseY, activeGroup, accent);
             return;
         }
-        TerminalUi.commandStackPanel(graphics, font, groupRailX, groupRailY, groupRailW, groupRailH, accent);
+        TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
+        TerminalUi.commandStackPanel(renderContext, graphics, font, groupRailX, groupRailY, groupRailW, groupRailH, accent);
         drawCollapseToggle(graphics, mouseX, mouseY, accent);
         boolean compact = groupRailW < 190;
         int cy = groupRailY + (compact ? 32 : 40);
@@ -236,22 +237,22 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
             int groupH = compact ? 24 : 28;
             boolean groupHover = TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, groupRailW - 16, groupH);
-            TerminalUi.commandStackGroupButton(graphics, font, groupRailX + 8, cy, groupRailW - 16, groupH,
-                    TerminalIcon.fromGroup(group), TerminalVisualAssets.terminalGroupIcon(group),
+            TerminalUi.commandStackGroupButton(renderContext, graphics, font, groupRailX + 8, cy, groupRailW - 16, groupH,
+                    TerminalIcon.fromGroup(group), TerminalUi.themedGroupIcon(renderContext, group),
                     navigationModel.groupLabel(group), active, groupHover, groupColor);
             cy += groupH + (active ? 5 : 3);
             if (active) {
-                cy = drawExpandedGroupPages(graphics, group, mouseX, mouseY, cy, rowH, gap, compact);
+                cy = drawExpandedGroupPages(graphics, group, mouseX, mouseY, cy, rowH, gap, compact, renderContext);
                 cy += 5;
             }
         }
         graphics.disableScissor();
-        TerminalUi.diagnosticRail(graphics, font, groupRailX + 10, groupRailY + groupRailH - 47,
+        TerminalUi.diagnosticRail(renderContext, graphics, font, groupRailX + 10, groupRailY + groupRailH - 47,
                 groupRailW - 20, 36, Minecraft.getInstance().player != null, accent);
     }
 
     private int drawExpandedGroupPages(GuiGraphicsExtractor graphics, String group, int mouseX, int mouseY,
-            int cy, int rowH, int gap, boolean compact) {
+            int cy, int rowH, int gap, boolean compact, TerminalRenderContext renderContext) {
         for (TerminalNavigationModel.IndexedTab entry : navigationModel.directTabsInGroup(group)) {
             cy = drawNavigationPage(graphics, entry, mouseX, mouseY, cy, rowH, gap, compact, 14, 22);
         }
@@ -260,13 +261,15 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             boolean selectedChapter = chapter.id().equals(activeChapter);
             boolean chapterHover = TerminalUi.inside(mouseX, mouseY, groupRailX + 14, cy, groupRailW - 22, rowH);
             String label = compact ? chapter.iconLabel() : chapter.title();
-            String summary = compact ? "" : chapter.tabs().size() + " CHANNELS";
+            String summary = chapterRailSummary(chapter, compact);
             TerminalIcon chapterIcon = TerminalIcon.fromTitle(chapter.title());
             if (chapterIcon == TerminalIcon.DEFAULT) {
                 chapterIcon = TerminalIcon.ADDONS;
             }
-            TerminalUi.commandPageButton(graphics, font, groupRailX + 14, cy, groupRailW - 22, rowH,
-                    chapterIcon, TerminalVisualAssets.terminalPageIcon(chapter.title()), label, summary,
+            TerminalRenderContext chapterContext = renderContext.withChapterTheme(chapter.id(), chapter.title(), chapter.id());
+            TerminalUi.commandPageButton(chapterContext, graphics, font, groupRailX + 14, cy, groupRailW - 22, rowH,
+                    chapterIcon, TerminalUi.themedIcon(chapterContext, com.knoxhack.echoterminal.api.theme.TerminalIconKey.chapter(chapter.id()),
+                            TerminalUi.themedPageIcon(renderContext, chapter.title())), label, summary,
                     selectedChapter, chapterHover, chapter.accent());
             cy += rowH + gap;
             if (selectedChapter) {
@@ -283,21 +286,38 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         return cy;
     }
 
+    private static String chapterRailSummary(TerminalNavigationModel.ChapterGroup chapter, boolean compact) {
+        if (compact || chapter == null) {
+            return "";
+        }
+        String title = chapter.title() == null ? "" : chapter.title();
+        if (title.startsWith("Chapter ")) {
+            return "Story chapter";
+        }
+        if (title.startsWith("Optional:")) {
+            return "Side route";
+        }
+        int count = chapter.tabs().size();
+        return count == 1 ? "Linked page" : count + " linked pages";
+    }
+
     private int drawNavigationPage(GuiGraphicsExtractor graphics, TerminalNavigationModel.IndexedTab entry,
             int mouseX, int mouseY, int cy, int rowH, int gap, boolean compact, int inset, int widthTrim) {
         TerminalTab tab = entry.tab();
         boolean selected = entry.index() == activeTab;
         boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + inset, cy, groupRailW - widthTrim, rowH);
-        TerminalUi.commandPageButton(graphics, font, groupRailX + inset, cy, groupRailW - widthTrim, rowH,
+        TerminalRenderContext renderContext = contextFor(tab, scrollFor(tab));
+        TerminalUi.commandPageButton(renderContext, graphics, font, groupRailX + inset, cy, groupRailW - widthTrim, rowH,
                 TerminalIcon.fromTitle(tab.chrome().shortTitle()),
-                TerminalVisualAssets.terminalPageIcon(tab.chrome().shortTitle()), tab.chrome().shortTitle(),
+                TerminalUi.themedPageIcon(renderContext, tab.chrome().shortTitle()), tab.chrome().shortTitle(),
                 compact ? "" : tab.chrome().summary(), selected, hover, tab.descriptor().accentColor());
         return cy + rowH + gap;
     }
 
     private void drawCollapsedCommandStack(GuiGraphicsExtractor graphics, List<TerminalTab> tabs,
             int mouseX, int mouseY, String activeGroup, int accent) {
-        TerminalUi.cinematicPanel(graphics, groupRailX, groupRailY, groupRailW, groupRailH, accent);
+        TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
+        TerminalUi.cinematicPanel(renderContext, graphics, groupRailX, groupRailY, groupRailW, groupRailH, accent);
         drawCollapseToggle(graphics, mouseX, mouseY, accent);
         int buttonW = Math.max(30, groupRailW - 16);
         int cy = groupRailY + 34;
@@ -306,15 +326,16 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             boolean active = group.equals(activeGroup);
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
             boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, buttonW, rowH);
-            TerminalUi.iconRailButton(graphics, font, groupRailX + 8, cy, buttonW, rowH,
-                    TerminalIcon.fromGroup(group), TerminalVisualAssets.terminalGroupIcon(group), "",
+            TerminalUi.iconRailButton(renderContext, graphics, font, groupRailX + 8, cy, buttonW, rowH,
+                    TerminalIcon.fromGroup(group), TerminalUi.themedGroupIcon(renderContext, group), "",
                     active, hover, groupColor);
             cy += rowH + 6;
         }
         if (!tabs.isEmpty()) {
             TerminalTab tab = tabs.get(activeTab);
+            TerminalRenderContext tabContext = contextFor(tab, scrollFor(tab));
             int pageY = Math.min(groupRailY + groupRailH - 82, cy + 8);
-            TerminalUi.hybridIconBadge(graphics, TerminalVisualAssets.terminalPageIcon(tab.chrome().shortTitle()),
+            TerminalUi.hybridIconBadge(graphics, TerminalUi.themedPageIcon(tabContext, tab.chrome().shortTitle()),
                     TerminalIcon.fromTitle(tab.chrome().shortTitle()),
                     groupRailX + Math.max(8, (groupRailW - 28) / 2), pageY, 28,
                     tab.descriptor().accentColor(), true);
@@ -397,7 +418,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             label = "ECHO-7 LINK  |  " + navigationModel.activePathLabel(activeTab);
         }
         int color = tabs.isEmpty() ? theme.accentColor() : chromeColor(tabs.get(activeTab));
-        TerminalUi.bottomShortcutBar(graphics, font, panelX, panelY + panelH - 30, panelW,
+        TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
+        TerminalUi.bottomShortcutBar(renderContext, graphics, font, panelX, panelY + panelH - 30, panelW,
                 footer, label.isBlank() ? "Esc Back" : label, color);
     }
 
@@ -531,6 +553,20 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private TerminalRenderContext contextFor(TerminalTab tab, int scroll) {
         Minecraft minecraft = Minecraft.getInstance();
+        Identifier tabId = tab == null ? null : tab.descriptor().id();
+        String group = tab == null ? navigationModel.activeGroup(activeTab) : tab.chrome().group();
+        String chapterId = navigationModel.activeChapterId(activeTab);
+        String chapterTitle = navigationModel.activePathLabel(activeTab);
+        String namespace = tabId == null || "echoterminal".equals(tabId.getNamespace()) ? chapterId : tabId.getNamespace();
+        TerminalThemeContext themeContext = new TerminalThemeContext(
+                tabId,
+                group,
+                chapterId,
+                chapterTitle,
+                namespace,
+                ticks,
+                TerminalClientOptions.useVisualAssets(),
+                TerminalClientOptions.reduceMotion());
         return new TerminalRenderContext(
                 minecraft,
                 minecraft.player,
@@ -542,7 +578,9 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 contentH - 20,
                 scroll,
                 this::selectTabById,
-                this::hasTab);
+                this::hasTab,
+                TerminalClientOptions.currentTheme(),
+                themeContext);
     }
 
     private boolean hasTab(Identifier tabId) {

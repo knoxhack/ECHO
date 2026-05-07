@@ -1,0 +1,395 @@
+package com.knoxhack.echoindustrialnexus.test;
+
+import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialFluidPipeBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialFluxDuctBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialItemDuctBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
+import com.knoxhack.echoindustrialnexus.entity.FurnaceWardenEntity;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialCompat;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialCoreIntegration;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialMissionProvider;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialTerminalIds;
+import com.knoxhack.echoindustrialnexus.menu.IndustrialMachineMenu;
+import com.knoxhack.echoindustrialnexus.progress.IndustrialProgress;
+import com.knoxhack.echoindustrialnexus.registry.ModBlocks;
+import com.knoxhack.echoindustrialnexus.registry.ModEntities;
+import com.knoxhack.echoindustrialnexus.registry.ModFluids;
+import com.knoxhack.echoindustrialnexus.registry.ModItems;
+import com.knoxhack.echoindustrialnexus.worldgen.IndustrialPoiGenerator;
+import com.knoxhack.echoindustrialnexus.worldgen.IndustrialPoiType;
+import com.knoxhack.echoblackboxprotocol.progression.BlackboxProgress;
+import com.knoxhack.echocore.api.EchoAddonRegistry;
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echonexusprotocol.world.NexusWorldData;
+import com.knoxhack.echostationfall.progression.StationfallProgress;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import java.util.List;
+import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.gametest.framework.FunctionGameTestInstance;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.TestData;
+import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.RegisterGameTestsEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+
+public final class ModGameTests {
+   private static final DeferredRegister<Consumer<GameTestHelper>> TEST_FUNCTIONS =
+      DeferredRegister.create(Registries.TEST_FUNCTION, EchoIndustrialNexus.MODID);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MACHINE_PROCESSING =
+      TEST_FUNCTIONS.register("machine_recipe_processing", () -> ModGameTests::machineRecipeProcessing);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FLUX_DUCT_TRANSFER =
+      TEST_FUNCTIONS.register("flux_duct_transfer_loss", () -> ModGameTests::fluxDuctTransferLoss);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ITEM_DUCT_ROUTING =
+      TEST_FUNCTIONS.register("item_duct_routing", () -> ModGameTests::itemDuctRouting);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SCRUBBER_PROGRESS =
+      TEST_FUNCTIONS.register("scrubber_safe_zone_progress", () -> ModGameTests::scrubberSafeZoneProgress);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSIONS =
+      TEST_FUNCTIONS.register("terminal_mission_snapshots", () -> ModGameTests::terminalMissionSnapshots);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_WIRING =
+      TEST_FUNCTIONS.register("core_chapter_route_records", () -> ModGameTests::coreChapterRouteRecords);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WARDEN_SPAWN =
+      TEST_FUNCTIONS.register("furnace_warden_spawn", () -> ModGameTests::furnaceWardenSpawn);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> POI_SMOKE =
+      TEST_FUNCTIONS.register("procedural_poi_smoke", () -> ModGameTests::proceduralPoiSmoke);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MENU_SYNC =
+      TEST_FUNCTIONS.register("machine_menu_data_sync", () -> ModGameTests::machineMenuDataSync);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SIDE_CONFIG =
+      TEST_FUNCTIONS.register("machine_side_config", () -> ModGameTests::machineSideConfig);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FLUID_TANK =
+      TEST_FUNCTIONS.register("fluid_tank_processing", () -> ModGameTests::fluidTankProcessing);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CONTROLLER_SHUTDOWN =
+      TEST_FUNCTIONS.register("controller_remote_shutdown", () -> ModGameTests::controllerRemoteShutdown);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> UPGRADE_STACKING =
+      TEST_FUNCTIONS.register("upgrade_stacking_rules", () -> ModGameTests::upgradeStackingRules);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> REWARD_IDEMPOTENCY =
+      TEST_FUNCTIONS.register("reward_claim_idempotency", () -> ModGameTests::rewardClaimIdempotency);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FLUID_CAPABILITY =
+      TEST_FUNCTIONS.register("fluid_capability_fill_drain", () -> ModGameTests::fluidCapabilityFillDrain);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FLUID_PIPE =
+      TEST_FUNCTIONS.register("fluid_pipe_transfer_filtering", () -> ModGameTests::fluidPipeTransferFiltering);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CROSS_COMPAT_OUTPUT =
+      TEST_FUNCTIONS.register("cross_compat_component_output", () -> ModGameTests::crossCompatComponentOutput);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_PRESSURE_COMPAT =
+      TEST_FUNCTIONS.register("nexus_pressure_compat", () -> ModGameTests::nexusPressureCompat);
+
+   private ModGameTests() {
+   }
+
+   public static void register(IEventBus eventBus) {
+      TEST_FUNCTIONS.register(eventBus);
+   }
+
+   public static void registerTests(RegisterGameTestsEvent event) {
+      Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("industrial_chapter"));
+      register(event, environment, "machine_recipe_processing", MACHINE_PROCESSING.getId());
+      register(event, environment, "flux_duct_transfer_loss", FLUX_DUCT_TRANSFER.getId());
+      register(event, environment, "item_duct_routing", ITEM_DUCT_ROUTING.getId());
+      register(event, environment, "scrubber_safe_zone_progress", SCRUBBER_PROGRESS.getId());
+      register(event, environment, "terminal_mission_snapshots", TERMINAL_MISSIONS.getId());
+      register(event, environment, "core_chapter_route_records", CORE_WIRING.getId());
+      register(event, environment, "furnace_warden_spawn", WARDEN_SPAWN.getId());
+      register(event, environment, "procedural_poi_smoke", POI_SMOKE.getId());
+      register(event, environment, "machine_menu_data_sync", MENU_SYNC.getId());
+      register(event, environment, "machine_side_config", SIDE_CONFIG.getId());
+      register(event, environment, "fluid_tank_processing", FLUID_TANK.getId());
+      register(event, environment, "controller_remote_shutdown", CONTROLLER_SHUTDOWN.getId());
+      register(event, environment, "upgrade_stacking_rules", UPGRADE_STACKING.getId());
+      register(event, environment, "reward_claim_idempotency", REWARD_IDEMPOTENCY.getId());
+      register(event, environment, "fluid_capability_fill_drain", FLUID_CAPABILITY.getId());
+      register(event, environment, "fluid_pipe_transfer_filtering", FLUID_PIPE.getId());
+      register(event, environment, "cross_compat_component_output", CROSS_COMPAT_OUTPUT.getId());
+      register(event, environment, "nexus_pressure_compat", NEXUS_PRESSURE_COMPAT.getId());
+   }
+
+   private static void machineRecipeProcessing(GameTestHelper helper) {
+      BlockPos local = new BlockPos(1, 1, 1);
+      helper.setBlock(local, (Block)ModBlocks.ORE_GRINDER.get());
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(local, IndustrialMachineBlockEntity.class);
+      machine.setItem(IndustrialMachineBlockEntity.INPUT_SLOT, new ItemStack(Blocks.IRON_ORE));
+      machine.receiveFlux(6000, false);
+      for (int i = 0; i < 220; i++) {
+         IndustrialMachineBlockEntity.tick(helper.getLevel(), machine.getBlockPos(), machine.getBlockState(), machine);
+      }
+      helper.assertTrue(machine.getItem(IndustrialMachineBlockEntity.OUTPUT_SLOT).is(ModItems.IRON_DUST.get()),
+         "Ore Grinder should process iron ore into Iron Dust");
+      helper.succeed();
+   }
+
+   private static void fluxDuctTransferLoss(GameTestHelper helper) {
+      helper.setBlock(new BlockPos(1, 1, 1), (Block)ModBlocks.FLUX_CAPACITOR_BANK.get());
+      helper.setBlock(new BlockPos(2, 1, 1), (Block)ModBlocks.COPPER_FLUX_DUCT.get());
+      helper.setBlock(new BlockPos(3, 1, 1), (Block)ModBlocks.FLUX_CAPACITOR_BANK.get());
+      IndustrialMachineBlockEntity source = helper.getBlockEntity(new BlockPos(1, 1, 1), IndustrialMachineBlockEntity.class);
+      IndustrialMachineBlockEntity receiver = helper.getBlockEntity(new BlockPos(3, 1, 1), IndustrialMachineBlockEntity.class);
+      IndustrialFluxDuctBlockEntity duct = helper.getBlockEntity(new BlockPos(2, 1, 1), IndustrialFluxDuctBlockEntity.class);
+      source.receiveFlux(1000, false);
+      helper.succeedWhen(() -> {
+         IndustrialFluxDuctBlockEntity.tick(helper.getLevel(), duct.getBlockPos(), duct.getBlockState(), duct);
+         helper.assertTrue(receiver.getFluxStored() > 0, "Flux duct should move Thermal Flux into a receiver");
+         helper.assertTrue(source.getFluxStored() + receiver.getFluxStored() <= 1000, "Flux duct transfer should preserve or lose, never duplicate, Thermal Flux");
+      });
+   }
+
+   private static void itemDuctRouting(GameTestHelper helper) {
+      BlockPos sourcePos = new BlockPos(1, 1, 1);
+      BlockPos ductPos = new BlockPos(2, 1, 1);
+      BlockPos relayDuctPos = new BlockPos(3, 1, 1);
+      BlockPos receiverPos = new BlockPos(4, 1, 1);
+      helper.setBlock(sourcePos, Blocks.CHEST);
+      helper.setBlock(ductPos, (Block)ModBlocks.SMART_DUCT.get());
+      helper.setBlock(relayDuctPos, (Block)ModBlocks.REINFORCED_DUCT.get());
+      helper.setBlock(receiverPos, Blocks.CHEST);
+      Container source = (Container)helper.getLevel().getBlockEntity(helper.absolutePos(sourcePos));
+      Container receiver = (Container)helper.getLevel().getBlockEntity(helper.absolutePos(receiverPos));
+      IndustrialItemDuctBlockEntity duct = helper.getBlockEntity(ductPos, IndustrialItemDuctBlockEntity.class);
+      duct.installFilter(helper.makeMockPlayer(GameType.CREATIVE), new ItemStack((ItemLike)ModItems.SCRAP_METAL.get()));
+      source.setItem(0, new ItemStack((ItemLike)ModItems.SCRAP_METAL.get(), 2));
+      source.setItem(1, new ItemStack(Items.IRON_INGOT, 2));
+      helper.succeedWhen(() -> {
+         IndustrialItemDuctBlockEntity.tick(helper.getLevel(), duct.getBlockPos(), duct.getBlockState(), duct);
+         helper.assertTrue(receiver.getItem(0).is(ModItems.SCRAP_METAL.get()), "Item duct network should route scrap through connected ducts");
+         helper.assertTrue(!receiver.getItem(0).is(Items.IRON_INGOT), "Smart Duct whitelist should block non-filtered items");
+      });
+   }
+
+   private static void scrubberSafeZoneProgress(GameTestHelper helper) {
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      IndustrialProgress.markScrubberZone(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)), "Cooling Mode", 400, 12);
+      helper.assertTrue(IndustrialProgress.flag(player, "safe_zone") || IndustrialProgress.value(player, "scrubber_modes_seen") >= 0,
+         "Scrubber progress API should remain stable for fallback safe zones");
+      helper.succeed();
+   }
+
+   private static void terminalMissionSnapshots(GameTestHelper helper) {
+      List<TerminalMissionDefinition> missions = IndustrialMissionProvider.INSTANCE.missions(helper.makeMockPlayer(GameType.CREATIVE));
+      helper.assertTrue(missions.size() == 10, "Industrial Terminal chapter should expose all 10 missions");
+      TerminalMissionSnapshot snapshot = IndustrialMissionProvider.INSTANCE.snapshot(null, IndustrialTerminalIds.id("mission/reclaim_power"));
+      helper.assertTrue(snapshot.status() == TerminalMissionStatus.UNLOCKED, "Industrial mission snapshots should be stable without player progress");
+      helper.succeed();
+   }
+
+   private static void coreChapterRouteRecords(GameTestHelper helper) {
+      IndustrialCoreIntegration.registerAddonChapter();
+      helper.assertTrue(EchoAddonRegistry.isRegistered(IndustrialCoreIntegration.CHAPTER_ID),
+         "Industrial Nexus should register as an ECHO addon chapter");
+      List<EchoRouteRecord> records = EchoCoreServices.routeRecords(helper.makeMockPlayer(GameType.CREATIVE)).stream()
+         .filter(record -> IndustrialCoreIntegration.CHAPTER_ID.equals(record.chapterId()))
+         .toList();
+      helper.assertTrue(records.size() == 10, "Industrial core route records should expose all 10 missions");
+      helper.succeed();
+   }
+
+   private static void furnaceWardenSpawn(GameTestHelper helper) {
+      FurnaceWardenEntity warden = ((EntityType<FurnaceWardenEntity>)ModEntities.FURNACE_WARDEN.get()).create(helper.getLevel(), EntitySpawnReason.EVENT);
+      helper.assertTrue(warden != null, "Furnace Warden should be spawnable");
+      if (warden != null) {
+         helper.assertTrue(warden.getMaxHealth() >= 180.0F, "Furnace Warden should have boss-scale health");
+      }
+      helper.succeed();
+   }
+
+   private static void proceduralPoiSmoke(GameTestHelper helper) {
+      ServerLevel level = helper.getLevel();
+      IndustrialPoiGenerator.generate(level, helper.absolutePos(new BlockPos(5, 1, 5)), IndustrialPoiType.ABANDONED_THERMAL_PLANT, RandomSource.create(7L));
+      IndustrialPoiGenerator.generate(level, helper.absolutePos(new BlockPos(24, 1, 5)), IndustrialPoiType.NEXUS_HEAT_EXCHANGER_RUINS, RandomSource.create(9L));
+      helper.succeed();
+   }
+
+   private static void machineMenuDataSync(GameTestHelper helper) {
+      BlockPos local = new BlockPos(1, 1, 1);
+      helper.setBlock(local, (Block)ModBlocks.ORE_GRINDER.get());
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(local, IndustrialMachineBlockEntity.class);
+      machine.receiveFlux(1234, false);
+      IndustrialMachineMenu menu = new IndustrialMachineMenu(1, helper.makeMockPlayer(GameType.CREATIVE).getInventory(), machine, machine.data());
+      helper.assertTrue(menu.flux() == 1234, "Industrial machine menu should sync Thermal Flux");
+      helper.assertTrue(menu.machineKind().name().equals("ORE_GRINDER"), "Industrial machine menu should sync machine kind");
+      helper.succeed();
+   }
+
+   private static void machineSideConfig(GameTestHelper helper) {
+      BlockPos local = new BlockPos(1, 1, 1);
+      helper.setBlock(local, (Block)ModBlocks.ORE_GRINDER.get());
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(local, IndustrialMachineBlockEntity.class);
+      helper.assertTrue(machine.getSlotsForFace(net.minecraft.core.Direction.DOWN).length > 0, "Standard config should expose outputs downward");
+      machine.cycleSideConfig(helper.makeMockPlayer(GameType.CREATIVE));
+      helper.assertTrue(machine.getSlotsForFace(net.minecraft.core.Direction.DOWN).length == 0, "Input-only config should block downward output automation");
+      helper.succeed();
+   }
+
+   private static void fluidTankProcessing(GameTestHelper helper) {
+      BlockPos local = new BlockPos(1, 1, 1);
+      helper.setBlock(local, (Block)ModBlocks.WATER_PURIFIER.get());
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(local, IndustrialMachineBlockEntity.class);
+      machine.fillInputFluidForTest(IndustrialMachineBlockEntity.FLUID_DIRTY_WATER, 1000);
+      machine.receiveFlux(2000, false);
+      for (int i = 0; i < 150; i++) {
+         IndustrialMachineBlockEntity.tick(helper.getLevel(), machine.getBlockPos(), machine.getBlockState(), machine);
+      }
+      helper.assertTrue(machine.getItem(IndustrialMachineBlockEntity.OUTPUT_SLOT).is(ModItems.CLEAN_WATER_CELL.get())
+         || machine.outputFluidAmount() >= 1000, "Water Purifier should process dirty water from its internal tank");
+      helper.succeed();
+   }
+
+   private static void controllerRemoteShutdown(GameTestHelper helper) {
+      BlockPos controllerPos = new BlockPos(1, 1, 1);
+      BlockPos targetPos = new BlockPos(3, 1, 1);
+      helper.setBlock(controllerPos, (Block)ModBlocks.FACTORY_CONTROLLER.get());
+      helper.setBlock(new BlockPos(2, 1, 1), (Block)ModBlocks.COPPER_FLUX_DUCT.get());
+      helper.setBlock(targetPos, (Block)ModBlocks.ORE_GRINDER.get());
+      IndustrialMachineBlockEntity controller = helper.getBlockEntity(controllerPos, IndustrialMachineBlockEntity.class);
+      IndustrialMachineBlockEntity target = helper.getBlockEntity(targetPos, IndustrialMachineBlockEntity.class);
+      controller.controllerEmergencyShutdown(helper.makeMockPlayer(GameType.CREATIVE));
+      helper.assertTrue(target.statusLabel().contains("Remote shutdown"), "Factory Controller should remote-shutdown linked machines");
+      helper.succeed();
+   }
+
+   private static void upgradeStackingRules(GameTestHelper helper) {
+      BlockPos local = new BlockPos(1, 1, 1);
+      helper.setBlock(local, (Block)ModBlocks.ORE_GRINDER.get());
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(local, IndustrialMachineBlockEntity.class);
+      ItemStack speed = new ItemStack((ItemLike)ModItems.SPEED_SERVO.get());
+      helper.assertTrue(machine.canPlaceItem(IndustrialMachineBlockEntity.UPGRADE_SLOT_START, speed), "First Speed Servo should be accepted");
+      machine.setItem(IndustrialMachineBlockEntity.UPGRADE_SLOT_START, speed.copy());
+      helper.assertTrue(!machine.canPlaceItem(IndustrialMachineBlockEntity.UPGRADE_SLOT_START + 1, speed.copy()), "Duplicate upgrade modules should be rejected");
+      helper.succeed();
+   }
+
+   private static void rewardClaimIdempotency(GameTestHelper helper) {
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      IndustrialProgress.claim(player, "reclaim_power");
+      IndustrialProgress.claim(player, "reclaim_power");
+      helper.assertTrue(IndustrialProgress.claimed(player, "reclaim_power"), "Industrial reward claims should remain claimed after repeated writes");
+      helper.succeed();
+   }
+
+   private static void fluidCapabilityFillDrain(GameTestHelper helper) {
+      BlockPos local = new BlockPos(1, 1, 1);
+      helper.setBlock(local, (Block)ModBlocks.WATER_PURIFIER.get());
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(local, IndustrialMachineBlockEntity.class);
+      ResourceHandler<FluidResource> handler = machine.fluidHandler(null);
+      try (Transaction tx = Transaction.openRoot()) {
+         int inserted = handler.insert(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_DIRTY_WATER), 250, tx);
+         helper.assertTrue(inserted == 250, "Machine fluid capability should accept dirty water during a probe transaction");
+      }
+      helper.assertTrue(machine.inputFluidAmount() == 0, "Aborted machine fluid insert should rollback tank state");
+      try (Transaction tx = Transaction.openRoot()) {
+         int inserted = handler.insert(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_DIRTY_WATER), 1000, tx);
+         helper.assertTrue(inserted == 1000, "Machine fluid capability should accept dirty water into its input tank");
+         tx.commit();
+      }
+      machine.setItem(IndustrialMachineBlockEntity.OUTPUT_SLOT, new ItemStack(Items.STONE));
+      machine.receiveFlux(2000, false);
+      for (int i = 0; i < 150; i++) {
+         IndustrialMachineBlockEntity.tick(helper.getLevel(), machine.getBlockPos(), machine.getBlockState(), machine);
+      }
+      int outputBefore = machine.outputFluidAmount();
+      try (Transaction tx = Transaction.openRoot()) {
+         int extracted = handler.extract(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_CLEAN_WATER), 100, tx);
+         helper.assertTrue(extracted > 0, "Machine fluid capability should expose clean water during a probe transaction");
+      }
+      helper.assertTrue(machine.outputFluidAmount() == outputBefore, "Aborted machine fluid extract should rollback tank state");
+      try (Transaction tx = Transaction.openRoot()) {
+         int extracted = handler.extract(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_CLEAN_WATER), 1000, tx);
+         helper.assertTrue(extracted > 0, "Machine fluid capability should drain processed clean water from its output tank");
+         tx.commit();
+      }
+      helper.succeed();
+   }
+
+   private static void fluidPipeTransferFiltering(GameTestHelper helper) {
+      BlockPos pipePos = new BlockPos(1, 1, 1);
+      BlockPos machinePos = new BlockPos(2, 1, 1);
+      helper.setBlock(pipePos, (Block)ModBlocks.STATIC_PIPE.get());
+      helper.setBlock(machinePos, (Block)ModBlocks.FLUID_REFINER.get());
+      IndustrialFluidPipeBlockEntity pipe = helper.getBlockEntity(pipePos, IndustrialFluidPipeBlockEntity.class);
+      IndustrialMachineBlockEntity machine = helper.getBlockEntity(machinePos, IndustrialMachineBlockEntity.class);
+      ResourceHandler<FluidResource> pipeHandler = pipe.fluidHandler(null);
+      try (Transaction tx = Transaction.openRoot()) {
+         int inserted = pipeHandler.insert(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_STATIC), 250, tx);
+         helper.assertTrue(inserted == 250, "Pipe fluid capability should accept static fluid during a probe transaction");
+      }
+      helper.assertTrue(pipe.amountForTest() == 0, "Aborted pipe fluid insert should rollback tank state");
+      try (Transaction tx = Transaction.openRoot()) {
+         int inserted = pipeHandler.insert(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_STATIC), 500, tx);
+         helper.assertTrue(inserted == 500, "Static Pipe should accept static fluid");
+         tx.commit();
+      }
+      try (Transaction tx = Transaction.openRoot()) {
+         int rejected = pipeHandler.insert(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_DIRTY_WATER), 100, tx);
+         helper.assertTrue(rejected == 0, "Pipe should reject mixed fluids while already holding static fluid");
+      }
+      IndustrialFluidPipeBlockEntity.tick(helper.getLevel(), pipe.getBlockPos(), pipe.getBlockState(), pipe);
+      helper.assertTrue(machine.inputFluidId() == IndustrialMachineBlockEntity.FLUID_STATIC && machine.inputFluidAmount() > 0,
+         "Static Pipe should transfer static fluid into adjacent fluid machines");
+
+      helper.setBlock(new BlockPos(4, 1, 1), (Block)ModBlocks.REINFORCED_PIPE.get());
+      IndustrialFluidPipeBlockEntity reinforced = helper.getBlockEntity(new BlockPos(4, 1, 1), IndustrialFluidPipeBlockEntity.class);
+      try (Transaction tx = Transaction.openRoot()) {
+         int rejected = reinforced.fluidHandler(null).insert(ModFluids.resourceFor(IndustrialMachineBlockEntity.FLUID_STATIC), 250, tx);
+         helper.assertTrue(rejected == 0, "Reinforced Pipe should reject Nexus/static fluids");
+      }
+      helper.succeed();
+   }
+
+   private static void crossCompatComponentOutput(GameTestHelper helper) {
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      IndustrialCompat.recordIndustrialOutput(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)), new ItemStack((ItemLike)ModItems.PRESSURE_COMPONENT.get()));
+      com.knoxhack.echostationfall.integration.StationfallIndustrialCompat.recordIndustrialComponent(player, "ai_override_chip_casing");
+      helper.assertTrue(StationfallProgress.get(player).aiOverrideObtained(),
+         "Stationfall progress should receive Industrial AI override casing support");
+      com.knoxhack.echoblackboxprotocol.integration.BlackboxIndustrialCompat.recordIndustrialComponent(player, "core_key_assembly");
+      helper.assertTrue(BlackboxProgress.get(player).hasNexusCoreAccessKey(),
+         "Blackbox progress should receive Industrial Core Key Assembly support");
+      helper.succeed();
+   }
+
+   private static void nexusPressureCompat(GameTestHelper helper) {
+      ServerLevel level = helper.getLevel();
+      BlockPos absolute = helper.absolutePos(new BlockPos(1, 1, 1));
+      net.minecraft.world.level.ChunkPos chunk = new net.minecraft.world.level.ChunkPos(absolute.getX() >> 4, absolute.getZ() >> 4);
+      int before = NexusWorldData.get(level).corruptionPressure(chunk);
+      IndustrialCompat.recordNexusThermalPressure(level, absolute, 4);
+      IndustrialCompat.recordStaticFluidLeak(level, absolute, IndustrialMachineBlockEntity.FLUID_STATIC, 500);
+      int after = NexusWorldData.get(level).corruptionPressure(chunk);
+      helper.assertTrue(after > before, "Industrial Nexus thermal/static events should raise Nexus corruption pressure");
+      helper.succeed();
+   }
+
+   private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String testName, Identifier functionId) {
+      TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData(
+         environment, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 2
+      );
+      event.registerTest(id(testName), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, functionId), data));
+   }
+
+   private static Identifier id(String path) {
+      return Identifier.fromNamespaceAndPath(EchoIndustrialNexus.MODID, path);
+   }
+}

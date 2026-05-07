@@ -36,6 +36,15 @@ repositories {
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'GeckoLib'
+                url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+            }
+        }
+        filter { includeGroupAndSubgroups('com.geckolib') }
+    }
 }
 
 base {
@@ -121,11 +130,29 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+def echoAddonSet = (project.findProperty('echoAddonSet') ?: 'all').toString().toLowerCase(java.util.Locale.ROOT)
+if (!['beta', 'all'].contains(echoAddonSet)) {
+    throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
+}
+def echoBetaAddonPaths = [':echoterminal', ':echoorbitalremnants', ':echonexusprotocol'] as Set
+
+def echoIncludedAddonProjects = {
+    rootProject.subprojects
+            .findAll { candidate ->
+                def addonRoot = rootProject.file('addons').toPath().toAbsolutePath().normalize()
+                def projectDir = candidate.projectDir.toPath().toAbsolutePath().normalize()
+                projectDir.parent == addonRoot
+                        && (echoAddonSet == 'all' || echoBetaAddonPaths.contains(candidate.path))
+            }
+            .sort { left, right -> left.path <=> right.path }
+}
+
 dependencies {
     implementation project(':echocore')
     compileOnly project(':echoterminal')
-    localRuntime project(':echoterminal')
-    localRuntime project(':echoorbitalremnants')
+    echoIncludedAddonProjects().each { addonProject ->
+        localRuntime addonProject
+    }
 
     // JEI is optional at runtime. Compile against its API and use the full mod only for local client testing.
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -189,7 +216,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.matching { it.name == 'runClient' }.configureEach {
-    description = 'Launches one Minecraft client with Ashfall, ECHO Core, ECHO Terminal, and Orbital Remnants.'
+    description = 'Launches one Minecraft client with the currently included ECHO modules.'
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
@@ -202,11 +229,12 @@ idea {
 
 tasks.register('buildEchoWorkspace') {
     group = 'build'
-    description = 'Builds ECHO Core, ECHO Terminal, Ashfall, and Orbital Remnants.'
+    description = "Builds ECHO Core, Ashfall, and ${echoAddonSet} addon chapters."
     dependsOn ':echocore:build'
-    dependsOn ':echoterminal:build'
     dependsOn tasks.named('build')
-    dependsOn ':echoorbitalremnants:build'
+    echoIncludedAddonProjects().each { addonProject ->
+        dependsOn "${addonProject.path}:build"
+    }
 }
 
 def echoPythonExecutable = System.getProperty('os.name').toLowerCase(java.util.Locale.ROOT).contains('windows')
@@ -217,7 +245,7 @@ tasks.register('validateEchoResources', Exec) {
     group = 'verification'
     description = 'Runs ECHO resource, localization, namespace, and packet ID validation.'
     workingDir = projectDir
-    commandLine echoPythonExecutable, 'tools/validate_resources.py'
+    commandLine echoPythonExecutable, 'tools/validate_resources.py', '--addon-set', echoAddonSet
 }
 
 tasks.register('validateEchoGameplayData', Exec) {
@@ -253,14 +281,15 @@ tasks.register('checkEchoRuntimeLogs', Exec) {
 
 tasks.named('checkEchoRuntimeLogs') {
     mustRunAfter ':echocore:runGameTestServer'
-    mustRunAfter ':echoterminal:runGameTestServer'
     mustRunAfter tasks.named('runGameTestServer')
-    mustRunAfter ':echoorbitalremnants:runGameTestServer'
+    echoIncludedAddonProjects().each { addonProject ->
+        mustRunAfter "${addonProject.path}:runGameTestServer"
+    }
 }
 
 tasks.register('verifyEchoRelease') {
     group = 'verification'
-    description = 'Runs release-hardening validators, workspace build, and supported GameTest servers.'
+    description = "Runs release-hardening validators, workspace build, and ${echoAddonSet} GameTest servers."
     dependsOn tasks.named('validateEchoResources')
     dependsOn tasks.named('validateEchoGameplayData')
     dependsOn tasks.named('checkEchoPoiStructures')
@@ -268,37 +297,39 @@ tasks.register('verifyEchoRelease') {
     dependsOn tasks.named('checkEchoRuntimeLogs')
     dependsOn tasks.named('buildEchoWorkspace')
     dependsOn ':echocore:runGameTestServer'
-    dependsOn ':echoterminal:runGameTestServer'
     dependsOn tasks.named('runGameTestServer')
-    dependsOn ':echoorbitalremnants:runGameTestServer'
+    echoIncludedAddonProjects().each { addonProject ->
+        dependsOn "${addonProject.path}:runGameTestServer"
+    }
 }
 
 def echoExpectedModJars = [
         [mod: project(':echocore').mod_id.toString(), version: project(':echocore').mod_version.toString()],
-        [mod: project(':echoterminal').mod_id.toString(), version: project(':echoterminal').mod_version.toString()],
         [mod: mod_id.toString(), version: mod_version.toString()],
-        [mod: project(':echoorbitalremnants').mod_id.toString(), version: project(':echoorbitalremnants').mod_version.toString()],
 ]
+echoIncludedAddonProjects().each { addon ->
+    echoExpectedModJars.add([mod: addon.mod_id.toString(), version: addon.mod_version.toString()])
+}
 def echoForbiddenModJarPrefixes = [
-        'echonexusprotocol',
-        'echoblackboxprotocol',
         'echostationfall',
+        'echoblackboxprotocol',
         'echoindustrialnexus',
         'echoindustrialrebirth',
 ] as Set
 def echoExpectedModJarNames = echoExpectedModJars.collect { "${it.mod}-${it.version}.jar".toString() } as Set
+def echoExpectedModJarPrefixes = echoExpectedModJars.collect { it.mod.toString().toLowerCase(java.util.Locale.ROOT) } as Set
 def echoSanityModsDir = project.findProperty('echoModpackModsDir')
         ? file(project.property('echoModpackModsDir'))
         : file('C:/Users/Ivan/curseforge/minecraft/Instances/Axes of Tomorrow/mods')
 
 tasks.register('checkEchoModJarSet') {
     group = 'verification'
-    description = 'Fails when a target modpack mods folder mixes stale or duplicate ECHO jars.'
+    description = "Verifies the release modpack folder contains exactly one current jar for every ${echoAddonSet} ECHO module."
 
     doLast {
         def modsDir = echoSanityModsDir
         if (!modsDir.exists()) {
-            throw new GradleException("Modpack mods folder not found: ${modsDir}. Pass -PechoModpackModsDir=<path>.")
+            throw new GradleException("Release modpack mods folder not found: ${modsDir}. Create it, run copyEchoJarsToModpack, or pass -PechoModpackModsDir=<path>.")
         }
 
         def echoJars = (modsDir.listFiles() ?: [] as File[]).findAll { jar ->
@@ -312,7 +343,8 @@ tasks.register('checkEchoModJarSet') {
             jar.isFile()
                     && jar.name.endsWith('.jar')
                     && echoForbiddenModJarPrefixes.any { prefix ->
-                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
+                        !echoExpectedModJarPrefixes.contains(prefix)
+                                && jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
                     }
         }
         if (!forbidden.isEmpty()) {
@@ -322,11 +354,11 @@ tasks.register('checkEchoModJarSet') {
         echoExpectedModJars.each { spec ->
             def matches = echoJars.findAll { it.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-") }
             if (matches.size() != 1) {
-                throw new GradleException("Expected exactly one ${spec.mod} jar in ${modsDir}, found ${matches*.name}.")
+                throw new GradleException("Expected exactly one ${spec.mod} jar in ${modsDir}, found ${matches*.name}. Run copyEchoJarsToModpack before verifyEchoRelease.")
             }
             def expectedName = "${spec.mod}-${spec.version}.jar"
             if (matches[0].name != expectedName) {
-                throw new GradleException("Stale ${spec.mod} jar in ${modsDir}: found ${matches[0].name}, expected ${expectedName}.")
+                throw new GradleException("Stale ${spec.mod} jar in ${modsDir}: found ${matches[0].name}, expected ${expectedName}. Remove stale jars, then run copyEchoJarsToModpack.")
             }
         }
 
@@ -340,28 +372,29 @@ tasks.register('checkEchoModJarSet') {
 
 tasks.register('copyEchoJarsToModpack', Copy) {
     group = 'distribution'
-    description = 'Builds and copies all ECHO jars into the local CurseForge modpack mods folder.'
+    description = "Builds and copies ${echoAddonSet} public ECHO release jars into the Axes of Tomorrow CurseForge mods folder."
 
     def coreProject = project(':echocore')
-    def terminalProject = project(':echoterminal')
-    def addonProject = project(':echoorbitalremnants')
+    def addonProjects = echoIncludedAddonProjects()
     def modpackModsDir = project.findProperty('echoModpackModsDir')
             ? file(project.property('echoModpackModsDir'))
-            : file('C:/Users/Ivan/curseforge/minecraft/Instances/ECHO Ashfall Protocol/mods')
+            : echoSanityModsDir
 
     dependsOn ':echocore:build'
-    dependsOn ':echoterminal:build'
     dependsOn tasks.named('build')
-    dependsOn ':echoorbitalremnants:build'
+    addonProjects.each { addonProject ->
+        dependsOn "${addonProject.path}:build"
+    }
     from(coreProject.layout.buildDirectory.file("libs/${coreProject.mod_id}-${coreProject.mod_version}.jar"))
-    from(terminalProject.layout.buildDirectory.file("libs/${terminalProject.mod_id}-${terminalProject.mod_version}.jar"))
     from(layout.buildDirectory.file("libs/${mod_id}-${mod_version}.jar"))
-    from(addonProject.layout.buildDirectory.file("libs/${addonProject.mod_id}-${addonProject.mod_version}.jar"))
+    addonProjects.each { addonProject ->
+        from(addonProject.layout.buildDirectory.file("libs/${addonProject.mod_id}-${addonProject.mod_version}.jar"))
+    }
     into modpackModsDir
 
     doFirst {
         if (!modpackModsDir.exists()) {
-            throw new GradleException("Modpack mods folder not found: ${modpackModsDir}")
+            throw new GradleException("Release modpack mods folder not found: ${modpackModsDir}. Create it or pass -PechoModpackModsDir=<path>.")
         }
         def stale = (modpackModsDir.listFiles() ?: [] as File[]).findAll { jar ->
             jar.isFile()
@@ -369,10 +402,12 @@ tasks.register('copyEchoJarsToModpack', Copy) {
                     && (echoExpectedModJars.any { spec ->
                         jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-")
                     } || echoForbiddenModJarPrefixes.any { prefix ->
-                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
+                        !echoExpectedModJarPrefixes.contains(prefix)
+                                && jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
                     })
                     && (!echoExpectedModJarNames.contains(jar.name) || echoForbiddenModJarPrefixes.any { prefix ->
-                        jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
+                        !echoExpectedModJarPrefixes.contains(prefix)
+                                && jar.name.toLowerCase(java.util.Locale.ROOT).startsWith("${prefix}-")
                     })
         }
         if (!stale.isEmpty()) {

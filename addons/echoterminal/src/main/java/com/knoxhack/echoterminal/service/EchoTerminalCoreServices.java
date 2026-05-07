@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -20,14 +21,14 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class EchoTerminalCoreServices {
     private static final int TERMINAL_SEARCH_RADIUS = 48;
     private static final int TERMINAL_VERTICAL_SEARCH_RADIUS = 16;
-    private static final Map<UUID, BlockPos> TERMINAL_CACHE = new ConcurrentHashMap<>();
+    private static final Map<UUID, TerminalReference> TERMINAL_CACHE = new ConcurrentHashMap<>();
 
     private EchoTerminalCoreServices() {
     }
 
     public static void rememberTerminal(Player player, BlockPos pos) {
         if (player != null && pos != null) {
-            TERMINAL_CACHE.put(player.getUUID(), pos.immutable());
+            TERMINAL_CACHE.put(player.getUUID(), new TerminalReference(player.level().dimension(), pos.immutable()));
         }
     }
 
@@ -102,7 +103,7 @@ public final class EchoTerminalCoreServices {
                 for (int dz = -TERMINAL_SEARCH_RADIUS; dz <= TERMINAL_SEARCH_RADIUS; dz++) {
                     BlockPos pos = center.offset(dx, dy, dz);
                     if (player.level().getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal
-                            && terminal.isOwner(player)) {
+                            && terminal.isExplicitOwner(player)) {
                         rememberTerminal(player, pos);
                         return terminal;
                     }
@@ -113,15 +114,21 @@ public final class EchoTerminalCoreServices {
     }
 
     private static EchoTerminalBlockEntity cachedTerminal(Player player) {
-        BlockPos cachedPos = TERMINAL_CACHE.get(player.getUUID());
-        if (cachedPos == null) {
+        TerminalReference cached = TERMINAL_CACHE.get(player.getUUID());
+        if (cached == null) {
             return null;
         }
-        if (player.level().getBlockEntity(cachedPos) instanceof EchoTerminalBlockEntity terminal
-                && terminal.isOwner(player)) {
+        if (!cached.dimension().equals(player.level().dimension())) {
+            return null;
+        }
+        if (player.level().getBlockEntity(cached.pos()) instanceof EchoTerminalBlockEntity terminal
+                && terminal.isExplicitOwner(player)) {
             return terminal;
         }
-        TERMINAL_CACHE.remove(player.getUUID(), cachedPos);
+        TERMINAL_CACHE.remove(player.getUUID(), cached);
         return null;
+    }
+
+    private record TerminalReference(ResourceKey<Level> dimension, BlockPos pos) {
     }
 }

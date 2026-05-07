@@ -6,7 +6,10 @@ import com.knoxhack.echoorbitalremnants.progression.ModAdvancements;
 import com.knoxhack.echoorbitalremnants.registry.ModEntities;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
 import com.knoxhack.echoorbitalremnants.suit.SuitState;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +30,7 @@ public class EchoZeroEntity extends NexusHuskEntity {
     private final ServerBossEvent bossEvent = BossEncounterSupport.bossBar(this,
             "ECHO-0", BossEvent.BossBarColor.PURPLE);
     private int phase = 1;
+    private boolean announced;
 
     public EchoZeroEntity(EntityType<? extends Zombie> type, Level level) {
         super(type, level);
@@ -49,6 +53,16 @@ public class EchoZeroEntity extends NexusHuskEntity {
         updatePhaseCue();
 
         int pulseRate = phase == 3 ? 35 : phase == 2 ? 45 : 55;
+        if (tickCount % pulseRate == Math.max(1, pulseRate - 12) && getTarget() instanceof Player player && distanceToSqr(player) < 100.0D) {
+            if (!announced) {
+                player.sendSystemMessage(Component.literal("ECHO-7 // First contact: ECHO-0. Purple reverse-pulse means quarantine pressure is building."));
+                announced = true;
+            }
+            if (level() instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(null, blockPosition(), SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.HOSTILE, 0.9F, 0.68F + phase * 0.1F);
+                serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, getX(), getY() + 0.7D, getZ(), 18 + phase * 5, 0.7D, 0.45D, 0.7D, 0.03D);
+            }
+        }
         if (tickCount % pulseRate == 0 && getTarget() instanceof Player player && distanceToSqr(player) < 100.0D) {
             SuitState state = SuitState.get(player);
             for (int i = 0; i < phase + 1; i++) {

@@ -19,10 +19,12 @@ public class ModTooltipEvents {
         String line = switch (id.getPath()) {
             case "echo_terminal" -> "Tracks objectives, route locks, suit diagnostics, factions, and ECHO memory.";
             case "emergency_rocket" -> "Stage on a complete 5x5 Launch Platform, board the vehicle, then launch; use in space to return to Earth.";
-            case "orbital_shuttle" -> "Travels to the Lunar Scar Zone; sneak-use in space to burn the saved return vector.";
-            case "mars_transfer_window" -> "Travels to Mars Ash Basin after lunar Helium-3 telemetry is resolved.";
-            case "europa_transfer_window" -> "Travels to Europa Cryo Ocean after Martian silica telemetry is resolved.";
-            case "nexus_drive_vessel" -> "Endgame vessel for the Nexus Anomaly Belt; sneak-use in space to return.";
+            case "orbital_shuttle" -> "Reusable route vessel to the Lunar Scar Zone; sneak-use in space to burn the saved return vector.";
+            case "mars_transfer_window" -> "Reusable route key to Mars Ash Basin after lunar Helium-3 telemetry is resolved; sneak-use in space to return.";
+            case "europa_transfer_window" -> "Reusable route key to Europa Cryo Ocean after Martian silica telemetry is resolved; sneak-use in space to return.";
+            case "saturn_transfer_window" -> "Reusable route key to Saturn Ring Graveyard after Europa Thermal Arrays resolve ring telemetry; sneak-use in space to return.";
+            case "titan_transfer_window" -> "Reusable route key to Titan Methane Shelf after Saturn Ring Relays stabilize descent; sneak-use in space to return.";
+            case "nexus_drive_vessel" -> "Reusable endgame vessel for the Nexus Anomaly Belt after Titan methane telemetry; sneak-use in space to return.";
             case "pressurized_helmet", "pressurized_chestplate", "pressurized_leggings", "magnetic_boots" -> "Part of the pressure suit required for vacuum survival.";
             case "oxygen_tank" -> "Required for launch readiness and suit oxygen support.";
             case "oxygen_booster" -> "Carry to slow oxygen drain; use to flush reserve oxygen into the suit.";
@@ -61,6 +63,10 @@ public class ModTooltipEvents {
             case "helium_extractor_node" -> "Lunar repair objective; scan with a Helium Extractor Core.";
             case "mars_pressure_console" -> "Mars repair objective; scan with a Pressure Regulator.";
             case "europa_thermal_array" -> "Europa repair objective; scan with a Europa Probe Array.";
+            case "saturn_ring_relay" -> "Saturn repair objective; scan with a Saturn Relay Lens to stabilize Titan descent.";
+            case "titan_methane_pump" -> "Titan repair objective; scan with a Titan Methane Cell to unlock Deep Space Protocol.";
+            case "faction_vendor_kiosk" -> "Beta faction support kiosk; scan after pledging to authorize one barter cache per hub.";
+            case "faction_relay_hub" -> "Beta faction relay hub; scan after pledging for support caches and contract routing.";
             case "cryo_battery" -> "Europa power core; can be fabricated by charging Cryo Crystals.";
             case "navigation_chip" -> "Recovered by reclaiming Vacuum Circuits; used for route computers.";
             case "nexus_drive_core" -> "Endgame drive core; craft it or fabricate one from Lunar Core Fragments.";
@@ -92,6 +98,12 @@ public class ModTooltipEvents {
         }
         if (path.contains("cryo") || path.contains("frozen")) {
             return "Europa cryo resource used for deep-space systems.";
+        }
+        if (path.contains("saturn")) {
+            return "Saturn ring resource used to stabilize Titan descent telemetry.";
+        }
+        if (path.contains("titan") || path.contains("methane")) {
+            return "Titan methane resource used to unlock Deep Space and Nexus prep.";
         }
         if (path.contains("orbital") || path.contains("satellite") || path.contains("vacuum") || path.contains("solar")) {
             return "Orbital salvage used for launch, station, and ship systems.";

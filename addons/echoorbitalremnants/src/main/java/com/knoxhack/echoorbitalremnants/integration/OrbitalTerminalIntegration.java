@@ -1,7 +1,16 @@
 package com.knoxhack.echoorbitalremnants.integration;
 
 import com.knoxhack.echoorbitalremnants.network.EchoTerminalSnapshot;
+import com.knoxhack.echoterminal.api.TerminalAddonGuide;
+import com.knoxhack.echoterminal.api.TerminalAddonInfo;
+import com.knoxhack.echoterminal.api.TerminalAddonInfoProvider;
+import com.knoxhack.echoterminal.api.TerminalAddonInfoRegistry;
+import com.knoxhack.echoterminal.api.TerminalAddonLink;
+import com.knoxhack.echoterminal.api.TerminalAddonMetric;
+import com.knoxhack.echoterminal.api.TerminalAddonSection;
 import com.knoxhack.echoterminal.api.TerminalIcon;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
 import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
@@ -15,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * Optional client-side ECHO Terminal bridge. Server actions and mission
@@ -31,9 +41,80 @@ public final class OrbitalTerminalIntegration {
         if (!REGISTERED.compareAndSet(false, true)) {
             return;
         }
-        TerminalTabRegistry.register(new OrbitalCommandTab());
-        TerminalTabRegistry.register(new OrbitalSurveyTab());
-        TerminalTabRegistry.register(new OrbitalEchoTab());
+        registerTab(new OrbitalCommandTab(), orbitalProfile(300));
+        registerTab(new OrbitalSurveyTab(), orbitalProfile(310));
+        registerTab(new OrbitalEchoTab(), orbitalProfile(320));
+        TerminalAddonInfoRegistry.register(new OrbitalAddonInfoProvider());
+    }
+
+    private static void registerTab(TerminalTab tab, TerminalNavigationProfile profile) {
+        TerminalTabRegistry.register(tab);
+        TerminalNavigationProfiles.register(tab.descriptor().id(), profile);
+    }
+
+    private static TerminalNavigationProfile orbitalProfile(int order) {
+        return TerminalNavigationProfile.chapter(OrbitalTerminalIds.CHAPTER_ID.toString(),
+                "Chapter 2: Orbital Remnants", "C2", order);
+    }
+
+    private static final class OrbitalAddonInfoProvider implements TerminalAddonInfoProvider {
+        @Override
+        public String chapterId() {
+            return OrbitalTerminalIds.CHAPTER_ID.getPath();
+        }
+
+        @Override
+        public TerminalAddonInfo info(Player player) {
+            if (player == null) {
+                return new TerminalAddonInfo(
+                        "Orbital command, route survey, and ECHO-0 quarantine interfaces.",
+                        List.of(new TerminalAddonMetric("Signal", "OFFLINE", "waiting for player telemetry", ACCENT)),
+                        List.of(new TerminalAddonSection("Command Feed",
+                                List.of("Open Orbital Command after player telemetry is available."))),
+                        links(),
+                        guide());
+            }
+            EchoTerminalSnapshot snapshot = EchoTerminalSnapshot.from(player);
+            List<String> survey = snapshot.surveyLines().isEmpty()
+                    ? List.of("No route surveys recorded yet.")
+                    : snapshot.surveyLines().stream().limit(3).toList();
+            return new TerminalAddonInfo(
+                    "Launch readiness, route survey, and ECHO-0 quarantine status.",
+                    List.of(
+                            new TerminalAddonMetric("Oxygen", snapshot.oxygen() + "%", "suit reserve", TerminalUi.CYAN),
+                            new TerminalAddonMetric("Pressure", snapshot.pressure() + "%", "suit pressure", TerminalUi.GREEN),
+                            new TerminalAddonMetric("Radiation", snapshot.radiation() + "%", "orbital exposure", TerminalUi.AMBER),
+                            new TerminalAddonMetric("Launch", snapshot.launchReady() ? "READY" : "PENDING",
+                                    snapshot.launchMissing().isEmpty() ? "all launch checks nominal" : String.join(", ", snapshot.launchMissing()),
+                                    snapshot.launchReady() ? TerminalUi.GREEN : TerminalUi.AMBER)),
+                    List.of(
+                            new TerminalAddonSection("Command Feed", List.of(
+                                    snapshot.missionStep(),
+                                    snapshot.nextObjective(),
+                                    snapshot.scanRequirement())),
+                            new TerminalAddonSection("Route Survey", survey)),
+                    links(),
+                    guide());
+        }
+
+        private static TerminalAddonGuide guide() {
+            return TerminalAddonGuide.mainline(2, 20, "After Ashfall",
+                    "Start Orbital Remnants after Ashfall gives you enough supplies and route confidence to leave the ground network.",
+                    List.of(
+                            "Open Orbital Command and review launch readiness.",
+                            "Scan the launch site and fill missing launch systems.",
+                            "Use Route Survey to track route worlds and ECHO-0 records."));
+        }
+
+        private static List<TerminalAddonLink> links() {
+            return List.of(
+                    new TerminalAddonLink(OrbitalTerminalIds.COMMAND_TAB, "Orbital Command",
+                            "Launch readiness and route telemetry", ACCENT),
+                    new TerminalAddonLink(OrbitalTerminalIds.SURVEY_TAB, "Route Survey",
+                            "Survey chains and recovery sites", 0xFF92F7A6),
+                    new TerminalAddonLink(OrbitalTerminalIds.ECHO_TAB, "ECHO-0 Records",
+                            "Quarantine and anomaly records", 0xFFC09BFF));
+        }
     }
 
     private static final class OrbitalCommandTab implements TerminalTab {

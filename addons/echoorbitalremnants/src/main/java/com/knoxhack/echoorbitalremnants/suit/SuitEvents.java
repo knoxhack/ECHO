@@ -9,18 +9,33 @@ import com.knoxhack.echoorbitalremnants.registry.ModEntities;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
 import com.knoxhack.echoorbitalremnants.world.OrbitalDebrisField;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class SuitEvents {
+    private static final Map<UUID, BlockScanCache> BLOCK_SCAN_CACHE = new HashMap<>();
+
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent.Post event) {
         Player player = event.getEntity();
@@ -63,12 +78,46 @@ public class SuitEvents {
 
         if (!player.level().isClientSide() && exposed) {
             handleServerOrbitalEffects(player, state);
+            if (player.tickCount % 160 == 0) {
+                pulseNearbyRouteObjective(player);
+            }
             if (player.tickCount % 3600 == 0 && player.level() instanceof ServerLevel serverLevel) {
                 OrbitalDebrisField.seedAmbientDebris(serverLevel, player.blockPosition());
             }
         }
 
         state.save(player);
+    }
+
+    @SubscribeEvent
+    public void onRouteCacheOpen(PlayerInteractEvent.RightClickBlock event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !ModDimensions.isSpaceLevel(player.level())) {
+            return;
+        }
+        BlockEntity blockEntity = player.level().getBlockEntity(event.getPos());
+        if (blockEntity == null || player.level().getBlockState(event.getPos()).getBlock() != Blocks.CHEST) {
+            return;
+        }
+        if (!nearbyBlock(player, 3,
+                ModBlocks.DOCKING_BEACON.get(),
+                ModBlocks.LUNAR_TITANIUM_BLOCK.get(),
+                ModBlocks.OXYGEN_PIPE.get(),
+                ModBlocks.FROZEN_CABLE.get(),
+                ModBlocks.SATURN_RING_RELAY.get(),
+                ModBlocks.METHANE_ICE.get(),
+                ModBlocks.NEXUS_DUST_BLOCK.get())) {
+            return;
+        }
+        long now = player.level().getGameTime();
+        long last = player.getPersistentData().getLongOr("echoorbitalremnants_route_cache_feedback_tick", -200L);
+        long lastPos = player.getPersistentData().getLongOr("echoorbitalremnants_route_cache_feedback_pos", Long.MIN_VALUE);
+        if (lastPos == event.getPos().asLong() && now - last < 80L) {
+            return;
+        }
+        player.getPersistentData().putLong("echoorbitalremnants_route_cache_feedback_tick", now);
+        player.getPersistentData().putLong("echoorbitalremnants_route_cache_feedback_pos", event.getPos().asLong());
+        player.sendSystemMessage(Component.literal("ECHO-7 // Recovery cache opened: route proof, crafting support, and survival recovery stock."));
+        player.level().playSound(null, event.getPos(), SoundEvents.CHEST_OPEN, SoundSource.BLOCKS, 0.55F, 1.25F);
     }
 
     @SubscribeEvent
@@ -129,7 +178,7 @@ public class SuitEvents {
         if (player.level().dimension() == ModDimensions.LOW_EARTH_ORBIT && !progress.orbitSurveyComplete()
                 && nearbyBlock(player, 7, ModBlocks.BROKEN_SOLAR_PANEL.get(), ModBlocks.ORBITAL_PLATING.get(), ModBlocks.SATELLITE_PLATING.get(), ModBlocks.STATION_RELAY_NODE.get())) {
             state.drainOxygen(Config.tunedHazardDrain(nearbyBlock(player, 5, ModBlocks.DOCKING_BEACON.get()) ? 3 : 2));
-            state.compromisePressure(Config.tunedHazardDrain(nearbyBlock(player, 7, ModBlocks.SATELLITE_PLATING.get()) ? 3 : 2));
+            state.compromisePressure(Config.tunedHazardDrain(2));
         }
         if (player.level().dimension() == ModDimensions.LUNAR_SCAR_ZONE && !progress.moonSurveyComplete()
                 && nearbyBlock(player, 7, ModBlocks.NEXUS_TOUCHED_STONE.get(), ModBlocks.NEXUS_GROWTH.get(), ModBlocks.NEXUS_DUST_BLOCK.get(), ModBlocks.SURVEY_MARKER.get(), ModBlocks.HELIUM_EXTRACTOR_NODE.get())) {
@@ -140,13 +189,27 @@ public class SuitEvents {
         if (player.level().dimension() == ModDimensions.MARS_ASH_BASIN && !progress.marsSurveyComplete()
                 && !hasItem(player, ModItems.MARTIAN_PRESSURE_VALVE.get()) && !hasItem(player, ModItems.PRESSURE_REGULATOR.get())
                 && !nearbyBlock(player, 6, ModBlocks.SIGNAL_RELAY.get(), ModBlocks.OXYGEN_PIPE.get(), ModBlocks.MARS_PRESSURE_CONSOLE.get())) {
-            state.compromisePressure(Config.tunedHazardDrain(nearbyBlock(player, 7, ModBlocks.MARTIAN_DUST.get(), ModBlocks.MARTIAN_BASALT.get()) ? 4 : 2));
+            state.compromisePressure(Config.tunedHazardDrain(nearbyBlock(player, 7, ModBlocks.MARTIAN_DUST.get(), ModBlocks.MARTIAN_BASALT.get()) ? 3 : 2));
         }
         if (player.level().dimension() == ModDimensions.EUROPA_CRYO_OCEAN && !progress.europaSurveyComplete()
                 && !nearbyBlock(player, 6, ModBlocks.THERMAL_VENT.get(), ModBlocks.EUROPA_THERMAL_ARRAY.get())) {
             state.drainOxygen(Config.tunedHazardDrain(1));
             if (!SuitState.hasThermalLiner(player)) {
-                state.compromisePressure(Config.tunedHazardDrain(nearbyBlock(player, 7, ModBlocks.CRYO_ICE.get(), ModBlocks.PACKED_CRYO_ICE.get(), ModBlocks.FROZEN_CABLE.get()) ? 3 : 2));
+                state.compromisePressure(Config.tunedHazardDrain(nearbyBlock(player, 7, ModBlocks.CRYO_ICE.get(), ModBlocks.PACKED_CRYO_ICE.get(), ModBlocks.FROZEN_CABLE.get()) ? 2 : 1));
+            }
+        }
+        if (player.level().dimension() == ModDimensions.SATURN_RING_GRAVEYARD && !progress.saturnSurveyComplete()
+                && nearbyBlock(player, 7, ModBlocks.SATURN_ICE_RUBBLE.get(), ModBlocks.SATURN_RING_RELAY.get(), ModBlocks.ORBITAL_PLATING.get())) {
+            state.drainOxygen(Config.tunedHazardDrain(1));
+            if (!nearbyBlock(player, 5, ModBlocks.FACTION_RELAY_HUB.get(), ModBlocks.FACTION_VENDOR_KIOSK.get())) {
+                state.compromisePressure(Config.tunedHazardDrain(1));
+            }
+        }
+        if (player.level().dimension() == ModDimensions.TITAN_METHANE_SHELF && !progress.titanSurveyComplete()
+                && !nearbyBlock(player, 6, ModBlocks.TITAN_METHANE_PUMP.get(), ModBlocks.FACTION_RELAY_HUB.get())) {
+            state.compromisePressure(Config.tunedHazardDrain(2));
+            if (!SuitState.hasThermalLiner(player)) {
+                state.drainOxygen(Config.tunedHazardDrain(1));
             }
         }
         if (player.level().dimension() == ModDimensions.NEXUS_ANOMALY_BELT && !progress.nexusStabilized()
@@ -220,7 +283,11 @@ public class SuitEvents {
 
     private static void spawnFeatureThreat(ServerLevel level, Player player) {
         Entity entity;
-        if (player.level().dimension() == ModDimensions.LOW_EARTH_ORBIT || player.level().dimension() == ModDimensions.EUROPA_CRYO_OCEAN) {
+        if (player.level().dimension() == ModDimensions.SATURN_RING_GRAVEYARD) {
+            entity = ModEntities.SATURN_RELAY_SENTINEL.get().create(level, EntitySpawnReason.EVENT);
+        } else if (player.level().dimension() == ModDimensions.TITAN_METHANE_SHELF) {
+            entity = ModEntities.TITAN_METHANE_STALKER.get().create(level, EntitySpawnReason.EVENT);
+        } else if (player.level().dimension() == ModDimensions.LOW_EARTH_ORBIT || player.level().dimension() == ModDimensions.EUROPA_CRYO_OCEAN) {
             entity = player.level().dimension() == ModDimensions.EUROPA_CRYO_OCEAN && player.getRandom().nextInt(4) == 0
                     ? ModEntities.EUROPA_CRYO_WARDEN.get().create(level, EntitySpawnReason.EVENT)
                     : ModEntities.ECHO_DEFENSE_DRONE.get().create(level, EntitySpawnReason.EVENT);
@@ -252,8 +319,58 @@ public class SuitEvents {
                 ModBlocks.MARS_PRESSURE_CONSOLE.get(),
                 ModBlocks.FROZEN_CABLE.get(),
                 ModBlocks.EUROPA_THERMAL_ARRAY.get(),
+                ModBlocks.SATURN_ICE_RUBBLE.get(),
+                ModBlocks.SATURN_RING_RELAY.get(),
+                ModBlocks.TITAN_THOLIN_DUST.get(),
+                ModBlocks.TITAN_METHANE_PUMP.get(),
                 ModBlocks.NEXUS_GROWTH.get(),
                 ModBlocks.NEXUS_ANCHOR.get());
+    }
+
+    private static void pulseNearbyRouteObjective(Player player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        BlockPos objective = nearbyBlockPos(player, 10,
+                ModBlocks.STATION_RELAY_NODE.get(),
+                ModBlocks.HELIUM_EXTRACTOR_NODE.get(),
+                ModBlocks.MARS_PRESSURE_CONSOLE.get(),
+                ModBlocks.EUROPA_THERMAL_ARRAY.get(),
+                ModBlocks.SATURN_RING_RELAY.get(),
+                ModBlocks.TITAN_METHANE_PUMP.get(),
+                ModBlocks.NEXUS_ANCHOR.get());
+        if (objective == null) {
+            return;
+        }
+        serverLevel.playSound(null, objective, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 0.28F, routePulsePitch(player));
+        serverLevel.sendParticles(routePulseParticle(player), objective.getX() + 0.5D, objective.getY() + 1.0D, objective.getZ() + 0.5D,
+                8, 0.35D, 0.28D, 0.35D, 0.01D);
+    }
+
+    private static net.minecraft.core.particles.ParticleOptions routePulseParticle(Player player) {
+        if (player.level().dimension() == ModDimensions.EUROPA_CRYO_OCEAN) {
+            return ParticleTypes.SNOWFLAKE;
+        }
+        if (player.level().dimension() == ModDimensions.TITAN_METHANE_SHELF) {
+            return ParticleTypes.LARGE_SMOKE;
+        }
+        if (player.level().dimension() == ModDimensions.NEXUS_ANOMALY_BELT) {
+            return ParticleTypes.REVERSE_PORTAL;
+        }
+        return ParticleTypes.ELECTRIC_SPARK;
+    }
+
+    private static float routePulsePitch(Player player) {
+        if (player.level().dimension() == ModDimensions.SATURN_RING_GRAVEYARD) {
+            return 1.75F;
+        }
+        if (player.level().dimension() == ModDimensions.TITAN_METHANE_SHELF) {
+            return 0.75F;
+        }
+        if (player.level().dimension() == ModDimensions.NEXUS_ANOMALY_BELT) {
+            return 1.95F;
+        }
+        return 1.35F;
     }
 
     private static boolean consume(Player player, net.minecraft.world.item.Item item) {
@@ -280,16 +397,47 @@ public class SuitEvents {
         return false;
     }
 
-    private static boolean nearbyBlock(Player player, int radius, net.minecraft.world.level.block.Block... blocks) {
-        net.minecraft.core.BlockPos center = player.blockPosition();
-        for (net.minecraft.core.BlockPos pos : net.minecraft.core.BlockPos.betweenClosed(center.offset(-radius, -3, -radius), center.offset(radius, 3, radius))) {
-            net.minecraft.world.level.block.Block current = player.level().getBlockState(pos).getBlock();
-            for (net.minecraft.world.level.block.Block block : blocks) {
+    private static boolean nearbyBlock(Player player, int radius, Block... blocks) {
+        String key = scanKey(player, radius, blocks);
+        BlockScanCache cache = BLOCK_SCAN_CACHE.get(player.getUUID());
+        if (cache != null && cache.tick + 40 >= player.tickCount && cache.key.equals(key)) {
+            return cache.found;
+        }
+        boolean found = nearbyBlockPosUncached(player, radius, blocks) != null;
+        BLOCK_SCAN_CACHE.put(player.getUUID(), new BlockScanCache(key, player.tickCount, found));
+        return found;
+    }
+
+    private static BlockPos nearbyBlockPos(Player player, int radius, Block... blocks) {
+        return nearbyBlockPosUncached(player, radius, blocks);
+    }
+
+    private static BlockPos nearbyBlockPosUncached(Player player, int radius, Block... blocks) {
+        BlockPos center = player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -3, -radius), center.offset(radius, 3, radius))) {
+            Block current = player.level().getBlockState(pos).getBlock();
+            for (Block block : blocks) {
                 if (current == block) {
-                    return true;
+                    return pos.immutable();
                 }
             }
         }
-        return false;
+        return null;
+    }
+
+    private static String scanKey(Player player, int radius, Block... blocks) {
+        BlockPos pos = player.blockPosition();
+        StringBuilder builder = new StringBuilder(player.level().dimension().identifier().toString())
+                .append('|').append(pos.getX() >> 2)
+                .append('|').append(pos.getY() >> 2)
+                .append('|').append(pos.getZ() >> 2)
+                .append('|').append(radius);
+        for (Block block : blocks) {
+            builder.append('|').append(System.identityHashCode(block));
+        }
+        return builder.toString();
+    }
+
+    private record BlockScanCache(String key, int tick, boolean found) {
     }
 }

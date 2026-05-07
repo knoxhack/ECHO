@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 2.0, "max": 4.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "echonexusprotocol:corrupted_ferrite", "weight": 4 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:static_fluid", "weight": 3 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:nexus_gel", "weight": 3 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:stabilized_purity_charge", "weight": 1 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:field_membrane", "weight": 2 }
+      ]
+    }
+  ],
+  "random_sequence": "echonexusprotocol:chests/containment_lab_reactor"
+}

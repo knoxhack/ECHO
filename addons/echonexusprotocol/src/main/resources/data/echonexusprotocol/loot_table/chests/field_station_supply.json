@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 2.0, "max": 4.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "echonexusprotocol:nexus_shard", "weight": 4 },
+        { "type": "minecraft:item", "name": "minecraft:redstone", "weight": 5 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:signal_wire", "weight": 3 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:filter_membrane", "weight": 2 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:purity_charge", "weight": 1 }
+      ]
+    }
+  ],
+  "random_sequence": "echonexusprotocol:chests/field_station_supply"
+}

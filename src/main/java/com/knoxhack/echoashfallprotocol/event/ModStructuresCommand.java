@@ -17,6 +17,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -40,6 +41,7 @@ public class ModStructuresCommand {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
             Commands.literal("modstructures")
+                .requires(ModStructuresCommand::hasCommandPermission)
                 .then(Commands.literal("create")
                     .then(Commands.argument("name", StringArgumentType.word())
                         .then(Commands.argument("width", IntegerArgumentType.integer(1, 64))
@@ -246,6 +248,10 @@ public class ModStructuresCommand {
 
     public static boolean isSafeStructureToken(String value) {
         return value != null && SAFE_STRUCTURE_TOKEN.matcher(value).matches();
+    }
+
+    public static boolean hasCommandPermission(net.minecraft.commands.CommandSourceStack source) {
+        return source != null && source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
     }
 
     public static Path resolveStructureOutputPath(String name, String category) {

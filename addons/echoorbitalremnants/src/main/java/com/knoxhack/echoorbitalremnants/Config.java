@@ -4,6 +4,10 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static final int DEFAULT_HAZARD_DRAIN_MULTIPLIER = 75;
+    public static final int DEFAULT_ORBITAL_EVENT_FREQUENCY = 3000;
+    public static final int DEFAULT_MACHINE_BASE_DURATION = 140;
+    public static final int DEFAULT_MACHINE_CHARGE_REGEN_TICKS = 16;
 
     public static final ModConfigSpec.BooleanValue ADVENTURE_LEAN_DEFAULTS = BUILDER
             .comment("Keeps orbital survival tense but recoverable.")
@@ -26,16 +30,16 @@ public class Config {
             .defineInRange("survival.vacuumDamageTicks", 80, 20, 400);
 
     public static final ModConfigSpec.IntValue HAZARD_DRAIN_MULTIPLIER = BUILDER
-            .comment("Balance tuning percentage for route hazard oxygen, pressure, and radiation drain.")
-            .defineInRange("balance.hazardDrainMultiplier", 85, 25, 250);
+            .comment("Public beta route pacing percentage for route hazard oxygen, pressure, and radiation drain.")
+            .defineInRange("balance.hazardDrainMultiplier", DEFAULT_HAZARD_DRAIN_MULTIPLIER, 25, 250);
 
     public static final ModConfigSpec.IntValue ARRIVAL_CACHE_SUPPORT_MULTIPLIER = BUILDER
             .comment("Balance tuning multiplier for route arrival cache survival support items.")
             .defineInRange("balance.arrivalCacheSupportMultiplier", 2, 1, 5);
 
     public static final ModConfigSpec.IntValue DEEP_SITE_THREAT_CHANCE = BUILDER
-            .comment("Percent chance that a dense route feature spawns an ambient threat when checked.")
-            .defineInRange("balance.deepSiteThreatChance", 65, 0, 100);
+            .comment("Percent chance that a dense route feature, including Saturn/Titan beta sites, spawns an ambient threat when checked.")
+            .defineInRange("balance.deepSiteThreatChance", 50, 0, 100);
 
     public static final ModConfigSpec.IntValue ORBITAL_ALTITUDE = BUILDER
             .comment("Overworld altitude treated as low orbit by the current orbital progression loop.")
@@ -46,8 +50,8 @@ public class Config {
             .define("launch.requireFullLaunchReadiness", true);
 
     public static final ModConfigSpec.IntValue ORBITAL_EVENT_FREQUENCY = BUILDER
-            .comment("Average ticks between ambient orbital event warnings.")
-            .defineInRange("events.orbitalEventFrequency", 2400, 200, 24000);
+            .comment("Average ticks between ambient orbital event warnings; tuned for public beta route pacing.")
+            .defineInRange("events.orbitalEventFrequency", DEFAULT_ORBITAL_EVENT_FREQUENCY, 200, 24000);
 
     public static final ModConfigSpec.BooleanValue FEATURE_THREATS_ENABLED = BUILDER
             .comment("If true, dense route features may spawn ambient orbital threats.")
@@ -62,12 +66,12 @@ public class Config {
             .define("worldgen.deepSiteCachesEnabled", true);
 
     public static final ModConfigSpec.IntValue MACHINE_BASE_DURATION = BUILDER
-            .comment("Base processing duration in ticks for orbital machines. Recipes may override this.")
-            .defineInRange("machines.baseDuration", 160, 20, 2400);
+            .comment("Public beta base processing duration in ticks for orbital machines. Recipes may override this.")
+            .defineInRange("machines.baseDuration", DEFAULT_MACHINE_BASE_DURATION, 20, 2400);
 
     public static final ModConfigSpec.IntValue MACHINE_CHARGE_REGEN_TICKS = BUILDER
-            .comment("Ticks between one point of passive machine system charge regeneration.")
-            .defineInRange("machines.chargeRegenTicks", 20, 1, 400);
+            .comment("Public beta ticks between one point of passive machine system charge regeneration.")
+            .defineInRange("machines.chargeRegenTicks", DEFAULT_MACHINE_CHARGE_REGEN_TICKS, 1, 400);
 
     public static final ModConfigSpec.IntValue MACHINE_MAX_CHARGE = BUILDER
             .comment("Maximum internal system charge stored by one machine.")
@@ -78,7 +82,7 @@ public class Config {
             .define("progression.dimensionUnlocksEnabled", true);
 
     public static final ModConfigSpec.BooleanValue MID_GAME_OBJECTIVES_ENABLED = BUILDER
-            .comment("If true, Orbit, Moon, Mars, and Europa require their v1.3 route objective chains before the next route opens.")
+            .comment("If true, Orbit, Moon, Mars, Europa, Saturn, and Titan require route objective chains before the next route opens.")
             .define("progression.midGameObjectivesEnabled", true);
 
     static final ModConfigSpec SPEC = BUILDER.build();

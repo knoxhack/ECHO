@@ -36,6 +36,9 @@ import java.util.*;
  */
 public class MissionRegistry {
     private static final Map<Integer, List<Mission>> PHASES = new LinkedHashMap<>();
+    private static final Map<BlockProbeKey, BlockProbeResult> BLOCK_PROBE_CACHE = new HashMap<>();
+    private static final int BLOCK_PROBE_CACHE_TICKS = 20;
+    private static final int BLOCK_PROBE_CACHE_MAX = 512;
 
     static {
         // === PHASE 0: CRASH LANDING ===
@@ -2321,17 +2324,57 @@ public class MissionRegistry {
         if (target == null) return false;
 
         BlockPos center = player.blockPosition();
+        long gameTime = player.level().getGameTime();
+        BlockProbeKey cacheKey = new BlockProbeKey(
+                player.getUUID(),
+                player.level().dimension().toString(),
+                blockName,
+                center.getX(),
+                center.getY(),
+                center.getZ());
+        BlockProbeResult cached = BLOCK_PROBE_CACHE.get(cacheKey);
+        if (cached != null && gameTime - cached.gameTime() <= BLOCK_PROBE_CACHE_TICKS) {
+            return cached.found();
+        }
+
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        boolean found = false;
         for (int dx = -20; dx <= 20; dx++) {
             for (int dy = -8; dy <= 8; dy++) {
                 for (int dz = -20; dz <= 20; dz++) {
                     cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                    if (player.level().getBlockState(cursor).is(target)) return true;
+                    if (player.level().getBlockState(cursor).is(target)) {
+                        found = true;
+                        break;
+                    }
                 }
+                if (found) break;
             }
+            if (found) break;
         }
-        return false;
+        BLOCK_PROBE_CACHE.put(cacheKey, new BlockProbeResult(gameTime, found));
+        pruneBlockProbeCache(gameTime);
+        return found;
     }
+
+    private static void pruneBlockProbeCache(long gameTime) {
+        if (BLOCK_PROBE_CACHE.size() <= BLOCK_PROBE_CACHE_MAX) {
+            return;
+        }
+        BLOCK_PROBE_CACHE.entrySet().removeIf(entry -> gameTime - entry.getValue().gameTime() > BLOCK_PROBE_CACHE_TICKS);
+        if (BLOCK_PROBE_CACHE.size() <= BLOCK_PROBE_CACHE_MAX) {
+            return;
+        }
+        Iterator<BlockProbeKey> iterator = BLOCK_PROBE_CACHE.keySet().iterator();
+        while (BLOCK_PROBE_CACHE.size() > BLOCK_PROBE_CACHE_MAX && iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
+    }
+
+    private record BlockProbeKey(UUID playerId, String dimension, String blockName, int x, int y, int z) {}
+
+    private record BlockProbeResult(long gameTime, boolean found) {}
 
     private static boolean hasActivatedNexusGrid(Player player) {
         if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level)) return false;

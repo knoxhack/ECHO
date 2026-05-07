@@ -15,9 +15,12 @@ import com.knoxhack.echoorbitalremnants.world.GroundRecoverySites;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -62,9 +65,10 @@ public class EchoTerminalItem extends Item {
             String midGameReport = tryMidGameRepair(player, progress);
             progress = EchoTerminalProgress.get(player);
             String surveyReport = trySurveyScan(player, progress);
+            String vendorReport = tryFactionVendorScan(player, EchoTerminalProgress.get(player));
             String contractReport = tryFactionContractScan(player, EchoTerminalProgress.get(player), false);
-            if (midGameReport != null || surveyReport != null || contractReport != null) {
-                String combined = combineReports(midGameReport, surveyReport, contractReport);
+            if (midGameReport != null || surveyReport != null || vendorReport != null || contractReport != null) {
+                String combined = combineReports(midGameReport, surveyReport, vendorReport, contractReport);
                 report(player, EchoTerminalProgress.get(player), combined);
                 return;
             }
@@ -84,11 +88,25 @@ public class EchoTerminalItem extends Item {
                 report(player, progress, "Europa cryo route triangulated through Martian terraformer dust.");
             } else if (level.dimension() == ModDimensions.EUROPA_CRYO_OCEAN && has(player, ModItems.CRYO_CRYSTAL.get())) {
                 if (midGameObjectivesEnabled() && !progress.europaArrayGateOpen() && !player.hasInfiniteMaterials()) {
-                    report(player, progress, "Deep Space Protocol unstable. Calibrate three Europa Thermal Arrays with Europa Probe Arrays before the anomaly route opens.");
+                    report(player, progress, "Saturn transfer unstable. Calibrate three Europa Thermal Arrays with Europa Probe Arrays before the ring route opens.");
+                    return;
+                }
+                progress.unlockSaturnRoute(player);
+                report(player, progress, "Saturn Transfer Window resolved. Europa thermal signal points into the ring graveyard.");
+            } else if (level.dimension() == ModDimensions.SATURN_RING_GRAVEYARD && has(player, ModItems.SATURN_RING_FRAGMENT.get())) {
+                if (midGameObjectivesEnabled() && !progress.saturnRelayGateOpen() && !player.hasInfiniteMaterials()) {
+                    report(player, progress, "Titan descent unstable. Restore three Saturn Ring Relays with Saturn Relay Lenses before the methane shelf can hold.");
+                    return;
+                }
+                progress.unlockTitanRoute(player);
+                report(player, progress, "Titan Transfer Window resolved from Saturn ring telemetry.");
+            } else if (level.dimension() == ModDimensions.TITAN_METHANE_SHELF && has(player, ModItems.TITAN_SURVEY_CORE.get())) {
+                if (midGameObjectivesEnabled() && !progress.titanPumpGateOpen() && !player.hasInfiniteMaterials()) {
+                    report(player, progress, "Deep Space Protocol unstable. Pressurize three Titan Methane Pumps before the anomaly route opens.");
                     return;
                 }
                 progress.unlockDeepSpaceProtocol(player);
-                report(player, progress, "Deep Space Protocol unlocked. Cryo-ocean signal confirms the anomaly belt.");
+                report(player, progress, "Deep Space Protocol unlocked. Titan methane telemetry confirms the anomaly belt.");
             } else if (has(player, ModItems.NEXUS_DRIVE_CORE.get())) {
                 progress.unlockDeepSpaceProtocol(player);
                 report(player, progress, "Deep Space Protocol unlocked. Nexus Drive telemetry is no longer silent.");
@@ -147,6 +165,7 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.OXYGEN_CANISTER.get(), 2);
                 give(player, ModItems.VACUUM_CIRCUIT.get(), 1);
             }
+            playObjectiveFeedback(player, ParticleTypes.ELECTRIC_SPARK, 1.5F);
             return result.report("Station Network restored. Lunar prep is stronger and the Orbital Shuttle route is cleared.");
         }
         if (level.dimension() == ModDimensions.LUNAR_SCAR_ZONE) {
@@ -164,6 +183,7 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.HELIUM_3_CELL.get(), 2);
                 give(player, ModItems.SUIT_SEALANT_PATCH.get(), 2);
             }
+            playObjectiveFeedback(player, ParticleTypes.HAPPY_VILLAGER, 1.35F);
             return result.report("Helium Extractor Network restored. Mars route reliability is online.");
         }
         if (level.dimension() == ModDimensions.MARS_ASH_BASIN) {
@@ -181,6 +201,7 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.MARTIAN_SILICA.get(), 3);
                 give(player, ModItems.OXYGEN_BOOSTER.get(), 1);
             }
+            playObjectiveFeedback(player, ParticleTypes.CLOUD, 0.9F);
             return result.report("Mars habitats pressurized. Europa prep can hold through dust hazard zones.");
         }
         if (level.dimension() == ModDimensions.EUROPA_CRYO_OCEAN) {
@@ -198,7 +219,44 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.CRYO_BATTERY.get(), 1);
                 give(player, ModItems.NEXUS_STABILIZER_SHARD.get(), 1);
             }
-            return result.report("Europa Thermal Array calibrated. Deep Space Protocol is unlocked.");
+            playObjectiveFeedback(player, ParticleTypes.SNOWFLAKE, 1.65F);
+            return result.report("Europa Thermal Array calibrated. Saturn Transfer Window is unlocked.");
+        }
+        if (level.dimension() == ModDimensions.SATURN_RING_GRAVEYARD) {
+            String siteId = nearbyBlockSiteId(player, "saturn_relays", ModBlocks.SATURN_RING_RELAY.get());
+            if (siteId == null) {
+                return null;
+            }
+            if (!has(player, ModItems.SATURN_RELAY_LENS.get()) && !player.hasInfiniteMaterials() && !progress.saturnRelayGateOpen()) {
+                return "Saturn relay waiting for one Saturn Relay Lens at this ring relay.";
+            }
+            EchoTerminalProgress.RouteObjectiveResult result = progress.repairSaturnRingRelay(player, siteId);
+            consumeRepairItem(player, ModItems.SATURN_RELAY_LENS.get(), result);
+            if (result.newlyComplete()) {
+                give(player, ModItems.TITAN_TRANSFER_WINDOW.get(), 1);
+                give(player, ModItems.SATURN_RING_FRAGMENT.get(), 2);
+                give(player, ModItems.OXYGEN_CANISTER.get(), 2);
+            }
+            playObjectiveFeedback(player, ParticleTypes.ELECTRIC_SPARK, 1.85F);
+            return result.report("Saturn Ring Relays restored. Titan descent vector is stable.");
+        }
+        if (level.dimension() == ModDimensions.TITAN_METHANE_SHELF) {
+            String siteId = nearbyBlockSiteId(player, "titan_pumps", ModBlocks.TITAN_METHANE_PUMP.get());
+            if (siteId == null) {
+                return null;
+            }
+            if (!has(player, ModItems.TITAN_METHANE_CELL.get()) && !player.hasInfiniteMaterials() && !progress.titanPumpGateOpen()) {
+                return "Titan pump waiting for one Titan Methane Cell at this pressure station.";
+            }
+            EchoTerminalProgress.RouteObjectiveResult result = progress.repairTitanMethanePump(player, siteId);
+            consumeRepairItem(player, ModItems.TITAN_METHANE_CELL.get(), result);
+            if (result.newlyComplete()) {
+                give(player, ModItems.NEXUS_DRIVE_CORE.get(), 1);
+                give(player, ModItems.TITAN_SURVEY_CORE.get(), 1);
+                give(player, ModItems.SUIT_SEALANT_PATCH.get(), 2);
+            }
+            playObjectiveFeedback(player, ParticleTypes.LARGE_SMOKE, 0.7F);
+            return result.report("Titan Methane Pumps pressurized. Deep Space Protocol is unlocked.");
         }
         return null;
     }
@@ -221,7 +279,8 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.OXYGEN_CANISTER.get(), 2);
                 give(player, ModItems.VACUUM_CIRCUIT.get(), 2);
             }
-            return result.report("Orbit survey complete. Station power routing and salvage maps improved.");
+            playObjectiveFeedback(player, ParticleTypes.ELECTRIC_SPARK, 1.5F);
+            return result.report("Orbit survey complete. Station power routing and salvage maps improved. Cache role confirmed: route proof, crafting support, and survival recovery.");
         }
         if (level.dimension() == ModDimensions.LUNAR_SCAR_ZONE) {
             String siteId = nearbyBlockSiteId(player, "moon", ModBlocks.SURVEY_MARKER.get());
@@ -239,7 +298,8 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.HELIUM_3_CELL.get(), 2);
                 give(player, ModItems.MARTIAN_PRESSURE_VALVE.get(), 1);
             }
-            return result.report("Lunar survey complete. Helium telemetry and Mars transfer reliability improved.");
+            playObjectiveFeedback(player, ParticleTypes.HAPPY_VILLAGER, 1.35F);
+            return result.report("Lunar survey complete. Helium telemetry and Mars transfer reliability improved. Cache role confirmed: route proof, crafting support, and survival recovery.");
         }
         if (level.dimension() == ModDimensions.MARS_ASH_BASIN) {
             String siteId = nearbyBlockSiteId(player, "mars", ModBlocks.SIGNAL_RELAY.get());
@@ -257,7 +317,8 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.MARTIAN_SILICA.get(), 3);
                 give(player, ModItems.EUROPA_THERMAL_PROBE.get(), 1);
             }
-            return result.report("Mars survey complete. Pressure valves restored and Europa prep materials recovered.");
+            playObjectiveFeedback(player, ParticleTypes.CLOUD, 0.9F);
+            return result.report("Mars survey complete. Pressure valves restored and Europa prep materials recovered. Cache role confirmed: route proof, crafting support, and survival recovery.");
         }
         if (level.dimension() == ModDimensions.EUROPA_CRYO_OCEAN) {
             String siteId = nearbyBlockSiteId(player, "europa", ModBlocks.THERMAL_VENT.get());
@@ -275,7 +336,46 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.CRYO_BATTERY.get(), 1);
                 give(player, ModItems.NEXUS_STABILIZER_SHARD.get(), 1);
             }
-            return result.report("Europa survey complete. Thermal vents mapped and Nexus stabilization recipes unlocked.");
+            playObjectiveFeedback(player, ParticleTypes.SNOWFLAKE, 1.65F);
+            return result.report("Europa survey complete. Thermal vents mapped and Saturn transfer recipes unlocked. Cache role confirmed: route proof, crafting support, and survival recovery.");
+        }
+        if (level.dimension() == ModDimensions.SATURN_RING_GRAVEYARD) {
+            String siteId = nearbyBlockSiteId(player, "saturn", ModBlocks.SATURN_RING_RELAY.get());
+            boolean itemScan = false;
+            if (siteId == null && has(player, ModItems.SATURN_RING_FRAGMENT.get())) {
+                siteId = itemSiteId(player, "saturn");
+                itemScan = true;
+            }
+            if (siteId == null) {
+                return null;
+            }
+            EchoTerminalProgress.SurveyResult result = progress.recordSaturnSurvey(player, siteId);
+            consumeSurveyItem(player, ModItems.SATURN_RING_FRAGMENT.get(), itemScan, result);
+            if (result.newlyComplete()) {
+                give(player, ModItems.SATURN_RELAY_LENS.get(), 1);
+                give(player, ModItems.TITAN_TRANSFER_WINDOW.get(), 1);
+            }
+            playObjectiveFeedback(player, ParticleTypes.ELECTRIC_SPARK, 1.85F);
+            return result.report("Saturn survey complete. Ring relay drift mapped and Titan transfer reliability improved. Cache role confirmed: route proof, crafting support, and survival recovery.");
+        }
+        if (level.dimension() == ModDimensions.TITAN_METHANE_SHELF) {
+            String siteId = nearbyBlockSiteId(player, "titan", ModBlocks.TITAN_METHANE_PUMP.get());
+            boolean itemScan = false;
+            if (siteId == null && has(player, ModItems.TITAN_SURVEY_CORE.get())) {
+                siteId = itemSiteId(player, "titan");
+                itemScan = true;
+            }
+            if (siteId == null) {
+                return null;
+            }
+            EchoTerminalProgress.SurveyResult result = progress.recordTitanSurvey(player, siteId);
+            consumeSurveyItem(player, ModItems.TITAN_SURVEY_CORE.get(), itemScan, result);
+            if (result.newlyComplete()) {
+                give(player, ModItems.TITAN_METHANE_CELL.get(), 2);
+                give(player, ModItems.NEXUS_DRIVE_CORE.get(), 1);
+            }
+            playObjectiveFeedback(player, ParticleTypes.LARGE_SMOKE, 0.7F);
+            return result.report("Titan survey complete. Methane shelf telemetry stabilized Nexus prep. Cache role confirmed: route proof, crafting support, and survival recovery.");
         }
         if (level.dimension() == ModDimensions.NEXUS_ANOMALY_BELT) {
             String siteId = nearbyBlockSiteId(player, "nexus", ModBlocks.NEXUS_ANCHOR.get(), ModBlocks.NEXUS_GROWTH.get());
@@ -296,7 +396,8 @@ public class EchoTerminalItem extends Item {
                 give(player, ModItems.STABILIZED_ECHO_CORE.get(), 1);
                 give(player, ModItems.NEXUS_DUST.get(), 8);
             }
-            String report = result.report("Nexus anchors stabilized. Post-ECHO-0 survey network is complete.");
+            playObjectiveFeedback(player, ParticleTypes.REVERSE_PORTAL, 1.95F);
+            String report = result.report("Nexus anchors stabilized. Post-ECHO-0 survey network is complete. Cache role confirmed: route proof, crafting support, and survival recovery.");
             if (result.newlyComplete() && EchoTerminalProgress.get(player).finalNetworkSealed()) {
                 report = EchoTerminalProgress.get(player).lastTerminalReport();
             }
@@ -325,6 +426,68 @@ public class EchoTerminalItem extends Item {
             report = EchoTerminalProgress.get(player).lastTerminalReport();
         }
         return report;
+    }
+
+    private static String tryFactionVendorScan(Player player, EchoTerminalProgress progress) {
+        if (!nearbyAnyBlock(player, ModBlocks.FACTION_VENDOR_KIOSK.get(), ModBlocks.FACTION_RELAY_HUB.get())) {
+            return null;
+        }
+        FactionPledgeItem.Faction faction = alignedFaction(progress);
+        if (progress.activeContractFaction() != null) {
+            return "Faction support hub reserved for active " + progress.activeContractFaction().displayName()
+                    + " contract service. Vendor cache is paused until this requirement clears: "
+                    + progress.factionContractRequirement();
+        }
+        if (faction == null) {
+            return "Faction support hub online. No pledge detected; use an Orbital Remnant Badge, Void Salvager Marker, or Nexus Choir Sigil to authorize beta barter caches.";
+        }
+        String vendorId = "vendor:" + faction.name().toLowerCase(java.util.Locale.ROOT)
+                + ":" + player.level().dimension().identifier().getPath()
+                + ":" + (player.blockPosition().getX() >> 4)
+                + ":" + (player.blockPosition().getZ() >> 4);
+        if (!progress.markTerminalMissionCacheClaimed(player, vendorId)) {
+            return "Faction support cache already serviced at this hub. Find another relay hub, or finish the active ECHO-tab contract chain for the next authorized reward.";
+        }
+        grantFactionVendorReward(player, faction);
+        playObjectiveFeedback(player, ParticleTypes.HAPPY_VILLAGER, 1.25F);
+        return switch (faction) {
+            case ORBITAL_REMNANT -> "Orbital Remnant aligned support cache authorized: oxygen, sealant, and route support delivered.";
+            case VOID_SALVAGERS -> "Void Salvager aligned barter cache authorized: circuits, alloy, and repair salvage delivered.";
+            case NEXUS_CHOIR -> "Nexus Choir aligned support cache authorized: stabilizers and anomaly supplies delivered.";
+        };
+    }
+
+    private static FactionPledgeItem.Faction alignedFaction(EchoTerminalProgress progress) {
+        if (progress.orbitalRemnantStanding() == com.knoxhack.echoorbitalremnants.progression.FactionStanding.ALIGNED) {
+            return FactionPledgeItem.Faction.ORBITAL_REMNANT;
+        }
+        if (progress.voidSalvagerStanding() == com.knoxhack.echoorbitalremnants.progression.FactionStanding.ALIGNED) {
+            return FactionPledgeItem.Faction.VOID_SALVAGERS;
+        }
+        if (progress.nexusChoirStanding() == com.knoxhack.echoorbitalremnants.progression.FactionStanding.ALIGNED) {
+            return FactionPledgeItem.Faction.NEXUS_CHOIR;
+        }
+        return null;
+    }
+
+    private static void grantFactionVendorReward(Player player, FactionPledgeItem.Faction faction) {
+        switch (faction) {
+            case ORBITAL_REMNANT -> {
+                give(player, ModItems.EMERGENCY_OXYGEN_CELL.get(), 3);
+                give(player, ModItems.OXYGEN_CANISTER.get(), 1);
+                give(player, ModItems.SATURN_RELAY_LENS.get(), 1);
+            }
+            case VOID_SALVAGERS -> {
+                give(player, ModItems.ORBITAL_ALLOY.get(), 2);
+                give(player, ModItems.VACUUM_CIRCUIT.get(), 2);
+                give(player, ModItems.TITAN_METHANE_CELL.get(), 1);
+            }
+            case NEXUS_CHOIR -> {
+                give(player, ModItems.NEXUS_STABILIZER_SHARD.get(), 2);
+                give(player, ModItems.NEXUS_DUST.get(), 4);
+                give(player, ModItems.TITAN_SURVEY_CORE.get(), 1);
+            }
+        }
     }
 
     private static boolean completeOrbitalRemnantContract(Player player) {
@@ -421,9 +584,9 @@ public class EchoTerminalItem extends Item {
             return "Faction relay is cooling down. Wait for the sync counter to clear, then press SCAN again.";
         }
         if (progress.allSurveysComplete()) {
-            return progress.completedFactionContractCount() == 0
+            return progress.completedFactionContractCount() < 3
                     ? "Survey network complete. " + progress.factionContractRequirement()
-                    + " Complete one ECHO-tab contract before the final seal."
+                    + " Complete three ECHO-tab contracts before the final seal (" + progress.completedFactionContractCount() + "/3)."
                     : "Survey network complete. Press SCAN to seal the final network.";
         }
         if (!progress.stationLifeSupportRestored()) {
@@ -457,10 +620,28 @@ public class EchoTerminalItem extends Item {
             if (midGameObjectivesEnabled() && !progress.europaArrayGateOpen()) {
                 return "Europa objective needs a Thermal Array nearby and one Europa Probe Array.";
             }
-            if (!progress.deepSpaceProtocolUnlocked()) {
-                return "Europa scan incomplete. Carry a Cryo Crystal or Nexus Drive Core to unlock Deep Space Protocol.";
+            if (!progress.saturnRouteUnlocked()) {
+                return "Europa scan incomplete. Carry a Cryo Crystal to resolve the Saturn Transfer Window.";
             }
             return "Europa survey needs a Thermal Vent nearby or one Europa Thermal Probe in inventory.";
+        }
+        if (level.dimension() == ModDimensions.SATURN_RING_GRAVEYARD) {
+            if (midGameObjectivesEnabled() && !progress.saturnRelayGateOpen()) {
+                return "Saturn objective needs a Ring Relay nearby and one Saturn Relay Lens.";
+            }
+            if (!progress.titanRouteUnlocked()) {
+                return "Saturn scan incomplete. Carry a Saturn Ring Fragment to resolve the Titan Transfer Window.";
+            }
+            return "Saturn survey needs a Ring Relay nearby or one Saturn Ring Fragment in inventory.";
+        }
+        if (level.dimension() == ModDimensions.TITAN_METHANE_SHELF) {
+            if (midGameObjectivesEnabled() && !progress.titanPumpGateOpen()) {
+                return "Titan objective needs a Methane Pump nearby and one Titan Methane Cell.";
+            }
+            if (!progress.deepSpaceProtocolUnlocked()) {
+                return "Titan scan incomplete. Carry a Titan Survey Core or Nexus Drive Core to unlock Deep Space Protocol.";
+            }
+            return "Titan survey needs a Methane Pump nearby or one Titan Survey Core in inventory.";
         }
         if (level.dimension() == ModDimensions.NEXUS_ANOMALY_BELT) {
             if (!progress.echoZeroEncountered()) {
@@ -468,7 +649,7 @@ public class EchoTerminalItem extends Item {
             }
             return "Nexus stabilization needs a new Nexus Anchor/Growth site or one Nexus Stabilizer Shard. Signal Analyzer can process Nexus Dust into shards.";
         }
-        if (progress.completedFactionContractCount() == 0) {
+        if (progress.completedFactionContractCount() < 3) {
             return "Faction contract unavailable. Use a faction pledge item first, then check the ECHO tab.";
         }
         return "Scan found no route hook. Use ROUTES or SURVEY for the next required location and item.";
@@ -477,6 +658,15 @@ public class EchoTerminalItem extends Item {
     private static void report(Player player, EchoTerminalProgress progress, String message) {
         progress.setLastTerminalReport(player, message);
         player.sendSystemMessage(Component.literal("ECHO-7 // " + message));
+    }
+
+    private static void playObjectiveFeedback(Player player, net.minecraft.core.particles.ParticleOptions particle, float pitch) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        BlockPos pos = player.blockPosition();
+        serverLevel.playSound(null, pos, SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.45F, pitch);
+        serverLevel.sendParticles(particle, player.getX(), player.getY() + 1.0D, player.getZ(), 14, 0.45D, 0.35D, 0.45D, 0.02D);
     }
 
     private static String combineReports(String... reports) {

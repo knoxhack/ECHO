@@ -11,8 +11,25 @@ plugins {
 include 'echocore'
 project(':echocore').projectDir = file('core/echocore')
 
-include 'echoterminal'
-project(':echoterminal').projectDir = file('addons/echoterminal')
+def echoAddonSet = (gradle.startParameter.projectProperties.get('echoAddonSet') ?: 'all')
+        .toString()
+        .toLowerCase(Locale.ROOT)
+def echoBetaAddons = ['echoterminal', 'echoorbitalremnants', 'echonexusprotocol']
+def echoReleaseAddons = ['echostationfall', 'echoblackboxprotocol', 'echoindustrialnexus']
 
-include 'echoorbitalremnants'
-project(':echoorbitalremnants').projectDir = file('addons/echoorbitalremnants')
+if (!['beta', 'all'].contains(echoAddonSet)) {
+    throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
+}
+
+def echoAddonProjects = echoAddonSet == 'all' ? echoBetaAddons + echoReleaseAddons : echoBetaAddons
+echoAddonProjects.each { addonName ->
+    def addonDir = file("addons/${addonName}")
+    if (!addonDir.isDirectory()) {
+        if (echoBetaAddons.contains(addonName)) {
+            throw new GradleException("Required beta addon '${addonName}' is missing at ${addonDir}.")
+        }
+        return
+    }
+    include addonName
+    project(":${addonName}").projectDir = addonDir
+}

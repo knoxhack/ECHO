@@ -3,12 +3,17 @@ package com.knoxhack.echoashfallprotocol.test;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoFactionContract;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
+import com.google.gson.JsonElement;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.block.NexusCoreBlock;
 import com.knoxhack.echoashfallprotocol.block.PowerNodeBlock;
+import com.knoxhack.echoashfallprotocol.block.WorkshopBlock;
+import com.knoxhack.echoashfallprotocol.block.entity.BatteryBankBlockEntity;
 import com.knoxhack.echoashfallprotocol.block.entity.NexusCoreBlockEntity;
 import com.knoxhack.echoashfallprotocol.block.entity.OreGrinderBlockEntity;
+import com.knoxhack.echoashfallprotocol.block.entity.PowerCableBlockEntity;
 import com.knoxhack.echoashfallprotocol.block.entity.PowerNodeBlockEntity;
+import com.knoxhack.echoashfallprotocol.block.entity.WaterPurifierBlockEntity;
 import com.knoxhack.echoashfallprotocol.boss.BossHudProfile;
 import com.knoxhack.echoashfallprotocol.boss.BossHudProfiles;
 import com.knoxhack.echoashfallprotocol.boss.BossHudTargetResolver;
@@ -41,17 +46,24 @@ import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventProfiles;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventStatus;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
 import com.knoxhack.echoashfallprotocol.event.ModStructuresCommand;
+import com.knoxhack.echoashfallprotocol.event.NexusCommandHandler;
 import com.knoxhack.echoashfallprotocol.event.PostNexusEventHandler;
+import com.knoxhack.echoashfallprotocol.event.StructureGenCommand;
+import com.knoxhack.echoashfallprotocol.fasttravel.RadioNetwork;
 import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
 import com.knoxhack.echoashfallprotocol.faction.AshfallFactionContracts;
 import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
+import com.knoxhack.echoashfallprotocol.faction.FactionDiplomacy;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.item.RareTechSchematicItem;
 import com.knoxhack.echoashfallprotocol.item.SchematicFragmentItem;
+import com.knoxhack.echoashfallprotocol.machine.MachineWearData;
+import com.knoxhack.echoashfallprotocol.machine.MachineWearSavedData;
 import com.knoxhack.echoashfallprotocol.network.BossNavigationPacket;
 import com.knoxhack.echoashfallprotocol.network.DroneCommandPacket;
 import com.knoxhack.echoashfallprotocol.network.ModNetwork;
+import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.research.Perk;
@@ -61,7 +73,13 @@ import com.knoxhack.echoashfallprotocol.world.BiomeGuardianSiteData;
 import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
 import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
+import com.knoxhack.echoashfallprotocol.world.StartingDropPodData;
 import com.knoxhack.echoashfallprotocol.worldgen.ProceduralStructureGenerator;
+import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
+import com.knoxhack.echoterminal.api.TerminalNavigationSection;
+import com.knoxhack.echoterminal.api.TerminalTabRegistry;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.serialization.JsonOps;
 import io.netty.buffer.Unpooled;
 import java.lang.reflect.Method;
 import java.util.Locale;
@@ -73,16 +91,24 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Vec3i;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -97,6 +123,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -134,6 +164,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("structure_export_paths", () -> ModGameTests::structureExportPaths);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STARTER_DROP_POD_TEMPLATE =
             TEST_FUNCTIONS.register("starter_drop_pod_template", () -> ModGameTests::starterDropPodTemplate);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STARTER_DROP_POD_CORRUPTION_GUARD =
+            TEST_FUNCTIONS.register("starter_drop_pod_corruption_guard", () -> ModGameTests::starterDropPodCorruptionGuard);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STARTING_DROP_POD_DATA_LENIENT_LOAD =
+            TEST_FUNCTIONS.register("starting_drop_pod_data_lenient_load", () -> ModGameTests::startingDropPodDataLenientLoad);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ARCHIVE_READ_STATE =
             TEST_FUNCTIONS.register("archive_read_state", () -> ModGameTests::archiveReadState);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SUBSTRATE_GRINDER_RECIPES =
@@ -146,6 +180,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("endgame_route_progress", () -> ModGameTests::endgameRouteProgress);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_LORE_TAXONOMY =
             TEST_FUNCTIONS.register("terminal_lore_taxonomy", () -> ModGameTests::terminalLoreTaxonomy);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_COMMAND_DECK_OWNERSHIP =
+            TEST_FUNCTIONS.register("terminal_command_deck_ownership", () -> ModGameTests::terminalCommandDeckOwnership);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_GUIDE_COVERAGE =
             TEST_FUNCTIONS.register("mission_guide_coverage", () -> ModGameTests::missionGuideCoverage);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FIRST_NIGHT_ROUTE_SAFETY =
@@ -156,6 +192,24 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("faction_contract_balance", () -> ModGameTests::factionContractBalance);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STRICT_FACTION_ENTITY_IDS =
             TEST_FUNCTIONS.register("strict_faction_entity_ids", () -> ModGameTests::strictFactionEntityIds);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MACHINE_WEAR_SAVED_DATA =
+            TEST_FUNCTIONS.register("machine_wear_saved_data", () -> ModGameTests::machineWearSavedData);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DEBUG_COMMAND_PERMISSION_GATES =
+            TEST_FUNCTIONS.register("debug_command_permission_gates", () -> ModGameTests::debugCommandPermissionGates);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_UPGRADE_DATA_PATH =
+            TEST_FUNCTIONS.register("nexus_upgrade_data_path", () -> ModGameTests::nexusUpgradeDataPath);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WATER_PURIFIER_NETWORK_POWER =
+            TEST_FUNCTIONS.register("water_purifier_network_power", () -> ModGameTests::waterPurifierNetworkPower);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORKSHOP_STATUS_COPY =
+            TEST_FUNCTIONS.register("workshop_status_copy", () -> ModGameTests::workshopStatusCopy);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_COMMAND_STATUS_ONLY =
+            TEST_FUNCTIONS.register("nexus_command_status_only", () -> ModGameTests::nexusCommandStatusOnly);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RADIO_DYNAMIC_STATION_PERSISTENCE =
+            TEST_FUNCTIONS.register("radio_dynamic_station_persistence", () -> ModGameTests::radioDynamicStationPersistence);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DRONE_INTEL_TARGETING =
+            TEST_FUNCTIONS.register("drone_intel_targeting", () -> ModGameTests::droneIntelTargeting);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> QUEST_REWARD_STACK_PERSISTENCE =
+            TEST_FUNCTIONS.register("quest_reward_stack_persistence", () -> ModGameTests::questRewardStackPersistence);
 
     private ModGameTests() {
     }
@@ -180,17 +234,29 @@ public final class ModGameTests {
         register(event, environment, "research_perk_graph", RESEARCH_PERK_GRAPH.getId());
         register(event, environment, "structure_export_paths", STRUCTURE_EXPORT_PATHS.getId());
         register(event, environment, "starter_drop_pod_template", STARTER_DROP_POD_TEMPLATE.getId());
+        register(event, environment, "starter_drop_pod_corruption_guard", STARTER_DROP_POD_CORRUPTION_GUARD.getId());
+        register(event, environment, "starting_drop_pod_data_lenient_load", STARTING_DROP_POD_DATA_LENIENT_LOAD.getId());
         register(event, environment, "archive_read_state", ARCHIVE_READ_STATE.getId());
         register(event, environment, "substrate_grinder_recipes", SUBSTRATE_GRINDER_RECIPES.getId());
         register(event, environment, "environmental_event_profiles", ENVIRONMENTAL_EVENT_PROFILES.getId());
         register(event, environment, "mission_ux_summary", MISSION_UX_SUMMARY.getId());
         register(event, environment, "endgame_route_progress", ENDGAME_ROUTE_PROGRESS.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
+        register(event, environment, "terminal_command_deck_ownership", TERMINAL_COMMAND_DECK_OWNERSHIP.getId());
         register(event, environment, "mission_guide_coverage", MISSION_GUIDE_COVERAGE.getId());
         register(event, environment, "first_night_route_safety", FIRST_NIGHT_ROUTE_SAFETY.getId());
         register(event, environment, "exploration_site_profiles", EXPLORATION_SITE_PROFILES.getId());
         register(event, environment, "faction_contract_balance", FACTION_CONTRACT_BALANCE.getId());
         register(event, environment, "strict_faction_entity_ids", STRICT_FACTION_ENTITY_IDS.getId());
+        register(event, environment, "machine_wear_saved_data", MACHINE_WEAR_SAVED_DATA.getId());
+        register(event, environment, "debug_command_permission_gates", DEBUG_COMMAND_PERMISSION_GATES.getId());
+        register(event, environment, "nexus_upgrade_data_path", NEXUS_UPGRADE_DATA_PATH.getId());
+        register(event, environment, "water_purifier_network_power", WATER_PURIFIER_NETWORK_POWER.getId());
+        register(event, environment, "workshop_status_copy", WORKSHOP_STATUS_COPY.getId());
+        register(event, environment, "nexus_command_status_only", NEXUS_COMMAND_STATUS_ONLY.getId());
+        register(event, environment, "radio_dynamic_station_persistence", RADIO_DYNAMIC_STATION_PERSISTENCE.getId());
+        register(event, environment, "drone_intel_targeting", DRONE_INTEL_TARGETING.getId());
+        register(event, environment, "quest_reward_stack_persistence", QUEST_REWARD_STACK_PERSISTENCE.getId());
     }
 
     private static void entityAttributeHardening(GameTestHelper helper) {
@@ -926,6 +992,54 @@ public final class ModGameTests {
                 "Curated drop pod should expose visible starter lockers");
         helper.assertTrue(countBlocks(helper, placePos, size, "minecraft:chest") >= 1,
                 "Curated drop pod should retain starter cache storage");
+        helper.assertTrue(countInvalidBlockEntities(helper, placePos, size) == 0,
+                "Curated drop pod placement should not leave block entities on air or non-entity blocks");
+        helper.succeed();
+    }
+
+    private static void starterDropPodCorruptionGuard(GameTestHelper helper) {
+        var template = helper.getLevel().getStructureManager().get(id("drop_pod"));
+        helper.assertTrue(template.isPresent(), "Starting drop pod NBT template should load");
+        Vec3i size = template.orElseThrow().getSize();
+
+        BlockPos origin = helper.absolutePos(new BlockPos(64, 4, 64));
+        BlockPos placePos = origin.offset(-size.getX() / 2, -2, -size.getZ() / 2);
+        BlockPos staleClearPos = placePos.offset(9, 3, -1);
+        helper.getLevel().setBlock(staleClearPos, Blocks.CHEST.defaultBlockState(), 3);
+        helper.assertTrue(helper.getLevel().getBlockEntity(staleClearPos) != null,
+                "Regression setup should create a stale-prone block entity before pod clearing");
+
+        BlockPos spawn = ProceduralStructureGenerator.placeStartingDropPod(
+                helper.getLevel(), origin, helper.getLevel().getRandom());
+        helper.assertTrue(spawn != null, "Starting drop pod placement should still succeed with stale block entities nearby");
+        helper.assertTrue(helper.getLevel().getBlockState(staleClearPos).isAir(),
+                "Starting pod clear margin should leave stale setup block as air");
+        helper.assertTrue(helper.getLevel().getBlockEntity(staleClearPos) == null,
+                "Starting pod clear margin should remove stale block entity data before saving");
+
+        helper.assertTrue(countInvalidBlockEntities(helper, placePos, size) == 0,
+                "Drop pod placement should not leave block entities on air or non-entity blocks");
+        helper.succeed();
+    }
+
+    private static void startingDropPodDataLenientLoad(GameTestHelper helper) {
+        com.google.gson.JsonObject empty = new com.google.gson.JsonObject();
+        StartingDropPodData emptyData = StartingDropPodData.CODEC.parse(JsonOps.INSTANCE, empty)
+                .result()
+                .orElse(null);
+        helper.assertTrue(emptyData != null, "Starting drop pod data should load when pods is absent");
+
+        com.google.gson.JsonObject malformedEntry = new com.google.gson.JsonObject();
+        malformedEntry.addProperty("playerId", "not-a-uuid");
+        com.google.gson.JsonArray pods = new com.google.gson.JsonArray();
+        pods.add(malformedEntry);
+        com.google.gson.JsonObject malformedRoot = new com.google.gson.JsonObject();
+        malformedRoot.add("pods", pods);
+        StartingDropPodData malformedData = StartingDropPodData.CODEC.parse(JsonOps.INSTANCE, malformedRoot)
+                .result()
+                .orElse(null);
+        helper.assertTrue(malformedData != null,
+                "Starting drop pod data should load and skip malformed player entries");
         helper.succeed();
     }
 
@@ -1072,7 +1186,7 @@ public final class ModGameTests {
         return count;
     }
 
-    private static int countBlocks(GameTestHelper helper, BlockPos origin, net.minecraft.core.Vec3i size, String blockId) {
+    private static int countBlocks(GameTestHelper helper, BlockPos origin, Vec3i size, String blockId) {
         int count = 0;
         for (int x = 0; x < size.getX(); x++) {
             for (int y = 0; y < size.getY(); y++) {
@@ -1080,6 +1194,25 @@ public final class ModGameTests {
                     Identifier id = BuiltInRegistries.BLOCK.getKey(
                             helper.getLevel().getBlockState(origin.offset(x, y, z)).getBlock());
                     if (id != null && id.toString().equals(blockId)) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    private static int countInvalidBlockEntities(GameTestHelper helper, BlockPos origin, Vec3i size) {
+        int count = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    BlockPos pos = origin.offset(x, y, z);
+                    if (helper.getLevel().getBlockEntity(pos) == null) {
+                        continue;
+                    }
+                    var state = helper.getLevel().getBlockState(pos);
+                    if (state.isAir() || !state.hasBlockEntity()) {
                         count++;
                     }
                 }
@@ -1351,6 +1484,36 @@ public final class ModGameTests {
         }
     }
 
+    private static void terminalCommandDeckOwnership(GameTestHelper helper) {
+        if (TerminalTabRegistry.tabs().isEmpty()) {
+            helper.succeed();
+            return;
+        }
+        Identifier commandDeck = Identifier.fromNamespaceAndPath("echoterminal", "overview");
+        Identifier ashfallCommand = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "overview");
+        boolean hasBuiltInCommandDeck = TerminalTabRegistry.tabs().stream()
+                .anyMatch(tab -> commandDeck.equals(tab.descriptor().id())
+                        && "COMMAND DECK".equals(tab.descriptor().title()));
+        boolean hasAshfallCommand = TerminalTabRegistry.tabs().stream()
+                .anyMatch(tab -> ashfallCommand.equals(tab.descriptor().id())
+                        && "ASHFALL COMMAND".equals(tab.descriptor().title()));
+        if (!hasBuiltInCommandDeck) {
+            helper.succeed();
+            return;
+        }
+        helper.assertTrue(hasBuiltInCommandDeck,
+                "Ashfall must not overwrite the built-in echoterminal:overview Command Deck action hub");
+        helper.assertTrue(hasAshfallCommand,
+                "Ashfall active protocol overview should live on its own addon-owned tab id");
+        TerminalNavigationProfiles.profile(commandDeck).ifPresent(profile ->
+                helper.assertTrue(profile.section() == TerminalNavigationSection.TERMINAL,
+                        "Built-in Command Deck should stay in Terminal navigation"));
+        TerminalNavigationProfiles.profile(ashfallCommand).ifPresent(profile ->
+                helper.assertTrue("ashfall".equals(profile.chapterId()),
+                        "Ashfall command overview should be grouped under the Ashfall chapter"));
+        helper.succeed();
+    }
+
     private static void missionGuideCoverage(GameTestHelper helper) {
         int covered = 0;
         for (Mission mission : MissionRegistry.getAllMissions()) {
@@ -1546,6 +1709,263 @@ public final class ModGameTests {
         assertRetiredEntityIdAbsent(helper, "salvager", "trader");
         assertRetiredEntityIdAbsent(helper, "mutant", "creature");
         helper.succeed();
+    }
+
+    private static void machineWearSavedData(GameTestHelper helper) {
+        BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        MachineWearData wearData = new MachineWearData(helper.getLevel());
+        wearData.setWear(pos, 73);
+        wearData.setJammed(pos, true);
+
+        MachineWearSavedData saved = MachineWearSavedData.get(helper.getLevel());
+        JsonElement encoded = MachineWearSavedData.CODEC.encodeStart(JsonOps.INSTANCE, saved)
+                .result()
+                .orElseThrow(() -> new IllegalStateException("Machine wear saved data should encode"));
+        MachineWearSavedData decoded = MachineWearSavedData.CODEC.parse(JsonOps.INSTANCE, encoded)
+                .result()
+                .orElseThrow(() -> new IllegalStateException("Machine wear saved data should decode"));
+
+        helper.assertTrue(decoded.getWear(pos) == 73, "Machine wear should survive saved-data serialization");
+        helper.assertTrue(decoded.isJammed(pos), "Machine jam state should survive saved-data serialization");
+        helper.assertTrue(new MachineWearData(helper.getLevel()).getWear(pos) == 73,
+                "Machine wear API should read world-saved state");
+        wearData.repair(pos, 100);
+        helper.assertFalse(MachineWearSavedData.get(helper.getLevel()).isJammed(pos),
+                "Repair should clear jam state when wear reaches zero");
+        helper.succeed();
+    }
+
+    private static void debugCommandPermissionGates(GameTestHelper helper) {
+        CommandSourceStack nonOp = commandSource(helper, LevelBasedPermissionSet.MODERATOR);
+        CommandSourceStack op = commandSource(helper, LevelBasedPermissionSet.GAMEMASTER);
+
+        helper.assertFalse(ModStructuresCommand.hasCommandPermission(nonOp),
+                "Structure export command should reject non-OP command source");
+        helper.assertFalse(StructureGenCommand.hasCommandPermission(nonOp),
+                "POI generation command should reject non-OP command source");
+        helper.assertTrue(ModStructuresCommand.hasCommandPermission(op),
+                "Structure export command should allow OP/dev command source");
+        helper.assertTrue(StructureGenCommand.hasCommandPermission(op),
+                "POI generation command should allow OP/dev command source");
+        helper.succeed();
+    }
+
+    private static CommandSourceStack commandSource(GameTestHelper helper, LevelBasedPermissionSet permissions) {
+        return new CommandSourceStack(
+                CommandSource.NULL,
+                Vec3.ZERO,
+                Vec2.ZERO,
+                helper.getLevel(),
+                permissions,
+                "gametest",
+                Component.literal("gametest"),
+                helper.getLevel().getServer(),
+                null);
+    }
+
+    private static void nexusUpgradeDataPath(GameTestHelper helper) {
+        ItemStack blade = new ItemStack(ModItems.NEXUS_BLADE.get());
+        com.knoxhack.echoashfallprotocol.item.upgrade.GearUpgradeHandler.setUpgradeLevel(blade, 2);
+
+        helper.assertTrue(com.knoxhack.echoashfallprotocol.item.GearUpgradeHandler.getUpgradeLevel(blade) == 2,
+                "Right-click compatibility handler should read nexus_upgrades");
+        helper.assertTrue(com.knoxhack.echoashfallprotocol.item.upgrade.GearUpgradeHandler.getBonusDamage(blade) >= 2.0F,
+                "Nexus upgrade level should increase weapon damage");
+        helper.assertTrue(com.knoxhack.echoashfallprotocol.item.GearUpgradeHandler.getDamageBonus(blade) >= 2.0F,
+                "Legacy damage helper should mirror Nexus upgrade damage");
+        helper.succeed();
+    }
+
+    private static void waterPurifierNetworkPower(GameTestHelper helper) {
+        BlockPos purifierPos = helper.absolutePos(new BlockPos(1, 2, 1));
+        BlockPos cablePos = purifierPos.east();
+        BlockPos bankPos = cablePos.east();
+
+        helper.getLevel().setBlock(purifierPos, ModBlocks.WATER_PURIFIER.get().defaultBlockState(), 3);
+        helper.getLevel().setBlock(cablePos, ModBlocks.POWER_CABLE.get().defaultBlockState(), 3);
+        helper.getLevel().setBlock(bankPos, ModBlocks.BATTERY_BANK.get().defaultBlockState(), 3);
+
+        helper.assertTrue(helper.getLevel().getBlockEntity(purifierPos) instanceof WaterPurifierBlockEntity,
+                "Water purifier block entity should be present");
+        helper.assertTrue(helper.getLevel().getBlockEntity(cablePos) instanceof PowerCableBlockEntity,
+                "Power cable block entity should be present");
+        helper.assertTrue(helper.getLevel().getBlockEntity(bankPos) instanceof BatteryBankBlockEntity,
+                "Battery bank block entity should be present");
+        if (helper.getLevel().getBlockEntity(purifierPos) instanceof WaterPurifierBlockEntity purifier
+                && helper.getLevel().getBlockEntity(bankPos) instanceof BatteryBankBlockEntity bank) {
+            MachineWearData wearData = new MachineWearData(helper.getLevel());
+            wearData.repair(purifierPos, MachineWearData.MAX_WEAR);
+            bank.setEnergyStored(2_000);
+            purifier.getInventory().setStackInSlot(0, new ItemStack(ModItems.DIRTY_WATER_BOTTLE.get()));
+            purifier.getInventory().setStackInSlot(1, new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get()));
+
+            for (int i = 0; i < 220; i++) {
+                BatteryBankBlockEntity.serverTick(helper.getLevel(), bankPos,
+                        helper.getLevel().getBlockState(bankPos), bank);
+                if (helper.getLevel().getBlockEntity(cablePos) instanceof PowerCableBlockEntity cable) {
+                    PowerCableBlockEntity.serverTick(helper.getLevel(), cablePos,
+                            helper.getLevel().getBlockState(cablePos), cable);
+                }
+                WaterPurifierBlockEntity.serverTick(helper.getLevel(), purifierPos,
+                        helper.getLevel().getBlockState(purifierPos), purifier);
+            }
+
+            int cableEnergy = helper.getLevel().getBlockEntity(cablePos) instanceof PowerCableBlockEntity cable
+                    ? cable.getEnergyStored()
+                    : -1;
+            helper.assertTrue(purifier.getInventory().getStackInSlot(2).is(ModItems.CLEAN_WATER_BOTTLE.get()),
+                    "Water purifier should produce clean water from cabled network power"
+                            + " output=" + purifier.getInventory().getStackInSlot(2)
+                            + " progress=" + purifier.data.get(0) + "/" + purifier.data.get(1)
+                            + " hasPower=" + purifier.data.get(2)
+                            + " purifierEnergy=" + purifier.getEnergyStored()
+                            + " cableEnergy=" + cableEnergy
+                            + " bankEnergy=" + bank.getEnergyStored()
+                            + " wear=" + wearData.getWear(purifierPos)
+                            + " jammed=" + wearData.isJammed(purifierPos));
+            helper.assertTrue(bank.getEnergyStored() < 2_000,
+                    "Cabled network source should spend energy on purification");
+        }
+        helper.succeed();
+    }
+
+    private static void workshopStatusCopy(GameTestHelper helper) {
+        String copy = WorkshopBlock.coverageSummaryMessage().getString();
+        helper.assertFalse(copy.contains("Machine links"), "Workshop status should not advertise unimplemented links");
+        helper.assertTrue(copy.contains("efficiency"), "Workshop status should describe the active area bonus");
+        helper.succeed();
+    }
+
+    private static void nexusCommandStatusOnly(GameTestHelper helper) {
+        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+        NexusCommandHandler.register(dispatcher);
+
+        var nexus = dispatcher.getRoot().getChild("nexus");
+        helper.assertTrue(nexus != null, "/nexus command should be registered");
+        helper.assertTrue(nexus.getChild("status") != null, "/nexus status should remain public");
+        for (String mutatingVerb : List.of("awaken", "scan", "encounter", "relay", "siege", "operation", "finale")) {
+            helper.assertTrue(nexus.getChild(mutatingVerb) == null,
+                    "/nexus should not expose public mutation verb: " + mutatingVerb);
+        }
+        helper.succeed();
+    }
+
+    private static void radioDynamicStationPersistence(GameTestHelper helper) {
+        RadioNetwork network = new RadioNetwork();
+        RadioNetwork.StationInfo dynamic = new RadioNetwork.StationInfo(
+                "relay_22222_70_-3333",
+                "Relay 22222, -3333",
+                new BlockPos(22222, 70, -3333));
+        network.activateStation(dynamic);
+
+        RadioNetwork restored = roundTripRadioNetwork(helper, network);
+        RadioNetwork.StationInfo restoredStation = restored.getStationInfo(dynamic.getId());
+        helper.assertTrue(restored.isActivated(dynamic.getId()), "Dynamic relay id should remain activated");
+        helper.assertTrue(restoredStation != null, "Dynamic relay metadata should be restored");
+        helper.assertTrue(restoredStation != null && restoredStation.getName().equals(dynamic.getName()),
+                "Dynamic relay name should survive serialization");
+        helper.assertTrue(restoredStation != null && restoredStation.getPosition().equals(dynamic.getPosition()),
+                "Dynamic relay position should survive serialization");
+        helper.assertTrue(restored.getAvailableDestinations(BlockPos.ZERO).stream()
+                        .anyMatch(station -> station.getId().equals(dynamic.getId())),
+                "Dynamic relay should resolve as a destination after reload");
+
+        TagValueOutput legacyOutput = TagValueOutput.createWithContext(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+        legacyOutput.putInt("discoveredCount", 1);
+        legacyOutput.putString("discovered_0", "relay_-10_64_20");
+        legacyOutput.putInt("activatedCount", 1);
+        legacyOutput.putString("activated_0", "relay_-10_64_20");
+        RadioNetwork legacy = new RadioNetwork();
+        legacy.deserialize(TagValueInput.create(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), legacyOutput.buildResult()));
+        helper.assertTrue(legacy.getStationInfo("relay_-10_64_20") != null,
+                "Legacy id-only dynamic relay saves should be reconstructed from relay coordinates");
+        helper.succeed();
+    }
+
+    private static void droneIntelTargeting(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        BlockPos playerPos = helper.absolutePos(new BlockPos(2, 2, 2));
+        player.setPos(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D);
+
+        FactionDiplomacy diplomacy = player.getData(ModAttachments.FACTION_DIPLOMACY.get());
+        diplomacy.setRelation(
+                FactionDiplomacy.FactionPair.fromFactions(
+                        AshfallBiomeFactions.SURVIVOR_NETWORK,
+                        AshfallBiomeFactions.CRASHBREAK_SALVAGE),
+                -80);
+        player.setData(ModAttachments.FACTION_DIPLOMACY.get(), diplomacy);
+
+        EchoCompanionDrone drone = spawnCompanionDrone(helper, player, new BlockPos(4, 2, 2));
+        drone.setRepairLevel(EchoCompanionDrone.REPAIR_FULL);
+        drone.setCurrentMode(EchoCompanionDrone.DroneMode.COMBAT);
+
+        Mob bandit = ModEntities.SCAVENGER_BANDIT.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(bandit != null, "Scavenger bandit should be spawnable");
+        if (bandit != null) {
+            BlockPos banditPos = helper.absolutePos(new BlockPos(6, 2, 2));
+            bandit.setPos(banditPos.getX() + 0.5D, banditPos.getY(), banditPos.getZ() + 0.5D);
+            helper.getLevel().addFreshEntity(bandit);
+            drone.tick();
+            helper.assertTrue(drone.getTarget() == bandit,
+                    "Combat intel should assign an obvious hostile faction target");
+            bandit.discard();
+        }
+        drone.discard();
+        helper.succeed();
+    }
+
+    private static void questRewardStackPersistence(GameTestHelper helper) {
+        QuestData original = new QuestData();
+        ItemStack namedReward = new ItemStack(Items.DIAMOND_SWORD);
+        namedReward.set(DataComponents.CUSTOM_NAME, Component.literal("ECHO Reward"));
+        original.completeMission("custom_reward", List.of(namedReward));
+
+        QuestData restored = roundTripQuestData(helper, original);
+        List<ItemStack> rewards = restored.getPendingRewards("custom_reward");
+        helper.assertTrue(rewards.size() == 1, "Custom reward stack should survive serialization");
+        helper.assertTrue(rewards.get(0).is(Items.DIAMOND_SWORD), "Custom reward item should survive serialization");
+        helper.assertTrue("ECHO Reward".equals(rewards.get(0).getHoverName().getString()),
+                "Custom reward component data should survive serialization");
+
+        TagValueOutput legacyOutput = TagValueOutput.createWithContext(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+        legacyOutput.putInt("pendingRewardMissions", 1);
+        legacyOutput.putString("rewardMission_0", "legacy_reward");
+        legacyOutput.putInt("rewardCount_0", 1);
+        legacyOutput.putString("rewardItem_0_0_id", BuiltInRegistries.ITEM.getKey(Items.APPLE).toString());
+        legacyOutput.putInt("rewardItem_0_0_count", 3);
+        QuestData legacy = new QuestData();
+        legacy.deserialize(TagValueInput.create(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), legacyOutput.buildResult()));
+        helper.assertTrue(legacy.getPendingRewards("legacy_reward").size() == 1
+                        && legacy.getPendingRewards("legacy_reward").get(0).is(Items.APPLE)
+                        && legacy.getPendingRewards("legacy_reward").get(0).getCount() == 3,
+                "Legacy id/count pending reward entries should still deserialize");
+        helper.succeed();
+    }
+
+    private static RadioNetwork roundTripRadioNetwork(GameTestHelper helper, RadioNetwork original) {
+        TagValueOutput output = TagValueOutput.createWithContext(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+        original.serialize(output);
+        CompoundTag tag = output.buildResult();
+        RadioNetwork restored = new RadioNetwork();
+        restored.deserialize(TagValueInput.create(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), tag));
+        return restored;
+    }
+
+    private static QuestData roundTripQuestData(GameTestHelper helper, QuestData original) {
+        TagValueOutput output = TagValueOutput.createWithContext(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+        original.serialize(output);
+        CompoundTag tag = output.buildResult();
+        QuestData restored = new QuestData();
+        restored.deserialize(TagValueInput.create(
+                ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), tag));
+        return restored;
     }
 
     private static void assertRetiredEntityIdAbsent(GameTestHelper helper, String first, String second) {

@@ -42,6 +42,12 @@ public final class ModItems {
     public static final DeferredItem<Item> EUROPA_TRANSFER_WINDOW = tracked(ITEMS.registerItem("europa_transfer_window",
             properties -> new PlanetaryRouteItem(PlanetaryRouteItem.Target.EUROPA, properties),
             p -> p.stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> SATURN_TRANSFER_WINDOW = tracked(ITEMS.registerItem("saturn_transfer_window",
+            properties -> new PlanetaryRouteItem(PlanetaryRouteItem.Target.SATURN, properties),
+            p -> p.stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> TITAN_TRANSFER_WINDOW = tracked(ITEMS.registerItem("titan_transfer_window",
+            properties -> new PlanetaryRouteItem(PlanetaryRouteItem.Target.TITAN, properties),
+            p -> p.stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> NEXUS_DRIVE_VESSEL = tracked(ITEMS.registerItem("nexus_drive_vessel", NexusDriveVesselItem::new,
             p -> p.stacksTo(1).rarity(Rarity.EPIC).fireResistant()));
 
@@ -98,6 +104,10 @@ public final class ModItems {
     public static final DeferredItem<Item> LUNAR_CORE_SAMPLE = simple("lunar_core_sample", p -> p.rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> MARTIAN_PRESSURE_VALVE = simple("martian_pressure_valve", p -> p.rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> EUROPA_THERMAL_PROBE = simple("europa_thermal_probe", p -> p.rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> SATURN_RING_FRAGMENT = simple("saturn_ring_fragment", p -> p.rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> SATURN_RELAY_LENS = simple("saturn_relay_lens", p -> p.rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> TITAN_METHANE_CELL = simple("titan_methane_cell", p -> p.rarity(Rarity.RARE));
+    public static final DeferredItem<Item> TITAN_SURVEY_CORE = simple("titan_survey_core", p -> p.rarity(Rarity.RARE));
     public static final DeferredItem<Item> NEXUS_STABILIZER_SHARD = simple("nexus_stabilizer_shard", p -> p.rarity(Rarity.RARE).fireResistant());
     public static final DeferredItem<Item> STABILIZED_ECHO_CORE = simple("stabilized_echo_core", p -> p.rarity(Rarity.EPIC).fireResistant());
     public static final DeferredItem<Item> STATION_RELAY_FUSE = simple("station_relay_fuse", p -> p.rarity(Rarity.UNCOMMON));

@@ -27,17 +27,17 @@ public class BiomeGuardianSiteData extends SavedData {
 
     public static final Codec<Entry> ENTRY_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
-                    Codec.STRING.fieldOf("guardianId").forGetter(Entry::guardianId),
-                    Codec.STRING.fieldOf("biomePath").forGetter(Entry::biomePath),
-                    BLOCK_POS_CODEC.fieldOf("entrance").forGetter(Entry::entrance),
-                    BLOCK_POS_CODEC.fieldOf("arena").forGetter(Entry::arena),
+                    Codec.STRING.optionalFieldOf("guardianId", "").forGetter(Entry::guardianId),
+                    Codec.STRING.optionalFieldOf("biomePath", "").forGetter(Entry::biomePath),
+                    BLOCK_POS_CODEC.optionalFieldOf("entrance", BlockPos.ZERO).forGetter(Entry::entrance),
+                    BLOCK_POS_CODEC.optionalFieldOf("arena", BlockPos.ZERO).forGetter(Entry::arena),
                     Codec.BOOL.optionalFieldOf("defeated", false).forGetter(Entry::defeated)
             ).apply(instance, Entry::new)
     );
 
     public static final Codec<BiomeGuardianSiteData> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
-                    ENTRY_CODEC.listOf().fieldOf("sites").forGetter(data -> data.sites)
+                    ENTRY_CODEC.listOf().optionalFieldOf("sites", List.of()).forGetter(data -> data.sites)
             ).apply(instance, BiomeGuardianSiteData::new)
     );
 
@@ -53,7 +53,9 @@ public class BiomeGuardianSiteData extends SavedData {
     }
 
     private BiomeGuardianSiteData(List<Entry> sites) {
-        this.sites.addAll(sites);
+        sites.stream()
+                .filter(BiomeGuardianSiteData::isValidEntry)
+                .forEach(this.sites::add);
     }
 
     public static BiomeGuardianSiteData get(ServerLevel level) {
@@ -99,6 +101,16 @@ public class BiomeGuardianSiteData extends SavedData {
 
     public List<Entry> allSites() {
         return List.copyOf(sites);
+    }
+
+    private static boolean isValidEntry(Entry entry) {
+        return entry != null
+                && entry.guardianId() != null
+                && !entry.guardianId().isBlank()
+                && entry.biomePath() != null
+                && !entry.biomePath().isBlank()
+                && entry.entrance() != null
+                && entry.arena() != null;
     }
 
     public record Entry(String guardianId, String biomePath, BlockPos entrance, BlockPos arena, boolean defeated) {

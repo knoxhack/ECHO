@@ -40,7 +40,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         return new TerminalMissionChapter(
                 OrbitalTerminalIds.CHAPTER_ID,
                 "ECHO-0 ROUTE CHAIN",
-                "Post-Nexus ECHO-7 route records for Earth recovery, Station ECHO debris, ECHO-0 quarantine, surveys, and the final network seal.",
+                "Public beta ECHO-7 route records for Ashfall recovery, Station ECHO debris, ECHO-0 quarantine, surveys, and the final network seal.",
                 300,
                 ACCENT,
                 true);
@@ -51,7 +51,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
         LaunchReadiness launch = LaunchReadiness.evaluateForLaunch(player);
         LaunchReadiness assembly = LaunchReadiness.evaluateForAssembly(player);
-        return List.of(OrbitalMission.values()).stream()
+        return java.util.Arrays.stream(OrbitalMission.values())
                 .map(mission -> definition(player, progress, launch, assembly, mission))
                 .toList();
     }
@@ -209,9 +209,17 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                     "Europa transfer",
                     progress.europaRouteUnlocked() ? "Europa cryo route unlocked." : "Resolve Martian Silica pressure telemetry.",
                     ModItems.EUROPA_TRANSFER_WINDOW.get(), progress.europaRouteUnlocked() ? 1 : 0, 1));
+            case SATURN_ROUTE -> List.of(requirement(
+                    "Saturn transfer",
+                    progress.saturnRouteUnlocked() ? "Saturn ring route unlocked." : "Resolve Europa thermal telemetry.",
+                    ModItems.SATURN_TRANSFER_WINDOW.get(), progress.saturnRouteUnlocked() ? 1 : 0, 1));
+            case TITAN_ROUTE -> List.of(requirement(
+                    "Titan transfer",
+                    progress.titanRouteUnlocked() ? "Titan methane route unlocked." : "Restore Saturn Ring Relays and recover ring fragments.",
+                    ModItems.TITAN_TRANSFER_WINDOW.get(), progress.titanRouteUnlocked() ? 1 : 0, 1));
             case DEEP_SPACE_PROTOCOL -> List.of(requirement(
                     "Deep Space Protocol",
-                    progress.deepSpaceProtocolUnlocked() ? "Deep Space Protocol unlocked." : "Resolve Europa cryo telemetry or Nexus drive evidence.",
+                    progress.deepSpaceProtocolUnlocked() ? "Deep Space Protocol unlocked." : "Resolve Titan methane telemetry or Nexus drive evidence.",
                     ModItems.NEXUS_DRIVE_CORE.get(), progress.deepSpaceProtocolUnlocked() ? 1 : 0, 1));
             case ECHO_ZERO -> List.of(requirement(
                     "ECHO-0",
@@ -220,11 +228,11 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             case SURVEY_NETWORK -> List.of(requirement(
                     "Route survey network",
                     progress.allSurveysComplete() ? "Every route survey is mapped and stable." : progress.surveyStatus(),
-                    ModItems.ORBIT_SURVEY_DATA.get(), progress.totalSurveyCount(), 15));
+                    ModItems.ORBIT_SURVEY_DATA.get(), progress.totalSurveyCount(), 21));
             case FACTION_CONTRACT -> List.of(requirement(
                     "Faction contract",
-                    progress.completedFactionContractCount() > 0 ? "One faction relay sealed into the route network." : progress.factionContractRequirement(),
-                    ModItems.ORBITAL_REMNANT_BADGE.get(), progress.completedFactionContractCount(), 1));
+                    progress.completedFactionContractCount() >= 3 ? "Three faction relays sealed into the route network." : progress.factionContractRequirement(),
+                    ModItems.ORBITAL_REMNANT_BADGE.get(), progress.completedFactionContractCount(), 3));
             case FINAL_SEAL -> List.of(requirement(
                     "Final network seal",
                     progress.finalNetworkSealed() ? "Orbital Remnants arc complete. Earth no longer answers to quarantine." : progress.scanRequirement(),
@@ -259,7 +267,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
     private static String earthCalibrationInstruction(Player player) {
         return standaloneOrbital(player)
                 ? "Sneak-use ECHO-7 on Earth to recover the orbital handoff file."
-                : "Sneak-use ECHO-7 on Earth after the Nexus handoff.";
+                : "Sneak-use ECHO-7 on Earth after Ashfall recovery to calibrate the Orbital route.";
     }
 
     private static boolean standaloneOrbital(Player player) {
@@ -283,11 +291,14 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             case LUNAR_SIGNAL -> progress.lunarSignalInvestigated();
             case MARS_ROUTE -> progress.marsRouteUnlocked();
             case EUROPA_ROUTE -> progress.europaRouteUnlocked();
+            case SATURN_ROUTE -> progress.saturnRouteUnlocked();
+            case TITAN_ROUTE -> progress.titanRouteUnlocked();
             case DEEP_SPACE_PROTOCOL -> progress.deepSpaceProtocolUnlocked();
             case ECHO_ZERO -> progress.echoZeroEncountered();
             case SURVEY_NETWORK -> progress.allSurveysComplete();
-            case FACTION_CONTRACT -> progress.completedFactionContractCount() > 0;
+            case FACTION_CONTRACT -> progress.completedFactionContractCount() >= 3;
             case FINAL_SEAL -> progress.finalNetworkSealed();
+            default -> false;
         };
     }
 
@@ -299,7 +310,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             return 1.0F;
         }
         return switch (mission) {
-            case EARTH_CALIBRATION, LOW_ORBIT, LUNAR_SIGNAL, MARS_ROUTE, EUROPA_ROUTE, DEEP_SPACE_PROTOCOL,
+            case EARTH_CALIBRATION, LOW_ORBIT, LUNAR_SIGNAL, MARS_ROUTE, EUROPA_ROUTE, SATURN_ROUTE, TITAN_ROUTE, DEEP_SPACE_PROTOCOL,
                     ECHO_ZERO, FACTION_CONTRACT, FINAL_SEAL -> 0.0F;
             case LAUNCH_CHAIN -> {
                 LaunchReadiness launch = LaunchReadiness.evaluateForLaunch(player);
@@ -307,7 +318,8 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                 yield ((launch.ready() ? 1.0F : 0.0F) + (assembly.ready() ? 1.0F : 0.0F)) / 2.0F;
             }
             case STATION_NETWORK -> progress.stationRelayRepairs() / 3.0F;
-            case SURVEY_NETWORK -> progress.totalSurveyCount() / 15.0F;
+            case SURVEY_NETWORK -> progress.totalSurveyCount() / 21.0F;
+            default -> 0.0F;
         };
     }
 
@@ -405,6 +417,12 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             case EUROPA_ROUTE -> stacks(
                     stack(ModItems.EMERGENCY_OXYGEN_CELL.get(), 4),
                     stack(ModItems.FROZEN_WIRING.get(), 2));
+            case SATURN_ROUTE -> stacks(
+                    stack(ModItems.SATURN_RELAY_LENS.get(), 1),
+                    stack(ModItems.OXYGEN_CANISTER.get(), 2));
+            case TITAN_ROUTE -> stacks(
+                    stack(ModItems.TITAN_METHANE_CELL.get(), 1),
+                    stack(ModItems.SUIT_SEALANT_PATCH.get(), 3));
             case DEEP_SPACE_PROTOCOL -> stacks(
                     stack(ModItems.OXYGEN_CANISTER.get(), 2),
                     stack(ModItems.ORBITAL_ALLOY.get(), 2));
@@ -457,6 +475,8 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             case LUNAR_SIGNAL -> stack(ModItems.ORBITAL_SHUTTLE.get(), 1);
             case MARS_ROUTE -> stack(ModItems.MARS_TRANSFER_WINDOW.get(), 1);
             case EUROPA_ROUTE -> stack(ModItems.EUROPA_TRANSFER_WINDOW.get(), 1);
+            case SATURN_ROUTE -> stack(ModItems.SATURN_TRANSFER_WINDOW.get(), 1);
+            case TITAN_ROUTE -> stack(ModItems.TITAN_TRANSFER_WINDOW.get(), 1);
             case DEEP_SPACE_PROTOCOL -> stack(ModItems.NEXUS_DRIVE_CORE.get(), 1);
             case ECHO_ZERO -> stack(ModItems.NEXUS_DRIVE_VESSEL.get(), 1);
             case SURVEY_NETWORK -> stack(ModItems.ORBIT_SURVEY_DATA.get(), 1);
@@ -513,29 +533,39 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                 "Resolve Martian pressure telemetry into the Europa cryo route, where cold treats suit seals as suggestions.",
                 "Repair Mars pressure consoles when required, then scan with Martian Silica support.",
                 "Route", "Hazard"),
-        DEEP_SPACE_PROTOCOL("deep_space_protocol", "Nexus Anomaly", 5, 0,
+        SATURN_ROUTE("saturn_route", "Saturn", 5, 0,
+                "Saturn Route",
+                "Follow Europa thermal telemetry into a graveyard of ring relays and broken faction hubs.",
+                "Calibrate Europa thermal arrays when required, then scan with Cryo Crystal support and use the Saturn Transfer Window.",
+                "Route", "Hazard"),
+        TITAN_ROUTE("titan_route", "Titan", 6, 0,
+                "Titan Route",
+                "Use Saturn relay fragments to descend onto the methane shelf before Deep Space Protocol can hold.",
+                "Restore Saturn Ring Relays when required, then scan with ring fragments and use the Titan Transfer Window.",
+                "Route", "Hazard"),
+        DEEP_SPACE_PROTOCOL("deep_space_protocol", "Nexus Anomaly", 7, 0,
                 "Deep Space Protocol",
-                "Use Europa or Nexus-drive telemetry to reveal the anomaly belt and the authority hiding beyond it.",
-                "Calibrate Europa thermal arrays when required, then scan with Cryo Crystal or Nexus Drive support. The route opens only after the evidence holds.",
+                "Use Titan or Nexus-drive telemetry to reveal the anomaly belt and the authority hiding beyond it.",
+                "Pressurize Titan Methane Pumps when required, then scan with Titan Survey Core or Nexus Drive support. The route opens only after the evidence holds.",
                 "Route", "Endgame"),
-        ECHO_ZERO("echo_zero", "Nexus Anomaly", 5, 1,
+        ECHO_ZERO("echo_zero", "Nexus Anomaly", 7, 1,
                 "ECHO-0",
                 "Confront the quarantine intelligence that believes Earth must stay silent to starve the Nexus.",
                 "Enter the Nexus Anomaly Belt, survive oxygen, pressure, and radiation load, then resolve ECHO-0.",
                 "Story", "Endgame"),
-        SURVEY_NETWORK("survey_network", "ROUTE SURVEY", 6, 0,
+        SURVEY_NETWORK("survey_network", "ROUTE SURVEY", 8, 0,
                 "Survey Network",
                 "Map the route worlds and stabilize the post-ECHO-0 Nexus anchors before the old quarantine reinterprets silence.",
                 "Use the Survey tab to finish each route's three unique logs. Evidence is the countermeasure now.",
                 "Survey", "Endgame"),
-        FACTION_CONTRACT("faction_contract", "ROUTE SURVEY", 6, 1,
+        FACTION_CONTRACT("faction_contract", "ROUTE SURVEY", 8, 1,
                 "Faction Contract",
-                "Seal one faction relay after the survey network is stable enough for people to argue over it.",
-                "Pledge to a faction, follow the ECHO-tab proof requirement, and press SCAN when the field proof is ready.",
+                "Seal three faction relays after the survey network is stable enough for people to argue over it.",
+                "Pledge to a faction, visit faction hubs for vendor support, and complete three ECHO-tab proof contracts.",
                 "Faction", "Endgame"),
-        FINAL_SEAL("final_seal", "FINAL SEAL", 7, 0,
+        FINAL_SEAL("final_seal", "FINAL SEAL", 9, 0,
                 "Final Network Seal",
-                "Close the Orbital Remnants arc after ECHO-0, surveys, and one faction relay prove the route belongs to the living.",
+                "Close the Orbital Remnants arc after ECHO-0, surveys, and three faction relays prove the route belongs to the living.",
                 "Press SCAN once all final prerequisites are complete.",
                 "Story", "Complete");
 

@@ -20,7 +20,7 @@ import java.util.List;
 
 public class EchoTerminalProgress {
     private static final String ROOT = "echoorbitalremnants_progress";
-    private static final String FINAL_NETWORK_REPORT = "Orbital Remnants arc complete. ECHO-0 is resolved, route surveys are mapped, Nexus anchors are stable, and one faction relay proves orbit no longer owns Earth.";
+    private static final String FINAL_NETWORK_REPORT = "Orbital Remnants arc complete. ECHO-0 is resolved, route surveys are mapped, Nexus anchors are stable, and three faction relays prove orbit no longer owns Earth.";
 
     private boolean orbitalContact;
     private boolean launchSiteTracked;
@@ -34,6 +34,10 @@ public class EchoTerminalProgress {
     private boolean marsAshBasinVisited;
     private boolean europaRouteUnlocked;
     private boolean europaCryoOceanVisited;
+    private boolean saturnRouteUnlocked;
+    private boolean saturnRingGraveyardVisited;
+    private boolean titanRouteUnlocked;
+    private boolean titanMethaneShelfVisited;
     private boolean deepSpaceProtocolUnlocked;
     private boolean anomalyBeltEntered;
     private boolean echoZeroEncountered;
@@ -58,29 +62,41 @@ public class EchoTerminalProgress {
     private int moonSurveyScans;
     private int marsSurveyScans;
     private int europaSurveyScans;
+    private int saturnSurveyScans;
+    private int titanSurveyScans;
     private int nexusSurveyScans;
     private String orbitSurveySites = "";
     private String moonSurveySites = "";
     private String marsSurveySites = "";
     private String europaSurveySites = "";
+    private String saturnSurveySites = "";
+    private String titanSurveySites = "";
     private String nexusSurveySites = "";
     private boolean orbitSurveyComplete;
     private boolean moonSurveyComplete;
     private boolean marsSurveyComplete;
     private boolean europaSurveyComplete;
+    private boolean saturnSurveyComplete;
+    private boolean titanSurveyComplete;
     private boolean nexusStabilized;
     private int stationRelayRepairs;
     private int lunarExtractorRepairs;
     private int marsPressureRepairs;
     private int europaArrayRepairs;
+    private int saturnRelayRepairs;
+    private int titanPumpRepairs;
     private String stationRelaySites = "";
     private String lunarExtractorSites = "";
     private String marsPressureSites = "";
     private String europaArraySites = "";
+    private String saturnRelaySites = "";
+    private String titanPumpSites = "";
     private boolean stationNetworkRestored;
     private boolean lunarExtractorOnline;
     private boolean marsHabitatsPressurized;
     private boolean europaArrayCalibrated;
+    private boolean saturnRelaysRestored;
+    private boolean titanPumpsPressurized;
     private boolean midGameObjectivesSeen = true;
     private String activeFactionContract = "";
     private String completedFactionContracts = "";
@@ -273,6 +289,44 @@ public class EchoTerminalProgress {
                 "The sub-ice lab preserved a deep-space ping under frozen signal glass.");
     }
 
+    public void unlockSaturnRoute(Player player) {
+        europaRouteUnlocked = true;
+        europaCryoOceanVisited = true;
+        saturnRouteUnlocked = true;
+        echoMemoryFragments = Math.max(echoMemoryFragments, 6);
+        save(player);
+        AshfallCompat.mirrorMilestone(player, "saturn_route", "Saturn route unlocked",
+                "Europa thermal telemetry resolved a relay path into the Saturn Ring Graveyard.");
+    }
+
+    public void markSaturnRingGraveyardVisited(Player player) {
+        saturnRouteUnlocked = true;
+        saturnRingGraveyardVisited = true;
+        echoMemoryFragments = Math.max(echoMemoryFragments, 6);
+        save(player);
+        AshfallCompat.mirrorMilestone(player, "saturn_ring_graveyard", "Saturn Ring Graveyard reached",
+                "Broken relay ribs in the rings still carry Titan descent instructions.");
+    }
+
+    public void unlockTitanRoute(Player player) {
+        saturnRouteUnlocked = true;
+        saturnRingGraveyardVisited = true;
+        titanRouteUnlocked = true;
+        echoMemoryFragments = Math.max(echoMemoryFragments, 7);
+        save(player);
+        AshfallCompat.mirrorMilestone(player, "titan_route", "Titan route unlocked",
+                "Saturn relay lenses resolved a methane-shelf descent vector.");
+    }
+
+    public void markTitanMethaneShelfVisited(Player player) {
+        titanRouteUnlocked = true;
+        titanMethaneShelfVisited = true;
+        echoMemoryFragments = Math.max(echoMemoryFragments, 7);
+        save(player);
+        AshfallCompat.mirrorMilestone(player, "titan_methane_shelf", "Titan Methane Shelf reached",
+                "The last outer-system shelf points straight at the Nexus quarantine belt.");
+    }
+
     public void markAnomalyBeltEntered(Player player) {
         deepSpaceProtocolUnlocked = true;
         anomalyBeltEntered = true;
@@ -397,12 +451,65 @@ public class EchoTerminalProgress {
         europaSurveyComplete = europaSurveyComplete || newlyComplete;
         if (newlyComplete) {
             europaCryoOceanVisited = true;
-            deepSpaceProtocolUnlocked = true;
+            saturnRouteUnlocked = true;
             echoMemoryFragments = Math.max(echoMemoryFragments, 6);
             grantSurveyAdvancement(player, ModAdvancements.EUROPA_SURVEY_COMPLETE);
         }
         save(player);
         return new SurveyResult("Europa survey", europaSurveyScans, 3, newlyComplete, false, false, true);
+    }
+
+    public SurveyResult recordSaturnSurvey(Player player) {
+        return recordSaturnSurvey(player, "legacy:saturn:" + (saturnSurveyScans + 1));
+    }
+
+    public SurveyResult recordSaturnSurvey(Player player, String siteId) {
+        if (saturnSurveyComplete) {
+            return SurveyResult.complete("Saturn survey", saturnSurveyScans, 3);
+        }
+        if (hasSite(saturnSurveySites, siteId)) {
+            return SurveyResult.duplicate("Saturn survey", surveyCount(saturnSurveyScans, saturnSurveySites), 3);
+        }
+        saturnSurveySites = addSite(saturnSurveySites, siteId);
+        saturnSurveyScans = Math.min(3, surveyCount(saturnSurveyScans + 1, saturnSurveySites));
+        grantSurveyAdvancement(player, ModAdvancements.SATURN_DEEP_SITE_DISCOVERED);
+        boolean newlyComplete = !saturnSurveyComplete && saturnSurveyScans >= 3;
+        saturnSurveyComplete = saturnSurveyComplete || newlyComplete;
+        if (newlyComplete) {
+            saturnRingGraveyardVisited = true;
+            titanRouteUnlocked = true;
+            echoMemoryFragments = Math.max(echoMemoryFragments, 7);
+            grantSurveyAdvancement(player, ModAdvancements.SATURN_SURVEY_COMPLETE);
+        }
+        save(player);
+        return new SurveyResult("Saturn survey", saturnSurveyScans, 3, newlyComplete, false, false, true);
+    }
+
+    public SurveyResult recordTitanSurvey(Player player) {
+        return recordTitanSurvey(player, "legacy:titan:" + (titanSurveyScans + 1));
+    }
+
+    public SurveyResult recordTitanSurvey(Player player, String siteId) {
+        if (titanSurveyComplete) {
+            return SurveyResult.complete("Titan survey", titanSurveyScans, 3);
+        }
+        if (hasSite(titanSurveySites, siteId)) {
+            return SurveyResult.duplicate("Titan survey", surveyCount(titanSurveyScans, titanSurveySites), 3);
+        }
+        titanSurveySites = addSite(titanSurveySites, siteId);
+        titanSurveyScans = Math.min(3, surveyCount(titanSurveyScans + 1, titanSurveySites));
+        grantSurveyAdvancement(player, ModAdvancements.TITAN_DEEP_SITE_DISCOVERED);
+        boolean newlyComplete = !titanSurveyComplete && titanSurveyScans >= 3;
+        titanSurveyComplete = titanSurveyComplete || newlyComplete;
+        if (newlyComplete) {
+            titanMethaneShelfVisited = true;
+            deepSpaceProtocolUnlocked = true;
+            nexusChoirStanding = maxStanding(nexusChoirStanding, FactionStanding.CONTACTED);
+            echoMemoryFragments = Math.max(echoMemoryFragments, 8);
+            grantSurveyAdvancement(player, ModAdvancements.TITAN_SURVEY_COMPLETE);
+        }
+        save(player);
+        return new SurveyResult("Titan survey", titanSurveyScans, 3, newlyComplete, false, false, true);
     }
 
     public SurveyResult recordNexusStabilization(Player player) {
@@ -515,7 +622,7 @@ public class EchoTerminalProgress {
         europaArrayCalibrated = europaArrayCalibrated || newlyComplete;
         if (newlyComplete) {
             europaCryoOceanVisited = true;
-            deepSpaceProtocolUnlocked = true;
+            saturnRouteUnlocked = true;
             nexusChoirStanding = maxStanding(nexusChoirStanding, FactionStanding.CONTACTED);
             echoMemoryFragments = Math.max(echoMemoryFragments, 6);
             grantSurveyAdvancement(player, ModAdvancements.EUROPA_ARRAY_CALIBRATED);
@@ -523,6 +630,51 @@ public class EchoTerminalProgress {
         grantMidGameMastery(player);
         save(player);
         return new RouteObjectiveResult("Europa Thermal Array", europaArrayRepairs, 3, newlyComplete, false, true);
+    }
+
+    public RouteObjectiveResult repairSaturnRingRelay(Player player, String siteId) {
+        if (saturnRelayGateOpen()) {
+            return RouteObjectiveResult.complete("Saturn Ring Relays", objectiveCount(saturnRelayRepairs, saturnRelaySites), 3);
+        }
+        if (hasSite(saturnRelaySites, siteId)) {
+            return RouteObjectiveResult.duplicate("Saturn Ring Relays", objectiveCount(saturnRelayRepairs, saturnRelaySites), 3);
+        }
+        saturnRelaySites = addSite(saturnRelaySites, siteId);
+        saturnRelayRepairs = Math.min(3, objectiveCount(saturnRelayRepairs + 1, saturnRelaySites));
+        boolean newlyComplete = !saturnRelaysRestored && saturnRelayRepairs >= 3;
+        saturnRelaysRestored = saturnRelaysRestored || newlyComplete;
+        if (newlyComplete) {
+            saturnRingGraveyardVisited = true;
+            titanRouteUnlocked = true;
+            echoMemoryFragments = Math.max(echoMemoryFragments, 7);
+            grantSurveyAdvancement(player, ModAdvancements.SATURN_RELAYS_RESTORED);
+        }
+        grantMidGameMastery(player);
+        save(player);
+        return new RouteObjectiveResult("Saturn Ring Relays", saturnRelayRepairs, 3, newlyComplete, false, true);
+    }
+
+    public RouteObjectiveResult repairTitanMethanePump(Player player, String siteId) {
+        if (titanPumpGateOpen()) {
+            return RouteObjectiveResult.complete("Titan Methane Pumps", objectiveCount(titanPumpRepairs, titanPumpSites), 3);
+        }
+        if (hasSite(titanPumpSites, siteId)) {
+            return RouteObjectiveResult.duplicate("Titan Methane Pumps", objectiveCount(titanPumpRepairs, titanPumpSites), 3);
+        }
+        titanPumpSites = addSite(titanPumpSites, siteId);
+        titanPumpRepairs = Math.min(3, objectiveCount(titanPumpRepairs + 1, titanPumpSites));
+        boolean newlyComplete = !titanPumpsPressurized && titanPumpRepairs >= 3;
+        titanPumpsPressurized = titanPumpsPressurized || newlyComplete;
+        if (newlyComplete) {
+            titanMethaneShelfVisited = true;
+            deepSpaceProtocolUnlocked = true;
+            nexusChoirStanding = maxStanding(nexusChoirStanding, FactionStanding.CONTACTED);
+            echoMemoryFragments = Math.max(echoMemoryFragments, 8);
+            grantSurveyAdvancement(player, ModAdvancements.TITAN_PUMPS_PRESSURIZED);
+        }
+        grantMidGameMastery(player);
+        save(player);
+        return new RouteObjectiveResult("Titan Methane Pumps", titanPumpRepairs, 3, newlyComplete, false, true);
     }
 
     public void alignFaction(Player player, FactionPledgeItem.Faction faction) {
@@ -611,7 +763,7 @@ public class EchoTerminalProgress {
     }
 
     public boolean canSealFinalNetwork() {
-        return echoZeroEncountered && allSurveysComplete() && completedFactionContractCount() > 0;
+        return echoZeroEncountered && allSurveysComplete() && completedFactionContractCount() >= 3;
     }
 
     public FactionPledgeItem.Faction activeContractFaction() {
@@ -671,11 +823,11 @@ public class EchoTerminalProgress {
             return "ECHO NOTE: Nexus stabilization is " + nexusStabilizationText()
                     + ". Scan distinct Nexus Anchor/Growth sites, or spend Nexus Stabilizer Shards from Signal Analyzer support.";
         }
-        if (allSurveysComplete() && completedFactionContractCount() == 0) {
+        if (allSurveysComplete() && completedFactionContractCount() < 3) {
             return "ECHO NOTE: Survey network complete. " + factionContractRequirement()
-                    + " Complete one ECHO-tab contract before the final seal.";
+                    + " Complete three ECHO-tab faction contracts before the final seal.";
         }
-        if (allSurveysComplete() && completedFactionContractCount() > 0) {
+        if (allSurveysComplete() && completedFactionContractCount() >= 3) {
             return "ECHO NOTE: Final prerequisites are complete. Press SCAN once to seal the survey network.";
         }
         return "ECHO NOTE: SCAN advances route hooks. SURVEY logs each unique route site once.";
@@ -688,7 +840,8 @@ public class EchoTerminalProgress {
         if (deepSpaceProtocolUnlocked || echoZeroEncountered) {
             return "DEEP SPACE";
         }
-        if (europaRouteUnlocked || europaCryoOceanVisited || marsRouteUnlocked || marsAshBasinVisited) {
+        if (saturnRouteUnlocked || saturnRingGraveyardVisited || titanRouteUnlocked || titanMethaneShelfVisited
+                || europaRouteUnlocked || europaCryoOceanVisited || marsRouteUnlocked || marsAshBasinVisited) {
             return "DEEP SPACE";
         }
         if (lunarSignalUnlocked || lunarSignalInvestigated) {
@@ -762,10 +915,28 @@ public class EchoTerminalProgress {
             return "Next Step: Use the Europa Transfer Window from orbital staging and search the sub-ice lab cache.";
         }
         if (midGameObjectivesRequired() && !europaArrayGateOpen()) {
-            return "Next Step: Calibrate three unique Europa Thermal Arrays with Europa Probe Arrays. SCAN at each array to unlock Deep Space Protocol.";
+            return "Next Step: Calibrate three unique Europa Thermal Arrays with Europa Probe Arrays. SCAN at each array to unlock the Saturn route.";
         }
         if (!deepSpaceProtocolUnlocked) {
-            return "Next Step: Carry a Cryo Crystal from Europa or a Nexus Drive Core in space, then press SCAN.";
+            if (!saturnRouteUnlocked) {
+                return "Next Step: Carry a Cryo Crystal in Europa or scan Europa survey proof to resolve the Saturn Transfer Window.";
+            }
+            if (!saturnRingGraveyardVisited) {
+                return "Next Step: Use the Saturn Transfer Window from orbital staging and recover ring relay fragments.";
+            }
+            if (midGameObjectivesRequired() && !saturnRelayGateOpen()) {
+                return "Next Step: Restore three unique Saturn Ring Relays with Saturn Relay Lenses. SCAN at each relay to stabilize Titan descent.";
+            }
+            if (!titanRouteUnlocked) {
+                return "Next Step: Carry a Saturn Ring Fragment in the ring graveyard and press SCAN to resolve Titan.";
+            }
+            if (!titanMethaneShelfVisited) {
+                return "Next Step: Use the Titan Transfer Window from orbital staging and recover methane shelf telemetry.";
+            }
+            if (midGameObjectivesRequired() && !titanPumpGateOpen()) {
+                return "Next Step: Pressurize three unique Titan Methane Pumps with Titan Methane Cells. SCAN at each pump to unlock Deep Space Protocol.";
+            }
+            return "Next Step: Carry a Titan Survey Core or Nexus Drive Core in space, then press SCAN.";
         }
         if (!anomalyBeltEntered) {
             return "Next Step: Craft and use the Nexus Drive Vessel from orbital staging, then locate the anomaly cache.";
@@ -780,8 +951,8 @@ public class EchoTerminalProgress {
         if (!allSurveysComplete()) {
             return "Next Step: Finish any remaining route surveys from the SURVEY tab; each route needs three unique logs.";
         }
-        if (completedFactionContractCount() == 0) {
-            return "Next Step: Complete one faction contract from the ECHO tab. " + factionContractRequirement();
+        if (completedFactionContractCount() < 3) {
+            return "Next Step: Complete three faction contracts from the ECHO tab (" + completedFactionContractCount() + "/3). " + factionContractRequirement();
         }
         if (!finalNetworkSealed) {
             return "Next Step: Press SCAN to seal the final survey network and close the quarantine aftermath.";
@@ -834,9 +1005,19 @@ public class EchoTerminalProgress {
                     : "Carry Martian Silica from the Mars habitat or terrain, then scan.";
         }
         if (!deepSpaceProtocolUnlocked) {
-            return midGameObjectivesRequired() && !europaArrayGateOpen()
-                    ? "Calibrate Europa Thermal Arrays (" + europaArrayRepairs() + "/3) with Europa Probe Arrays before Deep Space Protocol can hold."
-                    : "Carry a Cryo Crystal from Europa or a Nexus Drive Core in space, then scan.";
+            if (!saturnRouteUnlocked) {
+                return midGameObjectivesRequired() && !europaArrayGateOpen()
+                        ? "Calibrate Europa Thermal Arrays (" + europaArrayRepairs() + "/3) with Europa Probe Arrays before Saturn prep can hold."
+                        : "Carry a Cryo Crystal from Europa, then scan to resolve Saturn.";
+            }
+            if (!titanRouteUnlocked) {
+                return midGameObjectivesRequired() && !saturnRelayGateOpen()
+                        ? "Restore Saturn Ring Relays (" + saturnRelayRepairs() + "/3) with Saturn Relay Lenses before Titan descent can hold."
+                        : "Carry a Saturn Ring Fragment in the Saturn Ring Graveyard, then scan.";
+            }
+            return midGameObjectivesRequired() && !titanPumpGateOpen()
+                    ? "Pressurize Titan Methane Pumps (" + titanPumpRepairs() + "/3) with Titan Methane Cells before Deep Space Protocol can hold."
+                    : "Carry a Titan Survey Core or Nexus Drive Core in space, then scan.";
         }
         if (!anomalyBeltEntered) {
             return "Use the Nexus Drive Vessel from orbital staging.";
@@ -848,7 +1029,7 @@ public class EchoTerminalProgress {
             return "Nexus stabilization " + nexusStabilizationText()
                     + ": scan a new Nexus Anchor/Growth site or carry a Nexus Stabilizer Shard after ECHO-0.";
         }
-        if (completedFactionContractCount() == 0) {
+        if (completedFactionContractCount() < 3) {
             return factionContractRequirement();
         }
         if (!finalNetworkSealed) {
@@ -858,7 +1039,8 @@ public class EchoTerminalProgress {
     }
 
     public boolean allSurveysComplete() {
-        return orbitSurveyComplete && moonSurveyComplete && marsSurveyComplete && europaSurveyComplete && nexusStabilized;
+        return orbitSurveyComplete && moonSurveyComplete && marsSurveyComplete && europaSurveyComplete
+                && saturnSurveyComplete && titanSurveyComplete && nexusStabilized;
     }
 
     private int nexusStabilizationCount() {
@@ -871,25 +1053,38 @@ public class EchoTerminalProgress {
 
     public boolean stationNetworkGateOpen() {
         return stationNetworkRestored || lunarSignalInvestigated || marsRouteUnlocked || marsAshBasinVisited
-                || europaRouteUnlocked || europaCryoOceanVisited || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
+                || europaRouteUnlocked || europaCryoOceanVisited || saturnRouteUnlocked || saturnRingGraveyardVisited
+                || titanRouteUnlocked || titanMethaneShelfVisited || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
     }
 
     public boolean lunarExtractorGateOpen() {
         return lunarExtractorOnline || marsAshBasinVisited || europaRouteUnlocked
-                || europaCryoOceanVisited || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
+                || europaCryoOceanVisited || saturnRouteUnlocked || saturnRingGraveyardVisited
+                || titanRouteUnlocked || titanMethaneShelfVisited || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
     }
 
     public boolean marsHabitatGateOpen() {
-        return marsHabitatsPressurized || europaCryoOceanVisited || deepSpaceProtocolUnlocked
+        return marsHabitatsPressurized || europaCryoOceanVisited || saturnRouteUnlocked || saturnRingGraveyardVisited
+                || titanRouteUnlocked || titanMethaneShelfVisited || deepSpaceProtocolUnlocked
                 || anomalyBeltEntered || echoZeroEncountered;
     }
 
     public boolean europaArrayGateOpen() {
-        return europaArrayCalibrated || anomalyBeltEntered || echoZeroEncountered;
+        return europaArrayCalibrated || saturnRingGraveyardVisited || titanRouteUnlocked
+                || titanMethaneShelfVisited || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
+    }
+
+    public boolean saturnRelayGateOpen() {
+        return saturnRelaysRestored || titanMethaneShelfVisited || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
+    }
+
+    public boolean titanPumpGateOpen() {
+        return titanPumpsPressurized || deepSpaceProtocolUnlocked || anomalyBeltEntered || echoZeroEncountered;
     }
 
     public boolean allMidGameObjectivesComplete() {
-        return stationNetworkGateOpen() && lunarExtractorGateOpen() && marsHabitatGateOpen() && europaArrayGateOpen();
+        return stationNetworkGateOpen() && lunarExtractorGateOpen() && marsHabitatGateOpen()
+                && europaArrayGateOpen() && saturnRelayGateOpen() && titanPumpGateOpen();
     }
 
     public String surveyStatus() {
@@ -901,6 +1096,8 @@ public class EchoTerminalProgress {
                 + " M:" + surveyText(moonSurveyComplete, surveyCount(moonSurveyScans, moonSurveySites))
                 + " R:" + surveyText(marsSurveyComplete, surveyCount(marsSurveyScans, marsSurveySites))
                 + " E:" + surveyText(europaSurveyComplete, surveyCount(europaSurveyScans, europaSurveySites))
+                + " S:" + surveyText(saturnSurveyComplete, surveyCount(saturnSurveyScans, saturnSurveySites))
+                + " T:" + surveyText(titanSurveyComplete, surveyCount(titanSurveyScans, titanSurveySites))
                 + " N:" + surveyText(nexusStabilized, surveyCount(nexusSurveyScans, nexusSurveySites));
     }
 
@@ -914,7 +1111,11 @@ public class EchoTerminalProgress {
             lines.add(objectiveLine("Mars Hab", marsHabitatGateOpen(), marsPressureRepairs, marsPressureSites,
                     "Pressure Console + Regulator", "Europa prep"));
             lines.add(objectiveLine("Europa Array", europaArrayGateOpen(), europaArrayRepairs, europaArraySites,
-                    "Thermal Array + Probe Array", "Deep Space Protocol"));
+                    "Thermal Array + Probe Array", "Saturn route"));
+            lines.add(objectiveLine("Saturn Relays", saturnRelayGateOpen(), saturnRelayRepairs, saturnRelaySites,
+                    "Saturn Ring Relay + Lens", "Titan descent"));
+            lines.add(objectiveLine("Titan Pumps", titanPumpGateOpen(), titanPumpRepairs, titanPumpSites,
+                    "Methane Pump + Cell", "Deep Space Protocol"));
         }
         lines.add(surveyLine("Orbit", orbitSurveyComplete, orbitSurveyScans, orbitSurveySites,
                 "Signal Relay/Data", "station salvage"));
@@ -923,7 +1124,11 @@ public class EchoTerminalProgress {
         lines.add(surveyLine("Mars", marsSurveyComplete, marsSurveyScans, marsSurveySites,
                 "Signal Relay/Valve", "pressure tuning"));
         lines.add(surveyLine("Europa", europaSurveyComplete, europaSurveyScans, europaSurveySites,
-                "Thermal Vent/Probe", "Nexus prep"));
+                "Thermal Vent/Probe", "Saturn prep"));
+        lines.add(surveyLine("Saturn", saturnSurveyComplete, saturnSurveyScans, saturnSurveySites,
+                "Ring Relay/Fragment", "Titan prep"));
+        lines.add(surveyLine("Titan", titanSurveyComplete, titanSurveyScans, titanSurveySites,
+                "Methane Pump/Core", "Nexus prep"));
         lines.add(surveyLine("Nexus", nexusStabilized, nexusSurveyScans, nexusSurveySites,
                 "Anchor/Growth/Shard", echoZeroEncountered ? "post-ECHO-0 network" : "locked until ECHO-0"));
         return List.copyOf(lines);
@@ -948,6 +1153,8 @@ public class EchoTerminalProgress {
             case "lunar_scar_zone" -> moonSurveyComplete ? "Crater radiation mapped." : "Scar trenches spike radiation near Nexus impacts.";
             case "mars_ash_basin" -> marsSurveyComplete ? "Pressure valves restored." : "Dust fronts compromise suit pressure.";
             case "europa_cryo_ocean" -> europaSurveyComplete ? "Thermal vents charted." : "Cryo exposure drains pressure away from vents.";
+            case "saturn_ring_graveyard" -> saturnSurveyComplete ? "Ring relay drift mapped." : "Ring debris scrapes oxygen and return signal stability.";
+            case "titan_methane_shelf" -> titanSurveyComplete ? "Methane shelves charted." : "Methane pressure pockets compromise seals away from pump stations.";
             case "nexus_anomaly_belt" -> nexusStabilized ? "Anchors stabilized." : "Nexus anchors remain unstable after ECHO-0.";
             default -> hasGroundRecoverySites() && !allGroundRecoverySitesComplete()
                     ? groundRecoverySummary()
@@ -971,6 +1178,14 @@ public class EchoTerminalProgress {
         if (nearbyBlock(player, ModBlocks.FROZEN_CABLE.get(), ModBlocks.CRYO_CRYSTAL_BLOCK.get(),
                 ModBlocks.THERMAL_VENT.get(), ModBlocks.EUROPA_THERMAL_ARRAY.get())) {
             return europaArrayGateOpen() ? "Mapped Europa cable path or cryo pocket nearby." : "Deep-site signal: Europa thermal array nearby. Stay near vents.";
+        }
+        if (nearbyBlock(player, ModBlocks.SATURN_ICE_RUBBLE.get(), ModBlocks.SATURN_RING_RELAY.get(),
+                ModBlocks.FACTION_RELAY_HUB.get(), ModBlocks.FACTION_VENDOR_KIOSK.get())) {
+            return saturnRelayGateOpen() ? "Mapped Saturn relay or faction hub nearby." : "Deep-site signal: Saturn Ring Relay nearby. Keep return signal stable.";
+        }
+        if (nearbyBlock(player, ModBlocks.TITAN_THOLIN_DUST.get(), ModBlocks.METHANE_ICE.get(),
+                ModBlocks.TITAN_METHANE_PUMP.get(), ModBlocks.FACTION_VENDOR_KIOSK.get())) {
+            return titanPumpGateOpen() ? "Mapped Titan methane shelf nearby." : "Deep-site signal: Titan Methane Pump nearby. Pressure pockets active.";
         }
         if (nearbyBlock(player, ModBlocks.NEXUS_GROWTH.get(), ModBlocks.NEXUS_DUST_BLOCK.get(),
                 ModBlocks.NEXUS_ANCHOR.get())) {
@@ -1036,6 +1251,22 @@ public class EchoTerminalProgress {
         return europaCryoOceanVisited;
     }
 
+    public boolean saturnRouteUnlocked() {
+        return saturnRouteUnlocked;
+    }
+
+    public boolean saturnRingGraveyardVisited() {
+        return saturnRingGraveyardVisited;
+    }
+
+    public boolean titanRouteUnlocked() {
+        return titanRouteUnlocked;
+    }
+
+    public boolean titanMethaneShelfVisited() {
+        return titanMethaneShelfVisited;
+    }
+
     public boolean lunarSignalInvestigated() {
         return lunarSignalInvestigated;
     }
@@ -1066,6 +1297,14 @@ public class EchoTerminalProgress {
 
     public boolean europaSurveyComplete() {
         return europaSurveyComplete;
+    }
+
+    public boolean saturnSurveyComplete() {
+        return saturnSurveyComplete;
+    }
+
+    public boolean titanSurveyComplete() {
+        return titanSurveyComplete;
     }
 
     public boolean nexusStabilized() {
@@ -1108,6 +1347,16 @@ public class EchoTerminalProgress {
         recordEuropaSurvey(player, "qa:europa:1");
         recordEuropaSurvey(player, "qa:europa:2");
         recordEuropaSurvey(player, "qa:europa:3");
+        unlockSaturnRoute(player);
+        markSaturnRingGraveyardVisited(player);
+        recordSaturnSurvey(player, "qa:saturn:1");
+        recordSaturnSurvey(player, "qa:saturn:2");
+        recordSaturnSurvey(player, "qa:saturn:3");
+        unlockTitanRoute(player);
+        markTitanMethaneShelfVisited(player);
+        recordTitanSurvey(player, "qa:titan:1");
+        recordTitanSurvey(player, "qa:titan:2");
+        recordTitanSurvey(player, "qa:titan:3");
         unlockDeepSpaceProtocol(player);
         markAnomalyBeltEntered(player);
         markEchoZeroEncountered(player);
@@ -1115,8 +1364,8 @@ public class EchoTerminalProgress {
         recordNexusStabilization(player, "qa:nexus:1");
         recordNexusStabilization(player, "qa:nexus:2");
         recordNexusStabilization(player, "qa:nexus:3");
-        if (completedFactionContractCount() == 0) {
-            completedFactionContracts = addSite(completedFactionContracts, "qa_final_contract:1");
+        while (completedFactionContractCount() < 3) {
+            completedFactionContracts = addSite(completedFactionContracts, "qa_final_contract:" + (completedFactionContractCount() + 1));
         }
         sealFinalNetwork(player);
     }
@@ -1137,6 +1386,14 @@ public class EchoTerminalProgress {
         return europaArrayCalibrated;
     }
 
+    public boolean saturnRelaysRestored() {
+        return saturnRelaysRestored;
+    }
+
+    public boolean titanPumpsPressurized() {
+        return titanPumpsPressurized;
+    }
+
     public int stationRelayRepairs() {
         return objectiveCount(stationRelayRepairs, stationRelaySites);
     }
@@ -1151,6 +1408,14 @@ public class EchoTerminalProgress {
 
     public int europaArrayRepairs() {
         return objectiveCount(europaArrayRepairs, europaArraySites);
+    }
+
+    public int saturnRelayRepairs() {
+        return objectiveCount(saturnRelayRepairs, saturnRelaySites);
+    }
+
+    public int titanPumpRepairs() {
+        return objectiveCount(titanPumpRepairs, titanPumpSites);
     }
 
     public boolean hasReturnPoint() {
@@ -1264,12 +1529,21 @@ public class EchoTerminalProgress {
         return surveyCount(europaSurveyScans, europaSurveySites);
     }
 
+    public int saturnSurveyCount() {
+        return surveyCount(saturnSurveyScans, saturnSurveySites);
+    }
+
+    public int titanSurveyCount() {
+        return surveyCount(titanSurveyScans, titanSurveySites);
+    }
+
     public int nexusSurveyCount() {
         return surveyCount(nexusSurveyScans, nexusSurveySites);
     }
 
     public int totalSurveyCount() {
-        return orbitSurveyCount() + moonSurveyCount() + marsSurveyCount() + europaSurveyCount() + nexusSurveyCount();
+        return orbitSurveyCount() + moonSurveyCount() + marsSurveyCount() + europaSurveyCount()
+                + saturnSurveyCount() + titanSurveyCount() + nexusSurveyCount();
     }
 
     public boolean hasTerminalMissionCacheClaimed(String missionId) {
@@ -1303,6 +1577,10 @@ public class EchoTerminalProgress {
         tag.putBoolean("mars_ash_basin_visited", marsAshBasinVisited);
         tag.putBoolean("europa_route_unlocked", europaRouteUnlocked);
         tag.putBoolean("europa_cryo_ocean_visited", europaCryoOceanVisited);
+        tag.putBoolean("saturn_route_unlocked", saturnRouteUnlocked);
+        tag.putBoolean("saturn_ring_graveyard_visited", saturnRingGraveyardVisited);
+        tag.putBoolean("titan_route_unlocked", titanRouteUnlocked);
+        tag.putBoolean("titan_methane_shelf_visited", titanMethaneShelfVisited);
         tag.putBoolean("deep_space_protocol_unlocked", deepSpaceProtocolUnlocked);
         tag.putBoolean("anomaly_belt_entered", anomalyBeltEntered);
         tag.putBoolean("echo_zero_encountered", echoZeroEncountered);
@@ -1327,29 +1605,41 @@ public class EchoTerminalProgress {
         tag.putInt("moon_survey_scans", moonSurveyScans);
         tag.putInt("mars_survey_scans", marsSurveyScans);
         tag.putInt("europa_survey_scans", europaSurveyScans);
+        tag.putInt("saturn_survey_scans", saturnSurveyScans);
+        tag.putInt("titan_survey_scans", titanSurveyScans);
         tag.putInt("nexus_survey_scans", nexusSurveyScans);
         tag.putString("orbit_survey_sites", orbitSurveySites);
         tag.putString("moon_survey_sites", moonSurveySites);
         tag.putString("mars_survey_sites", marsSurveySites);
         tag.putString("europa_survey_sites", europaSurveySites);
+        tag.putString("saturn_survey_sites", saturnSurveySites);
+        tag.putString("titan_survey_sites", titanSurveySites);
         tag.putString("nexus_survey_sites", nexusSurveySites);
         tag.putBoolean("orbit_survey_complete", orbitSurveyComplete);
         tag.putBoolean("moon_survey_complete", moonSurveyComplete);
         tag.putBoolean("mars_survey_complete", marsSurveyComplete);
         tag.putBoolean("europa_survey_complete", europaSurveyComplete);
+        tag.putBoolean("saturn_survey_complete", saturnSurveyComplete);
+        tag.putBoolean("titan_survey_complete", titanSurveyComplete);
         tag.putBoolean("nexus_stabilized", nexusStabilized);
         tag.putInt("stationRelayRepairs", stationRelayRepairs);
         tag.putInt("lunarExtractorRepairs", lunarExtractorRepairs);
         tag.putInt("marsPressureRepairs", marsPressureRepairs);
         tag.putInt("europaArrayRepairs", europaArrayRepairs);
+        tag.putInt("saturnRelayRepairs", saturnRelayRepairs);
+        tag.putInt("titanPumpRepairs", titanPumpRepairs);
         tag.putString("stationRelaySites", stationRelaySites);
         tag.putString("lunarExtractorSites", lunarExtractorSites);
         tag.putString("marsPressureSites", marsPressureSites);
         tag.putString("europaArraySites", europaArraySites);
+        tag.putString("saturnRelaySites", saturnRelaySites);
+        tag.putString("titanPumpSites", titanPumpSites);
         tag.putBoolean("stationNetworkRestored", stationNetworkRestored);
         tag.putBoolean("lunarExtractorOnline", lunarExtractorOnline);
         tag.putBoolean("marsHabitatsPressurized", marsHabitatsPressurized);
         tag.putBoolean("europaArrayCalibrated", europaArrayCalibrated);
+        tag.putBoolean("saturnRelaysRestored", saturnRelaysRestored);
+        tag.putBoolean("titanPumpsPressurized", titanPumpsPressurized);
         tag.putBoolean("midGameObjectivesSeen", true);
         tag.putString("activeFactionContract", activeFactionContract);
         tag.putString("completedFactionContracts", completedFactionContracts);
@@ -1374,6 +1664,10 @@ public class EchoTerminalProgress {
         progress.europaRouteUnlocked = tag.getBooleanOr("europa_route_unlocked", false);
         progress.europaCryoOceanVisited = tag.getBooleanOr("europa_cryo_ocean_visited", false);
         progress.deepSpaceProtocolUnlocked = tag.getBooleanOr("deep_space_protocol_unlocked", false);
+        progress.saturnRouteUnlocked = tag.getBooleanOr("saturn_route_unlocked", progress.deepSpaceProtocolUnlocked);
+        progress.saturnRingGraveyardVisited = tag.getBooleanOr("saturn_ring_graveyard_visited", progress.deepSpaceProtocolUnlocked);
+        progress.titanRouteUnlocked = tag.getBooleanOr("titan_route_unlocked", progress.deepSpaceProtocolUnlocked);
+        progress.titanMethaneShelfVisited = tag.getBooleanOr("titan_methane_shelf_visited", progress.deepSpaceProtocolUnlocked);
         progress.anomalyBeltEntered = tag.getBooleanOr("anomaly_belt_entered", false);
         progress.echoZeroEncountered = tag.getBooleanOr("echo_zero_encountered", false);
         progress.echoZeroRewardClaimed = tag.getBooleanOr("echo_zero_reward_claimed", false);
@@ -1397,29 +1691,41 @@ public class EchoTerminalProgress {
         progress.moonSurveyScans = tag.getIntOr("moon_survey_scans", 0);
         progress.marsSurveyScans = tag.getIntOr("mars_survey_scans", 0);
         progress.europaSurveyScans = tag.getIntOr("europa_survey_scans", 0);
+        progress.saturnSurveyScans = tag.getIntOr("saturn_survey_scans", progress.deepSpaceProtocolUnlocked ? 3 : 0);
+        progress.titanSurveyScans = tag.getIntOr("titan_survey_scans", progress.deepSpaceProtocolUnlocked ? 3 : 0);
         progress.nexusSurveyScans = tag.getIntOr("nexus_survey_scans", 0);
         progress.orbitSurveySites = tag.getStringOr("orbit_survey_sites", "");
         progress.moonSurveySites = tag.getStringOr("moon_survey_sites", "");
         progress.marsSurveySites = tag.getStringOr("mars_survey_sites", "");
         progress.europaSurveySites = tag.getStringOr("europa_survey_sites", "");
+        progress.saturnSurveySites = tag.getStringOr("saturn_survey_sites", progress.deepSpaceProtocolUnlocked ? "legacy:saturn:a|legacy:saturn:b|legacy:saturn:c" : "");
+        progress.titanSurveySites = tag.getStringOr("titan_survey_sites", progress.deepSpaceProtocolUnlocked ? "legacy:titan:a|legacy:titan:b|legacy:titan:c" : "");
         progress.nexusSurveySites = tag.getStringOr("nexus_survey_sites", "");
         progress.orbitSurveyComplete = tag.getBooleanOr("orbit_survey_complete", false);
         progress.moonSurveyComplete = tag.getBooleanOr("moon_survey_complete", false);
         progress.marsSurveyComplete = tag.getBooleanOr("mars_survey_complete", false);
         progress.europaSurveyComplete = tag.getBooleanOr("europa_survey_complete", false);
+        progress.saturnSurveyComplete = tag.getBooleanOr("saturn_survey_complete", progress.deepSpaceProtocolUnlocked);
+        progress.titanSurveyComplete = tag.getBooleanOr("titan_survey_complete", progress.deepSpaceProtocolUnlocked);
         progress.nexusStabilized = tag.getBooleanOr("nexus_stabilized", false);
         progress.stationRelayRepairs = tag.getIntOr("stationRelayRepairs", 0);
         progress.lunarExtractorRepairs = tag.getIntOr("lunarExtractorRepairs", 0);
         progress.marsPressureRepairs = tag.getIntOr("marsPressureRepairs", 0);
         progress.europaArrayRepairs = tag.getIntOr("europaArrayRepairs", 0);
+        progress.saturnRelayRepairs = tag.getIntOr("saturnRelayRepairs", progress.deepSpaceProtocolUnlocked ? 3 : 0);
+        progress.titanPumpRepairs = tag.getIntOr("titanPumpRepairs", progress.deepSpaceProtocolUnlocked ? 3 : 0);
         progress.stationRelaySites = tag.getStringOr("stationRelaySites", "");
         progress.lunarExtractorSites = tag.getStringOr("lunarExtractorSites", "");
         progress.marsPressureSites = tag.getStringOr("marsPressureSites", "");
         progress.europaArraySites = tag.getStringOr("europaArraySites", "");
+        progress.saturnRelaySites = tag.getStringOr("saturnRelaySites", progress.deepSpaceProtocolUnlocked ? "legacy:saturn:a|legacy:saturn:b|legacy:saturn:c" : "");
+        progress.titanPumpSites = tag.getStringOr("titanPumpSites", progress.deepSpaceProtocolUnlocked ? "legacy:titan:a|legacy:titan:b|legacy:titan:c" : "");
         progress.stationNetworkRestored = tag.getBooleanOr("stationNetworkRestored", false);
         progress.lunarExtractorOnline = tag.getBooleanOr("lunarExtractorOnline", false);
         progress.marsHabitatsPressurized = tag.getBooleanOr("marsHabitatsPressurized", false);
         progress.europaArrayCalibrated = tag.getBooleanOr("europaArrayCalibrated", false);
+        progress.saturnRelaysRestored = tag.getBooleanOr("saturnRelaysRestored", progress.deepSpaceProtocolUnlocked);
+        progress.titanPumpsPressurized = tag.getBooleanOr("titanPumpsPressurized", progress.deepSpaceProtocolUnlocked);
         boolean midGameSeen = tag.getBooleanOr("midGameObjectivesSeen", false);
         if (!midGameSeen) {
             progress.stationNetworkRestored = progress.stationNetworkRestored || progress.lunarSignalInvestigated
@@ -1433,6 +1739,10 @@ public class EchoTerminalProgress {
                     || progress.europaCryoOceanVisited || progress.deepSpaceProtocolUnlocked || progress.anomalyBeltEntered
                     || progress.echoZeroEncountered;
             progress.europaArrayCalibrated = progress.europaArrayCalibrated || progress.deepSpaceProtocolUnlocked
+                    || progress.anomalyBeltEntered || progress.echoZeroEncountered;
+            progress.saturnRelaysRestored = progress.saturnRelaysRestored || progress.deepSpaceProtocolUnlocked
+                    || progress.anomalyBeltEntered || progress.echoZeroEncountered;
+            progress.titanPumpsPressurized = progress.titanPumpsPressurized || progress.deepSpaceProtocolUnlocked
                     || progress.anomalyBeltEntered || progress.echoZeroEncountered;
         }
         progress.midGameObjectivesSeen = true;

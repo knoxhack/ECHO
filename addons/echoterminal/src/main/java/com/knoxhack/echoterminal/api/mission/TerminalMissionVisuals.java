@@ -20,7 +20,7 @@ public record TerminalMissionVisuals(
             TerminalMissionDefinition definition,
             TerminalMissionSnapshot snapshot) {
         String category = definition == null ? "" : definition.category();
-        Identifier art = TerminalVisualAssets.missionCategoryArt(category);
+        Identifier art = TerminalVisualAssets.missionHeroArt(definition == null ? null : definition.id(), category);
         String track = trackType(category);
         String tone = snapshot == null ? "neutral" : switch (snapshot.status()) {
             case CLAIMABLE, COMPLETED, CLAIMED -> "success";

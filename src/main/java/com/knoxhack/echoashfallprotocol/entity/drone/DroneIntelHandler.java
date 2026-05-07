@@ -28,6 +28,7 @@ public class DroneIntelHandler {
     // Intel collection cooldowns per drone
     private int reconCooldown = 0;
     private int interceptCooldown = 0;
+    private int dossierCooldown = 0;
     
     /**
      * Called each tick when the drone is in SCOUT mode
@@ -112,8 +113,9 @@ public class DroneIntelHandler {
                     
                     // Priority target
                     if (drone.getTarget() == null || !drone.getTarget().isAlive()) {
-                        // Mark for drone targeting
-                        // This would integrate with drone AI
+                        drone.setTarget(mob);
+                        drone.setAggressive(true);
+                        return;
                     }
                 }
             }
@@ -170,15 +172,23 @@ public class DroneIntelHandler {
      * Update faction dossiers based on player proximity to faction areas
      */
     public void updateDossierFromProximity(EchoCompanionDrone drone, ServerLevel level) {
+        if (dossierCooldown > 0) {
+            dossierCooldown--;
+            return;
+        }
+        dossierCooldown = 100;
+
         Player owner = getOwner(drone, level);
         if (owner == null) return;
         
         BlockPos pos = drone.blockPosition();
         var territory = owner.getData(ModAttachments.FACTION_TERRITORY.get());
         
-        // Check biome influence at drone location
-        // This would need biome lookup
-        String biomeKey = level.getBiome(pos).toString();
+        String biomeKey = level.getBiome(pos)
+                .unwrapKey()
+                .map(Object::toString)
+                .map(DroneIntelHandler::extractBiomePath)
+                .orElse(level.getBiome(pos).toString());
         
         for (Identifier faction : AshfallFactionMap.all()) {
             int influence = territory.getBiomeInfluence(faction, biomeKey);
@@ -201,7 +211,11 @@ public class DroneIntelHandler {
         // Get owner from drone's owner UUID
         java.util.UUID ownerUUID = drone.getOwnerUUID();
         if (ownerUUID == null) return null;
-        
+
+        Player trackedOwner = drone.getOwner();
+        if (trackedOwner != null) {
+            return trackedOwner;
+        }
         return ((ServerLevel) level).getServer().getPlayerList().getPlayer(ownerUUID);
     }
     
@@ -251,6 +265,16 @@ public class DroneIntelHandler {
             return AshfallFactionMap.forEntity(entityId);
         }
         return null;
+    }
+
+    private static String extractBiomePath(String keyString) {
+        int slash = keyString.lastIndexOf('/');
+        int bracket = keyString.lastIndexOf(']');
+        if (slash >= 0 && bracket > slash) {
+            return keyString.substring(slash + 1, bracket);
+        }
+        int colon = keyString.lastIndexOf(':');
+        return colon >= 0 ? keyString.substring(colon + 1) : keyString;
     }
     
     private String generateTransmission(Identifier faction, FactionDiplomacy diplomacy, ServerLevel level) {

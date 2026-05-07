@@ -2,7 +2,9 @@
 
 Earth made its choice below. Orbit still calls it quarantine.
 
-ECHO: Orbital Remnants `1.5.0` is a post-Nexus addon chapter for the ECHO stack built on the bundled 26.1.2 NeoForge setup. It follows ECHO-7 along the pod's broken fall path from Earth recovery sites to Low Earth Orbit, Station ECHO debris, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, the Nexus Anomaly Belt, and the ECHO-0 quarantine protocol.
+ECHO: Orbital Remnants `1.5.0` is a post-Nexus addon chapter for the ECHO stack built on the bundled 26.1.2 NeoForge setup. It follows ECHO-7 along the pod's broken fall path from Earth recovery sites to Low Earth Orbit, Station ECHO debris, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, the Nexus Anomaly Belt, and the ECHO-0 quarantine protocol.
+
+Public beta promise: Orbital Remnants is a route survival adventure with deterministic hubs, compact faction contracts, and beta support/barter kiosks. It is not a full planetary RPG, bespoke animated encounter pack, or settlement/vendor expansion yet.
 
 ## Chapter Flow
 
@@ -14,7 +16,8 @@ After any ECHO: Ashfall Protocol Nexus choice, ECHO-7 controls orbital progressi
 - Build suit gear, oxygen support, launch infrastructure, and rocket parts.
 - Assemble the Emergency Rocket and reach orbit.
 - Restore Station ECHO systems, repair route networks, unlock later route vessels, survive hostile anomalies, and resolve ECHO-0.
-- Continue into the Living Route Worlds loop: explore deep route sites, map landmarks, stabilize hazards, finish post-ECHO-0 Nexus anchors, complete one faction contract, and seal the final survey network.
+- Follow the outer-system chain: Europa thermal work unlocks Saturn, Saturn relay work unlocks Titan, and Titan methane telemetry unlocks Deep Space Protocol.
+- Continue into the Living Route Worlds loop: explore deep route sites, map landmarks, stabilize hazards, finish post-ECHO-0 Nexus anchors, complete three faction contracts, and seal the final survey network.
 - Use the terminal's Next Step, SCAN, SURVEY, and faction contract reports whenever progression is blocked; ECHO guidance names missing hooks directly.
 
 ## Modular ECHO Integration
@@ -34,12 +37,12 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 - **Launch chain:** Launch Platform, Rocket Assembly Frame, Fuel Refinery, Oxygen Compressor, pressure suit, oxygen tank, and six rocket assembly parts.
 - **Suit survival:** oxygen, pressure, helmet seal, suit leak state, radiation, gravity, station power, emergency oxygen cells, suit sealant, and suit modules.
 - **Orbital machines:** one-input/one-output machines with processing progress and internal charge.
-- **Space routes:** Emergency Rocket, Orbital Shuttle, Mars Transfer Window, Europa Transfer Window, and Nexus Drive Vessel.
-- **Route terrain:** deterministic orbital debris corridors, lunar scar trenches, Martian ash/cavern fields, Europa ice pockets, and Nexus anomaly chains.
-- **Survey objectives:** terminal-tracked unique landmark scans for Orbit, Moon, Mars, Europa, and post-ECHO Nexus stabilization.
-- **Mid-game route objectives:** three-site repair chains for the Station Network, Lunar Helium Extractors, Mars Pressure Consoles, and Europa Thermal Arrays.
+- **Space routes:** Emergency Rocket, Orbital Shuttle, Mars Transfer Window, Europa Transfer Window, Saturn Transfer Window, Titan Transfer Window, and Nexus Drive Vessel.
+- **Route terrain:** deterministic orbital debris corridors, lunar scar trenches, Martian ash/cavern fields, Europa ice pockets, Saturn ring graveyard platforms, Titan methane shelves, and Nexus anomaly chains.
+- **Survey objectives:** terminal-tracked unique landmark scans for Orbit, Moon, Mars, Europa, Saturn, Titan, and post-ECHO Nexus stabilization.
+- **Mid-game route objectives:** three-site repair chains for the Station Network, Lunar Helium Extractors, Mars Pressure Consoles, Europa Thermal Arrays, Saturn Ring Relays, and Titan Methane Pumps.
 - **Deep sites:** three repeatable site families per route with fixed caches, objective blocks, traversal hooks, and local hazard pressure.
-- **Factions:** Orbital Remnant, Void Salvagers, and Nexus Choir alignment rewards plus terminal-driven contracts.
+- **Factions:** Orbital Remnant, Void Salvagers, and Nexus Choir alignment rewards, beta support/barter kiosks, relay hubs, and terminal-driven contracts.
 - **Threats:** ECHO drones, Vacuum Wraiths, Broken Astronaut Suits, Nexus Husks, major route encounters, and ECHO-0.
 
 ## Progression
@@ -52,11 +55,13 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 6. Lunar Helium Extractors
 7. Mars Pressure Consoles
 8. Europa Thermal Arrays
-9. Deep Space Protocol
-10. Nexus Anomaly Belt and ECHO-0
-11. Living Route Worlds Survey Network
-12. First faction contract completion
-13. Final network seal
+9. Saturn Ring Relays
+10. Titan Methane Pumps
+11. Deep Space Protocol
+12. Nexus Anomaly Belt and ECHO-0
+13. Living Route Worlds Survey Network
+14. Three faction contract completions
+15. Final network seal
 
 ## Build
 
@@ -90,9 +95,9 @@ The built jar is produced in `addons/echoorbitalremnants/build/libs/`.
 1. Run `.\gradlew.bat :echoorbitalremnants:build`.
 2. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer`.
 3. Launch a client and craft the ECHO-7 Terminal, Signal Analyzer, launch chain, and route vessels.
-4. Confirm first-play flow: Earth calibration, launch, Orbit, Moon, Mars, Europa, ECHO-0, SURVEY stabilization, one faction contract, and the final network seal.
+4. Confirm first-play flow: Earth calibration, launch, Orbit, Moon, Mars, Europa, Saturn, Titan, Nexus, ECHO-0, SURVEY stabilization, three faction contracts, and the final network seal.
 5. With ECHO: Terminal installed, confirm Orbital Command, Survey, and ECHO mission tabs render and that optional support caches claim once.
-6. Complete at least one faction pledge and terminal contract.
+6. Confirm faction pledges, beta support/barter hub wording, and three ECHO-tab faction contracts.
 7. Run the automated build and GameTest server before packaging.
 8. Expected jar: `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
 

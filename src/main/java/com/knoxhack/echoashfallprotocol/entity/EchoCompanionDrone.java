@@ -111,6 +111,7 @@ public class EchoCompanionDrone extends Mob {
     
     // Combat AI for faction-aware targeting
     private final com.knoxhack.echoashfallprotocol.entity.drone.DroneCombatAI combatAI = new com.knoxhack.echoashfallprotocol.entity.drone.DroneCombatAI(this);
+    private transient Player cachedOwner;
 
     public EchoCompanionDrone(EntityType<? extends Mob> type, Level level) {
         super(type, level);
@@ -150,10 +151,12 @@ public class EchoCompanionDrone extends Mob {
 
     public void setOwner(Player player) {
         this.entityData.set(DATA_OWNER, player.getUUID().toString());
+        this.cachedOwner = player;
     }
 
     public void setOwnerUUID(UUID uuid) {
         this.entityData.set(DATA_OWNER, uuid != null ? uuid.toString() : "");
+        this.cachedOwner = null;
     }
 
     public UUID getOwnerUUID() {
@@ -377,7 +380,14 @@ public class EchoCompanionDrone extends Mob {
     public Player getOwner() {
         UUID ownerId = getOwnerUUID();
         if (ownerId == null) return null;
-        return this.level().getPlayerByUUID(ownerId);
+        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && ownerId.equals(this.cachedOwner.getUUID())) {
+            return this.cachedOwner;
+        }
+        Player owner = this.level().getPlayerByUUID(ownerId);
+        if (owner != null) {
+            this.cachedOwner = owner;
+        }
+        return owner;
     }
 
     // --- ECHO-7 Voice Linkage ---
@@ -446,13 +456,18 @@ public class EchoCompanionDrone extends Mob {
             // Faction intel gathering based on drone mode
             if (serverLevel != null) {
                 switch (mode) {
-                    case SCOUT -> intelHandler.tickScoutMode(this, serverLevel);
+                    case SCOUT -> {
+                        intelHandler.tickScoutMode(this, serverLevel);
+                    }
                     case COMBAT -> {
                         intelHandler.tickCombatMode(this, serverLevel);
                         combatAI.tickCombat(serverLevel); // Faction-aware targeting + abilities
                     }
                     case PATROL -> intelHandler.tickCombatMode(this, serverLevel);
                     default -> {}
+                }
+                if (mode == DroneMode.SCOUT || mode == DroneMode.PATROL) {
+                    intelHandler.updateDossierFromProximity(this, serverLevel);
                 }
                 // Always try to intercept transmissions (all modes)
                 intelHandler.tryInterceptTransmission(this, serverLevel);

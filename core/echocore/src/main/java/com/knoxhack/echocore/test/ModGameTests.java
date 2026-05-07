@@ -49,6 +49,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("core_service_noops", () -> ModGameTests::coreServiceNoops);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_PLATFORM_CONTRACTS =
             TEST_FUNCTIONS.register("core_platform_contracts", () -> ModGameTests::corePlatformContracts);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_BETA_SERVICE_CONTRACTS =
+            TEST_FUNCTIONS.register("core_beta_service_contracts", () -> ModGameTests::coreBetaServiceContracts);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_FACTION_DATA =
             TEST_FUNCTIONS.register("core_faction_data", () -> ModGameTests::coreFactionData);
 
@@ -63,6 +65,7 @@ public final class ModGameTests {
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("core_release"));
         register(event, environment, "core_service_noops", CORE_SERVICE_NOOPS.getId());
         register(event, environment, "core_platform_contracts", CORE_PLATFORM_CONTRACTS.getId());
+        register(event, environment, "core_beta_service_contracts", CORE_BETA_SERVICE_CONTRACTS.getId());
         register(event, environment, "core_faction_data", CORE_FACTION_DATA.getId());
     }
 
@@ -261,6 +264,73 @@ public final class ModGameTests {
                 throw new IllegalStateException("test intel mirror failure");
             });
             EchoCoreServices.mirrorIntel(null, EchoCore.MODID, "test", "Test", "Test content");
+            EchoCoreServices.clearPlatformServicesForTests();
+        });
+        helper.succeed();
+    }
+
+    private static void coreBetaServiceContracts(GameTestHelper helper) {
+        EchoServiceRegistry.withClearedForTests(() -> {
+            EchoCoreServices.clearPlatformServicesForTests();
+
+            EchoProgressLedger ledger = new EchoProgressLedger(
+                    new java.util.LinkedHashSet<>(List.of("orbital:launch_ready", "", "ashfall:drop_pod_ready")),
+                    java.util.Map.of("beta.route", "ashfall_to_orbital", "", "ignored"),
+                    new java.util.LinkedHashSet<>(List.of("orbital:scan_launch_site", "ashfall:repair_terminal")));
+            helper.assertTrue(List.copyOf(ledger.milestones()).equals(List.of("ashfall:drop_pod_ready", "orbital:launch_ready")),
+                    "Progress ledger ids should normalize to sorted, non-blank beta milestone ids");
+            helper.assertTrue("ashfall_to_orbital".equals(ledger.flag("beta.route")),
+                    "Progress ledger flags should preserve canonical beta route handoff ids");
+            boolean immutableLedger = false;
+            try {
+                ledger.milestones().add("mutation");
+            } catch (UnsupportedOperationException expected) {
+                immutableLedger = true;
+            }
+            helper.assertTrue(immutableLedger, "Progress ledger snapshots must be immutable API values");
+
+            EchoCoreServices.registerRouteRecordService(player -> List.of(
+                    new EchoRouteRecord(id("orbital_launch_chain"), "orbital_remnants", "Launch Chain",
+                            "Launch", "Overworld", "IN PROGRESS", "Beta route handoff.", false),
+                    new EchoRouteRecord(id("ashfall_recovery_route"), "ashfall", "Recovery Route",
+                            "Survival", "Overworld", "ACTIVE", "Ashfall beta route.", false)));
+            List<EchoRouteRecord> routes = EchoCoreServices.routeRecords(null);
+            helper.assertTrue(routes.size() == 2, "Route record contract should expose both beta route records");
+            helper.assertTrue("ashfall".equals(routes.get(0).chapterId()),
+                    "Route record contract should sort by stable chapter id before title");
+            helper.assertTrue(routes.stream().anyMatch(route -> route.id().equals(id("orbital_launch_chain"))),
+                    "Route record contract should keep canonical Orbital handoff route id");
+
+            java.util.concurrent.atomic.AtomicBoolean stored = new java.util.concurrent.atomic.AtomicBoolean(false);
+            java.util.concurrent.atomic.AtomicBoolean claimed = new java.util.concurrent.atomic.AtomicBoolean(false);
+            EchoCoreServices.registerTerminalRewardService(new TerminalRewardService() {
+                @Override
+                public boolean storeRewards(net.minecraft.server.level.ServerPlayer player, String missionId,
+                        List<net.minecraft.world.item.ItemStack> rewards) {
+                    stored.set("ashfall:repair_terminal".equals(missionId) && rewards.isEmpty());
+                    return true;
+                }
+
+                @Override
+                public boolean claimRewards(net.minecraft.server.level.ServerPlayer player) {
+                    claimed.set(true);
+                    return true;
+                }
+
+                @Override
+                public int pendingRewardCount(net.minecraft.world.entity.player.Player player) {
+                    return -4;
+                }
+            });
+            helper.assertTrue(EchoCoreServices.storeTerminalRewards(null, "ashfall:repair_terminal", null),
+                    "Terminal reward service should accept sanitized reward lists");
+            helper.assertTrue(stored.get(), "Terminal reward service should receive empty rewards instead of null");
+            helper.assertTrue(EchoCoreServices.claimTerminalRewards(null),
+                    "Terminal reward service should route claim calls through the registered provider");
+            helper.assertTrue(claimed.get(), "Terminal reward provider should receive claim calls");
+            helper.assertTrue(EchoCoreServices.pendingTerminalRewardCount(null) == 0,
+                    "Terminal reward pending count should clamp provider underflow to zero");
+
             EchoCoreServices.clearPlatformServicesForTests();
         });
         helper.succeed();

@@ -12,12 +12,4 @@ public class TerminalEventHandler {
             event.setCanceled(true);
         }
     }
-
-    @SubscribeEvent
-    public void onCharacterTyped(ScreenEvent.CharacterTyped.Pre event) {
-        if (event.getScreen() instanceof EchoTerminalScreen screen
-                && screen.handleCharTyped(event.getCharacterEvent())) {
-            event.setCanceled(true);
-        }
-    }
 }

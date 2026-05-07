@@ -219,12 +219,12 @@ public class RelayStationBlock extends Block {
 
     private void discoverStation(Player player, BlockPos pos) {
         RadioNetwork.StationInfo station = StationRegistry.getOrCreateStation(pos);
-        RadioNetwork.get(player).discoverStation(station.getId());
+        RadioNetwork.get(player).discoverStation(station);
     }
 
     private void activateStationForPlayer(Player player, BlockPos pos) {
         RadioNetwork.StationInfo station = StationRegistry.getOrCreateStation(pos);
-        RadioNetwork.get(player).activateStation(station.getId());
+        RadioNetwork.get(player).activateStation(station);
     }
     
     /**

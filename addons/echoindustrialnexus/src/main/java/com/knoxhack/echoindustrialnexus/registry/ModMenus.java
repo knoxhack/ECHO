@@ -1,0 +1,24 @@
+package com.knoxhack.echoindustrialnexus.registry;
+
+import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
+import com.knoxhack.echoindustrialnexus.menu.IndustrialMachineMenu;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.MenuType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public final class ModMenus {
+   private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, EchoIndustrialNexus.MODID);
+
+   public static final DeferredHolder<MenuType<?>, MenuType<IndustrialMachineMenu>> INDUSTRIAL_MACHINE =
+      MENUS.register("industrial_machine", () -> IMenuTypeExtension.create(IndustrialMachineMenu::fromNetwork));
+
+   private ModMenus() {
+   }
+
+   public static void register(IEventBus eventBus) {
+      MENUS.register(eventBus);
+   }
+}

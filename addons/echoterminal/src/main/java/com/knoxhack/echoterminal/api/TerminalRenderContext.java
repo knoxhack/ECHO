@@ -1,6 +1,9 @@
 package com.knoxhack.echoterminal.api;
 
 import com.knoxhack.echoterminal.network.TerminalActionPacket;
+import com.knoxhack.echoterminal.api.theme.TerminalTheme;
+import com.knoxhack.echoterminal.api.theme.TerminalThemeContext;
+import com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
@@ -21,10 +24,30 @@ public record TerminalRenderContext(
         int contentHeight,
         int scrollY,
         Consumer<Identifier> tabNavigator,
-        Predicate<Identifier> tabAvailability) {
+        Predicate<Identifier> tabAvailability,
+        TerminalTheme theme,
+        TerminalThemeContext themeContext) {
     public TerminalRenderContext {
         tabNavigator = tabNavigator == null ? ignored -> { } : tabNavigator;
         tabAvailability = tabAvailability == null ? ignored -> false : tabAvailability;
+        theme = theme == null ? TerminalThemeRegistry.defaultTheme() : theme;
+        themeContext = themeContext == null ? TerminalThemeContext.empty() : themeContext;
+    }
+
+    public TerminalRenderContext(
+            Minecraft minecraft,
+            Player player,
+            int screenWidth,
+            int screenHeight,
+            int contentX,
+            int contentY,
+            int contentWidth,
+            int contentHeight,
+            int scrollY,
+            Consumer<Identifier> tabNavigator,
+            Predicate<Identifier> tabAvailability) {
+        this(minecraft, player, screenWidth, screenHeight, contentX, contentY, contentWidth, contentHeight,
+                scrollY, tabNavigator, tabAvailability, TerminalThemeRegistry.defaultTheme(), TerminalThemeContext.empty());
     }
 
     public void sendAction(Identifier tabId, Identifier actionId, String payload) {
@@ -43,6 +66,24 @@ public record TerminalRenderContext(
         } else {
             playRejectedSound();
         }
+    }
+
+    public TerminalRenderContext withThemeContext(TerminalThemeContext replacement) {
+        return new TerminalRenderContext(minecraft, player, screenWidth, screenHeight, contentX, contentY,
+                contentWidth, contentHeight, scrollY, tabNavigator, tabAvailability, theme, replacement);
+    }
+
+    public TerminalRenderContext withChapterTheme(String chapterId, String chapterTitle, String namespace) {
+        TerminalThemeContext current = themeContext == null ? TerminalThemeContext.empty() : themeContext;
+        return withThemeContext(new TerminalThemeContext(
+                current.activeTabId(),
+                current.navigationGroup(),
+                chapterId,
+                chapterTitle,
+                namespace,
+                current.tick(),
+                current.visualAssets(),
+                current.reducedMotion()));
     }
 
     public void playCommandSound() {

@@ -241,8 +241,7 @@ public class QuestData implements ValueIOSerializable {
             buf.writeUtf(entry.getKey());
             buf.writeVarInt(entry.getValue().size());
             for (ItemStack stack : entry.getValue()) {
-                buf.writeUtf(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-                buf.writeVarInt(stack.getCount());
+                ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, stack);
             }
         }
     }
@@ -255,12 +254,9 @@ public class QuestData implements ValueIOSerializable {
             int rewardCount = buf.readVarInt();
             List<ItemStack> stacks = new ArrayList<>();
             for (int j = 0; j < rewardCount; j++) {
-                Identifier id = Identifier.tryParse(buf.readUtf());
-                int count = buf.readVarInt();
-                if (id == null || count <= 0) continue;
-                Item item = BuiltInRegistries.ITEM.getValue(id);
-                if (item != null) {
-                    stacks.add(new ItemStack(item, count));
+                ItemStack stack = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
+                if (!stack.isEmpty()) {
+                    stacks.add(stack);
                 }
             }
             if (!missionId.isEmpty() && !stacks.isEmpty()) {
@@ -1041,10 +1037,14 @@ public class QuestData implements ValueIOSerializable {
         for (Map.Entry<String, List<ItemStack>> entry : pendingRewards.entrySet()) {
             output.putString("rewardMission_" + idx, entry.getKey());
             output.putInt("rewardCount_" + idx, entry.getValue().size());
+            ValueOutput.TypedOutputList<ItemStack> fullRewardStacks =
+                    output.list("rewardStacks_" + idx, ItemStack.CODEC);
             for (int i = 0; i < entry.getValue().size(); i++) {
                 ItemStack stack = entry.getValue().get(i);
-                // Store item id + count. Mission rewards are plain ItemStacks with no NBT
-                // (see MissionRegistry); full NBT persistence would require a HolderLookup.Provider.
+                if (!stack.isEmpty()) {
+                    fullRewardStacks.add(stack.copy());
+                }
+                // Keep the legacy id/count keys so older or malformed entries remain readable.
                 output.putString("rewardItem_" + idx + "_" + i + "_id",
                         BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
                 output.putInt("rewardItem_" + idx + "_" + i + "_count", stack.getCount());
@@ -1236,15 +1236,22 @@ public class QuestData implements ValueIOSerializable {
             if (missionId.isEmpty()) continue;
             int rewardCount = input.getIntOr("rewardCount_" + i, 0);
             List<ItemStack> rewards = new ArrayList<>();
-            for (int j = 0; j < rewardCount; j++) {
-                String itemId = input.getStringOr("rewardItem_" + i + "_" + j + "_id", "");
-                int itemCount = input.getIntOr("rewardItem_" + i + "_" + j + "_count", 0);
-                if (itemId.isEmpty() || itemCount <= 0) continue;
-                Identifier id = Identifier.tryParse(itemId);
-                if (id == null) continue;
-                Item item = BuiltInRegistries.ITEM.getValue(id);
-                if (item != null) {
-                    rewards.add(new ItemStack(item, itemCount));
+            for (ItemStack stack : input.listOrEmpty("rewardStacks_" + i, ItemStack.CODEC)) {
+                if (!stack.isEmpty()) {
+                    rewards.add(stack.copy());
+                }
+            }
+            if (rewards.isEmpty()) {
+                for (int j = 0; j < rewardCount; j++) {
+                    String itemId = input.getStringOr("rewardItem_" + i + "_" + j + "_id", "");
+                    int itemCount = input.getIntOr("rewardItem_" + i + "_" + j + "_count", 0);
+                    if (itemId.isEmpty() || itemCount <= 0) continue;
+                    Identifier id = Identifier.tryParse(itemId);
+                    if (id == null) continue;
+                    Item item = BuiltInRegistries.ITEM.getValue(id);
+                    if (item != null) {
+                        rewards.add(new ItemStack(item, itemCount));
+                    }
                 }
             }
             if (!rewards.isEmpty()) {

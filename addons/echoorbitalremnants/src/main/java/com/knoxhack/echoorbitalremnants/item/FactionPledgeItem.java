@@ -83,6 +83,10 @@ public class FactionPledgeItem extends Item {
             this.displayName = displayName;
         }
 
+        public String displayName() {
+            return displayName;
+        }
+
         abstract void grantReward(Player player);
     }
 }

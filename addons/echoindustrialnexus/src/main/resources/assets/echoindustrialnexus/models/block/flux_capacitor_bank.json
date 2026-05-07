@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "echoindustrialnexus:block/flux_capacitor_bank"
+  }
+}
