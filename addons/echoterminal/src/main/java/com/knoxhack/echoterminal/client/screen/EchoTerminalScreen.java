@@ -17,7 +17,6 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -119,17 +118,17 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             setScroll(tab, scrollFor(tab) + Math.max(36, contentH - 34));
             return true;
         }
-        if ((key == GLFW.GLFW_KEY_UP || key == GLFW.GLFW_KEY_W) && !tabs.isEmpty()) {
+        if (key == GLFW.GLFW_KEY_UP && !tabs.isEmpty()) {
             return selectGroupOffset(tabs, -1);
         }
-        if ((key == GLFW.GLFW_KEY_DOWN || key == GLFW.GLFW_KEY_S) && !tabs.isEmpty()) {
+        if (key == GLFW.GLFW_KEY_DOWN && !tabs.isEmpty()) {
             return selectGroupOffset(tabs, 1);
         }
-        if ((key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_A) && !tabs.isEmpty()) {
+        if (key == GLFW.GLFW_KEY_LEFT && !tabs.isEmpty()) {
             selectTab(Math.floorMod(activeTab - 1, tabs.size()), tabs);
             return true;
         }
-        if ((key == GLFW.GLFW_KEY_RIGHT || key == GLFW.GLFW_KEY_D || key == GLFW.GLFW_KEY_TAB) && !tabs.isEmpty()) {
+        if ((key == GLFW.GLFW_KEY_RIGHT || key == GLFW.GLFW_KEY_TAB) && !tabs.isEmpty()) {
             selectTab(Math.floorMod(activeTab + 1, tabs.size()), tabs);
             return true;
         }
@@ -142,15 +141,6 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             return true;
         }
         return super.keyPressed(event);
-    }
-
-    public boolean handleCharTyped(CharacterEvent event) {
-        TerminalRenderCache.beginFrame();
-        layout();
-        List<TerminalTab> tabs = tabs();
-        normalizeActiveTab(tabs);
-        TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
-        return tab != null && tab.charTyped(contextFor(tab, scrollFor(tab)), event);
     }
 
     @Override
@@ -400,8 +390,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private void drawFooter(GuiGraphicsExtractor graphics, List<TerminalTab> tabs) {
         String footer = layoutProfile == TerminalLayoutProfile.COMPACT_STACK
-                ? "ESC/Open Key Close   Arrows Navigate   Enter Command   Type Search   Wheel Scroll"
-                : "ESC/Open Key Close   Arrows Navigate   Enter Command   Type Search   Page/Wheel Scroll";
+                ? "ESC/Open Key Close   Arrows Navigate   Enter Command   Wheel Scroll"
+                : "ESC/Open Key Close   Arrows Navigate   Enter Command   Page/Wheel Scroll";
         String label = "";
         if (!tabs.isEmpty()) {
             label = "ECHO-7 LINK  |  " + navigationModel.activePathLabel(activeTab);
@@ -550,7 +540,26 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 contentY + 10 - scroll,
                 contentW - 22,
                 contentH - 20,
-                scroll);
+                scroll,
+                this::selectTabById,
+                this::hasTab);
+    }
+
+    private boolean hasTab(Identifier tabId) {
+        if (tabId == null) {
+            return false;
+        }
+        return tabs().stream().anyMatch(tab -> tab.descriptor().id().equals(tabId));
+    }
+
+    private void selectTabById(Identifier tabId) {
+        List<TerminalTab> tabs = tabs();
+        for (int i = 0; i < tabs.size(); i++) {
+            if (tabs.get(i).descriptor().id().equals(tabId)) {
+                selectTab(i, tabs);
+                return;
+            }
+        }
     }
 
     private void selectTab(int index, List<TerminalTab> tabs) {
