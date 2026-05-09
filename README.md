@@ -49,6 +49,15 @@ Addons communicate through `echocore` and `echoterminal` instead of reaching int
 7. Wake the Nexus campaign, scan six Prime Relays, resolve three relays, survive the Core countermeasure siege, then restore enough grid infrastructure to reach the Nexus Core and choose Restore, Destroy, or Control.
 8. Use FIELD > Reclamation to recover seeds and stabilize a small food route, then use ORBITAL / Orbital Command to begin the post-Nexus quarantine expansion and surface the Stationfall, Nexus, Industrial, and Blackbox chapter entries from the shared terminal.
 
+
+## GitHub Wiki Publishing
+
+The `wiki/` folder in this repo is the source-of-truth for wiki pages, but GitHub serves wiki content from the separate `Echo.wiki.git` repository.
+
+If the Wiki tab still shows “Create the first page”, publish the files in `wiki/` into `https://github.com/knoxhack/Echo.wiki.git`.
+
+See `docs/wiki_publish.md` and `tools/sync_wiki.sh` for the exact workflow.
+
 ## Requirements
 
 - Minecraft 26.1.2
