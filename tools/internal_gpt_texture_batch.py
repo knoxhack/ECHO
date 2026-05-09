@@ -46,6 +46,10 @@ class TextureRoot:
     modid: str
     textures: Path
 
+    @property
+    def asset_root(self) -> Path:
+        return self.textures.parent
+
 
 @dataclass(frozen=True)
 class TextureAsset:
@@ -85,6 +89,49 @@ ROOTS = (
         / "textures",
     ),
 )
+NON_GPT_EXCLUDED_MODIDS = {
+    "echoashfallprotocol",
+    "echoorbitalremnants",
+    "signalosexample",
+}
+
+
+def discover_non_gpt_roots() -> tuple[TextureRoot, ...]:
+    roots: list[TextureRoot] = []
+    addons_root = REPO_ROOT / "addons"
+    if not addons_root.exists():
+        return ()
+    for addon in sorted(path for path in addons_root.iterdir() if path.is_dir()):
+        assets_root = addon / "src" / "main" / "resources" / "assets"
+        if not assets_root.exists():
+            continue
+        for asset_root in sorted(path for path in assets_root.iterdir() if path.is_dir()):
+            modid = asset_root.name
+            if modid in NON_GPT_EXCLUDED_MODIDS:
+                continue
+            has_models = (asset_root / "models").exists()
+            has_textures = (asset_root / "textures").exists()
+            if not has_models and not has_textures:
+                continue
+            roots.append(TextureRoot(modid, modid, asset_root / "textures"))
+    return tuple(roots)
+
+
+NON_GPT_ROOTS = discover_non_gpt_roots()
+ALL_ROOTS = ROOTS + NON_GPT_ROOTS
+TARGET_ORDER = {root.target: index for index, root in enumerate(ALL_ROOTS)}
+
+THEME_HINTS = {
+    "echoagriculturereclamation": "reclaimed toxic agriculture, bio-lab greens, amber grow lights, clean seed-vault tech",
+    "echoblackboxprotocol": "black archive metal, pale memory fragments, violet/cyan corrupted protocol glow",
+    "echoconvoyprotocol": "rust-road convoy salvage, tires, fuel, rugged tan steel, hazard striping",
+    "echoindustrialnexus": "heavy industrial Nexus machinery, dark casings, orange hazard lights, cyan/violet power",
+    "echologisticsnetwork": "supply-network logistics gear, tagged crates, route UI tablets, teal/orange status accents",
+    "echonexusprotocol": "Nexus anomaly crystal, white signal bark, violet/cyan static energy, blackbox debris",
+    "signalos": "compact SignalOS terminal hardware, dark CRT glass, green/cyan signal glow",
+    "echostationfall": "damaged orbital station salvage, hull plating, red emergency lighting, cold blue oxygen gear",
+    "echoterminal": "ECHO terminal block, rugged metal casing, CRT interface glow, cyan-green diagnostics",
+}
 
 MACHINE_MARKERS = (
     "machine",
@@ -125,6 +172,12 @@ PLANT_MARKERS = (
     "fungus",
     "moss",
     "wheat",
+    "crop",
+    "orchid",
+    "beans",
+    "aloe",
+    "berry",
+    "berries",
 )
 
 ORE_MARKERS = (
@@ -152,9 +205,15 @@ UTILITY_BLOCK_MARKERS = (
     "meter",
     "table",
     "pod",
-    "glass",
     "door",
     "ladder",
+)
+
+CUTOUT_BLOCK_MARKERS = (
+    "glass",
+    "grate",
+    "cluster",
+    "tear",
 )
 
 ITEM_GROUP_MARKERS = (
@@ -191,6 +250,8 @@ def has_any(name: str, markers: Iterable[str]) -> bool:
 
 
 def classify_block(name: str) -> str:
+    if has_any(name, CUTOUT_BLOCK_MARKERS):
+        return "plant_cutout"
     if has_any(name, MACHINE_MARKERS) or has_any(name, UTILITY_BLOCK_MARKERS):
         return "machine_utility"
     if has_any(name, PLANT_MARKERS):
@@ -254,6 +315,10 @@ def prompt_hint_for(asset: TextureAsset | dict[str, str]) -> str:
     words = name.replace("_", " ")
     if category == "block":
         if group == "plant_cutout":
+            if "glass" in name:
+                return f"transparent Minecraft glass block texture for {words}, faint metal frame, subtle cracks or glow, magenta background only where transparent"
+            if "grate" in name:
+                return f"transparent industrial grate block texture for {words}, open slots, dark metal rim, magenta background only in holes"
             return f"transparent/cutout plant-like block tile for {words}, sparse leafy pixels"
         if group == "ore_crystal":
             return f"tileable mineral block for {words}, embedded readable chunks, no center emblem"
@@ -275,21 +340,136 @@ def prompt_hint_for(asset: TextureAsset | dict[str, str]) -> str:
     return f"readable 16x16 item sprite for {words}, transparent background"
 
 
+def read_json(path: Path) -> dict | None:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def write_json(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def parse_ref(ref: str, default_namespace: str) -> tuple[str, str] | None:
+    if not ref or ref.startswith("#"):
+        return None
+    if ":" in ref:
+        namespace, name = ref.split(":", 1)
+    else:
+        namespace, name = default_namespace, ref
+    return namespace, name
+
+
+def is_square_texture_size(path: Path) -> bool:
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+    except Exception:
+        return False
+    return width == height and width >= FINAL_SIZE and width % FINAL_SIZE == 0
+
+
+def model_texture_values(model: dict | None) -> list[str]:
+    if not isinstance(model, dict):
+        return []
+    textures = model.get("textures")
+    if not isinstance(textures, dict):
+        return []
+    return [value for value in textures.values() if isinstance(value, str) and not value.startswith("#")]
+
+
+def item_model_needs_own_texture(root: TextureRoot, name: str) -> bool:
+    model = read_json(root.asset_root / "models" / "item" / f"{name}.json")
+    if not isinstance(model, dict):
+        return False
+    parent = model.get("parent")
+    if isinstance(parent, str) and parent.startswith(f"{root.modid}:block/"):
+        return False
+    values = model_texture_values(model)
+    if not values:
+        return False
+    expected = f"item/{name}"
+    expected_path = root.asset_root / "textures" / f"{expected}.png"
+    for value in values:
+        parsed = parse_ref(value, root.modid)
+        if parsed is None:
+            continue
+        namespace, texture_path = parsed
+        if namespace == "minecraft":
+            return True
+        if namespace == root.modid:
+            if texture_path != expected:
+                return True
+            if not expected_path.exists():
+                return True
+    return False
+
+
+def block_model_needs_own_texture(root: TextureRoot, name: str) -> bool:
+    model = read_json(root.asset_root / "models" / "block" / f"{name}.json")
+    values = model_texture_values(model)
+    if not values:
+        return False
+    expected = f"block/{name}"
+    expected_path = root.asset_root / "textures" / f"{expected}.png"
+    for value in values:
+        parsed = parse_ref(value, root.modid)
+        if parsed is None:
+            continue
+        namespace, texture_path = parsed
+        if namespace == "minecraft":
+            return True
+        if namespace == root.modid and texture_path == expected and not expected_path.exists():
+            return True
+    return False
+
+
+def selected_roots(target: str) -> tuple[TextureRoot, ...]:
+    if target == "all":
+        return ALL_ROOTS
+    if target == "non-gpt-addons":
+        return NON_GPT_ROOTS
+    return tuple(root for root in ALL_ROOTS if root.target == target)
+
+
 def discover_assets(target: str, category: str) -> list[TextureAsset]:
     selected: list[TextureAsset] = []
-    for root in ROOTS:
-        if target != "all" and root.target != target:
-            continue
+    for root in selected_roots(target):
         for cat in ("block", "item"):
             if category != "all" and category != cat:
                 continue
+            paths: dict[str, Path] = {}
             folder = root.textures / cat
-            if not folder.exists():
-                continue
-            for path in sorted(folder.glob("*.png")):
-                with Image.open(path) as image:
-                    if image.size != (FINAL_SIZE, FINAL_SIZE):
-                        continue
+            if folder.exists():
+                for path in sorted(folder.glob("*.png")):
+                    if is_square_texture_size(path):
+                        paths[path.stem] = path
+            if cat == "item":
+                items_root = root.asset_root / "items"
+                if items_root.exists():
+                    for item_path in sorted(items_root.glob("*.json")):
+                        data = read_json(item_path)
+                        model = data.get("model") if isinstance(data, dict) else None
+                        model_id = model.get("model") if isinstance(model, dict) else None
+                        if isinstance(model_id, str) and model_id.startswith(f"{root.modid}:item/"):
+                            name = model_id.split("/", 1)[1]
+                            if item_model_needs_own_texture(root, name):
+                                paths.setdefault(name, root.textures / "item" / f"{name}.png")
+                models_root = root.asset_root / "models" / "item"
+                if models_root.exists():
+                    for model_path in sorted(models_root.glob("*.json")):
+                        if item_model_needs_own_texture(root, model_path.stem):
+                            paths.setdefault(model_path.stem, root.textures / "item" / f"{model_path.stem}.png")
+            else:
+                models_root = root.asset_root / "models" / "block"
+                if models_root.exists():
+                    for model_path in sorted(models_root.glob("*.json")):
+                        if block_model_needs_own_texture(root, model_path.stem):
+                            paths.setdefault(model_path.stem, root.textures / "block" / f"{model_path.stem}.png")
+            for name, path in sorted(paths.items()):
                 name = path.stem
                 group = classify_block(name) if cat == "block" else classify_item(name)
                 selected.append(
@@ -338,7 +518,7 @@ def asset_sort_key(asset: TextureAsset) -> tuple[int, int, int, str, str]:
         group_order = BLOCK_GROUP_ORDER.get(asset.group, 99)
     else:
         group_order = ITEM_GROUP_ORDER.get(asset.group, 99)
-    target_order = 0 if asset.target == "ashfall" else 1
+    target_order = TARGET_ORDER.get(asset.target, 99)
     return (cat_order, group_order, target_order, asset.name, asset.path)
 
 
@@ -357,7 +537,8 @@ def make_batch_id(target: str, category: str, assets: list[TextureAsset], offset
         return f"{target}_{category}_{offset:04d}_empty"
     end = offset + len(assets) - 1
     label = assets[0].category if category == "all" else category
-    return f"{target}_{label}_{offset:04d}_{end:04d}"
+    target_label = assets[0].target if len({asset.target for asset in assets}) == 1 else target
+    return f"{target_label}_{label}_{offset:04d}_{end:04d}"
 
 
 def sheet_prompt(assets: list[TextureAsset]) -> str:
@@ -397,7 +578,19 @@ def sheet_prompt(assets: list[TextureAsset]) -> str:
                 f"R{row}C{col}: {asset.category.upper()} {asset.modid}:{asset.name} - {asset.prompt_hint}."
             )
         else:
-            cell_lines.append(f"R{row}C{col}: leave as a simple neutral unused texture tile.")
+            if categories == {"item"}:
+                cell_lines.append(f"R{row}C{col}: leave empty, pure magenta #ff00ff only.")
+            else:
+                cell_lines.append(f"R{row}C{col}: leave as a simple neutral unused texture tile.")
+
+    theme_lines = []
+    for modid in sorted({asset.modid for asset in assets}):
+        hint = THEME_HINTS.get(modid)
+        if hint:
+            theme_lines.append(f"- {modid}: {hint}.")
+    theme_block = "\n".join(theme_lines)
+    if theme_block:
+        theme_block = "Addon visual themes:\n" + theme_block + "\n\n"
 
     return (
         f"{subject}\n"
@@ -407,6 +600,7 @@ def sheet_prompt(assets: list[TextureAsset]) -> str:
         "Style guide: follow the provided Minecraft 16x16 texture design guides. Clarity first. "
         "Rich reference look like the supplied machine sheets: dark industrial outlines where appropriate, chunky highlights, "
         "limited intentional accent colors, and clean silhouettes.\n\n"
+        f"{theme_block}"
         f"Rules: {rules}\n{background}\n\n"
         "Cell assignment, left to right, top to bottom:\n"
         + "\n".join(cell_lines)
@@ -952,6 +1146,13 @@ def item_from_cell(cell: Image.Image, output_size: int | None) -> Image.Image:
     return reframe_transparent_sprite(rgba, output_size or rgba.width)
 
 
+def cutout_block_from_cell(cell: Image.Image, asset: dict, output_size: int | None) -> Image.Image:
+    rgba = remove_key_background(cell.convert("RGBA"))
+    if "glass" in asset["name"] or "grate" in asset["name"]:
+        return center_crop_or_pad(rgba, output_size or rgba.width)
+    return reframe_transparent_sprite(rgba, output_size or rgba.width)
+
+
 def block_from_cell(cell: Image.Image, output_size: int | None) -> Image.Image:
     texture = cell.convert("RGBA")
     if output_size is not None:
@@ -961,7 +1162,7 @@ def block_from_cell(cell: Image.Image, output_size: int | None) -> Image.Image:
             texture = texture.resize((output_size, output_size), Image.Resampling.NEAREST)
     opaque = Image.new("RGBA", texture.size, (0, 0, 0, 255))
     opaque.alpha_composite(texture)
-    return opaque
+    return neutralize_solid_chroma_key(opaque)
 
 
 def visible_chroma_key_pixel_count(image: Image.Image) -> int:
@@ -970,6 +1171,117 @@ def visible_chroma_key_pixel_count(image: Image.Image) -> int:
         for r, g, b, a in image.convert("RGBA").getdata()
         if a and is_magenta_key_pixel(r, g, b, loose=False)
     )
+
+
+def is_exact_chroma_key_pixel(r: int, g: int, b: int, a: int) -> bool:
+    return (
+        a > 0
+        and r >= 220
+        and b >= 220
+        and g <= 70
+        and abs(r - b) <= 60
+        and r - g >= 150
+        and b - g >= 150
+    )
+
+
+def is_solid_chroma_matte_pixel(r: int, g: int, b: int, a: int) -> bool:
+    return (
+        a > 0
+        and r >= 45
+        and b >= 45
+        and g <= 130
+        and r - g >= 10
+        and b - g >= 10
+        and abs(r - b) <= 150
+    )
+
+
+def visible_exact_chroma_key_pixel_count(image: Image.Image) -> int:
+    return sum(
+        1
+        for r, g, b, a in image.convert("RGBA").getdata()
+        if is_exact_chroma_key_pixel(r, g, b, a)
+    )
+
+
+def neutralize_solid_chroma_key(texture: Image.Image) -> Image.Image:
+    rgba = texture.convert("RGBA")
+    width, height = rgba.size
+    pixels = list(rgba.getdata())
+
+    def is_loose_key(index: int) -> bool:
+        r, g, b, a = pixels[index]
+        return bool(a) and (
+            is_magenta_key_pixel(r, g, b, loose=True)
+            or is_solid_chroma_matte_pixel(r, g, b, a)
+        )
+
+    border_indices: list[int] = []
+    for x in range(width):
+        border_indices.append(x)
+        border_indices.append((height - 1) * width + x)
+    for y in range(1, height - 1):
+        border_indices.append(y * width)
+        border_indices.append(y * width + width - 1)
+
+    reached: set[int] = set()
+    stack = [index for index in border_indices if is_loose_key(index)]
+    while stack:
+        index = stack.pop()
+        if index in reached or not is_loose_key(index):
+            continue
+        reached.add(index)
+        x = index % width
+        y = index // width
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if nx < 0 or nx >= width or ny < 0 or ny >= height:
+                continue
+            neighbor = ny * width + nx
+            if neighbor not in reached and is_loose_key(neighbor):
+                stack.append(neighbor)
+
+    key_indices = set(reached)
+    key_indices.update(
+        index
+        for index, (r, g, b, a) in enumerate(pixels)
+        if is_exact_chroma_key_pixel(r, g, b, a)
+    )
+    if not key_indices:
+        return rgba
+
+    non_key_colors = [
+        (r, g, b)
+        for index, (r, g, b, a) in enumerate(pixels)
+        if a and index not in key_indices
+    ]
+    if not non_key_colors:
+        return rgba
+
+    fallback = tuple(sum(color[i] for color in non_key_colors) // len(non_key_colors) for i in range(3))
+    updated = pixels[:]
+    for index in key_indices:
+        x = index % width
+        y = index // width
+        neighbors: list[tuple[int, int, int]] = []
+        for radius in (1, 2, 3):
+            for ny in range(max(0, y - radius), min(height, y + radius + 1)):
+                for nx in range(max(0, x - radius), min(width, x + radius + 1)):
+                    if nx == x and ny == y:
+                        continue
+                    neighbor_index = ny * width + nx
+                    r, g, b, a = pixels[neighbor_index]
+                    if a and neighbor_index not in key_indices:
+                        neighbors.append((r, g, b))
+            if neighbors:
+                break
+        fill = fallback if not neighbors else tuple(
+            sum(color[channel] for color in neighbors) // len(neighbors) for channel in range(3)
+        )
+        updated[index] = (fill[0], fill[1], fill[2], 255)
+
+    rgba.putdata(updated)
+    return rgba
 
 
 def repair_block_chroma_key(asset: dict, texture: Image.Image, expected_size: int) -> Image.Image:
@@ -997,7 +1309,52 @@ def is_true_cutout_block(asset: dict) -> bool:
     name = asset["name"]
     if name.endswith("_grass_block") or "wasteland_grass_block" in name:
         return False
-    return asset.get("group") == "plant_cutout"
+    return asset.get("group") == "plant_cutout" or has_any(name, CUTOUT_BLOCK_MARKERS)
+
+
+def asset_root_from_texture_path(path: str) -> Path:
+    relative = Path(path)
+    parts = relative.parts
+    if "textures" not in parts:
+        raise ValueError(f"Texture asset path does not contain textures/: {path}")
+    index = parts.index("textures")
+    return REPO_ROOT / Path(*parts[:index])
+
+
+def rewrite_model_texture_refs(asset: dict) -> None:
+    asset_root = asset_root_from_texture_path(asset["path"])
+    category = asset["category"]
+    name = asset["name"]
+    modid = asset["modid"]
+    model_path = asset_root / "models" / category / f"{name}.json"
+    data = read_json(model_path)
+    if not isinstance(data, dict):
+        return
+
+    if category == "item":
+        parent = data.get("parent")
+        if isinstance(parent, str) and parent.startswith(f"{modid}:block/"):
+            return
+        texture_ref = f"{modid}:item/{name}"
+        textures = data.get("textures")
+        if not isinstance(textures, dict) or not textures:
+            data.setdefault("parent", "minecraft:item/generated")
+            data["textures"] = {"layer0": texture_ref}
+        else:
+            for key, value in list(textures.items()):
+                if isinstance(value, str) and not value.startswith("#"):
+                    textures[key] = texture_ref
+    else:
+        texture_ref = f"{modid}:block/{name}"
+        textures = data.get("textures")
+        if not isinstance(textures, dict) or not textures:
+            data["textures"] = {"all": texture_ref}
+        else:
+            for key, value in list(textures.items()):
+                if isinstance(value, str) and not value.startswith("#"):
+                    textures[key] = texture_ref
+
+    write_json(model_path, data)
 
 
 def validate_texture(asset: dict, image: Image.Image, expected_size: int) -> list[str]:
@@ -1020,6 +1377,8 @@ def validate_texture(asset: dict, image: Image.Image, expected_size: int) -> lis
     else:
         if transparent:
             errors.append(f"{asset['path']} block has transparent pixels")
+    if visible_exact_chroma_key_pixel_count(image) > 128:
+        errors.append(f"{asset['path']} contains visible chroma-key magenta")
     return errors
 
 
@@ -1083,8 +1442,10 @@ def crop_sheet(
                     (row + 1) * CELL_SIZE,
                 )
             )
-        if asset["category"] == "item" or is_true_cutout_block(asset):
+        if asset["category"] == "item":
             texture = item_from_cell(cell, native_size if native_resolution else FINAL_SIZE)
+        elif is_true_cutout_block(asset):
+            texture = cutout_block_from_cell(cell, asset, native_size if native_resolution else FINAL_SIZE)
         else:
             texture = block_from_cell(cell, native_size if native_resolution else FINAL_SIZE)
             texture = repair_block_chroma_key(asset, texture, expected_size)
@@ -1099,6 +1460,7 @@ def crop_sheet(
             final_path = REPO_ROOT / asset["path"]
             final_path.parent.mkdir(parents=True, exist_ok=True)
             texture.save(final_path)
+            rewrite_model_texture_refs(asset)
 
     updated = dict(manifest)
     updated["source_sheet"] = str(source_copy.relative_to(REPO_ROOT))
@@ -1180,7 +1542,8 @@ def checkerboard(size: tuple[int, int], block: int) -> Image.Image:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", choices=("ashfall", "orbital", "all"), default="all")
+    targets = tuple(["ashfall", "orbital", "non-gpt-addons", "all"] + [root.target for root in NON_GPT_ROOTS])
+    parser.add_argument("--target", choices=targets, default="all")
     parser.add_argument("--category", choices=("block", "item", "all"), default="all")
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--limit", type=int, default=DEFAULT_BATCH_SIZE)

@@ -1,6 +1,7 @@
 package com.knoxhack.echoterminal.api.theme;
 
 import com.knoxhack.echoterminal.EchoTerminal;
+import com.knoxhack.echoterminal.api.TerminalNavigationSection;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import com.knoxhack.echoterminal.api.TerminalVisualAssets;
 import net.minecraft.resources.Identifier;
@@ -27,8 +28,10 @@ public final class BuiltinTerminalThemes {
                         0xFF66E8FF, 0xFF2E8E9D, 0xFF92F7A6, 0xFFFFD166,
                         0xFFFF8FA3, 0xFF9FD1FF),
                 TerminalThemeTokens.Typography.defaults(),
-                TerminalThemeTokens.Panels.defaults(),
-                TerminalThemeTokens.Borders.defaults(),
+                new TerminalThemeTokens.Panels(0x7010242F, 0xC2050D14, 0xD2071017,
+                        0xFF123847, 0xFF102B36, 0xAA11161A, 0x6610212B, 0.70F),
+                new TerminalThemeTokens.Borders(0x3D244352, 0x6638DFF4, 0xB866E8FF,
+                        0xDD66E8FF, 0x33244352, 0x7038DFF4),
                 TerminalThemeTokens.Prompt.defaults(),
                 TerminalThemeTokens.Output.defaults(),
                 TerminalThemeTokens.States.defaults(),
@@ -60,13 +63,13 @@ public final class BuiltinTerminalThemes {
         TerminalThemeTokens tokens = new TerminalThemeTokens(
                 new TerminalThemeTokens.Colors(
                         0xFF060706, 0xF20B0E0D, 0xE30B1210, 0x76301F18, 0xC90A0B09,
-                        0xFF171B15, 0xFF25351F, 0xFFFFF4D8, 0xFFC9BFA6,
-                        0xFFFFC85A, 0xFF7F6E42, 0xFFA7F06C, 0xFFFFC85A,
+                        0xFF1B2018, 0xFF2D4227, 0xFFFFF6DE, 0xFFD6CAB0,
+                        0xFFFFD36A, 0xFF927D49, 0xFFA7F06C, 0xFFFFC85A,
                         0xFFFF6E6E, 0xFF74D9FF),
                 new TerminalThemeTokens.Typography(false, 11, 9, 14),
-                new TerminalThemeTokens.Panels(0x7A2A1D16, 0xD7080A08, 0xD0161812,
-                        0xFF2B3F25, 0xFF27311E, 0xAA17120E, 0x662E2418, 0.58F),
-                new TerminalThemeTokens.Borders(0x446D5A37, 0x669B7B3D, 0xC4FFC85A,
+                new TerminalThemeTokens.Panels(0x842A1D16, 0xDF080A08, 0xD81A1D16,
+                        0xFF304A2A, 0xFF2C3A22, 0xAA17120E, 0x73342519, 0.62F),
+                new TerminalThemeTokens.Borders(0x526D5A37, 0x789B7B3D, 0xD6FFC85A,
                         0xD0FFE08A, 0x555F5A4E, 0x88A66CFF),
                 new TerminalThemeTokens.Prompt(0xFFFFC85A, 0xFFFFF4D8, 0xFF74D9FF, 0xFFFF6E6E),
                 new TerminalThemeTokens.Output(0xFFFFF4D8, 0xFFC9BFA6, 0xFFA7F06C, 0xFFFFC85A, 0xFFFF6E6E),
@@ -114,6 +117,10 @@ public final class BuiltinTerminalThemes {
     public static TerminalIconSet defaultIcons() {
         return TerminalIconSet.builder()
                 .fallback(TerminalVisualAssets.ICON_BRAND_ECHO)
+                .icon(TerminalIconKey.group(TerminalNavigationSection.COMMAND.key()), TerminalVisualAssets.ICON_GROUP_PROTOCOL)
+                .icon(TerminalIconKey.group(TerminalNavigationSection.CHAPTERS.key()), TerminalVisualAssets.ICON_GROUP_CHAPTERS)
+                .icon(TerminalIconKey.group(TerminalNavigationSection.INTEL.key()), TerminalVisualAssets.ICON_GROUP_FIELD)
+                .icon(TerminalIconKey.group(TerminalNavigationSection.SYSTEM.key()), TerminalVisualAssets.ICON_GROUP_SYSTEMS)
                 .icon(TerminalIconKey.group(TerminalTabChrome.GROUP_PROTOCOL), TerminalVisualAssets.ICON_GROUP_PROTOCOL)
                 .icon(TerminalIconKey.group(TerminalTabChrome.GROUP_CORE), TerminalVisualAssets.ICON_GROUP_FIELD)
                 .icon(TerminalIconKey.group(TerminalTabChrome.GROUP_FIELD), TerminalVisualAssets.ICON_GROUP_FIELD)
@@ -124,6 +131,7 @@ public final class BuiltinTerminalThemes {
                 .icon(TerminalIconKey.group(TerminalTabChrome.GROUP_ADDONS), TerminalVisualAssets.ICON_GROUP_CHAPTERS)
                 .icon(TerminalIconKey.page("command_deck"), TerminalVisualAssets.ICON_PAGE_COMMAND_DECK)
                 .icon(TerminalIconKey.page("survival_route"), TerminalVisualAssets.ICON_PAGE_SURVIVAL_INDEX)
+                .icon(TerminalIconKey.page("baseline"), TerminalVisualAssets.ICON_PAGE_BASELINE)
                 .icon(TerminalIconKey.page("mission_graph"), TerminalVisualAssets.ICON_PAGE_PROTOCOL_ROADMAP)
                 .icon(TerminalIconKey.page("what_now"), TerminalVisualAssets.ICON_PAGE_SIGNAL_LEADS)
                 .icon(TerminalIconKey.page("vitals"), TerminalVisualAssets.ICON_PAGE_VITALS_SCAN)
@@ -132,6 +140,7 @@ public final class BuiltinTerminalThemes {
                 .icon(TerminalIconKey.page("reward_inbox"), TerminalVisualAssets.ICON_ACTION_CLAIM)
                 .icon(TerminalIconKey.page("field_archive"), TerminalVisualAssets.ICON_PAGE_FIELD_ARCHIVE)
                 .icon(TerminalIconKey.page("chapter_guide"), TerminalVisualAssets.ICON_PAGE_CHAPTERS)
+                .icon(TerminalIconKey.page("interface_settings"), TerminalVisualAssets.ICON_GROUP_SYSTEMS)
                 .icon(TerminalIconKey.action("claim"), TerminalVisualAssets.ICON_ACTION_CLAIM)
                 .icon(TerminalIconKey.action("turn_in"), TerminalVisualAssets.ICON_ACTION_TURN_IN)
                 .icon(TerminalIconKey.action("view"), TerminalVisualAssets.ICON_ACTION_VIEW)

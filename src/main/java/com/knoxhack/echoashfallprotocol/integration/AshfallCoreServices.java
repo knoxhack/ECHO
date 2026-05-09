@@ -81,6 +81,7 @@ public final class AshfallCoreServices {
         EchoCoreServices.registerHazardTelemetryService(AshfallCoreServices::hazardTelemetry);
         EchoCoreServices.registerDiagnosticService(AshfallCoreServices::diagnostics);
         EchoCoreServices.registerRouteRecordService(AshfallCoreServices::routeRecords);
+        EchoCoreServices.registerDiscoveryProvider(new AshfallDiscoveryProvider());
         EchoCoreServices.registerFactionActionHandler(AshfallFactionInteractionHandler.INSTANCE);
         AshfallBiomeFactions.register();
         EchoAshfallProtocol.LOGGER.info("ECHO platform providers after Ashfall setup: {}",

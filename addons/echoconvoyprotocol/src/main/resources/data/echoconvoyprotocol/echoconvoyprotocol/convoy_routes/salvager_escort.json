@@ -1,0 +1,51 @@
+{
+  "title": "Escort a Salvager Convoy",
+  "summary": "Move an Engine Core through a checkpoint and recover the cargo intact.",
+  "order": 10,
+  "requiredVehicle": "wasteland_rover",
+  "minFuel": 60,
+  "requiredCargo": [
+    {"item": "echoconvoyprotocol:engine_core", "count": 1}
+  ],
+  "rewards": [
+    {"item": "echoconvoyprotocol:armored_tire", "count": 2},
+    {"item": "echoconvoyprotocol:battery_cell", "count": 2}
+  ],
+  "threatLevel": 3,
+  "threat": {
+    "label": "Dust-Husk Ambush",
+    "entity": "minecraft:husk",
+    "minCount": 2,
+    "maxCount": 4,
+    "chanceOneIn": 9,
+    "cooldownTicks": 1200,
+    "vehicleDamage": 3,
+    "spawnRadius": 10.0,
+    "warning": "%threat% hitting %route%. Protect the cargo."
+  },
+  "checkpointFactionId": "echocore:survivors",
+  "minReputation": 0,
+  "checkpoint": {
+    "label": "Salvager Checkpoint",
+    "warning": "%checkpoint% blocked: survivors reputation %reputation%/%required%.",
+    "clearedMessage": "%checkpoint% logs the convoy and opens the lane."
+  },
+  "destinationHint": "Scavenger checkpoint road",
+  "requiredSignalMarkers": 2,
+  "minDistanceFromStart": 48,
+  "legs": [
+    {
+      "id": "checkpoint",
+      "title": "Salvager Checkpoint",
+      "minDistanceFromStart": 24,
+      "requiresCheckpoint": true,
+      "roadsideStructure": "echoconvoyprotocol:roadside/cargo_checkpoint"
+    },
+    {
+      "id": "destination",
+      "title": "Escort Recovery Signal",
+      "minDistanceFromStart": 48,
+      "roadsideStructure": "echoconvoyprotocol:roadside/signal_marker"
+    }
+  ]
+}

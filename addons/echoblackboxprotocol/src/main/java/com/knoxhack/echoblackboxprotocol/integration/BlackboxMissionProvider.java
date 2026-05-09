@@ -56,7 +56,8 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
          );
       } else {
          BlackboxProgress progress = BlackboxProgress.get(player);
-         boolean available = mission.available(progress);
+         boolean sagaAvailable = BlackboxCoreIntegration.sagaGateOpenForTerminal(player);
+         boolean available = sagaAvailable && mission.available(progress);
          boolean complete = mission.complete(progress);
          boolean claimed = progress.hasTerminalCacheClaimed(mission.path);
          TerminalMissionStatus status = !available
@@ -74,7 +75,7 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
             status,
             mission.progress(progress),
             statusLabel(status),
-            available ? "" : mission.lockReason(progress),
+            available ? "" : sagaAvailable ? mission.lockReason(progress) : BlackboxCoreIntegration.sagaGateReason(player),
             mission.actionHint(progress),
             actions
          );

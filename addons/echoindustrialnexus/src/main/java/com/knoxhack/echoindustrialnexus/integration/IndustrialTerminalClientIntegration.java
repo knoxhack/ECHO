@@ -16,6 +16,7 @@ import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import com.knoxhack.echoterminal.api.TerminalTabDescriptor;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.api.TerminalUi;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeRegistry;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,6 +43,7 @@ public final class IndustrialTerminalClientIntegration {
          TerminalNavigationProfile.chapter("industrial", "Optional: Industrial Nexus", "OP", 70)
       );
       TerminalAddonInfoRegistry.register(new IndustrialAddonInfoProvider());
+      TerminalRecipeRegistry.register(IndustrialTerminalRecipeProvider.INSTANCE);
    }
 
    private static final class IndustrialAddonInfoProvider implements TerminalAddonInfoProvider {

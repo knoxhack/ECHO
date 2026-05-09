@@ -71,12 +71,12 @@ public class BlackboxDungeonGenerator extends ChunkGenerator {
             }
 
             if (isMemoryPillar(this.dungeon, worldX, worldZ)) {
-               pos.set(localX, top + 1, localZ);
-               chunk.setBlockState(pos, ((Block)ModBlocks.SIGNAL_GLASS.get()).defaultBlockState());
+               placeMemoryPillar(chunk, pos, this.dungeon, localX, localZ, top);
             }
          }
       }
 
+      placeDungeonLandmarks(chunk, pos, this.dungeon, chunkPos);
       return CompletableFuture.completedFuture(chunk);
    }
 
@@ -164,7 +164,97 @@ public class BlackboxDungeonGenerator extends ChunkGenerator {
       };
    }
 
+   private static void placeDungeonLandmarks(ChunkAccess chunk, MutableBlockPos pos, BlackboxDungeon dungeon, ChunkPos chunkPos) {
+      int pulse = Math.floorMod(chunkPos.x() * 37 + chunkPos.z() * 41 + dungeon.ordinal() * 17, 9);
+      if (pulse > 1 && !isAnchorChunk(chunkPos)) {
+         return;
+      }
+
+      int localX = isAnchorChunk(chunkPos) ? 8 : 4 + pulse * 3;
+      int localZ = isAnchorChunk(chunkPos) ? 8 : 11 - pulse * 2;
+      int worldX = chunkPos.getBlockX(localX);
+      int worldZ = chunkPos.getBlockZ(localZ);
+      int top = topHeight(dungeon, worldX, worldZ);
+
+      BlockState floor = dungeon == BlackboxDungeon.LABYRINTH
+         ? ((Block)ModBlocks.CORRUPTED_FERRITE_BLOCK.get()).defaultBlockState()
+         : ((Block)ModBlocks.BLACK_METAL_BLOCK.get()).defaultBlockState();
+      BlockState trim = ((Block)ModBlocks.SIGNAL_GLASS.get()).defaultBlockState();
+      BlockState core = monolithState(dungeon);
+      BlockState machine = dungeonMachineState(dungeon);
+
+      for (int dx = -2; dx <= 2; dx++) {
+         for (int dz = -2; dz <= 2; dz++) {
+            int distance = Math.abs(dx) + Math.abs(dz);
+            setLocal(chunk, pos, localX + dx, top + 1, localZ + dz, distance == 2 ? trim : floor);
+         }
+      }
+      for (int dy = 2; dy <= 5; dy++) {
+         setLocal(chunk, pos, localX, top + dy, localZ, dy == 4 ? trim : core);
+      }
+      setLocal(chunk, pos, localX - 2, top + 2, localZ, machine);
+      setLocal(chunk, pos, localX + 2, top + 2, localZ, machine);
+      setLocal(chunk, pos, localX, top + 2, localZ - 2, trim);
+      setLocal(chunk, pos, localX, top + 2, localZ + 2, trim);
+   }
+
+   private static boolean isAnchorChunk(ChunkPos chunkPos) {
+      return Math.floorMod(chunkPos.x(), 4) == 0 && Math.floorMod(chunkPos.z(), 4) == 0;
+   }
+
+   private static BlockState monolithState(BlackboxDungeon dungeon) {
+      return switch (dungeon) {
+         case VAULT -> ((Block)ModBlocks.VAULT_MONOLITH.get()).defaultBlockState();
+         case BUNKER -> ((Block)ModBlocks.BUNKER_MONOLITH.get()).defaultBlockState();
+         case LABYRINTH -> ((Block)ModBlocks.LABYRINTH_MONOLITH.get()).defaultBlockState();
+         case TEMPLE -> ((Block)ModBlocks.TEMPLE_MONOLITH.get()).defaultBlockState();
+         case CORE_CHAMBER -> ((Block)ModBlocks.CORE_CHAMBER_MONOLITH.get()).defaultBlockState();
+      };
+   }
+
+   private static BlockState dungeonMachineState(BlackboxDungeon dungeon) {
+      return switch (dungeon) {
+         case VAULT -> ((Block)ModBlocks.BLACKBOX_DECODER.get()).defaultBlockState();
+         case BUNKER -> ((Block)ModBlocks.PROTOCOL_EXTRACTOR.get()).defaultBlockState();
+         case LABYRINTH -> ((Block)ModBlocks.MEMORY_PROJECTOR.get()).defaultBlockState();
+         case TEMPLE -> ((Block)ModBlocks.CORE_KEY_ASSEMBLER.get()).defaultBlockState();
+         case CORE_CHAMBER -> ((Block)ModBlocks.TRUTH_ENGINE.get()).defaultBlockState();
+      };
+   }
+
+   private static void setLocal(ChunkAccess chunk, MutableBlockPos pos, int x, int y, int z, BlockState state) {
+      if (x < 0 || x >= 16 || z < 0 || z >= 16 || y < 0 || y >= 256) {
+         return;
+      }
+      pos.set(x, y, z);
+      chunk.setBlockState(pos, state);
+   }
+
    private static boolean isMemoryPillar(BlackboxDungeon dungeon, int x, int z) {
       return Math.floorMod(x * 19 + z * 23 + dungeon.ordinal() * 7, 97) == 0;
+   }
+
+   private static void placeMemoryPillar(ChunkAccess chunk, MutableBlockPos pos, BlackboxDungeon dungeon, int localX, int localZ, int top) {
+      BlockState glass = ((Block)ModBlocks.SIGNAL_GLASS.get()).defaultBlockState();
+      BlockState base = dungeon == BlackboxDungeon.LABYRINTH
+         ? ((Block)ModBlocks.CORRUPTED_FERRITE_BLOCK.get()).defaultBlockState()
+         : ((Block)ModBlocks.BLACK_METAL_BLOCK.get()).defaultBlockState();
+      for (int dy = 1; dy <= 3; dy++) {
+         pos.set(localX, top + dy, localZ);
+         chunk.setBlockState(pos, dy == 2 ? glass : base);
+      }
+      for (int dx = -1; dx <= 1; dx++) {
+         for (int dz = -1; dz <= 1; dz++) {
+            if (Math.abs(dx) + Math.abs(dz) != 1) {
+               continue;
+            }
+            int x = localX + dx;
+            int z = localZ + dz;
+            if (x >= 0 && x < 16 && z >= 0 && z < 16) {
+               pos.set(x, top + 1, z);
+               chunk.setBlockState(pos, glass);
+            }
+         }
+      }
    }
 }

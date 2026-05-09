@@ -3,6 +3,10 @@ package com.knoxhack.echocore.test;
 import com.knoxhack.echocore.EchoCore;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
+import com.knoxhack.echocore.api.EchoDiscoveryCategory;
+import com.knoxhack.echocore.api.EchoDiscoveryEntry;
+import com.knoxhack.echocore.api.EchoDiscoveryProvider;
+import com.knoxhack.echocore.api.EchoDiscoveryState;
 import com.knoxhack.echocore.api.EchoDialogueTree;
 import com.knoxhack.echocore.api.EchoFactionAction;
 import com.knoxhack.echocore.api.EchoFactionActionHandlerService;
@@ -13,6 +17,7 @@ import com.knoxhack.echocore.api.EchoFactionPoiAffinity;
 import com.knoxhack.echocore.api.EchoFactionRegistry;
 import com.knoxhack.echocore.api.EchoFactionStanding;
 import com.knoxhack.echocore.api.EchoHazardTelemetry;
+import com.knoxhack.echocore.api.EchoHandoffs;
 import com.knoxhack.echocore.api.EchoProfile;
 import com.knoxhack.echocore.api.EchoProfileService;
 import com.knoxhack.echocore.api.EchoNpcRole;
@@ -34,6 +39,7 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
@@ -53,6 +59,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("core_beta_service_contracts", () -> ModGameTests::coreBetaServiceContracts);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_FACTION_DATA =
             TEST_FUNCTIONS.register("core_faction_data", () -> ModGameTests::coreFactionData);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_DISCOVERY_GRID =
+            TEST_FUNCTIONS.register("core_discovery_grid", () -> ModGameTests::coreDiscoveryGrid);
 
     private ModGameTests() {
     }
@@ -62,11 +70,15 @@ public final class ModGameTests {
     }
 
     public static void registerTests(RegisterGameTestsEvent event) {
+        if (!shouldRegisterTests()) {
+            return;
+        }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("core_release"));
         register(event, environment, "core_service_noops", CORE_SERVICE_NOOPS.getId());
         register(event, environment, "core_platform_contracts", CORE_PLATFORM_CONTRACTS.getId());
         register(event, environment, "core_beta_service_contracts", CORE_BETA_SERVICE_CONTRACTS.getId());
         register(event, environment, "core_faction_data", CORE_FACTION_DATA.getId());
+        register(event, environment, "core_discovery_grid", CORE_DISCOVERY_GRID.getId());
     }
 
     private static void coreServiceNoops(GameTestHelper helper) {
@@ -88,9 +100,13 @@ public final class ModGameTests {
             EchoProgressLedger ledger = EchoProgressLedger.empty()
                     .withMilestone("ashfall:nexus")
                     .withMilestone("ashfall:nexus")
+                    .withMilestone("stationfall.blackbox_retrieved")
+                    .withMilestone(EchoHandoffs.STATIONFALL_BLACKBOX_RECOVERED)
                     .withFlag("path", "restore")
                     .withActiveObjective("orbital:launch");
-            helper.assertTrue(ledger.milestones().size() == 1, "Ledger milestones should de-duplicate ids");
+            helper.assertTrue(ledger.milestones().size() == 2, "Ledger milestones should de-duplicate ids and handoff aliases");
+            helper.assertTrue(ledger.hasMilestone("stationfall:blackbox_recovered"),
+                    "Ledger milestone lookup should accept Stationfall handoff aliases");
             helper.assertTrue("restore".equals(ledger.flag("path")), "Ledger flags should be readable");
 
             EchoHazardTelemetry telemetry = new EchoHazardTelemetry(80, 20, 0, 100, 100, 0, 0, 0, "")
@@ -269,16 +285,127 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void coreDiscoveryGrid(GameTestHelper helper) {
+        EchoServiceRegistry.withClearedForTests(() -> {
+            EchoCoreServices.clearPlatformServicesForTests();
+            EchoDiscoveryEntry alpha = discoveryEntry("alpha", EchoDiscoveryCategory.STRUCTURE, "Alpha Signal", 10);
+            EchoDiscoveryEntry duplicateFirst = discoveryEntry("duplicate", EchoDiscoveryCategory.EVENT, "First Duplicate", 20);
+            EchoDiscoveryEntry duplicateSecond = discoveryEntry("duplicate", EchoDiscoveryCategory.EVENT, "Second Duplicate", 30);
+            EchoDiscoveryEntry checked = discoveryEntry("checked", EchoDiscoveryCategory.GUARDIAN, "Checked Signal", 40);
+            EchoCoreServices.registerDiscoveryProvider(new com.knoxhack.echocore.api.EchoDiscoveryProvider() {
+                @Override
+                public List<EchoDiscoveryEntry> entries(net.minecraft.world.entity.player.Player player) {
+                    return List.of(alpha, duplicateFirst, checked);
+                }
+
+                @Override
+                public EchoDiscoveryState state(net.minecraft.world.entity.player.Player player, EchoDiscoveryEntry entry) {
+                    return checked.id().equals(entry.id()) ? EchoDiscoveryState.CHECKED : EchoDiscoveryState.LOCKED;
+                }
+            });
+            EchoCoreServices.registerDiscoveryProvider(player -> List.of(duplicateSecond));
+
+            List<EchoDiscoveryEntry> entries = EchoCoreServices.discoveryEntries(null);
+            helper.assertTrue(entries.size() == 3, "Discovery registry should de-duplicate feature ids");
+            EchoDiscoveryEntry duplicate = EchoCoreServices.discoveryEntry(null, id("duplicate")).orElse(null);
+            helper.assertTrue(duplicate != null && "First Duplicate".equals(duplicate.revealedTitle()),
+                    "Discovery registry should keep the first duplicate id");
+
+            var player = (ServerPlayer) helper.makeMockPlayer(GameType.SURVIVAL);
+            helper.assertTrue(EchoCoreServices.discoveryState(player, alpha) == EchoDiscoveryState.LOCKED,
+                    "Undiscovered provider-locked features should remain locked");
+            helper.assertTrue(EchoCoreServices.discoverFeature(player, alpha.id()),
+                    "First discovery should report a newly recorded id");
+            helper.assertFalse(EchoCoreServices.discoverFeature(player, alpha.id()),
+                    "Duplicate discovery should not record or notify again");
+            helper.assertTrue(EchoCoreServices.hasDiscoveredFeature(player, alpha.id()),
+                    "Discovery data should persist the feature id");
+            helper.assertTrue(EchoCoreServices.discoveryState(player, alpha) == EchoDiscoveryState.DISCOVERED,
+                    "Stored discovery should lift a provider-locked entry to discovered");
+            helper.assertTrue(EchoCoreServices.discoveryState(player, checked) == EchoDiscoveryState.CHECKED,
+                    "Provider live state should resolve checked entries");
+
+            EchoCoreServices.clearPlatformServicesForTests();
+            EchoDiscoveryEntry playerScoped = discoveryEntry("player_scoped", EchoDiscoveryCategory.STRUCTURE,
+                    "Player Scoped Signal", 50);
+            EchoCoreServices.registerDiscoveryProvider(new EchoDiscoveryProvider() {
+                @Override
+                public List<EchoDiscoveryEntry> entries(net.minecraft.world.entity.player.Player player) {
+                    if (player == null) {
+                        throw new IllegalStateException("Player-scoped discovery entries need player context.");
+                    }
+                    return List.of(playerScoped);
+                }
+
+                @Override
+                public EchoDiscoveryState state(net.minecraft.world.entity.player.Player player, EchoDiscoveryEntry entry) {
+                    return EchoDiscoveryState.CHECKED;
+                }
+            });
+            helper.assertTrue(EchoCoreServices.platformProviderSummary().contains("discoveryProviders=1"),
+                    "Platform provider summary should count discovery providers without listing entries");
+            EchoDiscoveryEntry scoped = EchoCoreServices.discoveryEntries(player).stream()
+                    .filter(entry -> entry.id().equals(playerScoped.id()))
+                    .findFirst()
+                    .orElse(null);
+            helper.assertTrue(scoped != null
+                            && EchoCoreServices.discoveryState(player, scoped) == EchoDiscoveryState.CHECKED,
+                    "Discovery state should resolve with player-scoped provider ownership");
+
+            EchoCoreServices.clearPlatformServicesForTests();
+            Identifier routeId = id("active_route");
+            EchoCoreServices.registerRouteRecordService(routePlayer -> List.of(new EchoRouteRecord(
+                    routeId,
+                    "echocore",
+                    "Active Route",
+                    "Route",
+                    "Overworld",
+                    routePlayer == null ? "LOCKED" : "ACTIVE",
+                    "Player-visible route record.",
+                    false)));
+            EchoCoreServices.registerDiscoveryProvider(routePlayer -> {
+                if (routePlayer == null) {
+                    return List.of();
+                }
+                return EchoCoreServices.routeRecords(routePlayer).stream()
+                        .map(record -> new EchoDiscoveryEntry(
+                                EchoCoreServices.routeDiscoveryId(record.id()),
+                                id("test_chapter"),
+                                EchoDiscoveryCategory.STRUCTURE,
+                                record.title(),
+                                "Unknown Route",
+                                "Find the route in the field.",
+                                record.summary(),
+                                null,
+                                null,
+                                0xFF66E8FF,
+                                record.id(),
+                                60))
+                        .toList();
+            });
+            Identifier routeDiscoveryId = EchoCoreServices.routeDiscoveryId(routeId);
+            helper.assertTrue(EchoCoreServices.discoverVisibleRouteRecords(player) == 1,
+                    "Visible route discovery should record a newly visible route");
+            helper.assertTrue(EchoCoreServices.hasDiscoveredFeature(player, routeDiscoveryId),
+                    "Visible route discovery should persist the route feature id");
+            helper.assertTrue(EchoCoreServices.discoverVisibleRouteRecords(player) == 0,
+                    "Visible route discovery should be once-only for already recorded routes");
+        });
+        helper.succeed();
+    }
+
     private static void coreBetaServiceContracts(GameTestHelper helper) {
         EchoServiceRegistry.withClearedForTests(() -> {
             EchoCoreServices.clearPlatformServicesForTests();
 
             EchoProgressLedger ledger = new EchoProgressLedger(
-                    new java.util.LinkedHashSet<>(List.of("orbital:launch_ready", "", "ashfall:drop_pod_ready")),
+                    new java.util.LinkedHashSet<>(List.of("orbital:launch_ready", "", "ashfall:drop_pod_ready", "nexus:path:restore")),
                     java.util.Map.of("beta.route", "ashfall_to_orbital", "", "ignored"),
                     new java.util.LinkedHashSet<>(List.of("orbital:scan_launch_site", "ashfall:repair_terminal")));
-            helper.assertTrue(List.copyOf(ledger.milestones()).equals(List.of("ashfall:drop_pod_ready", "orbital:launch_ready")),
+            helper.assertTrue(List.copyOf(ledger.milestones()).equals(List.of("ashfall:drop_pod_ready", EchoHandoffs.NEXUS_PROTOCOL_COMPLETE, "orbital:launch_ready")),
                     "Progress ledger ids should normalize to sorted, non-blank beta milestone ids");
+            helper.assertTrue(ledger.hasMilestone("nexus:path:merge"),
+                    "Progress ledger should treat legacy Nexus path milestones as Nexus completion aliases");
             helper.assertTrue("ashfall_to_orbital".equals(ledger.flag("beta.route")),
                     "Progress ledger flags should preserve canonical beta route handoff ids");
             boolean immutableLedger = false;
@@ -489,6 +616,37 @@ public final class ModGameTests {
                 false,
                 2);
         event.registerTest(id(testName), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, functionId), data));
+    }
+
+    private static EchoDiscoveryEntry discoveryEntry(
+            String path, EchoDiscoveryCategory category, String title, int sortOrder) {
+        return new EchoDiscoveryEntry(
+                id(path),
+                id("test_chapter"),
+                category,
+                title,
+                "Unknown Signal",
+                "A test hint is present.",
+                "A test summary is present.",
+                null,
+                null,
+                0xFF66E8FF,
+                null,
+                sortOrder);
+    }
+
+    private static boolean shouldRegisterTests() {
+        String namespaces = System.getProperty("neoforge.enabledGameTestNamespaces", "");
+        if (namespaces == null || namespaces.isBlank()) {
+            return true;
+        }
+        for (String namespace : namespaces.split(",")) {
+            String normalized = namespace.trim();
+            if (normalized.equals(EchoCore.MODID) || normalized.equals("*") || normalized.equalsIgnoreCase("all")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Identifier id(String path) {

@@ -1,10 +1,12 @@
 package com.knoxhack.echoashfallprotocol.event;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.Config;
 import com.knoxhack.echoashfallprotocol.entity.ModEntities;
 import com.knoxhack.echoashfallprotocol.gameplay.MachineGameplayHelper;
 import com.knoxhack.echoashfallprotocol.gameplay.RadiationHelper;
+import com.knoxhack.echoashfallprotocol.integration.AshfallDiscoveryProvider;
 import com.knoxhack.echoashfallprotocol.network.EnvironmentalSyncPacket;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
@@ -200,6 +202,11 @@ public class EnvironmentalEventHandler {
             forceEventWeather(level, type, data.getEventDuration());
         }
         broadcastEventAlert(level, type, nexusData);
+        if (profile != null) {
+            for (ServerPlayer player : level.players()) {
+                EchoCoreServices.discoverFeature(player, AshfallDiscoveryProvider.eventId(profile.commandAlias()));
+            }
+        }
         playEventSound(level, type);
         syncEventToPlayers(level, data, gameTime);
     }

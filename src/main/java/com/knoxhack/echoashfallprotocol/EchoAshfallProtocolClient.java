@@ -95,7 +95,7 @@ public class EchoAshfallProtocolClient {
         NeoForge.EVENT_BUS.addListener(EchoAshfallProtocolClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(EchoAshfallProtocolClient::onKeyInput);
         if (ModList.get().isLoaded("echoterminal")) {
-            AshfallTerminalIntegration.register();
+            AshfallTerminalIntegration.registerClient();
             registerAshfallTerminalScreen();
         }
     }

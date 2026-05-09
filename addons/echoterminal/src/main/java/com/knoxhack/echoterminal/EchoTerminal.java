@@ -4,6 +4,7 @@ import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
+import com.knoxhack.echoterminal.mission.VanillaJourneyProgression;
 import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
 import com.knoxhack.echoterminal.network.ModNetwork;
 import com.knoxhack.echoterminal.registry.ModBlockEntities;
@@ -35,11 +36,13 @@ public class EchoTerminal {
         modEventBus.addListener(ModNetwork::registerPayloads);
         modEventBus.addListener(ModGameTests::registerTests);
         modEventBus.addListener(this::commonSetup);
+        VanillaJourneyProgression.register();
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             EchoTerminalCoreServices.register();
+            BuiltinTerminalCommonIntegration.register();
             TerminalMissionRegistry.register(MainSurvivalQuestProvider.INSTANCE);
             TerminalMissionRegistry.register(VanillaJourneyProvider.INSTANCE);
             TerminalMissionActions.registerForTab(MainSurvivalQuestProvider.TAB_ID);

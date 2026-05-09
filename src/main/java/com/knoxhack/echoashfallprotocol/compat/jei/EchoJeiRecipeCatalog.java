@@ -3,6 +3,7 @@ package com.knoxhack.echoashfallprotocol.compat.jei;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.block.entity.OreGrinderBlockEntity;
 import com.knoxhack.echoashfallprotocol.recipe.ScrapPressRecipe;
+import com.knoxhack.echoashfallprotocol.integration.AshfallRecipeInfoCatalog;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.schematic.SchematicTier;
@@ -50,18 +51,7 @@ public final class EchoJeiRecipeCatalog {
     }
 
     public static Map<Item, Component> gatedItemInfo() {
-        Map<Item, Component> info = new HashMap<>();
-        for (Map.Entry<SchematicTier, List<String>> entry : gatedByTier().entrySet()) {
-            for (String recipeId : entry.getValue()) {
-                Identifier id = Identifier.tryParse(recipeId);
-                if (id == null) {
-                    continue;
-                }
-                BuiltInRegistries.ITEM.getOptional(id).ifPresent(item ->
-                        info.put(item, Component.literal("Requires " + entry.getKey().name() + " schematic unlock.")));
-            }
-        }
-        return info;
+        return AshfallRecipeInfoCatalog.gatedItemInfo();
     }
 
     public static Component gatedNote(String recipeId) {

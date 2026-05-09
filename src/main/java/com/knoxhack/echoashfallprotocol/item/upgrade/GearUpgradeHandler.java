@@ -5,11 +5,14 @@ import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 /**
  * Handles Tier 5 gear upgrades via anvil.
@@ -28,7 +31,11 @@ public class GearUpgradeHandler {
         if (stack.isEmpty()) return false;
         return stack.is(ModItems.NEXUS_BLADE.get()) ||
                stack.is(ModItems.NEXUS_ANNIHILATOR.get()) ||
-               stack.is(ModItems.NEXUS_BLADE.get()); // Using Nexus Blade as proxy for CONTROL path
+               stack.is(ModItems.ALLOY_BLADE.get());
+    }
+
+    public static boolean isUpgradeable(ItemStack stack) {
+        return isNexusWeapon(stack);
     }
 
     /**
@@ -78,6 +85,71 @@ public class GearUpgradeHandler {
      */
     public static float getBonusDamage(ItemStack stack) {
         return getUpgradeLevel(stack) * 1.0f; // +1 damage per level
+    }
+
+    public static boolean hasGlowEffect(ItemStack stack) {
+        return getUpgradeLevel(stack) >= 3;
+    }
+
+    /**
+     * Handle direct field upgrades. Anvil upgrades stay supported below; this path
+     * keeps the original right-click interaction while using the canonical NBT
+     * storage and single subscribed handler.
+     */
+    @SubscribeEvent
+    public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+        Player player = event.getEntity();
+        ItemStack heldItem = event.getItemStack();
+        if (!heldItem.is(ModItems.NEXUS_CRYSTAL.get()) || !(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+
+        ItemStack target = player.getOffhandItem();
+        if (!isUpgradeable(target)) {
+            target = heldItem;
+        }
+        if (!isUpgradeable(target)) {
+            return;
+        }
+
+        attemptDirectUpgrade(serverPlayer, target);
+        event.setCanceled(true);
+    }
+
+    private static void attemptDirectUpgrade(ServerPlayer player, ItemStack item) {
+        int currentLevel = getUpgradeLevel(item);
+        if (currentLevel >= MAX_UPGRADES) {
+            player.sendSystemMessage(Component.literal(
+                    "\u00a7cThis item is already at maximum upgrade level (+" + MAX_UPGRADES + ")"));
+            return;
+        }
+
+        ItemStack crystalStack = findCrystalInInventory(player);
+        if (crystalStack.isEmpty()) {
+            player.sendSystemMessage(Component.literal("\u00a7cYou need a Nexus Crystal to upgrade this item"));
+            return;
+        }
+
+        crystalStack.shrink(1);
+        int newLevel = currentLevel + 1;
+        setUpgradeLevel(item, newLevel);
+        player.sendSystemMessage(Component.literal("\u00a7aItem upgraded to +" + newLevel + "! Max +" + MAX_UPGRADES));
+        if (newLevel == 3) {
+            player.sendSystemMessage(Component.literal("\u00a7dYour weapon begins to glow with ethereal runes..."));
+        } else if (newLevel == 5) {
+            player.sendSystemMessage(Component.literal(
+                    "\u00a76Your weapon reaches maximum power! A particle trail follows your strikes."));
+        }
+    }
+
+    private static ItemStack findCrystalInInventory(ServerPlayer player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.is(ModItems.NEXUS_CRYSTAL.get())) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     /**

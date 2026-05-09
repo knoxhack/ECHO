@@ -1,0 +1,310 @@
+package com.knoxhack.signalos.content;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.knoxhack.signalos.SignalOS;
+import com.knoxhack.signalos.api.TerminalArchiveRecord;
+import com.knoxhack.signalos.api.TerminalChapter;
+import com.knoxhack.signalos.api.TerminalIds;
+import com.knoxhack.signalos.api.TerminalMission;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
+
+public final class SignalOsJsonContentLoader
+        extends SimplePreparableReloadListener<SignalOsContentRegistry.LoadedContent> {
+    private static final String CHAPTER_DIR = "signalos/chapters";
+    private static final String MISSION_DIR = "signalos/missions";
+    private static final String ARCHIVE_DIR = "signalos/archives";
+
+    @Override
+    protected SignalOsContentRegistry.LoadedContent prepare(ResourceManager manager, ProfilerFiller profiler) {
+        LoadedEntries<TerminalChapter> chapters = load(manager, CHAPTER_DIR, SignalOsJsonContentLoader::parseChapter);
+        LoadedEntries<TerminalMission> missions = load(manager, MISSION_DIR, SignalOsJsonContentLoader::parseMission);
+        LoadedEntries<TerminalArchiveRecord> archives = load(manager, ARCHIVE_DIR, SignalOsJsonContentLoader::parseArchive);
+        SignalOsContentRegistry.LoadReport report = chapters.report()
+                .plus(missions.report())
+                .plus(archives.report());
+        return validateReferences(chapters.values(), missions.values(), archives.values(), report);
+    }
+
+    @Override
+    protected void apply(SignalOsContentRegistry.LoadedContent loaded, ResourceManager manager, ProfilerFiller profiler) {
+        SignalOsContentRegistry.replaceJsonContent(loaded);
+    }
+
+    public static TerminalChapter parseChapterForTests(Identifier id, JsonObject json) {
+        return parseChapter(id, json);
+    }
+
+    public static TerminalMission parseMissionForTests(Identifier id, JsonObject json) {
+        return parseMission(id, json);
+    }
+
+    public static TerminalArchiveRecord parseArchiveForTests(Identifier id, JsonObject json) {
+        return parseArchive(id, json);
+    }
+
+    public static SignalOsContentRegistry.LoadedContent validateReferencesForTests(
+            SignalOsContentRegistry.LoadedContent loaded) {
+        return validateReferences(loaded.chapters(), loaded.missions(), loaded.archives(), loaded.report());
+    }
+
+    private static <T> LoadedEntries<T> load(ResourceManager manager, String directory, Parser<T> parser) {
+        Map<Identifier, T> target = new LinkedHashMap<>();
+        int discovered = 0;
+        int parsedCount = 0;
+        int duplicates = 0;
+        int failed = 0;
+        for (Map.Entry<Identifier, Resource> entry : manager.listResources(directory, SignalOsJsonContentLoader::isJson).entrySet()) {
+            discovered++;
+            Identifier resourceId = entry.getKey();
+            Identifier id = contentId(resourceId, directory);
+            try (Reader reader = entry.getValue().openAsReader()) {
+                JsonElement root = JsonParser.parseReader(reader);
+                if (!root.isJsonObject()) {
+                    throw new JsonParseException("Root must be a JSON object.");
+                }
+                T parsedValue = parser.parse(id, root.getAsJsonObject());
+                if (target.putIfAbsent(id, parsedValue) != null) {
+                    duplicates++;
+                    SignalOS.LOGGER.warn("Duplicate SignalOS data id {} from {} ignored.", id, resourceId);
+                } else {
+                    parsedCount++;
+                }
+            } catch (IOException exception) {
+                failed++;
+                SignalOS.LOGGER.warn("Could not read SignalOS data file {}: {}", resourceId, exception.getMessage());
+            } catch (RuntimeException exception) {
+                failed++;
+                SignalOS.LOGGER.warn("Could not parse SignalOS data file {}: {}", resourceId, exception.getMessage());
+            }
+        }
+        return new LoadedEntries<>(target, new SignalOsContentRegistry.LoadReport(discovered, parsedCount, duplicates, failed, 0));
+    }
+
+    private static boolean isJson(Identifier id) {
+        return id.getPath().endsWith(".json");
+    }
+
+    private static Identifier contentId(Identifier resourceId, String directory) {
+        String path = resourceId.getPath();
+        String prefix = directory + "/";
+        if (path.startsWith(prefix)) {
+            path = path.substring(prefix.length());
+        }
+        if (path.endsWith(".json")) {
+            path = path.substring(0, path.length() - ".json".length());
+        }
+        return Identifier.fromNamespaceAndPath(resourceId.getNamespace(), path);
+    }
+
+    private static TerminalChapter parseChapter(Identifier id, JsonObject json) {
+        TerminalChapter.Builder builder = TerminalChapter.builder(id)
+                .title(string(json, "title", id.getPath()))
+                .section(string(json, "section", "progress"))
+                .order(integer(json, "order", 0))
+                .accentColor(integer(json, "accentColor", 0x66E8FF))
+                .visible(bool(json, "visible", true));
+        String icon = string(json, "icon", "");
+        if (!icon.isBlank()) {
+            builder.icon(icon);
+        }
+        JsonArray pages = array(json, "pages");
+        if (pages != null) {
+            for (int i = 0; i < pages.size(); i++) {
+                builder.page(stringElement(pages.get(i), "pages[" + i + "]"));
+            }
+        }
+        return builder.build();
+    }
+
+    private static TerminalMission parseMission(Identifier id, JsonObject json) {
+        TerminalMission.Builder builder = TerminalMission.builder(id)
+                .chapter(requiredString(json, "chapter"))
+                .title(string(json, "title", id.getPath()))
+                .description(string(json, "description", ""))
+                .order(integer(json, "order", 0))
+                .rewardClaim(bool(json, "rewardClaim", true));
+        String icon = string(json, "icon", "");
+        if (!icon.isBlank()) {
+            builder.icon(icon);
+        }
+        String advancement = string(json, "completionAdvancement", "");
+        if (!advancement.isBlank()) {
+            builder.completionAdvancement(advancement);
+        }
+        JsonArray objectives = array(json, "objectives");
+        if (objectives != null) {
+            for (int i = 0; i < objectives.size(); i++) {
+                builder.objective(stringElement(objectives.get(i), "objectives[" + i + "]"));
+            }
+        }
+        JsonArray rewards = array(json, json.has("displayRewards") ? "displayRewards" : "rewards");
+        if (rewards != null) {
+            String rewardKey = json.has("displayRewards") ? "displayRewards" : "rewards";
+            for (int i = 0; i < rewards.size(); i++) {
+                JsonElement rewardElement = rewards.get(i);
+                if (!rewardElement.isJsonObject()) {
+                    throw new JsonParseException("Field '" + rewardKey + "[" + i + "]' must be an object.");
+                }
+                JsonObject reward = rewardElement.getAsJsonObject();
+                builder.reward(requiredString(reward, rewardKey + "[" + i + "].item", "item"),
+                        integer(reward, rewardKey + "[" + i + "].count", "count", 1),
+                        string(reward, rewardKey + "[" + i + "].label", "label", ""));
+            }
+        }
+        return builder.build();
+    }
+
+    private static TerminalArchiveRecord parseArchive(Identifier id, JsonObject json) {
+        TerminalArchiveRecord.Builder builder = TerminalArchiveRecord.builder(id)
+                .chapter(requiredString(json, "chapter"))
+                .title(string(json, "title", id.getPath()))
+                .group(string(json, "group", ""))
+                .status(string(json, "status", "OPEN"))
+                .order(integer(json, "order", 0))
+                .locked(bool(json, "locked", false));
+        JsonArray lines = array(json, "lines");
+        if (lines != null) {
+            for (int i = 0; i < lines.size(); i++) {
+                builder.line(stringElement(lines.get(i), "lines[" + i + "]"));
+            }
+        }
+        return builder.build();
+    }
+
+    private static String requiredString(JsonObject json, String key) {
+        return requiredString(json, key, key);
+    }
+
+    private static String requiredString(JsonObject json, String fieldLabel, String key) {
+        String value = string(json, fieldLabel, key, "");
+        if (value.isBlank()) {
+            throw new JsonParseException("Missing required field '" + fieldLabel + "'.");
+        }
+        TerminalIds.parse(value, fieldLabel);
+        return value;
+    }
+
+    private static String string(JsonObject json, String key, String fallback) {
+        return string(json, key, key, fallback);
+    }
+
+    private static String string(JsonObject json, String fieldLabel, String key, String fallback) {
+        JsonElement element = json.get(key);
+        if (element == null || element.isJsonNull()) {
+            return fallback;
+        }
+        return stringElement(element, fieldLabel);
+    }
+
+    private static int integer(JsonObject json, String key, int fallback) {
+        return integer(json, key, key, fallback);
+    }
+
+    private static int integer(JsonObject json, String fieldLabel, String key, int fallback) {
+        JsonElement element = json.get(key);
+        if (element == null || element.isJsonNull()) {
+            return fallback;
+        }
+        if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isNumber()) {
+            throw new JsonParseException("Field '" + fieldLabel + "' must be an integer.");
+        }
+        try {
+            return element.getAsInt();
+        } catch (NumberFormatException exception) {
+            throw new JsonParseException("Field '" + fieldLabel + "' must be an integer.", exception);
+        }
+    }
+
+    private static boolean bool(JsonObject json, String key, boolean fallback) {
+        JsonElement element = json.get(key);
+        if (element == null || element.isJsonNull()) {
+            return fallback;
+        }
+        if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isBoolean()) {
+            throw new JsonParseException("Field '" + key + "' must be a boolean.");
+        }
+        return element.getAsBoolean();
+    }
+
+    private static JsonArray array(JsonObject json, String key) {
+        JsonElement element = json.get(key);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        if (!element.isJsonArray()) {
+            throw new JsonParseException("Field '" + key + "' must be an array.");
+        }
+        return element.getAsJsonArray();
+    }
+
+    private static String stringElement(JsonElement element, String fieldLabel) {
+        if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
+            throw new JsonParseException("Field '" + fieldLabel + "' must be a string.");
+        }
+        JsonPrimitive primitive = element.getAsJsonPrimitive();
+        if (!primitive.isString()) {
+            throw new JsonParseException("Field '" + fieldLabel + "' must be a string.");
+        }
+        return primitive.getAsString();
+    }
+
+    private static SignalOsContentRegistry.LoadedContent validateReferences(
+            Map<Identifier, TerminalChapter> chapters,
+            Map<Identifier, TerminalMission> missions,
+            Map<Identifier, TerminalArchiveRecord> archives,
+            SignalOsContentRegistry.LoadReport report) {
+        Map<Identifier, TerminalMission> validMissions = new LinkedHashMap<>();
+        Map<Identifier, TerminalArchiveRecord> validArchives = new LinkedHashMap<>();
+        int rejected = 0;
+        Set<Identifier> jsonChapterIds = chapters.keySet();
+
+        for (Map.Entry<Identifier, TerminalMission> entry : missions.entrySet()) {
+            Identifier chapterId = entry.getValue().chapterId();
+            if (hasResolvableChapter(chapterId, jsonChapterIds)) {
+                validMissions.put(entry.getKey(), entry.getValue());
+            } else {
+                rejected++;
+                SignalOS.LOGGER.warn("SignalOS mission {} references missing chapter {}; mission skipped.",
+                        entry.getKey(), chapterId);
+            }
+        }
+        for (Map.Entry<Identifier, TerminalArchiveRecord> entry : archives.entrySet()) {
+            Identifier chapterId = entry.getValue().chapterId();
+            if (hasResolvableChapter(chapterId, jsonChapterIds)) {
+                validArchives.put(entry.getKey(), entry.getValue());
+            } else {
+                rejected++;
+                SignalOS.LOGGER.warn("SignalOS archive {} references missing chapter {}; archive skipped.",
+                        entry.getKey(), chapterId);
+            }
+        }
+        return new SignalOsContentRegistry.LoadedContent(chapters, validMissions, validArchives,
+                report.withRejectedReferences(rejected));
+    }
+
+    private static boolean hasResolvableChapter(Identifier chapterId, Set<Identifier> jsonChapterIds) {
+        return chapterId != null && (jsonChapterIds.contains(chapterId) || SignalOsContentRegistry.hasNonJsonChapter(chapterId));
+    }
+
+    @FunctionalInterface
+    private interface Parser<T> {
+        T parse(Identifier id, JsonObject json);
+    }
+
+    private record LoadedEntries<T>(Map<Identifier, T> values, SignalOsContentRegistry.LoadReport report) {
+    }
+}

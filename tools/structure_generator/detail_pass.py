@@ -892,6 +892,94 @@ def add_access_path(
     return result
 
 
+def add_entrance_thresholds(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    route_role: str = "route",
+) -> BlockList:
+    """Mark one or two believable entry points with paths, lintels, and hazard tells."""
+    bounds = _bounds(blocks)
+    if not bounds:
+        return blocks
+    min_x, max_x, min_y, _, min_z, max_z = bounds
+    cx = (min_x + max_x) // 2
+    cz = (min_z + max_z) // 2
+    path_block = PATH_BLOCKS.get(category, PATH_BLOCKS["global"])
+    retaining = RETAINING_PALETTES.get(category, RETAINING_PALETTES["global"])
+    light_palette = LIGHTING_NODES.get(category, LIGHTING_NODES["global"])
+    result = blocks[:]
+
+    candidates = [
+        (cx, min_z, 0, -1, "north"),
+        (cx, max_z, 0, 1, "south"),
+        (min_x, cz, -1, 0, "west"),
+        (max_x, cz, 1, 0, "east"),
+    ]
+    rng.shuffle(candidates)
+    threshold_count = 2 if route_role in {"hub", "faction_hub", "camp", "cache", "landmark", "anomaly"} else 1
+    for x, z, dx, dz, _ in candidates[:threshold_count]:
+        # A three-wide threshold reads as an entrance without requiring doors.
+        for side in (-1, 0, 1):
+            tx = x + (side if dz != 0 else 0)
+            tz = z + (side if dx != 0 else 0)
+            result.append((tx, min_y, tz, path_block, None))
+            result.append((tx + dx, min_y, tz + dz, path_block, None))
+        for side in (-2, 2):
+            tx = x + (side if dz != 0 else 0)
+            tz = z + (side if dx != 0 else 0)
+            result.append((tx, min_y + 1, tz, rng.choice(retaining), None))
+            if rng.random() < 0.75:
+                result.append((tx, min_y + 2, tz, rng.choice(retaining), None))
+        marker = rng.choice(light_palette)
+        props = {"lit": "true"} if marker == "minecraft:redstone_torch" else None
+        if marker == "minecraft:campfire":
+            props = {"lit": "true", "facing": "north", "signal_fire": "false", "waterlogged": "false"}
+        result.append((x, min_y + 1, z, marker, props))
+
+    return result
+
+
+def add_broken_outline_clusters(
+    blocks: BlockList,
+    rng: random.Random,
+    category: str,
+    structure_size: str = "small",
+) -> BlockList:
+    """Break up rectangular bases with readable collapsed corners and retaining debris."""
+    bounds = _bounds(blocks)
+    if not bounds:
+        return blocks
+    min_x, max_x, min_y, _, min_z, max_z = bounds
+    width = max_x - min_x + 1
+    depth = max_z - min_z + 1
+    if width < 7 or depth < 7:
+        return blocks
+
+    retaining = RETAINING_PALETTES.get(category, RETAINING_PALETTES["global"])
+    foundation = FOUNDATION_PALETTES.get(category, FOUNDATION_PALETTES["global"])
+    corners = [
+        (min_x, min_z, 1, 1),
+        (max_x, min_z, -1, 1),
+        (min_x, max_z, 1, -1),
+        (max_x, max_z, -1, -1),
+    ]
+    rng.shuffle(corners)
+    cluster_count = 3 if structure_size in {"big", "landmark"} else 2
+    result = blocks[:]
+    for ox, oz, sx, sz in corners[:cluster_count]:
+        span = rng.randint(2, 4 if structure_size in {"big", "landmark"} else 3)
+        for step in range(span):
+            x = ox + sx * step
+            z = oz + sz * rng.randint(0, span)
+            result.append((x, min_y, z, rng.choice(foundation), None))
+            if rng.random() < 0.70:
+                result.append((x, min_y + 1, z, rng.choice(retaining), None))
+            if rng.random() < 0.30:
+                result.append((x + sx, min_y, z, rng.choice(foundation), None))
+    return result
+
+
 def add_lighting_nodes(blocks: BlockList, rng: random.Random, category: str, count: int = 3) -> BlockList:
     """Place category-appropriate light/marker blocks at readable anchors."""
     bounds = _bounds(blocks)
@@ -1353,6 +1441,8 @@ def apply_detail_pass(
     if route_role in {"hub", "faction_hub", "landmark", "anomaly"}:
         route_count += 1
     result = add_access_path(result, rng, category, route_count=min(route_count, 3), route_length=max(6, int(7 * multiplier)))
+    result = add_entrance_thresholds(result, rng, category, route_role=route_role)
+    result = add_broken_outline_clusters(result, rng, category, structure_size=structure_size)
     result = add_silhouette_polish(result, rng, category)
     result = add_category_signature(result, rng, category, name)
     result = add_route_role_set_piece(result, rng, category, name, profile)

@@ -22,7 +22,7 @@ ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth
 
 - `./gradlew :echoorbitalremnants:build`
 - `./gradlew :echoorbitalremnants:runGameTestServer`
-- Confirm the release jar appears in `addons/echoorbitalremnants/build/libs/`.
+- Confirm the release jar appears in `addons/echoorbitalremnants/build/libs/`; the primary redirected Gradle output remains under `%LOCALAPPDATA%/EchoGradleBuild/Echo/echoorbitalremnants/libs/`.
 - Optional manual pass: new survival world, terminal calibration, launch, every route, every machine menu, ECHO-0 completion.
 
 ## Known Boundaries

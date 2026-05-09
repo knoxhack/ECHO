@@ -40,6 +40,8 @@ public record TerminalTabChrome(
         String upper = title.toUpperCase(Locale.ROOT);
         String shortTitle = switch (upper) {
             case "OVERVIEW", "COMMAND DECK" -> "Command Deck";
+            case "WHAT NOW" -> "What Now";
+            case "TERMINAL SETTINGS", "INTERFACE SETTINGS" -> "Interface Settings";
             case "MISSIONS", "PROTOCOL ROADMAP" -> "Protocol Roadmap";
             case "SIDE OPS", "SIGNAL LEADS" -> "Signal Leads";
             case "ARCHIVES", "FIELD ARCHIVE" -> "Field Archive";
@@ -55,11 +57,12 @@ public record TerminalTabChrome(
             default -> title;
         };
         String group = switch (upper) {
-            case "OVERVIEW", "COMMAND DECK", "MISSIONS", "PROTOCOL ROADMAP", "SIDE OPS", "SIGNAL LEADS" ->
+            case "OVERVIEW", "COMMAND DECK", "WHAT NOW", "MISSIONS", "PROTOCOL ROADMAP", "SIDE OPS", "SIGNAL LEADS" ->
                     GROUP_PROTOCOL;
             case "ARCHIVES", "FIELD ARCHIVE", "CODEX", "SURVIVAL INDEX", "WORLD", "ROUTE MAP", "VANILLA",
                     "BASELINE" -> GROUP_FIELD;
-            case "STATUS", "VITALS SCAN", "DRONE", "COMPANION LINK", "SYSTEMS" -> GROUP_SYSTEMS;
+            case "STATUS", "VITALS SCAN", "DRONE", "COMPANION LINK", "SYSTEMS",
+                    "TERMINAL SETTINGS", "INTERFACE SETTINGS" -> GROUP_SYSTEMS;
             case "NEXUS", "NEXUS CORE" -> GROUP_NEXUS;
             case "ORBITAL", "ORBITAL COMMAND", "SURVEY", "ROUTE SURVEY", "ECHO", "ECHO-0 RECORDS" ->
                     GROUP_ORBITAL;
@@ -67,6 +70,8 @@ public record TerminalTabChrome(
         };
         String icon = switch (upper) {
             case "OVERVIEW", "COMMAND DECK" -> "CD";
+            case "WHAT NOW" -> "WN";
+            case "TERMINAL SETTINGS", "INTERFACE SETTINGS" -> "IS";
             case "MISSIONS", "PROTOCOL ROADMAP" -> "PR";
             case "SIDE OPS", "SIGNAL LEADS" -> "SL";
             case "STATUS", "VITALS SCAN" -> "VS";
@@ -83,6 +88,8 @@ public record TerminalTabChrome(
         };
         String summary = switch (upper) {
             case "OVERVIEW", "COMMAND DECK" -> "Active protocol dashboard";
+            case "WHAT NOW" -> "Progress diagnostics";
+            case "TERMINAL SETTINGS", "INTERFACE SETTINGS" -> "Presentation and accessibility";
             case "MISSIONS", "PROTOCOL ROADMAP" -> "ECHO-7 route objectives";
             case "SIDE OPS", "SIGNAL LEADS" -> "Optional recon signals";
             case "STATUS", "VITALS SCAN" -> "Systems and hazard scan";

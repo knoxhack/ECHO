@@ -1594,22 +1594,12 @@ public class MissionRegistry {
                 Collections.emptyList()
         ));
         phase4.add(bossMission(
-                "neutralize_wasteland_sentinel",
-                "Wasteland Sentinel",
-                "echoashfallprotocol:wasteland_sentinel",
-                "Bio Lab",
-                "the Wasteland",
-                "activate_relay_station",
-                Mission.Difficulty.HARD,
-                List.of(new ItemStack(ModItems.FILTER_CARTRIDGE_ADVANCED.get(), 1), new ItemStack(ModItems.RAD_AWAY.get(), 1), new ItemStack(ModItems.DATA_LOG_BIOME_BOSSES.get(), 1))
-        ));
-        phase4.add(bossMission(
                 "neutralize_plains_warlord",
                 "Plains Warlord",
                 "echoashfallprotocol:plains_warlord",
                 "Radwarden Outpost",
                 "Ruined Plains",
-                "neutralize_wasteland_sentinel",
+                "activate_relay_station",
                 Mission.Difficulty.HARD,
                 List.of(new ItemStack(ModItems.DENSE_ALLOY_CHUNK.get(), 2), new ItemStack(ModItems.ENERGY_CELL.get(), 4))
         ));

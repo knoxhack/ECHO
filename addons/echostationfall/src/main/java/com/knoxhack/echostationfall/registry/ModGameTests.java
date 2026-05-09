@@ -1,6 +1,7 @@
 package com.knoxhack.echostationfall.registry;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoHandoffs;
 import com.knoxhack.echostationfall.EchoStationfall;
 import com.knoxhack.echostationfall.integration.StationfallTerminalCommonIntegration;
 import com.knoxhack.echostationfall.progression.SignalPanicState;
@@ -143,6 +144,7 @@ public final class ModGameTests {
         progress.setSectionPower(player, StationSection.CREW_QUARTERS, StationPowerState.STABLE);
         progress.decodeLog(player, StationSection.CREW_QUARTERS);
         progress.markAiOverrideObtained(player);
+        progress.markBlackboxRetrieved(player);
         progress.markTerminalRewardClaimed(player, "crew_quarters_cache");
 
         StationfallProgress restored = StationfallProgress.get(player);
@@ -153,11 +155,14 @@ public final class ModGameTests {
         helper.assertTrue(restored.logDecoded(StationSection.CREW_QUARTERS),
                 "Decoded crew logs should persist on player data");
         helper.assertTrue(restored.aiOverrideObtained(), "AI Override milestone should persist");
+        helper.assertTrue(restored.blackboxRetrieved(), "Stationfall Blackbox retrieval should persist");
         helper.assertTrue(restored.terminalRewardClaimed("crew_quarters_cache"),
                 "Terminal claim state should persist without duplication");
         if (player instanceof ServerPlayer serverPlayer) {
             helper.assertTrue(EchoCoreServices.isArchiveUnlocked(serverPlayer, StationLore.crewLogId(StationSection.CREW_QUARTERS)),
                     "Decoding a crew log should unlock the matching archive record");
+            helper.assertTrue(EchoCoreServices.progressLedger(serverPlayer).hasMilestone(EchoHandoffs.STATIONFALL_BLACKBOX_RECOVERED),
+                    "Retrieving the Stationfall Blackbox should record the canonical saga handoff milestone");
         }
 
         SignalPanicState panic = SignalPanicState.get(player);

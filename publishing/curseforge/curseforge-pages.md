@@ -1,6 +1,6 @@
 # ECHO CurseForge Publish Copy
 
-Use these as paste-ready CurseForge page descriptions for the four ECHO projects.
+Use these as paste-ready CurseForge page descriptions for the staged ECHO projects. The current release stack also includes Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol through the shared Core and Terminal contracts.
 
 ## ECHO: Core
 
@@ -14,7 +14,7 @@ Full description:
 
 ECHO: Core is the shared foundation for the modular ECHO mod stack. It provides the API layer, service registry, addon chapter registration, Nexus path hooks, terminal placement contracts, terminal reward contracts, and intel mirroring services used by ECHO gameplay mods.
 
-This is a required library mod for ECHO projects. It does not add a standalone survival campaign by itself; it exists so ECHO: Ashfall Protocol, ECHO: Terminal, ECHO: Orbital Remnants, and future ECHO addons can speak the same progression and integration language.
+This is a required library mod for ECHO projects. It does not add a standalone survival campaign by itself; it exists so ECHO: Ashfall Protocol, ECHO: Terminal, ECHO: Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, Blackbox Protocol, and later ECHO addons can speak the same progression and integration language.
 
 Features:
 
@@ -23,7 +23,7 @@ Features:
 - Nexus path service hooks for post-decision content.
 - Terminal placement and reward service contracts.
 - Intel mirroring support between gameplay mods and terminal surfaces.
-- Lightweight foundation built for pack authors and future addon chapters.
+- Lightweight foundation built for pack authors and addon chapters.
 
 Requirements:
 
@@ -36,6 +36,7 @@ Recommended with:
 - ECHO: Terminal
 - ECHO: Ashfall Protocol
 - ECHO: Orbital Remnants
+- Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol when running the full stack
 
 ## ECHO: Terminal
 
@@ -49,16 +50,17 @@ Full description:
 
 ECHO: Terminal adds the shared ECHO Terminal block, UI shell, mission browser, archive surface, action routing, and addon integration hooks for the ECHO mod stack.
 
-With ECHO gameplay mods installed, the terminal becomes the player's command surface: missions, records, route status, survival guidance, addon tabs, notifications, and actionable buttons can all appear in one consistent in-game interface. It is built as a modular shell, so ECHO: Ashfall Protocol, ECHO: Orbital Remnants, and future chapters can register their own pages without replacing the terminal.
+With ECHO gameplay mods installed, the terminal becomes the player's command surface: missions, records, route status, survival guidance, addon tabs, recipe lookups, notifications, and actionable buttons can all appear in one consistent in-game interface. It is built as a modular shell, so ECHO: Ashfall Protocol, ECHO: Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, Blackbox Protocol, and later chapters can register their own pages without replacing the terminal.
 
 Features:
 
 - ECHO Terminal block and screen.
-- Shared tab, page, badge, archive, and notification APIs.
+- Shared tab, page, navigation, recipe, archive, and notification APIs.
 - Mission browser and mission presentation system.
+- Recipe Index with searchable ECHO items, Recipes/Uses modes, category filters, item details, and provider-backed process notes.
 - Networked terminal actions for registered addon commands.
-- Built-in visual shell for command, field, status, archive, and addon pages.
-- Integration point for Ashfall, Orbital Remnants, and future ECHO chapters.
+- Built-in visual shell for Command, Progress, Intel, System, archive, recipe, and addon pages.
+- Integration point for Ashfall, Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, Blackbox Protocol, and later ECHO chapters.
 
 Requirements:
 
@@ -94,7 +96,7 @@ Core features:
 - Scanner-led exploration through wastelands, toxic swamps, ruined cities, radiation zones, cryogenic ruins, crash scars, Nexus scars, faction hubs, POIs, and underground guardian arenas.
 - Factions including Remnants, Salvagers, and Mutant-aligned threats with reputation, patrols, raids, quests, trade pressure, and intel.
 - ECHO companion and drone progression for scouting, combat, scavenging, patrols, and terminal-linked reports.
-- Research, schematics, JEI machine categories, recovered biome goods, rare resource routes, and late-game restoration infrastructure.
+- Research, schematics, JEI machine categories, ECHO Terminal Recipe Index notes, recovered biome goods, rare resource routes, and late-game restoration infrastructure.
 - Nine buried biome guardian nodes leading to the Nexus Core.
 - Restore, Destroy, or Control finale with aftermath missions and optional orbital expansion unlock.
 
@@ -107,8 +109,8 @@ Requirements:
 
 Recommended:
 
-- ECHO: Terminal for the full shared ECHO interface.
 - JEI for custom machine and process recipe visibility.
+- ECHO: Terminal for shared route guidance, addon pages, and the provider-backed Recipe Index.
 - ECHO: Orbital Remnants for the optional post-Nexus expansion.
 
 ## ECHO: Orbital Remnants
@@ -157,3 +159,39 @@ Compatibility notes:
 - With ECHO: Ashfall Protocol installed, orbital calibration is locked until the player makes any Nexus choice: Restore, Destroy, or Control.
 - With ECHO: Terminal installed, Orbital records and actions appear inside the shared terminal.
 - Without ECHO: Terminal, Orbital Remnants keeps its standalone ECHO-7 Terminal item flow.
+
+## ECHO: Industrial Nexus
+
+Banner: pending Industrial Nexus banner asset.
+
+Short description:
+
+> Industrial automation, Thermal Flux machines, fluid pipes, scrubber safe zones, and factory recovery for the ECHO stack.
+
+Full description:
+
+ECHO: Industrial Nexus is the included infrastructure and automation chapter for the ECHO mod stack. It turns Ashfall survival into factory recovery with Thermal Flux generators, recipe-driven machines, item and fluid logistics, overheating, Industrial Scrubber safe zones, procedural industrial POIs, and Furnace Warden progression.
+
+With ECHO: Terminal installed, Industrial Nexus registers an Industrial chapter page, mission records, archive/action hooks, support-cache claims, and a Recipe Index provider for its data-driven machine recipes.
+
+Core features:
+
+- Thermal Flux generators, capacitor banks, Flux ducts, machine storage, and controller scans.
+- Recipe-driven machines with inputs, catalysts, outputs, byproducts, duration, heat, Thermal Flux cost or generation, and custom menu/screen sync.
+- NeoForge fluid tanks, cells, fallback bucket workflows, and tiered fluid pipes with filtering, transfer rates, loss, and hazardous leaks.
+- Industrial Scrubber modes for air, radiation, blight, station support, and cooling safe zones.
+- Procedural Abandoned Thermal Plants, Rusted Factory Complexes, Geothermal Drill Sites, Reactor Cooling Stations, and Nexus Heat Exchanger Ruins.
+- ECHO Terminal Recipe Index entries parsed from `echoindustrialnexus:industrial_processing` JSON, including item or tag ingredients, catalysts, byproducts, fluids, Thermal Flux, heat, and duration notes.
+- Furnace Warden activation, phased fight state, participant reward credit, and one-time Terminal reward eligibility.
+
+Requirements:
+
+- Minecraft 26.1.2
+- NeoForge 26.1.2.29-beta or newer
+- Java 25+
+- ECHO: Core 1.1.0 or newer
+
+Recommended:
+
+- ECHO: Terminal for shared Industrial mission pages, support caches, and Recipe Index visibility.
+- ECHO: Ashfall Protocol for the main survival route that Industrial infrastructure supports.

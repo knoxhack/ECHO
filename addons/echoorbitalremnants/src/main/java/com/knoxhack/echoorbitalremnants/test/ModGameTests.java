@@ -8,6 +8,7 @@ import com.knoxhack.echoorbitalremnants.entity.CorruptedDockingAiEntity;
 import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
+import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalMissionProvider;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIds;
 import com.knoxhack.echoorbitalremnants.item.FactionPledgeItem;
@@ -31,11 +32,19 @@ import com.knoxhack.echoorbitalremnants.world.MarsAshBasin;
 import com.knoxhack.echoorbitalremnants.world.NexusAnomalyBelt;
 import com.knoxhack.echoorbitalremnants.world.OrbitalDebrisField;
 import com.knoxhack.echoorbitalremnants.world.RouteTerrainGenerator;
+import com.knoxhack.echocore.api.EchoChapterCapability;
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
+import com.knoxhack.echocore.api.EchoHazardTelemetry;
+import com.knoxhack.echocore.api.EchoPackMode;
+import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echoterminal.api.TerminalTab;
 import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalNavigationSection;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.io.IOException;
@@ -77,6 +86,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -151,6 +161,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_mission_cache_state", () -> ModGameTests::terminalMissionCacheState);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSION_INTEGRATION =
             TEST_FUNCTIONS.register("terminal_mission_integration", () -> ModGameTests::terminalMissionIntegration);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_INTEGRATION_CONTRACT =
+            TEST_FUNCTIONS.register("core_integration_contract", () -> ModGameTests::coreIntegrationContract);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_LORE_TAXONOMY =
             TEST_FUNCTIONS.register("terminal_lore_taxonomy", () -> ModGameTests::terminalLoreTaxonomy);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_RC_POLISH =
@@ -166,6 +178,9 @@ public final class ModGameTests {
     }
 
     public static void registerTests(RegisterGameTestsEvent event) {
+        if (!shouldRegisterTests()) {
+            return;
+        }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("release_v1"));
         register(event, environment, "machine_processing", MACHINE_PROCESSING.getId());
         register(event, environment, "launch_readiness", LAUNCH_READINESS.getId());
@@ -200,6 +215,7 @@ public final class ModGameTests {
         register(event, environment, "boss_identity", BOSS_IDENTITY.getId());
         register(event, environment, "terminal_mission_cache_state", TERMINAL_MISSION_CACHE_STATE.getId());
         register(event, environment, "terminal_mission_integration", TERMINAL_MISSION_INTEGRATION.getId());
+        register(event, environment, "core_integration_contract", CORE_INTEGRATION_CONTRACT.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
         register(event, environment, "beta_rc_polish", BETA_RC_POLISH.getId());
         register(event, environment, "asset_completeness", ASSET_COMPLETENESS.getId());
@@ -793,6 +809,117 @@ public final class ModGameTests {
         }
     }
 
+    private static void coreIntegrationContract(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        AshfallCompat.registerAddonChapter();
+
+        boolean ashfallLoaded = ModList.get().isLoaded("echoashfallprotocol");
+        TerminalMissionSnapshot freshMission = OrbitalMissionProvider.INSTANCE.snapshot(player, id("earth_calibration"));
+        if (ashfallLoaded) {
+            helper.assertTrue(AshfallCompat.isOrbitalCalibrationLocked(player),
+                    "Ashfall-loaded Orbital should lock Earth calibration before a Nexus choice");
+            helper.assertFalse(AshfallCompat.hasPostNexusChoice(player),
+                    "Fresh Ashfall player data should not count as post-Nexus");
+            helper.assertTrue(freshMission.status() == TerminalMissionStatus.LOCKED,
+                    "Shared Terminal mission should mirror the Ashfall handoff lock");
+            helper.assertTrue(hasDiagnostic(EchoCoreServices.diagnostics(player), "orbital_ashfall_handoff_locked"),
+                    "Core diagnostics should publish the Ashfall handoff blocker");
+            markAshfallNexusChoice(helper, player);
+        } else {
+            helper.assertFalse(AshfallCompat.isOrbitalCalibrationLocked(player),
+                    "Standalone Orbital should not lock Earth calibration on missing Ashfall data");
+            helper.assertTrue(AshfallCompat.hasPostNexusChoice(player),
+                    "Standalone Orbital should expose a recovered handoff to Core availability checks");
+            helper.assertTrue(EchoCoreServices.packMode(player) == EchoPackMode.ORBITAL_STANDALONE,
+                    "Current Orbital GameTest runtime should resolve as Orbital standalone");
+            helper.assertTrue(freshMission.status() == TerminalMissionStatus.UNLOCKED,
+                    "Standalone Earth calibration should be immediately available");
+        }
+
+        helper.assertFalse(AshfallCompat.isOrbitalCalibrationLocked(player),
+                "Orbital calibration should be unlocked after the active handoff condition is satisfied");
+        helper.assertTrue(AshfallCompat.hasPostNexusChoice(player),
+                "Core-facing Orbital availability should be true after the handoff condition is satisfied");
+
+        EchoChapterCapability capability = EchoCoreServices.chapterCapabilities(player).stream()
+                .filter(entry -> "orbital_remnants".equals(entry.id()))
+                .findFirst()
+                .orElse(null);
+        helper.assertTrue(capability != null && capability.installed(),
+                "ECHO Core should report Orbital Remnants as an installed chapter");
+        helper.assertTrue(capability.available(), "ECHO Core should report Orbital available after handoff");
+        helper.assertTrue(capability.statusLine().contains(ashfallLoaded ? "Earth calibration" : "Standalone"),
+                "Core chapter status should explain the active Orbital handoff mode");
+
+        String ashfallSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/integration/AshfallCompat.java")
+                .replace("\r\n", "\n");
+        helper.assertTrue(ashfallSource.contains("PostNexusData")
+                        && ashfallSource.contains("getSelectedPath")
+                        && ashfallSource.contains("hasMadeChoice"),
+                "Ashfall compatibility should keep reading the real post-Nexus data shape");
+        helper.assertFalse(ashfallSource.contains("isOrbitalCalibrationLocked(Player player) {\n        return false;"),
+                "Ashfall calibration lock should not regress to the old stub");
+        helper.assertFalse(ashfallSource.contains("hasPostNexusChoice(Player player) {\n        return player != null;"),
+                "Post-Nexus detection should not regress to the old non-null-player stub");
+
+        List<EchoDiagnosticBlocker> freshDiagnostics = EchoCoreServices.diagnostics(player);
+        helper.assertTrue(hasDiagnostic(freshDiagnostics, "orbital_calibration_needed"),
+                "Core diagnostics should expose the initial Earth calibration objective");
+        helper.assertFalse(hasDiagnostic(freshDiagnostics, "orbital_ashfall_handoff_locked"),
+                "Ashfall handoff blocker should clear once the handoff condition is satisfied");
+
+        List<EchoRouteRecord> freshRoutes = orbitalRouteRecords(player);
+        helper.assertTrue(freshRoutes.size() == 4, "Core should publish all four Orbital route records");
+        EchoRouteRecord earthFresh = routeRecord(freshRoutes, "orbital_earth_recontact");
+        helper.assertTrue(earthFresh != null && "SCAN REQUIRED".equals(earthFresh.status()) && !earthFresh.complete(),
+                "Fresh Core route record should ask for Earth calibration");
+        helper.assertTrue(routeRecord(freshRoutes, "orbital_launch_chain") != null,
+                "Core route records should include the launch chain");
+        helper.assertTrue(routeRecord(freshRoutes, "orbital_route_worlds") != null,
+                "Core route records should include the route-world survey state");
+        helper.assertTrue(routeRecord(freshRoutes, "orbital_echo_zero") != null,
+                "Core route records should include the ECHO-0 quarantine state");
+
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        progress.markOrbitalContact(player);
+        TerminalMissionSnapshot calibratedMission = OrbitalMissionProvider.INSTANCE.snapshot(player, id("earth_calibration"));
+        helper.assertTrue(calibratedMission.status() == TerminalMissionStatus.CLAIMABLE,
+                "Calibrated Earth mission should become claimable in the shared Terminal provider");
+        EchoRouteRecord earthCalibrated = routeRecord(orbitalRouteRecords(player), "orbital_earth_recontact");
+        helper.assertTrue(earthCalibrated != null && "CALIBRATED".equals(earthCalibrated.status()) && earthCalibrated.complete(),
+                "Core Earth route record should mirror launch-site calibration");
+
+        EchoTerminalProgress.get(player).markLowOrbitReached(player);
+        TerminalMissionSnapshot lowOrbitMission = OrbitalMissionProvider.INSTANCE.snapshot(player, id("low_orbit"));
+        helper.assertTrue(lowOrbitMission.status() == TerminalMissionStatus.CLAIMABLE,
+                "Low Orbit mission should become claimable once the launch vector is reached");
+        EchoRouteRecord launchComplete = routeRecord(orbitalRouteRecords(player), "orbital_launch_chain");
+        helper.assertTrue(launchComplete != null && "COMPLETE".equals(launchComplete.status()) && launchComplete.complete(),
+                "Core launch route record should mirror Low Earth Orbit arrival");
+
+        EchoTerminalProgress.get(player).completeFullArcForQa(player);
+        List<EchoRouteRecord> finalRoutes = orbitalRouteRecords(player);
+        helper.assertTrue(routeRecord(finalRoutes, "orbital_route_worlds").complete(),
+                "Core route-world record should complete once all surveys and Nexus stabilization are complete");
+        EchoRouteRecord echoZero = routeRecord(finalRoutes, "orbital_echo_zero");
+        helper.assertTrue(echoZero != null && "SEALED".equals(echoZero.status()) && echoZero.complete(),
+                "Core ECHO-0 route record should mirror the final network seal");
+        TerminalMissionSnapshot finalSeal = OrbitalMissionProvider.INSTANCE.snapshot(player, id("final_seal"));
+        helper.assertTrue(finalSeal.status() == TerminalMissionStatus.CLAIMABLE,
+                "Final seal mission should become claimable after the implemented main loop is complete");
+
+        helper.assertTrue(EchoCoreServices.factionDefinitions().stream()
+                        .filter(definition -> EchoOrbitalRemnants.MODID.equals(definition.id().getNamespace()))
+                        .count() == 3,
+                "Core Faction Atlas should receive the three Orbital faction definitions");
+        player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
+        EchoHazardTelemetry telemetry = EchoCoreServices.hazardTelemetry(player);
+        helper.assertTrue(telemetry.exposure() >= 85 && telemetry.statusLine().contains("Orbital exposure"),
+                "Core hazard telemetry should expose active Orbital suit exposure");
+        helper.succeed();
+    }
+
     private static void terminalLoreTaxonomy(GameTestHelper helper) {
         helper.assertTrue("ECHO-0 ROUTE CHAIN".equals(OrbitalMissionProvider.INSTANCE.chapter().title()),
                 "Orbital mission chapter should render as the ECHO-0 route chain");
@@ -845,6 +972,20 @@ public final class ModGameTests {
                 "Faction hub scan copy should distinguish no pledge, serviced, active-contract, and authorized-cache states");
         helper.assertTrue(terminalSource.contains("Cache role confirmed: route proof, crafting support, and survival recovery"),
                 "Survey/cache scan feedback should explain why route caches are worth opening");
+        String routeItemSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/PlanetaryRouteItem.java");
+        helper.assertTrue(routeItemSource.contains("sendFeedback(player")
+                        && routeItemSource.contains("unlockHint()")
+                        && !routeItemSource.contains("Terminal telemetry lacks the handoff proof"),
+                "Route item lock feedback should stay action-bar visible and name the next concrete proof");
+        String shuttleSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/OrbitalShuttleItem.java");
+        helper.assertTrue(shuttleSource.contains("playShuttleFeedback")
+                        && shuttleSource.contains("sendFeedback(player")
+                        && shuttleSource.contains("Restore Station Life Support"),
+                "Orbital Shuttle handoff feedback should include particles, action-bar status, and concrete lock guidance");
+        String rocketSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/EmergencyRocketItem.java");
+        helper.assertTrue(rocketSource.contains("sendFeedback(player, \"Launch hold.")
+                        && rocketSource.contains("readiness.missing().size()"),
+                "Rocket staging holds should keep an action-bar summary before detailed missing checks");
         String suitSourceForFeedback = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/suit/SuitEvents.java");
         helper.assertTrue(suitSourceForFeedback.contains("Recovery cache opened: route proof, crafting support, and survival recovery stock")
                         && suitSourceForFeedback.contains("BlockScanCache")
@@ -1595,8 +1736,41 @@ public final class ModGameTests {
         event.registerTest(id(testName), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, functionId), data));
     }
 
+    private static boolean shouldRegisterTests() {
+        String namespaces = System.getProperty("neoforge.enabledGameTestNamespaces", "");
+        if (namespaces == null || namespaces.isBlank()) {
+            return true;
+        }
+        for (String namespace : namespaces.split(",")) {
+            String normalized = namespace.trim();
+            if (normalized.equals(EchoOrbitalRemnants.MODID) || normalized.equals("*") || normalized.equalsIgnoreCase("all")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, path);
+    }
+
+    private static boolean hasDiagnostic(List<EchoDiagnosticBlocker> diagnostics, String path) {
+        Identifier diagnosticId = id(path);
+        return diagnostics.stream().anyMatch(diagnostic -> diagnostic.id().equals(diagnosticId));
+    }
+
+    private static List<EchoRouteRecord> orbitalRouteRecords(net.minecraft.world.entity.player.Player player) {
+        return EchoCoreServices.routeRecords(player).stream()
+                .filter(record -> "orbital_remnants".equals(record.chapterId()))
+                .toList();
+    }
+
+    private static EchoRouteRecord routeRecord(List<EchoRouteRecord> records, String path) {
+        Identifier routeId = id(path);
+        return records.stream()
+                .filter(record -> record.id().equals(routeId))
+                .findFirst()
+                .orElse(null);
     }
 
     private static void markAshfallNexusChoice(GameTestHelper helper, net.minecraft.world.entity.player.Player player) {

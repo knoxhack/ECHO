@@ -1,0 +1,317 @@
+package com.knoxhack.echoconvoyprotocol.content;
+
+import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleKind;
+import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+public record ConvoyRouteDefinition(
+   Identifier id,
+   String title,
+   String summary,
+   int order,
+   String requiredVehicle,
+   int minFuel,
+   List<StackSpec> requiredCargo,
+   List<StackSpec> rewards,
+   int threatLevel,
+   ThreatSpec threat,
+   Identifier checkpointFactionId,
+   int minReputation,
+   CheckpointSpec checkpoint,
+   String destinationHint,
+   int requiredSignalMarkers,
+   int minDistanceFromStart,
+   List<RouteLeg> legs
+) {
+   public ConvoyRouteDefinition {
+      if (id == null) {
+         throw new IllegalArgumentException("Convoy route id is required.");
+      }
+      title = title == null || title.isBlank() ? id.getPath() : title.strip();
+      summary = summary == null ? "" : summary.strip();
+      requiredVehicle = requiredVehicle == null || requiredVehicle.isBlank() ? "any" : requiredVehicle.strip();
+      minFuel = Math.max(0, minFuel);
+      requiredCargo = List.copyOf(requiredCargo == null ? List.of() : requiredCargo);
+      rewards = List.copyOf(rewards == null ? List.of() : rewards);
+      threatLevel = Math.max(0, Math.min(5, threatLevel));
+      threat = threat == null ? ThreatSpec.fromThreatLevel(threatLevel) : threat;
+      checkpointFactionId = checkpointFactionId == null ? Identifier.fromNamespaceAndPath("echocore", "survivors") : checkpointFactionId;
+      minReputation = Math.max(0, minReputation);
+      checkpoint = checkpoint == null ? CheckpointSpec.defaults() : checkpoint;
+      destinationHint = destinationHint == null ? "Overworld roadside corridor" : destinationHint.strip();
+      requiredSignalMarkers = Math.max(1, requiredSignalMarkers);
+      minDistanceFromStart = Math.max(0, minDistanceFromStart);
+      legs = List.copyOf(legs == null || legs.isEmpty()
+         ? defaultLegs(requiredSignalMarkers, minDistanceFromStart, minReputation > 0)
+         : legs);
+      requiredSignalMarkers = Math.max(1, legs.size());
+   }
+
+   public ConvoyRouteDefinition(
+      Identifier id,
+      String title,
+      String summary,
+      int order,
+      String requiredVehicle,
+      int minFuel,
+      List<StackSpec> requiredCargo,
+      List<StackSpec> rewards,
+      int threatLevel,
+      Identifier checkpointFactionId,
+      int minReputation,
+      String destinationHint
+   ) {
+      this(
+         id,
+         title,
+         summary,
+         order,
+         requiredVehicle,
+         minFuel,
+         requiredCargo,
+         rewards,
+         threatLevel,
+         ThreatSpec.fromThreatLevel(threatLevel),
+         checkpointFactionId,
+         minReputation,
+         CheckpointSpec.defaults(),
+         destinationHint,
+         1,
+         24,
+         List.of()
+      );
+   }
+
+   public ConvoyRouteDefinition(
+      Identifier id,
+      String title,
+      String summary,
+      int order,
+      String requiredVehicle,
+      int minFuel,
+      List<StackSpec> requiredCargo,
+      List<StackSpec> rewards,
+      int threatLevel,
+      Identifier checkpointFactionId,
+      int minReputation,
+      String destinationHint,
+      int requiredSignalMarkers,
+      int minDistanceFromStart
+   ) {
+      this(
+         id,
+         title,
+         summary,
+         order,
+         requiredVehicle,
+         minFuel,
+         requiredCargo,
+         rewards,
+         threatLevel,
+         ThreatSpec.fromThreatLevel(threatLevel),
+         checkpointFactionId,
+         minReputation,
+         CheckpointSpec.defaults(),
+         destinationHint,
+         requiredSignalMarkers,
+         minDistanceFromStart,
+         List.of()
+      );
+   }
+
+   public ConvoyRouteDefinition(
+      Identifier id,
+      String title,
+      String summary,
+      int order,
+      String requiredVehicle,
+      int minFuel,
+      List<StackSpec> requiredCargo,
+      List<StackSpec> rewards,
+      int threatLevel,
+      Identifier checkpointFactionId,
+      int minReputation,
+      String destinationHint,
+      int requiredSignalMarkers,
+      int minDistanceFromStart,
+      List<RouteLeg> legs
+   ) {
+      this(
+         id,
+         title,
+         summary,
+         order,
+         requiredVehicle,
+         minFuel,
+         requiredCargo,
+         rewards,
+         threatLevel,
+         ThreatSpec.fromThreatLevel(threatLevel),
+         checkpointFactionId,
+         minReputation,
+         CheckpointSpec.defaults(),
+         destinationHint,
+         requiredSignalMarkers,
+         minDistanceFromStart,
+         legs
+      );
+   }
+
+   public boolean acceptsVehicle(ConvoyVehicleKind kind) {
+      return "any".equals(requiredVehicle) || kind.getSerializedName().equals(requiredVehicle);
+   }
+
+   public RouteLeg leg(int index) {
+      if (index < 0) {
+         return legs.getFirst();
+      }
+      if (index >= legs.size()) {
+         return legs.getLast();
+      }
+      return legs.get(index);
+   }
+
+   private static List<RouteLeg> defaultLegs(int requiredSignalMarkers, int minDistanceFromStart, boolean checkpointRoute) {
+      int count = Math.max(1, requiredSignalMarkers);
+      int distance = Math.max(0, minDistanceFromStart);
+      List<RouteLeg> defaults = new java.util.ArrayList<>();
+      for (int i = 0; i < count; i++) {
+         boolean finalLeg = i == count - 1;
+         int legDistance = finalLeg ? distance : distance * (i + 1) / count;
+         defaults.add(new RouteLeg(
+            finalLeg ? "destination" : "leg_" + (i + 1),
+            finalLeg ? "Destination Signal" : "Roadside Signal " + (i + 1),
+            legDistance,
+            checkpointRoute && finalLeg,
+            RouteLeg.DEFAULT_ROADSIDE_STRUCTURE
+         ));
+      }
+      return defaults;
+   }
+
+   public record RouteLeg(String id, String title, int minDistanceFromStart, boolean requiresCheckpoint, Identifier roadsideStructure) {
+      public static final Identifier DEFAULT_ROADSIDE_STRUCTURE =
+         Identifier.fromNamespaceAndPath("echoconvoyprotocol", "roadside/signal_marker");
+
+      public RouteLeg {
+         id = id == null || id.isBlank() ? "destination" : id.strip();
+         title = title == null || title.isBlank() ? id : title.strip();
+         minDistanceFromStart = Math.max(0, minDistanceFromStart);
+         roadsideStructure = roadsideStructure == null ? DEFAULT_ROADSIDE_STRUCTURE : roadsideStructure;
+      }
+   }
+
+   public record ThreatSpec(
+      String label,
+      Identifier entityType,
+      int minCount,
+      int maxCount,
+      int chanceOneIn,
+      int cooldownTicks,
+      int vehicleDamage,
+      double spawnRadius,
+      String warning
+   ) {
+      public ThreatSpec {
+         label = label == null || label.isBlank() ? "Road Ambush" : label.strip();
+         entityType = entityType == null ? Identifier.withDefaultNamespace("zombie") : entityType;
+         minCount = Math.max(0, minCount);
+         maxCount = Math.max(minCount, maxCount);
+         chanceOneIn = Math.max(0, chanceOneIn);
+         cooldownTicks = Math.max(20, cooldownTicks);
+         vehicleDamage = Math.max(0, vehicleDamage);
+         spawnRadius = Math.max(4.0D, spawnRadius);
+         warning = warning == null || warning.isBlank() ? "Road ambush on %route%. Keep moving." : warning.strip();
+      }
+
+      public static ThreatSpec fromThreatLevel(int threatLevel) {
+         int level = Math.max(0, Math.min(5, threatLevel));
+         if (level == 0) {
+            return new ThreatSpec("No Road Threat", Identifier.withDefaultNamespace("zombie"), 0, 0, 0, 1200, 0, 8.0D, "");
+         }
+         return new ThreatSpec(
+            "Road Ambush",
+            Identifier.withDefaultNamespace("zombie"),
+            Math.max(1, level),
+            Math.max(1, level),
+            Math.max(2, 18 - level * 3),
+            1200,
+            level,
+            8.0D,
+            "Road ambush on %route%. Keep moving."
+         );
+      }
+
+      public boolean enabled() {
+         return maxCount > 0 && chanceOneIn > 0;
+      }
+
+      public int rollCount(RandomSource random) {
+         if (maxCount <= minCount) {
+            return minCount;
+         }
+         return minCount + random.nextInt(maxCount - minCount + 1);
+      }
+
+      public String warningFor(ConvoyRouteDefinition route) {
+         return warning
+            .replace("%route%", route.title())
+            .replace("%threat%", label)
+            .replace("%entity%", entityType.toString());
+      }
+   }
+
+   public record CheckpointSpec(String label, String warning, String clearedMessage) {
+      public CheckpointSpec {
+         label = label == null || label.isBlank() ? "Faction Checkpoint" : label.strip();
+         warning = warning == null || warning.isBlank()
+            ? "%checkpoint% blocked: %faction% reputation %reputation%/%required%."
+            : warning.strip();
+         clearedMessage = clearedMessage == null || clearedMessage.isBlank()
+            ? "%checkpoint% cleared for %route%."
+            : clearedMessage.strip();
+      }
+
+      public static CheckpointSpec defaults() {
+         return new CheckpointSpec("Faction Checkpoint", "", "");
+      }
+
+      public String blockedMessage(ConvoyRouteDefinition route, int reputation) {
+         return tokens(warning, route, reputation);
+      }
+
+      public String clearedMessage(ConvoyRouteDefinition route) {
+         return tokens(clearedMessage, route, route.minReputation());
+      }
+
+      private String tokens(String message, ConvoyRouteDefinition route, int reputation) {
+         return message
+            .replace("%checkpoint%", label)
+            .replace("%route%", route.title())
+            .replace("%faction%", route.checkpointFactionId().toString())
+            .replace("%reputation%", Integer.toString(reputation))
+            .replace("%required%", Integer.toString(route.minReputation()));
+      }
+   }
+
+   public record StackSpec(Identifier itemId, int count) {
+      public StackSpec {
+         itemId = itemId == null ? Identifier.withDefaultNamespace("air") : itemId;
+         count = Math.max(1, count);
+      }
+
+      public Item item() {
+         Item item = BuiltInRegistries.ITEM.getValue(itemId);
+         return item == null ? Items.AIR : item;
+      }
+
+      public ItemStack stack() {
+         return new ItemStack(item(), count);
+      }
+   }
+}

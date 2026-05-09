@@ -12,22 +12,38 @@ public record TerminalNavigationProfile(
         String chapterIcon,
         int order) {
     public TerminalNavigationProfile {
-        section = section == null ? TerminalNavigationSection.CHAPTERS : section;
+        section = section == null ? TerminalNavigationSection.CHAPTERS : section.canonical();
         chapterId = clean(chapterId);
         chapterTitle = clean(chapterTitle);
         chapterIcon = clean(chapterIcon).toUpperCase(Locale.ROOT);
     }
 
+    public static TerminalNavigationProfile command(int order) {
+        return section(TerminalNavigationSection.COMMAND, order);
+    }
+
+    public static TerminalNavigationProfile progress(int order) {
+        return section(TerminalNavigationSection.CHAPTERS, order);
+    }
+
+    public static TerminalNavigationProfile intel(int order) {
+        return section(TerminalNavigationSection.INTEL, order);
+    }
+
+    public static TerminalNavigationProfile system(int order) {
+        return section(TerminalNavigationSection.SYSTEM, order);
+    }
+
     public static TerminalNavigationProfile terminal(int order) {
-        return section(TerminalNavigationSection.TERMINAL, order);
+        return command(order);
     }
 
     public static TerminalNavigationProfile core(int order) {
-        return section(TerminalNavigationSection.CORE, order);
+        return intel(order);
     }
 
     public static TerminalNavigationProfile chaptersHub(int order) {
-        return section(TerminalNavigationSection.CHAPTERS, order);
+        return progress(order);
     }
 
     public static TerminalNavigationProfile section(TerminalNavigationSection section, int order) {

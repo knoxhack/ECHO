@@ -37,13 +37,13 @@ public final class Config {
       builder.pop();
       builder.push("worldgen");
       PROCEDURAL_POIS_ENABLED = builder.comment("Generate compact Industrial Nexus procedural POIs during new chunk loads.").define("proceduralPoisEnabled", true);
-      POI_SPACING_CHUNKS = builder.comment("Base chunk spacing for Industrial Nexus procedural POI attempts.").defineInRange("poiSpacingChunks", 48, 12, 160);
+      POI_SPACING_CHUNKS = builder.comment("Base chunk spacing for Industrial Nexus procedural POI attempts.").defineInRange("poiSpacingChunks", 42, 12, 160);
       POI_SEARCH_RADIUS = builder.comment("Surface search radius used when placing Industrial Nexus POIs.").defineInRange("poiSearchRadius", 16, 2, 32);
-      THERMAL_PLANT_SPACING_BONUS = builder.comment("Extra chunks between Abandoned Thermal Plant attempts.").defineInRange("thermalPlantSpacingBonus", 7, 0, 120);
+      THERMAL_PLANT_SPACING_BONUS = builder.comment("Extra chunks between Abandoned Thermal Plant attempts.").defineInRange("thermalPlantSpacingBonus", 6, 0, 120);
       FACTORY_SPACING_BONUS = builder.comment("Extra chunks between Rusted Factory Complex attempts.").defineInRange("factorySpacingBonus", 0, 0, 120);
       GEOTHERMAL_SPACING_BONUS = builder.comment("Extra chunks between Geothermal Drill Site attempts.").defineInRange("geothermalSpacingBonus", 4, 0, 120);
-      REACTOR_SPACING_BONUS = builder.comment("Extra chunks between Reactor Cooling Station attempts.").defineInRange("reactorSpacingBonus", 12, 0, 120);
-      NEXUS_EXCHANGER_SPACING_BONUS = builder.comment("Extra chunks between Nexus Heat Exchanger Ruins attempts.").defineInRange("nexusExchangerSpacingBonus", 16, 0, 120);
+      REACTOR_SPACING_BONUS = builder.comment("Extra chunks between Reactor Cooling Station attempts.").defineInRange("reactorSpacingBonus", 10, 0, 120);
+      NEXUS_EXCHANGER_SPACING_BONUS = builder.comment("Extra chunks between Nexus Heat Exchanger Ruins attempts.").defineInRange("nexusExchangerSpacingBonus", 14, 0, 120);
       builder.pop();
       SPEC = builder.build();
    }

@@ -37,11 +37,11 @@ public class EmergencyRocketItem extends Item {
                     returnLevel = serverPlayer.level().getServer().overworld();
                 }
                 serverPlayer.teleportTo(returnLevel, progress.earthReturnX(), progress.earthReturnY(), progress.earthReturnZ(), Set.of(), player.getYRot(), player.getXRot(), false);
-                player.sendSystemMessage(Component.literal("ECHO-7 // Emergency re-entry vector accepted."));
+                sendFeedback(player, "Emergency re-entry vector accepted.");
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && !progress.hasEarthReturnPoint()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Re-entry denied. Launch from Earth once to save an Earth return vector."));
+                sendFeedback(player, "Re-entry denied. Launch from Earth once to save an Earth return vector.");
                 return InteractionResult.CONSUME;
             }
 
@@ -49,7 +49,7 @@ public class EmergencyRocketItem extends Item {
             if (!bypassesReadiness) {
                 LaunchReadiness readiness = LaunchReadiness.evaluateForLaunch(player);
                 if (!readiness.ready()) {
-                    player.sendSystemMessage(Component.literal("ECHO-7 // Launch hold. Complete these checks before staging the rocket:"));
+                    sendFeedback(player, "Launch hold. Complete " + readiness.missing().size() + " checks before staging the rocket.");
                     readiness.missing().stream().limit(8).forEach(player::sendSystemMessage);
                     return InteractionResult.CONSUME;
                 }
@@ -62,7 +62,7 @@ public class EmergencyRocketItem extends Item {
             Optional<BlockPos> padCenter = LaunchPadLocator.findNearbyPlatformCenter(player);
             EmergencyRocketEntity rocket = ModEntities.EMERGENCY_ROCKET_VEHICLE.get().create(serverLevel, EntitySpawnReason.EVENT);
             if (rocket == null) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement failed. Vehicle registry offline."));
+                sendFeedback(player, "Rocket placement failed. Vehicle registry offline.");
                 return InteractionResult.CONSUME;
             }
 
@@ -77,17 +77,17 @@ public class EmergencyRocketItem extends Item {
             }
             rocket.setLaunchPadPosition(rocketX, rocketY, rocketZ, player.getYRot());
             if (!serverLevel.noBlockCollision(rocket, rocket.getBoundingBox()) || !serverLevel.noBorderCollision(rocket, rocket.getBoundingBox())) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement blocked. Clear blocks or entities from the rocket volume above the pad."));
+                sendFeedback(player, "Rocket placement blocked. Clear blocks or entities from the rocket volume above the pad.");
                 return InteractionResult.CONSUME;
             }
             if (!serverLevel.getEntities((Entity) null, rocket.getBoundingBox().inflate(2.0D, 1.0D, 2.0D),
                     entity -> entity.getType() == ModEntities.EMERGENCY_ROCKET_VEHICLE.get()).isEmpty()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement blocked. Break or launch the existing staged vehicle first."));
+                sendFeedback(player, "Rocket placement blocked. Break or launch the existing staged vehicle first.");
                 return InteractionResult.CONSUME;
             }
 
             if (!serverLevel.addFreshEntity(rocket)) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Rocket placement failed. Move to a loaded, clear staging area and try again."));
+                sendFeedback(player, "Rocket placement failed. Move to a loaded, clear staging area and try again.");
                 return InteractionResult.CONSUME;
             }
             rocket.playStagedFeedback();
@@ -95,8 +95,16 @@ public class EmergencyRocketItem extends Item {
             if (!bypassesReadiness) {
                 stack.shrink(1);
             }
-            player.sendSystemMessage(Component.literal("ECHO-7 // Emergency Rocket staged on pad center. Board the cabin and start countdown."));
+            sendFeedback(player, "Emergency Rocket staged on pad center. Board the cabin and start countdown.");
         }
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    private static void sendFeedback(Player player, String message) {
+        Component component = Component.literal("ECHO-7 // " + message);
+        player.sendSystemMessage(component);
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(component, true);
+        }
     }
 }

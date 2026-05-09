@@ -1,0 +1,153 @@
+package com.knoxhack.echoterminal.api.recipe;
+
+import com.knoxhack.echoterminal.EchoTerminal;
+import com.knoxhack.echoterminal.api.TerminalApiIds;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+
+public final class TerminalRecipeRegistry {
+    private static final Map<Identifier, TerminalRecipeProvider> PROVIDERS = new ConcurrentHashMap<>();
+    private static volatile List<TerminalRecipeProvider> sortedProviders = List.of();
+
+    private TerminalRecipeRegistry() {
+    }
+
+    public static void register(TerminalRecipeProvider provider) {
+        if (provider == null) {
+            throw new IllegalArgumentException("Terminal recipe provider is required.");
+        }
+        Identifier id = TerminalApiIds.requireLowercase(provider.id(), "Terminal recipe provider");
+        TerminalRecipeProvider previous = PROVIDERS.putIfAbsent(id, provider);
+        if (previous != null && previous != provider) {
+            throw new IllegalArgumentException("Duplicate terminal recipe provider id: " + id);
+        }
+        ensureSorted();
+    }
+
+    public static List<TerminalRecipeProvider> providers() {
+        return sortedProviders;
+    }
+
+    public static List<TerminalRecipeCategory> categories(Player player) {
+        return snapshot(player).categories();
+    }
+
+    public static List<TerminalRecipeEntry> recipes(Player player) {
+        return snapshot(player).recipes();
+    }
+
+    public static TerminalRecipeSnapshot snapshot(Player player) {
+        List<TerminalRecipeCategory> categories = new ArrayList<>();
+        List<TerminalRecipeEntry> recipes = new ArrayList<>();
+        Set<Identifier> seenCategories = new LinkedHashSet<>();
+        Set<Identifier> seenRecipes = new LinkedHashSet<>();
+        for (TerminalRecipeProvider provider : sortedProviders) {
+            try {
+                for (TerminalRecipeCategory category : provider.categories(player)) {
+                    if (category == null) {
+                        continue;
+                    }
+                    if (seenCategories.add(category.id())) {
+                        categories.add(category);
+                    } else {
+                        EchoTerminal.LOGGER.warn("Terminal recipe category {} from provider {} was ignored because it is duplicated.",
+                                category.id(), provider.id());
+                    }
+                }
+            } catch (RuntimeException exception) {
+                EchoTerminal.LOGGER.warn("Terminal recipe provider {} failed while listing categories.", provider.id(), exception);
+            }
+            try {
+                for (TerminalRecipeEntry recipe : provider.recipes(player)) {
+                    if (recipe == null) {
+                        continue;
+                    }
+                    if (seenRecipes.add(recipe.id())) {
+                        recipes.add(recipe);
+                    } else {
+                        EchoTerminal.LOGGER.warn("Terminal recipe {} from provider {} was ignored because it is duplicated.",
+                                recipe.id(), provider.id());
+                    }
+                }
+            } catch (RuntimeException exception) {
+                EchoTerminal.LOGGER.warn("Terminal recipe provider {} failed while listing recipes.", provider.id(), exception);
+            }
+        }
+        categories.sort(Comparator
+                .comparingInt(TerminalRecipeCategory::order)
+                .thenComparing(category -> category.id().toString()));
+        recipes.sort(Comparator.comparing(entry -> entry.id().toString()));
+        return buildSnapshot(categories, recipes, sortedProviders.size());
+    }
+
+    private static TerminalRecipeSnapshot buildSnapshot(
+            List<TerminalRecipeCategory> categories, List<TerminalRecipeEntry> recipes, int providerCount) {
+        Map<Identifier, TerminalRecipeCategory> categoryMap = new LinkedHashMap<>();
+        for (TerminalRecipeCategory category : categories) {
+            categoryMap.put(category.id(), category);
+        }
+        Map<Item, List<TerminalRecipeEntry>> recipesByOutput = new LinkedHashMap<>();
+        Map<Item, List<TerminalRecipeEntry>> usesByItem = new LinkedHashMap<>();
+        Map<Identifier, Integer> countsByCategory = new LinkedHashMap<>();
+        for (TerminalRecipeEntry recipe : recipes) {
+            countsByCategory.merge(recipe.categoryId(), 1, Integer::sum);
+            for (Item item : recipe.itemsForRole(TerminalRecipeSlot.Role.OUTPUT)) {
+                addIndexed(recipesByOutput, item, recipe);
+            }
+            addUses(recipe, usesByItem, TerminalRecipeSlot.Role.INPUT);
+            addUses(recipe, usesByItem, TerminalRecipeSlot.Role.CATALYST);
+            addUses(recipe, usesByItem, TerminalRecipeSlot.Role.MACHINE);
+            addUses(recipe, usesByItem, TerminalRecipeSlot.Role.INFO);
+        }
+        return new TerminalRecipeSnapshot(categories, recipes, categoryMap, recipesByOutput, usesByItem,
+                countsByCategory, providerCount);
+    }
+
+    private static void addUses(
+            TerminalRecipeEntry recipe, Map<Item, List<TerminalRecipeEntry>> usesByItem, TerminalRecipeSlot.Role role) {
+        for (Item item : recipe.itemsForRole(role)) {
+            addIndexed(usesByItem, item, recipe);
+        }
+    }
+
+    private static void addIndexed(Map<Item, List<TerminalRecipeEntry>> index, Item item, TerminalRecipeEntry recipe) {
+        List<TerminalRecipeEntry> recipes = index.computeIfAbsent(item, ignored -> new ArrayList<>());
+        if (!recipes.contains(recipe)) {
+            recipes.add(recipe);
+        }
+    }
+
+    public static void ensureSorted() {
+        List<TerminalRecipeProvider> providers = new ArrayList<>(PROVIDERS.values());
+        providers.sort(Comparator.comparing(provider -> provider.id().toString()));
+        sortedProviders = List.copyOf(providers);
+    }
+
+    public static void clearForTests() {
+        PROVIDERS.clear();
+        sortedProviders = List.of();
+    }
+
+    public static void withClearedForTests(Runnable runnable) {
+        Map<Identifier, TerminalRecipeProvider> snapshot = Map.copyOf(PROVIDERS);
+        List<TerminalRecipeProvider> sortedSnapshot = sortedProviders;
+        PROVIDERS.clear();
+        sortedProviders = List.of();
+        try {
+            runnable.run();
+        } finally {
+            PROVIDERS.clear();
+            PROVIDERS.putAll(snapshot);
+            sortedProviders = sortedSnapshot;
+        }
+    }
+}

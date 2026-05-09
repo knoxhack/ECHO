@@ -7,9 +7,12 @@ import java.util.List;
  * Top-level command areas for the terminal shell.
  */
 public enum TerminalNavigationSection {
-    TERMINAL("Terminal", 0),
-    CORE("Core", 100),
-    CHAPTERS("Chapters", 200);
+    TERMINAL("Command", 0),
+    CORE("Intel", 200),
+    CHAPTERS("Progress", 100),
+    COMMAND("Command", 0),
+    INTEL("Intel", 200),
+    SYSTEM("System", 300);
 
     private final String label;
     private final int order;
@@ -31,17 +34,25 @@ public enum TerminalNavigationSection {
         return order;
     }
 
+    public TerminalNavigationSection canonical() {
+        return switch (this) {
+            case TERMINAL -> COMMAND;
+            case CORE -> INTEL;
+            default -> this;
+        };
+    }
+
     public static List<TerminalNavigationSection> storyFirstOrder() {
-        return List.of(CHAPTERS, TERMINAL, CORE);
+        return List.of(COMMAND, CHAPTERS, INTEL, SYSTEM);
     }
 
     public static TerminalNavigationSection fromKey(String key) {
         String normalized = key == null ? "" : key.strip().toUpperCase(Locale.ROOT);
         for (TerminalNavigationSection section : values()) {
             if (section.name().equals(normalized)) {
-                return section;
+                return section.canonical();
             }
         }
-        return CHAPTERS;
+        return COMMAND;
     }
 }

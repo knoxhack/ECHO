@@ -22,7 +22,6 @@ import java.util.Set;
 @EventBusSubscriber(modid = EchoAshfallProtocol.MODID)
 public class ProceduralStructureHandler {
     private static final Map<StructureType, Set<String>> VALID_BIOMES = Map.ofEntries(
-            Map.entry(StructureType.DROP_POD, Set.of("crash_zone_wasteland", "ruined_plains")),
             Map.entry(StructureType.BIO_LAB, Set.of("toxic_swamp", "ruined_plains")),
             Map.entry(StructureType.DATA_CENTER, Set.of("industrial_ruins", "ruined_cityscape")),
             Map.entry(StructureType.MILITARY_VAULT, Set.of("crash_zone_wasteland", "industrial_ruins", "radiation_zone")),
@@ -53,7 +52,6 @@ public class ProceduralStructureHandler {
         // Salt: unique seed modifier per structure type
 
         // Core structures (v1.0)
-        SPAWN_CONFIGS.put(StructureType.DROP_POD, new SpawnConfig(20, 5, 210415001));
         SPAWN_CONFIGS.put(StructureType.BIO_LAB, new SpawnConfig(28, 7, 210415002));
         SPAWN_CONFIGS.put(StructureType.DATA_CENTER, new SpawnConfig(36, 9, 210415003));
         SPAWN_CONFIGS.put(StructureType.MILITARY_VAULT, new SpawnConfig(56, 14, 210415004));
@@ -117,6 +115,7 @@ public class ProceduralStructureHandler {
     private static boolean shouldSpawnStructure(int chunkX, int chunkZ, StructureType type,
                                                  ServerLevel level, BlockPos center) {
         SpawnConfig config = SPAWN_CONFIGS.get(type);
+        if (type == StructureType.DROP_POD) return false;
         if (config == null) return false;
         if (!Config.isStructureEnabled(type)) return false;
         
@@ -229,7 +228,6 @@ public class ProceduralStructureHandler {
         return switch (type) {
             case REACTOR_RUIN -> true; // Can spawn anywhere
             case MILITARY_VAULT -> pos.getY() > 60; // Prefer higher ground
-            case DROP_POD -> pos.getY() > 62; // Flat areas
             default -> true;
         };
     }

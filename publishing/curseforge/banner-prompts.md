@@ -63,3 +63,18 @@ Lighting/mood: eerie quarantine in orbit, cold blue rim light, white station lig
 Color palette: black space, steel gray, cyan, white, small red/orange and violet highlights.
 Constraints: no logos, no watermark, no rendered text or letters, no UI panels, no official Minecraft logo.
 ```
+
+## ECHO: Industrial Nexus
+
+```text
+Use case: ads-marketing
+Asset type: CurseForge mod page banner, wide 3:1 landscape
+Primary request: Create a cinematic Minecraft-inspired industrial automation banner for the mod "ECHO: Industrial Nexus". Do not imitate official Minecraft branding, but use blocky voxel-world forms and game-art atmosphere.
+Scene/backdrop: a ruined factory floor rebuilt into a Thermal Flux machine line, with glowing ducts, fluid pipes, scrubber safe-zone haze, heat warning lights, and a distant Furnace Warden silhouette framed by industrial ruins.
+Subject: recovered factory infrastructure, recipe-driven machines, Thermal Flux conduits, fluid tanks, and ECHO terminal diagnostics.
+Style/medium: polished voxel game key art, industrial sci-fi survival, premium mod page banner.
+Composition/framing: very wide banner with machinery and duct network on the left/center, open darker smoky space on the right for later title text overlay; no close-up human faces.
+Lighting/mood: hot amber factory light balanced with cyan terminal diagnostics and subtle hazard green.
+Color palette: graphite, steel, amber heat, cyan diagnostics, muted hazard green, small red warnings.
+Constraints: no logos, no watermark, no rendered text or letters, no readable UI text, no official Minecraft logo.
+```

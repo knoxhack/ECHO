@@ -1,0 +1,13 @@
+{
+  "chapter": "signalos:signalos",
+  "title": "Field Interface",
+  "group": "SignalOS",
+  "status": "OPEN",
+  "order": 0,
+  "lines": [
+    "SignalOS currently renders chapter tabs, mission cards, archive records, a reward inbox view, and diagnostics reports.",
+    "Mods can register Java content. Packs can add simple JSON content under data/<namespace>/signalos.",
+    "Mission completion, claimed rewards, archive read state, and pending reward counts are synced from the server.",
+    "Theme rendering, custom page renderers, and bridge integrations are separate future layers."
+  ]
+}

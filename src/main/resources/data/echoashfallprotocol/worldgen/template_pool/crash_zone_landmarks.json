@@ -6,15 +6,6 @@
       "weight": 1,
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "echoashfallprotocol:biomes/crash_zone_wasteland/drop_pod_wreck_large",
-        "processors": "minecraft:empty",
-        "projection": "rigid"
-      }
-    },
-    {
-      "weight": 1,
-      "element": {
-        "element_type": "minecraft:single_pool_element",
         "location": "echoashfallprotocol:biomes/crash_zone_wasteland/cargo_module_field",
         "processors": "minecraft:empty",
         "projection": "rigid"

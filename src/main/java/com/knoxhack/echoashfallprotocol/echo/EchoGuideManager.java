@@ -4,6 +4,7 @@ import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.Config;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventHandler;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
+import com.knoxhack.echoashfallprotocol.integration.AshfallDiscoveryProvider;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
@@ -37,6 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles mission assignment, completion checking, and contextual messages.
  */
 public class EchoGuideManager {
+    private static final net.minecraft.resources.Identifier FIND_DROP_POD_ADVANCEMENT =
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                    com.knoxhack.echoashfallprotocol.EchoAshfallProtocol.MODID,
+                    "find_drop_pod");
+    private static final String FIND_DROP_POD_CRITERION = "found_drop_pod";
 
     // Cache for entity encounter checks to reduce allocations
     private static final Map<java.util.UUID, CachedEncounterCheck> encounterCache = new ConcurrentHashMap<>();
@@ -120,6 +126,10 @@ public class EchoGuideManager {
             quest.visitLocation("biome", currentId);
             if (currentId.contains(":")) {
                 quest.visitLocation("biome", currentId.substring(currentId.indexOf(':') + 1));
+            }
+            if (currentId.startsWith("echoashfallprotocol:")) {
+                EchoCoreServices.discoverFeature(player,
+                        AshfallDiscoveryProvider.biomeId(currentId.substring(currentId.indexOf(':') + 1)));
             }
             
             EchoMessages.Context context = switch (currentId) {
@@ -303,6 +313,13 @@ public class EchoGuideManager {
             player.setData(ModAttachments.QUEST_DATA.get(), quest);
             return;
         }
+        if (player.getPersistentData().getBoolean("ashes_of_tomorrow.received_kit").orElse(false)) {
+            quest.setDropPodInitialized(true);
+            spawnDamagedCompanionDrone(player, player.blockPosition(), quest);
+            player.setData(ModAttachments.QUEST_DATA.get(), quest);
+            grantFindDropPodAdvancement(player);
+            return;
+        }
 
         if (!(player.level() instanceof ServerLevel level)) return;
 
@@ -338,6 +355,14 @@ public class EchoGuideManager {
 
         quest.setDropPodInitialized(true);
         player.setData(ModAttachments.QUEST_DATA.get(), quest);
+        grantFindDropPodAdvancement(player);
+    }
+
+    private static void grantFindDropPodAdvancement(ServerPlayer player) {
+        var holder = player.level().getServer().getAdvancements().get(FIND_DROP_POD_ADVANCEMENT);
+        if (holder != null) {
+            player.getAdvancements().award(holder, FIND_DROP_POD_CRITERION);
+        }
     }
     
     private static BlockPos getSafeSpawnPosition(ServerPlayer player, BlockPos center, int crashLevel) {

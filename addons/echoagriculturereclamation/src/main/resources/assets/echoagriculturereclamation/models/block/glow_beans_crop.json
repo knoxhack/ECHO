@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "echoagriculturereclamation:block/glow_beans_crop"
+  }
+}

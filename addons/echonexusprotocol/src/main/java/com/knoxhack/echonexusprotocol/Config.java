@@ -53,7 +53,7 @@ public final class Config {
    static {
       Builder builder = new Builder();
       builder.push("progression");
-      FORCE_NEXUS_UNLOCK = builder.comment("Development override. When true, Nexus progression ignores stationfall:blackbox_recovered.")
+      FORCE_NEXUS_UNLOCK = builder.comment("Development override. When true, Nexus progression ignores the canonical Stationfall Blackbox handoff.")
          .define("forceNexusUnlock", false);
       BALANCE_PRESET = builder.comment("Documentation preset label for pack/admin tuning. Valid labels: casual, standard, hardcore. Numeric values below remain authoritative.")
          .define("balancePreset", "standard");

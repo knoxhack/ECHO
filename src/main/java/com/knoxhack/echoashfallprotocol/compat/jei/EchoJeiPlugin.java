@@ -20,6 +20,7 @@ import com.knoxhack.echoashfallprotocol.client.screen.RadiationCleanserScreen;
 import com.knoxhack.echoashfallprotocol.client.screen.ScrapPressScreen;
 import com.knoxhack.echoashfallprotocol.client.screen.ThermalBurnerScreen;
 import com.knoxhack.echoashfallprotocol.client.screen.WaterPurifierScreen;
+import com.knoxhack.echoashfallprotocol.integration.AshfallRecipeInfoCatalog;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.registry.ModMenuTypes;
@@ -34,7 +35,6 @@ import mezz.jei.api.registration.IRecipeTransferRegistration;
 import mezz.jei.api.recipe.types.IRecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.ItemStack;
 
 @JeiPlugin
 public class EchoJeiPlugin implements IModPlugin {
@@ -67,84 +67,8 @@ public class EchoJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         EchoJeiRecipeCatalog.allRecipes().forEach(registration::addRecipes);
-
-        registration.addItemStackInfo(new ItemStack(ModBlocks.RAIN_COLLECTOR_ITEM.get()),
-                Component.literal("Collects dirty water during rain. Use the block while rain reaches the collector."));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.HAND_RECYCLER_ITEM.get()),
-                Component.literal("First-hour machine bridge: craft with 1 Machine Casing, 4 Scrap Metal, and 4 Scrap Wire. Use a starter battery or nearby generator for power."));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.MICRO_GENERATOR_ITEM.get()),
-                Component.literal("Starter power source. The first-hour recipe uses 1 Machine Casing, 3 Scrap Wire, 1 Energy Cell, 1 Circuit Board, and 1 Scrap Metal."));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.WATER_PURIFIER_ITEM.get()),
-                Component.literal("Stable-base water loop. Build with 3 Machine Casings, 2 Scrap Plastic, 1 Filtration Membrane, and 1 Circuit Board, then feed dirty water and filters."));
-        registration.addItemStackInfo(new ItemStack(ModItems.FILTER_CARTRIDGE_BASIC.get()),
-                Component.literal("Basic filters have three early recipes: Scrap Plastic + Ash + Scrap Wire, String, or Plant Fiber + extra Ash. Rarely recovered from toxic salvage and scavengers."));
-        registration.addItemStackInfo(new ItemStack(ModItems.RAD_AWAY.get()),
-                Component.translatable("jei.EchoAshfallProtocol.rad_away.info"));
-        registration.addItemStackInfo(new ItemStack(ModItems.BASIC_BATTERY.get()),
-                Component.translatable("jei.EchoAshfallProtocol.battery.info"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ADVANCED_BATTERY.get()),
-                Component.translatable("jei.EchoAshfallProtocol.battery.info"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ELITE_BATTERY.get()),
-                Component.translatable("jei.EchoAshfallProtocol.battery.info"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.POWER_CABLE_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.cables"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.REINFORCED_POWER_CABLE_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.cables"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.HIGH_VOLTAGE_POWER_CABLE_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.cables"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.ENERGY_METER_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.meter"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.LOAD_DISTRIBUTOR_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.distributor"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.SCRAP_DYNAMO_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.scrap_dynamo"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.NEXUS_CAPACITOR_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.nexus_capacitor"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.THERMAL_ARRAY_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.thermal_array"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.ORE_GRINDER_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.ore_grinder"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.ISOTOPE_REFINER_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.isotope_refiner"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.FIELD_MED_BAY_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.field_med_bay"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.ATMOSPHERIC_SCRUBBER_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.scrubber"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.RADIATION_CLEANSER_ITEM.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.cleanser"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ALLOY_BLADE.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.alloy_weapon"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ALLOY_HAMMER.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.alloy_weapon"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ALLOY_HELMET.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.alloy_armor"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ALLOY_CHESTPLATE.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.alloy_armor"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ALLOY_LEGGINGS.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.alloy_armor"));
-        registration.addItemStackInfo(new ItemStack(ModItems.ALLOY_BOOTS.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.alloy_armor"));
-        registration.addItemStackInfo(new ItemStack(ModItems.HAZMAT_HELMET.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.hazmat"));
-        registration.addItemStackInfo(new ItemStack(ModItems.HAZMAT_CHESTPLATE.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.hazmat"));
-        registration.addItemStackInfo(new ItemStack(ModItems.HAZMAT_LEGGINGS.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.hazmat"));
-        registration.addItemStackInfo(new ItemStack(ModItems.HAZMAT_BOOTS.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.hazmat"));
-        registration.addItemStackInfo(new ItemStack(ModItems.FILTER_CARTRIDGE_ADVANCED.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.advanced_filter"));
-        registration.addItemStackInfo(new ItemStack(ModItems.PORTABLE_SIGNAL_SCANNER.get()),
-                Component.translatable("jei.EchoAshfallProtocol.midgame.route_supplies"));
-        registration.addItemStackInfo(new ItemStack(ModItems.MACHINE_UPGRADE_EFFICIENCY.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.upgrades"));
-        registration.addItemStackInfo(new ItemStack(ModItems.MACHINE_UPGRADE_OVERCLOCK.get()),
-                Component.translatable("jei.EchoAshfallProtocol.energy.upgrades"));
-        registration.addItemStackInfo(new ItemStack(ModBlocks.DEEP_CORE_MINER_ITEM.get()),
-                Component.literal("Generates random core samples only when powered and placed at Y <= -32."));
-
-        EchoJeiRecipeCatalog.gatedItemInfo().forEach((item, info) ->
-                registration.addItemStackInfo(new ItemStack(item), info));
+        AshfallRecipeInfoCatalog.entries().forEach(entry ->
+                registration.addItemStackInfo(entry.stack(), entry.text()));
     }
 
     @Override

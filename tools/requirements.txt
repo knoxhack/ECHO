@@ -1,2 +1,3 @@
 -r structure_generator/requirements.txt
 Pillow>=10.0.0
+nbtlib>=2.0.4

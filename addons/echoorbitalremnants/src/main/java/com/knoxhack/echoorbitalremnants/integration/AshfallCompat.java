@@ -24,6 +24,9 @@ import net.neoforged.fml.ModList;
 public final class AshfallCompat {
     private static final String CHAPTER_ID = "orbital_remnants";
     private static final String MIRROR_ROOT = "echoorbitalremnants_ashfall_mirror";
+    private static final String POST_NEXUS_DATA_CLASS = "com.knoxhack.echoashfallprotocol.endgame.PostNexusData";
+    private static final String NO_NEXUS_CHOICE = "NONE";
+    private static volatile boolean warnedPostNexusLookupFailure;
 
     private AshfallCompat() {
     }
@@ -67,9 +70,15 @@ public final class AshfallCompat {
             @Override
             public String statusLine(Player player) {
                 try {
+                    if (player == null) {
+                        return "ORBITAL REMNANTS: Calibration unavailable until player data is ready.";
+                    }
                     EchoPackMode mode = EchoCoreServices.packMode(player);
                     if (mode == EchoPackMode.ORBITAL_STANDALONE) {
                         return "ORBITAL REMNANTS: Standalone recovered handoff file active.";
+                    }
+                    if (isOrbitalCalibrationLocked(player)) {
+                        return "ORBITAL REMNANTS: Awaiting Ashfall Nexus choice before Earth calibration.";
                     }
                     return isAvailable(player)
                             ? "ORBITAL REMNANTS: Earth calibration can challenge quarantine."
@@ -99,11 +108,26 @@ public final class AshfallCompat {
     }
 
     public static boolean isOrbitalCalibrationLocked(Player player) {
-        return false;
+        if (player == null || !isAshfallLoaded()) {
+            return false;
+        }
+        if (EchoCoreServices.packMode(player) == EchoPackMode.ORBITAL_STANDALONE) {
+            return false;
+        }
+        return !hasPostNexusChoice(player);
     }
 
     public static boolean hasPostNexusChoice(Player player) {
-        return player != null;
+        if (player == null) {
+            return false;
+        }
+        if (!isAshfallLoaded()) {
+            return true;
+        }
+        if (EchoCoreServices.packMode(player) == EchoPackMode.ORBITAL_STANDALONE) {
+            return true;
+        }
+        return hasAshfallPostNexusChoice(player);
     }
 
     public static void mirrorMilestone(Player player, String id, String title, String content) {
@@ -242,5 +266,34 @@ public final class AshfallCompat {
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, path);
+    }
+
+    private static boolean hasAshfallPostNexusChoice(Player player) {
+        try {
+            Class<?> postNexusClass = Class.forName(POST_NEXUS_DATA_CLASS);
+            Object postNexus = postNexusClass.getMethod("get", Player.class).invoke(null, player);
+            if (postNexus == null) {
+                return false;
+            }
+            Object selectedPath = postNexusClass.getMethod("getSelectedPath").invoke(postNexus);
+            if (selectedPath == null || NO_NEXUS_CHOICE.equals(selectedPath.toString())) {
+                return false;
+            }
+            Object hasChoice = postNexusClass.getMethod("hasMadeChoice").invoke(postNexus);
+            return Boolean.TRUE.equals(hasChoice);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
+            warnPostNexusLookupFailure(exception);
+            return false;
+        }
+    }
+
+    private static void warnPostNexusLookupFailure(Throwable exception) {
+        if (warnedPostNexusLookupFailure) {
+            return;
+        }
+        warnedPostNexusLookupFailure = true;
+        EchoOrbitalRemnants.LOGGER.warn(
+                "Orbital could not read Ashfall post-Nexus player data; keeping Earth calibration locked.",
+                exception);
     }
 }

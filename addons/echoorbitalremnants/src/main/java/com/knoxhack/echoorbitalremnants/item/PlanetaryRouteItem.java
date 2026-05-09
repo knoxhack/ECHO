@@ -46,25 +46,24 @@ public class PlanetaryRouteItem extends Item {
                 playRouteFeedback(serverPlayer.level(), player.blockPosition(), ParticleTypes.CLOUD, 12, 1.35F);
                 serverPlayer.teleportTo(returnLevel, progress.returnX(), progress.returnY(), progress.returnZ(), Set.of(), player.getYRot(), player.getXRot(), false);
                 playRouteFeedback(returnLevel, BlockPos.containing(progress.returnX(), progress.returnY(), progress.returnZ()), ParticleTypes.CLOUD, 10, 1.6F);
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return vector committed."));
-                sendStatus(player, target.displayName + " return vector burned.");
+                sendFeedback(player, target.displayName + " return vector burned.");
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && player.isShiftKeyDown() && !progress.hasReturnPoint()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " return denied. No docking vector is saved; mark one before drifting farther."));
+                sendFeedback(player, target.displayName + " return denied. No docking vector is saved; mark one before drifting farther.");
                 return InteractionResult.CONSUME;
             }
 
             if (Config.DIMENSION_UNLOCKS_ENABLED.get() && !target.unlocked(progress) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " route locked. Terminal telemetry lacks the handoff proof."));
+                sendFeedback(player, target.displayName + " route locked. " + target.unlockHint());
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !target.midGameReady(progress) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " route locked. " + target.midGameLockMessage()));
+                sendFeedback(player, target.displayName + " route locked. " + target.midGameLockMessage());
                 return InteractionResult.CONSUME;
             }
             if (!SuitEvents.isOrbitalExposure(player) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " requires orbital staging. Launch to Low Earth Orbit before burning this route."));
+                sendFeedback(player, target.displayName + " requires orbital staging. Launch to Low Earth Orbit before burning this route.");
                 return InteractionResult.CONSUME;
             }
 
@@ -81,19 +80,22 @@ public class PlanetaryRouteItem extends Item {
                 playRouteFeedback(serverLevel, player.blockPosition(), ParticleTypes.PORTAL, 28, 0.75F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);
                 playRouteFeedback(targetLevel, arrival, target.particle(), 36, target.pitch());
-                player.sendSystemMessage(Component.literal("ECHO-7 // " + target.displayName + " route acquired. " + target.arrivalMessage));
-                sendStatus(player, target.displayName + " route burn complete. Return vector saved.");
+                sendFeedback(player, target.displayName + " route acquired. " + target.arrivalMessage
+                        + " Return vector saved.", target.displayName + " route burn complete. Return vector saved.");
             }
         }
         return InteractionResult.SUCCESS_SERVER;
     }
 
-    private static void sendStatus(Player player, String message) {
+    private static void sendFeedback(Player player, String message) {
+        sendFeedback(player, message, message);
+    }
+
+    private static void sendFeedback(Player player, String message, String status) {
         Component component = Component.literal("ECHO-7 // " + message);
+        player.sendSystemMessage(component);
         if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.sendSystemMessage(component, true);
-        } else {
-            player.sendSystemMessage(component);
+            serverPlayer.sendSystemMessage(Component.literal("ECHO-7 // " + status), true);
         }
     }
 
@@ -256,6 +258,15 @@ public class PlanetaryRouteItem extends Item {
         }
 
         abstract boolean unlocked(EchoTerminalProgress progress);
+
+        String unlockHint() {
+            return switch (this) {
+                case MARS -> "Scan a Helium-3 Cell in the Lunar Scar Zone to resolve Mars transfer.";
+                case EUROPA -> "Scan Martian Silica in the Mars Ash Basin to resolve Europa transfer.";
+                case SATURN -> "Scan a Cryo Crystal in Europa, or finish Europa survey proof, to resolve Saturn transfer.";
+                case TITAN -> "Scan a Saturn Ring Fragment in the ring graveyard to resolve Titan descent.";
+            };
+        }
 
         abstract boolean midGameReady(EchoTerminalProgress progress);
 

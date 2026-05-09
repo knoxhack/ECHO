@@ -25,15 +25,30 @@ public final class EchoCoreNetwork {
                 EchoFactionSyncPacket.CODEC,
                 (packet, ctx) -> ctx.enqueueWork(() -> handleFactionSync(packet, ctx.player()))
         );
+        registrar.playToClient(
+                DiscoveryToastPacket.TYPE,
+                DiscoveryToastPacket.CODEC,
+                (packet, ctx) -> ctx.enqueueWork(() -> handleDiscoveryToast(packet))
+        );
     }
 
     private static void handleFactionSync(EchoFactionSyncPacket packet, Player player) {
         EchoFactionDataService.importRoot(player, packet.factionRoot());
     }
 
+    private static void handleDiscoveryToast(DiscoveryToastPacket packet) {
+        try {
+            Class<?> hud = Class.forName("com.knoxhack.echoterminal.client.discovery.DiscoveryToastHud");
+            hud.getMethod("push", DiscoveryToastPacket.class).invoke(null, packet);
+        } catch (ReflectiveOperationException ignored) {
+            EchoCore.LOGGER.debug("Discovery toast received without a terminal HUD consumer.");
+        }
+    }
+
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             EchoCoreServices.syncFactionDataToClient(player);
+            EchoCoreServices.syncDiscoveryDataToClient(player);
         }
     }
 }

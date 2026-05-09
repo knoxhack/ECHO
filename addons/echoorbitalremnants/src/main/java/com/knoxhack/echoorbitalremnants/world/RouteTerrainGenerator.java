@@ -199,7 +199,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             };
             case MOON -> switch (normalized) {
                 case 1 -> List.of(new ItemStack(ModItems.LUNAR_CORE_SAMPLE.get()), new ItemStack(ModItems.HELIUM_EXTRACTOR_CORE.get()), new ItemStack(ModItems.HELIUM_3_CELL.get()), new ItemStack(ModItems.LUNAR_TITANIUM.get(), 2), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get()));
-                case 2 -> List.of(new ItemStack(ModItems.LUNAR_CORE_SAMPLE.get()), new ItemStack(ModItems.HELIUM_EXTRACTOR_CORE.get()), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 3), new ItemStack(ModItems.NEXUS_DUST.get(), 2));
+                case 2 -> List.of(new ItemStack(ModItems.LUNAR_CORE_SAMPLE.get()), new ItemStack(ModItems.HELIUM_EXTRACTOR_CORE.get()), new ItemStack(ModItems.LUNAR_TITANIUM.get()), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 3), new ItemStack(ModItems.NEXUS_DUST.get(), 2));
                 default -> List.of(new ItemStack(ModItems.LUNAR_CORE_SAMPLE.get()), new ItemStack(ModItems.HELIUM_EXTRACTOR_CORE.get()), new ItemStack(ModItems.LUNAR_TITANIUM.get(), 2), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 2));
             };
             case MARS -> switch (normalized) {
@@ -225,7 +225,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             case NEXUS -> switch (normalized) {
                 case 1 -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.LUNAR_CORE_FRAGMENT.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 3), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
                 case 2 -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 6), new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 2));
-                default -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 4), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
+                default -> List.of(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()), new ItemStack(ModItems.LUNAR_CORE_FRAGMENT.get()), new ItemStack(ModItems.NEXUS_DUST.get(), 4), new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get()));
             };
         };
     }
@@ -797,7 +797,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
         try {
             return Config.ROUTE_FEATURE_DENSITY.get();
         } catch (IllegalStateException ignored) {
-            return 2;
+            return 3;
         }
     }
 

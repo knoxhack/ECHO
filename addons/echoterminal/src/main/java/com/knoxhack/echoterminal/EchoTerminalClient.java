@@ -3,6 +3,8 @@ package com.knoxhack.echoterminal;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.client.BuiltinTerminalTabs;
 import com.knoxhack.echoterminal.client.TerminalEventHandler;
+import com.knoxhack.echoterminal.client.discovery.DiscoveryToastHud;
+import com.knoxhack.echoterminal.client.mission.TerminalMissionHudController;
 import com.knoxhack.echoterminal.client.screen.EchoTerminalScreens;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
@@ -19,6 +21,8 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
@@ -39,6 +43,8 @@ public class EchoTerminalClient {
         TerminalClientOptions.load();
         BuiltinTerminalTabs.register();
         NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onKeyInput);
+        NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onRenderGui);
         NeoForge.EVENT_BUS.register(new TerminalEventHandler());
     }
 
@@ -58,6 +64,18 @@ public class EchoTerminalClient {
         } else if (EchoTerminalScreens.isManagedTerminalScreen(minecraft.screen)) {
             minecraft.setScreen(null);
         }
+    }
+
+    private static void onClientTick(ClientTickEvent.Post event) {
+        TerminalMissionHudController.tick();
+        DiscoveryToastHud.tick();
+    }
+
+    private static void onRenderGui(RenderGuiEvent.Post event) {
+        TerminalMissionHudController.render(event.getGuiGraphics(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
+        DiscoveryToastHud.render(event.getGuiGraphics(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
     }
 
     @EventBusSubscriber(modid = EchoTerminal.MODID, value = Dist.CLIENT)

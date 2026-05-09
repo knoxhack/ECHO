@@ -1,5 +1,7 @@
 package com.knoxhack.echonexusprotocol.test;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoHandoffs;
 import com.knoxhack.echonexusprotocol.block.ProtocolSealBlock;
 import com.knoxhack.echonexusprotocol.block.entity.NexusMachineBlockEntity;
 import com.knoxhack.echonexusprotocol.Config;
@@ -304,6 +306,8 @@ public final class ModGameTests {
       Player player = helper.makeMockPlayer(GameType.CREATIVE);
       helper.assertFalse(NexusProgression.isNexusUnlocked(player), "Nexus should be gated before Stationfall/dev unlock");
       if (player instanceof ServerPlayer serverPlayer) {
+         EchoCoreServices.recordMilestone(serverPlayer, "stationfall.blackbox_retrieved");
+         helper.assertTrue(NexusProgression.isNexusUnlocked(player), "Legacy Stationfall blackbox milestone should satisfy Nexus gate");
          NexusProgression.grantDevelopmentUnlock(serverPlayer);
          helper.assertTrue(NexusProgression.isNexusUnlocked(player), "Development unlock should satisfy Nexus gate");
       }
@@ -320,7 +324,7 @@ public final class ModGameTests {
       Player player = helper.makeMockPlayer(GameType.CREATIVE);
       var locked = NexusTerminalMissionProvider.INSTANCE.snapshot(player, NexusTerminalIds.id("the_signal_beneath"));
       helper.assertTrue(locked.status() == TerminalMissionStatus.LOCKED, "Signal mission should explain the Stationfall handoff before Nexus unlock");
-      helper.assertTrue(locked.unlockReason().contains("stationfall:blackbox_recovered"), "Locked signal mission should name the required handoff milestone");
+      helper.assertTrue(locked.unlockReason().contains(EchoHandoffs.STATIONFALL_BLACKBOX_RECOVERED), "Locked signal mission should name the required handoff milestone");
       if (player instanceof ServerPlayer serverPlayer) {
          NexusProgression.grantDevelopmentUnlock(serverPlayer);
       }
@@ -354,7 +358,18 @@ public final class ModGameTests {
          "Final mission should expose all four ending actions after Guardian defeat"
       );
 
-      data.setEndingPath("restore");
+      if (player instanceof ServerPlayer serverPlayer) {
+         helper.assertTrue(
+            NexusTerminalMissionProvider.INSTANCE.handleAction(serverPlayer, NexusTerminalIds.id("what_rebuilds_the_world"), "choose_restore"),
+            "Final mission action should commit a Nexus path"
+         );
+         helper.assertTrue(
+            EchoCoreServices.progressLedger(serverPlayer).hasMilestone(EchoHandoffs.NEXUS_PROTOCOL_COMPLETE),
+            "Final Nexus path should record the canonical Nexus completion handoff"
+         );
+      } else {
+         data.setEndingPath("restore");
+      }
       var completed = NexusTerminalMissionProvider.INSTANCE.snapshot(player, NexusTerminalIds.id("what_rebuilds_the_world"));
       helper.assertTrue(
          completed.status() == TerminalMissionStatus.CLAIMABLE,
@@ -602,6 +617,7 @@ public final class ModGameTests {
 
    private static void endingWorldEffects(GameTestHelper helper) {
       NexusWorldData worldData = NexusWorldData.get(helper.getLevel());
+      worldData.commitEndingState("");
       ChunkPos destroyChunk = new ChunkPos(4, 4);
       worldData.setFieldValue(destroyChunk, 20);
       worldData.setCorruptionPressure(destroyChunk, 70);
@@ -749,12 +765,14 @@ public final class ModGameTests {
          husk.setPos(mobPos.getX() + 0.5, mobPos.getY(), mobPos.getZ() + 0.5);
          husk.setNoAi(true);
          helper.getLevel().addFreshEntity(husk);
-         float beforeHealth = husk.getHealth();
-         int hit = NexusUtilityItem.signalBladePulse(helper.getLevel(), absolute, player);
-         helper.assertTrue(hit > 0, "Signal Blade should hit nearby Nexus mobs");
-         helper.assertTrue(husk.getHealth() < beforeHealth, "Signal Blade should damage Nexus mobs");
-         helper.assertTrue(worldData.corruptionPressure(chunk) < corruptionAfterAnchor, "Signal Blade pulse should lower local corruption pressure");
-         helper.succeed();
+         helper.runAfterDelay(1L, () -> {
+            float beforeHealth = husk.getHealth();
+            int hit = NexusUtilityItem.signalBladePulse(helper.getLevel(), absolute, player);
+            helper.assertTrue(hit > 0, "Signal Blade should hit nearby Nexus mobs");
+            helper.assertTrue(husk.getHealth() < beforeHealth, "Signal Blade should damage Nexus mobs");
+            helper.assertTrue(worldData.corruptionPressure(chunk) < corruptionAfterAnchor, "Signal Blade pulse should lower local corruption pressure");
+            helper.succeed();
+         });
       }
    }
 

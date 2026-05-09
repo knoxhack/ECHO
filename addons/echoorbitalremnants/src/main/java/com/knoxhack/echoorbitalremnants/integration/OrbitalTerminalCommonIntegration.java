@@ -1,6 +1,5 @@
 package com.knoxhack.echoorbitalremnants.integration;
 
-import com.knoxhack.echoorbitalremnants.item.EchoTerminalItem;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
@@ -26,9 +25,9 @@ public final class OrbitalTerminalCommonIntegration {
         TerminalMissionRegistry.register(OrbitalMissionProvider.INSTANCE);
         TerminalMissionActions.registerForTab(OrbitalTerminalIds.ECHO_TAB);
         TerminalActionRegistry.register(OrbitalTerminalIds.COMMAND_TAB, OrbitalTerminalIds.SCAN_ACTION,
-                (player, payload) -> EchoTerminalItem.performScan(player));
+                (player, payload) -> OrbitalTerminalActions.scan(player));
         TerminalActionRegistry.register(OrbitalTerminalIds.SURVEY_TAB, OrbitalTerminalIds.SCAN_ACTION,
-                (player, payload) -> EchoTerminalItem.performScan(player));
+                (player, payload) -> OrbitalTerminalActions.scan(player));
         registerArchiveEntries();
     }
 
@@ -49,8 +48,8 @@ public final class OrbitalTerminalCommonIntegration {
                 "Post-Nexus Orbital Handoff",
                 "OPEN",
                 List.of(
-                        "Orbital calibration no longer waits for Ashfall's legacy Nexus choice; Chapter IV owns the Core route.",
-                        "Restore, Destroy, Control, or Merge now belong to ECHO: Nexus Protocol, while orbit remains the quarantine route between Ashfall and Stationfall.",
+                        "When Ashfall is installed, orbital calibration waits for one Ashfall Nexus choice; standalone Orbital uses a recovered handoff file.",
+                        "Restore, Destroy, or Control all give ECHO-0 the same field fact: Earth is no longer only a containment zone.",
                         "ECHO-7 can reopen the route from ruined Earth to Station ECHO debris and ask what fell before the pod did."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(

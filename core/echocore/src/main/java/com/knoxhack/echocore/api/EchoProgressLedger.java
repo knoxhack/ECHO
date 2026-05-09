@@ -12,7 +12,7 @@ public record EchoProgressLedger(
         Map<String, String> flags,
         Set<String> activeObjectives) {
     public EchoProgressLedger {
-        milestones = cleanSet(milestones);
+        milestones = cleanMilestoneSet(milestones);
         flags = cleanMap(flags);
         activeObjectives = cleanSet(activeObjectives);
     }
@@ -23,7 +23,7 @@ public record EchoProgressLedger(
 
     public EchoProgressLedger withMilestone(String milestoneId) {
         LinkedHashSet<String> next = new LinkedHashSet<>(milestones);
-        String clean = clean(milestoneId);
+        String clean = EchoHandoffs.canonicalMilestone(milestoneId);
         if (!clean.isBlank()) {
             next.add(clean);
         }
@@ -49,11 +49,38 @@ public record EchoProgressLedger(
     }
 
     public boolean hasMilestone(String milestoneId) {
-        return milestones.contains(clean(milestoneId));
+        String requested = EchoHandoffs.canonicalMilestone(milestoneId);
+        if (requested.isBlank()) {
+            return false;
+        }
+        if (milestones.contains(requested)) {
+            return true;
+        }
+        for (String milestone : milestones) {
+            if (EchoHandoffs.matches(milestone, requested)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String flag(String key) {
         return flags.getOrDefault(clean(key), "");
+    }
+
+    private static Set<String> cleanMilestoneSet(Set<String> values) {
+        if (values == null || values.isEmpty()) {
+            return Set.of();
+        }
+        LinkedHashSet<String> normalizedValues = new LinkedHashSet<>();
+        for (String value : values) {
+            String normalized = EchoHandoffs.canonicalMilestone(value);
+            if (!normalized.isBlank()) {
+                normalizedValues.add(normalized);
+            }
+        }
+        LinkedHashSet<String> sorted = new LinkedHashSet<>(normalizedValues.stream().sorted().toList());
+        return Collections.unmodifiableSet(sorted);
     }
 
     private static Set<String> cleanSet(Set<String> values) {

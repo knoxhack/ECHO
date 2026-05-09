@@ -46,6 +46,7 @@ public final class DungeonSeeder {
       carveCorridor(level, center.east(8), east.west(7), floor, accent);
       carveCorridor(level, center.west(8), west.east(7), floor, accent);
       level.setBlockAndUpdate(center, ((Block)ModBlocks.SIGNAL_GLASS.get()).defaultBlockState());
+      polishRoomAnchors(level, center, north, south, east, west, dungeon);
       switch (dungeon) {
          case VAULT:
             seedVault(level, center, north, south, east, west);
@@ -79,8 +80,8 @@ public final class DungeonSeeder {
       spawnEncounter(level, center.offset(6, 1, -5), (EntityType<?>)ModEntities.ARCHIVE_HUSK.get());
       spawnEncounter(level, east.east(12).above(), (EntityType<?>)ModEntities.SECURITY_ECHO.get());
       spawnEncounter(level, west.west(11).above(), (EntityType<?>)ModEntities.ARCHIVE_HUSK.get());
-      cache(level, north.west(5), new ItemStack(ModItems.PERSONAL_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.SECURITY_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.STATIC_FLUID.get()));
-      cache(level, south.east(5), new ItemStack(ModItems.ECHO_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORE_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORRUPTED_FERRITE.get(), 2));
+      cache(level, north.west(5), new ItemStack(ModItems.PERSONAL_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.SECURITY_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.STATIC_FLUID.get()), new ItemStack(ModItems.BLACK_METAL.get(), 2));
+      cache(level, south.east(5), new ItemStack(ModItems.ECHO_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORE_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORRUPTED_FERRITE.get(), 2), new ItemStack(ModItems.STATIC_FLUID.get()));
    }
 
    private static void seedBunker(ServerLevel level, BlockPos center, BlockPos north, BlockPos south, BlockPos east, BlockPos west) {
@@ -96,8 +97,8 @@ public final class DungeonSeeder {
       spawnEncounter(level, east.east(7).above(), (EntityType<?>)ModEntities.COMMAND_REMNANT_MINION.get());
       spawnEncounter(level, west.west(7).above(), (EntityType<?>)ModEntities.BLACKBOX_SENTINEL.get());
       spawnEncounter(level, south.north(4).above(), (EntityType<?>)ModEntities.COMMAND_REMNANT_MINION.get());
-      cache(level, east.north(4), new ItemStack(ModItems.COMMAND_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.BLACK_METAL.get(), 3));
-      cache(level, west.south(4), new ItemStack(ModItems.CORE_ACCESS_KEY_MATRIX.get()), new ItemStack(ModItems.STATIC_FLUID.get(), 2));
+      cache(level, east.north(4), new ItemStack(ModItems.COMMAND_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.BLACK_METAL.get(), 3), new ItemStack(ModItems.CORRUPTED_FERRITE.get(), 2));
+      cache(level, west.south(4), new ItemStack(ModItems.CORE_ACCESS_KEY_MATRIX.get()), new ItemStack(ModItems.STATIC_FLUID.get(), 2), new ItemStack(ModItems.BLACK_METAL.get(), 2));
    }
 
    private static void seedLabyrinth(ServerLevel level, BlockPos center, BlockPos north, BlockPos south, BlockPos east, BlockPos west) {
@@ -113,8 +114,8 @@ public final class DungeonSeeder {
       spawnEncounter(level, center.offset(5, 1, 6), (EntityType<?>)ModEntities.MEMORY_PARASITE.get());
       spawnEncounter(level, west.west(10).above(), (EntityType<?>)ModEntities.FALSE_ECHO_MINION.get());
       spawnEncounter(level, south.south(8).above(), (EntityType<?>)ModEntities.MEMORY_PARASITE.get());
-      cache(level, north.east(5), new ItemStack(ModItems.ECHO_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.STATIC_FLUID.get(), 2));
-      cache(level, south.west(5), new ItemStack(ModItems.DELETED_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORRUPTED_FERRITE.get(), 3));
+      cache(level, north.east(5), new ItemStack(ModItems.ECHO_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.STATIC_FLUID.get(), 2), new ItemStack(ModItems.CORRUPTED_FERRITE.get()));
+      cache(level, south.west(5), new ItemStack(ModItems.DELETED_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORRUPTED_FERRITE.get(), 3), new ItemStack(ModItems.STATIC_FLUID.get()));
    }
 
    private static void seedTemple(ServerLevel level, BlockPos center, BlockPos north, BlockPos south, BlockPos east, BlockPos west) {
@@ -128,8 +129,8 @@ public final class DungeonSeeder {
       sentinelPosts(level, center, 7);
       spawnEncounter(level, north.south(5).above(), (EntityType<?>)ModEntities.BLACKBOX_SENTINEL.get());
       spawnEncounter(level, east.west(4).above(), (EntityType<?>)ModEntities.SECURITY_ECHO.get());
-      cache(level, east.south(5), new ItemStack(ModItems.CORE_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.CORE_ACCESS_KEY_LEFT.get()));
-      cache(level, west.north(5), new ItemStack(ModItems.DELETED_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORE_ACCESS_KEY_RIGHT.get()));
+      cache(level, east.south(5), new ItemStack(ModItems.CORE_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.CORE_ACCESS_KEY_LEFT.get()), new ItemStack(ModItems.STATIC_FLUID.get()));
+      cache(level, west.north(5), new ItemStack(ModItems.DELETED_BLACKBOX_FRAGMENT.get()), new ItemStack(ModItems.CORE_ACCESS_KEY_RIGHT.get()), new ItemStack(ModItems.CORRUPTED_FERRITE.get(), 2));
    }
 
    private static void seedCoreChamber(ServerLevel level, BlockPos center, BlockPos north, BlockPos south, BlockPos east, BlockPos west) {
@@ -145,8 +146,8 @@ public final class DungeonSeeder {
       rotatingCoreRings(level, center);
       spawnEncounter(level, center.north(9).above(), (EntityType<?>)ModEntities.BLACKBOX_SENTINEL.get());
       spawnEncounter(level, center.south(9).above(), (EntityType<?>)ModEntities.SECURITY_ECHO.get());
-      cache(level, north.west(5), new ItemStack(ModItems.RESTORE_DIRECTIVE.get()), new ItemStack(ModItems.CONTROL_DIRECTIVE.get()), new ItemStack(ModItems.DESTROY_DIRECTIVE.get()));
-      cache(level, south.east(5), new ItemStack(ModItems.DELETED_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.MERGE_DIRECTIVE.get()));
+      cache(level, north.west(5), new ItemStack(ModItems.RESTORE_DIRECTIVE.get()), new ItemStack(ModItems.CONTROL_DIRECTIVE.get()), new ItemStack(ModItems.DESTROY_DIRECTIVE.get()), new ItemStack(ModItems.STATIC_FLUID.get(), 2));
+      cache(level, south.east(5), new ItemStack(ModItems.DELETED_BLACKBOX_FRAGMENT.get(), 2), new ItemStack(ModItems.MERGE_DIRECTIVE.get()), new ItemStack(ModItems.BLACK_METAL.get(), 3));
    }
 
    private static void carveRoom(ServerLevel level, BlockPos center, int halfX, int halfZ, BlockState floor, BlockState wall, boolean glassRoof) {
@@ -193,6 +194,26 @@ public final class DungeonSeeder {
       }
 
       level.setBlockAndUpdate(pos.above(2), ((Block)ModBlocks.SIGNAL_GLASS.get()).defaultBlockState());
+   }
+
+   private static void polishRoomAnchors(ServerLevel level, BlockPos center, BlockPos north, BlockPos south, BlockPos east, BlockPos west, BlackboxDungeon dungeon) {
+      BlockState signal = ((Block)ModBlocks.SIGNAL_GLASS.get()).defaultBlockState();
+      BlockState dark = ((Block)ModBlocks.BLACK_METAL_BLOCK.get()).defaultBlockState();
+      for (BlockPos room : new BlockPos[]{north, south, east, west}) {
+         for (BlockPos marker : new BlockPos[]{room.north(5), room.south(5), room.east(5), room.west(5)}) {
+            setDungeonBlock(level, marker.above(), signal);
+         }
+      }
+      for (int offset = -6; offset <= 6; offset += 3) {
+         setDungeonBlock(level, center.offset(offset, 1, 0), signal);
+         setDungeonBlock(level, center.offset(0, 1, offset), signal);
+      }
+      if (dungeon == BlackboxDungeon.CORE_CHAMBER || dungeon == BlackboxDungeon.TEMPLE) {
+         ring(level, center.above(1), 5, signal);
+      } else {
+         setDungeonBlock(level, center.north(6).above(), dark);
+         setDungeonBlock(level, center.south(6).above(), dark);
+      }
    }
 
    private static void cache(ServerLevel level, BlockPos pos, ItemStack... stacks) {

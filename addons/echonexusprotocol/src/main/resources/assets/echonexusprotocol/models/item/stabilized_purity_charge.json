@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "echonexusprotocol:item/purity_charge"
+    "layer0": "echonexusprotocol:item/stabilized_purity_charge"
   }
 }

@@ -1,8 +1,8 @@
 # ECHO Modpack Overview
 
-ECHO is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. ECHO: Ashfall Protocol is the main terrestrial campaign, and the broader ECHO ecosystem now spans the shared Core and Terminal layers plus the Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol addon chapters.
+ECHO is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. ECHO: Ashfall Protocol is the main terrestrial campaign, and the broader ECHO ecosystem now spans the shared Core and Terminal layers plus the Orbital Remnants, Agriculture Reclamation, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol addon chapters.
 
-The current full-stack release set is `echocore` `1.1.0`, `echoterminal` `1.1.0`, `echoashfallprotocol` `1.3.0`, `echoorbitalremnants` `1.5.0`, `echostationfall` `1.1.0`, `echonexusprotocol` `1.0.0`, `echoindustrialnexus` `0.1.0`, and `echoblackboxprotocol` `1.0.0`.
+The current full-stack release set is `echocore` `1.1.0`, `echoterminal` `1.1.0`, `echoashfallprotocol` `1.3.0`, `echoorbitalremnants` `1.5.0`, `echoagriculturereclamation` `0.1.0`, `echostationfall` `1.1.0`, `echonexusprotocol` `1.0.0`, `echoindustrialnexus` `0.1.0`, and `echoblackboxprotocol` `1.0.0`.
 
 Ashfall starts with a compact `20x10x20` armored drop pod, a damaged ECHO-7 AI, and a dead world full of toxic pockets, emergency water choices, unstable radiation, failed machines, faction pressure, and the still-running Nexus Core.
 
@@ -16,6 +16,7 @@ The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions w
 | `echoterminal` | `1.1.0` | Shared ECHO terminal shell, mission browser, chapter navigation, archive surfaces, reward inbox, diagnostics, and addon-facing navigation/profile API. |
 | `echoashfallprotocol` | `1.3.0` | Main ruined-Earth survival campaign with the compact drop pod, hazards, machines, factions, guardians, Prime Relay warfront, Nexus choice, Warden finale, and addon handoff. |
 | `echoorbitalremnants` | `1.5.0` | Post-Nexus orbital route chain from Earth calibration through launch, Low Orbit, Station Network, Moon, Mars, Europa, Saturn, Titan, Deep Space Protocol, ECHO-0, surveys, faction contracts, and final network seal. |
+| `echoagriculturereclamation` | `0.1.0` | Field agriculture recovery with recovered seeds, contaminated soils, hydroponics, greenhouse safety, gene stabilization, bio-reactor support, and chunk-local restoration scores. |
 | `echostationfall` | `1.1.0` | Station ECHO horror chapter with station boarding, nine section power/log recovery, oxygen/pressure/panic telemetry, AI override, Station Mother, and Blackbox handoff. |
 | `echonexusprotocol` | `1.0.0` | Chapter IV Nexus corruption and memory chapter with Nexus Charge, field stabilization, corrupted biomes, Core access, matter rewriting, the Nexus Guardian, and Restore/Control/Destroy/Merge path commitment. |
 | `echoindustrialnexus` | `0.1.0` | Industrial automation chapter with Thermal Flux, ducts, factories, machine heat, scrubber safe zones, filter automation, hybrid Nexus processing, POIs, and the Furnace Warden. |
@@ -28,11 +29,11 @@ The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions w
 3. Build the first powered machine loop.
 4. Stabilize water, power, shelter, and expedition recovery tools.
 5. Explore POIs for substrates, schematics, faction intel, and power-node leads.
-6. Clear the nine buried biome guardian nodes that anchor the ruined regions.
+6. Clear the eight active buried biome guardian nodes that anchor the ruined regions.
 7. Wake the Nexus campaign, scan Prime Relays, resolve the warfront, and restore enough grid infrastructure to access the Nexus Core.
 8. Make the irreversible Nexus choice.
 9. Finish the chosen Restore, Destroy, or Control branch through the Pre-Fall Archives, The Warden, and the final epilogue.
-10. Continue through the release addon chain: Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol.
+10. Continue through the release addon chain: Orbital Remnants, Agriculture Reclamation, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol.
 
 ## ECHO Ecosystem
 
@@ -40,19 +41,20 @@ The ecosystem is split by ownership rather than by one giant mod owning every sa
 
 ECHO Core owns shared contracts: pack mode, player profile state, progress milestones, diagnostics, hazard telemetry, route records, faction definitions/profiles/contracts/actions, POI affinity, NPC dialogue roles, terminal placement, terminal reward storage, archive unlocks, intel mirrors, and Nexus path/campaign mirrors. Addons publish into those services and keep their own detailed state.
 
-ECHO Terminal owns presentation: Command Deck, What Now, mission graph, route records, archives, faction atlas, vitals, reward inbox, addon chapter tabs, and mission browser interactions. Addons register terminal chapters through public APIs such as `TerminalNavigationProfile`, `TerminalNavigationProfiles`, `TerminalNavigationSection`, `TerminalMissionProvider`, and terminal action handlers.
+ECHO Terminal owns presentation: Command Deck, What Now, mission graph, route records, Recipe Index, transient provider-backed mission HUD notices, archives, faction atlas, vitals, reward inbox, addon chapter tabs, and mission browser interactions. Addons register terminal chapters through public APIs such as `TerminalNavigationProfile`, `TerminalNavigationProfiles`, `TerminalNavigationSection`, `TerminalMissionProvider`, terminal action handlers, and the `TerminalRecipeProvider` recipe surface.
 
 Chapter handoffs are milestone driven:
 
 | Handoff | Trigger |
 |---|---|
 | Ashfall -> Orbital Remnants | Any Ashfall Nexus path unlocks Earth orbital calibration unless Orbital is running standalone. |
+| Ashfall ecology -> Agriculture Reclamation | Recovered seed capsules, Bio Labs, Data Centers, Remnant caches, Salvager imports, toxic salvage, and cryogenic ruins feed the FIELD > Reclamation loop. |
 | Orbital Remnants -> Stationfall | Station coordinates or the restored Station Network opens Station ECHO boarding. |
 | Stationfall -> Nexus Protocol | `stationfall:blackbox_recovered` opens the Nexus Protocol chain. |
 | Nexus Protocol -> Blackbox Protocol | Nexus memory/Core escalation exposes deeper Blackbox evidence, Core keys, and final path context. |
 | Industrial Nexus | Runs as infrastructure support across the stack, feeding filters, factory recovery, Thermal Flux, hybrid materials, and late-game machine safety. |
 
-The Gradle workspace supports a small beta addon set and the full stack. `-PechoAddonSet=beta` includes Terminal and Orbital Remnants; `-PechoAddonSet=all` includes Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol as well.
+The Gradle workspace supports a small beta addon set and the full stack. `-PechoAddonSet=beta` includes Terminal, Orbital Remnants, and Agriculture Reclamation; `-PechoAddonSet=all` includes Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol as well.
 
 Release verification is also part of the ecosystem. `buildEchoWorkspace` builds the selected stack, `verifyEchoRelease` runs resource validation, gameplay-data validation, POI checks, runtime-log checks, jar-set checks, builds, and GameTests, and `copyEchoJarsToModpack` copies the selected jars into the local `Axes of Tomorrow` CurseForge profile. The private `tools/echo-release-terminal` dashboard supports release drafting and QA state, but it is not shipped as a mod artifact.
 
@@ -141,7 +143,7 @@ Vanilla biome resources are explicit recovery rewards instead of normal-biome de
 
 Machines depend on power distribution and may interact with adjacency, controller, pipe, or maintenance systems depending on the block.
 
-JEI support is optional but recommended. ECHO: Ashfall Protocol registers custom JEI categories for hardcoded machine behavior such as recycling, purification, burning, generation, pressing, grinding, isotope refining, radiation cleansing, crystalline synthesis, and deep-core mining. Locked schematic outputs stay visible with lock text so players can see what branch or machine tier they are moving toward.
+JEI support is optional but recommended. ECHO: Ashfall Protocol registers custom JEI categories for hardcoded machine behavior such as recycling, purification, burning, generation, pressing, grinding, isotope refining, radiation cleansing, crystalline synthesis, and deep-core mining. Those hardcoded recipe notes now share the same Ashfall item-info catalog and schematic gating text used by the ECHO Terminal Recipe Index, so locked outputs stay visible with branch or machine-tier guidance in both surfaces.
 
 ## World and Exploration
 
@@ -177,15 +179,14 @@ Faction NPCs use ECHO Core roles and dialogue snapshots. Ashfall registers Remna
 
 The ECHO terminal is the player-facing command surface.
 
-- **PROTOCOL:** Command Deck, What Now, Mission Graph, Protocol Roadmap, and Signal Leads for active route control, required objectives, diagnostics, and optional recon.
-- **FIELD:** Route Map, POI Atlas, Route Records, Field Archive, Faction Atlas, Survival Index, and Baseline for routes, records, template recognition, faction state, recipes, and recovered Minecraft tasks.
-- **SYSTEMS:** Vitals, Companion Link, and Reward Inbox for hazard telemetry, mutation/research state, drone commands, and terminal-stored rewards.
-- **NEXUS:** Nexus Core for Prime Relay warfront prep, Core countermeasure siege readiness, final path interface, and permanent choice confirmation.
-- **ORBITAL and ADDONS:** Orbital Command, Route Survey, ECHO-0 Records, Stationfall station state, Nexus Protocol research state, Industrial recovery records, Blackbox archives, route records, diagnostics, support caches, and addon faction standings.
+- **Command:** Command Deck and What Now for active route control, blockers, diagnostics, and next actions.
+- **Progress:** Mission Graph, Protocol Roadmap, main survival route, chapter hubs, and addon mission browsers for required objectives and chapter entry points.
+- **Intel:** Route Map, POI Atlas, Route Records, Recipe Index, Field Archive, Faction Atlas, Survival Index, Baseline, Nexus Core, Orbital Command, Route Survey, ECHO-0 Records, Stationfall state, Nexus Protocol research, Industrial recovery records, and Blackbox archives.
+- **System:** Vitals, Companion Link, Reward Inbox, and terminal settings for hazard telemetry, mutation/research state, drone commands, support caches, and presentation state.
 
 The terminal should answer one practical question at all times: what should I stabilize, craft, scan, repair, or explore next?
 
-Addon terminal navigation is treated as public API in `echoterminal`: `TerminalNavigationProfile`, `TerminalNavigationProfiles`, and `TerminalNavigationSection` define chapter sections without making an addon reach into another chapter's UI internals.
+Addon terminal navigation is treated as public API in `echoterminal`: `TerminalNavigationProfile`, `TerminalNavigationProfiles`, and `TerminalNavigationSection` define Command, Progress, Intel, and System ownership without making an addon reach into another chapter's UI internals. Recipe visibility uses the companion recipe API: `TerminalRecipeProvider`, `TerminalRecipeRegistry`, `TerminalRecipeCategory`, `TerminalRecipeEntry`, `TerminalRecipeSlot`, `TerminalRecipeNote`, and `TerminalRecipeSnapshot`. Legacy chrome group fallbacks exist only to keep old tabs visible.
 
 ## Drone System
 
@@ -211,7 +212,7 @@ Elite Salvager reputation unlocks a Rare Tech Schematic trade. Four generic Sche
 
 ## Nexus Endgame
 
-The Nexus Core is the final ECHO: Ashfall Protocol decision point. Before the Core route opens, all nine biome guardians must be defeated. They are buried Gridfall control nodes: Wasteland Sentinel, Plains Warlord, City Ruin Stalker, Industrial Juggernaut, Toxic Hive Matriarch, Crash Zone Colossus, Radiation Behemoth, Cryogenic Overseer, and Nexus Scar Avatar.
+The Nexus Core is the final ECHO: Ashfall Protocol decision point. Before the Core route opens, all eight active biome guardians must be defeated. They are buried Gridfall control nodes: Plains Warlord, City Ruin Stalker, Industrial Juggernaut, Toxic Hive Matriarch, Crash Zone Colossus, Radiation Behemoth, Cryogenic Overseer, and Nexus Scar Avatar.
 
 Once the guardian chain is clear, the current warfront pass adds a final readiness layer: wake the Nexus campaign, scan six Prime Relays, resolve three relays by stabilizing/severing/overriding them, survive the Core countermeasure siege, and prepare the chosen path. Once that chain and enough grid infrastructure are restored, the player chooses one path:
 
@@ -273,6 +274,7 @@ ECHO: Industrial Nexus is the infrastructure and automation expansion.
 - The mission chain is Reclaim Power, Grind the Wasteland, Filters for Survival, Dense Alloy, Control the Heat, Clean the Camp, Reactor Waste, Hybrid Warning, Factory Controller Online, and Production Survived.
 - Thermal Flux infrastructure includes Scrap Dynamo, Thermal Array, Geothermal Pump, Reactor Heat Exchanger, Solar Concentrator, Static Heat Exchanger, Flux Capacitor Bank, Reinforced/Stabilized/Hybrid/Core Flux Banks, Copper/Reinforced/Stabilized/Hybrid/Core Flux Ducts, and the Flux Multimeter.
 - Factory automation includes Salvage Shredder, Ore Grinder, Alloy Kiln, Substrate Grinder, Filter Press, Component Assembler, Industrial Recycler, Nexus-Thermal Injector, Fluid Refiner, Water Purifier, Corruption Safe Recycler, Reality Furnace, Factory Controller, item ducts, smart/vacuum/Nexus-safe ducts, and rusted/reinforced/pressurized/shielded/static pipes.
+- Its ECHO Terminal recipe provider reads `echoindustrialnexus:industrial_processing` JSON and surfaces item or tag ingredients, catalysts, byproducts, fluids, Thermal Flux cost/generation, heat, duration, and process notes in the shared Recipe Index.
 - Heat and safety tools include Thermal Wrench, Emergency Coolant Pack, Coolant Cells, Heat Sink Upgrades, Radiation Shielding Upgrades, Nexus Stabilizer Upgrades, Emergency Shutdown Modules, Industrial Scrubber modes, and Industrial Exo armor.
 - POI support includes Rusted Factory Complexes, Abandoned Thermal Plants, Geothermal Drill Sites, Reactor Cooling Stations, and Nexus Heat Exchanger Ruins.
 - The Furnace Warden is the current boss and drops/proves the late industrial thermal core route.
@@ -298,11 +300,12 @@ Lore continuity: Gridfall breaks Earth, the pod fell from Station ECHO, ECHO-7 s
 Recommended fresh-world checks:
 
 - First-night survival inside the compact pod without relying on vanilla forests.
-- JEI visibility for custom machine/process recipes.
-- ECHO terminal guidance across Command Deck, What Now, Mission Graph, Protocol Roadmap, Signal Leads, Route Map, POI Atlas, Route Records, Survival Index, Faction Atlas, Vitals, Companion Link, Reward Inbox, Nexus Core, ORBITAL, and addon chapter surfaces.
+- JEI and Terminal Recipe Index visibility for custom machine/process recipes.
+- ECHO terminal guidance across Command, Progress, Intel, and System sections, including Command Deck, What Now, Mission Graph, Protocol Roadmap, Signal Leads, Route Map, POI Atlas, Recipe Index, Route Records, Survival Index, Faction Atlas, Vitals, Companion Link, Reward Inbox, Nexus Core, ORBITAL, and addon chapter surfaces.
 - Drone repair/mode commands and Scout Drone fallback behavior.
 - Faction NPC dialogue/contracts, faction standings, trader rewards, POI cache identity, scanner route profiles, underground guardian routes, Prime Relay warfront prep, Nexus path objectives, Warden reward-once behavior, post-Nexus Orbital presentation, and addon route entry visibility.
 - Orbital route checks: Earth calibration, launch readiness, staged Emergency Rocket, Low Orbit, Station Relay repairs, Moon/Mars/Europa/Saturn/Titan route unlocks, Deep Space Protocol, ECHO-0, 21 survey records, three faction contracts, and final network seal.
+- Agriculture Reclamation checks: seed capsule recovery, profiled planting, hydroponic growth persistence, Bio-Reactor and Compost Recycler outputs, gene stabilization, greenhouse safety scoring, Ashfall/restoration soil compatibility, and chunk-local restoration pressure.
 - Stationfall checks: station boarding/return, nine section power states, crew logs, Signal Panic telemetry, Data Core AI override, Station Mother fight, Stationfall Blackbox recovery, and Nexus Protocol unlock.
 - Nexus Protocol checks: Stationfall blackbox gate, Nexus Scanner Visor, Nexus Recycler, Corruption Filter, Nexus Field Stabilizer, Memory Decoder, Blackbox Monolith, Corruption Warden, Reality Forge, Core Access Key, Nexus Guardian, and Restore/Control/Destroy/Merge commit actions.
 - Industrial checks: Thermal Flux generation, factory scans, duct networks, filter automation, scrubber safe zones, heat/overload handling, Nexus-thermal warning, Industrial POI locator hints, and Furnace Warden reward state.
@@ -312,6 +315,6 @@ Recommended fresh-world checks:
 Known constraints:
 
 - New resource and POI distribution is most reliable in new chunks.
-- The default workspace addon set is `beta`; use `-PechoAddonSet=all` when testing the full ecosystem.
+- The current release docs describe the full stack; use `-PechoAddonSet=beta` only for the smaller Core/Terminal/Ashfall/Orbital build, and `-PechoAddonSet=all` when testing the full ecosystem.
 - Drone control is terminal/direct-interaction based; the old standalone drone menu path is intentionally not exposed.
 - Audio polish currently favors built-in Minecraft sound events over bundled custom sound files.

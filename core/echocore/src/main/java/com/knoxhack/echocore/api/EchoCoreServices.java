@@ -1,18 +1,22 @@
 package com.knoxhack.echocore.api;
 
 import com.knoxhack.echocore.EchoCore;
+import com.knoxhack.echocore.discovery.EchoDiscoveryData;
+import com.knoxhack.echocore.network.DiscoveryToastPacket;
 import com.knoxhack.echocore.network.EchoFactionSyncPacket;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -54,6 +58,18 @@ public final class EchoCoreServices {
             warnProviderFailure("pack mode", service, exception);
             return detectPackMode(player);
         }
+    }
+
+    public static List<EchoChapterCapability> chapterCapabilities(Player player) {
+        ModList modList = ModList.get();
+        return List.of(
+                chapterCapability(player, modList, "ashfall_protocol", "echoashfallprotocol", "Ashfall Protocol"),
+                chapterCapability(player, modList, "orbital_remnants", "echoorbitalremnants", "Orbital Remnants"),
+                chapterCapability(player, modList, "stationfall", "echostationfall", "Stationfall"),
+                chapterCapability(player, modList, "nexus_protocol", "echonexusprotocol", "Nexus Protocol"),
+                chapterCapability(player, modList, "blackbox_protocol", "echoblackboxprotocol", "Blackbox Protocol"),
+                chapterCapability(player, modList, "agriculture_reclamation", "echoagriculturereclamation", "Agriculture Reclamation"),
+                chapterCapability(player, modList, "industrial_nexus", "echoindustrialnexus", "Industrial Nexus"));
     }
 
     public static void registerProfileService(EchoProfileService service) {
@@ -116,6 +132,93 @@ public final class EchoCoreServices {
             return;
         }
         saveProgressLedger(player, progressLedger(player).withMilestone(milestoneId));
+        discoverVisibleRouteRecords(player);
+    }
+
+    public static void registerDiscoveryProvider(EchoDiscoveryProvider provider) {
+        EchoDiscoveryRegistry.register(provider);
+    }
+
+    public static List<EchoDiscoveryEntry> discoveryEntries(Player player) {
+        return EchoDiscoveryRegistry.entries(player);
+    }
+
+    public static Optional<EchoDiscoveryEntry> discoveryEntry(Player player, Identifier id) {
+        return EchoDiscoveryRegistry.entry(player, id);
+    }
+
+    public static EchoDiscoveryState discoveryState(Player player, EchoDiscoveryEntry entry) {
+        if (entry == null) {
+            return EchoDiscoveryState.LOCKED;
+        }
+        EchoDiscoveryState providerState = EchoDiscoveryRegistry.state(player, entry);
+        if (providerState == EchoDiscoveryState.CHECKED) {
+            return EchoDiscoveryState.CHECKED;
+        }
+        if (player != null && EchoDiscoveryData.get(player).contains(entry.id())) {
+            return EchoDiscoveryState.DISCOVERED;
+        }
+        return providerState;
+    }
+
+    public static boolean hasDiscoveredFeature(Player player, Identifier id) {
+        return player != null && id != null && EchoDiscoveryData.get(player).contains(id);
+    }
+
+    public static boolean discoverFeature(ServerPlayer player, Identifier id) {
+        if (player == null || id == null) {
+            return false;
+        }
+        Optional<EchoDiscoveryEntry> entry = EchoDiscoveryRegistry.entry(player, id);
+        if (entry.isEmpty()) {
+            return false;
+        }
+        EchoDiscoveryData data = EchoDiscoveryData.get(player);
+        if (!data.discover(id)) {
+            return false;
+        }
+        EchoDiscoveryData.saveAndSync(player, data);
+        sendOptionalPayload(player, new DiscoveryToastPacket(entry.get()));
+        return true;
+    }
+
+    public static boolean discoverFeature(ServerPlayer player, String id) {
+        return discoverFeature(player, Identifier.tryParse(id == null ? "" : id));
+    }
+
+    public static Identifier routeDiscoveryId(Identifier routeRecordId) {
+        if (routeRecordId == null) {
+            return Identifier.fromNamespaceAndPath(EchoCore.MODID, "route/unknown");
+        }
+        return Identifier.fromNamespaceAndPath(routeRecordId.getNamespace(), "route/" + routeRecordId.getPath());
+    }
+
+    public static int discoverVisibleRouteRecords(ServerPlayer player) {
+        if (player == null) {
+            return 0;
+        }
+        int discovered = 0;
+        for (EchoRouteRecord record : routeRecords(player)) {
+            if (record == null || !routeRecordVisible(record)) {
+                continue;
+            }
+            if (discoverFeature(player, routeDiscoveryId(record.id()))) {
+                discovered++;
+            }
+        }
+        return discovered;
+    }
+
+    public static void syncDiscoveryDataToClient(ServerPlayer player) {
+        if (player != null) {
+            player.syncData(com.knoxhack.echocore.registry.ModAttachments.DISCOVERY_DATA.get());
+        }
+    }
+
+    public static void syncDiscoveryDataToClient(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            syncDiscoveryDataToClient(serverPlayer);
+        }
     }
 
     public static void registerRouteRecordService(EchoRouteRecordService service) {
@@ -281,6 +384,11 @@ public final class EchoCoreServices {
             try {
                 EchoFactionDataService.markContacted(player, factionId);
                 syncFactionDataToClient(player);
+                if (player instanceof ServerPlayer serverPlayer) {
+                    discoverFeature(serverPlayer,
+                            Identifier.fromNamespaceAndPath(factionId.getNamespace(), "faction/" + factionId.getPath()));
+                    discoverVisibleRouteRecords(serverPlayer);
+                }
             } catch (RuntimeException exception) {
                 warnProviderFailure("faction data", EchoFactionDataService.class, exception);
             }
@@ -365,7 +473,7 @@ public final class EchoCoreServices {
 
     public static void syncFactionDataToClient(ServerPlayer player) {
         if (player != null) {
-            PacketDistributor.sendToPlayer(player, new EchoFactionSyncPacket(EchoFactionDataService.exportRoot(player)));
+            sendOptionalPayload(player, new EchoFactionSyncPacket(EchoFactionDataService.exportRoot(player)));
         }
     }
 
@@ -742,6 +850,7 @@ public final class EchoCoreServices {
         RECOVERY_SERVICES.clear();
         FACTION_STANDING_SERVICES.clear();
         FACTION_ACTION_SERVICES.clear();
+        EchoDiscoveryRegistry.clearForTests();
     }
 
     public static String platformProviderSummary() {
@@ -752,7 +861,23 @@ public final class EchoCoreServices {
                 + ", recovery=" + RECOVERY_SERVICES.size()
                 + ", factionStanding=" + FACTION_STANDING_SERVICES.size()
                 + ", factionActions=" + FACTION_ACTION_SERVICES.size()
+                + ", discoveryProviders=" + EchoDiscoveryRegistry.providerCount()
                 + ", factions=" + factionDefinitions().size();
+    }
+
+    private static boolean routeRecordVisible(EchoRouteRecord record) {
+        if (record == null) {
+            return false;
+        }
+        if (record.complete()) {
+            return true;
+        }
+        String status = record.status() == null ? "" : record.status().toLowerCase(Locale.ROOT);
+        return !(status.contains("locked")
+                || status.contains("sealed")
+                || status.contains("pending")
+                || status.contains("unresolved")
+                || status.contains("waiting"));
     }
 
     private static List<EchoRouteRecord> safeRouteRecords(EchoRouteRecordService service, Player player) {
@@ -883,6 +1008,17 @@ public final class EchoCoreServices {
                 surface, providerName(provider), exception);
     }
 
+    private static void sendOptionalPayload(ServerPlayer player, CustomPacketPayload payload) {
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException | IllegalStateException exception) {
+            EchoCore.LOGGER.debug("Skipped optional ECHO payload {} for {}: {}",
+                    payload.type().id(),
+                    player == null ? "<null>" : player.getScoreboardName(),
+                    exception.getMessage());
+        }
+    }
+
     private static void warnInvalidProviderOutput(String surface, Object provider, String detail) {
         EchoCore.LOGGER.warn("ECHO platform {} provider {} returned invalid output: {}.",
                 surface, providerName(provider), detail);
@@ -911,6 +1047,16 @@ public final class EchoCoreServices {
         ModList modList = ModList.get();
         boolean ashfall = modList.isLoaded("echoashfallprotocol");
         boolean orbital = modList.isLoaded("echoorbitalremnants");
+        boolean stationfall = modList.isLoaded("echostationfall");
+        boolean nexus = modList.isLoaded("echonexusprotocol");
+        boolean blackbox = modList.isLoaded("echoblackboxprotocol");
+        boolean industrial = modList.isLoaded("echoindustrialnexus");
+        if (ashfall && orbital && stationfall && nexus && blackbox && industrial) {
+            return EchoPackMode.FULL_SAGA_WITH_EXTENSIONS;
+        }
+        if (ashfall && orbital && stationfall && nexus && blackbox) {
+            return EchoPackMode.COMPLETE_SAGA;
+        }
         if (ashfall && orbital) {
             return EchoPackMode.FULL_SAGA;
         }
@@ -920,7 +1066,33 @@ public final class EchoCoreServices {
         if (orbital) {
             return EchoPackMode.ORBITAL_STANDALONE;
         }
+        if (industrial) {
+            return EchoPackMode.INDUSTRIAL_EXTENSION;
+        }
         return EchoPackMode.UNKNOWN;
+    }
+
+    private static EchoChapterCapability chapterCapability(
+            Player player, ModList modList, String chapterId, String modId, String displayName) {
+        boolean installed = modList.isLoaded(modId);
+        Optional<EchoAddonChapter> chapter = EchoAddonRegistry.chapters().stream()
+                .filter(candidate -> chapterId.equals(candidate.id()))
+                .findFirst();
+        if (chapter.isEmpty()) {
+            return new EchoChapterCapability(chapterId, displayName, installed, false,
+                    installed ? "Installed, but no chapter provider is registered." : "Mod not installed.");
+        }
+        EchoAddonChapter provider = chapter.get();
+        boolean available = false;
+        String status = "";
+        try {
+            available = provider.isAvailable(player);
+            status = provider.statusLine(player);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("chapter capability " + chapterId, provider, exception);
+            status = "Chapter provider failed while reporting availability.";
+        }
+        return new EchoChapterCapability(chapterId, provider.displayName(), installed, available, status);
     }
 
     private static TerminalPlacementService terminalPlacementService() {

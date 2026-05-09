@@ -113,6 +113,7 @@ public final class StationfallStationGenerator {
             }
         }
         dress(level, section);
+        sectionCacheMarkers(level, section);
         sectionLights(level, section);
     }
 
@@ -152,6 +153,12 @@ public final class StationfallStationGenerator {
 
     private static void dress(ServerLevel level, StationSection section) {
         BlockPos center = section.center();
+        for (int x = center.getX() - 12; x <= center.getX() + 12; x += 6) {
+            BlockPos marker = new BlockPos(x, Y + 1, 0);
+            if (level.getBlockState(marker).isAir()) {
+                level.setBlock(marker, Blocks.LIGHT_GRAY_CARPET.defaultBlockState(), 2);
+            }
+        }
         for (int x = center.getX() - 12; x <= center.getX() + 12; x += 8) {
             level.setBlock(new BlockPos(x, Y + 1, -9), Blocks.IRON_BARS.defaultBlockState(), 2);
         }
@@ -162,27 +169,54 @@ public final class StationfallStationGenerator {
             case HYDROPONICS_BAY -> {
                 for (int x = center.getX() - 10; x <= center.getX() + 10; x += 5) {
                     level.setBlock(new BlockPos(x, Y + 1, -4), Blocks.MOSS_BLOCK.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(x, Y + 2, -4), ModBlocks.CORRUPTED_HYDROPONIC_GROWTH.get().defaultBlockState(), 2);
                 }
             }
             case MEDICAL_WING -> {
                 level.setBlock(new BlockPos(center.getX() + 4, Y + 1, 4), Blocks.WHITE_WOOL.defaultBlockState(), 2);
                 level.setBlock(new BlockPos(center.getX() + 5, Y + 1, 4), Blocks.RED_WOOL.defaultBlockState(), 2);
+                level.setBlock(new BlockPos(center.getX() - 5, Y + 1, 4), Blocks.WHITE_WOOL.defaultBlockState(), 2);
+                level.setBlock(new BlockPos(center.getX() - 4, Y + 1, 4), Blocks.RED_WOOL.defaultBlockState(), 2);
             }
             case ENGINEERING_DECK -> {
                 level.setBlock(new BlockPos(center.getX() + 8, Y + 1, -4), Blocks.LEVER.defaultBlockState(), 2);
                 level.setBlock(new BlockPos(center.getX() + 9, Y + 1, -4), Blocks.COPPER_BLOCK.defaultBlockState(), 2);
+                for (int z = -5; z <= 5; z += 5) {
+                    level.setBlock(new BlockPos(center.getX() - 8, Y + 1, z), ModBlocks.STATION_POWER_NODE.get().defaultBlockState(), 2);
+                }
             }
             case DATA_CORE -> {
                 level.setBlock(new BlockPos(center.getX() - 7, Y + 1, 3), Blocks.PURPLE_STAINED_GLASS.defaultBlockState(), 2);
                 level.setBlock(new BlockPos(center.getX() + 7, Y + 1, 3), Blocks.PURPLE_STAINED_GLASS.defaultBlockState(), 2);
+                for (int z = -6; z <= 6; z += 4) {
+                    level.setBlock(new BlockPos(center.getX(), Y + 1, z), ModBlocks.DATA_CORE_TERMINAL.get().defaultBlockState(), 2);
+                }
             }
-            case OBSERVATION_DECK -> level.setBlock(new BlockPos(center.getX(), Y + 1, 8), Blocks.LIGHTNING_ROD.defaultBlockState(), 2);
+            case OBSERVATION_DECK -> {
+                level.setBlock(new BlockPos(center.getX(), Y + 1, 8), Blocks.LIGHTNING_ROD.defaultBlockState(), 2);
+                for (int x = center.getX() - 6; x <= center.getX() + 6; x += 6) {
+                    level.setBlock(new BlockPos(x, Y + 1, HZ - 1), ModBlocks.CRACKED_OBSERVATION_GLASS.get().defaultBlockState(), 2);
+                }
+            }
             case COMMAND_MODULE -> {
                 level.setBlock(new BlockPos(center.getX() - 5, Y + 1, -5), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
                 level.setBlock(new BlockPos(center.getX() + 5, Y + 1, -5), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
+                level.setBlock(new BlockPos(center.getX(), Y + 1, -6), ModBlocks.DAMAGED_AIRLOCK.get().defaultBlockState(), 2);
             }
             default -> {
             }
+        }
+    }
+
+    private static void sectionCacheMarkers(ServerLevel level, StationSection section) {
+        BlockPos power = powerCachePos(section);
+        BlockPos common = commonCachePos(section);
+        level.setBlock(power.north(), Blocks.REDSTONE_TORCH.defaultBlockState(), 2);
+        level.setBlock(common.south(), Blocks.LANTERN.defaultBlockState(), 2);
+        level.setBlock(power.below(), ModBlocks.STATIONFALL_PLATING.get().defaultBlockState(), 2);
+        level.setBlock(common.below(), ModBlocks.STATIONFALL_PLATING.get().defaultBlockState(), 2);
+        if (section == StationSection.COMMAND_MODULE) {
+            level.setBlock(commandCachePos().north(), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
         }
     }
 

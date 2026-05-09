@@ -6,52 +6,40 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 displayURL="https://github.com/knoxhack/Echo"
-credits="Built with NeoForge"
 authors="KnoxHack"
+credits="Main Ashfall survival protocol and shared route content for the ECHO mod family."
 description='''
-ECHO: Ashfall Protocol is a post-Gridfall survival overhaul led by ECHO-7,
-a useful emergency operator with damaged memory and practical priorities.
-Rebuild from a ruined drop pod through water, shelter, factions, machines,
-buried guardian nodes, and the Nexus choice that still listens beneath the ash.
+ECHO: Ashfall Protocol is the main wasteland survival chapter for ECHO.
+It provides the Ashfall biome loop, missions, POIs, factions, guardians,
+Nexus progression, and cross-addon survival foundations.
 '''
 
-[[mixins]]
-config="echoashfallprotocol.mixins.json"
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="neoforge"
-    type="required"
-    versionRange="[${neo_version},)"
-    ordering="NONE"
-    side="BOTH"
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="minecraft"
-    type="required"
-    versionRange="${minecraft_version_range}"
-    ordering="NONE"
-    side="BOTH"
+modId="echocore"
+type="required"
+reason="Provides shared ECHO player data, faction, route, terminal, and discovery APIs."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="echocore"
-    type="required"
-    reason="Provides shared ECHO service APIs used by Ashfall and ECHO addons."
-    versionRange="[1.1.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.${mod_id}]]
-    modId="echoterminal"
-    type="optional"
-    reason="Provides the modular ECHO Terminal UI and terminal block."
-    versionRange="[1.1.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.${mod_id}]]
-    modId="jei"
-    type="optional"
-    reason="Shows ECHO: Ashfall Protocol machine/process recipes in Just Enough Items when installed."
-    versionRange="[29.5.0.26,)"
-    ordering="AFTER"
-    side="CLIENT"
+modId="echoterminal"
+type="optional"
+reason="Enables Ashfall mission, route, faction, and discovery surfaces inside the modular ECHO Terminal."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"

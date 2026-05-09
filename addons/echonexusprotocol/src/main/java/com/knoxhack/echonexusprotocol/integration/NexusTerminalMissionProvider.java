@@ -166,6 +166,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
             NexusWorldData.get(serverLevel).commitEndingState(path);
          }
          EchoCoreServices.recordMilestone(player, milestone);
+         EchoCoreServices.recordMilestone(player, NexusProgression.NEXUS_PROTOCOL_COMPLETE);
          player.sendSystemMessage(Component.literal(endingLine(path)));
          return true;
       }
@@ -195,7 +196,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          case SIGNAL_BENEATH -> List.of(
             requirement(
                "Stationfall handoff",
-               NexusProgression.isNexusUnlocked(player) ? "Blackbox recovery accepted." : "stationfall:blackbox_recovered missing.",
+               NexusProgression.isNexusUnlocked(player) ? "Blackbox recovery accepted." : NexusProgression.STATIONFALL_GATE + " missing.",
                (ItemLike)ModItems.BLACKBOX_FRAGMENT.get(),
                NexusProgression.isNexusUnlocked(player) ? 1 : 0,
                1
@@ -346,7 +347,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
 
    private static String lockedReason(Player player, NexusPlayerData data, NexusTerminalMissionProvider.NexusMission mission) {
       if (mission == NexusTerminalMissionProvider.NexusMission.SIGNAL_BENEATH) {
-         return "Recover Stationfall's blackbox milestone (`stationfall:blackbox_recovered`) or enable the Nexus development unlock before starting Chapter IV.";
+         return "Recover Stationfall's blackbox milestone (`" + NexusProgression.STATIONFALL_GATE + "`) or enable the Nexus development unlock before starting Chapter IV.";
       } else {
          NexusTerminalMissionProvider.NexusMission previous = mission.previous();
          return previous == null ? "Nexus mission locked." : "Complete " + previous.title() + " first: " + previous.guide();

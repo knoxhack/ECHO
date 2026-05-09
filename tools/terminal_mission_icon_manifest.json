@@ -663,12 +663,6 @@
       "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/control_epilogue.png"
     },
     {
-      "mission": "echoashfallprotocol:[ECHO-7] Guardian signal locked below ",
-      "title": " entrance, descend into the buried node, archive the site, then neutralize ",
-      "category": "combat",
-      "file": "assets/echoterminal/textures/gui/mission_icons/echoashfallprotocol/[ECHO-7] Guardian signal locked below .png"
-    },
-    {
       "mission": "echoashfallprotocol:crash_blackbox_signal",
       "title": "Crash Blackbox Signal",
       "category": "field_recon",

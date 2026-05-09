@@ -113,6 +113,15 @@ EXPECTED_STRUCTURE_SET_PLACEMENT = {
     "industrial_factories": ("LANDMARK_SPACING", "LANDMARK_SEPARATION"),
 }
 
+STARTER_ONLY_TEMPLATE_LOCATIONS = {
+    f"{MODID}:global/drop_pod",
+}
+
+FORBIDDEN_NATURAL_DROP_POD_TEMPLATE_TOKENS = (
+    "drop_pod",
+    "drop_pod_wreck",
+)
+
 SUBSTRATE_GRINDER_ITEMS = (
     "minecraft:stone",
     "minecraft:cobblestone",
@@ -683,7 +692,45 @@ def check_worldgen(errors: list[str]) -> None:
                     errors.append(
                         f"STRUCTURE_SET_BALANCE_DRIFT {path.relative_to(ROOT)}: "
                         f"spacing/separation {actual} expected {(spacing, separation)}"
-                )
+                    )
+
+
+def check_starter_only_drop_pod_worldgen(errors: list[str]) -> None:
+    poi_tag = tag_values(DATA_ROOT / "tags/worldgen/structure/poi_structures.json", errors)
+    if f"{MODID}:drop_pod" in poi_tag:
+        errors.append("RANDOM_DROP_POD_STRUCTURE_TAG data/echoashfallprotocol/tags/worldgen/structure/poi_structures.json")
+
+    for path in json_files(DATA_ROOT / "worldgen/structure_set"):
+        data = load_json(path, errors)
+        if not isinstance(data, dict):
+            continue
+        for structure in data.get("structures", []):
+            ref = structure.get("structure") if isinstance(structure, dict) else None
+            if ref == f"{MODID}:drop_pod":
+                errors.append(f"RANDOM_DROP_POD_STRUCTURE_SET {path.relative_to(ROOT)}")
+
+    starter_pool = DATA_ROOT / "worldgen/template_pool/drop_pod/start.json"
+    for path in json_files(DATA_ROOT / "worldgen/template_pool"):
+        data = load_json(path, errors)
+        if not isinstance(data, dict):
+            continue
+        for ref in walk_strings(data):
+            if not isinstance(ref, str) or not ref.startswith(f"{MODID}:"):
+                continue
+            if path == starter_pool and ref in {f"{MODID}:drop_pod/start", f"{MODID}:global/drop_pod"}:
+                continue
+            if any(token in ref for token in FORBIDDEN_NATURAL_DROP_POD_TEMPLATE_TOKENS):
+                errors.append(f"RANDOM_DROP_POD_TEMPLATE_POOL {path.relative_to(ROOT)}: {ref}")
+
+    procedural = read_source("event/ProceduralStructureHandler.java", errors)
+    forbidden_snippets = (
+        "Map.entry(StructureType.DROP_POD",
+        "SPAWN_CONFIGS.put(StructureType.DROP_POD",
+        "case DROP_POD ->",
+    )
+    for snippet in forbidden_snippets:
+        if snippet in procedural:
+            errors.append(f"RANDOM_DROP_POD_PROCEDURAL_HANDLER contains {snippet}")
 
 
 def check_poi_catalog(errors: list[str]) -> None:
@@ -696,7 +743,7 @@ def check_poi_catalog(errors: list[str]) -> None:
     getting_started = (ROOT / "GETTING_STARTED.md").read_text(encoding="utf-8")
     overview = (ROOT / "MODPACK_OVERVIEW.md").read_text(encoding="utf-8")
 
-    pool_locations = echo_template_pool_locations(errors)
+    pool_locations = echo_template_pool_locations(errors) - STARTER_ONLY_TEMPLATE_LOCATIONS
     catalog_entries = re.findall(
         r'entry\(\s*"([^"]+)",\s*"[^"]*",\s*"([^"]+)",\s*"[^"]*",\s*List\.of\(',
         catalog_source,
@@ -1143,6 +1190,7 @@ def check_top_risk_source_guards(errors: list[str]) -> None:
     nexus_block = read_source("block/NexusCoreBlock.java", errors)
     nexus_choice = read_source("endgame/NexusChoiceService.java", errors)
     terminal_integration = read_source("integration/AshfallTerminalIntegration.java", errors)
+    terminal_common_integration = read_source("integration/AshfallTerminalCommonIntegration.java", errors)
     player_tech_tracker = read_source("survival/PlayerTechTracker.java", errors)
     drone = read_source("entity/EchoCompanionDrone.java", errors)
     combat_ai = read_source("entity/drone/DroneCombatAI.java", errors)
@@ -1193,7 +1241,7 @@ def check_top_risk_source_guards(errors: list[str]) -> None:
     )
     require_source_tokens(
         "Nexus terminal integration",
-        terminal_integration,
+        terminal_integration + terminal_common_integration,
         (
             "private static final Identifier NEXUS",
             "NEXUS_CHOICE = id(\"nexus_choice\")",
@@ -1554,8 +1602,8 @@ def check_guardian_structure_source_guards(errors: list[str]) -> None:
 
     boss_paths = sorted(set(re.findall(r'"([a-z_]+)",\s*\n\s*"[^"]+",\s*\n\s*"([a-z_]+)"', profiles)))
     guardian_boss_paths = sorted({boss_path for _biome, boss_path in boss_paths})
-    if len(guardian_boss_paths) != 9:
-        errors.append(f"BAD_GUARDIAN_PROFILE_COUNT expected 9 boss paths, found {len(guardian_boss_paths)}")
+    if len(guardian_boss_paths) != 8:
+        errors.append(f"BAD_GUARDIAN_PROFILE_COUNT expected 8 active boss paths, found {len(guardian_boss_paths)}")
     for boss_path in guardian_boss_paths:
         if f'Map.entry("{boss_path}"' not in generator:
             errors.append(f"MISSING_GUARDIAN_THEME {boss_path}")
@@ -1940,7 +1988,7 @@ def check_terminal_mission_browser_source_guards(errors: list[str]) -> None:
         errors.append("STALE_TERMINAL_TOP_TWO_ROW_NAV shared shell should use sidebar hub or compact carousel")
     require_source_tokens(
         "Terminal dense operator polish",
-        screen + browser + ui + ashfall_terminal + orbital_terminal,
+        screen + browser + ui + builtin_tabs + ashfall_terminal + orbital_terminal,
         (
             "sidebarNavigation",
             "footerTop - contentY - 8",
@@ -2129,6 +2177,7 @@ def main() -> int:
     check_first_hour_stability_data(errors)
     check_substrate_grinder_data(errors)
     check_worldgen(errors)
+    check_starter_only_drop_pod_worldgen(errors)
     check_poi_catalog(errors)
     check_item_definitions(registered, errors)
     check_structure_nbt_palettes(registered_blocks, errors)

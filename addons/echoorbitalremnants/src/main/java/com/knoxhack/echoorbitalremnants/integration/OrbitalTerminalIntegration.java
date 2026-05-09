@@ -54,7 +54,7 @@ public final class OrbitalTerminalIntegration {
 
     private static TerminalNavigationProfile orbitalProfile(int order) {
         return TerminalNavigationProfile.chapter(OrbitalTerminalIds.CHAPTER_ID.toString(),
-                "Chapter 2: Orbital Remnants", "C2", order);
+                "Orbital Remnants", "OR", order);
     }
 
     private static final class OrbitalAddonInfoProvider implements TerminalAddonInfoProvider {

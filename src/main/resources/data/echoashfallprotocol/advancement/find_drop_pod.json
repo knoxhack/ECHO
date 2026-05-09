@@ -19,14 +19,7 @@
   },
   "criteria": {
     "found_drop_pod": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": {
-          "location": {
-            "structures": "echoashfallprotocol:drop_pod"
-          }
-        }
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [

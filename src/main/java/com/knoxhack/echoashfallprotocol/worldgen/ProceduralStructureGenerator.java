@@ -95,17 +95,9 @@ public class ProceduralStructureGenerator {
                     ModEntities.PLAINS_WARLORD::get),
             "toxic_swamp", new BiomeStructureProfile(StructureType.SPOREBOUND_SANCTUM,
                     Set.of(StructureType.BIO_LAB, StructureType.SEWER_JUNCTION, StructureType.REACTOR_RUIN),
-                    ModEntities.TOXIC_HIVE_MATRIARCH::get),
-            "the_wasteland", new BiomeStructureProfile(StructureType.BIO_LAB,
-                    Set.of(StructureType.DROP_POD, StructureType.RADIO_TOWER, StructureType.CRASHBREAK_SALVAGE_YARD),
-                    ModEntities.WASTELAND_SENTINEL::get)
+                    ModEntities.TOXIC_HIVE_MATRIARCH::get)
     );
     private static final Map<String, GuardianSiteTheme> GUARDIAN_THEMES = Map.ofEntries(
-            Map.entry("wasteland_sentinel", new GuardianSiteTheme(
-                    GuardianEntranceForm.RESCUE_HATCH, GuardianDescentForm.LADDER_SHAFT, 5, 0.32f,
-                    ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.WASTELAND_TRACE_RUBBLE::get,
-                    block(Blocks.IRON_BARS), ModBlocks.RUBBLE::get, block(Blocks.SEA_LANTERN),
-                    ModBlocks.SIGNAL_SCANNER::get, ModBlocks.CONCRETE_CHUNK::get)),
             Map.entry("plains_warlord", new GuardianSiteTheme(
                     GuardianEntranceForm.BUNKER_DOOR, GuardianDescentForm.STAIR_TUNNEL, 6, 0.30f,
                     block(Blocks.STONE_BRICKS), block(Blocks.IRON_BLOCK),

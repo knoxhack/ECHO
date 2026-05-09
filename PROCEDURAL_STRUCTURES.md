@@ -98,10 +98,10 @@ The Route Map POI Atlas is the player-facing catalog for the 99 concrete templat
 Profile-only scanner records currently have no template-pool entry but remain visible in the Route Map atlas with a zero template count: `relay_station`, `satellite_array`, `sewer_junction`, `train_yard`, and `abandoned_mine`.
 
 ### Guardian Sites
-- **Surface:** distinct landmarks for each guardian, including rescue hatch, bunker door, subway stair, freight lift, toxic sinkhole, reactor hatch, frozen shaft, impact breach, or Nexus breach
+- **Surface:** distinct landmarks for each active guardian, including bunker door, subway stair, freight lift, toxic sinkhole, reactor hatch, frozen shaft, impact breach, or Nexus breach
 - **Descent:** themed ladder shafts, stair-styled shafts, lift shafts, sinkholes, or breach shafts with a reliable fallback route
 - **Underground:** BSP arena with corridors, side rooms, loot, hazards, defenders, one boss chamber, and biome-specific arena motifs
-- **Progression:** all nine guardians must be neutralized before the Nexus Core route opens
+- **Progression:** all eight active guardians must be neutralized before the Nexus Core route opens
 - **Scanner:** active guardian missions point to the saved surface entrance, not the buried boss room
 
 ---
@@ -111,10 +111,10 @@ Profile-only scanner records currently have no template-pool entry but remain vi
 | Structure | Spacing | Separation | Rarity |
 |-----------|---------|------------|--------|
 | Drop Pod | 24 chunks | 6 | Common |
-| Bio Lab | 32 chunks | 8 | Uncommon |
-| Data Center | 40 chunks | 10 | Rare |
-| Military Vault | 48 chunks | 12 | Very Rare |
-| Reactor Ruin | 64 chunks | 16 | Endgame |
+| Bio Lab | 60 chunks | 24 | Major |
+| Data Center | 60 chunks | 24 | Major |
+| Military Vault | 60 chunks | 24 | Major |
+| Reactor Ruin | 60 chunks | 24 | Major |
 
 ---
 
@@ -163,7 +163,6 @@ The drop pod check expects a compact `20x10x20` template, the spawn/bed contract
 
 # Generate a biome guardian entrance and underground arena
 /genpoi biome_main toxic_swamp
-/genpoi biome_main the_wasteland
 
 # List active saved guardian entrances after generation
 /genpoi guardian_sites
@@ -188,7 +187,7 @@ Each structure instance should have:
 - Player-accessible chests and barrels with themed loot tables
 - Different decorative elements
 - Guardian sites have a visually distinct entrance, accessible descent route, one reachable boss chamber, one reserved boss spawn zone, and saved site data
-- Every biome-main guardian can be smoke-tested with `/genpoi biome_main <biome>` for `the_wasteland`, `ruined_plains`, `ruined_cityscape`, `industrial_ruins`, `toxic_swamp`, `crash_zone_wasteland`, `radiation_zone`, `cryogenic_ruins`, and `nexus_scar`
+- Every biome-main guardian can be smoke-tested with `/genpoi biome_main <biome>` for `ruined_plains`, `ruined_cityscape`, `industrial_ruins`, `toxic_swamp`, `crash_zone_wasteland`, `radiation_zone`, `cryogenic_ruins`, and `nexus_scar`
 - `/genpoi guardian_sites [guardian]` should report the saved surface entrance and buried arena used by scanner routing
 
 ---

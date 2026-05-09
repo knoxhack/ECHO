@@ -1,7 +1,6 @@
 package com.knoxhack.echoorbitalremnants.integration;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
-import com.knoxhack.echoorbitalremnants.item.EchoTerminalItem;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.progression.EmergencyRocketStatus;
 import com.knoxhack.echoorbitalremnants.progression.LaunchReadiness;
@@ -115,10 +114,12 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             return false;
         }
         if (ACTION_SCAN.equals(actionId)) {
-            EchoTerminalItem.performScan(player);
-            return true;
+            return OrbitalTerminalActions.scan(player);
         }
         if (!ACTION_CLAIM_CACHE.equals(actionId)) {
+            return false;
+        }
+        if (player == null) {
             return false;
         }
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
@@ -167,6 +168,10 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             return List.of(claimed
                     ? TerminalMissionAction.disabled(ACTION_CLAIM_CACHE, "CLAIM CACHE", "Support cache already claimed.")
                     : TerminalMissionAction.enabled(ACTION_CLAIM_CACHE, "CLAIM CACHE"));
+        }
+        if (!OrbitalTerminalActions.canScan(player)) {
+            return List.of(TerminalMissionAction.disabled(ACTION_SCAN, "SCAN ROUTE",
+                    OrbitalTerminalActions.MISSING_TERMINAL_REASON));
         }
         return List.of(TerminalMissionAction.enabled(ACTION_SCAN, "SCAN ROUTE"));
     }

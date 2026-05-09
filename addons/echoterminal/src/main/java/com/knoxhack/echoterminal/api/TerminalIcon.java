@@ -26,14 +26,23 @@ public enum TerminalIcon {
     DEFAULT;
 
     public static TerminalIcon fromGroup(String group) {
-        if (TerminalNavigationSection.TERMINAL.key().equals(group)) {
-            return CORE;
+        if (TerminalNavigationSection.COMMAND.key().equals(group)) {
+            return OVERVIEW;
         }
-        if (TerminalNavigationSection.CORE.key().equals(group)) {
+        if (TerminalNavigationSection.INTEL.key().equals(group)) {
             return FIELD;
+        }
+        if (TerminalNavigationSection.SYSTEM.key().equals(group)) {
+            return SYSTEMS;
         }
         if (TerminalNavigationSection.CHAPTERS.key().equals(group)) {
             return ADDONS;
+        }
+        if (TerminalNavigationSection.TERMINAL.key().equals(group)) {
+            return OVERVIEW;
+        }
+        if (TerminalNavigationSection.CORE.key().equals(group)) {
+            return FIELD;
         }
         if (TerminalTabChrome.GROUP_PROTOCOL.equals(group)) {
             return CORE;
@@ -67,6 +76,9 @@ public enum TerminalIcon {
         if (value.contains("command deck") || value.contains("overview")) {
             return OVERVIEW;
         }
+        if (value.contains("what now")) {
+            return SEARCH;
+        }
         if (value.contains("protocol roadmap") || value.contains("mission")) {
             return MISSIONS;
         }
@@ -97,8 +109,11 @@ public enum TerminalIcon {
         if (value.contains("baseline") || value.contains("vanilla")) {
             return VANILLA;
         }
-        if (value.contains("addon")) {
+        if (value.contains("chapter guide") || value.contains("addon")) {
             return ADDONS;
+        }
+        if (value.contains("settings")) {
+            return SETTINGS;
         }
         return DEFAULT;
     }

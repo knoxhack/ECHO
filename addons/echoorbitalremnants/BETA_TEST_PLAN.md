@@ -5,10 +5,12 @@ Use this checklist before publishing a release jar.
 ## Automated Checks
 
 1. Run `.\gradlew.bat :echoorbitalremnants:build` from the ECHO workspace root.
-2. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` from the ECHO workspace root.
-3. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
-4. Confirm the `terminal_mission_cache_state` and `terminal_mission_integration` GameTests pass when the shared ECHO Terminal is present in the local runtime.
-5. Confirm Core/Terminal/Ashfall stack versions are aligned: ECHO Core `1.1.0`, ECHO Terminal `1.1.0`, Ashfall Protocol `1.3.0`, and Orbital Remnants `1.5.0`.
+2. Run `.\gradlew.bat validateEchoResources -PechoAddonSet=beta -PechoPythonExecutable="<python.exe>"` from the ECHO workspace root.
+3. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` from the ECHO workspace root.
+4. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
+5. Confirm the primary redirected output is `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\echoorbitalremnants-1.5.0.jar`.
+6. Confirm all 38 required Orbital GameTests pass, including `terminal_mission_cache_state`, `terminal_mission_integration`, `core_integration_contract`, and `beta_rc_polish`.
+7. Confirm Core/Terminal/Ashfall stack versions are aligned: ECHO Core `1.1.0`, ECHO Terminal `1.1.0`, Ashfall Protocol `1.3.0`, and Orbital Remnants `1.5.0`.
 
 ## Clean Survival Smoke Test
 

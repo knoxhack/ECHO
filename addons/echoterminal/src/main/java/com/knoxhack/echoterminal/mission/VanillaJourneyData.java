@@ -33,11 +33,17 @@ public class VanillaJourneyData implements ValueIOSerializable {
         claimedRewardIds.add(advancementId.toString());
     }
 
-    public void setCompleted(Collection<Identifier> advancementIds) {
-        completedAdvancementIds.clear();
+    public boolean setCompleted(Collection<Identifier> advancementIds) {
+        Set<String> nextCompleted = new HashSet<>();
         for (Identifier id : advancementIds) {
-            completedAdvancementIds.add(id.toString());
+            nextCompleted.add(id.toString());
         }
+        if (completedAdvancementIds.equals(nextCompleted)) {
+            return false;
+        }
+        completedAdvancementIds.clear();
+        completedAdvancementIds.addAll(nextCompleted);
+        return true;
     }
 
     public Set<String> claimedRewardIds() {

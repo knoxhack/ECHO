@@ -44,27 +44,27 @@ public class NexusDriveVesselItem extends Item {
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && player.isShiftKeyDown() && !progress.hasReturnPoint()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus return denied. No docking vector is saved."));
+                sendFeedback(player, "Nexus return denied. No docking vector is saved.");
                 return InteractionResult.CONSUME;
             }
             if (Config.DIMENSION_UNLOCKS_ENABLED.get() && !progress.deepSpaceProtocolUnlocked() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Deep Space Protocol required."));
+                sendFeedback(player, "Nexus Drive sealed. Unlock Deep Space Protocol with Titan Survey Core or Nexus Drive telemetry.");
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.europaArrayGateOpen() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Complete Europa Thermal Array repairs before Nexus entry can hold."));
+                sendFeedback(player, "Nexus Drive sealed. Complete Europa Thermal Array repairs before Nexus entry can hold.");
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.saturnRelayGateOpen() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Complete Saturn Ring Relay repairs before Nexus entry can hold."));
+                sendFeedback(player, "Nexus Drive sealed. Complete Saturn Ring Relay repairs before Nexus entry can hold.");
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.titanPumpGateOpen() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive sealed. Complete Titan Methane Pump repairs before Nexus entry can hold."));
+                sendFeedback(player, "Nexus Drive sealed. Complete Titan Methane Pump repairs before Nexus entry can hold.");
                 return InteractionResult.CONSUME;
             }
             if (!SuitEvents.isOrbitalExposure(player) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Drive requires orbital staging. Launch to Low Earth Orbit first."));
+                sendFeedback(player, "Nexus Drive requires orbital staging. Launch to Low Earth Orbit first.");
                 return InteractionResult.CONSUME;
             }
             if (player instanceof ServerPlayer serverPlayer && serverPlayer.level() instanceof ServerLevel serverLevel) {
@@ -85,6 +85,14 @@ public class NexusDriveVesselItem extends Item {
             }
         }
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    private static void sendFeedback(Player player, String message) {
+        Component component = Component.literal("ECHO-7 // " + message);
+        player.sendSystemMessage(component);
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(component, true);
+        }
     }
 
     private static void sendStatus(Player player, String message) {

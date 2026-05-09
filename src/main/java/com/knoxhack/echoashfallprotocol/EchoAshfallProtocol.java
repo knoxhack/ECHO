@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 
 import com.knoxhack.echoashfallprotocol.entity.ModEntities;
 import com.knoxhack.echoashfallprotocol.integration.AshfallCoreServices;
+import com.knoxhack.echoashfallprotocol.integration.AshfallTerminalCommonIntegration;
 import com.knoxhack.echoashfallprotocol.recipe.ScrapPressRecipe;
 import com.knoxhack.echoashfallprotocol.registry.*;
 import com.knoxhack.echoashfallprotocol.test.ModGameTests;
@@ -72,6 +73,9 @@ public class EchoAshfallProtocol {
 
         event.enqueueWork(() -> {
             AshfallCoreServices.register();
+            if (net.neoforged.fml.ModList.get().isLoaded("echoterminal")) {
+                AshfallTerminalCommonIntegration.register();
+            }
             // Register Scrap Press recipes
             registerScrapPressRecipes();
         });

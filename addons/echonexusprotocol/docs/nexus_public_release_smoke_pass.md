@@ -60,5 +60,5 @@ Verification notes:
 - `copyEchoJarsToModpack -PechoAddonSet=beta` passed into `build\tmp\echo-release-mods`.
 - `checkEchoModJarSet -PechoAddonSet=beta` passed with exactly five beta jars.
 - `:echonexusprotocol:runGameTestServer -PechoAddonSet=beta --warning-mode all --no-configuration-cache` passed.
-- `verifyEchoRelease -PechoAddonSet=beta -PechoModpackModsDir="C:\Users\Ivan\Documents\GitHub\Echo\build\tmp\echo-release-mods" --warning-mode all --max-workers=1 --no-configuration-cache` passed.
+- `verifyEchoRelease -PechoAddonSet=beta -PechoModpackModsDir="<workspace>\build\tmp\echo-release-mods" --warning-mode all --max-workers=1 --no-configuration-cache` passed.
 - `checkEchoModJarSet -PechoAddonSet=beta` passed with exactly five beta jars: Ashfall, Core, Terminal, Orbital, and Nexus.

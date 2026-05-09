@@ -12,6 +12,8 @@ import com.knoxhack.echoterminal.api.theme.TerminalTheme;
 import com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry;
 import com.knoxhack.echoterminal.api.theme.TerminalThemeTokens;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class TerminalUi {
     public static int CYAN = 0xFF66E8FF;
@@ -27,6 +29,7 @@ public final class TerminalUi {
     public static int ROW_SELECTED = 0xFF123241;
     private static final float TERMINAL_PANEL_ASPECT = 2.0F;
     private static final float TERMINAL_BACKDROP_ASPECT = 16.0F / 9.0F;
+    private static final Map<Identifier, Boolean> TEXTURE_AVAILABILITY = new ConcurrentHashMap<>();
 
     public enum ImageFit {
         STRETCH,
@@ -1458,8 +1461,8 @@ public final class TerminalUi {
         graphics.fill(x, y, x + Math.max(48, w * 2 / 3), y + 2, opaque(color));
         graphics.fill(x + w - 2, y + 34, x + w, y + h - 16, 0x552E8E9D);
         graphics.fill(x + 8, y + 30, x + w - 8, y + 31, 0x332E8E9D);
-        String title = w < 190 ? "ECHO" : "ECHO BUS";
-        String subtitle = w < 190 ? "CHANNELS" : "SELECT SIGNAL CHANNEL";
+        String title = w < 190 ? "ECHO" : "ECHO NAV";
+        String subtitle = w < 190 ? "VIEWS" : "SELECT VIEW";
         graphics.text(font, trim(font, title, w - 28), x + 12, y + 8, CYAN, false);
         graphics.text(font, trim(font, subtitle, w - 28), x + 12, y + 21, MUTED, false);
     }
@@ -1475,8 +1478,8 @@ public final class TerminalUi {
         graphics.fill(x, y, x + Math.max(48, w * 2 / 3), y + 2, opaque(color));
         graphics.fill(x + w - 2, y + 34, x + w, y + h - 16, tokens.dividers().line());
         graphics.fill(x + 8, y + 30, x + w - 8, y + 31, tokens.dividers().gridLine());
-        String title = w < 190 ? "ECHO" : "ECHO BUS";
-        String subtitle = w < 190 ? "CHANNELS" : "SELECT SIGNAL CHANNEL";
+        String title = w < 190 ? "ECHO" : "ECHO NAV";
+        String subtitle = w < 190 ? "VIEWS" : "SELECT VIEW";
         graphics.text(font, trim(font, title, w - 28), x + 12, y + 8, tokens.colors().accent(), false);
         graphics.text(font, trim(font, subtitle, w - 28), x + 12, y + 21, tokens.colors().muted(), false);
     }
@@ -1519,7 +1522,8 @@ public final class TerminalUi {
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label,
             boolean selected, boolean hovered, int color) {
         TerminalThemeTokens tokens = tokens(context);
-        int bg = selected ? tokens.panels().selectedFill() : hovered ? tokens.panels().hoverFill() : tokens.colors().row();
+        int bg = selected ? tokens.panels().selectedFill()
+                : hovered ? withAlpha(tokens.panels().hoverFill(), 0xE8) : tokens.colors().row();
         int border = selected ? tokens.borders().selected() : hovered ? tokens.borders().normal() : tokens.borders().subtle();
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, border);
@@ -1528,6 +1532,8 @@ public final class TerminalUi {
             graphics.fill(x, y + h - 2, x + w, y + h, opaque(color));
             graphics.fill(x + Math.max(24, w / 3), y + h - 4, x + w - 8, y + h - 2, tokens.borders().strong());
             graphics.fill(x, y + 1, x + w, y + Math.min(h - 1, Math.max(3, h / 2)), tokens.effects().glowColor());
+        } else if (hovered) {
+            graphics.fill(x, y + h - 1, x + w, y + h, withAlpha(color, 0xAA));
         }
         int iconSize = Math.min(22, Math.max(16, h - 8));
         drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(3, (h - iconSize) / 2), iconSize,
@@ -1571,7 +1577,8 @@ public final class TerminalUi {
             int x, int y, int w, int h, TerminalIcon icon, Identifier texture, String label, String summary,
             boolean selected, boolean hovered, int color) {
         TerminalThemeTokens tokens = tokens(context);
-        int bg = selected ? tokens.panels().selectedFill() : hovered ? tokens.panels().hoverFill() : tokens.colors().row();
+        int bg = selected ? tokens.panels().selectedFill()
+                : hovered ? withAlpha(tokens.panels().hoverFill(), 0xE8) : tokens.colors().row();
         int border = selected ? tokens.borders().selected() : hovered ? tokens.borders().normal() : tokens.borders().subtle();
         graphics.fill(x, y, x + w, y + h, bg);
         graphics.outline(x, y, w, h, border);
@@ -1597,7 +1604,7 @@ public final class TerminalUi {
             int x, int y, int w, int h, boolean online, int color) {
         graphics.fill(x, y, x + w, y + h, 0x66071117);
         graphics.outline(x, y, w, h, 0x2238DFF4);
-        graphics.text(font, trim(font, "ECHO BUS", w - 20), x + 10, y + 7, CYAN_DIM, false);
+        graphics.text(font, trim(font, "ECHO LINK", w - 20), x + 10, y + 7, CYAN_DIM, false);
         int stateColor = online ? GREEN : RED;
         graphics.text(font, online ? "ONLINE" : "OFFLINE", x + 10, y + 20, stateColor, false);
         progress(graphics, x + 10, y + h - 12, Math.max(28, w - 20), 5, online ? 0.82F : 0.12F, color);
@@ -1608,11 +1615,82 @@ public final class TerminalUi {
         TerminalThemeTokens tokens = tokens(context);
         graphics.fill(x, y, x + w, y + h, tokens.colors().row());
         graphics.outline(x, y, w, h, tokens.borders().subtle());
-        graphics.text(font, trim(font, "ECHO BUS", w - 20), x + 10, y + 7, tokens.colors().accentDim(), false);
+        graphics.text(font, trim(font, "ECHO LINK", w - 20), x + 10, y + 7, tokens.colors().accentDim(), false);
         int stateColor = online ? tokens.colors().success() : tokens.colors().danger();
         graphics.text(font, online ? "ONLINE" : "OFFLINE", x + 10, y + 20, stateColor, false);
         progress(context, graphics, x + 10, y + h - 12, Math.max(28, w - 20), 5,
                 online ? 0.82F : 0.12F, color);
+    }
+
+    public static void contentFrame(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, int color, boolean hovered) {
+        TerminalThemeTokens tokens = tokens(context);
+        drawPanelTexture(context, graphics, chapterPanel(context), x, y, w, h,
+                Math.min(0.86F, tokens.panels().imageDarken() + 0.08F));
+        graphics.fill(x, y, x + w, y + h, tokens.colors().content());
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(h - 1, 18), tokens.panels().headerFill());
+        graphics.outline(x, y, w, h, hovered ? tokens.borders().normal() : tokens.borders().subtle());
+        graphics.fill(x, y, x + Math.max(44, Math.min(w, w / 7)), y + 2, opaque(color));
+        graphics.fill(x, y + h - 2, x + Math.max(36, Math.min(w, w / 8)), y + h, opaque(color));
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), tokens.borders().glow());
+        graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, tokens.borders().normal());
+        if (w > 80 && h > 56) {
+            graphics.fill(x + 10, y + 10, x + w - 10, y + 11, tokens.dividers().line());
+            graphics.fill(x + 10, y + h - 11, x + w - 10, y + h - 10, tokens.dividers().gridLine());
+        }
+        if (tokens.effects().grid() && w > 140 && h > 100) {
+            for (int gx = x + 32; gx < x + w - 16; gx += 48) {
+                graphics.fill(gx, y + 18, gx + 1, y + h - 12, tokens.dividers().gridLine());
+            }
+            for (int gy = y + 38; gy < y + h - 16; gy += 34) {
+                graphics.fill(x + 10, gy, x + w - 10, gy + 1, tokens.dividers().gridLine());
+            }
+        }
+    }
+
+    public static void collapseToggle(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, boolean collapsed, boolean hovered, int color) {
+        TerminalThemeTokens tokens = tokens(context);
+        int bg = hovered ? tokens.panels().hoverFill() : tokens.colors().row();
+        graphics.fill(x, y, x + w, y + h, bg);
+        graphics.outline(x, y, w, h, hovered ? tokens.borders().selected() : tokens.borders().subtle());
+        graphics.fill(x, y + h - 2, x + w, y + h, hovered ? opaque(color) : tokens.dividers().line());
+        int iconColor = hovered ? opaque(color) : tokens.colors().muted();
+        drawChevron(graphics, x + w / 2, y + h / 2, collapsed, iconColor);
+    }
+
+    public static void navigationSpine(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int h, int color) {
+        TerminalThemeTokens tokens = tokens(context);
+        graphics.fill(x, y, x + 1, y + h, tokens.dividers().line());
+        graphics.fill(x + 1, y, x + 2, y + h, withAlpha(color, 0x66));
+    }
+
+    public static void collapsedRailStatus(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, float progressValue, int color) {
+        TerminalThemeTokens tokens = tokens(context);
+        int fill = Math.max(4, Math.min(w, Math.round(w * Math.max(0.0F, Math.min(1.0F, progressValue)))));
+        graphics.fill(x, y, x + w, y + 4, tokens.colors().rowSelected());
+        graphics.fill(x, y, x + fill, y + 4, opaque(color));
+        graphics.fill(x, y + 5, x + w, y + 6, tokens.dividers().line());
+    }
+
+    public static void scrollbar(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int h, int scroll, int maxScroll, int color, boolean hovered) {
+        if (maxScroll <= 0 || h <= 16) {
+            return;
+        }
+        TerminalThemeTokens tokens = tokens(context);
+        int trackW = hovered ? 5 : 4;
+        graphics.fill(x, y, x + trackW, y + h, tokens.colors().rowSelected());
+        graphics.outline(x, y, trackW, h, tokens.borders().subtle());
+        int thumbH = Math.max(18, h * h / (h + maxScroll));
+        int thumbY = y + Math.round((h - thumbH) * (scroll / (float) maxScroll));
+        graphics.fill(x, thumbY, x + trackW, thumbY + thumbH, opaque(color));
+        if (hovered) {
+            graphics.fill(x + 1, thumbY + 1, x + trackW - 1, thumbY + Math.max(2, thumbH - 1),
+                    tokens.borders().strong());
+        }
     }
 
     public static void cinematicContentFrame(GuiGraphicsExtractor graphics,
@@ -1816,14 +1894,41 @@ public final class TerminalUi {
         }
     }
 
+    private static void drawChevron(GuiGraphicsExtractor graphics, int cx, int cy, boolean pointsRight, int color) {
+        if (pointsRight) {
+            graphics.fill(cx - 3, cy - 5, cx - 1, cy - 3, color);
+            graphics.fill(cx - 1, cy - 3, cx + 1, cy - 1, color);
+            graphics.fill(cx + 1, cy - 1, cx + 3, cy + 1, color);
+            graphics.fill(cx - 1, cy + 1, cx + 1, cy + 3, color);
+            graphics.fill(cx - 3, cy + 3, cx - 1, cy + 5, color);
+        } else {
+            graphics.fill(cx + 1, cy - 5, cx + 3, cy - 3, color);
+            graphics.fill(cx - 1, cy - 3, cx + 1, cy - 1, color);
+            graphics.fill(cx - 3, cy - 1, cx - 1, cy + 1, color);
+            graphics.fill(cx - 1, cy + 1, cx + 1, cy + 3, color);
+            graphics.fill(cx + 1, cy + 3, cx + 3, cy + 5, color);
+        }
+    }
+
     private static boolean textureAvailable(Identifier texture) {
         if (texture == null) {
             return false;
         }
+        Boolean cached = TEXTURE_AVAILABILITY.get(texture);
+        if (cached != null) {
+            return cached;
+        }
         try {
-            return Minecraft.getInstance().getResourceManager().getResource(texture).isPresent();
+            boolean available = Minecraft.getInstance().getResourceManager().getResource(texture).isPresent();
+            TEXTURE_AVAILABILITY.put(texture, available);
+            return available;
         } catch (RuntimeException | LinkageError ignored) {
+            TEXTURE_AVAILABILITY.put(texture, false);
             return false;
         }
+    }
+
+    public static void clearTextureAvailabilityCache() {
+        TEXTURE_AVAILABILITY.clear();
     }
 }

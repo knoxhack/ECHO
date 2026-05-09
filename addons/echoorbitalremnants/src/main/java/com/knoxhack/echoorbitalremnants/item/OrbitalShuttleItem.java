@@ -7,7 +7,10 @@ import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.world.LunarScarZone;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -33,24 +36,26 @@ public class OrbitalShuttleItem extends Item {
                 if (returnLevel == null) {
                     returnLevel = serverPlayer.level().getServer().overworld();
                 }
+                playShuttleFeedback(serverPlayer.level(), player.blockPosition(), 1.25F);
                 serverPlayer.teleportTo(returnLevel, progress.returnX(), progress.returnY(), progress.returnZ(), Set.of(), player.getYRot(), player.getXRot(), false);
-                player.sendSystemMessage(Component.literal("ECHO-7 // Shuttle return burn complete."));
+                playShuttleFeedback(returnLevel, BlockPos.containing(progress.returnX(), progress.returnY(), progress.returnZ()), 1.55F);
+                sendFeedback(player, "Shuttle return burn complete.");
                 return InteractionResult.SUCCESS_SERVER;
             }
             if (SuitEvents.isOrbitalExposure(player) && player.isShiftKeyDown() && !progress.hasReturnPoint()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Shuttle return denied. No docking vector is saved."));
+                sendFeedback(player, "Shuttle return denied. No docking vector is saved.");
                 return InteractionResult.CONSUME;
             }
             if (Config.DIMENSION_UNLOCKS_ENABLED.get() && !progress.lunarSignalUnlocked() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Shuttle lockout. Lunar Signal not resolved."));
+                sendFeedback(player, "Shuttle lockout. Restore Station Life Support, then SCAN to resolve the Lunar Signal.");
                 return InteractionResult.CONSUME;
             }
             if (Config.MID_GAME_OBJECTIVES_ENABLED.get() && !progress.stationNetworkGateOpen() && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Shuttle lockout. Repair three Station Relay Nodes to restore the Station Network."));
+                sendFeedback(player, "Shuttle lockout. Repair three Station Relay Nodes to restore the Station Network.");
                 return InteractionResult.CONSUME;
             }
             if (!SuitEvents.isOrbitalExposure(player) && !player.hasInfiniteMaterials()) {
-                player.sendSystemMessage(Component.literal("ECHO-7 // Shuttle requires orbital staging. Launch to Low Earth Orbit first."));
+                sendFeedback(player, "Shuttle requires orbital staging. Launch to Low Earth Orbit first.");
                 return InteractionResult.CONSUME;
             }
             if (player instanceof ServerPlayer serverPlayer && serverPlayer.level() instanceof ServerLevel serverLevel) {
@@ -63,11 +68,32 @@ public class OrbitalShuttleItem extends Item {
                 LunarScarZone.seedLandingSite(targetLevel, target);
                 spawnNexusHusks(targetLevel, target);
                 progress.markLunarSignalInvestigated(player);
+                playShuttleFeedback(serverLevel, player.blockPosition(), 0.95F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);
-                player.sendSystemMessage(Component.literal("ECHO-7 // Lunar Scar Zone acquired. Gravity irregularities confirmed."));
+                playShuttleFeedback(targetLevel, target, 1.35F);
+                sendFeedback(player, "Lunar Scar Zone acquired. Gravity irregularities confirmed. Return vector saved.",
+                        "Lunar route burn complete. Return vector saved.");
             }
         }
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    private static void sendFeedback(Player player, String message) {
+        sendFeedback(player, message, message);
+    }
+
+    private static void sendFeedback(Player player, String message, String status) {
+        Component component = Component.literal("ECHO-7 // " + message);
+        player.sendSystemMessage(component);
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(Component.literal("ECHO-7 // " + status), true);
+        }
+    }
+
+    private static void playShuttleFeedback(ServerLevel level, BlockPos pos, float pitch) {
+        level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.7F, pitch);
+        level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D,
+                26, 0.55D, 0.65D, 0.55D, 0.03D);
     }
 
     private static void spawnNexusHusks(ServerLevel level, BlockPos target) {

@@ -8,8 +8,8 @@ import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echocore.api.EchoFactionProfile;
 import com.knoxhack.echocore.api.EchoHazardTelemetry;
 import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echoterminal.BuiltinTerminalCommonIntegration;
 import com.knoxhack.echoterminal.EchoTerminal;
-import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalAddonGuide;
 import com.knoxhack.echoterminal.api.TerminalAddonInfo;
 import com.knoxhack.echoterminal.api.TerminalAddonInfoRegistry;
@@ -38,9 +38,14 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.knoxhack.echoterminal.client.discovery.DiscoveryGridTab;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
+import com.knoxhack.echoterminal.client.recipe.TerminalRecipeIndexTab;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
+import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
+import com.knoxhack.echoterminal.player.TerminalPlayerData;
+import com.knoxhack.echoterminal.player.TerminalPlayerData.TrackedMission;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,10 +63,11 @@ public final class BuiltinTerminalTabs {
     private static final Identifier MISSION_GRAPH = id("mission_graph");
     private static final Identifier ROUTE_RECORDS = id("route_records");
     private static final Identifier VITALS = id("vitals");
-    private static final Identifier REWARD_INBOX = id("reward_inbox");
+    private static final Identifier REWARD_INBOX = BuiltinTerminalCommonIntegration.REWARD_INBOX;
     private static final Identifier ADDONS = id("addons");
     private static final Identifier ARCHIVES = id("archives");
-    private static final Identifier CLAIM_REWARDS = id("claim_rewards");
+    private static final Identifier SETTINGS = id("settings");
+    private static final Identifier CLAIM_REWARDS = BuiltinTerminalCommonIntegration.CLAIM_REWARDS;
     private static final Map<String, TerminalAddonGuide> FALLBACK_GUIDES = Map.ofEntries(
             Map.entry("ashfall", TerminalAddonGuide.mainline(1, 10, "Start here",
                     "Begin with Ashfall to learn survival basics, repair the terminal, stabilize camp, and open the first route signals.",
@@ -131,16 +137,9 @@ public final class BuiltinTerminalTabs {
         if (!REGISTERED.compareAndSet(false, true)) {
             return;
         }
-        registerTab(new OverviewTab(), TerminalNavigationProfile.terminal(0));
-        registerTab(new MissionGraphTab(), TerminalNavigationProfile.terminal(120));
-        registerTab(new RouteRecordsTab(), TerminalNavigationProfile.core(125));
-        registerTab(new FactionAtlasTab(), TerminalNavigationProfile.core(128));
-        registerTab(new VitalsTab(), TerminalNavigationProfile.terminal(130));
-        registerTab(new RewardInboxTab(), TerminalNavigationProfile.terminal(140));
-        registerTab(new MainSurvivalRouteTab(), TerminalNavigationProfile.chaptersHub(0));
-        registerTab(new AddonsTab(), TerminalNavigationProfile.core(150));
-        TerminalActionRegistry.register(REWARD_INBOX, CLAIM_REWARDS,
-                (player, payload) -> EchoCoreServices.claimTerminalRewards(player));
+        for (BuiltinTabRegistration registration : builtinTabs()) {
+            registerTab(registration.tab(), registration.profile());
+        }
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("field_manual"),
                 "Protocol Flow",
@@ -148,10 +147,39 @@ public final class BuiltinTerminalTabs {
                 "OPEN",
                 List.of(
                         "Use this terminal as the command surface for installed ECHO chapters and survival routes.",
-                        "Channels collect missions, field records, drone controls, route state, and chapter status when those systems are present.",
+                        "Views collect missions, field records, drone controls, route state, and chapter status when those systems are present.",
                         "Progression stays sealed until the field route proves it; the terminal shows the clearest safe command view without opening records early."),
                 false));
-        registerTab(new ArchivesTab(), TerminalNavigationProfile.terminal(950));
+    }
+
+    public static Map<Identifier, TerminalNavigationProfile> builtinNavigationProfilesForTests() {
+        Map<Identifier, TerminalNavigationProfile> profiles = new LinkedHashMap<>();
+        for (BuiltinTabRegistration registration : builtinTabs()) {
+            profiles.put(registration.tab().descriptor().id(), registration.profile());
+        }
+        return Map.copyOf(profiles);
+    }
+
+    public static Identifier commandDeckDiagnosticsTabForTests() {
+        return DIAGNOSTICS;
+    }
+
+    private static List<BuiltinTabRegistration> builtinTabs() {
+        return List.of(
+                new BuiltinTabRegistration(new OverviewTab(), TerminalNavigationProfile.command(0)),
+                new BuiltinTabRegistration(new DiagnosticsTab(), TerminalNavigationProfile.command(80)),
+                new BuiltinTabRegistration(new MainSurvivalRouteTab(), TerminalNavigationProfile.progress(0)),
+                new BuiltinTabRegistration(new BaselineTab(), TerminalNavigationProfile.progress(50)),
+                new BuiltinTabRegistration(new MissionGraphTab(), TerminalNavigationProfile.progress(120)),
+                new BuiltinTabRegistration(new AddonsTab(), TerminalNavigationProfile.progress(150)),
+                new BuiltinTabRegistration(new RouteRecordsTab(), TerminalNavigationProfile.intel(125)),
+                new BuiltinTabRegistration(new DiscoveryGridTab(), TerminalNavigationProfile.intel(126)),
+                new BuiltinTabRegistration(new FactionAtlasTab(), TerminalNavigationProfile.intel(128)),
+                new BuiltinTabRegistration(new TerminalRecipeIndexTab(), TerminalNavigationProfile.intel(145)),
+                new BuiltinTabRegistration(new ArchivesTab(), TerminalNavigationProfile.intel(950)),
+                new BuiltinTabRegistration(new VitalsTab(), TerminalNavigationProfile.system(130)),
+                new BuiltinTabRegistration(new RewardInboxTab(), TerminalNavigationProfile.system(140)),
+                new BuiltinTabRegistration(new SettingsTab(), TerminalNavigationProfile.system(175)));
     }
 
     private static Identifier id(String path) {
@@ -161,6 +189,9 @@ public final class BuiltinTerminalTabs {
     private static void registerTab(TerminalTab tab, TerminalNavigationProfile profile) {
         TerminalTabRegistry.register(tab);
         TerminalNavigationProfiles.register(tab.descriptor().id(), profile);
+    }
+
+    private record BuiltinTabRegistration(TerminalTab tab, TerminalNavigationProfile profile) {
     }
 
     public static Identifier commandDeckPriorityTabForTests(
@@ -437,6 +468,62 @@ public final class BuiltinTerminalTabs {
         }
     }
 
+    private static final class BaselineTab implements TerminalTab {
+        private final TerminalTabDescriptor descriptor =
+                new TerminalTabDescriptor(VanillaJourneyProvider.TAB_ID, "BASELINE", 50, 0xFF92F7A6);
+        private final TerminalTabChrome chrome =
+                TerminalTabChrome.of("Baseline", TerminalTabChrome.GROUP_FIELD, "BL",
+                        "Minecraft advancement route", 50);
+        private final TerminalMissionBrowser browser =
+                new TerminalMissionBrowser(VanillaJourneyProvider.INSTANCE, descriptor.id(), true, 10);
+
+        @Override
+        public TerminalTabDescriptor descriptor() {
+            return descriptor;
+        }
+
+        @Override
+        public TerminalTabChrome chrome() {
+            return chrome;
+        }
+
+        @Override
+        public void onSelected(TerminalRenderContext context) {
+            browser.onSelected(context);
+        }
+
+        @Override
+        public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int mouseX, int mouseY, float partialTick) {
+            browser.render(context, graphics, mouseX, mouseY, partialTick);
+        }
+
+        @Override
+        public boolean mouseClicked(TerminalRenderContext context, double mouseX, double mouseY, int button) {
+            return browser.mouseClicked(context, mouseX, mouseY, button);
+        }
+
+        @Override
+        public boolean mouseScrolled(TerminalRenderContext context, double mouseX, double mouseY, double delta) {
+            return browser.mouseScrolled(context, mouseX, mouseY, delta);
+        }
+
+        @Override
+        public boolean keyPressed(TerminalRenderContext context, KeyEvent event) {
+            return browser.keyPressed(context, event);
+        }
+
+        @Override
+        public boolean charTyped(TerminalRenderContext context, CharacterEvent event) {
+            return browser.charTyped(context, event);
+        }
+
+        @Override
+        public int contentHeight(TerminalRenderContext context) {
+            return browser.contentHeight(context);
+        }
+    }
+
     private static final class OverviewTab implements TerminalTab {
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(id("overview"), "COMMAND DECK", 0, 0xFF66D9FF);
@@ -478,8 +565,14 @@ public final class BuiltinTerminalTabs {
             int pendingRewards = EchoCoreServices.pendingTerminalRewardCount(context.player());
             EchoRouteRecord route = firstIncompleteRoute(routes);
             SurvivalObjective objective = survivalObjective(context);
+            TrackedMission tracked = TerminalPlayerData.get(context.player()).trackedMission();
             List<DeckAction> tasks = survivalTasks(context, telemetry, diagnostics, objective, route, pendingRewards, chapters.size());
-            DeckAction next = tasks.isEmpty()
+            DeckAction next = tracked == null
+                    ? null
+                    : trackedMissionAction(context, tracked);
+            next = next != null
+                    ? next
+                    : tasks.isEmpty()
                     ? navigateAction(context, "Open Survival Route", "Guide", "Open the route and choose the next field objective.",
                             TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID)
                     : tasks.get(0);
@@ -767,28 +860,29 @@ public final class BuiltinTerminalTabs {
         private static List<DeckAction> commandActions(TerminalRenderContext context, List<EchoDiagnosticBlocker> diagnostics,
                 List<EchoRouteRecord> routes, int pendingRewards, int chapterCount) {
             List<DeckAction> commands = new ArrayList<>();
-            addUnique(commands, DeckAction.themeCycle());
-            addUnique(commands, navigateAction(context, "Survival Route", "Guide",
-                    "Open the full survival roadmap.", TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
-            if (pendingRewards > 0) {
-                addUnique(commands, DeckAction.reward("Claim Rewards", pendingRewards + " ready",
-                        "Collect support caches now.", TerminalUi.AMBER, true));
-            }
-            addUnique(commands, navigateAction(context, "Vitals", "Status", "Open hydration and hazard telemetry.",
-                    TerminalUi.CYAN, VITALS));
-            if (!routes.isEmpty()) {
-                addUnique(commands, navigateAction(context, "Routes", completedRoutes(routes) + "/" + routes.size(),
-                        "Open route records.", TerminalUi.GREEN, ROUTE_RECORDS));
-            }
-            if (!diagnostics.isEmpty() && commands.size() < 4) {
+            if (!diagnostics.isEmpty()) {
                 addUnique(commands, navigateAction(context, "Fix Blockers", String.valueOf(diagnostics.size()),
                         "Open What Now diagnostics.", DiagnosticsTab.severityColor(diagnostics.get(0).severity()), DIAGNOSTICS));
+            } else {
+                addUnique(commands, navigateAction(context, "What Now", "Clear",
+                        "Review blockers and unlock hints when progression stalls.", TerminalUi.AMBER, DIAGNOSTICS));
             }
-            if (chapterCount > 0 && commands.size() < 4) {
-                addUnique(commands, navigateAction(context, "Chapter Guide", String.valueOf(chapterCount),
-                        "Review chapter order and linked addon pages.", TerminalUi.CYAN, ADDONS));
+            addUnique(commands, navigateAction(context, "Progress", chapterCount > 0 ? chapterCount + " chapters" : "Route",
+                    "Open the survival route and chapter roadmap.", TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
+            addUnique(commands, navigateAction(context, "Intel", routeSummary(routes),
+                    "Open shared route records and world intel.", TerminalUi.CYAN, ROUTE_RECORDS));
+            if (pendingRewards > 0) {
+                addUnique(commands, DeckAction.reward("Rewards", pendingRewards + " ready",
+                        "Collect support caches now.", TerminalUi.AMBER, true));
+            } else {
+                addUnique(commands, navigateAction(context, "Settings", "System",
+                        "Tune navigation, presentation, and accessibility.", TerminalUi.CYAN, SETTINGS));
             }
             return commands.stream().limit(4).toList();
+        }
+
+        private static String routeSummary(List<EchoRouteRecord> routes) {
+            return routes == null || routes.isEmpty() ? "Records" : completedRoutes(routes) + "/" + routes.size();
         }
 
         private static DeckAction blockerAction(TerminalRenderContext context, EchoDiagnosticBlocker blocker) {
@@ -816,6 +910,19 @@ public final class BuiltinTerminalTabs {
         private static DeckAction survivalObjectiveAction(TerminalRenderContext context, SurvivalObjective objective) {
             return navigateAction(context, "Continue Survival", objective.statusLabel(),
                     objective.title() + ". " + objective.nextStep(), objective.color(), MainSurvivalQuestProvider.TAB_ID);
+        }
+
+        private static DeckAction trackedMissionAction(TerminalRenderContext context, TrackedMission tracked) {
+            boolean enabled = context != null && context.canNavigateToTab(tracked.tabId());
+            int color = tracked.color() == 0 ? TerminalUi.AMBER : tracked.color();
+            String title = tracked.title() == null || tracked.title().isBlank()
+                    ? tracked.missionId().getPath()
+                    : tracked.title();
+            String nextStep = tracked.nextStep() == null || tracked.nextStep().isBlank()
+                    ? "Open the tracked chapter to review the next move."
+                    : tracked.nextStep();
+            return new DeckAction("Tracked Mission", title, nextStep, color, tracked.tabId(),
+                    false, null, "track", enabled);
         }
 
         private static void addUnique(List<DeckAction> actions, DeckAction action) {
@@ -1043,6 +1150,139 @@ public final class BuiltinTerminalTabs {
                 }
                 context.navigateToTab(tabId);
             }
+        }
+    }
+
+    private static final class SettingsTab implements TerminalTab {
+        private final TerminalTabDescriptor descriptor =
+                new TerminalTabDescriptor(SETTINGS, "INTERFACE SETTINGS", 175, 0xFF9FD1FF);
+        private final TerminalTabChrome chrome =
+                TerminalTabChrome.of("Interface Settings", TerminalTabChrome.GROUP_SYSTEMS, "IS",
+                        "Presentation and accessibility", 175);
+        private final List<SettingsHitbox> hitboxes = new ArrayList<>();
+
+        @Override
+        public TerminalTabDescriptor descriptor() {
+            return descriptor;
+        }
+
+        @Override
+        public TerminalTabChrome chrome() {
+            return chrome;
+        }
+
+        @Override
+        public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            hitboxes.clear();
+            int x = context.contentX();
+            int y = context.contentY();
+            int w = context.contentWidth();
+            int cy = TerminalUi.sectionHeader(context, graphics,
+                    "INTERFACE SETTINGS", "Client-only", x, y, w, descriptor.accentColor());
+            cy = drawNavigationOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
+            cy = drawMissionOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
+            cy = drawHudNoticeOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
+            cy = drawVisualOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
+            TerminalUi.flatDataPanel(context, graphics, x, cy, w, 58, "ACCESSIBILITY", "",
+                    descriptor.accentColor());
+            TerminalUi.wrap(context, graphics,
+                    "Reduced motion is persisted locally and removes the heaviest animated terminal treatments where supported.",
+                    x + 10, cy + 22, w - 20, TerminalUi.MUTED);
+        }
+
+        @Override
+        public boolean mouseClicked(TerminalRenderContext context, double mouseX, double mouseY, int button) {
+            if (button != 0) {
+                return false;
+            }
+            for (SettingsHitbox hitbox : List.copyOf(hitboxes)) {
+                if (TerminalUi.inside(mouseX, mouseY, hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())) {
+                    hitbox.action().run();
+                    context.playCommandSound();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int contentHeight(TerminalRenderContext context) {
+            return Math.max(context.contentHeight(), 346);
+        }
+
+        private int drawNavigationOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            TerminalUi.section(context, graphics, "NAVIGATION", x, y, descriptor.accentColor());
+            int cy = y + 18;
+            int chipW = Math.max(86, Math.min(130, (w - 16) / TerminalClientOptions.NavigationStyle.values().length));
+            int chipX = x;
+            for (TerminalClientOptions.NavigationStyle style : TerminalClientOptions.NavigationStyle.values()) {
+                drawOptionChip(context, graphics, chipX, cy, chipW, label(style.name()),
+                        TerminalClientOptions.navigationStyle == style, mouseX, mouseY,
+                        () -> TerminalClientOptions.selectNavigationStyle(style));
+                chipX += chipW + 6;
+            }
+            return cy + 22;
+        }
+
+        private int drawMissionOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            TerminalUi.section(context, graphics, "MISSION VIEW", x, y, descriptor.accentColor());
+            int cy = y + 18;
+            int chipW = Math.max(76, Math.min(118, (w - 18) / TerminalClientOptions.MissionView.values().length));
+            int chipX = x;
+            for (TerminalClientOptions.MissionView view : TerminalClientOptions.MissionView.values()) {
+                drawOptionChip(context, graphics, chipX, cy, chipW, label(view.name()),
+                        TerminalClientOptions.missionView == view, mouseX, mouseY,
+                        () -> TerminalClientOptions.selectMissionView(view));
+                chipX += chipW + 6;
+            }
+            return cy + 22;
+        }
+
+        private int drawHudNoticeOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            TerminalUi.section(context, graphics, "HUD NOTICES", x, y, descriptor.accentColor());
+            int cy = y + 18;
+            drawOptionChip(context, graphics, x, cy, Math.min(154, Math.max(128, w / 3)),
+                    "MISSION HUD", TerminalClientOptions.missionHudNotifications, mouseX, mouseY,
+                    () -> TerminalClientOptions.setMissionHudNotifications(
+                            !TerminalClientOptions.missionHudNotifications));
+            return cy + 22;
+        }
+
+        private int drawVisualOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            TerminalUi.section(context, graphics, "VISUAL DENSITY", x, y, descriptor.accentColor());
+            int cy = y + 18;
+            int chipW = Math.max(86, Math.min(130, (w - 16) / TerminalClientOptions.VisualLevel.values().length));
+            int chipX = x;
+            for (TerminalClientOptions.VisualLevel level : TerminalClientOptions.VisualLevel.values()) {
+                drawOptionChip(context, graphics, chipX, cy, chipW, label(level.name()),
+                        TerminalClientOptions.visualLevel == level, mouseX, mouseY,
+                        () -> TerminalClientOptions.selectVisualLevel(level));
+                chipX += chipW + 6;
+            }
+            cy += 24;
+            drawOptionChip(context, graphics, x, cy, 128, "REDUCED MOTION",
+                    TerminalClientOptions.reduceMotion(), mouseX, mouseY,
+                    () -> TerminalClientOptions.setReducedMotion(!TerminalClientOptions.reduceMotion()));
+            return cy + 22;
+        }
+
+        private void drawOptionChip(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, String label, boolean selected, int mouseX, int mouseY, Runnable action) {
+            boolean hover = TerminalUi.inside(mouseX, mouseY, x, y, w, 16);
+            TerminalUi.filterChip(context, graphics, x, y, w, label, selected, true,
+                    descriptor.accentColor(), hover);
+            hitboxes.add(new SettingsHitbox(x, y, w, 16, action));
+        }
+
+        private static String label(String value) {
+            return value.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        }
+
+        private record SettingsHitbox(int x, int y, int w, int h, Runnable action) {
         }
     }
 
@@ -1442,7 +1682,7 @@ public final class BuiltinTerminalTabs {
             int cy = y + 22;
             if (links.isEmpty()) {
                 TerminalUi.wrap(context, graphics,
-                        "No addon terminal pages are registered. Core records and diagnostics still appear above.",
+                        "No addon terminal pages are registered. Shared intel and diagnostics still appear above.",
                         x, cy, width, TerminalUi.MUTED);
                 return;
             }
@@ -2284,6 +2524,9 @@ public final class BuiltinTerminalTabs {
         private int lastListY;
         private int lastListW;
         private int lastListH;
+        private final List<ArchiveHitbox> archiveHitboxes = new ArrayList<>();
+        private ArchiveVisibility visibility = ArchiveVisibility.ALL;
+        private String selectedGroup = "";
 
         @Override
         public TerminalTabDescriptor descriptor() {
@@ -2306,20 +2549,28 @@ public final class BuiltinTerminalTabs {
             int y = context.contentY();
             int w = context.contentWidth();
             int h = context.contentHeight();
-            List<TerminalArchiveEntry> entries = TerminalArchiveRegistry.entries();
+            archiveHitboxes.clear();
+            List<TerminalArchiveEntry> allEntries = TerminalArchiveRegistry.entries();
             TerminalUi.section(context, graphics, "SHARED ARCHIVES", x, y, descriptor.accentColor());
-            if (entries.isEmpty()) {
+            if (allEntries.isEmpty()) {
                 TerminalUi.line(context, graphics, "No shared archive records are available.", x, y + 18, w, TerminalUi.MUTED);
+                return;
+            }
+            int filtersBottom = drawArchiveFilters(context, graphics, allEntries, x, y + 18, w, mouseX, mouseY);
+            List<TerminalArchiveEntry> entries = filteredEntries(context, allEntries);
+            if (entries.isEmpty()) {
+                TerminalUi.emptyState(context, graphics, x, filtersBottom + 6, w,
+                        "No Records", "No archive records match the current filter.", descriptor.accentColor());
                 return;
             }
             normalizeSelection(entries);
             boolean wide = w >= 640;
             int listW = wide ? Math.max(250, Math.min(390, w * 40 / 100)) : w;
             int detailX = wide ? x + listW + 14 : x;
-            int detailY = wide ? y + 18 : y + 24 + entries.size() * ROW_HEIGHT;
+            int detailY = wide ? filtersBottom + 4 : filtersBottom + 10 + entries.size() * ROW_HEIGHT;
             int detailW = wide ? Math.max(220, w - listW - 18) : w;
 
-            int cy = y + 18;
+            int cy = filtersBottom + 4;
             lastListX = x;
             lastListY = cy;
             lastListW = listW - 8;
@@ -2328,10 +2579,11 @@ public final class BuiltinTerminalTabs {
                 boolean selected = entry.id().toString().equals(selectedEntryId);
                 boolean hovered = TerminalUi.inside(mouseX, mouseY, x, cy, listW - 8, ROW_HEIGHT - 4);
                 boolean locked = locked(context, entry);
+                boolean unread = !locked && !TerminalPlayerData.get(context.player()).isArchiveRead(entry.id());
                 int color = locked ? TerminalUi.MUTED : TerminalUi.TEXT;
                 TerminalUi.selectableRow(context, graphics, x, cy, listW - 8, ROW_HEIGHT - 4,
                         selected, hovered, descriptor.accentColor());
-                TerminalUi.line(context, graphics, entry.title(), x + 6, cy + 4, listW - 90, color);
+                TerminalUi.line(context, graphics, (unread ? "* " : "") + entry.title(), x + 6, cy + 4, listW - 90, color);
                 TerminalUi.miniStatusPill(context, graphics, entry.status(), x + listW - 78, cy + 3, 64, color, selected);
                 TerminalUi.line(context, graphics, entry.group(), x + 6, cy + 17, listW - 16, TerminalUi.MUTED);
                 cy += ROW_HEIGHT;
@@ -2370,13 +2622,27 @@ public final class BuiltinTerminalTabs {
 
         @Override
         public boolean mouseClicked(TerminalRenderContext context, double mouseX, double mouseY, int button) {
-            if (button != 0 || !TerminalUi.inside(mouseX, mouseY, lastListX, lastListY, lastListW, lastListH)) {
+            if (button != 0) {
                 return false;
             }
-            List<TerminalArchiveEntry> entries = TerminalArchiveRegistry.entries();
+            for (ArchiveHitbox hitbox : List.copyOf(archiveHitboxes)) {
+                if (TerminalUi.inside(mouseX, mouseY, hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())) {
+                    hitbox.action().run();
+                    return true;
+                }
+            }
+            if (!TerminalUi.inside(mouseX, mouseY, lastListX, lastListY, lastListW, lastListH)) {
+                return false;
+            }
+            List<TerminalArchiveEntry> entries = filteredEntries(context, TerminalArchiveRegistry.entries());
             int index = (int) ((mouseY - lastListY) / ROW_HEIGHT);
             if (index >= 0 && index < entries.size()) {
-                selectedEntryId = entries.get(index).id().toString();
+                TerminalArchiveEntry entry = entries.get(index);
+                selectedEntryId = entry.id().toString();
+                if (!locked(context, entry)) {
+                    context.sendAction(ARCHIVES, BuiltinTerminalCommonIntegration.MARK_ARCHIVE_READ,
+                            entry.id().toString());
+                }
                 return true;
             }
             return false;
@@ -2384,7 +2650,7 @@ public final class BuiltinTerminalTabs {
 
         @Override
         public int contentHeight(TerminalRenderContext context) {
-            List<TerminalArchiveEntry> entries = TerminalArchiveRegistry.entries();
+            List<TerminalArchiveEntry> entries = filteredEntries(context, TerminalArchiveRegistry.entries());
             int w = context.contentWidth();
             boolean wide = w >= 640;
             int listW = wide ? Math.max(250, Math.min(390, w * 40 / 100)) : w;
@@ -2393,9 +2659,60 @@ public final class BuiltinTerminalTabs {
             int rows = entries.size() * ROW_HEIGHT;
             int detailHeight = selected == null ? 40 : archiveDetailHeight(context, selected, detailW - 8) + 28;
             if (wide) {
-                return Math.max(context.contentHeight(), Math.max(42 + rows, detailHeight));
+                return Math.max(context.contentHeight(), Math.max(84 + rows, detailHeight + 42));
             }
-            return Math.max(context.contentHeight(), rows + detailHeight + 24);
+            return Math.max(context.contentHeight(), rows + detailHeight + 68);
+        }
+
+        private int drawArchiveFilters(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                List<TerminalArchiveEntry> entries, int x, int y, int w, int mouseX, int mouseY) {
+            int cy = y;
+            TerminalUi.line(context, graphics, "STATE", x, cy + 4, 42, TerminalUi.MUTED);
+            int chipX = x + 46;
+            for (ArchiveVisibility mode : ArchiveVisibility.values()) {
+                int chipW = mode == ArchiveVisibility.UNREAD ? 62 : 56;
+                boolean selected = visibility == mode;
+                boolean hover = TerminalUi.inside(mouseX, mouseY, chipX, cy, chipW, 15);
+                TerminalUi.filterChip(context, graphics, chipX, cy, chipW, mode.label(), selected, true,
+                        descriptor.accentColor(), hover);
+                archiveHitboxes.add(new ArchiveHitbox(chipX, cy, chipW, 15, () -> visibility = mode));
+                chipX += chipW + 4;
+            }
+            cy += 20;
+            TerminalUi.line(context, graphics, "GROUP", x, cy + 4, 42, TerminalUi.MUTED);
+            chipX = x + 46;
+            drawGroupChip(graphics, context, "ALL", "", chipX, cy, 50, mouseX, mouseY);
+            chipX += 54;
+            for (String group : archiveGroups(entries)) {
+                int chipW = Math.min(112, Math.max(58, TerminalUi.wrappedHeight(context, group, 120) + group.length() * 5));
+                if (chipX + chipW > x + w) {
+                    break;
+                }
+                drawGroupChip(graphics, context, group, group, chipX, cy, chipW, mouseX, mouseY);
+                chipX += chipW + 4;
+            }
+            return cy + 18;
+        }
+
+        private void drawGroupChip(GuiGraphicsExtractor graphics, TerminalRenderContext context, String label, String group,
+                int x, int y, int w, int mouseX, int mouseY) {
+            boolean selected = selectedGroup.equals(group);
+            boolean hover = TerminalUi.inside(mouseX, mouseY, x, y, w, 15);
+            TerminalUi.filterChip(context, graphics, x, y, w, label, selected, true,
+                    descriptor.accentColor(), hover);
+            archiveHitboxes.add(new ArchiveHitbox(x, y, w, 15, () -> selectedGroup = group));
+        }
+
+        private List<TerminalArchiveEntry> filteredEntries(TerminalRenderContext context, List<TerminalArchiveEntry> entries) {
+            TerminalPlayerData data = TerminalPlayerData.get(context.player());
+            return entries.stream()
+                    .filter(entry -> selectedGroup.isBlank() || selectedGroup.equals(entry.group()))
+                    .filter(entry -> visibility.matches(context, data, entry))
+                    .toList();
+        }
+
+        private static List<String> archiveGroups(List<TerminalArchiveEntry> entries) {
+            return entries.stream().map(TerminalArchiveEntry::group).distinct().sorted().toList();
         }
 
         private void normalizeSelection(List<TerminalArchiveEntry> entries) {
@@ -2431,6 +2748,36 @@ public final class BuiltinTerminalTabs {
 
         private static boolean locked(TerminalRenderContext context, TerminalArchiveEntry entry) {
             return entry.locked() && !EchoCoreServices.isArchiveUnlocked(context.player(), entry.id().toString());
+        }
+
+        private record ArchiveHitbox(int x, int y, int w, int h, Runnable action) {
+        }
+
+        private enum ArchiveVisibility {
+            ALL("ALL"),
+            OPEN("OPEN"),
+            LOCKED("LOCKED"),
+            UNREAD("UNREAD");
+
+            private final String label;
+
+            ArchiveVisibility(String label) {
+                this.label = label;
+            }
+
+            String label() {
+                return label;
+            }
+
+            boolean matches(TerminalRenderContext context, TerminalPlayerData data, TerminalArchiveEntry entry) {
+                boolean locked = ArchivesTab.locked(context, entry);
+                return switch (this) {
+                    case ALL -> true;
+                    case OPEN -> !locked;
+                    case LOCKED -> locked;
+                    case UNREAD -> !locked && !data.isArchiveRead(entry.id());
+                };
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.knoxhack.echoashfallprotocol.test;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoDiscoveryCategory;
+import com.knoxhack.echocore.api.EchoDiscoveryEntry;
 import com.knoxhack.echocore.api.EchoFactionContract;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.google.gson.JsonElement;
@@ -56,6 +58,8 @@ import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.faction.FactionDiplomacy;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
+import com.knoxhack.echoashfallprotocol.integration.AshfallDiscoveryProvider;
+import com.knoxhack.echoashfallprotocol.integration.AshfallTerminalCommonIntegration;
 import com.knoxhack.echoashfallprotocol.item.RareTechSchematicItem;
 import com.knoxhack.echoashfallprotocol.item.SchematicFragmentItem;
 import com.knoxhack.echoashfallprotocol.machine.MachineWearData;
@@ -75,9 +79,13 @@ import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import com.knoxhack.echoashfallprotocol.world.StartingDropPodData;
 import com.knoxhack.echoashfallprotocol.worldgen.ProceduralStructureGenerator;
+import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalNavigationSection;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
+import com.knoxhack.echoterminal.discovery.TerminalDiscoveryProvider;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.serialization.JsonOps;
 import io.netty.buffer.Unpooled;
@@ -106,6 +114,7 @@ import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.ProblemReporter;
@@ -182,12 +191,16 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_lore_taxonomy", () -> ModGameTests::terminalLoreTaxonomy);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_COMMAND_DECK_OWNERSHIP =
             TEST_FUNCTIONS.register("terminal_command_deck_ownership", () -> ModGameTests::terminalCommandDeckOwnership);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_COMMON_REGISTRATION =
+            TEST_FUNCTIONS.register("terminal_common_registration", () -> ModGameTests::terminalCommonRegistration);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_GUIDE_COVERAGE =
             TEST_FUNCTIONS.register("mission_guide_coverage", () -> ModGameTests::missionGuideCoverage);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FIRST_NIGHT_ROUTE_SAFETY =
             TEST_FUNCTIONS.register("first_night_route_safety", () -> ModGameTests::firstNightRouteSafety);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> EXPLORATION_SITE_PROFILES =
             TEST_FUNCTIONS.register("exploration_site_profiles", () -> ModGameTests::explorationSiteProfiles);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASHFALL_DISCOVERY_PROVIDER =
+            TEST_FUNCTIONS.register("ashfall_discovery_provider", () -> ModGameTests::ashfallDiscoveryProvider);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTION_CONTRACT_BALANCE =
             TEST_FUNCTIONS.register("faction_contract_balance", () -> ModGameTests::factionContractBalance);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STRICT_FACTION_ENTITY_IDS =
@@ -243,9 +256,11 @@ public final class ModGameTests {
         register(event, environment, "endgame_route_progress", ENDGAME_ROUTE_PROGRESS.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
         register(event, environment, "terminal_command_deck_ownership", TERMINAL_COMMAND_DECK_OWNERSHIP.getId());
+        register(event, environment, "terminal_common_registration", TERMINAL_COMMON_REGISTRATION.getId());
         register(event, environment, "mission_guide_coverage", MISSION_GUIDE_COVERAGE.getId());
         register(event, environment, "first_night_route_safety", FIRST_NIGHT_ROUTE_SAFETY.getId());
         register(event, environment, "exploration_site_profiles", EXPLORATION_SITE_PROFILES.getId());
+        register(event, environment, "ashfall_discovery_provider", ASHFALL_DISCOVERY_PROVIDER.getId());
         register(event, environment, "faction_contract_balance", FACTION_CONTRACT_BALANCE.getId());
         register(event, environment, "strict_faction_entity_ids", STRICT_FACTION_ENTITY_IDS.getId());
         register(event, environment, "machine_wear_saved_data", MACHINE_WEAR_SAVED_DATA.getId());
@@ -353,7 +368,19 @@ public final class ModGameTests {
     }
 
     private static void guardianProfileCoverage(GameTestHelper helper) {
-        helper.assertTrue(BiomeGuardianProfiles.all().size() == 9, "All nine Ashfall biome guardians need profiles");
+        helper.assertTrue(BiomeGuardianProfiles.all().size() == 8, "Ashfall should expose eight active biome guardian profiles");
+        helper.assertTrue(BiomeGuardianProfiles.byBiome("the_wasteland").isEmpty(),
+                "The Wasteland should no longer expose an active guardian profile");
+        helper.assertTrue(BiomeGuardianProfiles.byMissionId("neutralize_wasteland_sentinel").isEmpty(),
+                "Wasteland Sentinel should not be an active guardian mission");
+        helper.assertTrue(ProceduralStructureGenerator.getMainStructureForBiome("the_wasteland") == null,
+                "The Wasteland should not generate a biome-main guardian site");
+        helper.assertTrue(MissionRegistry.getMissionById("neutralize_wasteland_sentinel") == null,
+                "Wasteland Sentinel mission should be removed from the active mission registry");
+        Mission plainsWarlord = MissionRegistry.getMissionById("neutralize_plains_warlord");
+        helper.assertTrue(plainsWarlord != null
+                        && plainsWarlord.prerequisites().equals(List.of("activate_relay_station")),
+                "Plains Warlord should unlock directly after the Relay Station mission");
         Set<BiomeGuardianProfile.GuardianAbility> abilities =
                 EnumSet.noneOf(BiomeGuardianProfile.GuardianAbility.class);
         Set<String> missions = new HashSet<>();
@@ -447,13 +474,14 @@ public final class ModGameTests {
         player.setPos(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D);
 
         int index = 0;
+        int guardianCount = Math.max(1, BiomeGuardianProfiles.all().size());
         for (BiomeGuardianProfile profile : BiomeGuardianProfiles.all()) {
             BiomeBossEntity boss = profile.bossType().get().create(level, EntitySpawnReason.EVENT);
             helper.assertTrue(boss != null, "Guardian should be spawnable: " + profile.bossPath());
             if (boss == null) {
                 continue;
             }
-            double angle = index++ * (Math.PI * 2.0D / 9.0D);
+            double angle = index++ * (Math.PI * 2.0D / guardianCount);
             boss.setPos(player.getX() + Math.cos(angle) * 5.0D, player.getY(), player.getZ() + Math.sin(angle) * 5.0D);
             boss.setTarget(player);
             level.addFreshEntity(boss);
@@ -477,7 +505,7 @@ public final class ModGameTests {
     }
 
     private static void guardianSiteState(GameTestHelper helper) {
-        BiomeGuardianProfile profile = BiomeGuardianProfiles.byBiome("the_wasteland").orElseThrow();
+        BiomeGuardianProfile profile = BiomeGuardianProfiles.byBiome("ruined_plains").orElseThrow();
         BiomeGuardianSiteData data = BiomeGuardianSiteData.get(helper.getLevel());
         BlockPos entrance = helper.absolutePos(new BlockPos(4, 1, 4));
         BlockPos arena = helper.absolutePos(new BlockPos(12, 1, 12));
@@ -499,7 +527,7 @@ public final class ModGameTests {
     }
 
     private static void bossHudNavigation(GameTestHelper helper) {
-        helper.assertTrue(BossHudProfiles.all().size() >= 14,
+        helper.assertTrue(BossHudProfiles.all().size() >= 13,
                 "Boss HUD profiles should cover guardians, Warden, and orbital boss-tier encounters");
         for (BiomeGuardianProfile profile : BiomeGuardianProfiles.all()) {
             BossHudProfile hud = BossHudProfiles.byEntityId(profile.entityId()).orElse(null);
@@ -537,9 +565,10 @@ public final class ModGameTests {
                 "Orbital Docking AI HUD profile should exist");
         helper.assertTrue(BossHudProfiles.byTitle("ECHO-0").isPresent(), "ECHO-0 HUD title profile should exist");
 
-        BossHudProfile sentinelHud = BossHudProfiles.byEntityId("echoashfallprotocol:wasteland_sentinel").orElseThrow();
-        BossNavigationPacket original = BossNavigationPacket.active(sentinelHud, "minecraft:overworld",
-                new BlockPos(4, 64, -9), 2, 0.45F, "Wasteland Sentinel");
+        BiomeGuardianProfile guardian = BiomeGuardianProfiles.byBiome("ruined_plains").orElseThrow();
+        BossHudProfile guardianHud = BossHudProfiles.byEntityId(guardian.entityId()).orElseThrow();
+        BossNavigationPacket original = BossNavigationPacket.active(guardianHud, "minecraft:overworld",
+                new BlockPos(4, 64, -9), 2, 0.45F, guardian.title());
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         BossNavigationPacket.CODEC.encode(buffer, original);
         BossNavigationPacket decoded = BossNavigationPacket.CODEC.decode(buffer);
@@ -559,13 +588,12 @@ public final class ModGameTests {
         helper.assertTrue(decoded.category().equals(original.category()),
                 "Boss navigation packet should preserve category");
         helper.assertTrue("LIVE".equals(decoded.targetKind()), "Boss navigation packet should preserve live target kind");
-        helper.assertTrue(sentinelHud.phaseForHealth(0.65F) == 2 && sentinelHud.phaseForHealth(0.32F) == 3,
+        helper.assertTrue(guardianHud.phaseForHealth(0.65F) == 2 && guardianHud.phaseForHealth(0.32F) == 3,
                 "Boss HUD phase thresholds should expose phase 2 and phase 3");
 
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
         BlockPos playerPos = helper.absolutePos(new BlockPos(2, 2, 2));
         player.setPos(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D);
-        BiomeGuardianProfile guardian = BiomeGuardianProfiles.byBiome("the_wasteland").orElseThrow();
         setCurrentMission(QuestData.get(player), guardian.missionId());
         BiomeGuardianSiteData data = BiomeGuardianSiteData.get(helper.getLevel());
         BlockPos entrance = helper.absolutePos(new BlockPos(8, 2, 8));
@@ -632,8 +660,8 @@ public final class ModGameTests {
 
         NexusAccessRules.Status missingGuardians = NexusAccessRules.evaluate(quest, level, core);
         helper.assertFalse(missingGuardians.allowed(), "Nexus should deny before guardians are defeated");
-        helper.assertTrue(missingGuardians.missingGuardianCount() == 9,
-                "Nexus gate should require all nine guardians before checking nodes");
+        helper.assertTrue(missingGuardians.missingGuardianCount() == 8,
+                "Nexus gate should require all eight active guardians before checking nodes");
 
         for (BiomeGuardianProfile profile : BiomeGuardianProfiles.all()) {
             quest.recordEntityKill(profile.entityId());
@@ -742,8 +770,8 @@ public final class ModGameTests {
         NexusCampaignData data = NexusCampaignData.get(level);
         data.resetForTests();
 
-        helper.assertTrue(BiomeGuardianProfiles.all().size() == 9,
-                "Warfront content must not change the nine biome guardian profiles");
+        helper.assertTrue(BiomeGuardianProfiles.all().size() == 8,
+                "Warfront content must not change the eight active biome guardian profiles");
         helper.assertTrue(NexusRelayProfiles.hasCoverage(), "Every Prime Relay type needs a content profile");
         helper.assertTrue(NexusPressureMobProfiles.registryMatchesEntities(), "Pressure mob profiles must map to registered entities");
         helper.assertTrue(NexusFinalBossProfiles.hasCoverage(), "All three Nexus paths need finale boss profiles");
@@ -1514,6 +1542,23 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void terminalCommonRegistration(GameTestHelper helper) {
+        AshfallTerminalCommonIntegration.register();
+        Identifier missions = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "missions");
+        Identifier sideOps = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "ashfall_side_ops");
+        helper.assertTrue(TerminalMissionRegistry.provider(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "ashfall_protocol")).isPresent(),
+                "Ashfall common setup should register the main mission provider");
+        helper.assertTrue(TerminalMissionRegistry.provider(sideOps).isPresent(),
+                "Ashfall common setup should register the side ops mission provider");
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        if (player instanceof ServerPlayer serverPlayer) {
+            helper.assertTrue(TerminalActionRegistry.handle(serverPlayer, missions,
+                    TerminalMissionActions.MISSION_ACTION, "invalid"),
+                    "Ashfall common setup should register server-side terminal mission actions");
+        }
+        helper.succeed();
+    }
+
     private static void missionGuideCoverage(GameTestHelper helper) {
         int covered = 0;
         for (Mission mission : MissionRegistry.getAllMissions()) {
@@ -1654,6 +1699,43 @@ public final class ModGameTests {
             taggedStructures++;
         }
         helper.assertTrue(taggedStructures > 0, "POI structure tag should not be empty");
+        helper.succeed();
+    }
+
+    private static void ashfallDiscoveryProvider(GameTestHelper helper) {
+        if (EchoCoreServices.factionDefinitions().stream().noneMatch(definition -> AshfallFactionMap.isAshfall(definition.id()))) {
+            AshfallBiomeFactions.register();
+        }
+        List<EchoDiscoveryEntry> entries = new AshfallDiscoveryProvider().entries(null);
+        helper.assertTrue(!entries.isEmpty(), "Ashfall discovery provider should publish entries");
+        helper.assertTrue(entries.stream().anyMatch(entry -> entry.category() == EchoDiscoveryCategory.STRUCTURE),
+                "Ashfall discovery provider should publish structure entries");
+        helper.assertTrue(entries.stream().anyMatch(entry -> entry.category() == EchoDiscoveryCategory.BIOME),
+                "Ashfall discovery provider should publish biome entries");
+        helper.assertTrue(entries.stream().anyMatch(entry -> entry.category() == EchoDiscoveryCategory.GUARDIAN),
+                "Ashfall discovery provider should publish guardian entries");
+        helper.assertTrue(entries.stream().anyMatch(entry -> entry.category() == EchoDiscoveryCategory.EVENT),
+                "Ashfall discovery provider should publish event entries");
+        helper.assertTrue(entries.stream().noneMatch(entry -> entry.category() == EchoDiscoveryCategory.FACTION),
+                "Ashfall discovery provider should leave faction entries to the shared Terminal provider");
+        List<EchoDiscoveryEntry> terminalEntries = new TerminalDiscoveryProvider().entries(null);
+        Set<Identifier> discoveryIds = new HashSet<>();
+        for (EchoDiscoveryEntry entry : entries) {
+            helper.assertTrue(discoveryIds.add(entry.id()), "Ashfall discovery entry ids should be unique: " + entry.id());
+        }
+        for (EchoDiscoveryEntry entry : terminalEntries) {
+            helper.assertTrue(discoveryIds.add(entry.id()),
+                    "Ashfall discovery ids should not duplicate shared Terminal entries: " + entry.id());
+        }
+        helper.assertTrue(entries.stream().allMatch(entry -> entry.id() != null
+                        && entry.chapterId() != null
+                        && !entry.revealedTitle().isBlank()
+                        && !entry.lockedHintTitle().isBlank()
+                        && !entry.hintText().isBlank()
+                        && !entry.revealedSummary().isBlank()),
+                "Every Ashfall discovery entry should have stable id and nonblank spoiler-safe copy");
+        helper.assertTrue(entries.stream().anyMatch(entry -> entry.id().equals(AshfallDiscoveryProvider.biomeId("the_wasteland"))),
+                "The main Wasteland biome should remain discoverable as a biome entry");
         helper.succeed();
     }
 

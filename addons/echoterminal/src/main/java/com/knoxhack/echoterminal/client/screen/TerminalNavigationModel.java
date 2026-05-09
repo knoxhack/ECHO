@@ -68,7 +68,7 @@ final class TerminalNavigationModel {
     String activeGroup(int activeTab) {
         IndexedTab entry = indexed(activeTab);
         if (entry == null) {
-            return TerminalNavigationSection.TERMINAL.key();
+            return TerminalNavigationSection.COMMAND.key();
         }
         return entry.profile().section().key();
     }
@@ -81,7 +81,7 @@ final class TerminalNavigationModel {
     String activePathLabel(int activeTab) {
         IndexedTab entry = indexed(activeTab);
         if (entry == null) {
-            return TerminalNavigationSection.TERMINAL.label();
+            return TerminalNavigationSection.COMMAND.label();
         }
         String section = groupLabel(entry.profile().section().key());
         if (entry.profile().hasChapter()) {
@@ -132,7 +132,7 @@ final class TerminalNavigationModel {
                 return section.label();
             }
         }
-        return group;
+        return TerminalNavigationSection.fromKey(group).label();
     }
 
     private IndexedTab indexed(int activeTab) {

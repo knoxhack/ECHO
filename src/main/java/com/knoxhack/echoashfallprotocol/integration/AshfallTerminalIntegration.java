@@ -34,7 +34,6 @@ import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
 import com.knoxhack.echoashfallprotocol.world.ExplorationPoiCatalog;
 import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
-import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalAddonGuide;
 import com.knoxhack.echoterminal.api.TerminalAddonInfo;
 import com.knoxhack.echoterminal.api.TerminalAddonInfoProvider;
@@ -55,7 +54,6 @@ import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.api.TerminalUi;
 import com.knoxhack.echoterminal.api.TerminalVisualAssets;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionAction;
-import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionChapter;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
@@ -67,6 +65,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionVisuals;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeRegistry;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -102,7 +101,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * Optional bridge that contributes Ashfall content to the modular ECHO Terminal.
  */
 public final class AshfallTerminalIntegration {
-    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
+    private static final AtomicBoolean CLIENT_REGISTERED = new AtomicBoolean(false);
     private static final boolean LEGACY_NEXUS_TERMINAL_ENABLED = false;
     private static final String ASHFALL_CHAPTER_ID = "ashfall_protocol";
 
@@ -127,13 +126,15 @@ public final class AshfallTerminalIntegration {
     }
 
     public static void register() {
-        if (!REGISTERED.compareAndSet(false, true)) {
+        registerClient();
+    }
+
+    public static void registerClient() {
+        AshfallTerminalCommonIntegration.register();
+        if (!CLIENT_REGISTERED.compareAndSet(false, true)) {
             return;
         }
 
-        TerminalMissionRegistry.register(ASHFALL_MISSION_PROVIDER);
-        TerminalMissionRegistry.register(ASHFALL_SIDE_OPS_PROVIDER);
-        TerminalAddonInfoRegistry.register(new AshfallAddonInfoProvider());
         registerTab(new OverviewTab(), ashfallProfile(90));
         registerTab(new MissionBrowserTab(ASHFALL_MISSION_PROVIDER), ashfallProfile(100));
         registerTab(MissionBrowserTab.sideOps(ASHFALL_SIDE_OPS_PROVIDER), ashfallProfile(110));
@@ -146,19 +147,7 @@ public final class AshfallTerminalIntegration {
             TerminalTabRegistry.register(new NexusTab());
             TerminalNavigationProfiles.register(NEXUS, ashfallProfile(220));
         }
-
-        TerminalMissionActions.registerForTab(MISSIONS);
-        TerminalMissionActions.registerForTab(SIDE_OPS);
-        TerminalActionRegistry.register(MISSIONS, TURN_IN, AshfallTerminalIntegration::turnInCurrentMission);
-        TerminalActionRegistry.register(MISSIONS, CLAIM_REWARDS, (player, payload) -> EchoGuideManager.claimRewards(player));
-        TerminalActionRegistry.register(DRONE, DRONE_COMMAND,
-                (player, payload) -> ModNetwork.handleDroneCommand(new DroneCommandPacket(payload), player));
-        if (LEGACY_NEXUS_TERMINAL_ENABLED && !nexusProtocolLoaded()) {
-            TerminalActionRegistry.register(NEXUS, NEXUS_CHOICE, AshfallTerminalIntegration::chooseNexusPath);
-            TerminalActionRegistry.register(NEXUS, NEXUS_WARFRONT, AshfallTerminalIntegration::handleNexusWarfront);
-        }
-
-        registerFieldManualEntries();
+        TerminalRecipeRegistry.register(AshfallTerminalRecipeProvider.INSTANCE);
     }
 
     private static void registerTab(TerminalTab tab, TerminalNavigationProfile profile) {
@@ -283,7 +272,7 @@ public final class AshfallTerminalIntegration {
                 "Guardian Threat Dossier",
                 "OPEN",
                 List.of(
-                        "Nine biome guardian signals hold the old grid in place. Each one is buried beneath a region that still remembers how the world failed.",
+                        "Eight active biome guardian signals hold the old grid in place. Each one is buried beneath a region that still remembers how the world failed.",
                         "Each guardian has a unique threat profile, surface entrance, arena route, defender set, and reward bundle. Scan, prepare, descend, and leave nothing unresolved."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
@@ -588,7 +577,7 @@ public final class AshfallTerminalIntegration {
         private OverviewTab() {
             super(OVERVIEW, "ASHFALL COMMAND", 90, 0xFF66D9FF,
                     TerminalTabChrome.of("Ashfall Command", TerminalTabChrome.GROUP_PROTOCOL, "AC",
-                            "Active Ashfall protocol", 90));
+                            "Active protocol dashboard", 90));
         }
 
         @Override
@@ -1630,7 +1619,9 @@ public final class AshfallTerminalIntegration {
                 return;
             }
             if (entry.lines().isEmpty()) {
-                wrap(context, graphics, "No detailed record text is attached yet.", x + 12, cy, width - 24, TerminalUi.MUTED);
+                wrap(context, graphics,
+                        "Record detail is sealed until its owning route proof is recovered. Continue the active Ashfall mission chain or check Protocol Roadmap for the next unlock.",
+                        x + 12, cy, width - 24, TerminalUi.MUTED);
                 return;
             }
             for (String line : entry.lines()) {
@@ -2854,7 +2845,8 @@ public final class AshfallTerminalIntegration {
             }
             List<String> notes = recentUniqueNotes(quest);
             if (notes.isEmpty()) {
-                line(context, graphics, "No ECHO archive notes recorded yet.", x, cy, w, TerminalUi.MUTED);
+                line(context, graphics, "No ECHO archive notes are unlocked for this category yet.", x, cy, w,
+                        TerminalUi.MUTED);
                 return;
             }
             for (String note : notes) {

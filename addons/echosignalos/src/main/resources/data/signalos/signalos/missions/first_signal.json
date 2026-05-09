@@ -1,0 +1,9 @@
+{
+  "chapter": "signalos:signalos",
+  "title": "Terminal Check",
+  "description": "Open the terminal and verify that the built-in SignalOS pages are available.",
+  "objectives": ["Place or open a SignalOS Terminal", "Open Missions, Archives, Rewards, and Diagnostics tabs"],
+  "order": 0,
+  "icon": "signalos:terminal",
+  "rewardClaim": false
+}

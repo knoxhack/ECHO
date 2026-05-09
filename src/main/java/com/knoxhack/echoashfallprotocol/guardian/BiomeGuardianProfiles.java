@@ -27,42 +27,6 @@ public final class BiomeGuardianProfiles {
 
     static {
         register(profile(
-                "the_wasteland",
-                "neutralize_wasteland_sentinel",
-                "wasteland_sentinel",
-                "Wasteland Sentinel",
-                StructureType.BIO_LAB,
-                Set.of(StructureType.DROP_POD, StructureType.RADIO_TOWER, StructureType.CRASHBREAK_SALVAGE_YARD),
-                "half-buried rescue hatch",
-                "Buried Rescue-Control Lab",
-                "A first-response control node still classifies every survivor as a containment risk and every rescue as unfinished.",
-                ModEntities.WASTELAND_SENTINEL::get,
-                ModEntities.ECHO_DRONE::get,
-                0xFF61C7FF,
-                160.0f, 9.0f, 8.0f, 0.24f,
-                6.0f, 6.0f, 112, 300, 5,
-                BiomeGuardianProfile.GuardianAbility.SHIELD_PULSE,
-                BiomeGuardianProfile.ArenaHazard.RECOVERY_BEACON,
-                BiomeGuardianProfile.ParticleCue.ELECTRIC_SPARK,
-                BiomeGuardianProfile.PulseSound.BEACON,
-                true,
-                List.of(status(MobEffects.SLOWNESS, 60, 0)),
-                List.of(),
-                rewards(
-                        loot(ModItems.NEXUS_CRYSTAL::get, 1, 1),
-                        loot(ModItems.DENSE_ALLOY_CHUNK::get, 2, 2),
-                        loot(ModItems.DATA_LOG_BIOME_BOSSES::get, 1, 0),
-                        loot(ModItems.ENERGY_CELL::get, 1, 1)
-                ),
-                visual("textures/entity/wasteland_sentinel.png", 0xFFFFFFFF, 0xFF9FEFFF, 0.95f, 0.82f,
-                        BossEvent.BossBarColor.WHITE, false, BiomeGuardianProfile.VisualVariant.SENTINEL),
-                "Shield pulse throws attackers back, then exposes a short recovery window around the old beacon rhythm.",
-                "Bring an alloy weapon, food, one RadAway, and room to retreat when the beacon flares.",
-                "Rescue protocol rerouted. Ash response teams waking without patients.",
-                "Containment lock failed. Sentinel authorizing lethal recovery.",
-                "Wasteland rescue-control node severed. First route pressure falling."
-        ));
-        register(profile(
                 "ruined_plains",
                 "neutralize_plains_warlord",
                 "plains_warlord",

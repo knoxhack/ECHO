@@ -59,7 +59,7 @@ public class Config {
 
     public static final ModConfigSpec.IntValue ROUTE_FEATURE_DENSITY = BUILDER
             .comment("Controls repeatable deep-site density in route dimensions. Higher values place sites more often.")
-            .defineInRange("worldgen.routeFeatureDensity", 2, 1, 5);
+            .defineInRange("worldgen.routeFeatureDensity", 3, 1, 5);
 
     public static final ModConfigSpec.BooleanValue DEEP_SITE_CACHES_ENABLED = BUILDER
             .comment("If true, generated deep route sites include fixed survival caches.")

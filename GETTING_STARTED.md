@@ -9,7 +9,7 @@ This guide walks a new player from drop-pod wakeup to the Nexus choice. For a sy
 - Start a fresh world so wasteland biomes and POIs generate cleanly.
 - Normal or Hard difficulty best matches the survival tuning.
 - Back up important worlds before reaching the Nexus Core; the final choice is meant to matter.
-- Install JEI if you want recipe-viewer support for ECHO machines, locked schematics, and custom process categories.
+- Install JEI if you want recipe-viewer support for ECHO machines, locked schematics, and custom process categories; the ECHO Terminal Recipe Index also exposes provider-backed ECHO process notes without requiring JEI.
 
 ## 1.3.0 Player Checklist
 
@@ -19,7 +19,7 @@ Use this checklist for a clean first report:
 2. Check the bed at `(5, 3, 10)` / `(5, 3, 11)`, the door/ramp, side windows, roof beacons, landing struts, and labeled pod lockers.
 3. Open the ECHO terminal and confirm the current mission plus What Now diagnostics tell you what to stabilize next.
 4. Build the first powered loop: Hand Recycler, Micro Generator, Filter Workbench, Water Purifier, and Battery Bank.
-5. Use JEI to inspect ECHO custom machine categories and confirm locked recipes explain their schematic requirements.
+5. Use JEI and the ECHO Terminal Recipe Index to inspect ECHO custom machine categories, item recipes/uses, category filters, process notes, and locked schematic requirements.
 6. Deploy a Scout Drone or repair the ECHO companion drone, then test Drone tab commands.
 7. Scan at least one POI and confirm the readout names the actual site, route, hazard profile, prep kit, objective, distance, direction, and likely supplies; then check Route Map -> POI Atlas for the grouped template signals behind that scanner profile.
 8. Check Mission Graph, Route Records, Vitals, Reward Inbox, Faction Atlas, and Field Archive against the same save state.
@@ -153,14 +153,14 @@ Goal: reactivate the broken power network.
 
 - Deploy scanners, Scout Drones, Power Nodes, Workshops, and Relay Stations.
 - Treat biome guardians as buried route encounters. The scanner points to a visible surface entrance, but the arena is below as a Gridfall control node.
-- Clear each node in sequence from Wasteland Sentinel through Nexus Scar Avatar before expecting the Nexus Core route to open.
+- Clear each active node in sequence from Plains Warlord through Nexus Scar Avatar before expecting the Nexus Core route to open.
 - Use ECHO terminal status, world telemetry, faction intel, and scanner risk readouts before committing.
 
 ### Phase 7: Nexus Integration
 
 Goal: reach the Nexus Core and choose the future.
 
-The Core route is locked behind all nine guardian missions plus the current Nexus campaign readiness chain. If the terminal still points you at a guardian, scan for its entrance, descend, resolve the encounter, and return with the dossier complete before searching for the Core.
+The Core route is locked behind all eight active guardian missions plus the current Nexus campaign readiness chain. If the terminal still points you at a guardian, scan for its entrance, descend, resolve the encounter, and return with the dossier complete before searching for the Core.
 
 Before the final commitment, use the Nexus Core interface to wake the campaign, scan six Prime Relays, resolve three relays, and survive the Core countermeasure siege. The terminal shows readiness for Restore, Destroy, and Control and mirrors the sealed path through ECHO Core so addon chapters can react.
 
@@ -212,11 +212,12 @@ Open the ECHO terminal often.
 - What Now ranks blockers and next actions across installed ECHO chapters.
 - Mission Graph and Protocol Roadmap show the required route spine.
 - Route Records and Route Map collect scanner routes, POI Atlas template signals, recovery sites, and orbital paths.
+- Recipe Index searches ECHO items, switches between Recipes and Uses, filters by provider category, and shows machine slots, inputs, catalysts, outputs, process time, notes, and locked schematic hints.
 - Vitals shows hazard telemetry, weather/event pressure, suit/health context, and counter guidance.
 - Faction Atlas shows standing, contracts, NPC roles, POI affinity, and last contact.
 - Reward Inbox claims terminal-stored mission and support-cache rewards.
-- Field Archive, Survival Index, Baseline, Drone, World, and Nexus tabs explain recipes, lore, machines, survival tools, faction state, drone modes, and endgame systems.
-- Addon chapter sections use the shared terminal navigation API so Orbital, Stationfall, Nexus, Industrial, and Blackbox surfaces stay grouped by owning chapter.
+- Field Archive, Survival Index, Baseline, Drone, World, and Nexus tabs explain lore, machines, survival tools, faction state, drone modes, and endgame systems.
+- Addon chapter sections use explicit shared terminal navigation profiles so Orbital, Stationfall, Nexus, Industrial, and Blackbox surfaces stay grouped by owning chapter under Command, Progress, Intel, or System.
 
 The same terminal displays the post-Nexus addon chain after your Nexus choice.
 
@@ -236,7 +237,7 @@ From there, smoke each public addon entry:
 
 - Stationfall: confirm station route state, station power, panic pressure, and crew logs surface.
 - Nexus Protocol: confirm Nexus charge, corruption stabilization, and research/memory route state surface.
-- Industrial Nexus: confirm Thermal Flux, industrial machines, salvage automation, and filter-support records surface.
+- Industrial Nexus: confirm Thermal Flux, industrial machines, salvage automation, filter-support records, and Terminal Recipe Index entries for industrial processing surface.
 - Blackbox Protocol: confirm memory fragments, archive dungeons, boss proofs, and final directives surface.
 
 ## Practical Tips

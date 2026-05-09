@@ -1,0 +1,71 @@
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/knoxhack/echo/issues"
+
+[[mods]]
+modId="echoagriculturereclamation"
+version="0.1.1"
+displayName="ECHO: Agriculture Reclamation"
+displayURL="https://github.com/knoxhack/echo"
+authors="KnoxHack"
+credits="Built as the ruined-world ecology recovery chapter for the ECHO beta stack."
+description='''
+The player brings life back to a dead world.
+
+ECHO: Agriculture Reclamation adds recovered seeds, contaminated soil,
+hydroponics, gene stabilization, greenhouses, bio-reactors, and chunk-local
+ecological restoration without rewriting biome ids.
+'''
+
+[[dependencies.echoagriculturereclamation]]
+modId="neoforge"
+type="required"
+versionRange="[26.1.2.29-beta,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="minecraft"
+type="required"
+versionRange="[26.1.2,26.2)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="echocore"
+type="required"
+reason="Provides shared ECHO addon and service APIs."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="echoterminal"
+type="optional"
+reason="Allows Agriculture Reclamation records and missions to appear inside the modular ECHO Terminal."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="echoashfallprotocol"
+type="optional"
+reason="Seed vault, toxic salvage, and ruined ecology hooks complement Ashfall survival."
+versionRange="[1.3.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="echonexusprotocol"
+type="optional"
+reason="Nexus-touched crops can be stabilized when Nexus Protocol is installed."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="echoorbitalremnants"
+type="optional"
+reason="Cryogenic ruins and orbital caches can feed seed recovery when present."
+versionRange="[1.5.0,)"
+ordering="AFTER"
+side="BOTH"

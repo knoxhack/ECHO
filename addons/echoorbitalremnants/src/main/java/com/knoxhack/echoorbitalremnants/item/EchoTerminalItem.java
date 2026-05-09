@@ -1,5 +1,6 @@
 package com.knoxhack.echoorbitalremnants.item;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoorbitalremnants.Config;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
@@ -657,6 +658,9 @@ public class EchoTerminalItem extends Item {
 
     private static void report(Player player, EchoTerminalProgress progress, String message) {
         progress.setLastTerminalReport(player, message);
+        if (player instanceof ServerPlayer serverPlayer) {
+            EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
+        }
         player.sendSystemMessage(Component.literal("ECHO-7 // " + message));
     }
 

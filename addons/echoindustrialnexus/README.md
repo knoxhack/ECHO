@@ -15,13 +15,14 @@ Production Completion pass.
 - Required compile/runtime dependency: `echocore`
 - Optional soft integrations: `echoterminal`, Ashfall Protocol, Nexus Protocol, Orbital Remnants, Stationfall, Blackbox Protocol
 
-Industrial Nexus loads and plays without optional sibling chapters. When ECHO Terminal is present, it registers a shared Industrial Nexus chapter, mission provider, archive entries, and actions for factory scans, POI location hints, and reward cache claims.
+Industrial Nexus loads and plays without optional sibling chapters. When ECHO Terminal is present, it registers a shared Industrial Nexus chapter, mission provider, archive entries, actions for factory scans, POI location hints, reward cache claims, and a terminal recipe provider for Industrial processing data.
 
 ## Production Features
 
 - Thermal Flux network: generators, capacitor banks, Flux ducts, machine storage, generation stats, and controller scans.
 - Machine gameplay: input, catalyst, output, byproduct, upgrade, sided inventory, recipe duration, TF cost/generation, heat gain/cooling, remote shutdown, warnings, and custom menu/screen sync.
 - NeoForge fluid gameplay: registered Industrial fluids, machine fluid capabilities, internal tanks, bucket/cell fallback recipes, and active fluid pipes with tier capacity, transfer rate, filtering, loss, and hazardous leak behavior.
+- Terminal Recipe Index integration: `echoindustrialnexus:industrial_processing` JSON is surfaced with item/tag ingredients, catalysts, byproducts, input/output fluids, Thermal Flux cost or generation, heat gain, process duration, and machine categories.
 - Overheating: Cool, Warm, Hot, Critical, and Meltdown states with heat sinks, coolant, scrubber cooling, emergency shutdown modules, fire/leak fallout, and Terminal progress recording.
 - Industrial Scrubber: Air, Radiation, Blight, Station, and Cooling modes with fallback safe-zone records and soft reflection hooks into sibling systems when they are installed.
 - World content: configurable procedural Abandoned Thermal Plants, Rusted Factory Complexes, Geothermal Drill Sites, Reactor Cooling Stations, and Nexus Heat Exchanger Ruins with loot, hazards, schematics, and Warden arena support.
@@ -46,6 +47,7 @@ Manual smoke checklist after the client launches:
 - Fill/drain the Fluid Refiner and Water Purifier through cells and fluid pipes.
 - Cycle Industrial Scrubber modes and confirm safe-zone progress updates.
 - Use ECHO Terminal Industrial Nexus actions: scan factory, locate POI, claim cache.
+- Open the ECHO Terminal Recipe Index and confirm Industrial machine categories show JSON-driven processing recipes, fluid notes, heat, Thermal Flux, catalysts, and byproducts.
 - Generate or locate a procedural POI and verify loot/hazard placement.
 - Activate and defeat the Furnace Warden and verify participant reward credit.
 

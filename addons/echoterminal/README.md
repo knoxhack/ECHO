@@ -2,12 +2,15 @@
 
 ECHO: Terminal is the shared command surface for the Echo stack. It provides the terminal block, menu, client screen, mission provider API, action routing, navigation sections, archive records, rewards inbox, diagnostics, route records, faction atlas, vitals telemetry, and addon chapter hub.
 
-## Beta Feature Set
+## Release Feature Set
 
+- Four-section command shell: Command, Progress, Intel, and System.
 - Command Deck summary with mode, chapter, route, blocker, and reward counts.
 - What Now diagnostics for the next actionable blocker or release condition.
 - Survival Route tab that aggregates vanilla progression and installed ECHO chapter missions into one guided route.
 - Mission browser with visual/guided/minimal views, filters, search, scrollable detail panes, keyboard navigation, and claim/action routing.
+- Provider-backed transient mission HUD notices for newly available missions, ready objectives, reward caches, claimed caches, and newly online phases.
+- Recipe Index with searchable ECHO items, Recipes/Uses modes, provider category filters, item detail panes, machine/input/catalyst/output slots, process time, notes, and locked schematic hints.
 - Baseline vanilla journey rewards route support caches through the Reward Inbox on an owned terminal.
 - Shared Reward Inbox for support caches exposed through Echo Core.
 - Addon Chapters hub, Route Records, Faction Atlas, Vitals, Mission Graph, and Field Archive tabs.
@@ -19,17 +22,25 @@ ECHO: Terminal is the shared command surface for the Echo stack. It provides the
 - Close terminal: `Esc` or the configured terminal key.
 - Navigate terminal sections/pages: arrow keys or WASD.
 - Mission browser: type to search, `Ctrl+F` focuses search, left/right cycles filters, up/down changes selected mission, `Enter` or `Space` activates the first enabled mission command.
+- Recipe Index: type to search, click an ECHO item, switch Recipes/Uses, choose category chips, right-click an item slot to inspect uses, and scroll item/result/detail panes independently.
+- Mission HUD notices: enabled by default and toggleable from Interface Settings as `MISSION HUD`.
 - Scroll long content with mouse wheel or Page Up/Page Down.
 
 ## Addon Integration
 
 Addons should register `TerminalMissionProvider` implementations for mission records and use `TerminalMissionActions.registerForTab` when a tab needs server-authoritative mission commands. Addons can also expose archive entries, navigation profiles, chapter metadata, route records, faction profiles, diagnostics, hazard telemetry, and pending rewards through Echo Core services.
 
-For beta stability, mission providers should tolerate missing players, return empty lists instead of throwing when content is unavailable, and keep action handlers authoritative on the server.
+Registered mission providers also feed the client mission HUD notification controller. Providers do not need a separate packet or notification API: the controller polls synced provider snapshots, skips the aggregate Survival Route provider to avoid duplicates, and shows transient cards for status transitions while leaving persistent objective pinning to chapter HUDs.
+
+Explicit `TerminalNavigationProfile` registration is the public routing contract. Use `TerminalNavigationProfiles.register` to place tabs in Command, Progress, Intel, or System and to group chapter-owned pages. `TerminalTabChrome` group fallbacks remain for compatibility only.
+
+Recipe-aware addons should register `TerminalRecipeProvider` implementations with `TerminalRecipeRegistry`. Providers publish `TerminalRecipeCategory` and `TerminalRecipeEntry` data built from `TerminalRecipeSlot`, `TerminalRecipeNote`, and `TerminalRecipeSnapshot` semantics so the Recipe Index can search outputs, uses, catalysts, machines, info-only entries, and locked notes.
+
+For release stability, mission and recipe providers should tolerate missing players, return empty lists instead of throwing when content is unavailable, keep action handlers authoritative on the server, and leave recipe authority with the owning addon.
 
 ## Terminal Themes
 
-Echo Terminal ships a Java-only theme engine for beta. Themes are registered through `TerminalThemeRegistry` and are client presentation only: they do not change packets, world data, mission authority, or reward behavior.
+Echo Terminal ships a Java-only theme engine for the release stack. Themes are registered through `TerminalThemeRegistry` and are client presentation only: they do not change packets, world data, mission authority, or reward behavior.
 
 Built-in themes:
 
@@ -64,17 +75,17 @@ TerminalThemeRegistry.register(TerminalTheme.builder(id("my_theme"), "My Theme")
 
 Generated or hand-authored assets should avoid baked-in text. Labels are rendered by code for localization, readability, scaling, and accessibility.
 
-## Beta Limitations
+## Release Notes And Limits
 
-- The terminal is primarily a client command interface; it does not pin objectives to the HUD yet.
+- Mission HUD notices are transient status cards, not a persistent objective pin; chapter HUDs may still render their own trackers.
 - Most chapter-specific behavior is provided by the owning addon. If an addon is missing or disabled, the terminal shows only the providers that are registered.
 - Visual assets can be reduced through `TerminalClientOptions`, but there is not yet an in-game options screen for every terminal presentation setting beyond theme selection.
-- `TerminalBadgeProvider` and `TerminalNotificationProvider` are deferred beta APIs until badges and notification chrome are fully wired.
+- `TerminalBadgeProvider` and a generalized `TerminalNotificationProvider` remain deferred APIs; mission HUD notices are currently wired through `TerminalMissionProvider` snapshots.
 - Baseline cache claims require a placed or recently opened owned terminal so the Reward Inbox has a storage target.
-- Save compatibility is expected for normal beta use, but fresh-world smoke testing is recommended before public release candidates.
+- Save compatibility is expected for normal release use, but fresh-world smoke testing is recommended before public release candidates.
 
 ## Release Checklist
 
 - Run `.\gradlew.bat :echoterminal:runGameTestServer --warning-mode all`.
 - Run the workspace release verification after packaging paths are aligned.
-- Smoke test block opening, keybind opening, every tab, narrow UI widths, mission search/filter, vanilla reward claim, no-addon install, and full-addon install.
+- Smoke test block opening, keybind opening, every tab, narrow UI widths, mission search/filter, Recipe Index search/category/Recipes/Uses flows, vanilla reward claim, no-addon install, and full-addon install.

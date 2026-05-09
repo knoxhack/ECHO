@@ -4,10 +4,10 @@
     {
       "rolls": { "min": 2.0, "max": 4.0 },
       "entries": [
-        { "type": "minecraft:item", "name": "echonexusprotocol:data_fragment", "weight": 5 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:data_fragment", "weight": 6 },
         { "type": "minecraft:item", "name": "echonexusprotocol:memory_shard", "weight": 4 },
         { "type": "minecraft:item", "name": "echonexusprotocol:blackbox_fragment", "weight": 1 },
-        { "type": "minecraft:item", "name": "echonexusprotocol:core_glass", "weight": 2 }
+        { "type": "minecraft:item", "name": "echonexusprotocol:core_glass", "weight": 3 }
       ]
     }
   ],

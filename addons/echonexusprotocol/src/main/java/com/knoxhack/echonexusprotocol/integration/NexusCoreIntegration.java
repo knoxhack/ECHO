@@ -52,7 +52,7 @@ public final class NexusCoreIntegration {
 
                   public String statusLine(Player player) {
                      if (!this.isAvailable(player)) {
-                        return "NEXUS PROTOCOL: Locked until stationfall:blackbox_recovered or development unlock.";
+                        return "NEXUS PROTOCOL: Locked until " + NexusProgression.STATIONFALL_GATE + " or development unlock.";
                      } else {
                         NexusPlayerData data = NexusPlayerData.get(player);
                         return data.hasEndingPath()
@@ -104,7 +104,7 @@ public final class NexusCoreIntegration {
                Severity.BLOCKED,
                "Nexus Protocol locked",
                "The Core refuses clean access until the Stationfall blackbox is recovered.",
-               "Complete stationfall:blackbox_recovered or use /nexusprotocol unlock during development."
+               "Complete " + NexusProgression.STATIONFALL_GATE + " or use /nexusprotocol unlock during development."
             )
          );
       } else {

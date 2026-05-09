@@ -34,6 +34,9 @@ import com.mojang.datafixers.util.Pair;
  */
 @EventBusSubscriber(modid = EchoAshfallProtocol.MODID)
 public class PlayerStartingKitHandler {
+    private static final Identifier FIND_DROP_POD_ADVANCEMENT =
+            Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "find_drop_pod");
+    private static final String FIND_DROP_POD_CRITERION = "found_drop_pod";
     private static final ResourceKey<Biome> THE_WASTELAND = ResourceKey.create(
             Registries.BIOME,
             Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "the_wasteland"));
@@ -55,6 +58,10 @@ public class PlayerStartingKitHandler {
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        if (isGameTestServer(player)) {
+            return;
+        }
 
         // Check if player has received starting kit (using persistent data)
         CompoundTag playerData = player.getPersistentData();
@@ -108,6 +115,7 @@ public class PlayerStartingKitHandler {
             QuestData quest = player.getData(ModAttachments.QUEST_DATA.get());
             quest.setDropPodInitialized(true);
             player.setData(ModAttachments.QUEST_DATA.get(), quest);
+            grantFindDropPodAdvancement(player);
             EchoAshfallProtocol.LOGGER.info(
                     "Spawned {} inside personal starting drop pod at {} from origin {}.",
                     player.getName().getString(),
@@ -131,6 +139,21 @@ public class PlayerStartingKitHandler {
     private static boolean isReusableStartingPod(StartingDropPodData.Entry entry) {
         return entry.origin().getY() >= MIN_STARTING_SURFACE_Y
                 && entry.interior().getY() >= MIN_STARTING_SURFACE_Y;
+    }
+
+    private static boolean isGameTestServer(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        String serverClassName = level.getServer().getClass().getName();
+        return serverClassName.contains("GameTest") || serverClassName.contains("gametest");
+    }
+
+    private static void grantFindDropPodAdvancement(ServerPlayer player) {
+        var holder = player.level().getServer().getAdvancements().get(FIND_DROP_POD_ADVANCEMENT);
+        if (holder != null) {
+            player.getAdvancements().award(holder, FIND_DROP_POD_CRITERION);
+        }
     }
 
     private static boolean rescueUndergroundStartingPod(ServerPlayer player) {

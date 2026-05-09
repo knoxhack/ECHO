@@ -10,26 +10,26 @@
         {
           "type": "minecraft:item",
           "name": "echostationfall:pressure_seal_kit",
-          "weight": 5
+          "weight": 7
         },
         {
           "type": "minecraft:item",
           "name": "echostationfall:emergency_oxygen_pack",
-          "weight": 5
+          "weight": 7
         },
         {
           "type": "minecraft:item",
           "name": "echostationfall:crew_log_tablet",
-          "weight": 2
+          "weight": 3
         },
         {
           "type": "minecraft:item",
           "name": "echostationfall:station_battery",
-          "weight": 1
+          "weight": 2
         },
         {
           "type": "minecraft:empty",
-          "weight": 3
+          "weight": 2
         }
       ],
       "functions": [
@@ -57,7 +57,7 @@
         },
         {
           "type": "minecraft:empty",
-          "weight": 8
+          "weight": 10
         }
       ]
     }

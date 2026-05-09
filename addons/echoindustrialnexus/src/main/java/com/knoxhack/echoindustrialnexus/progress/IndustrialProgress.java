@@ -1,5 +1,6 @@
 package com.knoxhack.echoindustrialnexus.progress;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoindustrialnexus.block.IndustrialFluxDuctBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialItemDuctBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialMachineBlock;
@@ -84,6 +85,7 @@ public final class IndustrialProgress {
          progress.maxPlayerStat(player.getUUID(), "stored_flux", stored);
          progress.maxPlayerStat(player.getUUID(), "flux_capacity", capacity);
          progress.setPlayerFlag(player.getUUID(), "factory_scanned", true);
+         EchoCoreServices.discoverVisibleRouteRecords((ServerPlayer)player);
       }
       return new FactoryScan(machines, itemDucts, fluxDucts, controllers, scrubbers, hot, stored, capacity);
    }
@@ -95,8 +97,12 @@ public final class IndustrialProgress {
       AABB area = new AABB(pos).inflate(12.0);
       for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, area)) {
          CompoundTag data = data(player);
-         data.putInt("thermal_flux_generated", Math.min(2000000000, data.getIntOr("thermal_flux_generated", 0) + amount * 20));
+         int previousFlux = data.getIntOr("thermal_flux_generated", 0);
+         data.putInt("thermal_flux_generated", Math.min(2000000000, previousFlux + amount * 20));
          IndustrialWorldProgress.get(serverLevel).addPlayerStat(player.getUUID(), "thermal_flux_generated", amount * 20L);
+         if (previousFlux <= 0) {
+            EchoCoreServices.discoverVisibleRouteRecords(player);
+         }
       }
       IndustrialWorldProgress.get(serverLevel).addWorldStat("thermal_flux_generated", amount * 20L);
    }
@@ -110,6 +116,7 @@ public final class IndustrialProgress {
       worldProgress.recordScrubberZone(pos, mode == null ? "Air Mode" : mode, storedFlux, heat);
       for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, area)) {
          CompoundTag data = data(player);
+         boolean wasSafe = data.getBoolean("safe_zone").orElse(false);
          data.putBoolean("safe_zone", true);
          data.putString("scrubber_mode", mode == null ? "Air Mode" : mode);
          data.putInt("scrubber_modes_seen", data.getIntOr("scrubber_modes_seen", 0) | scrubberModeBit(mode));
@@ -118,6 +125,9 @@ public final class IndustrialProgress {
          worldProgress.setPlayerFlag(player.getUUID(), "safe_zone", true);
          worldProgress.maxPlayerStat(player.getUUID(), "scrubber_modes_seen", data.getIntOr("scrubber_modes_seen", 0));
          worldProgress.maxPlayerStat(player.getUUID(), "scrubber_flux_seen", storedFlux);
+         if (!wasSafe) {
+            EchoCoreServices.discoverVisibleRouteRecords(player);
+         }
       }
    }
 
@@ -128,7 +138,8 @@ public final class IndustrialProgress {
       AABB area = new AABB(pos).inflate(12.0);
       for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, area)) {
          CompoundTag data = data(player);
-         data.putInt("overheating_events", data.getIntOr("overheating_events", 0) + 1);
+         int previousEvents = data.getIntOr("overheating_events", 0);
+         data.putInt("overheating_events", previousEvents + 1);
          if (prevented) {
             data.putInt("shutdowns_survived", data.getIntOr("shutdowns_survived", 0) + 1);
          } else {
@@ -137,6 +148,9 @@ public final class IndustrialProgress {
          IndustrialWorldProgress progress = IndustrialWorldProgress.get(serverLevel);
          progress.addPlayerStat(player.getUUID(), "overheating_events", 1L);
          progress.addPlayerStat(player.getUUID(), prevented ? "shutdowns_survived" : "meltdowns_survived", 1L);
+         if (previousEvents <= 0) {
+            EchoCoreServices.discoverVisibleRouteRecords(player);
+         }
       }
    }
 
@@ -147,11 +161,15 @@ public final class IndustrialProgress {
       AABB area = new AABB(pos).inflate(16.0);
       for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, area)) {
          CompoundTag data = data(player);
+         boolean alreadyWarned = data.getBoolean("nexus_thermal_warning").orElse(false);
          data.putBoolean("nexus_thermal_warning", true);
          data.putInt("nexus_scans", data.getIntOr("nexus_scans", 0) + 1);
          IndustrialWorldProgress progress = IndustrialWorldProgress.get(serverLevel);
          progress.setPlayerFlag(player.getUUID(), "nexus_thermal_warning", true);
          progress.addPlayerStat(player.getUUID(), "nexus_scans", 1L);
+         if (!alreadyWarned) {
+            EchoCoreServices.discoverVisibleRouteRecords(player);
+         }
       }
    }
 
@@ -177,6 +195,7 @@ public final class IndustrialProgress {
          progress.setPlayerFlag(player.getUUID(), "furnace_warden_defeated", true);
          progress.setPlayerFlag(player.getUUID(), "thermal_plant_cleared", true);
          progress.addWorldStat("furnace_warden_defeats", 1L);
+         EchoCoreServices.discoverVisibleRouteRecords((ServerPlayer)player);
       }
    }
 
@@ -188,6 +207,7 @@ public final class IndustrialProgress {
       progress.setPlayerFlag(player.getUUID(), "poi_located", true);
       progress.setPlayerFlag(player.getUUID(), "poi_" + id, true);
       player.sendSystemMessage(Component.literal("ECHO INDUSTRIAL // POI locator tuned to " + id.replace('_', ' ') + ". Watch for thermal blocks and factory lights in newly explored terrain."));
+      EchoCoreServices.discoverVisibleRouteRecords(player);
    }
 
    public static boolean claimed(Player player, String id) {
@@ -202,6 +222,7 @@ public final class IndustrialProgress {
       data(player).putBoolean("claimed_" + id, true);
       if (player instanceof ServerPlayer && player.level() instanceof ServerLevel serverLevel) {
          IndustrialWorldProgress.get(serverLevel).claimReward(player.getUUID(), id);
+         EchoCoreServices.discoverVisibleRouteRecords((ServerPlayer)player);
       }
    }
 

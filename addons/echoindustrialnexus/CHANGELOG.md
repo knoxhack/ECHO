@@ -7,6 +7,7 @@
 - Upgraded Smart Ducts with a one-slot filter, whitelist/blacklist wrench toggle, Nexus-safe override behavior, persistence, and loop/backtrack guarding.
 - Cached Factory Controller scan state and stopped passive Terminal mission snapshots from rescanning the factory every mission read.
 - Improved machine GUI readouts with named fluids, warning causes, side-config text, and early-chain route hints.
+- Added ECHO Terminal Recipe Index coverage for `echoindustrialnexus:industrial_processing` JSON, including item/tag ingredients, catalysts, byproducts, fluids, Thermal Flux, heat, and duration notes.
 - Added POI terrain/biome/loaded-footprint safety checks and Warden phase telegraphs, Furnace Drone minions, and marked cooling objectives.
 - Added focused regression coverage for fluid transaction rollback, mixed-fluid rejection, pipe filtering, and Smart Duct filtering.
 

@@ -26,7 +26,7 @@ public final class TerminalNavigationProfiles {
 
     public static TerminalNavigationProfile profileFor(TerminalTab tab) {
         if (tab == null || tab.descriptor() == null) {
-            return TerminalNavigationProfile.chaptersHub(0);
+            return TerminalNavigationProfile.command(0);
         }
         TerminalNavigationProfile registered = PROFILES.get(tab.descriptor().id());
         return registered == null ? fallbackFor(tab) : registered;
@@ -51,18 +51,21 @@ public final class TerminalNavigationProfiles {
         TerminalTabChrome chrome = tab.chrome();
         int order = tab.descriptor().order();
         String group = chrome == null ? "" : chrome.group();
-        if (List.of(TerminalTabChrome.GROUP_PROTOCOL, TerminalTabChrome.GROUP_SYSTEMS).contains(group)) {
-            return TerminalNavigationProfile.terminal(order);
+        if (TerminalTabChrome.GROUP_PROTOCOL.equals(group)) {
+            return TerminalNavigationProfile.command(order);
+        }
+        if (TerminalTabChrome.GROUP_SYSTEMS.equals(group)) {
+            return TerminalNavigationProfile.system(order);
         }
         if (List.of(TerminalTabChrome.GROUP_CORE, TerminalTabChrome.GROUP_FIELD,
                 TerminalTabChrome.GROUP_ENDGAME, TerminalTabChrome.GROUP_NEXUS).contains(group)) {
-            return TerminalNavigationProfile.core(order);
+            return TerminalNavigationProfile.intel(order);
         }
         if (TerminalTabChrome.GROUP_ORBITAL.equals(group)) {
             return TerminalNavigationProfile.chapter(fallbackChapterId(group), fallbackChapterTitle(group), "", order);
         }
         if (TerminalTabChrome.GROUP_ADDONS.equals(group)) {
-            return TerminalNavigationProfile.chaptersHub(order);
+            return TerminalNavigationProfile.progress(order);
         }
         return TerminalNavigationProfile.chapter(fallbackChapterId(group), fallbackChapterTitle(group), "", order);
     }

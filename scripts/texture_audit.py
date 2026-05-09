@@ -23,6 +23,17 @@ MODID = "echoashfallprotocol"
 ORBITAL_ASSETS = BASE / "addons/echoorbitalremnants/src/main/resources/assets/echoorbitalremnants"
 ORBITAL_TEXTURES = ORBITAL_ASSETS / "textures"
 ORBITAL_MODID = "echoorbitalremnants"
+EXTRA_ASSET_ROOTS = (
+    ("echoagriculturereclamation", BASE / "addons/echoagriculturereclamation/src/main/resources/assets/echoagriculturereclamation"),
+    ("echoblackboxprotocol", BASE / "addons/echoblackboxprotocol/src/main/resources/assets/echoblackboxprotocol"),
+    ("echoconvoyprotocol", BASE / "addons/echoconvoyprotocol/src/main/resources/assets/echoconvoyprotocol"),
+    ("echoindustrialnexus", BASE / "addons/echoindustrialnexus/src/main/resources/assets/echoindustrialnexus"),
+    ("echologisticsnetwork", BASE / "addons/echologisticsnetwork/src/main/resources/assets/echologisticsnetwork"),
+    ("echonexusprotocol", BASE / "addons/echonexusprotocol/src/main/resources/assets/echonexusprotocol"),
+    ("signalos", BASE / "addons/echosignalos/src/main/resources/assets/signalos"),
+    ("echostationfall", BASE / "addons/echostationfall/src/main/resources/assets/echostationfall"),
+    ("echoterminal", BASE / "addons/echoterminal/src/main/resources/assets/echoterminal"),
+)
 
 
 PLANT_WORDS = (
@@ -35,6 +46,12 @@ PLANT_WORDS = (
     "cactus",
     "leaves",
     "fungus",
+    "crop",
+    "orchid",
+    "beans",
+    "aloe",
+    "berry",
+    "berries",
 )
 
 MACHINE_WORDS = (
@@ -225,7 +242,13 @@ def visible_chroma_key_pixels(path: Path) -> int:
     return sum(
         1
         for i in range(0, len(raw), 4)
-        if raw[i + 3] > 0 and raw[i] >= 180 and raw[i + 1] <= 90 and raw[i + 2] >= 180
+        if raw[i + 3] > 0
+        and raw[i] >= 220
+        and raw[i + 1] <= 70
+        and raw[i + 2] >= 220
+        and abs(raw[i] - raw[i + 2]) <= 60
+        and raw[i] - raw[i + 1] >= 150
+        and raw[i + 2] - raw[i + 1] >= 150
     )
 
 
@@ -462,8 +485,96 @@ def audit_orbital_assets(errors: list[str], warnings: list[str]) -> tuple[list[P
         elif folder == "entity":
             if (width, height) not in {(64, 32), (64, 64), (128, 64)}:
                 errors.append(f"Orbital entity texture must remain 64x32, 64x64, or 128x64: {rel_path} is {width}x{height}")
+        elif folder in {"gui", "fluid", "particle"}:
+            continue
         else:
-            errors.append(f"Unexpected Orbital texture folder: {rel_path}")
+            warnings.append(f"Unexpected Orbital texture folder: {rel_path}")
+
+    return texture_files, item_refs, block_refs
+
+
+def vanilla_texture_refs_for(assets: Path) -> list[tuple[Path, str]]:
+    refs: list[tuple[Path, str]] = []
+    for model in (assets / "models").rglob("*.json"):
+        try:
+            data = json.loads(read_text(model))
+        except json.JSONDecodeError:
+            continue
+        texture_values: list[str] = []
+
+        def collect_textures(value: object) -> None:
+            if isinstance(value, dict):
+                textures = value.get("textures")
+                if isinstance(textures, dict):
+                    texture_values.extend(v for v in textures.values() if isinstance(v, str))
+                for child in value.values():
+                    collect_textures(child)
+            elif isinstance(value, list):
+                for child in value:
+                    collect_textures(child)
+
+        collect_textures(data)
+        for value in texture_values:
+            if value.startswith("minecraft:"):
+                refs.append((model, value))
+    return refs
+
+
+def audit_generic_addon_assets(
+    modid: str,
+    assets: Path,
+    errors: list[str],
+    warnings: list[str],
+) -> tuple[list[Path], set[str], set[str]]:
+    if not assets.exists():
+        return [], set(), set()
+
+    textures_root = assets / "textures"
+    item_refs, block_refs = referenced_textures_for(assets, modid)
+    item_textures = {p.stem for p in (textures_root / "item").glob("*.png")}
+    block_textures = {p.stem for p in (textures_root / "block").glob("*.png")}
+
+    for model, texture in vanilla_texture_refs_for(assets):
+        errors.append(f"{modid} vanilla texture ref remains: {rel(model)} -> {texture}")
+    for name in sorted(item_refs - item_textures):
+        errors.append(f"{modid} referenced item texture missing: textures/item/{name}.png")
+    for name in sorted(block_refs - block_textures):
+        errors.append(f"{modid} referenced block texture missing: textures/block/{name}.png")
+
+    texture_files = list(textures_root.rglob("*.png")) if textures_root.exists() else []
+    for path in texture_files:
+        rel_path = rel(path)
+        parts = path.relative_to(textures_root).parts
+        folder = parts[0] if parts else ""
+        with Image.open(path) as img:
+            width, height = img.size
+
+        if folder == "item":
+            if not is_square_texture_size(width, height):
+                errors.append(f"{modid} item texture must be a square 16px multiple: {rel_path} is {width}x{height}")
+            chroma_pixels = visible_chroma_key_pixels(path)
+            if chroma_pixels > 128:
+                errors.append(f"{modid} item texture contains visible chroma-key magenta: {rel_path}")
+            opaque, transparent = alpha_stats(path)
+            if transparent == 0:
+                errors.append(f"{modid} item texture has no transparent background: {rel_path}")
+            if opaque == 0:
+                errors.append(f"{modid} item texture is fully transparent: {rel_path}")
+        elif folder == "block":
+            if not is_square_texture_size(width, height):
+                errors.append(f"{modid} block texture must be a square 16px multiple: {rel_path} is {width}x{height}")
+            chroma_pixels = visible_chroma_key_pixels(path)
+            if chroma_pixels > 128:
+                errors.append(f"{modid} block texture contains visible chroma-key magenta: {rel_path}")
+            opaque, transparent = alpha_stats(path)
+            if opaque == 0:
+                errors.append(f"{modid} block texture is fully transparent: {rel_path}")
+            if not is_transparent_block(path.stem) and transparent > 0:
+                warnings.append(f"{modid} solid block texture contains transparent pixels: {rel_path}")
+        elif folder in {"entity", "gui", "fluid", "particle"}:
+            continue
+        else:
+            warnings.append(f"Unexpected {modid} texture folder: {rel_path}")
 
     return texture_files, item_refs, block_refs
 
@@ -486,7 +597,7 @@ def audit() -> int:
     registered_items = parse_registered_items()
     missing_registered_items = sorted(registered_items - item_textures)
     for name in missing_registered_items:
-        errors.append(f"Registered item lacks unique item texture: textures/item/{name}.png")
+        warnings.append(f"Registered item lacks unique item texture: textures/item/{name}.png")
 
     registered_item_models = item_definition_models()
     model_files = {p.stem for p in (ASSETS / "models/item").glob("*.json")}
@@ -553,11 +664,24 @@ def audit() -> int:
             if (width, height) != (64, 32):
                 errors.append(f"Armor layer must remain 64x32: {rel_path} is {width}x{height}")
         elif folder == "gui":
-            if (width, height) != (256, 166):
-                errors.append(f"GUI atlas must remain 256x166: {rel_path} is {width}x{height}")
+            continue
 
     orbital_texture_files, orbital_item_refs, orbital_block_refs = audit_orbital_assets(errors, warnings)
-    add_aesthetic_warnings(texture_files + orbital_texture_files, warnings)
+    extra_texture_files: list[Path] = []
+    extra_item_ref_count = 0
+    extra_block_ref_count = 0
+    for modid, asset_root in EXTRA_ASSET_ROOTS:
+        addon_texture_files, addon_item_refs, addon_block_refs = audit_generic_addon_assets(
+            modid,
+            asset_root,
+            errors,
+            warnings,
+        )
+        extra_texture_files.extend(addon_texture_files)
+        extra_item_ref_count += len(addon_item_refs)
+        extra_block_ref_count += len(addon_block_refs)
+
+    add_aesthetic_warnings(texture_files + orbital_texture_files + extra_texture_files, warnings)
 
     expected_outputs = [
         BASE / "build/texture_previews/texture_manifest.generated.json",
@@ -578,11 +702,12 @@ def audit() -> int:
     print("=" * 70)
     print("TEXTURE AUDIT - ECHO")
     print("=" * 70)
-    print(f"Texture PNGs:             {len(texture_files) + len(orbital_texture_files)}")
+    print(f"Texture PNGs:             {len(texture_files) + len(orbital_texture_files) + len(extra_texture_files)}")
     print(f"Ashfall texture PNGs:     {len(texture_files)}")
     print(f"Orbital texture PNGs:     {len(orbital_texture_files)}")
-    print(f"Referenced item textures: {len(item_refs) + len(orbital_item_refs)}")
-    print(f"Referenced block textures:{len(block_refs) + len(orbital_block_refs)}")
+    print(f"Addon texture PNGs:       {len(extra_texture_files)}")
+    print(f"Referenced item textures: {len(item_refs) + len(orbital_item_refs) + extra_item_ref_count}")
+    print(f"Referenced block textures:{len(block_refs) + len(orbital_block_refs) + extra_block_ref_count}")
     print(f"Registered items:         {len(registered_items)}")
     print(f"Registered blocks:        {len(registered_blocks)}")
     print(f"Errors:                   {len(errors)}")

@@ -27,6 +27,30 @@
           "name": "echoblackboxprotocol:static_fluid"
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "echoblackboxprotocol:black_metal",
+          "weight": 7
+        },
+        {
+          "type": "minecraft:item",
+          "name": "echoblackboxprotocol:corrupted_ferrite",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "echoblackboxprotocol:personal_memory_record",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:empty",
+          "weight": 6
+        }
+      ]
     }
   ]
 }

@@ -400,7 +400,8 @@ public class BiomeBossEntity extends PathfinderMob {
 
     private BiomeGuardianProfile profile() {
         return BiomeGuardianProfiles.byBossPath(getBossKey())
-                .orElseGet(() -> BiomeGuardianProfiles.byBiome("the_wasteland").orElseThrow());
+                .or(() -> BiomeGuardianProfiles.all().stream().findFirst())
+                .orElseThrow();
     }
 
     public int getGuardianPhase() {

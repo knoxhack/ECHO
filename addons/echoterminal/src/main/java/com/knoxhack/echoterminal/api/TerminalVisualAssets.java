@@ -532,14 +532,23 @@ public final class TerminalVisualAssets {
     }
 
     public static Identifier terminalGroupIcon(String group) {
+        if (TerminalNavigationSection.COMMAND.key().equals(group)) {
+            return ICON_GROUP_PROTOCOL;
+        }
+        if (TerminalNavigationSection.INTEL.key().equals(group)) {
+            return ICON_GROUP_FIELD;
+        }
+        if (TerminalNavigationSection.SYSTEM.key().equals(group)) {
+            return ICON_GROUP_SYSTEMS;
+        }
+        if (TerminalNavigationSection.CHAPTERS.key().equals(group)) {
+            return ICON_GROUP_CHAPTERS;
+        }
         if (TerminalNavigationSection.TERMINAL.key().equals(group)) {
             return ICON_GROUP_PROTOCOL;
         }
         if (TerminalNavigationSection.CORE.key().equals(group)) {
             return ICON_GROUP_FIELD;
-        }
-        if (TerminalNavigationSection.CHAPTERS.key().equals(group)) {
-            return ICON_GROUP_CHAPTERS;
         }
         if (TerminalTabChrome.GROUP_PROTOCOL.equals(group) || TerminalTabChrome.GROUP_CORE.equals(group)) {
             return ICON_GROUP_PROTOCOL;
@@ -566,6 +575,9 @@ public final class TerminalVisualAssets {
         String value = title == null ? "" : title.toLowerCase(Locale.ROOT);
         if (value.contains("command deck") || value.contains("overview")) {
             return ICON_PAGE_COMMAND_DECK;
+        }
+        if (value.contains("what now")) {
+            return ICON_PAGE_SIGNAL_LEADS;
         }
         if (value.contains("protocol roadmap") || value.contains("mission")) {
             return ICON_PAGE_PROTOCOL_ROADMAP;
@@ -605,6 +617,9 @@ public final class TerminalVisualAssets {
         }
         if (value.contains("chapter") || value.contains("addon")) {
             return ICON_PAGE_CHAPTERS;
+        }
+        if (value.contains("settings")) {
+            return ICON_GROUP_SYSTEMS;
         }
         return null;
     }

@@ -1,6 +1,7 @@
 package com.knoxhack.echoterminal.test;
 
 import com.knoxhack.echoterminal.EchoTerminal;
+import com.knoxhack.echoterminal.BuiltinTerminalCommonIntegration;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalAddonGuide;
 import com.knoxhack.echoterminal.api.TerminalAddonInfo;
@@ -30,15 +31,29 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionAction;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionChapter;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeCategory;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeEntry;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeNote;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeProvider;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeRegistry;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeSnapshot;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeSlot;
 import com.knoxhack.echoterminal.block.entity.EchoTerminalBlockEntity;
 import com.knoxhack.echoterminal.client.BuiltinTerminalTabs;
+import com.knoxhack.echoterminal.client.discovery.DiscoveryGridTab;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
+import com.knoxhack.echoterminal.client.mission.TerminalMissionHudController;
+import com.knoxhack.echoterminal.client.mission.TerminalMissionNotice;
+import com.knoxhack.echoterminal.client.mission.TerminalMissionNoticeType;
+import com.knoxhack.echoterminal.client.recipe.TerminalRecipeIndexTab;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
+import com.knoxhack.echoterminal.discovery.TerminalDiscoveryProvider;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
 import com.knoxhack.echoterminal.mission.VanillaJourneyData;
@@ -48,9 +63,19 @@ import com.knoxhack.echoterminal.registry.ModBlocks;
 import com.knoxhack.echoterminal.service.EchoTerminalCoreServices;
 import com.knoxhack.echocore.api.EchoAddonChapter;
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoDiscoveryCategory;
+import com.knoxhack.echocore.api.EchoDiscoveryEntry;
+import com.knoxhack.echocore.api.EchoDiscoveryState;
+import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echocore.discovery.EchoDiscoveryData;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -58,6 +83,7 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.gametest.framework.FunctionGameTestInstance;
@@ -93,6 +119,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_addon_guide_ordering", () -> ModGameTests::terminalAddonGuideOrdering);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_NAVIGATION_PROFILES =
             TEST_FUNCTIONS.register("terminal_navigation_profiles", () -> ModGameTests::terminalNavigationProfiles);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_DISCOVERY_GRID_FILTERS =
+            TEST_FUNCTIONS.register("terminal_discovery_grid_filters", () -> ModGameTests::terminalDiscoveryGridFilters);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_DISCOVERY_GRID_ROUTE_STATE =
+            TEST_FUNCTIONS.register("terminal_discovery_grid_route_state", () -> ModGameTests::terminalDiscoveryGridRouteState);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RENDER_CONTEXT_NAVIGATION =
             TEST_FUNCTIONS.register("terminal_render_context_navigation", () -> ModGameTests::terminalRenderContextNavigation);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_THEME_REGISTRY =
@@ -105,6 +135,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_theme_resources", () -> ModGameTests::terminalThemeResources);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_THEME_SELECTION =
             TEST_FUNCTIONS.register("terminal_theme_selection", () -> ModGameTests::terminalThemeSelection);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RESOURCE_NAME_CONTRACTS =
+            TEST_FUNCTIONS.register("terminal_resource_name_contracts", () -> ModGameTests::terminalResourceNameContracts);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_COMMAND_DECK_PRIORITY =
             TEST_FUNCTIONS.register("terminal_command_deck_priority", () -> ModGameTests::terminalCommandDeckPriority);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSION_ACTION_ROUTING =
@@ -131,10 +163,20 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_menu_validity", () -> ModGameTests::terminalMenuValidity);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_BASELINE_CACHE_CONTRACT =
             TEST_FUNCTIONS.register("terminal_baseline_cache_contract", () -> ModGameTests::terminalBaselineCacheContract);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_BASELINE_AUTO_REFRESH =
+            TEST_FUNCTIONS.register("terminal_baseline_auto_refresh", () -> ModGameTests::terminalBaselineAutoRefresh);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_BASELINE_DATA_DEFINITIONS =
+            TEST_FUNCTIONS.register("terminal_baseline_data_definitions", () -> ModGameTests::terminalBaselineDataDefinitions);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSION_BROWSER_CACHE =
             TEST_FUNCTIONS.register("terminal_mission_browser_cache", () -> ModGameTests::terminalMissionBrowserCache);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSION_BROWSER_PHASE_GATING =
             TEST_FUNCTIONS.register("terminal_mission_browser_phase_gating", () -> ModGameTests::terminalMissionBrowserPhaseGating);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSION_HUD_NOTIFICATIONS =
+            TEST_FUNCTIONS.register("terminal_mission_hud_notifications", () -> ModGameTests::terminalMissionHudNotifications);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RECIPE_REGISTRY =
+            TEST_FUNCTIONS.register("terminal_recipe_registry", () -> ModGameTests::terminalRecipeRegistry);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RECIPE_LOOKUPS =
+            TEST_FUNCTIONS.register("terminal_recipe_lookups", () -> ModGameTests::terminalRecipeLookups);
 
     private ModGameTests() {
     }
@@ -144,6 +186,9 @@ public final class ModGameTests {
     }
 
     public static void registerTests(RegisterGameTestsEvent event) {
+        if (!shouldRegisterTests()) {
+            return;
+        }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("terminal_release"));
         register(event, environment, "terminal_api_ids", TERMINAL_API_IDS.getId());
         register(event, environment, "terminal_tab_registry", TERMINAL_TAB_REGISTRY.getId());
@@ -151,10 +196,15 @@ public final class ModGameTests {
         register(event, environment, "terminal_addon_info_registry", TERMINAL_ADDON_INFO_REGISTRY.getId());
         register(event, environment, "terminal_addon_guide_ordering", TERMINAL_ADDON_GUIDE_ORDERING.getId());
         register(event, environment, "terminal_navigation_profiles", TERMINAL_NAVIGATION_PROFILES.getId());
+        register(event, environment, "terminal_discovery_grid_filters", TERMINAL_DISCOVERY_GRID_FILTERS.getId());
+        register(event, environment, "terminal_discovery_grid_route_state", TERMINAL_DISCOVERY_GRID_ROUTE_STATE.getId());
         register(event, environment, "terminal_render_context_navigation", TERMINAL_RENDER_CONTEXT_NAVIGATION.getId());
         register(event, environment, "terminal_theme_registry", TERMINAL_THEME_REGISTRY.getId());
         register(event, environment, "terminal_theme_icon_fallback", TERMINAL_THEME_ICON_FALLBACK.getId());
         register(event, environment, "terminal_theme_chapter_style", TERMINAL_THEME_CHAPTER_STYLE.getId());
+        register(event, environment, "terminal_theme_resources", TERMINAL_THEME_RESOURCES.getId());
+        register(event, environment, "terminal_theme_selection", TERMINAL_THEME_SELECTION.getId());
+        register(event, environment, "terminal_resource_name_contracts", TERMINAL_RESOURCE_NAME_CONTRACTS.getId());
         register(event, environment, "terminal_command_deck_priority", TERMINAL_COMMAND_DECK_PRIORITY.getId());
         register(event, environment, "terminal_mission_action_routing", TERMINAL_MISSION_ACTION_ROUTING.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
@@ -168,8 +218,13 @@ public final class ModGameTests {
         register(event, environment, "terminal_reward_explicit_owner", TERMINAL_REWARD_EXPLICIT_OWNER.getId());
         register(event, environment, "terminal_menu_validity", TERMINAL_MENU_VALIDITY.getId());
         register(event, environment, "terminal_baseline_cache_contract", TERMINAL_BASELINE_CACHE_CONTRACT.getId());
+        register(event, environment, "terminal_baseline_auto_refresh", TERMINAL_BASELINE_AUTO_REFRESH.getId());
+        register(event, environment, "terminal_baseline_data_definitions", TERMINAL_BASELINE_DATA_DEFINITIONS.getId());
         register(event, environment, "terminal_mission_browser_cache", TERMINAL_MISSION_BROWSER_CACHE.getId());
         register(event, environment, "terminal_mission_browser_phase_gating", TERMINAL_MISSION_BROWSER_PHASE_GATING.getId());
+        register(event, environment, "terminal_mission_hud_notifications", TERMINAL_MISSION_HUD_NOTIFICATIONS.getId());
+        register(event, environment, "terminal_recipe_registry", TERMINAL_RECIPE_REGISTRY.getId());
+        register(event, environment, "terminal_recipe_lookups", TERMINAL_RECIPE_LOOKUPS.getId());
     }
 
     private static void terminalApiIds(GameTestHelper helper) {
@@ -186,6 +241,12 @@ public final class ModGameTests {
             });
             helper.assertFalse(TerminalActionRegistry.handle(null, id("test_tab"), id("failing_action"), ""),
                     "Failing terminal action handlers should be logged and ignored");
+            AtomicBoolean denied = new AtomicBoolean(false);
+            TerminalActionRegistry.register(id("test_tab"), id("denied_action"),
+                    (player, payload) -> denied.set(true), context -> false);
+            helper.assertTrue(TerminalActionRegistry.handle(null, id("test_tab"), id("denied_action"), ""),
+                    "Known terminal actions rejected by validators should be consumed without reporting unknown");
+            helper.assertFalse(denied.get(), "Rejected terminal action handlers should not run");
         });
         helper.succeed();
     }
@@ -238,6 +299,72 @@ public final class ModGameTests {
             }
             helper.assertTrue(uppercaseRejected, "Mission chapter ids must reject uppercase namespaces");
         });
+        helper.succeed();
+    }
+
+    private static void terminalRecipeRegistry(GameTestHelper helper) {
+        TerminalRecipeRegistry.withClearedForTests(() -> {
+            TerminalRecipeRegistry.register(new DummyRecipeProvider(id("alpha_provider"), 10));
+            TerminalRecipeRegistry.register(new DummyRecipeProvider(id("zeta_provider"), 20));
+            TerminalRecipeRegistry.register(new DuplicateRecipeProvider());
+            TerminalRecipeRegistry.register(new ThrowingRecipeProvider());
+            helper.assertTrue(TerminalRecipeRegistry.providers().size() == 4,
+                    "Recipe provider registry should expose registered providers that pass id validation");
+            helper.assertTrue(TerminalRecipeRegistry.providers().get(0).id().equals(id("alpha_provider")),
+                    "Recipe providers should sort by id");
+            TerminalRecipeSnapshot snapshot = TerminalRecipeRegistry.snapshot(null);
+            helper.assertTrue(snapshot.categories().get(0).id().equals(id("alpha_category")),
+                    "Recipe categories should sort by order then id");
+            helper.assertTrue(snapshot.categories().stream().filter(category -> category.id().equals(id("alpha_category"))).count() == 1,
+                    "Duplicate recipe categories should be de-duped in snapshots");
+            helper.assertTrue(snapshot.recipes().stream().filter(recipe -> recipe.id().equals(id("alpha_provider/recipe"))).count() == 1,
+                    "Duplicate recipe ids should be de-duped in snapshots");
+            helper.assertTrue(snapshot.recipesFor(Items.APPLE).size() == 2,
+                    "Snapshot output index should include deterministic provider recipes");
+            helper.assertTrue(snapshot.usesFor(Items.STICK).size() == 2,
+                    "Snapshot use index should include deterministic provider recipes");
+
+            boolean duplicateRejected = false;
+            try {
+                TerminalRecipeRegistry.register(new DummyRecipeProvider(id("alpha_provider"), 99));
+            } catch (IllegalArgumentException expected) {
+                duplicateRejected = true;
+            }
+            helper.assertTrue(duplicateRejected, "Duplicate recipe provider ids must fail fast");
+        });
+        helper.succeed();
+    }
+
+    private static void terminalRecipeLookups(GameTestHelper helper) {
+        TerminalRecipeEntry lockedRecipe = new TerminalRecipeEntry(
+                id("recipe/test_locked"),
+                id("recipe_category"),
+                "Locked Apple",
+                new ItemStack(Items.CRAFTING_TABLE),
+                List.of(
+                        TerminalRecipeSlot.input(new ItemStack(Items.STICK)),
+                        TerminalRecipeSlot.catalyst(new ItemStack(Items.REDSTONE)),
+                        TerminalRecipeSlot.info(new ItemStack(Items.BOOK), "Info"),
+                        TerminalRecipeSlot.output(new ItemStack(Items.APPLE))),
+                List.of(TerminalRecipeNote.warning("Requires TEST schematic unlock.")),
+                40,
+                true);
+        helper.assertTrue(lockedRecipe.outputs(Items.APPLE), "Recipe lookup should match outputs");
+        helper.assertTrue(lockedRecipe.uses(Items.STICK), "Recipe lookup should match inputs");
+        helper.assertTrue(lockedRecipe.uses(Items.REDSTONE), "Recipe lookup should match catalysts");
+        helper.assertTrue(lockedRecipe.uses(Items.CRAFTING_TABLE), "Recipe lookup should match machine slots");
+        helper.assertTrue(lockedRecipe.mentions(Items.BOOK), "Recipe lookup should match info slots");
+        helper.assertTrue(lockedRecipe.locked() && lockedRecipe.notes().stream().anyMatch(TerminalRecipeNote::warning),
+                "Locked recipes should keep warning notes visible");
+        helper.assertTrue(TerminalRecipeIndexTab.matchingRecipesForTests(
+                        List.of(lockedRecipe), new ItemStack(Items.APPLE), false).size() == 1,
+                "Recipe index should expose recipes for selected outputs");
+        helper.assertTrue(TerminalRecipeIndexTab.matchingRecipesForTests(
+                        List.of(lockedRecipe), new ItemStack(Items.STICK), true).size() == 1,
+                "Recipe index should expose uses for selected inputs");
+        helper.assertTrue(TerminalRecipeIndexTab.echoItemsForTests().stream()
+                        .allMatch(stack -> BuiltInRegistries.ITEM.getKey(stack.getItem()).getNamespace().startsWith("echo")),
+                "Recipe index item grid should only expose ECHO namespaces");
         helper.succeed();
     }
 
@@ -348,44 +475,96 @@ public final class ModGameTests {
     private static void terminalNavigationProfiles(GameTestHelper helper) {
         TerminalNavigationProfiles.withClearedForTests(() -> {
             helper.assertTrue(TerminalNavigationSection.storyFirstOrder().equals(List.of(
+                            TerminalNavigationSection.COMMAND,
                             TerminalNavigationSection.CHAPTERS,
-                            TerminalNavigationSection.TERMINAL,
-                            TerminalNavigationSection.CORE)),
-                    "Terminal navigation should render story chapters before utility sections");
+                            TerminalNavigationSection.INTEL,
+                            TerminalNavigationSection.SYSTEM)),
+                    "Terminal navigation should render task-first sections in player-facing order");
 
             TerminalNavigationProfile command = TerminalNavigationProfiles.profileFor(
                     new DummyTab(id("overview"), "OVERVIEW", 0));
-            helper.assertTrue(command.section() == TerminalNavigationSection.TERMINAL,
-                    "Legacy protocol tabs should fall back into the Terminal section");
+            helper.assertTrue(command.section() == TerminalNavigationSection.COMMAND,
+                    "Legacy protocol tabs should fall back into the Command section");
+
+            helper.assertTrue(TerminalNavigationProfile.terminal(10).section() == TerminalNavigationSection.COMMAND,
+                    "Legacy Terminal profiles should canonicalize to Command");
+            helper.assertTrue(TerminalNavigationProfile.core(10).section() == TerminalNavigationSection.INTEL,
+                    "Legacy Core profiles should canonicalize to Intel");
+            helper.assertTrue(TerminalNavigationSection.fromKey("TERMINAL") == TerminalNavigationSection.COMMAND,
+                    "Legacy Terminal section keys should resolve to Command");
+            helper.assertTrue(TerminalNavigationSection.fromKey("CORE") == TerminalNavigationSection.INTEL,
+                    "Legacy Core section keys should resolve to Intel");
 
             TerminalNavigationProfile endgame = TerminalNavigationProfiles.profileFor(new DummyChromeTab(
                     new TerminalTabDescriptor(id("legacy_endgame"), "ENDGAME", 220, 0xFFC77DFF),
                     TerminalTabChrome.of("Legacy Endgame", TerminalTabChrome.GROUP_ENDGAME, "EG",
                             "Legacy finale", 220)));
-            helper.assertTrue(endgame.section() == TerminalNavigationSection.CORE,
+            helper.assertTrue(endgame.section() == TerminalNavigationSection.INTEL,
                     "Legacy endgame tabs should not create a standalone Endgame section");
 
             TerminalNavigationProfile nexus = TerminalNavigationProfiles.profileFor(new DummyChromeTab(
                     new TerminalTabDescriptor(id("legacy_nexus"), "NEXUS", 230, 0xFFC77DFF),
                     TerminalTabChrome.of("Legacy Nexus", TerminalTabChrome.GROUP_NEXUS, "NX",
                             "Legacy finale", 230)));
-            helper.assertTrue(nexus.section() == TerminalNavigationSection.CORE,
+            helper.assertTrue(nexus.section() == TerminalNavigationSection.INTEL,
                     "Nexus tabs require an explicit addon profile before they appear as beta chapter navigation");
 
             TerminalNavigationProfiles.register(MainSurvivalQuestProvider.TAB_ID,
-                    TerminalNavigationProfile.chaptersHub(0));
+                    TerminalNavigationProfile.progress(0));
             TerminalNavigationProfile survivalRoute =
                     TerminalNavigationProfiles.profile(MainSurvivalQuestProvider.TAB_ID).orElse(null);
             helper.assertTrue(survivalRoute != null
                             && survivalRoute.section() == TerminalNavigationSection.CHAPTERS,
-                    "Survival Route should be the main Chapters section destination");
+                    "Survival Route should be the main Progress section destination");
 
             Identifier addons = id("addons");
-            TerminalNavigationProfiles.register(addons, TerminalNavigationProfile.core(150));
+            TerminalNavigationProfiles.register(addons, TerminalNavigationProfile.progress(150));
             TerminalNavigationProfile chapterStatus = TerminalNavigationProfiles.profile(addons).orElse(null);
             helper.assertTrue(chapterStatus != null
-                            && chapterStatus.section() == TerminalNavigationSection.CORE,
-                    "Chapter Guide should live in the Core section while preserving the addons tab id");
+                            && chapterStatus.section() == TerminalNavigationSection.CHAPTERS,
+                    "Chapter Guide should live in the Progress section while preserving the addons tab id");
+
+            Map<Identifier, TerminalNavigationProfile> builtinProfiles =
+                    BuiltinTerminalTabs.builtinNavigationProfilesForTests();
+            helper.assertTrue(builtinProfiles.get(id("overview")).section() == TerminalNavigationSection.COMMAND,
+                    "Command Deck should live in Command");
+            helper.assertTrue(builtinProfiles.get(BuiltinTerminalTabs.commandDeckDiagnosticsTabForTests())
+                            .section() == TerminalNavigationSection.COMMAND,
+                    "What Now diagnostics should be a registered Command page");
+            helper.assertTrue(builtinProfiles.get(MainSurvivalQuestProvider.TAB_ID)
+                            .section() == TerminalNavigationSection.CHAPTERS,
+                    "Survival Route should live in Progress");
+            helper.assertTrue(builtinProfiles.get(VanillaJourneyProvider.TAB_ID)
+                            .section() == TerminalNavigationSection.CHAPTERS,
+                    "Baseline should expose the standalone vanilla route in Progress");
+            helper.assertTrue(builtinProfiles.get(id("mission_graph")).section() == TerminalNavigationSection.CHAPTERS,
+                    "Mission Graph should live in Progress");
+            helper.assertTrue(builtinProfiles.get(MainSurvivalQuestProvider.TAB_ID).order()
+                            < builtinProfiles.get(VanillaJourneyProvider.TAB_ID).order()
+                            && builtinProfiles.get(VanillaJourneyProvider.TAB_ID).order()
+                            < builtinProfiles.get(id("mission_graph")).order(),
+                    "Baseline should sit between the aggregate Survival Route and Mission Graph");
+            helper.assertTrue(builtinProfiles.get(id("addons")).section() == TerminalNavigationSection.CHAPTERS,
+                    "Chapter Guide should live in Progress");
+            helper.assertTrue(builtinProfiles.get(id("route_records")).section() == TerminalNavigationSection.INTEL,
+                    "Route Records should live in Intel");
+            helper.assertTrue(builtinProfiles.get(DiscoveryGridTab.TAB_ID).section() == TerminalNavigationSection.INTEL,
+                    "Discovery Grid should live in Intel");
+            helper.assertTrue(builtinProfiles.get(id("route_records")).order()
+                            < builtinProfiles.get(DiscoveryGridTab.TAB_ID).order()
+                            && builtinProfiles.get(DiscoveryGridTab.TAB_ID).order()
+                            < builtinProfiles.get(id("faction_atlas")).order(),
+                    "Discovery Grid should sit between Route Records and Faction Atlas");
+            helper.assertTrue(builtinProfiles.get(id("faction_atlas")).section() == TerminalNavigationSection.INTEL,
+                    "Faction Atlas should live in Intel");
+            helper.assertTrue(builtinProfiles.get(id("archives")).section() == TerminalNavigationSection.INTEL,
+                    "Field Archive should live in Intel");
+            helper.assertTrue(builtinProfiles.get(id("vitals")).section() == TerminalNavigationSection.SYSTEM,
+                    "Vitals should live in System");
+            helper.assertTrue(builtinProfiles.get(id("reward_inbox")).section() == TerminalNavigationSection.SYSTEM,
+                    "Reward Inbox should live in System");
+            helper.assertTrue(builtinProfiles.get(id("settings")).section() == TerminalNavigationSection.SYSTEM,
+                    "Interface Settings should live in System");
 
             Identifier stationfall = id("stationfall");
             TerminalNavigationProfiles.register(stationfall,
@@ -399,6 +578,108 @@ public final class ModGameTests {
             helper.assertTrue("Chapter 3: Stationfall".equals(stationProfile.chapterTitle()),
                     "Addon profiles should expose numbered chapter titles");
         });
+        helper.succeed();
+    }
+
+    private static void terminalDiscoveryGridFilters(GameTestHelper helper) {
+        EchoCoreServices.clearPlatformServicesForTests();
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoDiscoveryEntry locked = discoveryEntry("locked_structure", EchoDiscoveryCategory.STRUCTURE,
+                "Locked Structure", 10);
+        EchoDiscoveryEntry discovered = discoveryEntry("discovered_biome", EchoDiscoveryCategory.BIOME,
+                "Discovered Biome", 20);
+        EchoDiscoveryEntry checked = discoveryEntry("checked_guardian", EchoDiscoveryCategory.GUARDIAN,
+                "Checked Guardian", 30);
+
+        EchoCoreServices.registerDiscoveryProvider(new com.knoxhack.echocore.api.EchoDiscoveryProvider() {
+            @Override
+            public List<EchoDiscoveryEntry> entries(Player player) {
+                return List.of(locked, discovered, checked);
+            }
+
+            @Override
+            public EchoDiscoveryState state(Player player, EchoDiscoveryEntry entry) {
+                return checked.id().equals(entry.id()) ? EchoDiscoveryState.CHECKED : EchoDiscoveryState.LOCKED;
+            }
+        });
+
+        helper.assertTrue(recordDiscoveredForTest(player, discovered.id()),
+                "Stored discovery should record the discovered card once");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, null).size() == 3,
+                "Discovery Grid should include all registered entries with no filters");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, EchoDiscoveryCategory.STRUCTURE, null)
+                        .equals(List.of(locked)),
+                "Discovery Grid category filter should isolate structures");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.LOCKED)
+                        .equals(List.of(locked)),
+                "Discovery Grid locked filter should keep provider-locked hint cards");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.DISCOVERED)
+                        .equals(List.of(discovered)),
+                "Discovery Grid discovered filter should include stored discoveries");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.CHECKED)
+                        .equals(List.of(checked)),
+                "Discovery Grid checked filter should include live completed entries");
+        EchoCoreServices.clearPlatformServicesForTests();
+        helper.succeed();
+    }
+
+    private static void terminalDiscoveryGridRouteState(GameTestHelper helper) {
+        EchoCoreServices.clearPlatformServicesForTests();
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoRouteRecord readyRecord = new EchoRouteRecord(
+                id("route/ready_route"),
+                "terminal_tests",
+                "Ready Route",
+                "Route",
+                "Field",
+                "READY",
+                "Ready route summary",
+                false);
+        EchoRouteRecord completeRecord = new EchoRouteRecord(
+                id("route/complete_route"),
+                "terminal_tests",
+                "Complete Route",
+                "Route",
+                "Field",
+                "COMPLETE",
+                "Complete route summary",
+                true);
+        Identifier readyDiscoveryId = EchoCoreServices.routeDiscoveryId(readyRecord.id());
+        Identifier completeDiscoveryId = EchoCoreServices.routeDiscoveryId(completeRecord.id());
+
+        EchoCoreServices.registerRouteRecordService(ignored -> List.of(readyRecord, completeRecord));
+        EchoCoreServices.registerDiscoveryProvider(new TerminalDiscoveryProvider());
+
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.LOCKED).stream()
+                        .anyMatch(entry -> entry.id().equals(readyDiscoveryId)),
+                "READY route records should stay locked until a persisted discovery exists");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.DISCOVERED).stream()
+                        .noneMatch(entry -> entry.id().equals(readyDiscoveryId)),
+                "READY route records should not reveal from route status alone");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.CHECKED).stream()
+                        .anyMatch(entry -> entry.id().equals(completeDiscoveryId)),
+                "Complete route records should resolve as checked from live progression");
+        EchoDiscoveryEntry lockedEntry = EchoCoreServices.discoveryEntries(player).stream()
+                .filter(entry -> entry.id().equals(readyDiscoveryId))
+                .findFirst()
+                .orElseThrow();
+        helper.assertTrue(!lockedEntry.lockedHintTitle().equals(lockedEntry.revealedTitle())
+                        && !lockedEntry.hintText().isBlank(),
+                "Locked route cards should keep hint-only metadata");
+
+        helper.assertTrue(recordDiscoveredForTest(player, readyDiscoveryId),
+                "Test discovery seed should persist the READY route id once");
+        helper.assertTrue(recordDiscoveredForTest(player, completeDiscoveryId),
+                "Test discovery seed should persist the COMPLETE route id once");
+        helper.assertTrue(EchoCoreServices.hasDiscoveredFeature(player, readyDiscoveryId),
+                "Visible route discovery should persist the READY route id");
+        helper.assertTrue(DiscoveryGridTab.visibleEntriesForTests(player, null, EchoDiscoveryState.DISCOVERED).stream()
+                        .anyMatch(entry -> entry.id().equals(readyDiscoveryId)),
+                "Persisted route discovery should reveal non-complete route cards");
+        helper.assertFalse(recordDiscoveredForTest(player, readyDiscoveryId),
+                "Duplicate route discovery should remain silent");
+
+        EchoCoreServices.clearPlatformServicesForTests();
         helper.succeed();
     }
 
@@ -517,6 +798,28 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void terminalResourceNameContracts(GameTestHelper helper) {
+        Path root = Path.of("addons", "echoterminal", "src", "main", "resources",
+                "assets", EchoTerminal.MODID, "textures", "gui");
+        if (Files.isDirectory(root)) {
+            try (var paths = Files.walk(root)) {
+                List<String> unsafe = paths
+                        .filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().endsWith(".png"))
+                        .map(root::relativize)
+                        .map(Path::toString)
+                        .map(path -> path.replace('\\', '/'))
+                        .filter(path -> !path.matches("[a-z0-9_./-]+"))
+                        .toList();
+                helper.assertTrue(unsafe.isEmpty(),
+                        "Terminal GUI texture names must be lowercase identifier-safe: " + unsafe);
+            } catch (IOException exception) {
+                helper.assertTrue(false, "Terminal resource name scan failed: " + exception.getMessage());
+            }
+        }
+        helper.succeed();
+    }
+
     private static void terminalCommandDeckPriority(GameTestHelper helper) {
         helper.assertTrue(BuiltinTerminalTabs.commandDeckPriorityTabForTests(
                         true, true, 5, true, true, true, 2).equals(id("vitals")),
@@ -560,6 +863,12 @@ public final class ModGameTests {
                     TerminalMissionActions.payload(chapter, mission, "claim_reward"));
             helper.assertTrue(routed, "Generic mission action should route through TerminalActionRegistry");
             helper.assertTrue(handled.get(), "Mission provider should receive generic mission action payload");
+            BuiltinTerminalCommonIntegration.registerActionsForTests();
+            helper.assertTrue(TerminalActionRegistry.handle(null,
+                            BuiltinTerminalCommonIntegration.REWARD_INBOX,
+                            BuiltinTerminalCommonIntegration.CLAIM_REWARDS,
+                            ""),
+                    "Built-in reward inbox action should be registered from common setup");
         }));
         helper.succeed();
     }
@@ -870,6 +1179,11 @@ public final class ModGameTests {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         Identifier missionId = Identifier.withDefaultNamespace("story/mine_stone");
         VanillaJourneyData data = VanillaJourneyData.get(player);
+        TerminalMissionSnapshot open = VanillaJourneyProvider.INSTANCE.snapshot(player, missionId);
+        helper.assertTrue(open.actions().stream().anyMatch(action -> action.enabled()
+                        && "refresh".equals(action.id()) && "SYNC ADVANCEMENTS".equals(action.label())),
+                "Open Baseline records should expose advancement sync before cache claims");
+
         data.setCompleted(List.of(missionId));
         TerminalMissionSnapshot claimable = VanillaJourneyProvider.INSTANCE.snapshot(player, missionId);
         helper.assertTrue(claimable.status() == TerminalMissionStatus.CLAIMABLE,
@@ -885,6 +1199,91 @@ public final class ModGameTests {
         helper.assertTrue(claimed.actions().stream().anyMatch(action -> !action.enabled()
                         && action.disabledReason().contains("already claimed")),
                 "Claimed Baseline records should explain that the cache is already claimed");
+        helper.succeed();
+    }
+
+    @SuppressWarnings("removal")
+    private static void terminalBaselineAutoRefresh(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Identifier missionId = Identifier.withDefaultNamespace("story/mine_stone");
+        VanillaJourneyData data = VanillaJourneyData.get(player);
+        data.setCompleted(List.of());
+        helper.assertFalse(data.isCompleted(missionId),
+                "Baseline test should start with unsynced advancement data");
+
+        AdvancementHolder holder = player.level().getServer().getAdvancements().get(missionId);
+        helper.assertTrue(holder != null, "Tracked vanilla advancement should exist on the test server");
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        List<String> remainingCriteria = new ArrayList<>();
+        for (String criterion : progress.getRemainingCriteria()) {
+            remainingCriteria.add(criterion);
+        }
+        helper.assertFalse(remainingCriteria.isEmpty(),
+                "Tracked vanilla advancement should have criteria to award");
+        for (String criterion : remainingCriteria) {
+            player.getAdvancements().award(holder, criterion);
+        }
+
+        helper.assertTrue(VanillaJourneyData.get(player).isCompleted(missionId),
+                "Awarding a tracked vanilla advancement should automatically sync Baseline progress");
+        helper.assertTrue(VanillaJourneyProvider.INSTANCE.snapshot(player, missionId).status()
+                        == TerminalMissionStatus.CLAIMABLE,
+                "Automatically synced Baseline progress should make the cache claimable");
+        helper.succeed();
+    }
+
+    private static void terminalBaselineDataDefinitions(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        List<TerminalMissionDefinition> definitions = VanillaJourneyProvider.INSTANCE.missions(player);
+        helper.assertTrue(definitions.size() == 39,
+                "Baseline should load the full vanilla advancement route from bundled data definitions");
+
+        TerminalMissionDefinition root = definitions.stream()
+                .filter(definition -> definition.id().equals(Identifier.withDefaultNamespace("story/root")))
+                .findFirst()
+                .orElseThrow();
+        TerminalMissionSnapshot rootSnapshot = VanillaJourneyProvider.INSTANCE.snapshot(player, root.id());
+        helper.assertTrue(root.rewards().isEmpty() && root.requirements().isEmpty(),
+                "Data-defined Baseline roots should remain guide records without rewards");
+        helper.assertTrue(VanillaJourneyProvider.INSTANCE.role(player, root, rootSnapshot) == TerminalMissionRole.REFERENCE,
+                "Data-defined Baseline roots should expose reference roles");
+
+        Identifier stoneId = Identifier.withDefaultNamespace("story/mine_stone");
+        TerminalMissionDefinition stone = definitions.stream()
+                .filter(definition -> definition.id().equals(stoneId))
+                .findFirst()
+                .orElseThrow();
+        helper.assertTrue("Stone Age".equals(stone.title())
+                        && "story".equals(stone.phaseId())
+                        && stone.phaseOrder() == 0
+                        && stone.missionOrder() == 1,
+                "Data-defined Baseline missions should preserve title and ordering metadata");
+        helper.assertTrue("Task Cache".equals(stone.difficulty())
+                        && stone.icon().getItem() == Items.COBBLESTONE,
+                "Data-defined Baseline missions should preserve tier labels and icons");
+        helper.assertTrue(stone.rewards().stream().anyMatch(reward ->
+                        reward.stack().getItem() == Items.BREAD && reward.stack().getCount() == 4),
+                "Data-defined task cache should include bread rewards");
+        helper.assertTrue(stone.rewards().stream().anyMatch(reward ->
+                        reward.stack().getItem() == Items.TORCH && reward.stack().getCount() == 12),
+                "Data-defined task cache should include torch rewards");
+        helper.assertTrue(stone.rewards().stream().anyMatch(reward ->
+                        reward.stack().getItem() == Items.EXPERIENCE_BOTTLE && reward.stack().getCount() == 2),
+                "Data-defined task cache should include experience bottle rewards");
+        helper.assertTrue(VanillaJourneyProvider.INSTANCE.tracksAdvancement(stoneId),
+                "Data-defined Baseline missions should be tracked for server refresh");
+        helper.assertFalse(VanillaJourneyProvider.INSTANCE.tracksAdvancement(id("not_a_vanilla_advancement")),
+                "Unknown advancement ids should not be tracked by the Baseline provider");
+
+        Identifier optionalId = Identifier.withDefaultNamespace("nether/all_effects");
+        TerminalMissionDefinition optional = definitions.stream()
+                .filter(definition -> definition.id().equals(optionalId))
+                .findFirst()
+                .orElseThrow();
+        TerminalMissionSnapshot optionalSnapshot = VanillaJourneyProvider.INSTANCE.snapshot(player, optionalId);
+        helper.assertTrue(VanillaJourneyProvider.INSTANCE.role(player, optional, optionalSnapshot)
+                        == TerminalMissionRole.OPTIONAL,
+                "Data-defined Baseline roles should preserve optional high-risk records");
         helper.succeed();
     }
 
@@ -983,6 +1382,87 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void terminalMissionHudNotifications(GameTestHelper helper) {
+        TerminalMissionRegistry.withClearedForTests(() -> {
+            TerminalMissionHudController controller = new TerminalMissionHudController();
+            MutableHudMissionProvider provider = new MutableHudMissionProvider(id("hud_chapter"), "HUD Chapter", 25);
+            Identifier relay = id("hud_relay");
+            Identifier camp = id("hud_camp");
+            Identifier burstA = id("hud_burst_a");
+            Identifier burstB = id("hud_burst_b");
+            Identifier burstC = id("hud_burst_c");
+            Identifier burstD = id("hud_burst_d");
+            provider.add(relay, "Repair Relay", "Relay Phase", 10, 1,
+                    TerminalMissionRole.MAIN, TerminalMissionStatus.LOCKED, 0.0F);
+            provider.add(camp, "Stabilize Camp", "Camp Phase", 0, 1,
+                    TerminalMissionRole.MAIN, TerminalMissionStatus.UNLOCKED, 0.45F);
+            provider.add(burstA, "Burst A", "Factory Phase", 20, 1,
+                    TerminalMissionRole.MAIN, TerminalMissionStatus.LOCKED, 0.0F);
+            provider.add(burstB, "Burst B", "Factory Phase", 20, 2,
+                    TerminalMissionRole.MAIN, TerminalMissionStatus.LOCKED, 0.0F);
+            provider.add(burstC, "Burst C", "Factory Phase", 20, 3,
+                    TerminalMissionRole.MAIN, TerminalMissionStatus.LOCKED, 0.0F);
+            provider.add(burstD, "Burst D", "Factory Phase", 20, 4,
+                    TerminalMissionRole.MAIN, TerminalMissionStatus.LOCKED, 0.0F);
+
+            TerminalMissionRegistry.register(MainSurvivalQuestProvider.INSTANCE);
+            TerminalMissionRegistry.register(provider);
+            TerminalMissionRegistry.register(new ThrowingMissionsProvider(id("hud_throwing"), 50));
+
+            controller.scanForTests(null, 100L);
+            helper.assertTrue(controller.drainQueuedNoticesForTests().isEmpty(),
+                    "First mission HUD scan should baseline without startup notices");
+
+            provider.set(relay, TerminalMissionStatus.UNLOCKED, 0.25F);
+            controller.scanForTests(null, 120L);
+            List<TerminalMissionNotice> relayNotices = controller.drainQueuedNoticesForTests();
+            helper.assertTrue(hasNotice(relayNotices, TerminalMissionNoticeType.MISSION_AVAILABLE),
+                    "Locked-to-unlocked missions should raise a mission available notice");
+            helper.assertTrue(hasNotice(relayNotices, TerminalMissionNoticeType.PHASE_ONLINE),
+                    "The first active mission in a phase should raise a phase online notice");
+            helper.assertFalse(relayNotices.stream()
+                            .anyMatch(notice -> MainSurvivalQuestProvider.CHAPTER_ID.equals(notice.chapterId())),
+                    "Mission HUD should skip the aggregate Survival Route provider");
+
+            provider.set(relay, TerminalMissionStatus.LOCKED, 0.0F);
+            controller.scanForTests(null, 125L);
+            provider.set(relay, TerminalMissionStatus.UNLOCKED, 0.25F);
+            controller.scanForTests(null, 130L);
+            helper.assertTrue(controller.drainQueuedNoticesForTests().isEmpty(),
+                    "Repeated mission available signals should respect the notice cooldown");
+
+            provider.set(camp, TerminalMissionStatus.COMPLETED, 1.0F);
+            controller.scanForTests(null, 160L);
+            helper.assertTrue(hasNotice(controller.drainQueuedNoticesForTests(), TerminalMissionNoticeType.OBJECTIVE_READY),
+                    "Unlocked-to-completed missions should raise an objective ready notice");
+
+            provider.set(relay, TerminalMissionStatus.CLAIMABLE, 1.0F);
+            controller.scanForTests(null, 220L);
+            helper.assertTrue(hasNotice(controller.drainQueuedNoticesForTests(), TerminalMissionNoticeType.CACHE_READY),
+                    "Claimable missions should raise a cache ready notice");
+
+            provider.set(relay, TerminalMissionStatus.CLAIMED, 1.0F);
+            controller.scanForTests(null, 300L);
+            helper.assertTrue(hasNotice(controller.drainQueuedNoticesForTests(), TerminalMissionNoticeType.CACHE_CLAIMED),
+                    "Claimed rewards should raise a cache claimed notice");
+
+            provider.set(burstA, TerminalMissionStatus.UNLOCKED, 0.1F);
+            provider.set(burstB, TerminalMissionStatus.UNLOCKED, 0.1F);
+            provider.set(burstC, TerminalMissionStatus.UNLOCKED, 0.1F);
+            provider.set(burstD, TerminalMissionStatus.UNLOCKED, 0.1F);
+            controller.scanForTests(null, 400L);
+            List<TerminalMissionNotice> burstNotices = controller.drainQueuedNoticesForTests();
+            helper.assertTrue(burstNotices.size() == 1
+                            && burstNotices.get(0).type() == TerminalMissionNoticeType.SUMMARY,
+                    "Large mission update bursts should collapse into a single summary card");
+        });
+        helper.succeed();
+    }
+
+    private static boolean hasNotice(List<TerminalMissionNotice> notices, TerminalMissionNoticeType type) {
+        return notices.stream().anyMatch(notice -> notice.type() == type);
+    }
+
     private record DummyTab(TerminalTabDescriptor descriptor) implements TerminalTab {
         DummyTab(Identifier id, String title, int order) {
             this(new TerminalTabDescriptor(id, title, order, 0xFF66D9FF));
@@ -1015,6 +1495,86 @@ public final class ModGameTests {
         @Override
         public TerminalAddonInfo info(Player player) {
             return info;
+        }
+    }
+
+    private record DummyRecipeProvider(Identifier providerId, int order) implements TerminalRecipeProvider {
+        @Override
+        public Identifier id() {
+            return providerId;
+        }
+
+        @Override
+        public List<TerminalRecipeCategory> categories(Player player) {
+            return List.of(new TerminalRecipeCategory(
+                    ModGameTests.id(providerId.getPath().replace("_provider", "_category")),
+                    providerId.getPath(),
+                    new ItemStack(Items.CRAFTING_TABLE),
+                    0xFFFFD166,
+                    order));
+        }
+
+        @Override
+        public List<TerminalRecipeEntry> recipes(Player player) {
+            Identifier category = ModGameTests.id(providerId.getPath().replace("_provider", "_category"));
+            return List.of(new TerminalRecipeEntry(
+                    ModGameTests.id(providerId.getPath() + "/recipe"),
+                    category,
+                    "Recipe " + providerId.getPath(),
+                    new ItemStack(Items.CRAFTING_TABLE),
+                    List.of(TerminalRecipeSlot.input(new ItemStack(Items.STICK)),
+                            TerminalRecipeSlot.output(new ItemStack(Items.APPLE))),
+                    List.of(TerminalRecipeNote.info("Test recipe")),
+                    20,
+                    false));
+        }
+    }
+
+    private record DuplicateRecipeProvider() implements TerminalRecipeProvider {
+        @Override
+        public Identifier id() {
+            return ModGameTests.id("duplicate_provider");
+        }
+
+        @Override
+        public List<TerminalRecipeCategory> categories(Player player) {
+            return List.of(new TerminalRecipeCategory(
+                    ModGameTests.id("alpha_category"),
+                    "duplicate category",
+                    new ItemStack(Items.CRAFTING_TABLE),
+                    0xFFFFD166,
+                    5));
+        }
+
+        @Override
+        public List<TerminalRecipeEntry> recipes(Player player) {
+            return List.of(new TerminalRecipeEntry(
+                    ModGameTests.id("alpha_provider/recipe"),
+                    ModGameTests.id("alpha_category"),
+                    "Duplicate Recipe",
+                    new ItemStack(Items.CRAFTING_TABLE),
+                    List.of(TerminalRecipeSlot.input(new ItemStack(Items.STICK)),
+                            TerminalRecipeSlot.output(new ItemStack(Items.APPLE))),
+                    List.of(),
+                    20,
+                    false));
+        }
+    }
+
+    private record ThrowingRecipeProvider() implements TerminalRecipeProvider {
+        @Override
+        public Identifier id() {
+            return ModGameTests.id("throwing_provider");
+        }
+
+        @Override
+        public List<TerminalRecipeCategory> categories(Player player) {
+            throw new IllegalStateException("test terminal recipe category failure");
+        }
+
+        @Override
+        public List<TerminalRecipeEntry> recipes(Player player) {
+            throw new IllegalStateException("test terminal recipe list failure");
         }
     }
 
@@ -1162,6 +1722,115 @@ public final class ModGameTests {
                     List.of(),
                     List.of(),
                     List.of());
+        }
+    }
+
+    private static final class MutableHudMissionProvider implements TerminalMissionProvider {
+        private final Identifier chapterId;
+        private final String title;
+        private final int order;
+        private final Map<Identifier, MutableHudMission> missions = new LinkedHashMap<>();
+
+        private MutableHudMissionProvider(Identifier chapterId, String title, int order) {
+            this.chapterId = chapterId;
+            this.title = title;
+            this.order = order;
+        }
+
+        void add(Identifier missionId, String missionTitle, String phaseTitle, int phaseOrder, int missionOrder,
+                TerminalMissionRole role, TerminalMissionStatus status, float progress) {
+            missions.put(missionId, new MutableHudMission(
+                    missionId, missionTitle, phaseTitle, phaseOrder, missionOrder, role, status, progress));
+        }
+
+        void set(Identifier missionId, TerminalMissionStatus status, float progress) {
+            MutableHudMission mission = missions.get(missionId);
+            if (mission != null) {
+                mission.status = status;
+                mission.progress = progress;
+            }
+        }
+
+        @Override
+        public TerminalMissionChapter chapter() {
+            return new TerminalMissionChapter(chapterId, title, "HUD notice test provider", order, 0xFF66D9FF, true);
+        }
+
+        @Override
+        public List<TerminalMissionDefinition> missions(Player player) {
+            return missions.values().stream()
+                    .map(mission -> new TerminalMissionDefinition(
+                            mission.id,
+                            chapterId,
+                            mission.phaseTitle.toLowerCase(java.util.Locale.ROOT).replace(' ', '_'),
+                            mission.phaseTitle,
+                            mission.phaseOrder,
+                            mission.missionOrder,
+                            mission.title,
+                            mission.title + " briefing",
+                            mission.title + " guide",
+                            "HUD Test",
+                            "Test",
+                            new ItemStack(Items.COMPASS),
+                            List.of(),
+                            List.of(),
+                            List.of()))
+                    .toList();
+        }
+
+        @Override
+        public TerminalMissionSnapshot snapshot(Player player, Identifier missionId) {
+            MutableHudMission mission = missions.get(missionId);
+            return mission == null
+                    ? new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F,
+                            "LOCKED", "Missing HUD test mission.", "Missing HUD test mission.", List.of())
+                    : new TerminalMissionSnapshot(mission.id, mission.status, mission.progress,
+                            mission.status.name(), "", mission.title + " next step",
+                            mission.status == TerminalMissionStatus.CLAIMABLE
+                                    ? List.of(TerminalMissionAction.enabled("claim_reward", "CLAIM CACHE"))
+                                    : List.of());
+        }
+
+        @Override
+        public TerminalMissionPresentation presentation(
+                Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+            return new TerminalMissionPresentation(
+                    definition.title(),
+                    definition.briefing(),
+                    snapshot.actionHint(),
+                    definition.phaseTitle(),
+                    snapshot.status().name().toLowerCase(java.util.Locale.ROOT),
+                    List.of("HUD Test"),
+                    "");
+        }
+
+        @Override
+        public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+            MutableHudMission mission = missions.get(definition.id());
+            return mission == null ? TerminalMissionRole.MAIN : mission.role;
+        }
+    }
+
+    private static final class MutableHudMission {
+        private final Identifier id;
+        private final String title;
+        private final String phaseTitle;
+        private final int phaseOrder;
+        private final int missionOrder;
+        private final TerminalMissionRole role;
+        private TerminalMissionStatus status;
+        private float progress;
+
+        private MutableHudMission(Identifier id, String title, String phaseTitle, int phaseOrder, int missionOrder,
+                TerminalMissionRole role, TerminalMissionStatus status, float progress) {
+            this.id = id;
+            this.title = title;
+            this.phaseTitle = phaseTitle;
+            this.phaseOrder = phaseOrder;
+            this.missionOrder = missionOrder;
+            this.role = role;
+            this.status = status;
+            this.progress = progress;
         }
     }
 
@@ -1397,8 +2066,43 @@ public final class ModGameTests {
         event.registerTest(id(testName), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, functionId), data));
     }
 
+    private static boolean shouldRegisterTests() {
+        String namespaces = System.getProperty("neoforge.enabledGameTestNamespaces", "");
+        if (namespaces == null || namespaces.isBlank()) {
+            return true;
+        }
+        for (String namespace : namespaces.split(",")) {
+            String normalized = namespace.trim();
+            if (normalized.equals(EchoTerminal.MODID) || normalized.equals("*") || normalized.equalsIgnoreCase("all")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(EchoTerminal.MODID, path);
+    }
+
+    private static EchoDiscoveryEntry discoveryEntry(
+            String path, EchoDiscoveryCategory category, String title, int sortOrder) {
+        return new EchoDiscoveryEntry(
+                id(path),
+                id("test_chapter"),
+                category,
+                title,
+                "Unknown Signal",
+                "Find this signal in the field.",
+                title + " summary.",
+                null,
+                null,
+                0xFF66E8FF,
+                null,
+                sortOrder);
+    }
+
+    private static boolean recordDiscoveredForTest(Player player, Identifier id) {
+        return EchoDiscoveryData.get(player).discover(id);
     }
 
     private static boolean classpathResourceExists(Identifier id) {

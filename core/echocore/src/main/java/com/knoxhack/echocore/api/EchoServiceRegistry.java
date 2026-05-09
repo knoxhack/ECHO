@@ -1,5 +1,6 @@
 package com.knoxhack.echocore.api;
 
+import com.knoxhack.echocore.EchoCore;
 import java.util.Optional;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +18,13 @@ public final class EchoServiceRegistry {
         if (serviceType == null || service == null) {
             throw new IllegalArgumentException("Service type and implementation are required.");
         }
-        SERVICES.put(serviceType, serviceType.cast(service));
+        Object previous = SERVICES.put(serviceType, serviceType.cast(service));
+        if (previous != null && previous != service) {
+            EchoCore.LOGGER.warn("ECHO Core service {} replaced {} with {}.",
+                    serviceType.getSimpleName(),
+                    previous.getClass().getName(),
+                    service.getClass().getName());
+        }
     }
 
     public static <T> Optional<T> find(Class<T> serviceType) {

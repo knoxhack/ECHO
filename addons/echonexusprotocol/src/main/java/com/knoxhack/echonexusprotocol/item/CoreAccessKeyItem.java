@@ -32,7 +32,7 @@ public class CoreAccessKeyItem extends Item {
       if (level.isClientSide()) return InteractionResult.SUCCESS;
       if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.CONSUME;
       if (!NexusProgression.isNexusUnlocked(player) && !player.hasInfiniteMaterials()) {
-         player.sendSystemMessage(Component.literal("ECHO-7 // Core Access denied. Recover stationfall:blackbox_recovered through Stationfall handoff, or enable the Nexus dev unlock config for testing."));
+         player.sendSystemMessage(Component.literal("ECHO-7 // Core Access denied. Recover " + NexusProgression.STATIONFALL_GATE + " through Stationfall handoff, or enable the Nexus dev unlock config for testing."));
          return InteractionResult.CONSUME;
       }
       MinecraftServer server = serverPlayer.level().getServer();

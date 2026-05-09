@@ -177,6 +177,21 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 
+def addonLocalReleaseJarDir = project.layout.projectDirectory.dir('build/libs')
+
+tasks.register('syncAddonReleaseJar', Sync) {
+    group = 'distribution'
+    description = 'Copies the redirected Gradle build jar into the addon-local build/libs release path.'
+
+    dependsOn tasks.named('jar')
+    from(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    into addonLocalReleaseJarDir
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('syncAddonReleaseJar')
+}
+
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {
     module {

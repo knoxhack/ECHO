@@ -10,6 +10,7 @@ import com.knoxhack.echoindustrialnexus.integration.IndustrialCompat;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialCoreIntegration;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialMissionProvider;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialTerminalIds;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialTerminalRecipeProvider;
 import com.knoxhack.echoindustrialnexus.menu.IndustrialMachineMenu;
 import com.knoxhack.echoindustrialnexus.progress.IndustrialProgress;
 import com.knoxhack.echoindustrialnexus.registry.ModBlocks;
@@ -27,6 +28,9 @@ import com.knoxhack.echostationfall.progression.StationfallProgress;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeEntry;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeSlot;
+import com.google.gson.JsonParser;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -72,6 +76,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("scrubber_safe_zone_progress", () -> ModGameTests::scrubberSafeZoneProgress);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MISSIONS =
       TEST_FUNCTIONS.register("terminal_mission_snapshots", () -> ModGameTests::terminalMissionSnapshots);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RECIPE_PARSER =
+      TEST_FUNCTIONS.register("terminal_recipe_parser", () -> ModGameTests::terminalRecipeParser);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_WIRING =
       TEST_FUNCTIONS.register("core_chapter_route_records", () -> ModGameTests::coreChapterRouteRecords);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WARDEN_SPAWN =
@@ -113,6 +119,7 @@ public final class ModGameTests {
       register(event, environment, "item_duct_routing", ITEM_DUCT_ROUTING.getId());
       register(event, environment, "scrubber_safe_zone_progress", SCRUBBER_PROGRESS.getId());
       register(event, environment, "terminal_mission_snapshots", TERMINAL_MISSIONS.getId());
+      register(event, environment, "terminal_recipe_parser", TERMINAL_RECIPE_PARSER.getId());
       register(event, environment, "core_chapter_route_records", CORE_WIRING.getId());
       register(event, environment, "furnace_warden_spawn", WARDEN_SPAWN.getId());
       register(event, environment, "procedural_poi_smoke", POI_SMOKE.getId());
@@ -192,6 +199,42 @@ public final class ModGameTests {
       helper.assertTrue(missions.size() == 10, "Industrial Terminal chapter should expose all 10 missions");
       TerminalMissionSnapshot snapshot = IndustrialMissionProvider.INSTANCE.snapshot(null, IndustrialTerminalIds.id("mission/reclaim_power"));
       helper.assertTrue(snapshot.status() == TerminalMissionStatus.UNLOCKED, "Industrial mission snapshots should be stable without player progress");
+      helper.succeed();
+   }
+
+   private static void terminalRecipeParser(GameTestHelper helper) {
+      TerminalRecipeEntry recipe = IndustrialTerminalRecipeProvider.parseForTests("terminal_parser",
+         JsonParser.parseString("""
+            {
+              "type": "echoindustrialnexus:industrial_processing",
+              "machine": "fluid_refiner",
+              "ingredient": [
+                "minecraft:iron_ingot",
+                { "item": "minecraft:copper_ingot" }
+              ],
+              "result": "minecraft:redstone",
+              "count": 2,
+              "catalyst": "minecraft:coal",
+              "catalystCount": 1,
+              "byproduct": "minecraft:lapis_lazuli",
+              "byproductCount": 1,
+              "byproductChance": 25,
+              "inputFluidId": 1,
+              "inputFluidAmount": 250,
+              "outputFluidId": 2,
+              "outputFluidAmount": 125
+            }
+            """).getAsJsonObject()).orElseThrow();
+      helper.assertTrue(recipe.uses(Items.IRON_INGOT), "Terminal parser should match array item ingredients");
+      helper.assertTrue(recipe.uses(Items.COAL), "Terminal parser should match catalysts");
+      helper.assertTrue(recipe.outputs(Items.REDSTONE), "Terminal parser should match result outputs");
+      helper.assertTrue(recipe.outputs(Items.LAPIS_LAZULI), "Terminal parser should match byproduct outputs");
+      helper.assertTrue(recipe.slots().stream().anyMatch(slot -> slot.role() == TerminalRecipeSlot.Role.INPUT
+            && slot.label().contains("Input fluid")),
+         "Terminal parser should expose fluid inputs as text slots");
+      helper.assertTrue(recipe.slots().stream().anyMatch(slot -> slot.role() == TerminalRecipeSlot.Role.OUTPUT
+            && slot.label().contains("Output fluid")),
+         "Terminal parser should expose fluid outputs as text slots");
       helper.succeed();
    }
 

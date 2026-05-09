@@ -1,5 +1,6 @@
 package com.knoxhack.echoorbitalremnants.suit;
 
+import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -7,6 +8,12 @@ import net.minecraft.world.entity.player.Player;
 
 public class SuitState {
     private static final String ROOT = "echoorbitalremnants_suit";
+    private static final int BASELINE_STATION_POWER = 12;
+    private static final int LOW_ORBIT_STATION_POWER = 28;
+    private static final int LIFE_SUPPORT_STATION_POWER = 46;
+    private static final int STATION_RELAY_POWER_STEP = 12;
+    private static final int RESTORED_STATION_POWER = 82;
+    private static final int FULL_STATION_POWER = 100;
 
     private int oxygen = 100;
     private int pressure = 100;
@@ -15,7 +22,7 @@ public class SuitState {
     private boolean suitLeak;
     private boolean backupAirAvailable = true;
     private boolean autoSealAvailable = true;
-    private int stationPower = 12;
+    private int stationPower = BASELINE_STATION_POWER;
     private float gravity = 1.0F;
 
     public static SuitState get(Player player) {
@@ -92,11 +99,46 @@ public class SuitState {
         oxygen = Math.min(100, oxygen + amount);
     }
 
+    void stabilizeFromStationPower(int oxygenAmount, int pressureAmount, int radiationAmount) {
+        recoverOxygen(oxygenAmount);
+        recoverPressure(pressureAmount);
+        reduceRadiation(radiationAmount);
+    }
+
     public void applySealantPatch() {
         pressure = Math.min(100, pressure + 45);
         helmetSealSecure = true;
         suitLeak = false;
         autoSealAvailable = false;
+    }
+
+    void syncStationPower(EchoTerminalProgress progress, boolean hasStationPowerMatrix) {
+        if (progress == null) {
+            stationPower = clampStationPower(stationPower);
+            return;
+        }
+
+        int power = BASELINE_STATION_POWER;
+        if (progress.lowOrbitReached()) {
+            power = Math.max(power, LOW_ORBIT_STATION_POWER);
+        }
+        if (progress.stationLifeSupportRestored()) {
+            power = Math.max(power, LIFE_SUPPORT_STATION_POWER);
+        }
+
+        int relayRepairs = Math.min(3, Math.max(0, progress.stationRelayRepairs()));
+        if (relayRepairs > 0) {
+            power = Math.max(power, LIFE_SUPPORT_STATION_POWER + relayRepairs * STATION_RELAY_POWER_STEP);
+        }
+
+        if (progress.stationNetworkRestored()) {
+            power = Math.max(power, RESTORED_STATION_POWER);
+            if (hasStationPowerMatrix) {
+                power = FULL_STATION_POWER;
+            }
+        }
+
+        stationPower = clampStationPower(power);
     }
 
     public boolean critical() {
@@ -171,6 +213,21 @@ public class SuitState {
         return false;
     }
 
+    private void recoverOxygen(int amount) {
+        oxygen = Math.min(100, oxygen + Math.max(0, amount));
+    }
+
+    private void recoverPressure(int amount) {
+        pressure = Math.min(100, pressure + Math.max(0, amount));
+        if (!suitLeak && pressure > 35) {
+            helmetSealSecure = true;
+        }
+    }
+
+    private static int clampStationPower(int value) {
+        return Math.max(0, Math.min(100, value));
+    }
+
     private CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tag.putInt("oxygen", oxygen);
@@ -194,7 +251,7 @@ public class SuitState {
         state.suitLeak = tag.getBooleanOr("suit_leak", false);
         state.backupAirAvailable = tag.getBooleanOr("backup_air_available", true);
         state.autoSealAvailable = tag.getBooleanOr("auto_seal_available", true);
-        state.stationPower = tag.getIntOr("station_power", 12);
+        state.stationPower = clampStationPower(tag.getIntOr("station_power", BASELINE_STATION_POWER));
         state.gravity = (float) tag.getDoubleOr("gravity", 1.0D);
         return state;
     }

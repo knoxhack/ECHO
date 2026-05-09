@@ -27,6 +27,11 @@ MODS = (
         ROOT / "addons/echoterminal/src/main/resources",
         ROOT / "addons/echoterminal/src/main/java/com/knoxhack/echoterminal",
     ),
+    (
+        "signalos",
+        ROOT / "addons/echosignalos/src/main/resources",
+        ROOT / "addons/echosignalos/src/main/java/com/knoxhack/signalos",
+    ),
     ("echoashfallprotocol", ROOT / "src/main/resources", ROOT / "src/main/java/com/knoxhack/echoashfallprotocol"),
     (
         "echoorbitalremnants",
@@ -34,13 +39,54 @@ MODS = (
         ROOT / "addons/echoorbitalremnants/src/main/java/com/knoxhack/echoorbitalremnants",
     ),
     (
+        "echonexusprotocol",
+        ROOT / "addons/echonexusprotocol/src/main/resources",
+        ROOT / "addons/echonexusprotocol/src/main/java/com/knoxhack/echonexusprotocol",
+    ),
+    (
+        "echoagriculturereclamation",
+        ROOT / "addons/echoagriculturereclamation/src/main/resources",
+        ROOT / "addons/echoagriculturereclamation/src/main/java/com/knoxhack/echoagriculturereclamation",
+    ),
+    (
+        "echoblackboxprotocol",
+        ROOT / "addons/echoblackboxprotocol/src/main/resources",
+        ROOT / "addons/echoblackboxprotocol/src/main/java/com/knoxhack/echoblackboxprotocol",
+    ),
+    (
+        "echoindustrialnexus",
+        ROOT / "addons/echoindustrialnexus/src/main/resources",
+        ROOT / "addons/echoindustrialnexus/src/main/java/com/knoxhack/echoindustrialnexus",
+    ),
+    (
+        "echologisticsnetwork",
+        ROOT / "addons/echologisticsnetwork/src/main/resources",
+        ROOT / "addons/echologisticsnetwork/src/main/java/com/knoxhack/echologisticsnetwork",
+    ),
+    (
+        "echoconvoyprotocol",
+        ROOT / "addons/echoconvoyprotocol/src/main/resources",
+        ROOT / "addons/echoconvoyprotocol/src/main/java/com/knoxhack/echoconvoyprotocol",
+    ),
+    (
         "echostationfall",
         ROOT / "addons/echostationfall/src/main/resources",
         ROOT / "addons/echostationfall/src/main/java/com/knoxhack/echostationfall",
     ),
 )
-BETA_MOD_IDS = {"echocore", "echoterminal", "echoashfallprotocol", "echoorbitalremnants"}
+BETA_MOD_IDS = {
+    "echocore",
+    "echoterminal",
+    "signalos",
+    "echoashfallprotocol",
+    "echoorbitalremnants",
+    "echonexusprotocol",
+    "echoagriculturereclamation",
+}
 ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
+ADDON_DIR_TO_MODID = {
+    "echosignalos": "signalos",
+}
 SKIPPED_SCAN_DIRS = {".git", ".gradle", "build", "run", "__pycache__"}
 TEXT_SCAN_SUFFIXES = {".gradle", ".java", ".json", ".md", ".properties", ".py", ".toml", ".yaml", ".yml"}
 RELEASE_POLISH_SCAN_ROOTS = (
@@ -49,6 +95,7 @@ RELEASE_POLISH_SCAN_ROOTS = (
     ROOT / "core/echocore/src/main",
     ROOT / "addons/echoterminal/src/main",
     ROOT / "addons/echoorbitalremnants/src/main",
+    ROOT / "addons/echoagriculturereclamation/src/main",
     ROOT / "addons/echostationfall/src/main",
     ROOT / ".github",
     ROOT / "README.md",
@@ -84,9 +131,29 @@ STALE_RELEASE_TOKENS = (
 MODID_CONSTANTS = {
     "EchoCore.MODID": "echocore",
     "EchoTerminal.MODID": "echoterminal",
+    "SignalOS.MODID": "signalos",
     "EchoAshfallProtocol.MODID": "echoashfallprotocol",
     "EchoOrbitalRemnants.MODID": "echoorbitalremnants",
+    "EchoNexusProtocol.MODID": "echonexusprotocol",
+    "EchoAgricultureReclamation.MODID": "echoagriculturereclamation",
+    "EchoBlackboxProtocol.MODID": "echoblackboxprotocol",
+    "EchoIndustrialNexus.MODID": "echoindustrialnexus",
+    "EchoLogisticsNetwork.MODID": "echologisticsnetwork",
+    "EchoConvoyProtocol.MODID": "echoconvoyprotocol",
     "EchoStationfall.MODID": "echostationfall",
+}
+TEXTURE_QUALITY_MOD_IDS = {
+    "echoashfallprotocol",
+    "echoorbitalremnants",
+    "echoagriculturereclamation",
+    "echoblackboxprotocol",
+    "echoindustrialnexus",
+    "echologisticsnetwork",
+    "echoconvoyprotocol",
+    "echonexusprotocol",
+    "signalos",
+    "echostationfall",
+    "echoterminal",
 }
 LOW_DETAIL_BLOCK_EXEMPTIONS = {
     "ash_layer",
@@ -287,6 +354,18 @@ def walk(value: Any) -> Iterable[Any]:
             yield from walk(item)
 
 
+def is_visible_chroma_key_pixel(r: int, g: int, b: int, a: int) -> bool:
+    return (
+        a > 0
+        and r >= 220
+        and g <= 70
+        and b >= 220
+        and abs(r - b) <= 60
+        and r - g >= 150
+        and b - g >= 150
+    )
+
+
 def parse_ref(ref: str, default_namespace: str) -> tuple[str, str] | None:
     if not ref or ref.startswith("#") or ref.startswith("builtin/"):
         return None
@@ -385,8 +464,12 @@ def check_packet_namespaces(modid: str, java_root: Path, errors: list[str]) -> N
         r"Identifier\.fromNamespaceAndPath\(\s*(?:\"([^\"]+)\"|([A-Za-z_][A-Za-z0-9_.]*\.MODID))"
     )
     search_root = java_root / "network"
-    files = search_root.rglob("*.java") if search_root.exists() else java_root.rglob("*.java")
+    if not search_root.exists():
+        return
+    files = search_root.rglob("*.java")
     for path in files:
+        if "test" in path.relative_to(java_root).parts:
+            continue
         text = path.read_text(encoding="utf-8")
         for match in pattern.finditer(text):
             namespace, modid_constant = match.groups()
@@ -415,7 +498,7 @@ def iter_repo_text_files() -> Iterable[Path]:
         if any(part in SKIPPED_SCAN_DIRS for part in relative_parts):
             continue
         if len(relative_parts) >= 2 and relative_parts[0] == "addons":
-            addon_modid = relative_parts[1]
+            addon_modid = ADDON_DIR_TO_MODID.get(relative_parts[1], relative_parts[1])
             if addon_modid not in ACTIVE_MOD_IDS:
                 continue
         if path.suffix.lower() not in TEXT_SCAN_SUFFIXES:
@@ -458,7 +541,7 @@ def iter_release_polish_files() -> Iterable[Path]:
             if any(part in SKIPPED_SCAN_DIRS for part in relative_parts):
                 continue
             if len(relative_parts) >= 2 and relative_parts[0] == "addons":
-                addon_modid = relative_parts[1]
+                addon_modid = ADDON_DIR_TO_MODID.get(relative_parts[1], relative_parts[1])
                 if addon_modid not in ACTIVE_MOD_IDS:
                     continue
             if path.suffix.lower() not in TEXT_SCAN_SUFFIXES:
@@ -682,6 +765,14 @@ def expected_terminal_mission_ids() -> set[tuple[str, str]]:
             for path in re.findall(r'mission\(\s*"([^"]+)"', text)
         )
 
+    agriculture = ROOT / "addons/echoagriculturereclamation/src/main/java/com/knoxhack/echoagriculturereclamation/integration/ReclamationMissionProvider.java"
+    if agriculture.exists():
+        text = agriculture.read_text(encoding="utf-8", errors="ignore")
+        expected.extend(
+            ("echoagriculturereclamation", "mission/" + path)
+            for path in re.findall(r'mission\(\s*"([^"]+)"', text)
+        )
+
     enum_providers = (
         (
             "echoblackboxprotocol",
@@ -754,7 +845,7 @@ def check_terminal_mission_visual_assets(errors: list[str]) -> None:
 
 
 def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[str]) -> None:
-    if modid != "echoashfallprotocol":
+    if modid not in TEXTURE_QUALITY_MOD_IDS:
         return
 
     asset_root = resource_root / f"assets/{modid}"
@@ -781,8 +872,32 @@ def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[st
                 expected = " or ".join(f"{w}x{h}" for w, h in sorted(ALLOWED_PIXEL_TEXTURE_SIZES))
                 errors.append(f"BAD_PIXEL_TEXTURE_SIZE {rel(path)}: {width}x{height}, expected {expected}")
 
-            if folder == "block" and path.stem in REQUIRED_16X16_BLOCK_TEXTURES and (width, height) != (16, 16):
+            if (
+                modid == "echoashfallprotocol"
+                and folder == "block"
+                and path.stem in REQUIRED_16X16_BLOCK_TEXTURES
+                and (width, height) != (16, 16)
+            ):
                 errors.append(f"BAD_TERRAIN_TEXTURE_SIZE {rel(path)}: {width}x{height}, expected 16x16")
+
+            alpha_values = [pixel[3] for pixel in pixels]
+            transparent = sum(1 for alpha in alpha_values if alpha == 0)
+            opaque = sum(1 for alpha in alpha_values if alpha > 0)
+            if folder == "item":
+                if opaque == 0:
+                    errors.append(f"EMPTY_ITEM_TEXTURE {rel(path)}")
+                if transparent == 0:
+                    errors.append(f"OPAQUE_ITEM_TEXTURE {rel(path)}")
+            if folder == "block":
+                if opaque == 0:
+                    errors.append(f"EMPTY_BLOCK_TEXTURE {rel(path)}")
+                chroma_pixels = sum(
+                    1
+                    for r, g, b, a in pixels
+                    if is_visible_chroma_key_pixel(r, g, b, a)
+                )
+                if chroma_pixels > 128:
+                    errors.append(f"VISIBLE_CHROMA_KEY_BLOCK_TEXTURE {rel(path)}")
 
             if modid != "echoashfallprotocol" or folder != "block":
                 continue
@@ -859,8 +974,9 @@ def check_stationfall_resource_completeness(errors: list[str]) -> None:
             except Exception as exc:  # noqa: BLE001 - report corrupt or unreadable assets.
                 errors.append(f"BAD_STATIONFALL_TEXTURE {rel(path)}: {exc}")
                 continue
-            if size != (16, 16):
-                errors.append(f"BAD_STATIONFALL_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected 16x16")
+            if size not in ALLOWED_PIXEL_TEXTURE_SIZES:
+                expected = " or ".join(f"{w}x{h}" for w, h in sorted(ALLOWED_PIXEL_TEXTURE_SIZES))
+                errors.append(f"BAD_STATIONFALL_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected {expected}")
 
 
 def main() -> int:

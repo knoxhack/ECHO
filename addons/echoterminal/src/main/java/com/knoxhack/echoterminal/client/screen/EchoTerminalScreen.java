@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -187,6 +188,15 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         return true;
     }
 
+    public boolean handleCharTyped(CharacterEvent event) {
+        TerminalRenderCache.beginFrame();
+        layout();
+        List<TerminalTab> tabs = tabs();
+        normalizeActiveTab(tabs);
+        TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
+        return tab != null && tab.charTyped(contextFor(tab, scrollFor(tab)), event);
+    }
+
     private List<TerminalTab> tabs() {
         List<TerminalTab> current = TerminalTabRegistry.tabs();
         if (current != cachedTabs) {
@@ -225,7 +235,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         }
         TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
         TerminalUi.commandStackPanel(renderContext, graphics, font, groupRailX, groupRailY, groupRailW, groupRailH, accent);
-        drawCollapseToggle(graphics, mouseX, mouseY, accent);
+        drawCollapseToggle(renderContext, graphics, mouseX, mouseY, accent);
         boolean compact = groupRailW < 190;
         int cy = groupRailY + (compact ? 32 : 40);
         int rowH = commandRowHeight();
@@ -276,7 +286,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 int childRailX = groupRailX + 18;
                 int childRailH = chapter.tabs().size() * (rowH + gap) - gap;
                 if (childRailH > 0) {
-                    graphics.fill(childRailX, cy, childRailX + 1, cy + childRailH, 0x6638DFF4);
+                    TerminalUi.navigationSpine(chapterContext, graphics, childRailX, cy, childRailH, chapter.accent());
                 }
                 for (TerminalNavigationModel.IndexedTab entry : chapter.tabs()) {
                     cy = drawNavigationPage(graphics, entry, mouseX, mouseY, cy, rowH, gap, compact, 24, 34);
@@ -318,10 +328,10 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             int mouseX, int mouseY, String activeGroup, int accent) {
         TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
         TerminalUi.cinematicPanel(renderContext, graphics, groupRailX, groupRailY, groupRailW, groupRailH, accent);
-        drawCollapseToggle(graphics, mouseX, mouseY, accent);
+        drawCollapseToggle(renderContext, graphics, mouseX, mouseY, accent);
         int buttonW = Math.max(30, groupRailW - 16);
         int cy = groupRailY + 34;
-        int rowH = 34;
+        int rowH = groupRailW <= 52 ? 32 : 34;
         for (String group : navigationModel.groups()) {
             boolean active = group.equals(activeGroup);
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
@@ -335,28 +345,20 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             TerminalTab tab = tabs.get(activeTab);
             TerminalRenderContext tabContext = contextFor(tab, scrollFor(tab));
             int pageY = Math.min(groupRailY + groupRailH - 82, cy + 8);
-            TerminalUi.hybridIconBadge(graphics, TerminalUi.themedPageIcon(tabContext, tab.chrome().shortTitle()),
+            TerminalUi.hybridIconBadge(tabContext, graphics, TerminalUi.themedPageIcon(tabContext, tab.chrome().shortTitle()),
                     TerminalIcon.fromTitle(tab.chrome().shortTitle()),
                     groupRailX + Math.max(8, (groupRailW - 28) / 2), pageY, 28,
                     tab.descriptor().accentColor(), true);
-            graphics.fill(groupRailX + 10, groupRailY + groupRailH - 26,
-                    groupRailX + groupRailW - 10, groupRailY + groupRailH - 22, 0x552E8E9D);
-            graphics.fill(groupRailX + 10, groupRailY + groupRailH - 26,
-                    groupRailX + groupRailW - 18, groupRailY + groupRailH - 22, TerminalUi.opaque(accent));
+            TerminalUi.collapsedRailStatus(tabContext, graphics, groupRailX + 10, groupRailY + groupRailH - 26,
+                    groupRailW - 20, 0.82F, accent);
         }
     }
 
-    private void drawCollapseToggle(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accent) {
+    private void drawCollapseToggle(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int mouseX, int mouseY, int accent) {
         boolean hovered = TerminalUi.inside(mouseX, mouseY, collapseToggleX, collapseToggleY, collapseToggleW, collapseToggleH);
-        int bg = hovered ? 0xAA10313C : 0x66071117;
-        graphics.fill(collapseToggleX, collapseToggleY, collapseToggleX + collapseToggleW,
-                collapseToggleY + collapseToggleH, bg);
-        graphics.outline(collapseToggleX, collapseToggleY, collapseToggleW, collapseToggleH,
-                hovered ? 0xAA66E8FF : 0x6638DFF4);
-        String label = commandStackCollapsed ? "OPEN" : "MIN";
-        graphics.centeredText(font, label, collapseToggleX + collapseToggleW / 2,
-                collapseToggleY + Math.max(4, (collapseToggleH - 8) / 2),
-                hovered ? TerminalUi.TEXT : TerminalUi.MUTED);
+        TerminalUi.collapseToggle(context, graphics, collapseToggleX, collapseToggleY, collapseToggleW,
+                collapseToggleH, commandStackCollapsed, hovered, accent);
     }
 
     private void drawCompactTopNavigation(GuiGraphicsExtractor graphics, List<TerminalTab> tabs, int mouseX, int mouseY) {
@@ -386,9 +388,11 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private void drawBody(GuiGraphicsExtractor graphics, List<TerminalTab> tabs, int mouseX, int mouseY, float partialTick) {
         int bodyAccent = tabs.isEmpty() ? theme.accentColor() : chromeColor(tabs.get(activeTab));
-        TerminalUi.cinematicContentFrame(graphics, contentX, contentY, contentW, contentH, bodyAccent);
+        boolean contentHovered = TerminalUi.inside(mouseX, mouseY, contentX, contentY, contentW, contentH);
+        TerminalRenderContext bodyContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
+        TerminalUi.contentFrame(bodyContext, graphics, contentX, contentY, contentW, contentH, bodyAccent, contentHovered);
         if (tabs.isEmpty()) {
-            graphics.text(font, Component.literal("No terminal channels are online."), contentX + 10, contentY + 10, theme.mutedColor(), false);
+            graphics.text(font, Component.literal("No terminal views are online."), contentX + 10, contentY + 10, theme.mutedColor(), false);
             return;
         }
         if (Minecraft.getInstance().player == null) {
@@ -405,14 +409,16 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         graphics.enableScissor(contentX, contentY, contentX + contentW, contentY + contentH);
         tab.render(context, graphics, mouseX, mouseY, partialTick);
         graphics.disableScissor();
-        TerminalUi.scrollbar(graphics, contentX + contentW - 5, contentY + 5, contentH - 10,
-                scroll, maxScroll(tab), tab.descriptor().accentColor());
+        TerminalUi.scrollbar(context, graphics, contentX + contentW - 7, contentY + 8, contentH - 16,
+                scroll, maxScroll(tab), tab.descriptor().accentColor(), contentHovered);
     }
 
     private void drawFooter(GuiGraphicsExtractor graphics, List<TerminalTab> tabs) {
-        String footer = layoutProfile == TerminalLayoutProfile.COMPACT_STACK
-                ? "ESC/Open Key Close   Arrows Navigate   Enter Command   Wheel Scroll"
-                : "ESC/Open Key Close   Arrows Navigate   Enter Command   Page/Wheel Scroll";
+        String footer = panelW < 560
+                ? "ESC Close   Arrows Nav   Wheel Scroll"
+                : layoutProfile == TerminalLayoutProfile.COMPACT_STACK
+                        ? "ESC/Open Key Close   Arrows Navigate   Enter Command   Wheel Scroll"
+                        : "ESC/Open Key Close   Arrows Navigate   Enter Command   Page/Wheel Scroll";
         String label = "";
         if (!tabs.isEmpty()) {
             label = "ECHO-7 LINK  |  " + navigationModel.activePathLabel(activeTab);
@@ -716,8 +722,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         navW = pageRailW;
         navH = pageRailH;
         collapseToggleH = 18;
-        collapseToggleW = commandStackCollapsed ? Math.max(36, groupRailW - 16) : 38;
-        collapseToggleX = commandStackCollapsed ? groupRailX + 8 : groupRailX + groupRailW - collapseToggleW - 8;
+        collapseToggleW = commandStackCollapsed ? Math.max(30, groupRailW - 18) : 26;
+        collapseToggleX = commandStackCollapsed ? groupRailX + 9 : groupRailX + groupRailW - collapseToggleW - 8;
         collapseToggleY = groupRailY + 8;
         int gap = commandStackCollapsed ? 10 : panelW >= 760 ? 14 : 8;
         contentX = groupRailX + groupRailW + gap;

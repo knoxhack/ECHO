@@ -121,7 +121,7 @@ The ECHO Terminal reports survey progress across Orbit, Moon, Mars, Europa, Satu
 
 ## Living Route Worlds
 
-The expanded beta route spaces carry repair objectives inside deterministic deep-site families. Each route has three site families with a survey objective block, repair objective block, fixed cache, traversal hook, and hazard clue.
+The expanded route spaces carry repair objectives inside deterministic deep-site families. Each route has three site families with a survey objective block, repair objective block, fixed cache, traversal hook, and hazard clue.
 
 | Route | Deep Site Families |
 |---|---|
@@ -135,9 +135,9 @@ The expanded beta route spaces carry repair objectives inside deterministic deep
 
 Feature-heavy zones can attract ambient threats when `events.featureThreatsEnabled` is true. `worldgen.routeFeatureDensity` tunes deep-site density, and `worldgen.deepSiteCachesEnabled` controls generated deep-site caches.
 
-Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, `balance.deepSiteThreatChance`, `events.orbitalEventFrequency`, `machines.baseDuration`, and `machines.chargeRegenTicks` for quick pack tuning across the longer Saturn/Titan route arc. The public beta Adventure preset should feel recoverable but tense: first-arrival and deep-site caches include progression value, crafting support, and oxygen/seal recovery; route hazards remain dangerous without forcing emergency recovery every minute; route surveys reduce local pressure once a dimension is mapped.
+Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, `balance.deepSiteThreatChance`, `events.orbitalEventFrequency`, `machines.baseDuration`, and `machines.chargeRegenTicks` for quick pack tuning across the longer Saturn/Titan route arc. The Adventure preset should feel recoverable but tense: first-arrival and deep-site caches include progression value, crafting support, and oxygen/seal recovery; route hazards remain dangerous without forcing emergency recovery every minute; route surveys reduce local pressure once a dimension is mapped.
 
-Public beta promise: Orbital Remnants is currently a route survival adventure with deterministic hubs, compact faction contracts, and beta support/barter kiosks. It is intentionally not a full planetary RPG or NPC settlement expansion yet.
+Release promise: Orbital Remnants is currently a route survival adventure with deterministic hubs, compact faction contracts, and support/barter kiosks. It is intentionally not a full planetary RPG or NPC settlement expansion yet.
 
 ## After ECHO-0: Stabilizing the Survey Network
 

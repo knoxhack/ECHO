@@ -2,18 +2,22 @@
 
 ## 1.5.0 - Orbital Cohesion Polish
 
-- Expanded the public beta route arc through Saturn Ring Graveyard and Titan Methane Shelf before the Nexus finale.
+- Expanded the release route arc through Saturn Ring Graveyard and Titan Methane Shelf before the Nexus finale.
 - Added Saturn/Titan terminal state, route guidance, route records, arrival/deep-site cache support, hazards, objectives, encounters, and route-transfer coverage.
-- Added beta faction support/barter kiosks and relay hubs while keeping full NPC vendors, faction bases, and long quest chains deferred.
+- Added faction support/barter kiosks and relay hubs while keeping full NPC vendors, faction bases, and long quest chains deferred.
 - Removed the GeckoLib dependency for this beta; encounter visuals remain on tinted vanilla renderers.
-- Tuned the longer-route beta defaults with lower deep-site threat chance, lighter Saturn oxygen drain, lighter Titan pressure drain, and recoverability stacks in Saturn/Titan caches.
-- Smoothed public beta route pacing with lighter hazard defaults, less frequent orbital events, faster machine cadence, softer Orbit/Mars/Europa spikes, and clearer cache cadence expectations.
+- Tuned the longer-route defaults with lower deep-site threat chance, lighter Saturn oxygen drain, lighter Titan pressure drain, and recoverability stacks in Saturn/Titan caches.
+- Smoothed route pacing with lighter hazard defaults, less frequent orbital events, faster machine cadence, softer Orbit/Mars/Europa spikes, and clearer cache cadence expectations.
 - Added richer optional ECHO Terminal integration with Orbital Command, Survey, and ECHO mission surfaces.
 - Added shared Terminal mission records and once-only utility support caches backed by Orbital progress save data.
 - Moved Orbital shared-Terminal action and mission registration to common setup so server-side actions work on dedicated servers.
 - Expanded Orbital archive handoff notes and tester coverage for Terminal mission cache state and action registration.
 - Added ECHO Core route records for Earth Recontact, Launch Chain, Route Worlds, and ECHO-0 Quarantine.
 - Added ECHO Core diagnostics, hazard telemetry, and Faction Atlas integration for Orbital Remnant, Void Salvagers, and Nexus Choir standings.
+- Hardened the Ashfall handoff so Earth calibration waits for a real Ashfall Nexus choice when Ashfall is installed while standalone Orbital uses the recovered ECHO-7 handoff.
+- Added a Core integration contract GameTest and expanded release coverage to 38 required Orbital GameTests.
+- Polished route-vessel and rocket blocked/success feedback with action-bar summaries, route handoff particles, and concrete next-proof guidance.
+- Synced the redirected Gradle jar into the addon-local `build/libs` release path and made resource validation part of the release gate.
 - Synced docs to the full Echo stack versions: Core `1.1.0`, Terminal `1.1.0`, Ashfall `1.3.0`, and Orbital `1.5.0`.
 
 ## 1.4.0 - Full Endgame

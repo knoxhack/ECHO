@@ -2,6 +2,7 @@ package com.knoxhack.echoterminal.registry;
 
 import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.mission.VanillaJourneyData;
+import com.knoxhack.echoterminal.player.TerminalPlayerData;
 import java.util.function.Supplier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -17,6 +18,14 @@ public final class ModAttachments {
                     "vanilla_journey_data",
                     () -> AttachmentType.<VanillaJourneyData>serializable(VanillaJourneyData::new)
                             .sync((holder, player) -> holder == player, VanillaJourneyData.STREAM_CODEC)
+                            .copyOnDeath()
+                            .build());
+
+    public static final Supplier<AttachmentType<TerminalPlayerData>> TERMINAL_PLAYER_DATA =
+            ATTACHMENT_TYPES.register(
+                    "terminal_player_data",
+                    () -> AttachmentType.<TerminalPlayerData>serializable(TerminalPlayerData::new)
+                            .sync((holder, player) -> holder == player, TerminalPlayerData.STREAM_CODEC)
                             .copyOnDeath()
                             .build());
 

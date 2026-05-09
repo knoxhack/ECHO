@@ -4,7 +4,7 @@ Earth made its choice below. Orbit still calls it quarantine.
 
 ECHO: Orbital Remnants `1.5.0` is a post-Nexus addon chapter for the ECHO stack built on the bundled 26.1.2 NeoForge setup. It follows ECHO-7 along the pod's broken fall path from Earth recovery sites to Low Earth Orbit, Station ECHO debris, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, the Nexus Anomaly Belt, and the ECHO-0 quarantine protocol.
 
-Public beta promise: Orbital Remnants is a route survival adventure with deterministic hubs, compact faction contracts, and beta support/barter kiosks. It is not a full planetary RPG, bespoke animated encounter pack, or settlement/vendor expansion yet.
+Release promise: Orbital Remnants is a route survival adventure with deterministic hubs, compact faction contracts, and support/barter kiosks. It is not a full planetary RPG, bespoke animated encounter pack, or settlement/vendor expansion yet.
 
 ## Chapter Flow
 
@@ -42,7 +42,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 - **Survey objectives:** terminal-tracked unique landmark scans for Orbit, Moon, Mars, Europa, Saturn, Titan, and post-ECHO Nexus stabilization.
 - **Mid-game route objectives:** three-site repair chains for the Station Network, Lunar Helium Extractors, Mars Pressure Consoles, Europa Thermal Arrays, Saturn Ring Relays, and Titan Methane Pumps.
 - **Deep sites:** three repeatable site families per route with fixed caches, objective blocks, traversal hooks, and local hazard pressure.
-- **Factions:** Orbital Remnant, Void Salvagers, and Nexus Choir alignment rewards, beta support/barter kiosks, relay hubs, and terminal-driven contracts.
+- **Factions:** Orbital Remnant, Void Salvagers, and Nexus Choir alignment rewards, support/barter kiosks, relay hubs, and terminal-driven contracts.
 - **Threats:** ECHO drones, Vacuum Wraiths, Broken Astronaut Suits, Nexus Husks, major route encounters, and ECHO-0.
 
 ## Progression
@@ -85,21 +85,24 @@ Run a development client with Ashfall loaded from the root project:
 Run automated checks:
 
 ```powershell
-.\gradlew.bat :echoorbitalremnants:build :echoorbitalremnants:runGameTestServer
+.\gradlew.bat --no-daemon :echoorbitalremnants:build --console=plain
+.\gradlew.bat --no-daemon validateEchoResources --console=plain -PechoAddonSet=beta -PechoPythonExecutable="<python.exe>"
+.\gradlew.bat --no-daemon :echoorbitalremnants:runGameTestServer --console=plain
 ```
 
-The built jar is produced in `addons/echoorbitalremnants/build/libs/`.
+The root workspace redirects Gradle's primary build output to `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\`. `:echoorbitalremnants:build` also syncs the same jar into the addon-local release path, `addons/echoorbitalremnants/build/libs/`.
 
 ## Release Checklist
 
 1. Run `.\gradlew.bat :echoorbitalremnants:build`.
-2. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer`.
-3. Launch a client and craft the ECHO-7 Terminal, Signal Analyzer, launch chain, and route vessels.
-4. Confirm first-play flow: Earth calibration, launch, Orbit, Moon, Mars, Europa, Saturn, Titan, Nexus, ECHO-0, SURVEY stabilization, three faction contracts, and the final network seal.
-5. With ECHO: Terminal installed, confirm Orbital Command, Survey, and ECHO mission tabs render and that optional support caches claim once.
-6. Confirm faction pledges, beta support/barter hub wording, and three ECHO-tab faction contracts.
-7. Run the automated build and GameTest server before packaging.
+2. Run `.\gradlew.bat validateEchoResources -PechoAddonSet=beta -PechoPythonExecutable="<python.exe>"`.
+3. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` and confirm all 38 required Orbital tests pass.
+4. Launch a client and craft the ECHO-7 Terminal, Signal Analyzer, launch chain, and route vessels.
+5. Confirm first-play flow: Earth calibration, launch, Orbit, Moon, Mars, Europa, Saturn, Titan, Nexus, ECHO-0, SURVEY stabilization, three faction contracts, and the final network seal.
+6. With ECHO: Terminal installed, confirm Orbital Command, Survey, and ECHO mission tabs render and that optional support caches claim once.
+7. Confirm faction pledges, support/barter hub wording, and three ECHO-tab faction contracts.
 8. Expected jar: `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
+9. Primary Gradle output: `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\echoorbitalremnants-1.5.0.jar`.
 
 ## Documentation
 

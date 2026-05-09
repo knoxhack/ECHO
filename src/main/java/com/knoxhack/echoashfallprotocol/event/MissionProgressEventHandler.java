@@ -1,9 +1,11 @@
 package com.knoxhack.echoashfallprotocol.event;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
+import com.knoxhack.echoashfallprotocol.integration.AshfallDiscoveryProvider;
 import com.knoxhack.echoashfallprotocol.world.BiomeGuardianSiteData;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -23,7 +25,6 @@ import java.util.Set;
 @EventBusSubscriber(modid = EchoAshfallProtocol.MODID)
 public class MissionProgressEventHandler {
     private static final Set<String> BIOME_BOSS_IDS = Set.of(
-            "echoashfallprotocol:wasteland_sentinel",
             "echoashfallprotocol:crash_zone_colossus",
             "echoashfallprotocol:cryogenic_overseer",
             "echoashfallprotocol:industrial_juggernaut",
@@ -35,7 +36,6 @@ public class MissionProgressEventHandler {
     );
 
     private static final Map<String, String> BOSS_NAMES = Map.of(
-            "echoashfallprotocol:wasteland_sentinel", "Wasteland Sentinel",
             "echoashfallprotocol:crash_zone_colossus", "Crash Zone Colossus",
             "echoashfallprotocol:cryogenic_overseer", "Cryogenic Overseer",
             "echoashfallprotocol:industrial_juggernaut", "Industrial Juggernaut",
@@ -67,6 +67,8 @@ public class MissionProgressEventHandler {
             guardianProfile.ifPresent(profile -> quest.visitLocation("guardian", profile.bossPath()));
             guardianProfile.ifPresent(profile ->
                     quest.recordPOIState("guardian_" + profile.bossPath(), QuestData.POIObjectiveState.BOSS_DEFEATED));
+            guardianProfile.ifPresent(profile ->
+                    EchoCoreServices.discoverFeature(player, AshfallDiscoveryProvider.guardianId(profile.bossPath())));
             quest.addToArchive("[GUARDIAN] " + bossName + " neutralized. Underground Gridfall node archived.");
             if (killed.level() instanceof ServerLevel serverLevel) {
                 guardianProfile.ifPresent(profile ->

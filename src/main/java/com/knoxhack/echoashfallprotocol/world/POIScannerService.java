@@ -1,5 +1,6 @@
 package com.knoxhack.echoashfallprotocol.world;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.echo.Mission;
 import com.knoxhack.echoashfallprotocol.echo.MissionRegistry;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
@@ -7,6 +8,7 @@ import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
+import com.knoxhack.echoashfallprotocol.integration.AshfallDiscoveryProvider;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.ChatFormatting;
@@ -188,6 +190,12 @@ public final class POIScannerService {
                     + hit.hazardProfile() + ". Prep: " + hit.prepHint() + ".");
         }
         QuestData.saveAndSync(player, quest);
+        if (siteId.startsWith("guardian_")) {
+            EchoCoreServices.discoverFeature(player,
+                    AshfallDiscoveryProvider.guardianId(siteId.substring("guardian_".length())));
+        } else if (!siteId.startsWith("nexus_relay_")) {
+            EchoCoreServices.discoverFeature(player, AshfallDiscoveryProvider.structureId(siteId));
+        }
 
         if (!alreadyDiscovered && profile.faction() != null) {
             var territory = player.getData(ModAttachments.FACTION_TERRITORY.get());

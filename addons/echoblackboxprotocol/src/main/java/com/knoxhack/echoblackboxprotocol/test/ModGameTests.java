@@ -1,5 +1,7 @@
 package com.knoxhack.echoblackboxprotocol.test;
 
+import com.knoxhack.echocore.api.EchoHandoffs;
+import com.knoxhack.echocore.api.EchoProgressLedger;
 import com.knoxhack.echoblackboxprotocol.EchoBlackboxProtocol;
 import com.knoxhack.echoblackboxprotocol.block.BlackboxMachineBlock;
 import com.knoxhack.echoblackboxprotocol.entity.BlackboxBossEntity;
@@ -371,6 +373,14 @@ public final class ModGameTests {
 
    private static void sagaGates(GameTestHelper helper) {
       helper.assertTrue(
+         EchoProgressLedger.empty().withMilestone("nexus:path:restore").hasMilestone(EchoHandoffs.NEXUS_PROTOCOL_COMPLETE),
+         "Blackbox Nexus gate should accept legacy Nexus path milestones through Core handoff aliases"
+      );
+      helper.assertTrue(
+         EchoProgressLedger.empty().withMilestone("stationfall:blackbox_recovered").hasMilestone(EchoHandoffs.STATIONFALL_BLACKBOX_RECOVERED),
+         "Blackbox Stationfall gate should accept legacy Stationfall handoff milestones through Core handoff aliases"
+      );
+      helper.assertTrue(
          BlackboxCoreIntegration.sagaGateDecisionForTest(false, null, false, false, false, false), "Blackbox should allow standalone entry when optional saga modules are absent"
       );
       helper.assertTrue(
@@ -506,12 +516,13 @@ public final class ModGameTests {
       dropMachine.setItem(BlackboxMachineBlockEntity.INPUT_SLOT, new ItemStack(ModItems.STATIC_FLUID.get()));
       BlockPos dropPos = dropMachine.getBlockPos();
       ((BlackboxMachineBlock)ModBlocks.MEMORY_STABILIZER.get()).playerDestroy(helper.getLevel(), player, dropPos, dropMachine.getBlockState(), dropMachine, ItemStack.EMPTY);
-      helper.assertTrue(
-         !helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(dropPos).inflate(2.0), entity -> entity.getItem().is(ModItems.STATIC_FLUID.get())).isEmpty(),
-         "Breaking a machine should drop stored inventory"
-      );
-
-      helper.succeed();
+      helper.runAfterDelay(1L, () -> {
+         helper.assertTrue(
+            !helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(dropPos).inflate(2.0), entity -> entity.getItem().is(ModItems.STATIC_FLUID.get())).isEmpty(),
+            "Breaking a machine should drop stored inventory"
+         );
+         helper.succeed();
+      });
    }
 
    private static void machineWorkstations(GameTestHelper helper) {

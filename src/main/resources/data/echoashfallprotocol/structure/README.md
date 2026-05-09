@@ -64,11 +64,10 @@ The generator mirrors this template into singular runtime resources:
 
 ## Biome Guardian Structures
 
-Each wasteland biome has a required guardian profile. The visible surface structure is only the entrance; the real site is a buried Gridfall control node 18-36 blocks below the surface with a themed descent route, side rooms, hazard pockets, defenders, loot, and one clear boss chamber.
+Each active guardian biome has a required guardian profile. The visible surface structure is only the entrance; the real site is a buried Gridfall control node 18-36 blocks below the surface with a themed descent route, side rooms, hazard pockets, defenders, loot, and one clear boss chamber.
 
 | Biome | Surface entrance | Underground arena | Guardian |
 |---|---|---|---|
-| `the_wasteland` | Half-buried rescue hatch | Buried Rescue-Control Lab | Wasteland Sentinel |
 | `ruined_plains` | Reinforced bunker door | Underground Radwarden Command Bunker | Plains Warlord |
 | `ruined_cityscape` | Subway service stair | Subway Data-Vault Ambush Site | City Ruin Stalker |
 | `industrial_ruins` | Ruined freight lift | Factory Sublevel Maintenance Core | Industrial Juggernaut |
@@ -80,7 +79,7 @@ Each wasteland biome has a required guardian profile. The visible surface struct
 
 Drop pods are side structures only and are not used as boss arenas.
 
-The procedural generator gives every guardian a distinct visual theme: rescue-control concrete for the Wasteland Sentinel, fortified bunker staging for the Plains Warlord, subway/sculk cues for the City Stalker, industrial lift hardware for the Juggernaut, toxic growth for the Hive Matriarch, crash debris for the Colossus, containment lighting for the Behemoth, ice storage for the Overseer, and Nexus anomaly anchors for the Scar Avatar. Each theme still preserves a clear scanner entrance, descent route, and reserved boss-spawn zone.
+The procedural generator gives every active guardian a distinct visual theme: fortified bunker staging for the Plains Warlord, subway/sculk cues for the City Stalker, industrial lift hardware for the Juggernaut, toxic growth for the Hive Matriarch, crash debris for the Colossus, containment lighting for the Behemoth, ice storage for the Overseer, and Nexus anomaly anchors for the Scar Avatar. Each theme still preserves a clear scanner entrance, descent route, and reserved boss-spawn zone.
 
 ## Debug Commands
 
@@ -95,14 +94,12 @@ Examples:
 
 ```mcfunction
 /genpoi biome_main toxic_swamp
-/genpoi biome_main the_wasteland
 /genpoi procedural reactor_ruin
 ```
 
 For a full guardian visual pass, smoke-test all biome-main profiles:
 
 ```mcfunction
-/genpoi biome_main the_wasteland
 /genpoi biome_main ruined_plains
 /genpoi biome_main ruined_cityscape
 /genpoi biome_main industrial_ruins

@@ -269,6 +269,7 @@ public class NexusCommandHandler {
          NexusPlayerData.saveAndSync(player, data);
          worldData.commitEndingState(path);
          EchoCoreServices.recordMilestone(player, milestone);
+         EchoCoreServices.recordMilestone(player, NexusProgression.NEXUS_PROTOCOL_COMPLETE);
          player.sendSystemMessage(Component.literal("ECHO-7 // Nexus path committed: " + path));
          return 1;
       }

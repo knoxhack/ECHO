@@ -1,6 +1,7 @@
 package com.knoxhack.echostationfall.progression;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoHandoffs;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
 import java.util.EnumMap;
@@ -17,7 +18,7 @@ public final class StationfallProgress {
     public static final String MILESTONE_BOARDED = "stationfall.boarded";
     public static final String MILESTONE_OVERRIDE = "stationfall.ai_override";
     public static final String MILESTONE_BOSS = "stationfall.station_mother_defeated";
-    public static final String MILESTONE_BLACKBOX = "stationfall.blackbox_retrieved";
+    public static final String MILESTONE_BLACKBOX = EchoHandoffs.STATIONFALL_BLACKBOX_RECOVERED;
 
     private boolean coordinatesUnlocked;
     private boolean boarded;

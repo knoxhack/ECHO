@@ -10,6 +10,7 @@ import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
 import com.knoxhack.echocore.api.EchoHazardTelemetry;
+import com.knoxhack.echocore.api.EchoHandoffs;
 import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echocore.api.EchoDiagnosticBlocker.Severity;
 import java.lang.reflect.Method;
@@ -22,8 +23,8 @@ import net.neoforged.fml.ModList;
 
 public final class BlackboxCoreIntegration {
    private static final String CHAPTER_ID = "blackbox_protocol";
-   private static final String STATIONFALL_HANDOFF = "echostationfall:stationfall_blackbox_recovered";
-   private static final String NEXUS_PROTOCOL_HANDOFF = "echonexusprotocol:nexus_protocol_complete";
+   private static final String STATIONFALL_HANDOFF = EchoHandoffs.STATIONFALL_BLACKBOX_RECOVERED;
+   private static final String NEXUS_PROTOCOL_HANDOFF = EchoHandoffs.NEXUS_PROTOCOL_COMPLETE;
 
    private BlackboxCoreIntegration() {
    }
@@ -189,6 +190,21 @@ public final class BlackboxCoreIntegration {
 
    public static boolean sagaGateOpenForTest(Player player) {
       return sagaGateOpen(player);
+   }
+
+   public static boolean sagaGateOpenForTerminal(Player player) {
+      return sagaGateOpen(player);
+   }
+
+   public static String sagaGateReason(Player player) {
+      if (sagaGateOpen(player)) {
+         return "";
+      }
+      return "Blackbox waits for late-game handoffs: "
+         + STATIONFALL_HANDOFF
+         + " and "
+         + NEXUS_PROTOCOL_HANDOFF
+         + ". Legacy Stationfall/Nexus path milestones are accepted by Echo Core aliases.";
    }
 
    public static boolean sagaGateDecisionForTest(

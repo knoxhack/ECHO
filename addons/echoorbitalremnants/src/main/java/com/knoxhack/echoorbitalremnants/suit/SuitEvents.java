@@ -41,6 +41,9 @@ public class SuitEvents {
         Player player = event.getEntity();
         boolean exposed = isOrbitalExposure(player);
         SuitState state = SuitState.get(player);
+        if (!player.level().isClientSide()) {
+            state.syncStationPower(EchoTerminalProgress.get(player), hasItem(player, ModItems.STATION_POWER_MATRIX.get()));
+        }
         boolean fullSuit = SuitState.hasFullPressureSuit(player);
         boolean magneticBoots = SuitState.hasMagneticBoots(player);
         boolean oxygenBooster = SuitState.hasOxygenBooster(player);
@@ -149,6 +152,10 @@ public class SuitEvents {
             return;
         }
 
+        if (player.tickCount % 100 == 0) {
+            applyStationPowerSupport(player, state);
+        }
+
         if (state.critical()
                 && player.tickCount % Config.tunedSurvivalInterval(Config.VACUUM_DAMAGE_TICKS) == 0
                 && !player.hasInfiniteMaterials()) {
@@ -171,6 +178,20 @@ public class SuitEvents {
                 && player.getRandom().nextInt(100) < Config.DEEP_SITE_THREAT_CHANCE.get()) {
             spawnFeatureThreat(serverLevel, player);
         }
+    }
+
+    private static void applyStationPowerSupport(Player player, SuitState state) {
+        if (player.level().dimension() != ModDimensions.LOW_EARTH_ORBIT
+                || state.stationPower() < 46
+                || !nearStationPowerInfrastructure(player)) {
+            return;
+        }
+
+        int power = state.stationPower();
+        int oxygenRecovery = power >= 82 ? 2 : 1;
+        int pressureRecovery = power >= 70 ? 2 : 1;
+        int radiationRecovery = power >= 82 ? 1 : 0;
+        state.stabilizeFromStationPower(oxygenRecovery, pressureRecovery, radiationRecovery);
     }
 
     private static void applyDimensionHazards(Player player, SuitState state) {
@@ -231,7 +252,7 @@ public class SuitEvents {
                     state.addRadiation(SuitState.hasRadiationVisor(player));
                 }
             }
-            case STATION_BLACKOUT -> state.drainOxygen(Config.tunedHazardDrain(5));
+            case STATION_BLACKOUT -> state.drainOxygen(stationBlackoutDrain(player, state));
             case NEXUS_PULSE -> {
                 for (int i = 0; i < Config.tunedHazardDrain(1); i++) {
                     state.addRadiation(false);
@@ -239,6 +260,18 @@ public class SuitEvents {
                 state.compromisePressure(Config.tunedHazardDrain(3));
             }
         }
+    }
+
+    private static int stationBlackoutDrain(Player player, SuitState state) {
+        int drain = Config.tunedHazardDrain(5);
+        if (player.level().dimension() != ModDimensions.LOW_EARTH_ORBIT
+                || state.stationPower() < 70
+                || !nearStationPowerInfrastructure(player)) {
+            return drain;
+        }
+
+        int reduction = state.stationPower() >= 95 ? 3 : 2;
+        return Math.max(1, drain - reduction);
     }
 
     private static void sendOrbitalEventVisual(Player player, OrbitalEventType event) {
@@ -395,6 +428,15 @@ public class SuitEvents {
             }
         }
         return false;
+    }
+
+    private static boolean nearStationPowerInfrastructure(Player player) {
+        return nearbyBlock(player, 7,
+                ModBlocks.STATION_LIFE_SUPPORT_CORE.get(),
+                ModBlocks.STATION_RELAY_NODE.get(),
+                ModBlocks.STATION_WALL_PANEL.get(),
+                ModBlocks.DOCKING_BEACON.get(),
+                ModBlocks.OXYGEN_PIPE.get());
     }
 
     private static boolean nearbyBlock(Player player, int radius, Block... blocks) {

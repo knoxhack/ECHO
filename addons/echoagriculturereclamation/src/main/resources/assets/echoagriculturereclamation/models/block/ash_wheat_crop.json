@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "echoagriculturereclamation:block/ash_wheat_crop"
+  }
+}

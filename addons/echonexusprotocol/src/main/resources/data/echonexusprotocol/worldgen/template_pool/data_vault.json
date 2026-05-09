@@ -8,7 +8,7 @@
         "element_type": "minecraft:single_pool_element",
         "location": "echonexusprotocol:data_vault",
         "processors": "minecraft:empty",
-        "projection": "rigid"
+        "projection": "terrain_matching"
       }
     }
   ]

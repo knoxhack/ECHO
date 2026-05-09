@@ -11,10 +11,11 @@ credits="Built as an ECHO addon chapter for post-Nexus space survival."
 description='''
 Earth made its choice below. Orbit still calls it quarantine.
 
-ECHO: Orbital Remnants is a post-Nexus addon chapter for ECHO: Ashfall Protocol.
-Follow ECHO-7 along the pod's broken fall path through launch prep, pressure-suit
-hazards, Station ECHO debris, route repairs, surveys, faction contracts, hostile
-remnants, and ECHO-0 quarantine resolution.
+ECHO: Orbital Remnants is a modular ECHO route-survival chapter. With Ashfall
+installed, Earth calibration waits for a Nexus choice; standalone Orbital uses a
+recovered ECHO-7 handoff. Follow the broken fall path through launch prep,
+pressure-suit hazards, Station ECHO debris, Saturn and Titan route repairs,
+surveys, faction contracts, hostile remnants, and ECHO-0 quarantine resolution.
 '''
 
 [[dependencies.${mod_id}]]

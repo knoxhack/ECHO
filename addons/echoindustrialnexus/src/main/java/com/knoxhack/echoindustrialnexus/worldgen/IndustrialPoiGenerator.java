@@ -34,6 +34,9 @@ public final class IndustrialPoiGenerator {
       radiusX += biomeWidthBonus(level, base, type);
       buildPad(level, base, radiusX, radiusZ);
       buildShell(level, base, type, radiusX, radiusZ, variant);
+      buildApproachPad(level, base, type, radiusX, radiusZ, variant);
+      breakPerimeter(level, base, type, radiusX, radiusZ, variant);
+      placeTypeReadability(level, base, type, radiusX, radiusZ, variant);
       placeCore(level, base, type, variant);
       placeLoot(level, base.offset(radiusX - 2, 1, radiusZ - 2), type, random);
       if (variant >= 1) {
@@ -176,6 +179,58 @@ public final class IndustrialPoiGenerator {
       level.setBlock(base.offset(radiusX - 1, 1, 0), ModBlocks.HAZARD_DOOR.get().defaultBlockState(), 3);
       level.setBlock(base.offset(-radiusX + 1, 1, 0), ModBlocks.MAINTENANCE_HATCH.get().defaultBlockState(), 3);
       buildPartition(level, base, radiusX, radiusZ, variant);
+   }
+
+   private static void buildApproachPad(ServerLevel level, BlockPos base, IndustrialPoiType type, int radiusX, int radiusZ, int variant) {
+      BlockState approach = type == IndustrialPoiType.GEOTHERMAL_DRILL_SITE
+         ? Blocks.MAGMA_BLOCK.defaultBlockState()
+         : ModBlocks.WARNING_STRIPE_BLOCK.get().defaultBlockState();
+      BlockState grate = ModBlocks.INDUSTRIAL_GRATE.get().defaultBlockState();
+      int entryZ = -radiusZ - 1;
+      for (int z = entryZ - 5; z <= entryZ; z++) {
+         for (int x = -2; x <= 2; x++) {
+            level.setBlock(base.offset(x, 0, z), Math.abs(x) == 2 && Math.floorMod(z + variant, 2) == 0 ? approach : grate, 3);
+         }
+      }
+      level.setBlock(base.offset(-3, 1, entryZ - 1), ModBlocks.EMERGENCY_LIGHT.get().defaultBlockState(), 3);
+      level.setBlock(base.offset(3, 1, entryZ - 1), ModBlocks.FACTORY_LIGHT.get().defaultBlockState(), 3);
+   }
+
+   private static void breakPerimeter(ServerLevel level, BlockPos base, IndustrialPoiType type, int radiusX, int radiusZ, int variant) {
+      BlockState rubble = type == IndustrialPoiType.NEXUS_HEAT_EXCHANGER_RUINS
+         ? ModBlocks.STATIC_PIPE.get().defaultBlockState()
+         : ModBlocks.RUSTED_CATWALK.get().defaultBlockState();
+      int southGap = -radiusZ;
+      for (int x = -2; x <= 2; x++) {
+         level.setBlock(base.offset(x, 1, southGap), Blocks.AIR.defaultBlockState(), 3);
+         level.setBlock(base.offset(x, 2, southGap), Blocks.AIR.defaultBlockState(), 3);
+      }
+      BlockPos[] collapsed = new BlockPos[]{
+         base.offset(-radiusX + 1 + variant, 1, -radiusZ + 1),
+         base.offset(radiusX - 1, 1, radiusZ - 2 - variant),
+         base.offset(-radiusX + 2, 1, radiusZ - 1)
+      };
+      for (BlockPos pos : collapsed) {
+         level.setBlock(pos, rubble, 3);
+         level.setBlock(pos.above(), ModBlocks.PIPE_WALL.get().defaultBlockState(), 3);
+      }
+   }
+
+   private static void placeTypeReadability(ServerLevel level, BlockPos base, IndustrialPoiType type, int radiusX, int radiusZ, int variant) {
+      BlockState signal = switch (type) {
+         case ABANDONED_THERMAL_PLANT -> ModBlocks.THERMAL_COIL_BLOCK.get().defaultBlockState();
+         case RUSTED_FACTORY_COMPLEX -> ModBlocks.CONVEYOR_FLOOR.get().defaultBlockState();
+         case GEOTHERMAL_DRILL_SITE -> Blocks.MAGMA_BLOCK.defaultBlockState();
+         case REACTOR_COOLING_STATION -> ModBlocks.PRESSURE_GAUGE_BLOCK.get().defaultBlockState();
+         case NEXUS_HEAT_EXCHANGER_RUINS -> ModBlocks.NEXUS_SAFE_DUCT.get().defaultBlockState();
+      };
+      for (int offset = -3; offset <= 3; offset += 3) {
+         level.setBlock(base.offset(offset, 1, -radiusZ + 3), signal, 3);
+      }
+      level.setBlock(base.offset(radiusX - 3, 1, radiusZ - 3), ModBlocks.CONTROL_PANEL.get().defaultBlockState(), 3);
+      if (variant == 2) {
+         level.setBlock(base.offset(-radiusX + 3, 1, -radiusZ + 3), ModBlocks.BROKEN_MONITOR.get().defaultBlockState(), 3);
+      }
    }
 
    private static void buildPartition(ServerLevel level, BlockPos base, int radiusX, int radiusZ, int variant) {

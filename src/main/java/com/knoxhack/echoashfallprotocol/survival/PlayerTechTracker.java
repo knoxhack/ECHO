@@ -157,7 +157,7 @@ public class PlayerTechTracker {
             if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                 NexusWorldData worldData = NexusWorldData.get(serverLevel.getServer().overworld());
                 NexusStatePacket packet = NexusStatePacket.fromWorldData(worldData);
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, packet);
+                sendOptionalPayload(player, packet);
                 if (worldData.hasChoiceBeenMade()) {
                     com.knoxhack.echoashfallprotocol.event.PostNexusEventHandler.syncPlayerToWorldChoice(player);
                     com.knoxhack.echoashfallprotocol.endgame.PostNexusData.syncToClient(player);
@@ -176,5 +176,13 @@ public class PlayerTechTracker {
 
     public static int getTechLevel(ServerPlayer player) {
         return getOrCreateData(player).getTechLevel();
+    }
+
+    private static void sendOptionalPayload(ServerPlayer player, net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
+        try {
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException | IllegalStateException ignored) {
+            // Synthetic GameTest players do not always negotiate optional client payload channels.
+        }
     }
 }

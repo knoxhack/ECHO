@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "echoagriculturereclamation:block/filter_reed_crop"
+  }
+}

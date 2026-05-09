@@ -457,7 +457,7 @@ public class ModItems {
             props -> new DataLogItem(props, DataLogItem.DataLogType.NEXUS_ARCHIVES, "Biome Guardian Dossiers",
                     new String[]{"ECHO Threat Index - Regional Guardians",
             "Each hostile biome hides a buried Gridfall control node below a visible surface entrance. Some are corrupted security echoes, some are failed containment systems, and some are living command relays shaped by radiation.",
-                            "The Wasteland Sentinel waits below a rescue hatch as if the first emergency protocol never ended. The Plains Warlord and City Stalker turned bunkers and subway vaults into territory law.",
+                            "The Plains Warlord and City Stalker turned bunkers and subway vaults into territory law.",
                             "Industrial, cryogenic, toxic, radiation, crash-zone, and Nexus guardians each anchor a different Gridfall failure mode underground. None of them are the Core. All of them teach you how the Core thinks.",
                             "Neutralize them to cut the path to the Nexus into stable, survivable steps.",
                             "Scanner priority: locate the surface entrance, descend, archive the node, defeat the guardian, then follow the next signal."}), new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE),
