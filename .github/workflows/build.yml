@@ -42,3 +42,86 @@ jobs:
 
       - name: Verify release build
         run: ./gradlew verifyEchoRelease -x checkEchoModJarSet
+
+      - name: Collect built JAR artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p dist/jars
+          mapfile -t jar_files < <(
+            find \
+              build/libs \
+              core/echocore/build/libs \
+              addons \
+              -type f \
+              -name '*.jar' \
+              ! -name '*-sources.jar' \
+              ! -name '*-javadoc.jar' \
+              \( \
+                -path 'build/libs/*' -o \
+                -path 'core/echocore/build/libs/*' -o \
+                -path 'addons/*/build/libs/*' \
+              \) \
+              | sort
+          )
+
+          if [ "${#jar_files[@]}" -eq 0 ]; then
+            echo "No runtime JARs were found."
+            exit 1
+          fi
+
+          for jar in "${jar_files[@]}"; do
+            cp "$jar" "dist/jars/$(basename "$jar")"
+          done
+
+      - name: Upload JAR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: echo-jars-${{ github.sha }}
+          path: dist/jars/*.jar
+          if-no-files-found: error
+          retention-days: 21
+
+      - name: Summarize built JARs
+        run: |
+          set -euo pipefail
+          {
+            echo "## Runtime JAR Artifacts"
+            echo
+            echo "| Module | JAR |"
+            echo "| --- | --- |"
+
+            mapfile -t summary_jars < <(
+              find \
+                build/libs \
+                core/echocore/build/libs \
+                addons \
+                -type f \
+                -name '*.jar' \
+                ! -name '*-sources.jar' \
+                ! -name '*-javadoc.jar' \
+                \( \
+                  -path 'build/libs/*' -o \
+                  -path 'core/echocore/build/libs/*' -o \
+                  -path 'addons/*/build/libs/*' \
+                \) \
+                | sort
+            )
+
+            for jar in "${summary_jars[@]}"; do
+              module="$jar"
+              case "$jar" in
+                build/libs/*)
+                  module="root"
+                  ;;
+                core/echocore/build/libs/*)
+                  module="core/echocore"
+                  ;;
+                addons/*/build/libs/*)
+                  module="${jar#addons/}"
+                  module="addons/${module%%/*}"
+                  ;;
+              esac
+
+              echo "| ${module} | $(basename "$jar") |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
