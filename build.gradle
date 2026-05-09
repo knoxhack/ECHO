@@ -163,6 +163,12 @@ def echoIncludedAddonProjects = {
             .sort { left, right -> left.path <=> right.path }
 }
 
+def echoExpectedReleaseProjects = {
+    def expected = [project(':echocore'), rootProject]
+    expected.addAll(echoIncludedAddonProjects())
+    expected.unique { it.path }.sort { left, right -> left.path <=> right.path }
+}
+
 dependencies {
     implementation project(':echocore')
     compileOnly project(':echoterminal')
@@ -250,6 +256,42 @@ tasks.register('buildEchoWorkspace') {
     dependsOn tasks.named('build')
     echoIncludedAddonProjects().each { addonProject ->
         dependsOn "${addonProject.path}:build"
+    }
+}
+
+tasks.register('printReleaseManifest') {
+    group = 'release'
+    description = 'Prints the release module manifest (module path, artifact, version, jar path).'
+    dependsOn echoExpectedReleaseProjects().collect { expectedProject ->
+        "${expectedProject.path}:jar"
+    }
+    doLast {
+        echoExpectedReleaseProjects().each { expectedProject ->
+            def jarTask = expectedProject.tasks.named('jar').get()
+            def jarFile = jarTask.archiveFile.get().asFile
+            println "${expectedProject.path}|${jarTask.archiveBaseName.get()}|${expectedProject.version}|${jarFile.absolutePath}"
+        }
+    }
+}
+
+tasks.register('validateReleaseArtifacts') {
+    group = 'verification'
+    description = 'Fails when an expected release module did not produce a jar artifact.'
+    dependsOn echoExpectedReleaseProjects().collect { expectedProject ->
+        "${expectedProject.path}:jar"
+    }
+    doLast {
+        def missingArtifacts = []
+        echoExpectedReleaseProjects().each { expectedProject ->
+            def jarTask = expectedProject.tasks.named('jar').get()
+            def jarFile = jarTask.archiveFile.get().asFile
+            if (!jarFile.isFile()) {
+                missingArtifacts << "${expectedProject.path} -> ${jarFile.absolutePath}"
+            }
+        }
+        if (!missingArtifacts.isEmpty()) {
+            throw new GradleException("Missing release artifacts for expected modules:\n - ${missingArtifacts.join('\n - ')}")
+        }
     }
 }
 

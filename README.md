@@ -127,6 +127,17 @@ Terminal addons should register navigation through the public `echoterminal` pro
 - `LORE_BIBLE.md` - shared tactical-eerie canon and writing rules for missions, archives, docs, and addon chapters.
 - `GETTING_STARTED.md` - player-facing walkthrough from drop pod to Nexus choice.
 - `PROCEDURAL_STRUCTURES.md` - POI and structure generation reference.
+- `docs/release_process.md` - release checklist, version contract, and CI release artifact expectations.
+
+## Version Contract
+
+Releases follow an explicit version contract so tags, module versions, and release names stay aligned:
+
+- Git tags must use `v<major>.<minor>.<patch>` with optional prerelease suffixes (for example `v1.3.1-beta.1`).
+- The numeric part of the tag must match each module's release version for that cut.
+- GitHub release names should reuse the exact tag value for traceability.
+
+See `docs/release_process.md` for the full release workflow and manifest checks.
 
 ## 1.3.0 Full Stack Smoke Checklist
 
