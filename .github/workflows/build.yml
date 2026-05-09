@@ -41,6 +41,44 @@ jobs:
           python -m pip install -r tools/requirements.txt
 
       - name: Verify release build
+libs/*)
+                module="root"
+                ;;
+              */core/echocore/build/libs/*)
+                module="core/echocore"
+                ;;
+              */addons/*/build/libs/*)
+                module="${jar#*/addons/}"
+                module="addons/${module%%/*}"
+                ;;
+            esac
+
+            target_name="${module//\//__}__$(basename "$jar")"
+            cp "$jar" "dist/jars/$target_name"
+            printf '%s\t%s\t%s\n' "$module" "$(basename "$jar")" "$target_name" >> dist/jars/manifest.tsv
+          done
+
+      - name: Upload JAR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: echo-jars-${{ github.sha }}
+          path: dist/jars/*.jar
+          if-no-files-found: error
+          retention-days: 21
+
+      - name: Summarize built JARs
+        run: |
+          set -euo pipefail
+          {
+            echo "## Runtime JAR Artifacts"
+            echo
+            echo "| Module | JAR |"
+            echo "| --- | --- |"
+            while IFS=$'\t' read -r module source_jar target_jar; do
+              echo "| ${module} | ${source_jar} (`${target_jar}`) |"
+            done < dist/jars/manifest.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
+=======
         run: ./gradlew verifyEchoRelease validateReleaseArtifacts -x checkEchoModJarSet
 
       - name: Generate release manifest
@@ -58,3 +96,68 @@ jobs:
         with:
           files: |
             release-manifest.txt
+      - name: Verify release build
+        run: ./gradlew verifyEchoRelease -x checkEchoModJarSet
+
+      - name: Collect built JAR artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p dist/jars
+          project_name="${GITHUB_REPOSITORY##*/}"
+          gradle_build_root="${ECHO_GRADLE_BUILD_DIR:-${RUNNER_TEMP:-/tmp}/EchoGradleBuild}"
+          artifact_root="${gradle_build_root}/${project_name}"
+          mapfile -t jar_files < <(
+            find "$artifact_root" \
+              -type f \
+              -path '*/build/libs/*.jar' \
+              ! -name '*-sources.jar' \
+              ! -name '*-javadoc.jar' \
+              | sort
+          )
+
+          if [ "${#jar_files[@]}" -eq 0 ]; then
+            echo "No runtime JARs were found."
+            exit 1
+          fi
+
+          : > dist/jars/manifest.tsv
+          for jar in "${jar_files[@]}"; do
+            module="$jar"
+            case "$jar" in
+              */root/build/libs/*)
+                module="root"
+                ;;
+              */core/echocore/build/libs/*)
+                module="core/echocore"
+                ;;
+              */addons/*/build/libs/*)
+                module="${jar#*/addons/}"
+                module="addons/${module%%/*}"
+                ;;
+            esac
+
+            target_name="${module//\//__}__$(basename "$jar")"
+            cp "$jar" "dist/jars/$target_name"
+            printf '%s\t%s\t%s\n' "$module" "$(basename "$jar")" "$target_name" >> dist/jars/manifest.tsv
+          done
+
+      - name: Upload JAR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: echo-jars-${{ github.sha }}
+          path: dist/jars/*.jar
+          if-no-files-found: error
+          retention-days: 21
+
+      - name: Summarize built JARs
+        run: |
+          set -euo pipefail
+          {
+            echo "## Runtime JAR Artifacts"
+            echo
+            echo "| Module | JAR |"
+            echo "| --- | --- |"
+            while IFS=$'\t' read -r module source_jar target_jar; do
+              echo "| ${module} | ${source_jar} (\`${target_jar}\`) |"
+            done < dist/jars/manifest.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
