@@ -1,0 +1,98 @@
+name: Release Beta
+
+on:
+  push:
+    tags:
+      - "v*.*.*-beta*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-beta:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x ./gradlew
+
+      - name: Build release modules for beta
+        run: ./gradlew buildEchoWorkspace -PechoAddonSet=all
+
+      - name: Collect release JARs
+        id: collect_jars
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGING_DIR="release-beta-artifacts"
+          mkdir -p "$STAGING_DIR"
+
+          mapfile -t jars < <(
+            find . \( -path "./build/libs/*" -o -path "./*/build/libs/*" \) \
+              -type f -name "*.jar" \
+              -not -name "*-sources.jar" \
+              -not -name "*-javadoc.jar"
+          )
+
+          if [ "${#jars[@]}" -eq 0 ]; then
+            echo "jar_count=0" >> "$GITHUB_OUTPUT"
+            echo "No JAR files found to stage."
+            exit 0
+          fi
+
+          for jar in "${jars[@]}"; do
+            cp "$jar" "$STAGING_DIR/"
+          done
+
+          jar_count=$(find "$STAGING_DIR" -maxdepth 1 -type f -name "*.jar" | wc -l | tr -d ' ')
+          echo "jar_count=$jar_count" >> "$GITHUB_OUTPUT"
+
+      - name: Block empty release
+        if: steps.collect_jars.outputs.jar_count == '0'
+        run: |
+          echo "No JAR artifacts were collected. Failing to block empty release."
+          exit 1
+
+      - name: Build release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          NOTES_TEMPLATE=".github/release-notes/beta.md"
+          NOTES_OUTPUT="release-beta-notes.md"
+
+          cp "$NOTES_TEMPLATE" "$NOTES_OUTPUT"
+          {
+            echo
+            echo "## Included Artifacts"
+            find release-beta-artifacts -maxdepth 1 -type f -name "*.jar" -printf "%f\n" \
+              | sed -E 's/\.jar$//' \
+              | sed -E 's/-([0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9]+)*)$/|\1/' \
+              | awk -F'|' '{printf "- `%s` (`%s`)\n", $1, $2}' \
+              | sort
+          } >> "$NOTES_OUTPUT"
+
+          echo "notes_file=$NOTES_OUTPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Publish beta release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.notes_file }}
+          files: release-beta-artifacts/*.jar
