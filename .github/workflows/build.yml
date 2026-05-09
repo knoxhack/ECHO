@@ -47,12 +47,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/jars
-          search_roots=(build/libs core/echocore/build/libs)
-          while IFS= read -r addon_lib; do
-            search_roots+=("$addon_lib")
-          done < <(find addons -mindepth 2 -maxdepth 2 -type d -name libs -path '*/build/libs' | sort)
-
-          mapfile -t jar_files < <(find "${search_roots[@]}" -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | sort)
+          project_name="${GITHUB_REPOSITORY##*/}"
+          gradle_build_root="${ECHO_GRADLE_BUILD_DIR:-${RUNNER_TEMP:-/tmp}/EchoGradleBuild}"
+          artifact_root="${gradle_build_root}/${project_name}"
+          mapfile -t jar_files < <(
+            find "$artifact_root" \
+              -type f \
+              -path '*/build/libs/*.jar' \
+              ! -name '*-sources.jar' \
+              ! -name '*-javadoc.jar' \
+              | sort
+          )
 
           if [ "${#jar_files[@]}" -eq 0 ]; then
             echo "No runtime JARs were found."
@@ -63,14 +68,14 @@ jobs:
           for jar in "${jar_files[@]}"; do
             module="$jar"
             case "$jar" in
-              build/libs/*)
+              */root/build/libs/*)
                 module="root"
                 ;;
-              core/echocore/build/libs/*)
+              */core/echocore/build/libs/*)
                 module="core/echocore"
                 ;;
-              addons/*/build/libs/*)
-                module="${jar#addons/}"
+              */addons/*/build/libs/*)
+                module="${jar#*/addons/}"
                 module="addons/${module%%/*}"
                 ;;
             esac
