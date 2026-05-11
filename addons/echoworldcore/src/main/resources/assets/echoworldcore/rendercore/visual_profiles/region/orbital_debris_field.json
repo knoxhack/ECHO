@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/blue_stained_glass.png",
+  "default_state": "SCANNING",
+  "transition_seconds": 0.28,
+  "materials": {
+    "orbital_scan": {
+      "color": "#FFA58BFF",
+      "alpha": 0.5,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "debris_tracking_arc",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/blue_stained_glass.png",
+      "material": "orbital_scan",
+      "states": ["ONLINE", "ACTIVE", "SCANNING"],
+      "alpha": 0.48,
+      "emissive": true
+    }
+  ]
+}

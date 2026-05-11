@@ -100,11 +100,13 @@ public class FactionDiplomacy implements ValueIOSerializable {
         }
 
         public static FactionPair fromFactions(Identifier a, Identifier b) {
-            if (a == null || b == null || a.equals(b)) {
+            Identifier left = AshfallFactionMap.canonicalFaction(a);
+            Identifier right = AshfallFactionMap.canonicalFaction(b);
+            if (left == null || right == null || left.equals(right)) {
                 return null;
             }
             for (FactionPair pair : VALUES) {
-                if (pair.involves(a) && pair.involves(b)) {
+                if (pair.involves(left) && pair.involves(right)) {
                     return pair;
                 }
             }
@@ -171,9 +173,13 @@ public class FactionDiplomacy implements ValueIOSerializable {
     }
 
     public DiplomaticState getWorstStateForFaction(Identifier faction) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
+        if (canonical == null) {
+            return DiplomaticState.COLD_WAR;
+        }
         DiplomaticState worst = DiplomaticState.ALLIANCE;
         for (FactionPair pair : FactionPair.values()) {
-            if (pair.involves(faction) && getState(pair).ordinal() > worst.ordinal()) {
+            if (pair.involves(canonical) && getState(pair).ordinal() > worst.ordinal()) {
                 worst = getState(pair);
             }
         }
@@ -181,13 +187,17 @@ public class FactionDiplomacy implements ValueIOSerializable {
     }
 
     public Identifier getMostHostile(Identifier faction) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
+        if (canonical == null) {
+            return null;
+        }
         Identifier mostHostile = null;
         int lowestRelation = 100;
         for (Identifier other : AshfallFactionMap.all()) {
-            if (other.equals(faction)) {
+            if (other.equals(canonical)) {
                 continue;
             }
-            int relation = getRelation(faction, other);
+            int relation = getRelation(canonical, other);
             if (relation < lowestRelation) {
                 lowestRelation = relation;
                 mostHostile = other;
@@ -284,14 +294,15 @@ public class FactionDiplomacy implements ValueIOSerializable {
 
     private void initializeDefaults() {
         setDefault(AshfallBiomeFactions.RADWARDEN_COMPACT, AshfallBiomeFactions.SPOREBOUND_SANCTUM, -35);
-        setDefault(AshfallBiomeFactions.RUSTWORKS_UNION, AshfallBiomeFactions.CRASHBREAK_SALVAGE, 20);
-        setDefault(AshfallBiomeFactions.METRO_ARCHIVISTS, AshfallBiomeFactions.SCARBOUND_CONCLAVE, -15);
-        setDefault(AshfallBiomeFactions.SURVIVOR_NETWORK, AshfallBiomeFactions.DUSTLINE_FREEHOLDS, 25);
-        setDefault(AshfallBiomeFactions.THAWBOUND_COLLECTIVE, AshfallBiomeFactions.RADWARDEN_COMPACT, 10);
+        setDefault(AshfallBiomeFactions.RADWARDEN_COMPACT, AshfallBiomeFactions.CRASHBREAK_SALVAGE, 15);
+        setDefault(AshfallBiomeFactions.CRASHBREAK_SALVAGE, AshfallBiomeFactions.SPOREBOUND_SANCTUM, -10);
     }
 
     private void setDefault(Identifier a, Identifier b, int value) {
-        relations.putIfAbsent(pairKey(a, b), value);
+        String key = pairKey(a, b);
+        if (!key.isBlank()) {
+            relations.putIfAbsent(key, value);
+        }
     }
 
     private static void writeSync(RegistryFriendlyByteBuf buf, FactionDiplomacy data) {
@@ -312,19 +323,32 @@ public class FactionDiplomacy implements ValueIOSerializable {
         data.relations.clear();
         int count = buf.readVarInt();
         for (int i = 0; i < count; i++) {
-            data.relations.put(normalizePairKey(buf.readUtf()), clamp(buf.readVarInt()));
+            String key = normalizePairKey(buf.readUtf());
+            int value = clamp(buf.readVarInt());
+            if (!key.isBlank()) {
+                data.relations.put(key, value);
+            }
         }
         data.lastStateChangeTick.clear();
         int changeCount = buf.readVarInt();
         for (int i = 0; i < changeCount; i++) {
-            data.lastStateChangeTick.put(normalizePairKey(buf.readUtf()), buf.readLong());
+            String key = normalizePairKey(buf.readUtf());
+            long tick = buf.readLong();
+            if (!key.isBlank()) {
+                data.lastStateChangeTick.put(key, tick);
+            }
         }
         return data;
     }
 
     private static String pairKey(Identifier a, Identifier b) {
-        String left = a.toString();
-        String right = b.toString();
+        Identifier canonicalA = AshfallFactionMap.canonicalFaction(a);
+        Identifier canonicalB = AshfallFactionMap.canonicalFaction(b);
+        if (canonicalA == null || canonicalB == null || canonicalA.equals(canonicalB)) {
+            return "";
+        }
+        String left = canonicalA.toString();
+        String right = canonicalB.toString();
         return left.compareTo(right) <= 0 ? left + "|" + right : right + "|" + left;
     }
 

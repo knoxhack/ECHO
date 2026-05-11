@@ -41,18 +41,12 @@ public final class ReclamationCrossAddonIntegration {
       Map.entry("nexus_cracked_soil", SoilState.IRRADIATED)
    );
    private static final List<Identifier> REMNANT_FACTIONS = List.of(
-      id("echoorbitalremnants", "orbital_remnants"),
-      id(ASHFALL_MODID, "remnant_collective"),
-      id(ASHFALL_MODID, "metro_archivists"),
       id(ASHFALL_MODID, "radwarden_compact")
    );
    private static final List<Identifier> SALVAGER_FACTIONS = List.of(
-      id("echoorbitalremnants", "void_salvagers"),
-      id(ASHFALL_MODID, "salvager_guild"),
       id(ASHFALL_MODID, "crashbreak_salvage")
    );
    private static final List<Identifier> MUTANT_FACTIONS = List.of(
-      id(ASHFALL_MODID, "mutant_front"),
       id(ASHFALL_MODID, "sporebound_sanctum")
    );
 

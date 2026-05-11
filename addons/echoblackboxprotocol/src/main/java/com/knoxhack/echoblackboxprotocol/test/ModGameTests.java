@@ -692,13 +692,13 @@ public final class ModGameTests {
 
    private static void assertRecipe(GameTestHelper helper, String path) {
       Identifier recipeId = id(path);
-      boolean exists = helper.getLevel().recipeAccess().getRecipes().stream().anyMatch(holder -> holder.id().identifier().equals(recipeId));
+      boolean exists = helper.getLevel().getServer().getRecipeManager().getRecipes().stream().anyMatch(holder -> holder.id().identifier().equals(recipeId));
       helper.assertTrue(exists, "Required survival recipe missing: " + recipeId);
    }
 
    private static void assertNoRecipe(GameTestHelper helper, String path) {
       Identifier recipeId = id(path);
-      boolean exists = helper.getLevel().recipeAccess().getRecipes().stream().anyMatch(holder -> holder.id().identifier().equals(recipeId));
+      boolean exists = helper.getLevel().getServer().getRecipeManager().getRecipes().stream().anyMatch(holder -> holder.id().identifier().equals(recipeId));
       helper.assertFalse(exists, "Recipe should not be available through vanilla crafting: " + recipeId);
    }
 

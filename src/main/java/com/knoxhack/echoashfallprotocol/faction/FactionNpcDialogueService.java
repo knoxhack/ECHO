@@ -7,15 +7,16 @@ import com.knoxhack.echocore.api.EchoFactionContract;
 import com.knoxhack.echocore.api.EchoFactionContractState;
 import com.knoxhack.echocore.api.EchoFactionInteractionSnapshot;
 import com.knoxhack.echocore.api.EchoFactionProfile;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
 import com.knoxhack.echoashfallprotocol.entity.faction.FactionNpcEntity;
 import com.knoxhack.echoashfallprotocol.network.FactionDialogueOpenPacket;
 import com.knoxhack.echoashfallprotocol.network.FactionNpcActionPacket;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Server-side coordinator for faction NPC conversation state.
@@ -36,7 +37,7 @@ public final class FactionNpcDialogueService {
         EchoCoreServices.recordFactionInteraction(player, factionId, roleId, player.level().getGameTime());
         EchoCoreServices.factionInteractionSnapshot(player, factionId, roleId)
                 .map(snapshot -> packet(player, npc, snapshot))
-                .ifPresent(packet -> PacketDistributor.sendToPlayer(player, packet));
+                .ifPresent(packet -> EchoNetSend.toPlayer(player, packet, EchoPacketKind.CLIENTBOUND_SYNC));
     }
 
     public static void handleAction(ServerPlayer player, FactionNpcActionPacket packet) {

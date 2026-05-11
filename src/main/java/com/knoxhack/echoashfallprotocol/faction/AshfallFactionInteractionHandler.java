@@ -30,7 +30,7 @@ public final class AshfallFactionInteractionHandler implements EchoFactionAction
 
     @Override
     public boolean supports(Identifier factionId) {
-        return factionId != null && factionId.toString().startsWith(EchoAshfallProtocol.MODID + ":");
+        return AshfallFactionMap.isAshfall(factionId);
     }
 
     @Override
@@ -83,7 +83,8 @@ public final class AshfallFactionInteractionHandler implements EchoFactionAction
     @Override
     public EchoFactionActionResult handle(ServerPlayer player, Identifier factionId, Identifier actionId,
             String roleId, Identifier targetId) {
-        EchoFactionProfile profile = com.knoxhack.echocore.api.EchoCoreServices.factionProfile(player, factionId)
+        Identifier canonicalFaction = AshfallFactionMap.canonicalOrDefault(factionId);
+        EchoFactionProfile profile = com.knoxhack.echocore.api.EchoCoreServices.factionProfile(player, canonicalFaction)
                 .orElse(null);
         if (profile == null) {
             return EchoFactionActionResult.failure("Unknown Faction", "This contact is not registered with Echo Core.");
@@ -97,7 +98,7 @@ public final class AshfallFactionInteractionHandler implements EchoFactionAction
         String path = actionId == null ? "" : actionId.getPath();
         if (path.endsWith("_talk")) {
             String voice = roleVoice(definition, roleId);
-            com.knoxhack.echocore.api.EchoCoreServices.rememberFactionNpc(player, factionId, voice);
+            com.knoxhack.echocore.api.EchoCoreServices.rememberFactionNpc(player, canonicalFaction, voice);
             return EchoFactionActionResult.info(definition.shortName() + " Dialogue", voice);
         }
 
@@ -112,7 +113,7 @@ public final class AshfallFactionInteractionHandler implements EchoFactionAction
                         definition.shortName() + " services require standing " + required + ".");
             }
             EchoFactionActionResult result = AshfallFactionServices.perform(player, profile, roleId);
-            com.knoxhack.echocore.api.EchoCoreServices.rememberFactionNpc(player, factionId, result.message());
+            com.knoxhack.echocore.api.EchoCoreServices.rememberFactionNpc(player, canonicalFaction, result.message());
             return result;
         }
 

@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.client.screen;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoashfallprotocol.network.FactionDialogueOpenPacket;
 import com.knoxhack.echoashfallprotocol.network.FactionNpcActionPacket;
 import java.util.ArrayList;
@@ -11,7 +12,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -92,7 +92,7 @@ public class FactionDialogueScreen extends Screen {
     }
 
     private void send(String actionId, String targetId) {
-        ClientPacketDistributor.sendToServer(new FactionNpcActionPacket(packet.entityId(), actionId, targetId));
+        EchoNetClientActions.sendServerboundAction(new FactionNpcActionPacket(packet.entityId(), actionId, targetId));
     }
 
     private Layout layout() {

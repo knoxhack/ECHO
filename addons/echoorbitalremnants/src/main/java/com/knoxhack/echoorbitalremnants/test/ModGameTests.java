@@ -9,6 +9,7 @@ import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
+import com.knoxhack.echoorbitalremnants.integration.OrbitalFactions;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalMissionProvider;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIds;
 import com.knoxhack.echoorbitalremnants.item.FactionPledgeItem;
@@ -65,6 +66,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.gametest.framework.GameTestEnvironments;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -141,12 +143,12 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("rocket_damage_drop", () -> ModGameTests::rocketDamageDrop);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_FACTION_CONTRACTS =
             TEST_FUNCTIONS.register("beta_faction_contracts", () -> ModGameTests::betaFactionContracts);
-    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_ORBITAL_REMNANT_CONTRACT =
-            TEST_FUNCTIONS.register("beta_orbital_remnant_contract", () -> ModGameTests::betaOrbitalRemnantContract);
-    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_VOID_SALVAGER_CONTRACT =
-            TEST_FUNCTIONS.register("beta_void_salvager_contract", () -> ModGameTests::betaVoidSalvagerContract);
-    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_NEXUS_CHOIR_CONTRACT =
-            TEST_FUNCTIONS.register("beta_nexus_choir_contract", () -> ModGameTests::betaNexusChoirContract);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_RADWARDEN_CONTRACT =
+            TEST_FUNCTIONS.register("beta_radwarden_contract", () -> ModGameTests::betaRadwardenContract);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_CRASHBREAK_CONTRACT =
+            TEST_FUNCTIONS.register("beta_crashbreak_contract", () -> ModGameTests::betaCrashbreakContract);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_SPOREBOUND_CONTRACT =
+            TEST_FUNCTIONS.register("beta_sporebound_contract", () -> ModGameTests::betaSporeboundContract);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MID_GAME_OBJECTIVE_CHAIN =
             TEST_FUNCTIONS.register("mid_game_objective_chain", () -> ModGameTests::midGameObjectiveChain);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MID_GAME_ROUTE_GATES =
@@ -169,6 +171,20 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("beta_rc_polish", () -> ModGameTests::betaRcPolish);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSET_COMPLETENESS =
             TEST_FUNCTIONS.register("asset_completeness", () -> ModGameTests::assetCompleteness);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MACHINE_BREAK_DROPS_INVENTORY =
+            TEST_FUNCTIONS.register("machine_break_drops_inventory", () -> ModGameTests::machineBreakDropsInventory);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROCKET_ASSEMBLY_VIRTUAL_OUTPUT =
+            TEST_FUNCTIONS.register("rocket_assembly_virtual_output", () -> ModGameTests::rocketAssemblyVirtualOutput);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROUTE_ARRIVAL_SEED_ONCE =
+            TEST_FUNCTIONS.register("route_arrival_seed_once", () -> ModGameTests::routeArrivalSeedOnce);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> HIGH_ALTITUDE_SCAN_GATE =
+            TEST_FUNCTIONS.register("high_altitude_scan_gate", () -> ModGameTests::highAltitudeScanGate);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> AMBIENT_THREAT_CAP =
+            TEST_FUNCTIONS.register("ambient_threat_cap", () -> ModGameTests::ambientThreatCap);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STRICT_PLAYABLE_PATH =
+            TEST_FUNCTIONS.register("strict_playable_path", () -> ModGameTests::strictPlayablePath);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> PROGRESS_PERSISTENCE_ROUND_TRIP =
+            TEST_FUNCTIONS.register("progress_persistence_round_trip", () -> ModGameTests::progressPersistenceRoundTrip);
 
     private ModGameTests() {
     }
@@ -205,9 +221,9 @@ public final class ModGameTests {
         register(event, environment, "rocket_ignition_commit", ROCKET_IGNITION_COMMIT.getId());
         register(event, environment, "rocket_damage_drop", ROCKET_DAMAGE_DROP.getId());
         register(event, environment, "beta_faction_contracts", BETA_FACTION_CONTRACTS.getId());
-        register(event, environment, "beta_orbital_remnant_contract", BETA_ORBITAL_REMNANT_CONTRACT.getId());
-        register(event, environment, "beta_void_salvager_contract", BETA_VOID_SALVAGER_CONTRACT.getId());
-        register(event, environment, "beta_nexus_choir_contract", BETA_NEXUS_CHOIR_CONTRACT.getId());
+        register(event, environment, "beta_radwarden_contract", BETA_RADWARDEN_CONTRACT.getId());
+        register(event, environment, "beta_crashbreak_contract", BETA_CRASHBREAK_CONTRACT.getId());
+        register(event, environment, "beta_sporebound_contract", BETA_SPOREBOUND_CONTRACT.getId());
         register(event, environment, "mid_game_objective_chain", MID_GAME_OBJECTIVE_CHAIN.getId());
         register(event, environment, "mid_game_route_gates", MID_GAME_ROUTE_GATES.getId());
         register(event, environment, "mid_game_recipes_and_sites", MID_GAME_RECIPES_AND_SITES.getId());
@@ -219,6 +235,13 @@ public final class ModGameTests {
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
         register(event, environment, "beta_rc_polish", BETA_RC_POLISH.getId());
         register(event, environment, "asset_completeness", ASSET_COMPLETENESS.getId());
+        register(event, environment, "machine_break_drops_inventory", MACHINE_BREAK_DROPS_INVENTORY.getId());
+        register(event, environment, "rocket_assembly_virtual_output", ROCKET_ASSEMBLY_VIRTUAL_OUTPUT.getId());
+        register(event, environment, "route_arrival_seed_once", ROUTE_ARRIVAL_SEED_ONCE.getId());
+        register(event, environment, "high_altitude_scan_gate", HIGH_ALTITUDE_SCAN_GATE.getId());
+        register(event, environment, "ambient_threat_cap", AMBIENT_THREAT_CAP.getId());
+        register(event, environment, "strict_playable_path", STRICT_PLAYABLE_PATH.getId());
+        register(event, environment, "progress_persistence_round_trip", PROGRESS_PERSISTENCE_ROUND_TRIP.getId());
     }
 
     private static void machineProcessing(GameTestHelper helper) {
@@ -284,6 +307,343 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void machineBreakDropsInventory(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 1, 1);
+        helper.setBlock(pos, ModBlocks.OXYGEN_COMPRESSOR.get());
+        OrbitalMachineBlockEntity machine = helper.getBlockEntity(pos, OrbitalMachineBlockEntity.class);
+        machine.setItem(OrbitalMachineBlockEntity.INPUT_SLOT, new ItemStack(ModItems.VACUUM_CIRCUIT.get(), 2));
+        machine.setItem(OrbitalMachineBlockEntity.OUTPUT_SLOT, new ItemStack(ModItems.NAVIGATION_CHIP.get()));
+
+        BlockPos absolute = helper.absolutePos(pos);
+        helper.getLevel().destroyBlock(absolute, false);
+        helper.assertTrue(countItemDropsNear(helper, absolute, ModItems.VACUUM_CIRCUIT.get()) >= 2,
+                "Breaking a machine should drop stored input instead of deleting it");
+        helper.assertTrue(countItemDropsNear(helper, absolute, ModItems.NAVIGATION_CHIP.get()) >= 1,
+                "Breaking a machine should drop stored output instead of deleting it");
+        helper.succeed();
+    }
+
+    private static void rocketAssemblyVirtualOutput(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        BlockPos framePos = placeLaunchComplex(helper, player, new BlockPos(6, 1, 6));
+        giveAssemblyParts(player);
+        OrbitalMachineBlockEntity frame = helper.getBlockEntity(framePos, OrbitalMachineBlockEntity.class);
+        OrbitalMachineMenu menu = new OrbitalMachineMenu(1, player.getInventory(), frame, frame.data());
+        menu.broadcastChanges();
+        helper.assertTrue(frame.getItem(OrbitalMachineBlockEntity.OUTPUT_SLOT).is(ModItems.EMERGENCY_ROCKET.get()),
+                "Rocket Assembly Frame should expose a virtual Emergency Rocket output");
+        CompoundTag savedFrame = frame.saveWithFullMetadata(helper.getLevel().registryAccess());
+        String rocketId = BuiltInRegistries.ITEM.getKey(ModItems.EMERGENCY_ROCKET.get()).toString();
+        helper.assertFalse(savedFrame.toString().contains(rocketId),
+                "Rocket Assembly Frame should not persist the virtual Emergency Rocket output as inventory");
+        int rocketsBeforeBlockedTake = count(player.getInventory(), ModItems.EMERGENCY_ROCKET.get());
+        removeOne(player.getInventory(), ModItems.ROCKET_NOSE_CONE.get());
+        helper.assertFalse(menu.getSlot(OrbitalMachineBlockEntity.OUTPUT_SLOT).mayPickup(player),
+                "Rocket Assembly Frame should re-check readiness before granting the virtual output");
+        helper.assertTrue(menu.quickMoveStack(player, OrbitalMachineBlockEntity.OUTPUT_SLOT).isEmpty(),
+                "Shift-clicking a stale virtual rocket output should be blocked when readiness is no longer true");
+        helper.assertTrue(count(player.getInventory(), ModItems.EMERGENCY_ROCKET.get()) == rocketsBeforeBlockedTake,
+                "Blocked stale virtual output shift-click should not grant a rocket");
+
+        BlockPos absolute = helper.absolutePos(framePos);
+        int dropsBefore = countItemDropsNear(helper, absolute, ModItems.EMERGENCY_ROCKET.get());
+        helper.getLevel().destroyBlock(absolute, false);
+        int dropsAfter = countItemDropsNear(helper, absolute, ModItems.EMERGENCY_ROCKET.get());
+        helper.assertTrue(dropsAfter == dropsBefore,
+                "Breaking a Rocket Assembly Frame should not drop its virtual Emergency Rocket output");
+        helper.succeed();
+    }
+
+    private static void routeArrivalSeedOnce(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        EchoTerminalProgress.reset(player);
+        player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.MARS_TRANSFER_WINDOW.get()));
+
+        InteractionResult first = ModItems.MARS_TRANSFER_WINDOW.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(first == InteractionResult.SUCCESS_SERVER, "First route burn should succeed");
+        helper.assertTrue(EchoTerminalProgress.get(player).hasRouteArrivalSeeded("mars_ash_basin"),
+                "First Mars route burn should persist the arrival seed token");
+        net.minecraft.server.level.ServerLevel routeLevel = (net.minecraft.server.level.ServerLevel) player.level();
+        BlockPos firstArrival = player.blockPosition();
+        int chestsAfterFirst = countChestsNear(routeLevel, firstArrival, 18);
+        int threatsAfterFirst = countOrbitalThreatsNear(routeLevel, firstArrival, 24.0D);
+
+        InteractionResult second = ModItems.MARS_TRANSFER_WINDOW.get().use(routeLevel, player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(second == InteractionResult.SUCCESS_SERVER, "Repeated route burn should remain usable");
+        helper.assertTrue(countChestsNear(routeLevel, firstArrival, 18) == chestsAfterFirst,
+                "Repeated route burn should not reseed the first-arrival cache");
+        helper.assertTrue(countOrbitalThreatsNear(routeLevel, firstArrival, 24.0D) == threatsAfterFirst,
+                "Repeated route burn should not duplicate the first-arrival threat wave");
+        helper.succeed();
+    }
+
+    private static void highAltitudeScanGate(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
+        player.getInventory().add(new ItemStack(ModBlocks.STATION_LIFE_SUPPORT_CORE.get()));
+
+        helper.assertTrue(SuitEvents.isOrbitalExposure(player), "High overworld altitude should still count as survival exposure");
+        helper.assertFalse(SuitEvents.isOrbitalProgressionScan(player),
+                "High overworld altitude should not count as orbital progression before a real launch");
+        com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        helper.assertFalse(progress.lowOrbitReached(),
+                "High-altitude overworld scan should not mark Low Earth Orbit before launch");
+        helper.assertFalse(progress.stationLifeSupportRestored(),
+                "High-altitude overworld scan should not restore station state before launch");
+        helper.succeed();
+    }
+
+    private static void ambientThreatCap(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
+        for (int i = 0; i < 6; i++) {
+            Entity entity = ModEntities.ECHO_DEFENSE_DRONE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+            helper.assertTrue(entity != null, "Ambient threat should be spawnable for cap testing");
+            entity.setPos(player.getX() + i, player.getY(), player.getZ());
+            helper.getLevel().addFreshEntity(entity);
+        }
+
+        int before = countOrbitalThreatsNear(helper.getLevel(), player, 18.0D);
+        helper.assertTrue(SuitEvents.localThreatCapReached(helper.getLevel(), player),
+                "Six nearby orbital threats should trip the local ambient cap");
+        try {
+            Method method = SuitEvents.class.getDeclaredMethod("spawnFeatureThreat",
+                    net.minecraft.server.level.ServerLevel.class,
+                    net.minecraft.world.entity.player.Player.class);
+            method.setAccessible(true);
+            method.invoke(null, helper.getLevel(), player);
+        } catch (ReflectiveOperationException exception) {
+            throw new RuntimeException("Unable to invoke feature threat spawn for cap test", exception);
+        }
+        helper.assertTrue(countOrbitalThreatsNear(helper.getLevel(), player, 18.0D) == before,
+                "Ambient threat cap should prevent another nearby feature threat spawn");
+        helper.succeed();
+    }
+
+    private static void strictPlayablePath(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setGameMode(GameType.SURVIVAL);
+        player.getAbilities().instabuild = false;
+        EchoTerminalProgress.reset(player);
+        markAshfallNexusChoice(helper, player);
+
+        BlockPos scanOrigin = helper.absolutePos(new BlockPos(20, 10, 70));
+        player.teleportTo(helper.getLevel(), scanOrigin.getX() + 0.5D, scanOrigin.getY(), scanOrigin.getZ() + 0.5D,
+                Set.of(), player.getYRot(), player.getXRot(), false);
+        com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.hasGroundRecoverySites(), "Playable path should begin with ECHO-7 Earth recovery calibration");
+
+        for (GroundRecoverySite site : progress.groundRecoverySites()) {
+            player.teleportTo(helper.getLevel(), site.pos().getX() + 0.5D, site.pos().getY(), site.pos().getZ() + 0.5D,
+                    Set.of(), player.getYRot(), player.getXRot(), false);
+            com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
+        }
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.allGroundRecoverySitesComplete(), "Playable path should complete all tracked Earth recovery sites");
+        String recoveredObjective = EchoTerminalSnapshot.from(player).nextObjective();
+        helper.assertTrue(recoveredObjective.contains("launch") || recoveredObjective.contains("Rocket")
+                        || recoveredObjective.contains("stage"),
+                "Terminal should guide a recovered player into launch construction or rocket staging");
+
+        BlockPos framePos = placeLaunchComplex(helper, player, new BlockPos(6, 1, 6));
+        giveAssemblyParts(player);
+        player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.PRESSURIZED_HELMET.get()));
+        player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.PRESSURIZED_CHESTPLATE.get()));
+        player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.PRESSURIZED_LEGGINGS.get()));
+        player.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.MAGNETIC_BOOTS.get()));
+        player.getInventory().add(new ItemStack(ModItems.OXYGEN_TANK.get()));
+
+        OrbitalMachineBlockEntity frame = helper.getBlockEntity(framePos, OrbitalMachineBlockEntity.class);
+        OrbitalMachineMenu menu = new OrbitalMachineMenu(1, player.getInventory(), frame, frame.data());
+        menu.broadcastChanges();
+        helper.assertTrue(frame.getItem(OrbitalMachineBlockEntity.OUTPUT_SLOT).is(ModItems.EMERGENCY_ROCKET.get()),
+                "Rocket Assembly Frame should expose the craftable Emergency Rocket during the playable path");
+        int rocketsBeforeAssembly = count(player.getInventory(), ModItems.EMERGENCY_ROCKET.get());
+        ItemStack assemblyTake = menu.quickMoveStack(player, OrbitalMachineBlockEntity.OUTPUT_SLOT);
+        helper.assertFalse(assemblyTake.isEmpty(), "Playable path should be able to take the assembled Emergency Rocket");
+        helper.assertTrue(count(player.getInventory(), ModItems.EMERGENCY_ROCKET.get()) == rocketsBeforeAssembly + 1,
+                "Assembling should grant exactly one Emergency Rocket");
+        helper.assertTrue(count(player.getInventory(), ModItems.FUEL_TANK.get()) == 0,
+                "Assembling should consume the real rocket parts instead of duplicating them");
+        helper.assertTrue(moveOneToHand(player, ModItems.EMERGENCY_ROCKET.get()),
+                "Playable path should move the assembled rocket into the player's hand for staging");
+
+        InteractionResult stageResult = ModItems.EMERGENCY_ROCKET.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(stageResult == InteractionResult.SUCCESS_SERVER, "Prepared Emergency Rocket staging should succeed");
+        EmergencyRocketEntity rocket = firstRocketNear(helper.getLevel(), player);
+        helper.assertTrue(rocket != null, "Staging should place one launch vehicle on the pad");
+        helper.assertTrue(countRocketsNear(helper.getLevel(), player) == 1,
+                "Staging should create exactly one launch vehicle in the playable path");
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        helper.assertTrue(player.getVehicle() == rocket, "Playable path should allow boarding the staged rocket");
+        rocket.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+        helper.assertTrue(rocket.launchState() == EmergencyRocketEntity.LaunchState.COUNTDOWN,
+                "Playable path should start the launch countdown from the cabin");
+        for (int i = 0; i < EmergencyRocketEntity.COUNTDOWN_TICKS + EmergencyRocketEntity.ASCENT_TICKS + 10; i++) {
+            rocket.tick();
+        }
+
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.lowOrbitReached(), "Completed launch should mark Low Earth Orbit reached");
+        helper.assertTrue(progress.hasEarthReturnPoint(), "Completed launch should save a safe Earth return vector");
+        helper.assertTrue(progress.hasRouteArrivalSeeded("low_earth_orbit"),
+                "First launch should seed Low Earth Orbit arrival support only once");
+
+        player.getInventory().add(new ItemStack(ModBlocks.STATION_LIFE_SUPPORT_CORE.get()));
+        com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.stationLifeSupportRestored(), "Orbit scan should restore station life support when the player has the core");
+        helper.assertTrue(progress.lunarSignalUnlocked(), "Station life support scan should unlock the Lunar Signal");
+        helper.assertTrue(EchoTerminalSnapshot.from(player).scanReport().contains("Station life support"),
+                "Terminal feedback should explain the successful station scan");
+
+        progress.repairStationRelay(player, "strict:station:1");
+        progress = EchoTerminalProgress.get(player);
+        progress.repairStationRelay(player, "strict:station:2");
+        progress = EchoTerminalProgress.get(player);
+        progress.repairStationRelay(player, "strict:station:3");
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.stationNetworkGateOpen(), "Station relay repairs should open the shuttle route objective gate");
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.ORBITAL_SHUTTLE.get()));
+        InteractionResult shuttleResult = ModItems.ORBITAL_SHUTTLE.get().use(player.level(), player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(shuttleResult == InteractionResult.SUCCESS_SERVER, "Orbital Shuttle should burn to the Lunar route");
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.lunarSignalInvestigated(), "Shuttle burn should persist Lunar Signal investigation");
+        helper.assertTrue(progress.hasReturnPoint(), "Shuttle burn should save a route return vector");
+        helper.assertTrue(progress.hasRouteArrivalSeeded("lunar_scar_zone"),
+                "First Lunar arrival should persist its arrival seed token");
+
+        progress.repairLunarExtractor(player, "strict:lunar:1");
+        progress = EchoTerminalProgress.get(player);
+        progress.repairLunarExtractor(player, "strict:lunar:2");
+        progress = EchoTerminalProgress.get(player);
+        progress.repairLunarExtractor(player, "strict:lunar:3");
+        player.getInventory().add(new ItemStack(ModItems.HELIUM_3_CELL.get()));
+        com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.marsRouteUnlocked(), "Scanning Lunar Helium-3 after extractor repairs should unlock Mars");
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.MARS_TRANSFER_WINDOW.get()));
+        InteractionResult marsResult = ModItems.MARS_TRANSFER_WINDOW.get().use(player.level(), player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(marsResult == InteractionResult.SUCCESS_SERVER, "Mars Transfer Window should burn after route unlock");
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.marsAshBasinVisited(), "Mars route burn should persist Mars arrival progress");
+        helper.assertTrue(progress.hasRouteArrivalSeeded("mars_ash_basin"),
+                "First Mars arrival should persist its arrival seed token");
+        EchoTerminalSnapshot routeSnapshot = EchoTerminalSnapshot.from(player);
+        helper.assertTrue(routeSnapshot.marsVisited() && routeSnapshot.routeReturnSaved(),
+                "Terminal snapshot should expose route state and the saved return vector");
+
+        player.setShiftKeyDown(true);
+        InteractionResult returnResult = ModItems.MARS_TRANSFER_WINDOW.get().use(player.level(), player, InteractionHand.MAIN_HAND);
+        player.setShiftKeyDown(false);
+        helper.assertTrue(returnResult == InteractionResult.SUCCESS_SERVER, "Sneak-using a route item should execute the saved return vector");
+        helper.assertTrue(EchoTerminalSnapshot.from(player).missionHelp().contains("ECHO NOTE"),
+                "Terminal should continue to provide next-step guidance after the playable route loop");
+        helper.succeed();
+    }
+
+    private static void progressPersistenceRoundTrip(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        progress.setEarthReturnPoint(player, 10.0D, 64.0D, -10.0D, "minecraft:overworld");
+        progress.setReturnPoint(player, 20.0D, 96.0D, -20.0D, "echoorbitalremnants:lunar_scar_zone");
+        progress.markLowOrbitReached(player);
+        progress.restoreStationLifeSupport(player);
+        progress.markRouteArrivalSeeded(player, "low_earth_orbit");
+        progress.markRouteArrivalSeeded(player, "lunar_scar_zone");
+        progress.markRouteArrivalSeeded(player, "mars_ash_basin");
+        progress.markTerminalMissionCacheClaimed(player, "strict_cache");
+
+        progress = EchoTerminalProgress.get(player);
+        for (int i = 1; i <= 3; i++) {
+            progress.recordOrbitSurvey(player, "persist:orbit:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordMoonSurvey(player, "persist:moon:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordMarsSurvey(player, "persist:mars:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordEuropaSurvey(player, "persist:europa:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordSaturnSurvey(player, "persist:saturn:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordTitanSurvey(player, "persist:titan:" + i);
+            progress = EchoTerminalProgress.get(player);
+        }
+        progress.markEchoZeroEncountered(player);
+        progress = EchoTerminalProgress.get(player);
+        for (int i = 1; i <= 3; i++) {
+            progress.recordNexusStabilization(player, "persist:nexus:" + i);
+            progress = EchoTerminalProgress.get(player);
+        }
+
+        for (int i = 1; i <= 3; i++) {
+            progress.repairStationRelay(player, "persist:station:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.repairLunarExtractor(player, "persist:lunar:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.repairMarsPressureConsole(player, "persist:mars_pressure:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.repairEuropaThermalArray(player, "persist:europa_array:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.repairSaturnRingRelay(player, "persist:saturn_relay:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.repairTitanMethanePump(player, "persist:titan_pump:" + i);
+            progress = EchoTerminalProgress.get(player);
+        }
+
+        progress.alignFaction(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        progress = EchoTerminalProgress.get(player);
+        progress.completeFactionContract(player);
+        progress = EchoTerminalProgress.get(player);
+        progress.alignFaction(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        progress = EchoTerminalProgress.get(player);
+        progress.completeFactionContract(player);
+        progress = EchoTerminalProgress.get(player);
+        progress.alignFaction(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
+        progress = EchoTerminalProgress.get(player);
+        progress.completeFactionContract(player);
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.finalNetworkSealed(), "Pre-save state should be seal-complete before reload simulation");
+
+        CompoundTag saved = player.getPersistentData().getCompoundOrEmpty("echoorbitalremnants_progress").copy();
+        EchoTerminalProgress.reset(player);
+        helper.assertFalse(EchoTerminalProgress.get(player).hasReturnPoint(),
+                "Reset should clear route vectors before restoring saved progress data");
+        player.getPersistentData().put("echoorbitalremnants_progress", saved.copy());
+        EchoTerminalProgress loaded = EchoTerminalProgress.get(player);
+
+        helper.assertTrue(loaded.lowOrbitReached(), "Reloaded progress should retain Low Earth Orbit completion");
+        helper.assertTrue(loaded.hasEarthReturnPoint() && loaded.earthReturnX() == 10.0D,
+                "Reloaded progress should retain the Earth return vector");
+        helper.assertTrue(loaded.hasReturnPoint() && loaded.returnDimension().equals("echoorbitalremnants:lunar_scar_zone"),
+                "Reloaded progress should retain the route return vector");
+        helper.assertTrue(loaded.hasRouteArrivalSeeded("low_earth_orbit")
+                        && loaded.hasRouteArrivalSeeded("lunar_scar_zone")
+                        && loaded.hasRouteArrivalSeeded("mars_ash_basin"),
+                "Reloaded progress should retain route arrival seed tokens");
+        helper.assertTrue(loaded.hasTerminalMissionCacheClaimed("strict_cache"),
+                "Reloaded progress should retain once-only Terminal cache claims");
+        helper.assertTrue(loaded.allSurveysComplete() && loaded.totalSurveyCount() == 21,
+                "Reloaded progress should retain all survey and Nexus stabilization state");
+        helper.assertTrue(loaded.stationNetworkGateOpen() && loaded.lunarExtractorGateOpen()
+                        && loaded.marsHabitatGateOpen() && loaded.europaArrayGateOpen()
+                        && loaded.saturnRelayGateOpen() && loaded.titanPumpGateOpen(),
+                "Reloaded progress should retain all route repair gates");
+        helper.assertTrue(loaded.completedFactionContractCount() == 3,
+                "Reloaded progress should retain completed faction contract count");
+        helper.assertTrue(loaded.finalNetworkSealed(),
+                "Reloaded progress should retain final seal state");
+        helper.assertTrue(loaded.lastTerminalReport().contains("Orbital Remnants arc complete"),
+                "Reloaded final state should retain Terminal completion feedback");
+        helper.succeed();
+    }
+
     private static void terminalProgress(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.CREATIVE);
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
@@ -345,9 +705,9 @@ public final class ModGameTests {
         ModItems.ORBITAL_REMNANT_BADGE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
         helper.assertTrue(progress.orbitalRemnantStanding() == FactionStanding.ALIGNED,
-                "Orbital Remnant pledge should persist aligned standing");
+                "Radwarden pledge should persist aligned standing");
         helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.OXYGEN_BOOSTER.get())),
-                "Orbital Remnant pledge should grant oxygen support");
+                "Radwarden pledge should grant oxygen support");
         int boosters = count(player.getInventory(), ModItems.OXYGEN_BOOSTER.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.ORBITAL_REMNANT_BADGE.get()));
         ModItems.ORBITAL_REMNANT_BADGE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
@@ -473,7 +833,7 @@ public final class ModGameTests {
                 "Terminal survey rows should name scan hooks");
         helper.assertTrue(snapshot.surveyLines().stream().anyMatch(line -> line.contains("Station Relay Node")),
                 "Terminal survey rows should name mid-game repair hooks");
-        boolean analyzerRecipe = helper.getLevel().recipeAccess().getRecipes().stream()
+        boolean analyzerRecipe = helper.getLevel().getServer().getRecipeManager().getRecipes().stream()
                 .anyMatch(holder -> holder.id().identifier().equals(id("signal_analyzer")));
         helper.assertTrue(analyzerRecipe, "Signal Analyzer should have a survival crafting recipe");
         helper.succeed();
@@ -909,10 +1269,16 @@ public final class ModGameTests {
         helper.assertTrue(finalSeal.status() == TerminalMissionStatus.CLAIMABLE,
                 "Final seal mission should become claimable after the implemented main loop is complete");
 
+        helper.assertTrue(OrbitalFactions.ORBITAL_REMNANTS.equals(Identifier.fromNamespaceAndPath("echoashfallprotocol", "radwarden_compact")),
+                "Radwarden orbital lane should mirror into the Ashfall Radwarden faction id");
+        helper.assertTrue(OrbitalFactions.VOID_SALVAGERS.equals(Identifier.fromNamespaceAndPath("echoashfallprotocol", "crashbreak_salvage")),
+                "Crashbreak orbital lane should mirror into the Ashfall Crashbreak faction id");
+        helper.assertTrue(OrbitalFactions.NEXUS_CHOIR.equals(Identifier.fromNamespaceAndPath("echoashfallprotocol", "sporebound_sanctum")),
+                "Sporebound orbital lane should mirror into the Ashfall Sporebound faction id");
         helper.assertTrue(EchoCoreServices.factionDefinitions().stream()
                         .filter(definition -> EchoOrbitalRemnants.MODID.equals(definition.id().getNamespace()))
-                        .count() == 3,
-                "Core Faction Atlas should receive the three Orbital faction definitions");
+                        .count() == 0,
+                "Orbital should mirror standing into Ashfall factions without registering Orbital faction definitions");
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         EchoHazardTelemetry telemetry = EchoCoreServices.hazardTelemetry(player);
         helper.assertTrue(telemetry.exposure() >= 85 && telemetry.statusLine().contains("Orbital exposure"),
@@ -968,8 +1334,13 @@ public final class ModGameTests {
         helper.assertTrue(terminalSource.contains("No pledge detected")
                         && terminalSource.contains("already serviced at this hub")
                         && terminalSource.contains("Vendor cache is paused")
-                        && terminalSource.contains("aligned support cache authorized"),
+                        && terminalSource.contains("faction.vendorCacheReport()"),
                 "Faction hub scan copy should distinguish no pledge, serviced, active-contract, and authorized-cache states");
+        String pledgeSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/FactionPledgeItem.java");
+        helper.assertTrue(pledgeSource.contains("Radwarden orbital containment cache authorized")
+                        && pledgeSource.contains("Crashbreak orbital salvage cache authorized")
+                        && pledgeSource.contains("Sporebound anomaly support cache authorized"),
+                "Faction cache reports should use the three-faction Orbital lane vocabulary");
         helper.assertTrue(terminalSource.contains("Cache role confirmed: route proof, crafting support, and survival recovery"),
                 "Survey/cache scan feedback should explain why route caches are worth opening");
         String routeItemSource = sourceText("src/main/java/com/knoxhack/echoorbitalremnants/item/PlanetaryRouteItem.java");
@@ -1451,12 +1822,14 @@ public final class ModGameTests {
 
     private static void betaFactionContracts(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.VOID_SALVAGER_MARKER.get()));
         ModItems.VOID_SALVAGER_MARKER.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
         helper.assertTrue(progress.voidSalvagerStanding() == FactionStanding.ALIGNED,
-                "Void Salvager pledge should persist aligned standing");
-        helper.assertTrue(progress.factionContractStatus().contains("Void Salvager"),
+                "Crashbreak pledge should persist aligned standing");
+        helper.assertTrue(progress.factionContractStatus().contains("Crashbreak"),
                 "Aligned faction should expose an active terminal contract");
 
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
@@ -1466,7 +1839,7 @@ public final class ModGameTests {
         progress = EchoTerminalProgress.get(player);
         helper.assertTrue(progress.completedFactionContractCount() == 1,
                 "Completing a faction contract should persist exactly one completion");
-        helper.assertTrue(progress.lastTerminalReport().contains("Void Salvager Manifest complete"),
+        helper.assertTrue(progress.lastTerminalReport().contains("Crashbreak Orbital Salvage Manifest complete"),
                 "Terminal report should describe the completed faction contract");
         helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.NAVIGATION_CHIP.get())),
                 "Faction contract should grant a useful mission reward");
@@ -1479,64 +1852,70 @@ public final class ModGameTests {
         helper.assertTrue(count(player.getInventory(), ModItems.NAVIGATION_CHIP.get()) == chips,
                 "Cooldown scan should not double-grant faction contract rewards");
         helper.assertTrue(EchoTerminalSnapshot.from(player).factionContract().contains("cooling down")
-                        || EchoTerminalSnapshot.from(player).factionContract().contains("Void Salvager"),
+                        || EchoTerminalSnapshot.from(player).factionContract().contains("Crashbreak"),
                 "Terminal snapshot should expose faction contract state");
         helper.succeed();
     }
 
-    private static void betaOrbitalRemnantContract(GameTestHelper helper) {
+    private static void betaRadwardenContract(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.ORBITAL_REMNANT_BADGE.get()));
         ModItems.ORBITAL_REMNANT_BADGE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).lastTerminalReport().contains("wrong dimension"),
-                "Orbital Remnant contract should explain wrong-dimension blocking");
+                "Radwarden contract should explain wrong-dimension blocking");
         player.getInventory().add(new ItemStack(ModItems.ORBIT_SURVEY_DATA.get()));
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).completedFactionContractCount() == 1,
-                "Orbital Remnant contract should complete from Orbit Survey Data proof");
+                "Radwarden contract should complete from Orbit Survey Data proof");
         helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.OXYGEN_CANISTER.get())),
-                "Orbital Remnant contract should grant oxygen support rewards");
+                "Radwarden contract should grant oxygen support rewards");
         helper.succeed();
     }
 
-    private static void betaVoidSalvagerContract(GameTestHelper helper) {
+    private static void betaCrashbreakContract(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.VOID_SALVAGER_MARKER.get()));
         ModItems.VOID_SALVAGER_MARKER.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         player.getInventory().clearContent();
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).lastTerminalReport().contains("Orbital Alloy"),
-                "Void Salvager contract should name missing proof items");
+                "Crashbreak contract should name missing proof items");
         player.getInventory().add(new ItemStack(ModItems.ORBITAL_ALLOY.get()));
         player.getInventory().add(new ItemStack(ModItems.VACUUM_CIRCUIT.get()));
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).completedFactionContractCount() == 1,
-                "Void Salvager contract should complete from salvage proof items");
+                "Crashbreak contract should complete from salvage proof items");
         helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.NAVIGATION_CHIP.get())),
-                "Void Salvager contract should grant navigation support rewards");
+                "Crashbreak contract should grant navigation support rewards");
         helper.succeed();
     }
 
-    private static void betaNexusChoirContract(GameTestHelper helper) {
+    private static void betaSporeboundContract(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.NEXUS_CHOIR_SIGIL.get()));
         ModItems.NEXUS_CHOIR_SIGIL.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         player.getInventory().add(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()));
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).lastTerminalReport().contains("ECHO-0"),
-                "Nexus Choir contract should stay locked before ECHO-0");
+                "Sporebound contract should stay locked before ECHO-0");
         helper.assertTrue(EchoTerminalProgress.get(player).completedFactionContractCount() == 0,
-                "Nexus Choir contract should not complete before ECHO-0");
+                "Sporebound contract should not complete before ECHO-0");
         EchoTerminalProgress.get(player).markEchoZeroEncountered(player);
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).completedFactionContractCount() == 1,
-                "Nexus Choir contract should complete from stabilizer shard proof after ECHO-0");
+                "Sporebound contract should complete from stabilizer shard proof after ECHO-0");
         helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.CRYO_BATTERY.get())),
-                "Nexus Choir contract should grant late-route support rewards");
+                "Sporebound contract should grant late-route support rewards");
         helper.succeed();
     }
 
@@ -1848,14 +2227,14 @@ public final class ModGameTests {
 
     private static void assertRecipe(GameTestHelper helper, String path) {
         Identifier recipeId = id(path);
-        boolean exists = helper.getLevel().recipeAccess().getRecipes().stream()
+        boolean exists = helper.getLevel().getServer().getRecipeManager().getRecipes().stream()
                 .anyMatch(holder -> holder.id().identifier().equals(recipeId));
         helper.assertTrue(exists, "Required survival recipe missing: " + recipeId);
     }
 
     private static void assertNoRecipe(GameTestHelper helper, String path) {
         Identifier recipeId = id(path);
-        boolean exists = helper.getLevel().recipeAccess().getRecipes().stream()
+        boolean exists = helper.getLevel().getServer().getRecipeManager().getRecipes().stream()
                 .anyMatch(holder -> holder.id().identifier().equals(recipeId));
         helper.assertFalse(exists, "Recipe should not be available through normal survival crafting: " + recipeId);
     }
@@ -1960,6 +2339,37 @@ public final class ModGameTests {
         return total;
     }
 
+    private static void removeOne(net.minecraft.world.entity.player.Inventory inventory, Item item) {
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack.is(item)) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    inventory.setItem(slot, ItemStack.EMPTY);
+                }
+                return;
+            }
+        }
+    }
+
+    private static boolean moveOneToHand(net.minecraft.world.entity.player.Player player, Item item) {
+        if (player.getItemInHand(InteractionHand.MAIN_HAND).is(item)) {
+            return true;
+        }
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.is(item)) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    player.getInventory().setItem(slot, ItemStack.EMPTY);
+                }
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item));
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static int countRocketsNear(net.minecraft.world.entity.player.Player player) {
         return countRocketsNear(player.level(), player);
     }
@@ -1974,6 +2384,15 @@ public final class ModGameTests {
 
     private static EmergencyRocketEntity firstRocketNear(net.minecraft.world.entity.player.Player player) {
         return rocketsNear(player).stream()
+                .filter(EmergencyRocketEntity.class::isInstance)
+                .map(EmergencyRocketEntity.class::cast)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static EmergencyRocketEntity firstRocketNear(net.minecraft.world.level.Level level,
+            net.minecraft.world.entity.player.Player player) {
+        return rocketsNear(level, player).stream()
                 .filter(EmergencyRocketEntity.class::isInstance)
                 .map(EmergencyRocketEntity.class::cast)
                 .findFirst()
@@ -1999,6 +2418,49 @@ public final class ModGameTests {
                 player.getX() + 4.0D, player.getY() + 4.0D, player.getZ() + 4.0D);
         return player.level().getEntities((Entity) null, area,
                 entity -> entity instanceof ItemEntity item && item.getItem().is(ModItems.EMERGENCY_ROCKET.get())).size();
+    }
+
+    private static int countItemDropsNear(GameTestHelper helper, BlockPos center, Item item) {
+        AABB area = new AABB(center.getX() - 4.0D, center.getY() - 4.0D, center.getZ() - 4.0D,
+                center.getX() + 4.0D, center.getY() + 4.0D, center.getZ() + 4.0D);
+        int total = 0;
+        for (Entity entity : helper.getLevel().getEntities((Entity) null, area,
+                candidate -> candidate instanceof ItemEntity itemEntity && itemEntity.getItem().is(item))) {
+            total += ((ItemEntity) entity).getItem().getCount();
+        }
+        return total;
+    }
+
+    private static int countChestsNear(net.minecraft.server.level.ServerLevel level, BlockPos center, int radius) {
+        int total = 0;
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -8, -radius), center.offset(radius, 8, radius))) {
+            if (level.getBlockState(pos).is(Blocks.CHEST)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    private static int countOrbitalThreatsNear(net.minecraft.world.level.Level level,
+            net.minecraft.world.entity.player.Player player, double radius) {
+        return countOrbitalThreatsNear(level, player.blockPosition(), radius);
+    }
+
+    private static int countOrbitalThreatsNear(net.minecraft.world.level.Level level, BlockPos center, double radius) {
+        AABB area = new AABB(center.getX() - radius, center.getY() - radius, center.getZ() - radius,
+                center.getX() + radius, center.getY() + radius, center.getZ() + radius);
+        return level.getEntities((Entity) null, area, ModGameTests::isOrbitalThreat).size();
+    }
+
+    private static boolean isOrbitalThreat(Entity entity) {
+        return entity.getType() == ModEntities.ECHO_DEFENSE_DRONE.get()
+                || entity.getType() == ModEntities.VACUUM_WRAITH.get()
+                || entity.getType() == ModEntities.BROKEN_ASTRONAUT.get()
+                || entity.getType() == ModEntities.NEXUS_HUSK.get()
+                || entity.getType() == ModEntities.LUNAR_NEXUS_HUSK.get()
+                || entity.getType() == ModEntities.EUROPA_CRYO_WARDEN.get()
+                || entity.getType() == ModEntities.SATURN_RELAY_SENTINEL.get()
+                || entity.getType() == ModEntities.TITAN_METHANE_STALKER.get();
     }
 
     private static BlockPos sitePos(List<GroundRecoverySite> sites, GroundRecoverySiteType type) {

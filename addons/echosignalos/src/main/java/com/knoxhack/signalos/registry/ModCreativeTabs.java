@@ -19,7 +19,13 @@ public final class ModCreativeTabs {
                     .title(Component.translatable("itemGroup.signalos"))
                     .withTabsBefore(CreativeModeTabs.FUNCTIONAL_BLOCKS)
                     .icon(() -> ModBlocks.TERMINAL_ITEM.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> output.accept(ModBlocks.TERMINAL_ITEM.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModBlocks.TERMINAL_ITEM.get());
+                        output.accept(ModBlocks.WORKSTATION_ITEM.get());
+                        output.accept(ModBlocks.SERVER_RACK_ITEM.get());
+                        output.accept(ModBlocks.NETWORK_RELAY_ITEM.get());
+                        output.accept(ModBlocks.DATA_DRIVE.get());
+                    })
                     .build());
 
     private ModCreativeTabs() {

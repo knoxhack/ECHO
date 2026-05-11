@@ -322,7 +322,7 @@ public class EchoCompanionDrone extends Mob {
 
         forceFollowMode();
         Vec3 target = getOwnerHoverTarget(owner);
-        this.setPos(target.x, target.y, target.z);
+        this.teleportTo(target.x, target.y, target.z);
         this.setDeltaMovement(Vec3.ZERO);
         this.speak("Recall acknowledged.", MOOD_PROFESSIONAL, 40, 8);
         return true;

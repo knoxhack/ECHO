@@ -284,14 +284,22 @@ public class ReclamationMachineBlock extends Block {
             int amount = Math.max(organic + 1, 2);
             yield MachineOutput.bio(spec.displayName(), new ItemStack(ModItems.BIO_GEL.get(), amount), amount);
          }
-         case "cryo_moss" -> MachineOutput.other(spec.displayName(), new ItemStack(ModItems.PURIFICATION_ENZYME.get()));
+         case "cryo_moss" -> MachineOutput.bio(
+            spec.displayName(),
+            listOf(
+               new ItemStack(ModItems.BIO_GEL.get(), organic),
+               new ItemStack(ModItems.PURIFICATION_ENZYME.get())
+            ),
+            organic
+         );
          case "nexus_orchid" -> MachineOutput.other(
             spec.displayName(),
             listOf(
+               new ItemStack(ModItems.BIO_GEL.get(), organic),
                new ItemStack(ModItems.GENE_SAMPLE.get()),
                optionalBridge("echonexusprotocol", "nexus_gel", 1)
             )
-         );
+         ).withBioGel(organic);
          default -> MachineOutput.bio(spec.displayName(), new ItemStack(ModItems.BIO_GEL.get(), organic), organic);
       };
    }
@@ -418,6 +426,10 @@ public class ReclamationMachineBlock extends Block {
 
       private static MachineOutput other(String inputName, List<ItemStack> stacks) {
          return new MachineOutput(inputName, stacks, 0, 0);
+      }
+
+      private MachineOutput withBioGel(int amount) {
+         return new MachineOutput(inputName, stacks, amount, nutrientMix);
       }
    }
 

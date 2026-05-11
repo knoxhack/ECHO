@@ -1,6 +1,7 @@
 package com.knoxhack.signalos.registry;
 
 import com.knoxhack.signalos.SignalOS;
+import com.knoxhack.signalos.block.entity.SignalOsServerRackBlockEntity;
 import com.knoxhack.signalos.block.entity.SignalOsTerminalBlockEntity;
 import java.util.Set;
 import net.minecraft.core.registries.Registries;
@@ -15,7 +16,13 @@ public final class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SignalOsTerminalBlockEntity>> TERMINAL =
             BLOCK_ENTITIES.register("terminal",
-                    () -> new BlockEntityType<>(SignalOsTerminalBlockEntity::new, Set.of(ModBlocks.TERMINAL.get())));
+                    () -> new BlockEntityType<>(SignalOsTerminalBlockEntity::new,
+                            Set.of(ModBlocks.TERMINAL.get(), ModBlocks.WORKSTATION.get())));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SignalOsServerRackBlockEntity>> SERVER_RACK =
+            BLOCK_ENTITIES.register("server_rack",
+                    () -> new BlockEntityType<>(SignalOsServerRackBlockEntity::new,
+                            Set.of(ModBlocks.SERVER_RACK.get())));
 
     private ModBlockEntities() {
     }

@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/light_blue_stained_glass.png",
+  "default_state": "ACTIVE",
+  "transition_seconds": 0.35,
+  "materials": {
+    "hazard_cold": {
+      "color": "#FFA5F3FF",
+      "alpha": 0.58,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "cryo_warning",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/light_blue_stained_glass.png",
+      "material": "hazard_cold",
+      "states": ["ONLINE", "ACTIVE"],
+      "alpha": 0.56,
+      "emissive": true
+    }
+  ]
+}

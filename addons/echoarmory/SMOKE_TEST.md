@@ -1,0 +1,75 @@
+# ECHO: Armory Smoke Tests
+
+Run these in a survival world with ECHO Core and Armory loaded. Terminal and Logistics checks require their optional sibling mods.
+
+## First Survival Loop
+
+1. Craft `armory_alloy_plate`.
+2. Craft and place `armory_bench`.
+3. Craft `alloy_sword` or `thermal_chestplate`.
+4. Craft and place `module_upgrade_table`.
+5. Craft `stability_rune`, `frost_core`, or `gas_mask_filter`.
+6. Insert gear in slot 1 and module in slot 2, then apply.
+7. Confirm the module item is consumed only on success and the gear tooltip shows installed module data.
+
+## Energy Loop
+
+1. Craft an energy-capable item such as `frost_blade` or `veil_bow`.
+2. Spend energy through combat or ranged use.
+3. Place `energy_core_charging_station`.
+4. Insert gear plus `veil_crystal` or `resonance_shard` in AUX.
+5. Apply and confirm one fuel item is consumed and stored energy refills to capacity.
+
+## Ranged Safety Loop
+
+1. Equip `veil_bow` with `ammo_crystals` in inventory.
+2. Use it with no target in front of the player.
+3. Confirm no ammo or energy is consumed.
+4. Aim at a valid hostile target and fire.
+5. Confirm one ammo crystal is consumed before stored energy.
+
+## Faction Depot Loop
+
+1. Inspect depot offers for `veil_sabre`, `energy_rifle`, `construct_gauntlet`, `veil_resistant_helm`, `drone_leggings`, or `construct_harness`.
+2. Try to use/equip one while reputation is missing.
+3. Confirm the item is not deleted and reports the lock requirement.
+4. Grant the matching faction reputation and repeat.
+5. Confirm use/equip/protection now applies.
+
+## Terminal Armory Loop
+
+1. Open `SYSTEM > Armory`.
+2. Click a mission kit row, augment row, and boss row.
+3. Use `EQUIP`, `INSTALL`, `RECHARGE`, and `PREVIEW`.
+4. Confirm actions report missing, locked, duplicate, incompatible, no fuel, or readiness status without consuming items on failure.
+
+## Logistics Delivery Loop
+
+1. Load Logistics Network with an eligible dispatch endpoint.
+2. Select an Armory loadout with a Logistics preset.
+3. Click `LOGISTICS`.
+4. Confirm dispatch is queued or a clear unavailable/blocked message is shown.
+
+## Reload Persistence
+
+1. Install a module and partially spend energy.
+2. Save and reload the world.
+3. Confirm installed modules, tier, stance, cosmetic trim, instability, and energy state remain on the gear stack.
+4. Place a station with inventory, save/reload, and confirm stored gear/resources remain.
+
+Automated coverage: `stack_component_round_trip_persists_armory_state` and `station_inventory_round_trip_persists_items_and_gear_state` exercise the same persistence contract through the GameTest server.
+
+## Safety Proof Coverage
+
+The GameTest server also covers protected station slot rules, active-operation extraction blocking, selected Terminal recharge/preview/logistics action paths, duplicate/incompatible/full module install rejection, no-target ranged shots, ammo-before-energy ranged consumption, faction lock safety, and fuel-costed recharge.
+
+## Release Commands
+
+```powershell
+.\gradlew.bat :echoarmory:build
+.\gradlew.bat validateEchoResources
+.\gradlew.bat validateEchoGameplayData
+.\gradlew.bat --no-configuration-cache :echoarmory:runGameTestServer
+.\gradlew.bat buildEchoWorkspace
+.\gradlew.bat --no-configuration-cache validateReleaseArtifacts printReleaseManifest
+```

@@ -5,6 +5,8 @@ import com.knoxhack.echoashfallprotocol.network.NexusStatePacket;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
@@ -179,10 +181,6 @@ public class PlayerTechTracker {
     }
 
     private static void sendOptionalPayload(ServerPlayer player, net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
-        try {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, payload);
-        } catch (UnsupportedOperationException | IllegalStateException ignored) {
-            // Synthetic GameTest players do not always negotiate optional client payload channels.
-        }
+        EchoNetSend.toPlayer(player, payload, EchoPacketKind.CLIENTBOUND_SYNC);
     }
 }

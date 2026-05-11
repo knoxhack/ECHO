@@ -150,7 +150,7 @@ def echoAddonSet = (project.findProperty('echoAddonSet') ?: 'all').toString().to
 if (!['beta', 'all'].contains(echoAddonSet)) {
     throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
 }
-def echoBetaAddonPaths = [':echoterminal', ':echosignalos', ':signalosexample', ':echoorbitalremnants', ':echonexusprotocol', ':echoagriculturereclamation'] as Set
+def echoBetaAddonPaths = [':echonetcore', ':echoterminal', ':echomissioncore', ':echodatacore', ':echosignalos', ':signalosexample', ':echoorbitalremnants', ':echonexusprotocol', ':echoagriculturereclamation', ':echoworldcore'] as Set
 
 def echoIncludedAddonProjects = {
     rootProject.subprojects
@@ -171,7 +171,8 @@ def echoExpectedReleaseProjects = {
 
 dependencies {
     implementation project(':echocore')
-    compileOnly project(':echoterminal')
+    implementation project(':echonetcore')
+    implementation project(':echoterminal')
     echoIncludedAddonProjects().each { addonProject ->
         localRuntime addonProject
     }

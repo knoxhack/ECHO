@@ -2,7 +2,6 @@ package com.knoxhack.echoashfallprotocol.integration;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.echo.EchoGuideManager;
-import com.knoxhack.echoashfallprotocol.echo.EndgameMissionProgress;
 import com.knoxhack.echoashfallprotocol.echo.Mission;
 import com.knoxhack.echoashfallprotocol.echo.MissionRegistry;
 import com.knoxhack.echoashfallprotocol.echo.MissionUxSummary;
@@ -154,6 +153,10 @@ public final class AshfallTerminalCommonIntegration {
         }
 
         private static void registerProviders() {
+            if (ModList.get().isLoaded("echomissioncore")) {
+                EchoAshfallProtocol.LOGGER.info("Ashfall Terminal mission providers skipped; MissionCore owns mission display.");
+                return;
+            }
             com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry.register(ASHFALL_MISSIONS);
             com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry.register(ASHFALL_SIDE_OPS);
         }
@@ -255,7 +258,7 @@ public final class AshfallTerminalCommonIntegration {
             QuestData.MissionStatus status = quest.getMissionStatus(mission.id());
             boolean preview = mission.isPathPreview(player);
             boolean pendingRewards = quest.hasPendingRewards(mission.id());
-            boolean completeNow = safeComplete(mission, player);
+            boolean completeNow = cheapMissionSatisfied(player, quest, mission);
             TerminalMissionStatus terminalStatus = preview
                     ? TerminalMissionStatus.VIEW_ONLY
                     : switch (status) {
@@ -270,13 +273,11 @@ public final class AshfallTerminalCommonIntegration {
                     && mission.isTurnInMission()
                     && completeNow
                     && !preview;
-            MissionUxSummary summary = MissionUxSummary.of(player, quest, mission);
+            MissionUxSummary summary = MissionUxSummary.forHud(player, quest, mission);
             return new TerminalMissionSnapshot(
                     id(mission.id()),
                     terminalStatus,
-                    EndgameMissionProgress.forMission(player, quest, mission)
-                            .map(EndgameMissionProgress.Snapshot::progress)
-                            .orElseGet(() -> mission.getProgress(player)),
+                    cheapProgress(player, quest, mission, status, completeNow),
                     summary.statusLabel(),
                     terminalStatus == TerminalMissionStatus.LOCKED || terminalStatus == TerminalMissionStatus.VIEW_ONLY
                             ? MissionUxSummary.unlockReason(player, quest, mission)
@@ -337,26 +338,59 @@ public final class AshfallTerminalCommonIntegration {
         }
 
         private static List<TerminalMissionRequirement> requirements(Player player, QuestData quest, Mission mission) {
-            List<TerminalMissionRequirement> endgameRequirements = EndgameMissionProgress.forMission(player, quest, mission)
-                    .map(snapshot -> snapshot.entries().stream()
-                            .map(entry -> TerminalMissionRequirement.custom(
-                                    entry.label(), entry.detail(), entry.icon(),
-                                    entry.have(), entry.need(), entry.satisfied()))
-                            .toList())
-                    .orElse(List.of());
-            if (!endgameRequirements.isEmpty()) {
-                return endgameRequirements;
-            }
             List<TerminalMissionRequirement> requirements = new ArrayList<>();
             for (Mission.ItemProgress progress : mission.getItemProgress(player)) {
                 requirements.add(TerminalMissionRequirement.item(
                         progress.item(), progress.have(), progress.need(), progress.satisfied()));
             }
+            for (Mission.BlockRequirement requirement : mission.requiredBlocks()) {
+                int have = quest.getBlockPlaceCount(requirement.blockId());
+                int need = Math.max(1, requirement.count());
+                requirements.add(TerminalMissionRequirement.custom(
+                        requirement.displayName(),
+                        Math.min(have, need) + "/" + need + " placed",
+                        missionIcon(mission),
+                        Math.min(have, need),
+                        need,
+                        have >= need));
+            }
+            for (Mission.EntityKillRequirement requirement : mission.requiredEntityKills()) {
+                int have = quest.getEntityKills(requirement.entityType());
+                int need = Math.max(1, requirement.count());
+                requirements.add(TerminalMissionRequirement.custom(
+                        requirement.displayName(),
+                        Math.min(have, need) + "/" + need + " neutralized",
+                        missionIcon(mission),
+                        Math.min(have, need),
+                        need,
+                        have >= need));
+            }
+            for (Mission.LocationRequirement requirement : mission.requiredLocations()) {
+                boolean visited = quest.hasVisitedLocation(requirement.locationType(), requirement.locationId());
+                requirements.add(TerminalMissionRequirement.custom(
+                        requirement.displayName(),
+                        visited ? "Archived" : "Not archived",
+                        missionIcon(mission),
+                        visited ? 1 : 0,
+                        1,
+                        visited));
+            }
+            for (Mission.EquipmentRequirement requirement : mission.requiredEquipment()) {
+                ItemStack equipped = player == null ? ItemStack.EMPTY : player.getItemBySlot(requirement.slot());
+                boolean wearing = !equipped.isEmpty() && equipped.getItem() == requirement.item().getItem();
+                requirements.add(TerminalMissionRequirement.custom(
+                        requirement.displayName(),
+                        wearing ? "Equipped" : "Not equipped",
+                        requirement.item(),
+                        wearing ? 1 : 0,
+                        1,
+                        wearing));
+            }
             if (requirements.isEmpty()) {
-                boolean complete = safeComplete(mission, player);
+                boolean complete = cheapMissionSatisfied(player, quest, mission);
                 requirements.add(TerminalMissionRequirement.custom(
                         mission.objectiveText(),
-                        complete ? "Objective complete" : "Progress tracked by server state",
+                        complete ? "Objective complete" : "Progress tracked by synced route state",
                         missionIcon(mission),
                         complete ? 1 : 0,
                         1,
@@ -380,6 +414,76 @@ public final class AshfallTerminalCommonIntegration {
         private static boolean isCurrentMission(QuestData quest, Mission mission) {
             Mission current = MissionRegistry.getMission(quest.getCurrentPhase(), quest.getCurrentMissionIndex());
             return current != null && current.id().equals(mission.id());
+        }
+
+        private static boolean cheapMissionSatisfied(Player player, QuestData quest, Mission mission) {
+            if (player == null || quest == null || mission == null) {
+                return false;
+            }
+            if (quest.isMissionCompleted(mission.id())) {
+                return true;
+            }
+            if (mission.validatesRequiredItems() && !mission.hasRequiredItems(player)) {
+                return false;
+            }
+            if (mission.hasBlockRequirements() && !mission.hasRequiredBlocks(player)) {
+                return false;
+            }
+            for (Mission.EntityKillRequirement requirement : mission.requiredEntityKills()) {
+                if (quest.getEntityKills(requirement.entityType()) < requirement.count()) {
+                    return false;
+                }
+            }
+            for (Mission.LocationRequirement requirement : mission.requiredLocations()) {
+                if (!quest.hasVisitedLocation(requirement.locationType(), requirement.locationId())) {
+                    return false;
+                }
+            }
+            return mission.hasRequiredEquipment(player) && mission.hasAnyRequirements();
+        }
+
+        private static float cheapProgress(
+                Player player,
+                QuestData quest,
+                Mission mission,
+                QuestData.MissionStatus status,
+                boolean completeNow) {
+            if (status == QuestData.MissionStatus.COMPLETED || completeNow) {
+                return 1.0F;
+            }
+            if (player == null || quest == null || mission == null) {
+                return 0.0F;
+            }
+
+            float total = 0.0F;
+            int entries = 0;
+            if (mission.validatesRequiredItems()) {
+                for (Mission.ItemProgress progress : mission.getItemProgress(player)) {
+                    int need = Math.max(1, progress.need());
+                    total += Math.min(1.0F, progress.have() / (float) need);
+                    entries++;
+                }
+            }
+            for (Mission.BlockRequirement requirement : mission.requiredBlocks()) {
+                int need = Math.max(1, requirement.count());
+                total += Math.min(1.0F, quest.getBlockPlaceCount(requirement.blockId()) / (float) need);
+                entries++;
+            }
+            for (Mission.EntityKillRequirement requirement : mission.requiredEntityKills()) {
+                int need = Math.max(1, requirement.count());
+                total += Math.min(1.0F, quest.getEntityKills(requirement.entityType()) / (float) need);
+                entries++;
+            }
+            for (Mission.LocationRequirement requirement : mission.requiredLocations()) {
+                total += quest.hasVisitedLocation(requirement.locationType(), requirement.locationId()) ? 1.0F : 0.0F;
+                entries++;
+            }
+            for (Mission.EquipmentRequirement requirement : mission.requiredEquipment()) {
+                ItemStack equipped = player.getItemBySlot(requirement.slot());
+                total += !equipped.isEmpty() && equipped.getItem() == requirement.item().getItem() ? 1.0F : 0.0F;
+                entries++;
+            }
+            return entries == 0 ? 0.0F : total / entries;
         }
     }
 
@@ -531,9 +635,9 @@ public final class AshfallTerminalCommonIntegration {
                 "Faction Signal Threads",
                 "OPEN",
                 List.of(
-                        "Ten Ashfall factions report through Echo Core: shelters, rangers, freeholds, archivists, workers, sanctums, salvage crews, wardens, thaw crews, and scar witnesses.",
+                        "Three Ashfall factions report through Echo Core: Radwarden Compact containment crews, Crashbreak Salvage route builders, and Sporebound Sanctum anomaly interpreters.",
                         "Faction work is not separate from the main route: contacts, contracts, services, and standing all feed the same synced Echo Core record.",
-                        "Orbital Remnant, Void Salvager, and Nexus Choir signals echo those same pressures after the Nexus choice reaches orbit."),
+                        "Orbital lanes mirror those same three pressures after the Nexus choice reaches orbit: Radwarden containment, Crashbreak salvage, and Sporebound anomaly reading."),
                 false));
     }
 }

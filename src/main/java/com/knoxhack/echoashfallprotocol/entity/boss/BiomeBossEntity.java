@@ -1,6 +1,8 @@
 package com.knoxhack.echoashfallprotocol.entity.boss;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoashfallprotocol.boss.BossHudSync;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -145,6 +147,7 @@ public class BiomeBossEntity extends PathfinderMob {
         super.dropCustomDeathLoot(level, source, recentlyHit);
         BiomeGuardianProfile profile = profile();
         dropProfileLoot(level, profile);
+        awardGuardianFactionReputation(level, source, profile);
         announceNearby("\u00A76[ECHO-7]\u00A7r " + profile.defeatLine());
         playGuardianSound(SoundEvents.BEACON_DEACTIVATE, 1.3f, 0.75f);
     }
@@ -303,6 +306,27 @@ public class BiomeBossEntity extends PathfinderMob {
             ItemStack stack = entry.stack(this.random);
             this.spawnAtLocation(level, stack);
         }
+    }
+
+    private void awardGuardianFactionReputation(ServerLevel level, DamageSource source, BiomeGuardianProfile profile) {
+        if (source.getEntity() instanceof ServerPlayer player) {
+            awardGuardianFactionReputation(player, profile);
+            return;
+        }
+        AABB box = this.getBoundingBox().inflate(56.0);
+        for (Player player : level.getEntitiesOfClass(Player.class, box)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                awardGuardianFactionReputation(serverPlayer, profile);
+            }
+        }
+    }
+
+    private void awardGuardianFactionReputation(ServerPlayer player, BiomeGuardianProfile profile) {
+        EchoCoreServices.addFactionReputation(player, profile.ownerFaction(), 12);
+        EchoCoreServices.markFactionContacted(player, profile.ownerFaction());
+        player.sendSystemMessage(Component.literal("\u00A76[ECHO-7]\u00A7r "
+                + AshfallFactionMap.displayName(profile.ownerFaction())
+                + " archived the " + profile.title() + " datacore."));
     }
 
     private void spawnPhaseParticles(BiomeGuardianProfile profile, int count) {

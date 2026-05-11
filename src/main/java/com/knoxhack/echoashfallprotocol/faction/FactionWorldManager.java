@@ -20,7 +20,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
- * World-level pressure for the 10 Ashfall factions.
+ * World-level pressure for the three Ashfall factions.
  */
 @EventBusSubscriber(modid = EchoAshfallProtocol.MODID)
 public class FactionWorldManager {

@@ -30,10 +30,13 @@ configurations { runtimeClasspath.extendsFrom localRuntime }
 
 dependencies {
     implementation project(":echocore")
+    implementation project(":echonetcore")
     compileOnly project(":echoterminal")
     compileOnly project(":echologisticsnetwork")
+    compileOnly project(":echorendercore")
     localRuntime project(":echoterminal")
     localRuntime project(":echologisticsnetwork")
+    localRuntime project(":echorendercore")
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

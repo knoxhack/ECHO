@@ -85,7 +85,7 @@ public class ReclamationCropBlock extends Block implements EntityBlock {
       SoilState soil = level.getBlockState(pos.below()).getBlock() == ModBlocks.HYDROPONIC_TRAY.get()
          ? SoilState.STABILIZED
          : SoilState.fromBlock(level.getBlockState(pos.below()));
-      int greenhouse = ReclamationProgress.scanGreenhouseSafety(level, pos);
+      int greenhouse = ReclamationProgress.growthGreenhouseSafety(level, pos);
       SeedProfile profile = profileAt(level, pos, state);
       if (!ReclamationCropLogic.canGrow(spec, soil, profile, greenhouse)) {
          if (random.nextInt(100) < ReclamationContent.crop(spec).failedGrowthDeathChance()) {

@@ -1,24 +1,46 @@
-import type { AppSettings, CommandRun, ProjectDetail, ScanReport } from "../shared/types.js";
+import type {
+  AppSettings,
+  CommandRun,
+  FeatureCatalogResponse,
+  JarManifest,
+  ModpackInventory,
+  ModpackPipelineRun,
+  ProjectDetail,
+  ReadinessReport,
+  ScanReport
+} from "../shared/types.js";
 
 export interface ExportContext {
   detail: ProjectDetail;
   settings: AppSettings;
   scans: ScanReport[];
   runs: CommandRun[];
+  jarManifest?: JarManifest;
+  readinessReport?: ReadinessReport;
+  featureCatalog?: FeatureCatalogResponse;
+  modpackSummary?: ModpackInventory;
+  modpackRuns?: ModpackPipelineRun[];
 }
 
 export function exportJson(context: ExportContext): string {
-  const { detail, settings, scans, runs } = context;
+  const { detail, settings, scans, runs, jarManifest, readinessReport, featureCatalog, modpackSummary, modpackRuns } = context;
   const latestScan = detail.latestReport;
+  const jarPromoteRuns = runs.filter((run) => run.commandId === "promote-jars");
   return JSON.stringify(
     {
       generatedAt: new Date().toISOString(),
       project: detail.project,
       settings,
-      readinessScore: latestScan?.summary.readinessScore ?? detail.project.buildHealth,
+      readinessScore: readinessReport?.score ?? latestScan?.summary.readinessScore ?? detail.project.buildHealth,
+      readinessReport,
       latestScan,
       recentScans: scans,
       releaseRuns: runs,
+      jarManifest,
+      jarPromoteRuns,
+      featureCatalog,
+      modpackSummary,
+      modpackRuns,
       roadmap: detail.roadmap,
       terminalPlanner: detail.terminalPlanner,
       promptTemplates: detail.prompts,
@@ -30,8 +52,9 @@ export function exportJson(context: ExportContext): string {
 }
 
 export function exportMarkdown(context: ExportContext): string {
-  const { detail, settings, scans, runs } = context;
+  const { detail, settings, scans, runs, jarManifest, readinessReport, featureCatalog, modpackSummary, modpackRuns } = context;
   const report = detail.latestReport;
+  const jarPromoteRuns = runs.filter((run) => run.commandId === "promote-jars");
   const lines = [
     `# ${detail.project.name} Command Center Report`,
     "",
@@ -39,9 +62,11 @@ export function exportMarkdown(context: ExportContext): string {
     `Milestone: ${detail.project.currentMilestone}`,
     `Build Health: ${detail.project.buildHealth}%`,
     `Next Action: ${detail.project.nextRecommendedAction}`,
-    `Readiness Score: ${report?.summary.readinessScore ?? detail.project.buildHealth}%`,
+    `Readiness Score: ${readinessReport?.score ?? report?.summary.readinessScore ?? detail.project.buildHealth}%`,
+    `Next Readiness Action: ${readinessReport?.nextAction?.label ?? "None"}`,
     "",
     "## Settings Snapshot",
+    `- Project Workspace: ${detail.project.workspacePath}`,
     `- ECHO Root: ${settings.echoRoot}`,
     `- Mods Folder: ${settings.modpackModsDir || "not configured"}`,
     `- Python Executable: ${settings.pythonExecutable}`,
@@ -64,6 +89,15 @@ export function exportMarkdown(context: ExportContext): string {
       ? runs.map((run) => `- ${run.commandId}: ${run.status}${run.exitCode == null ? "" : ` (exit ${run.exitCode})`}${run.durationMs == null ? "" : `, ${run.durationMs}ms`}`)
       : ["No release runs yet."]),
     "",
+    "## Jar Management",
+    ...(jarManifest ? markdownJarManifest(jarManifest, jarPromoteRuns) : ["Jar manifest was not included in this export."]),
+    "",
+    "## Feature And Lore Implementation",
+    ...(featureCatalog ? markdownFeatureCatalog(featureCatalog) : ["Feature catalog was not included in this export."]),
+    "",
+    "## Modpack Management",
+    ...(modpackSummary ? markdownModpack(modpackSummary, modpackRuns ?? []) : ["Modpack summary was not included in this export."]),
+    "",
     "## Roadmap",
     ...detail.roadmap.map((phase) => `- ${phase.title}: ${phase.status} (${phase.progress}%) - ${phase.summary}`),
     "",
@@ -76,6 +110,59 @@ export function exportMarkdown(context: ExportContext): string {
     ...detail.releaseActions.map((action) => `- ${action.label}: ${action.description}`)
   ];
   return `${lines.join("\n")}\n`;
+}
+
+function markdownModpack(summary: ModpackInventory, runs: ModpackPipelineRun[]): string[] {
+  return [
+    `Generated: ${summary.generatedAt}`,
+    `Target Folder: ${summary.targetDir || "not configured"}`,
+    `Target Status: ${summary.targetConfigured ? (summary.targetExists ? summary.status : "missing") : "not configured"}`,
+    ...(summary.blockers.length ? summary.blockers.map((blocker) => `- Blocked: ${blocker}`) : ["- Rebuild & Update All is available."]),
+    `Expected: ${summary.summary.expected}, built: ${summary.summary.built}, current: ${summary.summary.current}, stale: ${summary.summary.stale}, duplicate: ${summary.summary.duplicate}`,
+    ...summary.targets.map((target) => `- ${target.projectName}: ${target.status}, command ${target.buildCommandId}, ${target.manifest.summary.current}/${target.manifest.summary.expected} current jar(s)`),
+    "",
+    "### Modpack Pipeline History",
+    ...(runs.length
+      ? runs.map((run) => `- ${run.status} at ${run.finishedAt ?? run.startedAt}: ${run.steps.filter((step) => step.status === "succeeded").length}/${run.steps.length} step(s) complete`)
+      : ["No modpack pipeline runs yet."])
+  ];
+}
+
+function markdownFeatureCatalog(catalog: FeatureCatalogResponse): string[] {
+  const statusSummary = Object.entries(catalog.summary.statusCounts)
+    .filter(([, count]) => count > 0)
+    .map(([status, count]) => `${status}: ${count}`)
+    .join(", ");
+  return [
+    `Generated: ${catalog.generatedAt}`,
+    `Total Features: ${catalog.summary.total}${statusSummary ? ` (${statusSummary})` : ""}`,
+    ...catalog.features.map((feature) => {
+      const sources = feature.sources.map((source) => `${source.label} / ${source.section}`).join("; ");
+      const evidence = feature.evidence.map((item) => item.label).join("; ");
+      return `- [${feature.status}] ${feature.title}: ${feature.implementationSummary} Next: ${feature.nextAction}${sources ? ` Sources: ${sources}.` : ""}${evidence ? ` Evidence: ${evidence}.` : ""}`;
+    })
+  ];
+}
+
+function markdownJarManifest(manifest: JarManifest, jarPromoteRuns: CommandRun[]): string[] {
+  return [
+    `Generated: ${manifest.generatedAt}`,
+    `Build Root: ${manifest.buildRoot}`,
+    `Target Folder: ${manifest.targetDir || "not configured"}`,
+    `Target Status: ${manifest.targetConfigured ? (manifest.targetExists ? "ready" : "missing") : "not configured"}`,
+    ...(manifest.blockers.length ? manifest.blockers.map((blocker) => `- Blocked: ${blocker}`) : ["- Promote path is available."]),
+    `Expected: ${manifest.summary.expected}, built: ${manifest.summary.built}, current in target: ${manifest.summary.current}, stale: ${manifest.summary.stale}, duplicate: ${manifest.summary.duplicate}`,
+    ...manifest.artifacts.map((artifact) => {
+      const sourceState = artifact.exists ? "built" : "missing";
+      const targetState = artifact.current ? "current" : "not current";
+      return `- ${artifact.expectedFileName}: ${sourceState}, target ${targetState}${artifact.checksum ? `, sha256 ${artifact.checksum}` : ""}`;
+    }),
+    "",
+    "### Jar Promote History",
+    ...(jarPromoteRuns.length
+      ? jarPromoteRuns.map((run) => `- ${run.status} at ${run.finishedAt ?? run.startedAt}: ${run.output.split("\n")[0] ?? run.commandId}`)
+      : ["No jar promote runs yet."])
+  ];
 }
 
 function markdownReport(report: ScanReport | null): string[] {

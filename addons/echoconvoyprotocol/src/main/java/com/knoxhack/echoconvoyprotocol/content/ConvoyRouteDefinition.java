@@ -40,7 +40,7 @@ public record ConvoyRouteDefinition(
       rewards = List.copyOf(rewards == null ? List.of() : rewards);
       threatLevel = Math.max(0, Math.min(5, threatLevel));
       threat = threat == null ? ThreatSpec.fromThreatLevel(threatLevel) : threat;
-      checkpointFactionId = checkpointFactionId == null ? Identifier.fromNamespaceAndPath("echocore", "survivors") : checkpointFactionId;
+      checkpointFactionId = checkpointFactionId == null ? Identifier.fromNamespaceAndPath("echoashfallprotocol", "crashbreak_salvage") : checkpointFactionId;
       minReputation = Math.max(0, minReputation);
       checkpoint = checkpoint == null ? CheckpointSpec.defaults() : checkpoint;
       destinationHint = destinationHint == null ? "Overworld roadside corridor" : destinationHint.strip();

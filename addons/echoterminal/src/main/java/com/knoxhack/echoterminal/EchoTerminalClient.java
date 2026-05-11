@@ -6,6 +6,7 @@ import com.knoxhack.echoterminal.client.TerminalEventHandler;
 import com.knoxhack.echoterminal.client.discovery.DiscoveryToastHud;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionHudController;
 import com.knoxhack.echoterminal.client.screen.EchoTerminalScreens;
+import com.knoxhack.echoterminal.client.screen.TerminalClientConfigIntegration;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
 import com.knoxhack.echoterminal.registry.ModMenus;
@@ -41,6 +42,7 @@ public class EchoTerminalClient {
     public EchoTerminalClient(ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         TerminalClientOptions.load();
+        TerminalClientConfigIntegration.register();
         BuiltinTerminalTabs.register();
         NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onKeyInput);
         NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onClientTick);

@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.network;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echonetcore.api.EchoPayloadCodecs;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -14,8 +15,8 @@ public record ResearchPurchasePacket(String perkId) implements CustomPacketPaylo
     public static final Identifier ID = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "research_purchase");
 
     public static final StreamCodec<FriendlyByteBuf, ResearchPurchasePacket> CODEC = StreamCodec.of(
-        (buf, packet) -> buf.writeUtf(packet.perkId),
-        buf -> new ResearchPurchasePacket(buf.readUtf())
+        (buf, packet) -> EchoPayloadCodecs.writeUtf(buf, packet.perkId, EchoPayloadCodecs.ID),
+        buf -> new ResearchPurchasePacket(EchoPayloadCodecs.readUtf(buf, EchoPayloadCodecs.ID))
     );
 
     public static final Type<ResearchPurchasePacket> TYPE = new Type<>(ID);

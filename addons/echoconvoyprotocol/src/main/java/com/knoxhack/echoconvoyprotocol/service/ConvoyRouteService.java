@@ -1,11 +1,14 @@
 package com.knoxhack.echoconvoyprotocol.service;
 
+import com.knoxhack.echoconvoyprotocol.EchoConvoyProtocol;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
 import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyStationBlockEntity;
 import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleEntity;
 import com.knoxhack.echoconvoyprotocol.progress.ConvoyProgress;
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.WorldMarker;
+import com.knoxhack.echocore.api.WorldMarkerType;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -43,12 +46,14 @@ public final class ConvoyRouteService {
       ConvoyRouteDefinition definition = route.get();
       RouteCheck check = readiness(player, vehicle, definition, false);
       if (!check.ready()) {
-         player.sendSystemMessage(Component.literal("ECHO CONVOY // Route blocked: " + check.message()));
+         player.sendSystemMessage(Component.literal("ECHO CONVOY // Route blocked: " + check.message() + ". " + readinessHint(check, definition)));
          return false;
       }
       ConvoyProgress progress = ConvoyProgress.get(player);
       progress.activate(definition.id(), startPos, vehicle.getUUID());
       progress.activateBeacon(Identifier.fromNamespaceAndPath(definition.id().getNamespace(), "beacon/" + definition.id().getPath()));
+      recordWorldMarker(player, definition, startPos, WorldMarkerType.ROUTE_START,
+         "Convoy Start: " + definition.title(), "Convoy route start beacon.");
       vehicle.setActiveRouteId(definition.id().toString());
       player.sendSystemMessage(Component.literal(
          "ECHO CONVOY // Route active: " + definition.title()
@@ -90,7 +95,7 @@ public final class ConvoyRouteService {
       ConvoyRouteDefinition definition = route.get();
       RouteCheck check = readiness(player, vehicle, definition, false);
       if (!check.ready()) {
-         player.sendSystemMessage(Component.literal("ECHO CONVOY // Route cannot close: " + check.message()));
+         player.sendSystemMessage(Component.literal("ECHO CONVOY // Route cannot close: " + check.message() + ". " + readinessHint(check, definition)));
          return false;
       }
       if (!routeVehicleMatches(progress, vehicle, definition)) {
@@ -121,6 +126,8 @@ public final class ConvoyRouteService {
       }
       if (nextLeg < definition.requiredSignalMarkers()) {
          progress.markSignal(definition.id(), markerPos);
+         recordWorldMarker(player, definition, markerPos, WorldMarkerType.ROUTE_CHECKPOINT,
+            "Convoy Checkpoint: " + leg.title(), "Roadside signal logged for " + definition.title() + ".");
          player.sendSystemMessage(Component.literal(
             "ECHO CONVOY // Route leg " + nextLeg + "/" + definition.requiredSignalMarkers()
                + " logged: " + definition.title() + "."
@@ -148,6 +155,8 @@ public final class ConvoyRouteService {
       }
       progress.markSignal(definition.id(), markerPos);
       progress.complete(definition.id());
+      recordWorldMarker(player, definition, markerPos, WorldMarkerType.ROUTE_DESTINATION,
+         "Convoy Destination: " + definition.title(), "Completed convoy route destination.");
       vehicle.setActiveRouteId("");
       player.sendSystemMessage(Component.literal("ECHO CONVOY // Contract complete: " + definition.title() + ". Rewards pending in Convoy Routes."));
       if (player instanceof ServerPlayer serverPlayer) {
@@ -216,6 +225,49 @@ public final class ConvoyRouteService {
       return new RouteCheck(true, "ready");
    }
 
+   public static String readinessHint(Player player, ConvoyVehicleEntity vehicle, ConvoyRouteDefinition route) {
+      return readinessHint(readiness(player, vehicle, route), route);
+   }
+
+   public static String readinessHint(RouteCheck check, ConvoyRouteDefinition route) {
+      if (check == null || route == null) {
+         return "Scan convoy routes again to refresh requirements.";
+      }
+      if (check.ready()) {
+         return "Ready: start this route at a Convoy Beacon or from the Convoy tab.";
+      }
+      String message = check.message() == null ? "" : check.message();
+      if (message.contains("no convoy vehicle")) {
+         return "Craft a Vehicle Workbench, process a Scrap Bike Kit, deploy it, then stand near the vehicle.";
+      }
+      if (message.contains("locked")) {
+         return "Use a vehicle you deployed or reclaim your own vehicle before starting.";
+      }
+      if (message.startsWith("requires ")) {
+         return "Bring a " + route.requiredVehicle().replace('_', ' ') + " kit or choose a route for the current vehicle.";
+      }
+      if (message.startsWith("fuel ")) {
+         return "Add Fuel Canisters directly or through a Vehicle Dock until fuel reaches " + route.minFuel() + ".";
+      }
+      if (message.startsWith("missing cargo ")) {
+         return "Load " + cargoManifest(route) + " by sneak-using cargo on the vehicle or with a Cargo Anchor.";
+      }
+      if (message.contains("requires reputation")) {
+         return "Build " + route.checkpoint().label() + " reputation or select an unguarded route first.";
+      }
+      return "Review route requirements in the Convoy tab, then scan again.";
+   }
+
+   public static String cargoManifest(ConvoyRouteDefinition route) {
+      if (route == null || route.requiredCargo().isEmpty()) {
+         return "the required cargo";
+      }
+      return route.requiredCargo().stream()
+         .map(cargo -> cargo.count() + "x " + cargo.stack().getHoverName().getString())
+         .reduce((left, right) -> left + ", " + right)
+         .orElse("the required cargo");
+   }
+
    public static long claimableRewards(Player player) {
       ConvoyProgress progress = ConvoyProgress.get(player);
       return ConvoyContent.routes().stream()
@@ -227,6 +279,42 @@ public final class ConvoyRouteService {
       if (!player.getInventory().add(stack.copy())) {
          player.level().addFreshEntity(new ItemEntity(player.level(), player.getX(), player.getY(), player.getZ(), stack.copy()));
       }
+   }
+
+   private static void recordWorldMarker(
+      Player player,
+      ConvoyRouteDefinition route,
+      BlockPos pos,
+      WorldMarkerType type,
+      String title,
+      String summary
+   ) {
+      if (!(player instanceof ServerPlayer serverPlayer) || route == null || pos == null) {
+         return;
+      }
+      Identifier markerId = Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID,
+         "world_marker/" + route.id().getPath() + "/" + type.name().toLowerCase(java.util.Locale.ROOT)
+            + "/" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ());
+      WorldMarker marker = new WorldMarker(
+         markerId,
+         Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "convoy_route"),
+         type,
+         title,
+         summary + " " + route.summary(),
+         serverPlayer.level().dimension(),
+         pos,
+         96,
+         true,
+         serverPlayer.level().getGameTime()
+      );
+      EchoCoreServices.worldMarkerService().revealMarker(serverPlayer, marker);
+      EchoCoreServices.structureDiscoveryService().recordStructureScan(
+         serverPlayer,
+         Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "convoy_route"),
+         pos,
+         title,
+         route.summary()
+      );
    }
 
    private static boolean routeVehicleMatches(ConvoyProgress progress, ConvoyVehicleEntity vehicle, ConvoyRouteDefinition definition) {

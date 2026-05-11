@@ -12,16 +12,9 @@ import net.minecraft.resources.Identifier;
  */
 public final class AshfallFactionMap {
     private static final List<Identifier> ALL = List.of(
-            AshfallBiomeFactions.SURVIVOR_NETWORK,
-            AshfallBiomeFactions.ASHLAND_RANGERS,
-            AshfallBiomeFactions.DUSTLINE_FREEHOLDS,
-            AshfallBiomeFactions.METRO_ARCHIVISTS,
-            AshfallBiomeFactions.RUSTWORKS_UNION,
-            AshfallBiomeFactions.SPOREBOUND_SANCTUM,
-            AshfallBiomeFactions.CRASHBREAK_SALVAGE,
             AshfallBiomeFactions.RADWARDEN_COMPACT,
-            AshfallBiomeFactions.THAWBOUND_COLLECTIVE,
-            AshfallBiomeFactions.SCARBOUND_CONCLAVE);
+            AshfallBiomeFactions.CRASHBREAK_SALVAGE,
+            AshfallBiomeFactions.SPOREBOUND_SANCTUM);
 
     private AshfallFactionMap() {
     }
@@ -31,114 +24,125 @@ public final class AshfallFactionMap {
     }
 
     public static boolean isAshfall(Identifier factionId) {
-        return factionId != null && EchoAshfallProtocol.MODID.equals(factionId.getNamespace())
-                && ALL.contains(factionId);
+        return canonicalFaction(factionId) != null;
     }
 
     public static Identifier resolveFactionId(String value) {
         String normalized = normalize(value);
         if (normalized.isBlank()) {
-            return AshfallBiomeFactions.SURVIVOR_NETWORK;
+            return AshfallBiomeFactions.RADWARDEN_COMPACT;
         }
 
         if (normalized.contains(":")) {
             try {
                 Identifier parsed = Identifier.parse(normalized);
-                return isAshfall(parsed) ? parsed : AshfallBiomeFactions.SURVIVOR_NETWORK;
+                return canonicalOrDefault(parsed);
             } catch (RuntimeException ignored) {
-                return AshfallBiomeFactions.SURVIVOR_NETWORK;
+                return AshfallBiomeFactions.RADWARDEN_COMPACT;
             }
         }
 
-        for (Identifier factionId : ALL) {
-            if (factionId.getPath().equals(normalized)) {
-                return factionId;
-            }
+        return canonicalOrDefault(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, normalized));
+    }
+
+    public static Identifier canonicalOrDefault(Identifier factionId) {
+        Identifier canonical = canonicalFaction(factionId);
+        return canonical == null ? AshfallBiomeFactions.RADWARDEN_COMPACT : canonical;
+    }
+
+    public static Identifier canonicalFaction(Identifier factionId) {
+        if (factionId == null) {
+            return null;
         }
-        return AshfallBiomeFactions.SURVIVOR_NETWORK;
+        if (ALL.contains(factionId)) {
+            return factionId;
+        }
+        return switch (factionId.toString()) {
+            case "echoashfallprotocol:survivor_network",
+                    "echoashfallprotocol:ashland_rangers",
+                    "echoashfallprotocol:thawbound_collective",
+                    "echoashfallprotocol:remnant_collective",
+                    "echoorbitalremnants:orbital_remnants",
+                    "echoarmory:remnant_collective" -> AshfallBiomeFactions.RADWARDEN_COMPACT;
+            case "echoashfallprotocol:dustline_freeholds",
+                    "echoashfallprotocol:metro_archivists",
+                    "echoashfallprotocol:rustworks_union",
+                    "echoashfallprotocol:salvager_guild",
+                    "echocore:survivors",
+                    "echoorbitalremnants:void_salvagers",
+                    "echoarmory:salvager_guild",
+                    "echoarmory:construct_foundry" -> AshfallBiomeFactions.CRASHBREAK_SALVAGE;
+            case "echoashfallprotocol:scarbound_conclave",
+                    "echoashfallprotocol:mutant_front",
+                    "echoorbitalremnants:nexus_choir" -> AshfallBiomeFactions.SPOREBOUND_SANCTUM;
+            default -> null;
+        };
     }
 
     public static Identifier forPoi(String poiId) {
         String value = normalize(poiId);
         if (value.contains("nexus") || value.contains("scar") || value.contains("anomaly")) {
-            return AshfallBiomeFactions.SCARBOUND_CONCLAVE;
-        }
-        if (value.contains("cryo") || value.contains("frozen") || value.contains("thermal")) {
-            return AshfallBiomeFactions.THAWBOUND_COLLECTIVE;
+            return AshfallBiomeFactions.SPOREBOUND_SANCTUM;
         }
         if (value.contains("radiation") || value.contains("reactor") || value.contains("military")
-                || value.contains("containment") || value.contains("warning")) {
+                || value.contains("containment") || value.contains("warning")
+                || value.contains("cryo") || value.contains("frozen") || value.contains("thermal")
+                || value.contains("ash") || value.contains("wasteland") || value.contains("checkpoint")
+                || value.contains("survivor") || value.contains("shelter")) {
             return AshfallBiomeFactions.RADWARDEN_COMPACT;
         }
         if (value.contains("crash") || value.contains("drop_pod") || value.contains("wreck")
-                || value.contains("airframe")) {
+                || value.contains("airframe")
+                || value.contains("industrial") || value.contains("factory") || value.contains("train")
+                || value.contains("refinery") || value.contains("pipe") || value.contains("gantry")
+                || value.contains("city") || value.contains("metro") || value.contains("subway")
+                || value.contains("archive") || value.contains("data_center")
+                || value.contains("plains") || value.contains("freehold") || value.contains("watchtower")
+                || value.contains("roadside") || value.contains("camp")) {
             return AshfallBiomeFactions.CRASHBREAK_SALVAGE;
         }
         if (value.contains("toxic") || value.contains("spore") || value.contains("mutant")
                 || value.contains("bio") || value.contains("grove")) {
             return AshfallBiomeFactions.SPOREBOUND_SANCTUM;
         }
-        if (value.contains("industrial") || value.contains("factory") || value.contains("train")
-                || value.contains("refinery") || value.contains("pipe") || value.contains("gantry")) {
-            return AshfallBiomeFactions.RUSTWORKS_UNION;
-        }
-        if (value.contains("city") || value.contains("metro") || value.contains("subway")
-                || value.contains("archive") || value.contains("data_center")) {
-            return AshfallBiomeFactions.METRO_ARCHIVISTS;
-        }
-        if (value.contains("plains") || value.contains("freehold") || value.contains("watchtower")
-                || value.contains("roadside") || value.contains("camp")) {
-            return AshfallBiomeFactions.DUSTLINE_FREEHOLDS;
-        }
-        if (value.contains("ash") || value.contains("wasteland") || value.contains("checkpoint")) {
-            return AshfallBiomeFactions.ASHLAND_RANGERS;
-        }
-        return AshfallBiomeFactions.SURVIVOR_NETWORK;
+        return AshfallBiomeFactions.RADWARDEN_COMPACT;
     }
 
     public static Identifier forEntity(String entityId) {
         String value = normalize(entityId);
         if (value.contains("nexus") || value.contains("scar")) {
-            return AshfallBiomeFactions.SCARBOUND_CONCLAVE;
+            return AshfallBiomeFactions.SPOREBOUND_SANCTUM;
         }
-        if (value.contains("cryo") || value.contains("frozen")) {
-            return AshfallBiomeFactions.THAWBOUND_COLLECTIVE;
-        }
-        if (value.contains("radiation") || value.contains("rad_zombie") || value.contains("behemoth")) {
+        if (value.contains("radiation") || value.contains("rad_zombie") || value.contains("behemoth")
+                || value.contains("cryo") || value.contains("frozen") || value.contains("overseer")
+                || value.contains("wasteland")) {
             return AshfallBiomeFactions.RADWARDEN_COMPACT;
         }
-        if (value.contains("crash") || value.contains("scavenger") || value.contains("bandit")) {
+        if (value.contains("crash") || value.contains("scavenger") || value.contains("bandit")
+                || value.contains("rust") || value.contains("steam") || value.contains("industrial")
+                || value.contains("city") || value.contains("metro")
+                || value.contains("plains") || value.contains("warlord") || value.contains("wild_dog")) {
             return AshfallBiomeFactions.CRASHBREAK_SALVAGE;
         }
         if (value.contains("toxic") || value.contains("spore") || value.contains("feral")
                 || value.contains("crawler") || value.contains("ghoul")) {
             return AshfallBiomeFactions.SPOREBOUND_SANCTUM;
         }
-        if (value.contains("rust") || value.contains("steam") || value.contains("industrial")) {
-            return AshfallBiomeFactions.RUSTWORKS_UNION;
-        }
-        if (value.contains("city") || value.contains("metro")) {
-            return AshfallBiomeFactions.METRO_ARCHIVISTS;
-        }
-        if (value.contains("plains") || value.contains("warlord") || value.contains("wild_dog")) {
-            return AshfallBiomeFactions.DUSTLINE_FREEHOLDS;
-        }
-        if (value.contains("ash") || value.contains("wasteland")) {
-            return AshfallBiomeFactions.ASHLAND_RANGERS;
-        }
-        return AshfallBiomeFactions.SURVIVOR_NETWORK;
+        return AshfallBiomeFactions.RADWARDEN_COMPACT;
     }
 
     public static String displayName(Identifier factionId) {
-        return EchoCoreServices.factionDefinition(factionId)
+        Identifier canonical = canonicalOrDefault(factionId);
+        return EchoCoreServices.factionDefinition(canonical)
                 .map(EchoFactionDefinition::displayName)
-                .orElseGet(() -> readable(factionId));
+                .orElseGet(() -> readable(canonical));
     }
 
     public static String shortName(Identifier factionId) {
-        return EchoCoreServices.factionDefinition(factionId)
+        Identifier canonical = canonicalOrDefault(factionId);
+        return EchoCoreServices.factionDefinition(canonical)
                 .map(EchoFactionDefinition::shortName)
-                .orElseGet(() -> readable(factionId));
+                .orElseGet(() -> readable(canonical));
     }
 
     public static String readable(Identifier factionId) {

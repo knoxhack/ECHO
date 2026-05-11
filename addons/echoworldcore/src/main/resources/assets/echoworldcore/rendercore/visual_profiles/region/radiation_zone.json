@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/yellow_stained_glass.png",
+  "default_state": "OVERHEATED",
+  "transition_seconds": 0.25,
+  "materials": {
+    "radiation_band": {
+      "color": "#FFFFF26A",
+      "alpha": 0.5,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "rad_warning_band",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/yellow_stained_glass.png",
+      "material": "radiation_band",
+      "states": ["ACTIVE", "SCANNING", "OVERHEATED"],
+      "alpha": 0.48,
+      "emissive": true
+    }
+  ]
+}

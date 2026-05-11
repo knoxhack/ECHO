@@ -64,6 +64,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     private boolean commandStackNavigation;
     private boolean sidebarNavigation;
     private boolean commandStackCollapsed;
+    private int commandStackScroll;
+    private String commandStackScrollGroup = "";
     private int collapseToggleX;
     private int collapseToggleY;
     private int collapseToggleW;
@@ -86,6 +88,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         layout();
         List<TerminalTab> tabs = tabs();
         normalizeActiveTab(tabs);
+        clampCommandStackScroll();
 
         drawChrome(graphics, tabs, mouseX, mouseY);
         drawBody(graphics, tabs, mouseX, mouseY, partialTick);
@@ -102,6 +105,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         layout();
         List<TerminalTab> tabs = tabs();
         normalizeActiveTab(tabs);
+        clampCommandStackScroll();
         TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
         if (tab != null && tab.keyPressed(contextFor(tab, scrollFor(tab)), event)) {
             return true;
@@ -151,6 +155,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         layout();
         List<TerminalTab> tabs = tabs();
         normalizeActiveTab(tabs);
+        clampCommandStackScroll();
         if (handleNavigationClick(tabs, event.x(), event.y())) {
             return true;
         }
@@ -173,6 +178,10 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         layout();
         List<TerminalTab> tabs = tabs();
         normalizeActiveTab(tabs);
+        if (handleCommandStackMouseScroll(tabs, mouseX, mouseY, deltaY)) {
+            return true;
+        }
+        clampCommandStackScroll();
         TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
         if (tab == null || !TerminalUi.inside(mouseX, mouseY, contentX, contentY, contentW, contentH)) {
             return false;
@@ -193,6 +202,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         layout();
         List<TerminalTab> tabs = tabs();
         normalizeActiveTab(tabs);
+        clampCommandStackScroll();
         TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
         return tab != null && tab.charTyped(contextFor(tab, scrollFor(tab)), event);
     }
@@ -217,7 +227,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         TerminalRenderContext chromeContext = contextFor(tab, tab == null ? 0 : scrollFor(tab));
         TerminalUi.appShellBackdrop(chromeContext, graphics, panelX, panelY, panelW, panelH, chromeColor(tab));
         TerminalUi.topMetaBar(chromeContext, graphics, font, panelX, panelY, panelW,
-                theme.title(), status, meta, chromeColor(tab));
+                shellHeaderHeight(), theme.title(), status, meta, chromeColor(tab));
 
         drawSidebarNavigation(graphics, tabs, mouseX, mouseY);
     }
@@ -233,32 +243,44 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             drawCollapsedCommandStack(graphics, tabs, mouseX, mouseY, activeGroup, accent);
             return;
         }
+        clampCommandStackScroll();
         TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
         TerminalUi.commandStackPanel(renderContext, graphics, font, groupRailX, groupRailY, groupRailW, groupRailH, accent);
         drawCollapseToggle(renderContext, graphics, mouseX, mouseY, accent);
         boolean compact = groupRailW < 190;
-        int cy = groupRailY + (compact ? 32 : 40);
+        int cy = commandStackContentY() - commandStackScroll;
         int rowH = commandRowHeight();
         int gap = commandRowGap();
-        graphics.enableScissor(groupRailX, groupRailY + 28, groupRailX + groupRailW,
-                groupRailY + groupRailH - 54);
+        int viewportTop = commandStackViewportTop();
+        int viewportH = commandStackViewportHeight();
+        boolean railHovered = commandStackViewportContains(mouseX, mouseY);
+        int groupInset = railInset(8);
+        int groupTrim = railTrim(16);
+        graphics.enableScissor(groupRailX, viewportTop, groupRailX + groupRailW,
+                commandStackViewportBottom());
         for (String group : navigationModel.groups()) {
             boolean active = group.equals(activeGroup);
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
-            int groupH = compact ? 24 : 28;
-            boolean groupHover = TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, groupRailW - 16, groupH);
-            TerminalUi.commandStackGroupButton(renderContext, graphics, font, groupRailX + 8, cy, groupRailW - 16, groupH,
+            int groupH = commandGroupHeight(compact);
+            boolean groupHover = railHovered
+                    && TerminalUi.inside(mouseX, mouseY, groupRailX + groupInset, cy, groupRailW - groupTrim, groupH);
+            TerminalUi.commandStackGroupButton(renderContext, graphics, font, groupRailX + groupInset, cy,
+                    groupRailW - groupTrim, groupH,
                     TerminalIcon.fromGroup(group), TerminalUi.themedGroupIcon(renderContext, group),
                     navigationModel.groupLabel(group), active, groupHover, groupColor);
-            cy += groupH + (active ? 5 : 3);
+            cy += groupH + zoomed(active ? 5 : 3, active ? 3 : 2);
             if (active) {
                 cy = drawExpandedGroupPages(graphics, group, mouseX, mouseY, cy, rowH, gap, compact, renderContext);
-                cy += 5;
+                cy += zoomed(5, 3);
             }
         }
         graphics.disableScissor();
-        TerminalUi.diagnosticRail(renderContext, graphics, font, groupRailX + 10, groupRailY + groupRailH - 47,
-                groupRailW - 20, 36, Minecraft.getInstance().player != null, accent);
+        TerminalUi.scrollbar(renderContext, graphics, groupRailX + groupRailW - zoomed(7, 5), viewportTop, viewportH,
+                commandStackScroll, maxCommandStackScroll(), accent, railHovered);
+        int diagnosticH = diagnosticRailHeight();
+        TerminalUi.diagnosticRail(renderContext, graphics, font, groupRailX + railInset(10),
+                groupRailY + groupRailH - diagnosticH - zoomed(11, 8), groupRailW - railTrim(20), diagnosticH,
+                Minecraft.getInstance().player != null, accent);
     }
 
     private int drawExpandedGroupPages(GuiGraphicsExtractor graphics, String group, int mouseX, int mouseY,
@@ -269,7 +291,11 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         String activeChapter = navigationModel.activeChapterId(activeTab);
         for (TerminalNavigationModel.ChapterGroup chapter : navigationModel.chaptersInGroup(group)) {
             boolean selectedChapter = chapter.id().equals(activeChapter);
-            boolean chapterHover = TerminalUi.inside(mouseX, mouseY, groupRailX + 14, cy, groupRailW - 22, rowH);
+            int chapterInset = railInset(14);
+            int chapterTrim = railTrim(22);
+            boolean chapterHover = commandStackViewportContains(mouseX, mouseY)
+                    && TerminalUi.inside(mouseX, mouseY, groupRailX + chapterInset, cy,
+                            groupRailW - chapterTrim, rowH);
             String label = compact ? chapter.iconLabel() : chapter.title();
             String summary = chapterRailSummary(chapter, compact);
             TerminalIcon chapterIcon = TerminalIcon.fromTitle(chapter.title());
@@ -277,13 +303,14 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 chapterIcon = TerminalIcon.ADDONS;
             }
             TerminalRenderContext chapterContext = renderContext.withChapterTheme(chapter.id(), chapter.title(), chapter.id());
-            TerminalUi.commandPageButton(chapterContext, graphics, font, groupRailX + 14, cy, groupRailW - 22, rowH,
+            TerminalUi.commandPageButton(chapterContext, graphics, font, groupRailX + chapterInset, cy,
+                    groupRailW - chapterTrim, rowH,
                     chapterIcon, TerminalUi.themedIcon(chapterContext, com.knoxhack.echoterminal.api.theme.TerminalIconKey.chapter(chapter.id()),
                             TerminalUi.themedPageIcon(renderContext, chapter.title())), label, summary,
                     selectedChapter, chapterHover, chapter.accent());
             cy += rowH + gap;
             if (selectedChapter) {
-                int childRailX = groupRailX + 18;
+                int childRailX = groupRailX + railInset(18);
                 int childRailH = chapter.tabs().size() * (rowH + gap) - gap;
                 if (childRailH > 0) {
                     TerminalUi.navigationSpine(chapterContext, graphics, childRailX, cy, childRailH, chapter.accent());
@@ -315,9 +342,13 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             int mouseX, int mouseY, int cy, int rowH, int gap, boolean compact, int inset, int widthTrim) {
         TerminalTab tab = entry.tab();
         boolean selected = entry.index() == activeTab;
-        boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + inset, cy, groupRailW - widthTrim, rowH);
+        int scaledInset = railInset(inset);
+        int scaledTrim = railTrim(widthTrim);
+        boolean hover = commandStackViewportContains(mouseX, mouseY)
+                && TerminalUi.inside(mouseX, mouseY, groupRailX + scaledInset, cy, groupRailW - scaledTrim, rowH);
         TerminalRenderContext renderContext = contextFor(tab, scrollFor(tab));
-        TerminalUi.commandPageButton(renderContext, graphics, font, groupRailX + inset, cy, groupRailW - widthTrim, rowH,
+        TerminalUi.commandPageButton(renderContext, graphics, font, groupRailX + scaledInset, cy,
+                groupRailW - scaledTrim, rowH,
                 TerminalIcon.fromTitle(tab.chrome().shortTitle()),
                 TerminalUi.themedPageIcon(renderContext, tab.chrome().shortTitle()), tab.chrome().shortTitle(),
                 compact ? "" : tab.chrome().summary(), selected, hover, tab.descriptor().accentColor());
@@ -329,28 +360,30 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
         TerminalUi.cinematicPanel(renderContext, graphics, groupRailX, groupRailY, groupRailW, groupRailH, accent);
         drawCollapseToggle(renderContext, graphics, mouseX, mouseY, accent);
-        int buttonW = Math.max(30, groupRailW - 16);
-        int cy = groupRailY + 34;
-        int rowH = groupRailW <= 52 ? 32 : 34;
+        int buttonW = Math.max(zoomed(30, 24), groupRailW - railTrim(16));
+        int cy = groupRailY + zoomed(34, 28);
+        int rowH = collapsedGroupRowHeight();
         for (String group : navigationModel.groups()) {
             boolean active = group.equals(activeGroup);
             int groupColor = navigationModel.groupAccent(group, theme.accentColor());
-            boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, buttonW, rowH);
-            TerminalUi.iconRailButton(renderContext, graphics, font, groupRailX + 8, cy, buttonW, rowH,
+            int groupInset = railInset(8);
+            boolean hover = TerminalUi.inside(mouseX, mouseY, groupRailX + groupInset, cy, buttonW, rowH);
+            TerminalUi.iconRailButton(renderContext, graphics, font, groupRailX + groupInset, cy, buttonW, rowH,
                     TerminalIcon.fromGroup(group), TerminalUi.themedGroupIcon(renderContext, group), "",
                     active, hover, groupColor);
-            cy += rowH + 6;
+            cy += rowH + zoomed(6, 4);
         }
         if (!tabs.isEmpty()) {
             TerminalTab tab = tabs.get(activeTab);
             TerminalRenderContext tabContext = contextFor(tab, scrollFor(tab));
-            int pageY = Math.min(groupRailY + groupRailH - 82, cy + 8);
+            int pageY = Math.min(groupRailY + groupRailH - zoomed(82, 68), cy + zoomed(8, 6));
+            int badgeSize = zoomed(28, 22);
             TerminalUi.hybridIconBadge(tabContext, graphics, TerminalUi.themedPageIcon(tabContext, tab.chrome().shortTitle()),
                     TerminalIcon.fromTitle(tab.chrome().shortTitle()),
-                    groupRailX + Math.max(8, (groupRailW - 28) / 2), pageY, 28,
+                    groupRailX + Math.max(railInset(8), (groupRailW - badgeSize) / 2), pageY, badgeSize,
                     tab.descriptor().accentColor(), true);
-            TerminalUi.collapsedRailStatus(tabContext, graphics, groupRailX + 10, groupRailY + groupRailH - 26,
-                    groupRailW - 20, 0.82F, accent);
+            TerminalUi.collapsedRailStatus(tabContext, graphics, groupRailX + railInset(10),
+                    groupRailY + groupRailH - zoomed(26, 22), groupRailW - railTrim(20), 0.82F, accent);
         }
     }
 
@@ -409,7 +442,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         graphics.enableScissor(contentX, contentY, contentX + contentW, contentY + contentH);
         tab.render(context, graphics, mouseX, mouseY, partialTick);
         graphics.disableScissor();
-        TerminalUi.scrollbar(context, graphics, contentX + contentW - 7, contentY + 8, contentH - 16,
+        TerminalUi.scrollbar(context, graphics, contentX + contentW - zoomed(7, 5),
+                contentY + zoomed(8, 6), contentH - zoomed(16, 12),
                 scroll, maxScroll(tab), tab.descriptor().accentColor(), contentHovered);
     }
 
@@ -425,8 +459,9 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         }
         int color = tabs.isEmpty() ? theme.accentColor() : chromeColor(tabs.get(activeTab));
         TerminalRenderContext renderContext = tabs.isEmpty() ? contextFor(null, 0) : contextFor(tabs.get(activeTab), 0);
-        TerminalUi.bottomShortcutBar(renderContext, graphics, font, panelX, panelY + panelH - 30, panelW,
-                footer, label.isBlank() ? "Esc Back" : label, color);
+        int footerH = shellFooterHeight();
+        TerminalUi.bottomShortcutBar(renderContext, graphics, font, panelX, panelY + panelH - footerH, panelW,
+                footerH, footer, label.isBlank() ? "Esc Back" : label, color);
     }
 
     private boolean handleNavigationClick(List<TerminalTab> tabs, double mouseX, double mouseY) {
@@ -443,32 +478,39 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     private boolean handleCommandStackNavigationClick(List<TerminalTab> tabs, double mouseX, double mouseY) {
         if (TerminalUi.inside(mouseX, mouseY, collapseToggleX, collapseToggleY, collapseToggleW, collapseToggleH)) {
             commandStackCollapsed = !commandStackCollapsed;
+            commandStackScroll = 0;
             playUiSound(0.85F);
             return true;
         }
         if (commandStackCollapsed) {
             return handleCollapsedCommandStackClick(tabs, mouseX, mouseY);
         }
+        clampCommandStackScroll();
+        if (!commandStackViewportContains(mouseX, mouseY)) {
+            return false;
+        }
         String activeGroup = navigationModel.activeGroup(activeTab);
         boolean compact = groupRailW < 190;
-        int cy = groupRailY + (compact ? 32 : 40);
+        int cy = commandStackContentY() - commandStackScroll;
         int rowH = commandRowHeight();
         int gap = commandRowGap();
+        int groupInset = railInset(8);
+        int groupTrim = railTrim(16);
         for (String group : navigationModel.groups()) {
             boolean active = group.equals(activeGroup);
-            int groupH = compact ? 24 : 28;
-            if (TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, groupRailW - 16, groupH)) {
+            int groupH = commandGroupHeight(compact);
+            if (TerminalUi.inside(mouseX, mouseY, groupRailX + groupInset, cy, groupRailW - groupTrim, groupH)) {
                 selectTab(navigationModel.firstTabInGroup(group), tabs);
                 return true;
             }
-            cy += groupH + (active ? 5 : 3);
+            cy += groupH + zoomed(active ? 5 : 3, active ? 3 : 2);
             if (active) {
                 int nextY = handleExpandedGroupClick(tabs, group, mouseX, mouseY, cy, rowH, gap);
                 if (nextY < 0) {
                     return true;
                 }
                 cy = nextY;
-                cy += 5;
+                cy += zoomed(5, 3);
             }
         }
         return false;
@@ -477,7 +519,8 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     private int handleExpandedGroupClick(List<TerminalTab> tabs, String group, double mouseX, double mouseY,
             int cy, int rowH, int gap) {
         for (TerminalNavigationModel.IndexedTab entry : navigationModel.directTabsInGroup(group)) {
-            if (TerminalUi.inside(mouseX, mouseY, groupRailX + 14, cy, groupRailW - 22, rowH)) {
+            if (TerminalUi.inside(mouseX, mouseY, groupRailX + railInset(14), cy,
+                    groupRailW - railTrim(22), rowH)) {
                 selectTab(entry.index(), tabs);
                 return -1;
             }
@@ -485,14 +528,16 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         }
         String activeChapter = navigationModel.activeChapterId(activeTab);
         for (TerminalNavigationModel.ChapterGroup chapter : navigationModel.chaptersInGroup(group)) {
-            if (TerminalUi.inside(mouseX, mouseY, groupRailX + 14, cy, groupRailW - 22, rowH)) {
+            if (TerminalUi.inside(mouseX, mouseY, groupRailX + railInset(14), cy,
+                    groupRailW - railTrim(22), rowH)) {
                 selectTab(navigationModel.firstTabInChapter(chapter), tabs);
                 return -1;
             }
             cy += rowH + gap;
             if (chapter.id().equals(activeChapter)) {
                 for (TerminalNavigationModel.IndexedTab entry : chapter.tabs()) {
-                    if (TerminalUi.inside(mouseX, mouseY, groupRailX + 22, cy, groupRailW - 30, rowH)) {
+                    if (TerminalUi.inside(mouseX, mouseY, groupRailX + railInset(22), cy,
+                            groupRailW - railTrim(30), rowH)) {
                         selectTab(entry.index(), tabs);
                         return -1;
                     }
@@ -504,15 +549,15 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     }
 
     private boolean handleCollapsedCommandStackClick(List<TerminalTab> tabs, double mouseX, double mouseY) {
-        int buttonW = Math.max(30, groupRailW - 16);
-        int cy = groupRailY + 34;
-        int rowH = 34;
+        int buttonW = Math.max(zoomed(30, 24), groupRailW - railTrim(16));
+        int cy = groupRailY + zoomed(34, 28);
+        int rowH = collapsedGroupRowHeight();
         for (String group : navigationModel.groups()) {
-            if (TerminalUi.inside(mouseX, mouseY, groupRailX + 8, cy, buttonW, rowH)) {
+            if (TerminalUi.inside(mouseX, mouseY, groupRailX + railInset(8), cy, buttonW, rowH)) {
                 selectTab(navigationModel.firstTabInGroup(group), tabs);
                 return true;
             }
-            cy += rowH + 6;
+            cy += rowH + zoomed(6, 4);
         }
         return false;
     }
@@ -540,21 +585,185 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private int commandRowHeight() {
         if (commandStackCollapsed) {
-            return 28;
+            return zoomed(Math.max(24, 28 - densityStep() * 2), 20);
         }
         String activeGroup = navigationModel.activeGroup(activeTab);
         int tabCount = Math.max(1, navigationModel.visibleRowCount(activeGroup, activeTab));
         int groupCount = Math.max(1, navigationModel.groups().size());
         boolean compact = groupRailW < 190;
-        int reserved = (compact ? 94 : 118) + groupCount * (compact ? 27 : 34);
-        int min = compact ? 22 : 26;
-        int max = compact ? 28 : 34;
+        int reserved = zoomed(compact ? 88 : 106, compact ? 72 : 86)
+                + groupCount * (commandGroupHeight(compact) + zoomed(5, 3));
+        int min = zoomed(Math.max(compact ? 20 : 23, (compact ? 22 : 26) - densityStep()),
+                compact ? 18 : 20);
+        int max = zoomed(Math.max(compact ? 24 : 28, (compact ? 28 : 34) - densityStep() * 3),
+                compact ? 20 : 23);
         int available = Math.max(tabCount * min, groupRailH - reserved);
-        return Math.max(min, Math.min(max, (available / tabCount) - 2));
+        return Math.max(min, Math.min(max, (available / tabCount) - zoomed(2, 1)));
     }
 
     private int commandRowGap() {
-        return commandRowHeight() <= 25 ? 2 : 3;
+        return commandRowHeight() <= zoomed(25, 21) ? zoomed(2, 2) : zoomed(3, 2);
+    }
+
+    private boolean handleCommandStackMouseScroll(List<TerminalTab> tabs, double mouseX, double mouseY, double deltaY) {
+        if (tabs.isEmpty() || commandStackCollapsed || !commandStackViewportContains(mouseX, mouseY)) {
+            return false;
+        }
+        int maxScroll = maxCommandStackScroll();
+        if (maxScroll <= 0) {
+            return false;
+        }
+        setCommandStackScroll(commandStackScroll - (int) Math.round(deltaY * commandStackScrollStep()));
+        return true;
+    }
+
+    private void syncCommandStackScrollGroup() {
+        String activeGroup = navigationModel.activeGroup(activeTab);
+        if (!activeGroup.equals(commandStackScrollGroup)) {
+            commandStackScrollGroup = activeGroup;
+            commandStackScroll = 0;
+        }
+    }
+
+    private void setCommandStackScroll(int value) {
+        syncCommandStackScrollGroup();
+        commandStackScroll = Math.max(0, Math.min(value, maxCommandStackScroll()));
+    }
+
+    private void clampCommandStackScroll() {
+        syncCommandStackScrollGroup();
+        if (commandStackCollapsed) {
+            commandStackScroll = 0;
+            return;
+        }
+        commandStackScroll = Math.max(0, Math.min(commandStackScroll, maxCommandStackScroll()));
+    }
+
+    private int maxCommandStackScroll() {
+        if (commandStackCollapsed) {
+            return 0;
+        }
+        return Math.max(0, commandStackContentHeight() - commandStackViewportHeight());
+    }
+
+    private int commandStackContentHeight() {
+        boolean compact = groupRailW < 190;
+        int cy = commandStackContentY();
+        int rowH = commandRowHeight();
+        int gap = commandRowGap();
+        String activeGroup = navigationModel.activeGroup(activeTab);
+        for (String group : navigationModel.groups()) {
+            boolean active = group.equals(activeGroup);
+            int groupH = commandGroupHeight(compact);
+            cy += groupH + zoomed(active ? 5 : 3, active ? 3 : 2);
+            if (active) {
+                cy = advanceExpandedGroup(group, cy, rowH, gap);
+                cy += zoomed(5, 3);
+            }
+        }
+        return Math.max(0, cy - commandStackViewportTop());
+    }
+
+    private int advanceExpandedGroup(String group, int cy, int rowH, int gap) {
+        cy += navigationModel.directTabsInGroup(group).size() * (rowH + gap);
+        String activeChapter = navigationModel.activeChapterId(activeTab);
+        for (TerminalNavigationModel.ChapterGroup chapter : navigationModel.chaptersInGroup(group)) {
+            cy += rowH + gap;
+            if (chapter.id().equals(activeChapter)) {
+                cy += chapter.tabs().size() * (rowH + gap);
+            }
+        }
+        return cy;
+    }
+
+    private int commandStackContentY() {
+        return groupRailY + (groupRailW < 190
+                ? zoomed(Math.max(30, 32 - densityStep()), 26)
+                : zoomed(Math.max(34, 40 - densityStep() * 3), 30));
+    }
+
+    private int commandStackViewportTop() {
+        return groupRailY + zoomed(Math.max(26, 28 - densityStep()), 22);
+    }
+
+    private int commandStackViewportBottom() {
+        return groupRailY + groupRailH - commandStackFooterReserve();
+    }
+
+    private int commandStackViewportHeight() {
+        return Math.max(0, commandStackViewportBottom() - commandStackViewportTop());
+    }
+
+    private boolean commandStackViewportContains(double mouseX, double mouseY) {
+        return !commandStackCollapsed
+                && TerminalUi.inside(mouseX, mouseY, groupRailX, commandStackViewportTop(),
+                        groupRailW, commandStackViewportHeight());
+    }
+
+    private TerminalClientOptions.InterfaceDensity interfaceDensity() {
+        return TerminalClientOptions.interfaceDensity();
+    }
+
+    private int densityStep() {
+        return interfaceDensity().compactness();
+    }
+
+    private TerminalClientOptions.TerminalZoom terminalZoom() {
+        return TerminalClientOptions.terminalZoom();
+    }
+
+    private double terminalZoomScale() {
+        return terminalZoom().scale();
+    }
+
+    private int zoomed(int value) {
+        return (int) Math.round(value * terminalZoomScale());
+    }
+
+    private int zoomed(int value, int minimum) {
+        return Math.max(minimum, zoomed(value));
+    }
+
+    private double zoomed(double value, double minimum) {
+        return Math.max(minimum, value * terminalZoomScale());
+    }
+
+    private int railInset(int value) {
+        return zoomed(value, Math.max(5, (int) Math.floor(value * 0.72D)));
+    }
+
+    private int railTrim(int value) {
+        return zoomed(value, Math.max(10, (int) Math.floor(value * 0.72D)));
+    }
+
+    private int shellHeaderHeight() {
+        return zoomed(Math.max(42, 52 - densityStep() * 4), 36);
+    }
+
+    private int shellFooterHeight() {
+        return zoomed(Math.max(24, 30 - densityStep() * 2), 22);
+    }
+
+    private int commandGroupHeight(boolean compact) {
+        return zoomed(Math.max(compact ? 22 : 24, (compact ? 24 : 28) - densityStep() * 2),
+                compact ? 19 : 20);
+    }
+
+    private int collapsedGroupRowHeight() {
+        int base = groupRailW <= 52 ? 32 : 34;
+        return zoomed(Math.max(28, base - densityStep() * 2), 24);
+    }
+
+    private int diagnosticRailHeight() {
+        return zoomed(Math.max(30, 36 - densityStep() * 2), 26);
+    }
+
+    private int commandStackFooterReserve() {
+        return diagnosticRailHeight() + zoomed(16, 12);
+    }
+
+    private double commandStackScrollStep() {
+        return zoomed(Math.max(14.0D, 18.0D - densityStep() * 2.0D), 12.0D);
     }
 
     private TerminalRenderContext contextFor(TerminalTab tab, int scroll) {
@@ -573,15 +782,19 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
                 ticks,
                 TerminalClientOptions.useVisualAssets(),
                 TerminalClientOptions.reduceMotion());
+        int contentPadX = zoomed(10, 8);
+        int contentPadY = zoomed(10, 8);
+        int contentTrimW = zoomed(22, 16);
+        int contentTrimH = zoomed(20, 16);
         return new TerminalRenderContext(
                 minecraft,
                 minecraft.player,
                 width,
                 height,
-                contentX + 10,
-                contentY + 10 - scroll,
-                contentW - 22,
-                contentH - 20,
+                contentX + contentPadX,
+                contentY + contentPadY - scroll,
+                Math.max(80, contentW - contentTrimW),
+                Math.max(80, contentH - contentTrimH),
                 scroll,
                 this::selectTabById,
                 this::hasTab,
@@ -617,6 +830,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         rememberedTabId = tab.descriptor().id();
         tab.onSelected(contextFor(tab, scrollFor(tab)));
         clampScroll(tab);
+        clampCommandStackScroll();
         if (initialTabSelected && previousTab != activeTab) {
             playUiSound(1.15F);
         }
@@ -655,6 +869,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         if (activeTab >= tabs.size()) {
             activeTab = tabs.size() - 1;
         }
+        clampCommandStackScroll();
     }
 
     private int findTab(List<TerminalTab> tabs, Identifier id) {
@@ -685,13 +900,23 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private int maxScroll(TerminalTab tab) {
         int contentHeight = Math.max(0, tab.contentHeight(contextFor(tab, 0)));
-        return Math.max(0, contentHeight - (contentH - 16));
+        return Math.max(0, contentHeight - (contentH - zoomed(16, 12)));
     }
 
     private void layout() {
-        int margin = Math.max(8, Math.min(16, Math.min(width, height) / 68));
-        panelW = Math.min(theme.panelMaxWidth(), Math.max(340, width - margin * 2));
-        panelH = Math.min(theme.panelMaxHeight(), Math.max(280, height - margin * 2));
+        int density = densityStep();
+        int minDimension = Math.min(width, height);
+        int baseMargin = Math.max(8, Math.min(16, minDimension / 68));
+        int margin = Math.min(Math.max(baseMargin + density * 8, baseMargin),
+                Math.max(10, minDimension / 7));
+        int minPanelW = zoomed(340, 300);
+        int minPanelH = zoomed(280, 240);
+        int usableW = Math.max(minPanelW, width - margin * 2);
+        int usableH = Math.max(minPanelH, height - margin * 2);
+        int maxPanelW = Math.max(minPanelW, zoomed(Math.max(360, theme.panelMaxWidth() - density * 36), minPanelW));
+        int maxPanelH = Math.max(minPanelH, zoomed(Math.max(270, theme.panelMaxHeight() - density * 24), minPanelH));
+        panelW = Math.min(maxPanelW, Math.min(usableW, zoomed(usableW, minPanelW)));
+        panelH = Math.min(maxPanelH, Math.min(usableH, zoomed(usableH, minPanelH)));
         layoutProfile = panelW < 660
                 ? TerminalLayoutProfile.COMPACT_STACK
                 : panelW < 980 ? TerminalLayoutProfile.MEDIUM_CAROUSEL : TerminalLayoutProfile.APP_HUB;
@@ -699,20 +924,22 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         panelY = (height - panelH) / 2;
         commandStackNavigation = true;
         sidebarNavigation = true;
-        int footerTop = panelY + panelH - 34;
-        int horizontalPad = panelW < 560 ? 12 : 18;
+        int footerTop = panelY + panelH - shellFooterHeight() - zoomed(4, 3);
+        int horizontalPad = zoomed(panelW < 560 ? 12 : 18 + density, 8);
         groupRailX = panelX + horizontalPad;
-        groupRailY = panelY + 58;
+        groupRailY = panelY + shellHeaderHeight() + zoomed(6, 4);
         if (commandStackCollapsed) {
-            groupRailW = panelW >= 760 ? 58 : 50;
+            groupRailW = panelW >= 760 ? zoomed(58, 46) : zoomed(50, 42);
         } else if (panelW >= 980) {
-            groupRailW = Math.max(232, Math.min(286, panelW / 5));
+            groupRailW = Math.max(zoomed(224, 188),
+                    Math.min(zoomed(276, 224), panelW / 5 - zoomed(density * 4)));
         } else if (panelW >= 760) {
-            groupRailW = Math.max(206, Math.min(238, panelW / 4));
+            groupRailW = Math.max(zoomed(198, 168),
+                    Math.min(zoomed(230, 190), panelW / 4 - zoomed(density * 3)));
         } else {
-            groupRailW = Math.max(108, Math.min(152, panelW / 4));
+            groupRailW = Math.max(zoomed(108, 92), Math.min(zoomed(152, 124), panelW / 4));
         }
-        groupRailH = Math.max(210, footerTop - groupRailY - 8);
+        groupRailH = Math.max(zoomed(210, 168), footerTop - groupRailY - zoomed(8, 6));
         pageRailX = groupRailX;
         pageRailY = groupRailY;
         pageRailW = groupRailW;
@@ -721,15 +948,29 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         navY = pageRailY;
         navW = pageRailW;
         navH = pageRailH;
-        collapseToggleH = 18;
-        collapseToggleW = commandStackCollapsed ? Math.max(30, groupRailW - 18) : 26;
-        collapseToggleX = commandStackCollapsed ? groupRailX + 9 : groupRailX + groupRailW - collapseToggleW - 8;
-        collapseToggleY = groupRailY + 8;
-        int gap = commandStackCollapsed ? 10 : panelW >= 760 ? 14 : 8;
+        collapseToggleH = zoomed(18, 14);
+        collapseToggleW = commandStackCollapsed ? Math.max(zoomed(30, 24), groupRailW - zoomed(18, 14)) : zoomed(26, 22);
+        collapseToggleX = commandStackCollapsed
+                ? groupRailX + zoomed(9, 7)
+                : groupRailX + groupRailW - collapseToggleW - zoomed(8, 6);
+        collapseToggleY = groupRailY + zoomed(8, 6);
+        int gap = commandStackCollapsed
+                ? zoomed(Math.max(8, 10 - density), 6)
+                : panelW >= 760 ? zoomed(Math.max(10, 14 - density * 2), 8) : zoomed(8, 6);
         contentX = groupRailX + groupRailW + gap;
         contentY = groupRailY;
-        contentW = Math.max(panelW < 520 ? 180 : 260, panelX + panelW - contentX - horizontalPad);
-        contentH = Math.max(168, footerTop - contentY - 8);
+        contentW = Math.max(zoomed(panelW < 520 ? 180 : 260, panelW < 520 ? 150 : 210),
+                panelX + panelW - contentX - horizontalPad);
+        contentH = Math.max(zoomed(168, 136), footerTop - contentY - 8);
+        clampActiveContentScroll();
+        clampCommandStackScroll();
+    }
+
+    private void clampActiveContentScroll() {
+        List<TerminalTab> tabs = navigationModel.tabs();
+        if (activeTab >= 0 && activeTab < tabs.size()) {
+            clampScroll(tabs.get(activeTab));
+        }
     }
 
     private String trim(String text, int maxWidth) {

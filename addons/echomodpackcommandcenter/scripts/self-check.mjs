@@ -24,9 +24,17 @@ const requiredRoutes = [
   "/api/projects/:slug/prompts/render",
   "/api/projects/:slug/release",
   "/api/projects/:slug/release/:commandId/run",
+  "/api/projects/:slug/jars",
+  "/api/projects/:slug/readiness",
+  "/api/projects/:slug/features",
+  "/api/projects/:slug/jars/build",
+  "/api/projects/:slug/jars/promote",
   "/api/projects/:slug/runs",
   "/api/runs/:runId",
   "/api/runs/:runId/stop",
+  "/api/modpack/summary",
+  "/api/modpack/rebuild",
+  "/api/modpack/runs",
   "/api/projects/:slug/export"
 ];
 
@@ -40,6 +48,32 @@ const expectedCommands = [
   "copy-jars",
   "remove-stale-jars",
   "generate-release-notes"
+];
+const expectedProjects = [
+  "echo",
+  "echocore",
+  "echonetcore",
+  "echodatacore",
+  "echomissioncore",
+  "echoashfallprotocol",
+  "echoterminal",
+  "echosignalos",
+  "signalosexample",
+  "echoorbitalremnants",
+  "echonexusprotocol",
+  "echoagriculturereclamation",
+  "echoworldcore",
+  "echostationfall",
+  "echoblackboxprotocol",
+  "echoindustrialnexus",
+  "echologisticsnetwork",
+  "echorendercore",
+  "echoconvoyprotocol",
+  "echoholomap",
+  "echoindex",
+  "echoarmory",
+  "echolens",
+  "arcana"
 ];
 
 assert.equal(pkg.scripts.dev.includes("vite"), true, "dev script should run Vite");
@@ -55,10 +89,26 @@ for (const route of requiredRoutes) {
 
 const echo = seed.projects.find((project) => project.slug === "echo");
 assert.ok(echo, "ECHO project must be seeded");
-assert.equal(echo.modules.length, 8, "ECHO should seed all eight public release modules");
+assert.deepEqual(seed.projects.map((project) => project.slug), expectedProjects, "Project cards must map to real workspace modules only");
+assert.equal(echo.modules.length, 22, "ECHO should seed the full real workspace release module set");
 
-const actionIds = seed.releaseActions.map((action) => action.commandId);
+const actionIds = seed.releaseActions.filter((action) => action.projectSlug === "echo").map((action) => action.commandId);
 assert.deepEqual(actionIds, expectedCommands, "Release action allowlist changed unexpectedly");
+
+for (const project of seed.projects.filter((candidate) => candidate.slug !== "echo" && candidate.slug !== "arcana")) {
+  const scopedActions = seed.releaseActions.filter((action) => action.projectSlug === project.slug).map((action) => action.commandId).sort();
+  assert.deepEqual(scopedActions, ["build-module", "compile-java", "run-gametests", "validate-resources"], `${project.slug} needs scoped module actions`);
+}
+
+const arcana = seed.projects.find((project) => project.slug === "arcana");
+assert.ok(arcana, "ARCANA project must be seeded");
+assert.equal(arcana.workspacePath, "C:/Github/ARCANA", "ARCANA should point at its checkout");
+assert.deepEqual(arcana.modules.map((module) => module.modId), ["arcanaveil"], "ARCANA should seed its real mod id");
+assert.deepEqual(
+  seed.releaseActions.filter((action) => action.projectSlug === "arcana").map((action) => action.commandId).sort(),
+  ["build-module", "compile-java", "run-gametests", "scan-runtime-logs", "validate-resources", "verify-release"],
+  "ARCANA needs its standalone Gradle release actions"
+);
 
 for (const action of seed.releaseActions) {
   if (action.mode === "shell") {
@@ -71,7 +121,7 @@ for (const action of seed.releaseActions) {
 }
 
 const tracks = seed.qaTracks.filter((track) => track.projectSlug === "echo").map((track) => track.key).sort();
-assert.deepEqual(tracks, ["handoffs", "release-ops", "resources", "terminal"], "Unexpected ECHO QA tracks");
+assert.deepEqual(tracks, ["handoffs", "release-ops", "resources", "runtime-logs", "terminal"], "Unexpected ECHO QA tracks");
 
 const promptCategories = new Set(seed.promptTemplates.map((prompt) => prompt.category));
 assert.ok(promptCategories.has("Codex QA"), "Codex QA prompts must be seeded");

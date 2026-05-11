@@ -1,0 +1,2038 @@
+{
+  "workflow": "Built-in imagegen chroma-key menu sheets plus local alpha removal; deterministic mission tile sheets and slicing/export.",
+  "runtime_assets_root": "src/main/resources/assets/echoterminal/textures/gui/themes",
+  "runtime_export_sizes": {
+    "menu_icons": "128x128",
+    "mission_icons": "256x256"
+  },
+  "source_sheets": {
+    "echo_console": {
+      "menu": {
+        "chroma_key": "#00ff00",
+        "chroma_sheet": "source_sheets/echo_console_icons_chroma.png",
+        "alpha_sheet": "source_sheets/echo_console_icons_alpha.png",
+        "prompt": "4x4 transparent-ready sheet of crisp cyan/blue/green ECHO terminal hologram menu glyphs on a flat #00ff00 chroma key."
+      },
+      "mission_tiles": {
+        "echoagriculturereclamation": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echoagriculturereclamation.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 6,
+          "cells": {
+            "mission_icons/echoagriculturereclamation/mission/analyze_soil.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/first_growth.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/gene_stabilization.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/greenhouse_online.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/recover_seed.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/restore_chunk.png": [
+              5,
+              0
+            ]
+          }
+        },
+        "echoashfallprotocol": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echoashfallprotocol.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 138,
+          "cells": {
+            "mission_icons/echoashfallprotocol/acquire_mutagen.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/activate_power_node.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/activate_relay_station.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/awaken_nexus_core.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/base_stability_check.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_atmospheric_scrubber.png": [
+              5,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_battery_bank.png": [
+              6,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_factory_controller.png": [
+              7,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_field_med_bay.png": [
+              0,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_filter_workbench.png": [
+              1,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_hand_recycler.png": [
+              2,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_isotope_refiner.png": [
+              3,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_micro_generator.png": [
+              4,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_nexus_capacitor.png": [
+              5,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_ore_grinder.png": [
+              6,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_radiation_cleanser.png": [
+              7,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_rain_collector.png": [
+              0,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_research_lab.png": [
+              1,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_scout_drone.png": [
+              2,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_scrap_dynamo.png": [
+              3,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_scrap_press.png": [
+              4,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_thermal_array.png": [
+              5,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_thermal_burner.png": [
+              6,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_water_purifier.png": [
+              7,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_workshop.png": [
+              0,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/calibrate_midgame_grid.png": [
+              1,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/charge_basic_battery.png": [
+              2,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/clear_military_vault.png": [
+              3,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/collect_mutated_tissue.png": [
+              4,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_crashbreak_contract.png": [
+              5,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_first_faction_task.png": [
+              6,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_radwarden_contract.png": [
+              7,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_sporebound_contract.png": [
+              0,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/contact_crashbreak_salvage.png": [
+              1,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/contact_radwarden_compact.png": [
+              2,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/contact_sporebound_sanctum.png": [
+              3,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_command_lattice.png": [
+              4,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_enter_archives.png": [
+              5,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_epilogue.png": [
+              6,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_finale.png": [
+              7,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_guardian.png": [
+              0,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/control_resource_dominance.png": [
+              1,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/control_signal_expansion.png": [
+              2,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_advanced_filter.png": [
+              3,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_bone_knife.png": [
+              4,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_cold_route_supplies.png": [
+              5,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_crude_spear.png": [
+              6,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_hide_wrap.png": [
+              7,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_mutagen_vial.png": [
+              0,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/craft_portable_scanner.png": [
+              1,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/craft_radaway.png": [
+              2,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/craft_scrap_knife.png": [
+              3,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/crash_blackbox_signal.png": [
+              4,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/deploy_scout_drone.png": [
+              5,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/deploy_stationary_scanner.png": [
+              6,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/destroy_dead_signal.png": [
+              7,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/destroy_enter_archives.png": [
+              0,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_epilogue.png": [
+              1,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_finale.png": [
+              2,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_guardian.png": [
+              3,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_scorched_earth.png": [
+              4,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_survive_storms.png": [
+              5,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/drink_clean_water.png": [
+              6,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/drone_memory_sweep.png": [
+              7,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/emergency_filter_water.png": [
+              0,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/enter_bio_lab.png": [
+              1,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/enter_cryogenic_ruins.png": [
+              2,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/equip_alloy_kit.png": [
+              3,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/equip_gas_mask.png": [
+              4,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/expedition_readiness.png": [
+              5,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/faction_crossband.png": [
+              6,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/faction_reputation.png": [
+              7,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/find_dense_alloy.png": [
+              0,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/find_nexus_core.png": [
+              1,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/find_schematic_fragment.png": [
+              2,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_faction_contact.png": [
+              3,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_perk.png": [
+              4,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_ruin_signature.png": [
+              5,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_schematic.png": [
+              6,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/fix_mask_filter.png": [
+              7,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/forage_wasteland_food.png": [
+              0,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/forge_alloy_weapon.png": [
+              1,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/get_dirty_water.png": [
+              2,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/guardian_signal_lattice.png": [
+              3,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/guardian_signal_locked_below.png": [
+              4,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/install_energy_meter.png": [
+              5,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/install_item_pipe.png": [
+              6,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/loot_survivor_cache.png": [
+              7,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/make_machine_casing.png": [
+              0,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_city_ruin_stalker.png": [
+              1,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_crash_zone_colossus.png": [
+              2,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_cryogenic_overseer.png": [
+              3,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_industrial_juggernaut.png": [
+              4,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_nexus_scar_avatar.png": [
+              5,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_plains_warlord.png": [
+              6,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_radiation_behemoth.png": [
+              7,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_toxic_hive_matriarch.png": [
+              0,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_wasteland_sentinel.png": [
+              1,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/nexus_choice_record.png": [
+              2,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/orbital_quarantine_echo.png": [
+              3,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/overclock_machine.png": [
+              4,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/plant_mutated_sapling.png": [
+              5,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/poi_explorer.png": [
+              6,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/poi_field_atlas.png": [
+              7,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/reach_decision.png": [
+              0,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/recover_cryo_sample.png": [
+              1,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/recover_data_log.png": [
+              2,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/recover_drone_intel.png": [
+              3,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/repair_echo_drone.png": [
+              4,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/resolve_prime_relays.png": [
+              5,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/restore_enter_archives.png": [
+              6,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/restore_epilogue.png": [
+              7,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/restore_finale.png": [
+              0,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_guardian.png": [
+              1,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_purge_corruption.png": [
+              2,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_repair_nodes.png": [
+              3,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_world_lattice.png": [
+              4,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/route_power_cable.png": [
+              5,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/scan_first_poi.png": [
+              6,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/scan_mutation_status.png": [
+              7,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/scan_prime_relays.png": [
+              0,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/scout_radiation_zone.png": [
+              1,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/secure_crash_outpost.png": [
+              2,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/secure_sleep_shelter.png": [
+              3,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/set_drone_scout_mode.png": [
+              4,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/set_power_priority.png": [
+              5,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/stabilize_mutation_effects.png": [
+              6,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/stabilize_nexus_grid.png": [
+              7,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/stockpile_clean_water.png": [
+              0,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/stockpile_rations.png": [
+              1,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/stockpile_route_supplies.png": [
+              2,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/survey_reactor_ruin.png": [
+              3,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/survive_core_countermeasure.png": [
+              4,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/upgrade_drone_support.png": [
+              5,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/upgrade_power_cable.png": [
+              6,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/use_field_med_bay.png": [
+              7,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/warm_up_after_exposure.png": [
+              0,
+              17
+            ],
+            "mission_icons/echoashfallprotocol/wasteland_surface_report.png": [
+              1,
+              17
+            ]
+          }
+        },
+        "echoblackboxprotocol": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echoblackboxprotocol.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 6,
+          "cells": {
+            "mission_icons/echoblackboxprotocol/blackbox_vault.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/core_key.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/decode_memories.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/memory_bosses.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/nexus_guardian.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/truth_engine.png": [
+              5,
+              0
+            ]
+          }
+        },
+        "echoindustrialnexus": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echoindustrialnexus.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 10,
+          "cells": {
+            "mission_icons/echoindustrialnexus/mission/clean_camp.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/control_heat.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/dense_alloy.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/factory_controller.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/filters_survival.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/grind_wasteland.png": [
+              5,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/hybrid_warning.png": [
+              6,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/production_survived.png": [
+              7,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/reactor_waste.png": [
+              0,
+              1
+            ],
+            "mission_icons/echoindustrialnexus/mission/reclaim_power.png": [
+              1,
+              1
+            ]
+          }
+        },
+        "echonexusprotocol": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echonexusprotocol.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 10,
+          "cells": {
+            "mission_icons/echonexusprotocol/deleted_history.png": [
+              0,
+              0
+            ],
+            "mission_icons/echonexusprotocol/dirty_charge.png": [
+              1,
+              0
+            ],
+            "mission_icons/echonexusprotocol/quarantine_failed.png": [
+              2,
+              0
+            ],
+            "mission_icons/echonexusprotocol/reality_forge.png": [
+              3,
+              0
+            ],
+            "mission_icons/echonexusprotocol/stabilize_the_camp.png": [
+              4,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_core_door.png": [
+              5,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_monolith_remembers.png": [
+              6,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_signal_beneath.png": [
+              7,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_tower_still_speaks.png": [
+              0,
+              1
+            ],
+            "mission_icons/echonexusprotocol/what_rebuilds_the_world.png": [
+              1,
+              1
+            ]
+          }
+        },
+        "echoorbitalremnants": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echoorbitalremnants.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 14,
+          "cells": {
+            "mission_icons/echoorbitalremnants/deep_space_protocol.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/earth_calibration.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/echo_zero.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/europa_route.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/faction_contract.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/final_seal.png": [
+              5,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/launch_chain.png": [
+              6,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/low_orbit.png": [
+              7,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/lunar_signal.png": [
+              0,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/mars_route.png": [
+              1,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/saturn_route.png": [
+              2,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/station_network.png": [
+              3,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/survey_network.png": [
+              4,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/titan_route.png": [
+              5,
+              1
+            ]
+          }
+        },
+        "echostationfall": {
+          "sheet": "source_sheets/mission_tiles/echo_console/echostationfall.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 7,
+          "cells": {
+            "mission_icons/echostationfall/ai_override.png": [
+              0,
+              0
+            ],
+            "mission_icons/echostationfall/blackbox.png": [
+              1,
+              0
+            ],
+            "mission_icons/echostationfall/board_station.png": [
+              2,
+              0
+            ],
+            "mission_icons/echostationfall/decode_logs.png": [
+              3,
+              0
+            ],
+            "mission_icons/echostationfall/restore_power.png": [
+              4,
+              0
+            ],
+            "mission_icons/echostationfall/stabilize_sections.png": [
+              5,
+              0
+            ],
+            "mission_icons/echostationfall/station_mother.png": [
+              6,
+              0
+            ]
+          }
+        },
+        "minecraft": {
+          "sheet": "source_sheets/mission_tiles/echo_console/minecraft.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 39,
+          "cells": {
+            "mission_icons/minecraft/adventure/hero_of_the_village.png": [
+              0,
+              0
+            ],
+            "mission_icons/minecraft/adventure/kill_a_mob.png": [
+              1,
+              0
+            ],
+            "mission_icons/minecraft/adventure/kill_all_mobs.png": [
+              2,
+              0
+            ],
+            "mission_icons/minecraft/adventure/root.png": [
+              3,
+              0
+            ],
+            "mission_icons/minecraft/adventure/shoot_arrow.png": [
+              4,
+              0
+            ],
+            "mission_icons/minecraft/adventure/sleep_in_bed.png": [
+              5,
+              0
+            ],
+            "mission_icons/minecraft/adventure/trade.png": [
+              6,
+              0
+            ],
+            "mission_icons/minecraft/end/dragon_egg.png": [
+              7,
+              0
+            ],
+            "mission_icons/minecraft/end/elytra.png": [
+              0,
+              1
+            ],
+            "mission_icons/minecraft/end/enter_end_gateway.png": [
+              1,
+              1
+            ],
+            "mission_icons/minecraft/end/kill_dragon.png": [
+              2,
+              1
+            ],
+            "mission_icons/minecraft/end/root.png": [
+              3,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/balanced_diet.png": [
+              4,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/breed_an_animal.png": [
+              5,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/plant_seed.png": [
+              6,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/root.png": [
+              7,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/safely_harvest_honey.png": [
+              0,
+              2
+            ],
+            "mission_icons/minecraft/husbandry/tame_an_animal.png": [
+              1,
+              2
+            ],
+            "mission_icons/minecraft/nether/all_effects.png": [
+              2,
+              2
+            ],
+            "mission_icons/minecraft/nether/all_potions.png": [
+              3,
+              2
+            ],
+            "mission_icons/minecraft/nether/brew_potion.png": [
+              4,
+              2
+            ],
+            "mission_icons/minecraft/nether/create_beacon.png": [
+              5,
+              2
+            ],
+            "mission_icons/minecraft/nether/find_bastion.png": [
+              6,
+              2
+            ],
+            "mission_icons/minecraft/nether/obtain_ancient_debris.png": [
+              7,
+              2
+            ],
+            "mission_icons/minecraft/nether/obtain_blaze_rod.png": [
+              0,
+              3
+            ],
+            "mission_icons/minecraft/nether/return_to_sender.png": [
+              1,
+              3
+            ],
+            "mission_icons/minecraft/nether/root.png": [
+              2,
+              3
+            ],
+            "mission_icons/minecraft/nether/summon_wither.png": [
+              3,
+              3
+            ],
+            "mission_icons/minecraft/story/enchant_item.png": [
+              4,
+              3
+            ],
+            "mission_icons/minecraft/story/enter_the_end.png": [
+              5,
+              3
+            ],
+            "mission_icons/minecraft/story/enter_the_nether.png": [
+              6,
+              3
+            ],
+            "mission_icons/minecraft/story/follow_ender_eye.png": [
+              7,
+              3
+            ],
+            "mission_icons/minecraft/story/iron_tools.png": [
+              0,
+              4
+            ],
+            "mission_icons/minecraft/story/lava_bucket.png": [
+              1,
+              4
+            ],
+            "mission_icons/minecraft/story/mine_diamond.png": [
+              2,
+              4
+            ],
+            "mission_icons/minecraft/story/mine_stone.png": [
+              3,
+              4
+            ],
+            "mission_icons/minecraft/story/root.png": [
+              4,
+              4
+            ],
+            "mission_icons/minecraft/story/smelt_iron.png": [
+              5,
+              4
+            ],
+            "mission_icons/minecraft/story/upgrade_tools.png": [
+              6,
+              4
+            ]
+          }
+        }
+      }
+    },
+    "nexus_modpack": {
+      "menu": {
+        "chroma_key": "#ff00ff",
+        "chroma_sheet": "source_sheets/nexus_modpack_icons_chroma.png",
+        "alpha_sheet": "source_sheets/nexus_modpack_icons_alpha.png",
+        "prompt": "4x4 transparent-ready sheet of crisp amber/gold/violet Nexus industrial terminal menu glyphs on a flat #ff00ff chroma key."
+      },
+      "mission_tiles": {
+        "echoagriculturereclamation": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echoagriculturereclamation.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 6,
+          "cells": {
+            "mission_icons/echoagriculturereclamation/mission/analyze_soil.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/first_growth.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/gene_stabilization.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/greenhouse_online.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/recover_seed.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoagriculturereclamation/mission/restore_chunk.png": [
+              5,
+              0
+            ]
+          }
+        },
+        "echoashfallprotocol": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echoashfallprotocol.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 138,
+          "cells": {
+            "mission_icons/echoashfallprotocol/acquire_mutagen.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/activate_power_node.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/activate_relay_station.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/awaken_nexus_core.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/base_stability_check.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_atmospheric_scrubber.png": [
+              5,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_battery_bank.png": [
+              6,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_factory_controller.png": [
+              7,
+              0
+            ],
+            "mission_icons/echoashfallprotocol/build_field_med_bay.png": [
+              0,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_filter_workbench.png": [
+              1,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_hand_recycler.png": [
+              2,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_isotope_refiner.png": [
+              3,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_micro_generator.png": [
+              4,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_nexus_capacitor.png": [
+              5,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_ore_grinder.png": [
+              6,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_radiation_cleanser.png": [
+              7,
+              1
+            ],
+            "mission_icons/echoashfallprotocol/build_rain_collector.png": [
+              0,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_research_lab.png": [
+              1,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_scout_drone.png": [
+              2,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_scrap_dynamo.png": [
+              3,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_scrap_press.png": [
+              4,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_thermal_array.png": [
+              5,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_thermal_burner.png": [
+              6,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_water_purifier.png": [
+              7,
+              2
+            ],
+            "mission_icons/echoashfallprotocol/build_workshop.png": [
+              0,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/calibrate_midgame_grid.png": [
+              1,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/charge_basic_battery.png": [
+              2,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/clear_military_vault.png": [
+              3,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/collect_mutated_tissue.png": [
+              4,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_crashbreak_contract.png": [
+              5,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_first_faction_task.png": [
+              6,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_radwarden_contract.png": [
+              7,
+              3
+            ],
+            "mission_icons/echoashfallprotocol/complete_sporebound_contract.png": [
+              0,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/contact_crashbreak_salvage.png": [
+              1,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/contact_radwarden_compact.png": [
+              2,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/contact_sporebound_sanctum.png": [
+              3,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_command_lattice.png": [
+              4,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_enter_archives.png": [
+              5,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_epilogue.png": [
+              6,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_finale.png": [
+              7,
+              4
+            ],
+            "mission_icons/echoashfallprotocol/control_guardian.png": [
+              0,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/control_resource_dominance.png": [
+              1,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/control_signal_expansion.png": [
+              2,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_advanced_filter.png": [
+              3,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_bone_knife.png": [
+              4,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_cold_route_supplies.png": [
+              5,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_crude_spear.png": [
+              6,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_hide_wrap.png": [
+              7,
+              5
+            ],
+            "mission_icons/echoashfallprotocol/craft_mutagen_vial.png": [
+              0,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/craft_portable_scanner.png": [
+              1,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/craft_radaway.png": [
+              2,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/craft_scrap_knife.png": [
+              3,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/crash_blackbox_signal.png": [
+              4,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/deploy_scout_drone.png": [
+              5,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/deploy_stationary_scanner.png": [
+              6,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/destroy_dead_signal.png": [
+              7,
+              6
+            ],
+            "mission_icons/echoashfallprotocol/destroy_enter_archives.png": [
+              0,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_epilogue.png": [
+              1,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_finale.png": [
+              2,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_guardian.png": [
+              3,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_scorched_earth.png": [
+              4,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/destroy_survive_storms.png": [
+              5,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/drink_clean_water.png": [
+              6,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/drone_memory_sweep.png": [
+              7,
+              7
+            ],
+            "mission_icons/echoashfallprotocol/emergency_filter_water.png": [
+              0,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/enter_bio_lab.png": [
+              1,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/enter_cryogenic_ruins.png": [
+              2,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/equip_alloy_kit.png": [
+              3,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/equip_gas_mask.png": [
+              4,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/expedition_readiness.png": [
+              5,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/faction_crossband.png": [
+              6,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/faction_reputation.png": [
+              7,
+              8
+            ],
+            "mission_icons/echoashfallprotocol/find_dense_alloy.png": [
+              0,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/find_nexus_core.png": [
+              1,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/find_schematic_fragment.png": [
+              2,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_faction_contact.png": [
+              3,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_perk.png": [
+              4,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_ruin_signature.png": [
+              5,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/first_schematic.png": [
+              6,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/fix_mask_filter.png": [
+              7,
+              9
+            ],
+            "mission_icons/echoashfallprotocol/forage_wasteland_food.png": [
+              0,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/forge_alloy_weapon.png": [
+              1,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/get_dirty_water.png": [
+              2,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/guardian_signal_lattice.png": [
+              3,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/guardian_signal_locked_below.png": [
+              4,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/install_energy_meter.png": [
+              5,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/install_item_pipe.png": [
+              6,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/loot_survivor_cache.png": [
+              7,
+              10
+            ],
+            "mission_icons/echoashfallprotocol/make_machine_casing.png": [
+              0,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_city_ruin_stalker.png": [
+              1,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_crash_zone_colossus.png": [
+              2,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_cryogenic_overseer.png": [
+              3,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_industrial_juggernaut.png": [
+              4,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_nexus_scar_avatar.png": [
+              5,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_plains_warlord.png": [
+              6,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_radiation_behemoth.png": [
+              7,
+              11
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_toxic_hive_matriarch.png": [
+              0,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/neutralize_wasteland_sentinel.png": [
+              1,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/nexus_choice_record.png": [
+              2,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/orbital_quarantine_echo.png": [
+              3,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/overclock_machine.png": [
+              4,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/plant_mutated_sapling.png": [
+              5,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/poi_explorer.png": [
+              6,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/poi_field_atlas.png": [
+              7,
+              12
+            ],
+            "mission_icons/echoashfallprotocol/reach_decision.png": [
+              0,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/recover_cryo_sample.png": [
+              1,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/recover_data_log.png": [
+              2,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/recover_drone_intel.png": [
+              3,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/repair_echo_drone.png": [
+              4,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/resolve_prime_relays.png": [
+              5,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/restore_enter_archives.png": [
+              6,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/restore_epilogue.png": [
+              7,
+              13
+            ],
+            "mission_icons/echoashfallprotocol/restore_finale.png": [
+              0,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_guardian.png": [
+              1,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_purge_corruption.png": [
+              2,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_repair_nodes.png": [
+              3,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/restore_world_lattice.png": [
+              4,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/route_power_cable.png": [
+              5,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/scan_first_poi.png": [
+              6,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/scan_mutation_status.png": [
+              7,
+              14
+            ],
+            "mission_icons/echoashfallprotocol/scan_prime_relays.png": [
+              0,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/scout_radiation_zone.png": [
+              1,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/secure_crash_outpost.png": [
+              2,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/secure_sleep_shelter.png": [
+              3,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/set_drone_scout_mode.png": [
+              4,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/set_power_priority.png": [
+              5,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/stabilize_mutation_effects.png": [
+              6,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/stabilize_nexus_grid.png": [
+              7,
+              15
+            ],
+            "mission_icons/echoashfallprotocol/stockpile_clean_water.png": [
+              0,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/stockpile_rations.png": [
+              1,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/stockpile_route_supplies.png": [
+              2,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/survey_reactor_ruin.png": [
+              3,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/survive_core_countermeasure.png": [
+              4,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/upgrade_drone_support.png": [
+              5,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/upgrade_power_cable.png": [
+              6,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/use_field_med_bay.png": [
+              7,
+              16
+            ],
+            "mission_icons/echoashfallprotocol/warm_up_after_exposure.png": [
+              0,
+              17
+            ],
+            "mission_icons/echoashfallprotocol/wasteland_surface_report.png": [
+              1,
+              17
+            ]
+          }
+        },
+        "echoblackboxprotocol": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echoblackboxprotocol.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 6,
+          "cells": {
+            "mission_icons/echoblackboxprotocol/blackbox_vault.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/core_key.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/decode_memories.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/memory_bosses.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/nexus_guardian.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoblackboxprotocol/truth_engine.png": [
+              5,
+              0
+            ]
+          }
+        },
+        "echoindustrialnexus": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echoindustrialnexus.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 10,
+          "cells": {
+            "mission_icons/echoindustrialnexus/mission/clean_camp.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/control_heat.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/dense_alloy.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/factory_controller.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/filters_survival.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/grind_wasteland.png": [
+              5,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/hybrid_warning.png": [
+              6,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/production_survived.png": [
+              7,
+              0
+            ],
+            "mission_icons/echoindustrialnexus/mission/reactor_waste.png": [
+              0,
+              1
+            ],
+            "mission_icons/echoindustrialnexus/mission/reclaim_power.png": [
+              1,
+              1
+            ]
+          }
+        },
+        "echonexusprotocol": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echonexusprotocol.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 10,
+          "cells": {
+            "mission_icons/echonexusprotocol/deleted_history.png": [
+              0,
+              0
+            ],
+            "mission_icons/echonexusprotocol/dirty_charge.png": [
+              1,
+              0
+            ],
+            "mission_icons/echonexusprotocol/quarantine_failed.png": [
+              2,
+              0
+            ],
+            "mission_icons/echonexusprotocol/reality_forge.png": [
+              3,
+              0
+            ],
+            "mission_icons/echonexusprotocol/stabilize_the_camp.png": [
+              4,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_core_door.png": [
+              5,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_monolith_remembers.png": [
+              6,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_signal_beneath.png": [
+              7,
+              0
+            ],
+            "mission_icons/echonexusprotocol/the_tower_still_speaks.png": [
+              0,
+              1
+            ],
+            "mission_icons/echonexusprotocol/what_rebuilds_the_world.png": [
+              1,
+              1
+            ]
+          }
+        },
+        "echoorbitalremnants": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echoorbitalremnants.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 14,
+          "cells": {
+            "mission_icons/echoorbitalremnants/deep_space_protocol.png": [
+              0,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/earth_calibration.png": [
+              1,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/echo_zero.png": [
+              2,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/europa_route.png": [
+              3,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/faction_contract.png": [
+              4,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/final_seal.png": [
+              5,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/launch_chain.png": [
+              6,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/low_orbit.png": [
+              7,
+              0
+            ],
+            "mission_icons/echoorbitalremnants/lunar_signal.png": [
+              0,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/mars_route.png": [
+              1,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/saturn_route.png": [
+              2,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/station_network.png": [
+              3,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/survey_network.png": [
+              4,
+              1
+            ],
+            "mission_icons/echoorbitalremnants/titan_route.png": [
+              5,
+              1
+            ]
+          }
+        },
+        "echostationfall": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/echostationfall.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 7,
+          "cells": {
+            "mission_icons/echostationfall/ai_override.png": [
+              0,
+              0
+            ],
+            "mission_icons/echostationfall/blackbox.png": [
+              1,
+              0
+            ],
+            "mission_icons/echostationfall/board_station.png": [
+              2,
+              0
+            ],
+            "mission_icons/echostationfall/decode_logs.png": [
+              3,
+              0
+            ],
+            "mission_icons/echostationfall/restore_power.png": [
+              4,
+              0
+            ],
+            "mission_icons/echostationfall/stabilize_sections.png": [
+              5,
+              0
+            ],
+            "mission_icons/echostationfall/station_mother.png": [
+              6,
+              0
+            ]
+          }
+        },
+        "minecraft": {
+          "sheet": "source_sheets/mission_tiles/nexus_modpack/minecraft.png",
+          "cell_size": 256,
+          "columns": 8,
+          "count": 39,
+          "cells": {
+            "mission_icons/minecraft/adventure/hero_of_the_village.png": [
+              0,
+              0
+            ],
+            "mission_icons/minecraft/adventure/kill_a_mob.png": [
+              1,
+              0
+            ],
+            "mission_icons/minecraft/adventure/kill_all_mobs.png": [
+              2,
+              0
+            ],
+            "mission_icons/minecraft/adventure/root.png": [
+              3,
+              0
+            ],
+            "mission_icons/minecraft/adventure/shoot_arrow.png": [
+              4,
+              0
+            ],
+            "mission_icons/minecraft/adventure/sleep_in_bed.png": [
+              5,
+              0
+            ],
+            "mission_icons/minecraft/adventure/trade.png": [
+              6,
+              0
+            ],
+            "mission_icons/minecraft/end/dragon_egg.png": [
+              7,
+              0
+            ],
+            "mission_icons/minecraft/end/elytra.png": [
+              0,
+              1
+            ],
+            "mission_icons/minecraft/end/enter_end_gateway.png": [
+              1,
+              1
+            ],
+            "mission_icons/minecraft/end/kill_dragon.png": [
+              2,
+              1
+            ],
+            "mission_icons/minecraft/end/root.png": [
+              3,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/balanced_diet.png": [
+              4,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/breed_an_animal.png": [
+              5,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/plant_seed.png": [
+              6,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/root.png": [
+              7,
+              1
+            ],
+            "mission_icons/minecraft/husbandry/safely_harvest_honey.png": [
+              0,
+              2
+            ],
+            "mission_icons/minecraft/husbandry/tame_an_animal.png": [
+              1,
+              2
+            ],
+            "mission_icons/minecraft/nether/all_effects.png": [
+              2,
+              2
+            ],
+            "mission_icons/minecraft/nether/all_potions.png": [
+              3,
+              2
+            ],
+            "mission_icons/minecraft/nether/brew_potion.png": [
+              4,
+              2
+            ],
+            "mission_icons/minecraft/nether/create_beacon.png": [
+              5,
+              2
+            ],
+            "mission_icons/minecraft/nether/find_bastion.png": [
+              6,
+              2
+            ],
+            "mission_icons/minecraft/nether/obtain_ancient_debris.png": [
+              7,
+              2
+            ],
+            "mission_icons/minecraft/nether/obtain_blaze_rod.png": [
+              0,
+              3
+            ],
+            "mission_icons/minecraft/nether/return_to_sender.png": [
+              1,
+              3
+            ],
+            "mission_icons/minecraft/nether/root.png": [
+              2,
+              3
+            ],
+            "mission_icons/minecraft/nether/summon_wither.png": [
+              3,
+              3
+            ],
+            "mission_icons/minecraft/story/enchant_item.png": [
+              4,
+              3
+            ],
+            "mission_icons/minecraft/story/enter_the_end.png": [
+              5,
+              3
+            ],
+            "mission_icons/minecraft/story/enter_the_nether.png": [
+              6,
+              3
+            ],
+            "mission_icons/minecraft/story/follow_ender_eye.png": [
+              7,
+              3
+            ],
+            "mission_icons/minecraft/story/iron_tools.png": [
+              0,
+              4
+            ],
+            "mission_icons/minecraft/story/lava_bucket.png": [
+              1,
+              4
+            ],
+            "mission_icons/minecraft/story/mine_diamond.png": [
+              2,
+              4
+            ],
+            "mission_icons/minecraft/story/mine_stone.png": [
+              3,
+              4
+            ],
+            "mission_icons/minecraft/story/root.png": [
+              4,
+              4
+            ],
+            "mission_icons/minecraft/story/smelt_iron.png": [
+              5,
+              4
+            ],
+            "mission_icons/minecraft/story/upgrade_tools.png": [
+              6,
+              4
+            ]
+          }
+        }
+      }
+    }
+  },
+  "prompts": {
+    "echo_console": "4x4 transparent-ready sheet of crisp cyan/blue/green ECHO terminal hologram menu glyphs on a flat #00ff00 chroma key.",
+    "nexus_modpack": "4x4 transparent-ready sheet of crisp amber/gold/violet Nexus industrial terminal menu glyphs on a flat #ff00ff chroma key.",
+    "mission_tiles": "Deterministic 256x256 opaque square mission tile sheets generated from the theme motif sheets, with filled terminal backdrops, chapter-accent lighting, readable symbolic silhouettes, no text, and stable slicing cells."
+  },
+  "themes": {
+    "echo_console": {
+      "mirrored_base_textures": 533,
+      "flat_cards": 16,
+      "chrome": 24,
+      "semantic_icons": 86,
+      "mission_icons": 230,
+      "mission_source_sheets": 8,
+      "menu_checked": 118,
+      "menu_transparent_corners": 118,
+      "menu_size_checked": 118,
+      "menu_size_128": 118,
+      "mission_checked": 230,
+      "mission_size_256": 230,
+      "mission_opaque_tiles": 230,
+      "mission_non_empty_background": 230
+    },
+    "nexus_modpack": {
+      "mirrored_base_textures": 533,
+      "flat_cards": 16,
+      "chrome": 24,
+      "semantic_icons": 86,
+      "mission_icons": 230,
+      "mission_source_sheets": 8,
+      "menu_checked": 118,
+      "menu_transparent_corners": 118,
+      "menu_size_checked": 118,
+      "menu_size_128": 118,
+      "mission_checked": 230,
+      "mission_size_256": 230,
+      "mission_opaque_tiles": 230,
+      "mission_non_empty_background": 230
+    }
+  },
+  "generated_at": "2026-05-11T01:19:31.616990+00:00"
+}

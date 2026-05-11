@@ -12,7 +12,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.AABB;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -31,6 +33,9 @@ public final class EchoDroneVoice {
     /** Max distance (blocks) for the drone to be the speaker. */
     public static final double DRONE_SPEAK_RANGE = 32.0;
     public static final double DRONE_SPEAK_RANGE_SQ = DRONE_SPEAK_RANGE * DRONE_SPEAK_RANGE;
+    private static final long DRONE_LOOKUP_HIT_CACHE_TICKS = 100L;
+    private static final long DRONE_LOOKUP_MISS_CACHE_TICKS = 20L;
+    private static final Map<UUID, CachedDroneLookup> DRONE_LOOKUP_CACHE = new HashMap<>();
 
     public enum EventType {
         MISSION_START(1.2f, EchoCompanionDrone.MOOD_PROFESSIONAL, 40),
@@ -61,10 +66,30 @@ public final class EchoDroneVoice {
     public static EchoCompanionDrone findDrone(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel level)) return null;
         UUID playerId = player.getUUID();
+        long now = level.getGameTime();
+        String dimension = level.dimension().toString();
+        CachedDroneLookup cached = DRONE_LOOKUP_CACHE.get(playerId);
+        if (cached != null && dimension.equals(cached.dimension())) {
+            EchoCompanionDrone cachedDrone = cached.drone();
+            long maxAge = cachedDrone == null ? DRONE_LOOKUP_MISS_CACHE_TICKS : DRONE_LOOKUP_HIT_CACHE_TICKS;
+            if (now - cached.gameTime() <= maxAge) {
+                if (cachedDrone == null) {
+                    return null;
+                }
+                if (cachedDrone.isAlive() && cachedDrone.level() == level
+                        && cachedDrone.distanceToSqr(player) <= DRONE_SPEAK_RANGE_SQ) {
+                    return cachedDrone;
+                }
+            }
+        }
+
         AABB box = player.getBoundingBox().inflate(DRONE_SPEAK_RANGE);
         List<EchoCompanionDrone> drones = level.getEntitiesOfClass(EchoCompanionDrone.class, box,
                 d -> playerId.equals(d.getOwnerUUID()) && d.isAlive());
-        if (drones.isEmpty()) return null;
+        if (drones.isEmpty()) {
+            DRONE_LOOKUP_CACHE.put(playerId, new CachedDroneLookup(dimension, now, null));
+            return null;
+        }
         EchoCompanionDrone nearest = null;
         double bestSq = DRONE_SPEAK_RANGE_SQ;
         for (EchoCompanionDrone d : drones) {
@@ -74,6 +99,7 @@ public final class EchoDroneVoice {
                 nearest = d;
             }
         }
+        DRONE_LOOKUP_CACHE.put(playerId, new CachedDroneLookup(dimension, now, nearest));
         return nearest;
     }
 
@@ -161,29 +187,29 @@ public final class EchoDroneVoice {
      * Called each server tick from EchoGuideManager. Emits occasional
      * contextual hints through the drone when nothing else is happening.
      */
-    public static void tickIdleChatter(ServerPlayer player, QuestData quest) {
+    public static boolean tickIdleChatter(ServerPlayer player, QuestData quest) {
         long now = player.level().getGameTime();
 
         // Skip if chat recently fired (terminal / mission event)
-        if (now - quest.getLastMessageTick() < RECENT_MESSAGE_WINDOW) return;
+        if (now - quest.getLastMessageTick() < RECENT_MESSAGE_WINDOW) return false;
 
         long nextDue = quest.getNextDroneChatterTick();
         if (nextDue == 0L) {
             // First run: schedule initial delay
             quest.setNextDroneChatterTick(now + MIN_CHATTER_GAP + player.level().getRandom().nextInt(MAX_CHATTER_GAP - MIN_CHATTER_GAP));
-            return;
+            return true;
         }
-        if (now < nextDue) return;
+        if (now < nextDue) return false;
 
         EchoCompanionDrone drone = findDrone(player);
         if (drone == null || drone.isSpeaking()) {
             // Reschedule and wait
             quest.setNextDroneChatterTick(now + MIN_CHATTER_GAP);
-            return;
+            return true;
         }
         if (drone.getRepairLevel() < EchoCompanionDrone.REPAIR_FOLLOW) {
             quest.setNextDroneChatterTick(now + MIN_CHATTER_GAP);
-            return;
+            return true;
         }
 
         String line = pickIdleLine(player, quest);
@@ -199,7 +225,10 @@ public final class EchoDroneVoice {
 
         int gap = MIN_CHATTER_GAP + player.level().getRandom().nextInt(MAX_CHATTER_GAP - MIN_CHATTER_GAP);
         quest.setNextDroneChatterTick(now + gap);
+        return true;
     }
+
+    private record CachedDroneLookup(String dimension, long gameTime, EchoCompanionDrone drone) {}
 
     private static String pickIdleLine(ServerPlayer player, QuestData quest) {
         SurvivalData sv = player.getData(ModAttachments.SURVIVAL_DATA.get());

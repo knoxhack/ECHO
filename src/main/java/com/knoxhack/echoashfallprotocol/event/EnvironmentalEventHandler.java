@@ -15,6 +15,8 @@ import com.knoxhack.echoashfallprotocol.survival.ColdData;
 import com.knoxhack.echoashfallprotocol.survival.HazardZoneManager;
 import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
@@ -30,7 +32,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Environmental Event System - triggers weather and hazard events.
@@ -260,7 +261,7 @@ public class EnvironmentalEventHandler {
         );
         for (Player player : level.players()) {
             if (player instanceof ServerPlayer serverPlayer) {
-                PacketDistributor.sendToPlayer(serverPlayer, packet);
+                EchoNetSend.toPlayer(serverPlayer, packet, EchoPacketKind.CLIENTBOUND_SYNC);
             }
         }
     }

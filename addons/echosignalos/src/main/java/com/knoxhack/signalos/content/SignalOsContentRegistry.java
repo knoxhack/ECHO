@@ -6,6 +6,11 @@ import com.knoxhack.signalos.api.TerminalChapter;
 import com.knoxhack.signalos.api.TerminalDiagnosticProvider;
 import com.knoxhack.signalos.api.TerminalMission;
 import com.knoxhack.signalos.api.TerminalPage;
+import com.knoxhack.signalos.api.SignalOsApp;
+import com.knoxhack.signalos.api.SignalOsDataProvider;
+import com.knoxhack.signalos.api.SignalOsDataRecord;
+import com.knoxhack.signalos.api.SignalOsDriveData;
+import com.knoxhack.signalos.api.SignalOsPeripheralProvider;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -22,6 +27,9 @@ public final class SignalOsContentRegistry {
     private static final Map<Identifier, TerminalMission> JAVA_MISSIONS = new ConcurrentHashMap<>();
     private static final Map<Identifier, TerminalArchiveRecord> JAVA_ARCHIVES = new ConcurrentHashMap<>();
     private static final Map<Identifier, TerminalDiagnosticProvider> DIAGNOSTIC_PROVIDERS = new ConcurrentHashMap<>();
+    private static final Map<Identifier, SignalOsApp> JAVA_APPS = new ConcurrentHashMap<>();
+    private static final Map<Identifier, SignalOsDataProvider> DATA_PROVIDERS = new ConcurrentHashMap<>();
+    private static final Map<Identifier, SignalOsPeripheralProvider> PERIPHERAL_PROVIDERS = new ConcurrentHashMap<>();
 
     private static final Map<Identifier, TerminalChapter> SCRIPT_CHAPTERS = new ConcurrentHashMap<>();
     private static final Map<Identifier, TerminalMission> SCRIPT_MISSIONS = new ConcurrentHashMap<>();
@@ -55,6 +63,24 @@ public final class SignalOsContentRegistry {
         registerUnique(DIAGNOSTIC_PROVIDERS, provider.id(), provider, "diagnostic provider");
     }
 
+    public static void registerApp(SignalOsApp app) {
+        registerUnique(JAVA_APPS, app.id(), app, "app");
+    }
+
+    public static void registerDataProvider(SignalOsDataProvider provider) {
+        if (provider == null || provider.id() == null) {
+            throw new IllegalArgumentException("SignalOS data provider id is required.");
+        }
+        registerUnique(DATA_PROVIDERS, provider.id(), provider, "data provider");
+    }
+
+    public static void registerPeripheralProvider(SignalOsPeripheralProvider provider) {
+        if (provider == null || provider.id() == null) {
+            throw new IllegalArgumentException("SignalOS peripheral provider id is required.");
+        }
+        registerUnique(PERIPHERAL_PROVIDERS, provider.id(), provider, "peripheral provider");
+    }
+
     public static void registerScriptChapter(TerminalChapter chapter) {
         SCRIPT_CHAPTERS.put(chapter.id(), chapter);
     }
@@ -75,7 +101,9 @@ public final class SignalOsContentRegistry {
 
     public static void replaceJsonContent(LoadedContent loaded) {
         jsonContent = loaded == null ? LoadedContent.empty() : loaded;
-        SignalOS.LOGGER.info("SignalOS loaded {} JSON chapters, {} JSON missions, and {} JSON archive records.",
+        SignalOS.LOGGER.info(
+                "SignalOS loaded {} JSON apps, {} JSON data records, {} JSON drive templates, {} JSON chapters, {} JSON missions, and {} JSON archive records.",
+                jsonContent.apps().size(), jsonContent.dataRecords().size(), jsonContent.driveTemplates().size(),
                 jsonContent.chapters().size(), jsonContent.missions().size(), jsonContent.archives().size());
         LoadReport report = jsonContent.report();
         if (report.hasProblems()) {
@@ -225,12 +253,82 @@ public final class SignalOsContentRegistry {
         return List.copyOf(diagnostics);
     }
 
+    public static List<SignalOsApp> apps() {
+        Map<Identifier, SignalOsApp> merged = new LinkedHashMap<>();
+        merged.putAll(JAVA_APPS);
+        putMissing(merged, jsonContent.apps());
+        return merged.values().stream()
+                .sorted(Comparator.comparingInt(SignalOsApp::order)
+                        .thenComparing(app -> app.id().toString()))
+                .toList();
+    }
+
+    public static SignalOsApp app(Identifier appId) {
+        if (appId == null) {
+            return null;
+        }
+        SignalOsApp app = JAVA_APPS.get(appId);
+        return app == null ? jsonContent.apps().get(appId) : app;
+    }
+
+    public static List<SignalOsDataRecord> dataRecords(Player player) {
+        Map<Identifier, SignalOsDataRecord> records = new LinkedHashMap<>();
+        putMissing(records, jsonContent.dataRecords());
+        for (SignalOsDataProvider provider : dataProviders()) {
+            try {
+                List<SignalOsDataRecord> provided = provider.records(player);
+                if (provided != null) {
+                    for (SignalOsDataRecord record : provided) {
+                        if (record != null) {
+                            records.putIfAbsent(record.id(), record);
+                        }
+                    }
+                }
+            } catch (RuntimeException exception) {
+                SignalOS.LOGGER.warn("SignalOS data provider {} failed.", provider.id(), exception);
+            }
+        }
+        return records.values().stream()
+                .sorted(Comparator.comparingInt(SignalOsDataRecord::order)
+                        .thenComparing(record -> record.id().toString()))
+                .toList();
+    }
+
+    public static List<SignalOsPeripheralProvider.Peripheral> peripherals(Player player) {
+        List<SignalOsPeripheralProvider.Peripheral> peripherals = new ArrayList<>();
+        for (SignalOsPeripheralProvider provider : peripheralProviders()) {
+            try {
+                List<SignalOsPeripheralProvider.Peripheral> provided = provider.peripherals(player);
+                if (provided != null) {
+                    peripherals.addAll(provided.stream().filter(java.util.Objects::nonNull).toList());
+                }
+            } catch (RuntimeException exception) {
+                SignalOS.LOGGER.warn("SignalOS peripheral provider {} failed.", provider.id(), exception);
+            }
+        }
+        peripherals.sort(Comparator.comparing(SignalOsPeripheralProvider.Peripheral::kind)
+                .thenComparing(SignalOsPeripheralProvider.Peripheral::label)
+                .thenComparing(peripheral -> peripheral.id().toString()));
+        return List.copyOf(peripherals);
+    }
+
+    public static SignalOsDriveData driveTemplate(Identifier templateId) {
+        return templateId == null ? null : jsonContent.driveTemplates().get(templateId);
+    }
+
+    public static List<SignalOsDriveData> driveTemplates() {
+        return jsonContent.driveTemplates().values().stream().toList();
+    }
+
     public static void clearForTests() {
         JAVA_CHAPTERS.clear();
         JAVA_PAGES.clear();
         JAVA_MISSIONS.clear();
         JAVA_ARCHIVES.clear();
         DIAGNOSTIC_PROVIDERS.clear();
+        JAVA_APPS.clear();
+        DATA_PROVIDERS.clear();
+        PERIPHERAL_PROVIDERS.clear();
         clearScriptContent();
         jsonContent = LoadedContent.empty();
     }
@@ -241,6 +339,9 @@ public final class SignalOsContentRegistry {
         Map<Identifier, TerminalMission> missions = Map.copyOf(JAVA_MISSIONS);
         Map<Identifier, TerminalArchiveRecord> archives = Map.copyOf(JAVA_ARCHIVES);
         Map<Identifier, TerminalDiagnosticProvider> diagnostics = Map.copyOf(DIAGNOSTIC_PROVIDERS);
+        Map<Identifier, SignalOsApp> apps = Map.copyOf(JAVA_APPS);
+        Map<Identifier, SignalOsDataProvider> dataProviders = Map.copyOf(DATA_PROVIDERS);
+        Map<Identifier, SignalOsPeripheralProvider> peripheralProviders = Map.copyOf(PERIPHERAL_PROVIDERS);
         Map<Identifier, TerminalChapter> scriptChapters = Map.copyOf(SCRIPT_CHAPTERS);
         Map<Identifier, TerminalMission> scriptMissions = Map.copyOf(SCRIPT_MISSIONS);
         Map<Identifier, TerminalArchiveRecord> scriptArchives = Map.copyOf(SCRIPT_ARCHIVES);
@@ -254,6 +355,9 @@ public final class SignalOsContentRegistry {
             JAVA_MISSIONS.putAll(missions);
             JAVA_ARCHIVES.putAll(archives);
             DIAGNOSTIC_PROVIDERS.putAll(diagnostics);
+            JAVA_APPS.putAll(apps);
+            DATA_PROVIDERS.putAll(dataProviders);
+            PERIPHERAL_PROVIDERS.putAll(peripheralProviders);
             SCRIPT_CHAPTERS.putAll(scriptChapters);
             SCRIPT_MISSIONS.putAll(scriptMissions);
             SCRIPT_ARCHIVES.putAll(scriptArchives);
@@ -316,26 +420,53 @@ public final class SignalOsContentRegistry {
         };
     }
 
+    private static List<SignalOsDataProvider> dataProviders() {
+        return DATA_PROVIDERS.values().stream()
+                .sorted(Comparator.comparingInt(SignalOsDataProvider::order)
+                        .thenComparing(provider -> provider.id().toString()))
+                .toList();
+    }
+
+    private static List<SignalOsPeripheralProvider> peripheralProviders() {
+        return PERIPHERAL_PROVIDERS.values().stream()
+                .sorted(Comparator.comparingInt(SignalOsPeripheralProvider::order)
+                        .thenComparing(provider -> provider.id().toString()))
+                .toList();
+    }
+
     public record LoadedContent(
             Map<Identifier, TerminalChapter> chapters,
             Map<Identifier, TerminalMission> missions,
             Map<Identifier, TerminalArchiveRecord> archives,
+            Map<Identifier, SignalOsApp> apps,
+            Map<Identifier, SignalOsDataRecord> dataRecords,
+            Map<Identifier, SignalOsDriveData> driveTemplates,
             LoadReport report) {
         public LoadedContent {
             chapters = Map.copyOf(chapters == null ? Map.of() : chapters);
             missions = Map.copyOf(missions == null ? Map.of() : missions);
             archives = Map.copyOf(archives == null ? Map.of() : archives);
+            apps = Map.copyOf(apps == null ? Map.of() : apps);
+            dataRecords = Map.copyOf(dataRecords == null ? Map.of() : dataRecords);
+            driveTemplates = Map.copyOf(driveTemplates == null ? Map.of() : driveTemplates);
             report = report == null ? LoadReport.empty() : report;
         }
 
         public LoadedContent(Map<Identifier, TerminalChapter> chapters,
                 Map<Identifier, TerminalMission> missions,
                 Map<Identifier, TerminalArchiveRecord> archives) {
-            this(chapters, missions, archives, LoadReport.empty());
+            this(chapters, missions, archives, Map.of(), Map.of(), Map.of(), LoadReport.empty());
+        }
+
+        public LoadedContent(Map<Identifier, TerminalChapter> chapters,
+                Map<Identifier, TerminalMission> missions,
+                Map<Identifier, TerminalArchiveRecord> archives,
+                LoadReport report) {
+            this(chapters, missions, archives, Map.of(), Map.of(), Map.of(), report);
         }
 
         public static LoadedContent empty() {
-            return new LoadedContent(Map.of(), Map.of(), Map.of(), LoadReport.empty());
+            return new LoadedContent(Map.of(), Map.of(), Map.of(), Map.of(), Map.of(), Map.of(), LoadReport.empty());
         }
     }
 

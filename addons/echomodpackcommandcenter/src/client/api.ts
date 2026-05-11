@@ -1,9 +1,16 @@
 import type {
   AppSettings,
   CommandRun,
+  FeatureCatalogResponse,
+  JarManifest,
+  JarPipelineResult,
+  ModpackInventory,
+  ModpackPipelineResult,
+  ModpackPipelineRun,
   Project,
   ProjectDetail,
   PromptTemplate,
+  ReadinessReport,
   ReleaseAction,
   ScanMode,
   ScanReport
@@ -32,8 +39,29 @@ export async function getProjects(): Promise<Project[]> {
   return data.projects;
 }
 
+export async function getModpackSummary(): Promise<ModpackInventory> {
+  return request<ModpackInventory>("/modpack/summary");
+}
+
+export async function getModpackRuns(): Promise<ModpackPipelineRun[]> {
+  const data = await request<{ runs: ModpackPipelineRun[] }>("/modpack/runs");
+  return data.runs;
+}
+
+export async function rebuildModpack(confirmed = false): Promise<ModpackPipelineResult> {
+  return request<ModpackPipelineResult>("/modpack/rebuild", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmed })
+  });
+}
+
 export async function getProject(slug: string): Promise<ProjectDetail> {
   return request<ProjectDetail>(`/projects/${slug}`);
+}
+
+export async function getFeatures(slug: string): Promise<FeatureCatalogResponse> {
+  return request<FeatureCatalogResponse>(`/projects/${slug}/features`);
 }
 
 export async function runScan(slug: string, mode: ScanMode): Promise<ScanReport> {
@@ -55,6 +83,30 @@ export async function getRelease(slug: string): Promise<{
   runs: CommandRun[];
 }> {
   return request<{ actions: ReleaseAction[]; modpackModsDir: string | null; runs: CommandRun[] }>(`/projects/${slug}/release`);
+}
+
+export async function getJars(slug: string): Promise<JarManifest> {
+  return request<JarManifest>(`/projects/${slug}/jars`);
+}
+
+export async function getReadiness(slug: string): Promise<ReadinessReport> {
+  return request<ReadinessReport>(`/projects/${slug}/readiness`);
+}
+
+export async function buildJars(slug: string, confirmed = false): Promise<{ run: CommandRun; manifest: JarManifest }> {
+  return request<{ run: CommandRun; manifest: JarManifest }>(`/projects/${slug}/jars/build`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmed })
+  });
+}
+
+export async function promoteJars(slug: string, confirmed = false): Promise<JarPipelineResult> {
+  return request<JarPipelineResult>(`/projects/${slug}/jars/promote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmed })
+  });
 }
 
 export async function listRuns(slug: string): Promise<CommandRun[]> {

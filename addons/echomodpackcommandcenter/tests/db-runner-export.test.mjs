@@ -5,6 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import { CommandCenterStore } from "../src/server/db.ts";
 import { exportJson, exportMarkdown } from "../src/server/exporter.ts";
+import { buildFeatureCatalog } from "../src/server/features.ts";
+import { buildJarManifest } from "../src/server/jars.ts";
+import { buildModpackSummary, listModpackRuns } from "../src/server/modpack.ts";
 import { startReleaseAction, stopReleaseAction } from "../src/server/runner.ts";
 
 function tempStore() {
@@ -96,7 +99,11 @@ test("exports include settings, latest scan, raw output, and run history", () =>
       detail: store.getProjectDetail("echo"),
       settings: store.getSettings(),
       scans: store.listScanReports("echo"),
-      runs: store.listCommandRuns("echo")
+      runs: store.listCommandRuns("echo"),
+      jarManifest: buildJarManifest(store.getProject("echo"), store.getSettings()),
+      featureCatalog: buildFeatureCatalog("echo", store.getFeatures("echo")),
+      modpackSummary: buildModpackSummary(store),
+      modpackRuns: listModpackRuns(store)
     };
     const parsed = JSON.parse(exportJson(context));
     const markdown = exportMarkdown(context);
@@ -104,9 +111,33 @@ test("exports include settings, latest scan, raw output, and run history", () =>
     assert.equal(parsed.settings.defaultScanMode, "quick");
     assert.equal(parsed.recentScans.length, 1);
     assert.equal(parsed.releaseRuns.length, 1);
+    assert.equal(parsed.jarManifest.projectSlug, "echo");
+    assert.equal(parsed.featureCatalog.projectSlug, "echo");
+    assert.equal(parsed.modpackSummary.summary.projects, 2);
+    assert.equal(parsed.featureCatalog.features.some((feature) => feature.id === "echo-terminal"), true);
     assert.match(markdown, /Settings Snapshot/);
     assert.match(markdown, /Release Run History/);
+    assert.match(markdown, /Jar Management/);
+    assert.match(markdown, /Feature And Lore Implementation/);
+    assert.match(markdown, /Modpack Management/);
+    assert.match(markdown, /ECHO-7 Terminal Surface/);
     assert.match(markdown, /raw validator lines/);
+  } finally {
+    store.close();
+  }
+});
+
+test("feature seed data syncs into the local database", () => {
+  const { store } = tempStore();
+  try {
+    const echoFeatures = store.getFeatures("echo");
+    const arcanaFeatures = store.getFeatures("arcana");
+    const terminalFeatures = store.getFeatures("echoterminal");
+
+    assert.equal(echoFeatures.length > 10, true);
+    assert.equal(arcanaFeatures.length > 5, true);
+    assert.equal(terminalFeatures.some((feature) => feature.status === "implemented"), true);
+    assert.equal(echoFeatures[0].order <= echoFeatures.at(-1).order, true);
   } finally {
     store.close();
   }

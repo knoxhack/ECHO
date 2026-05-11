@@ -94,6 +94,14 @@ public final class ConvoyTerminalClientIntegration {
          cy = infoRow(context, graphics, x, cy, w, snapshot.checkpointStatus(),
             snapshot.checkpointStatus().contains("blocked") ? TerminalUi.warning(context) : TerminalUi.text(context));
 
+         TerminalUi.section(context, graphics, "FIELD ASSISTANT", x, cy + 4, ACCENT);
+         cy += 20;
+         cy = infoRow(context, graphics, x, cy, w, snapshot.assistantStatus(),
+            snapshot.assistantStatus().startsWith("Prep") || snapshot.assistantStatus().startsWith("Setup")
+               ? TerminalUi.warning(context)
+               : TerminalUi.accent(context));
+         cy = lineList(context, graphics, x, cy, w, snapshot.assistantLines(), 3, TerminalUi.text(context), "Scan routes for acquisition hints.");
+
          TerminalUi.section(context, graphics, "CARGO", x, cy + 4, ACCENT);
          cy += 20;
          cy = lineList(context, graphics, x, cy, w, snapshot.cargoLines(), 4, TerminalUi.text(context), "Cargo bay empty.");
@@ -309,7 +317,7 @@ public final class ConvoyTerminalClientIntegration {
 
       @Override
       public int contentHeight(TerminalRenderContext context) {
-         return 640;
+         return 720;
       }
    }
 }

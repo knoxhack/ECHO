@@ -40,6 +40,18 @@ public class SignalOsTerminalBlockEntity extends BlockEntity {
         return player != null && ownerUUID != null && ownerUUID.equals(player.getUUID());
     }
 
+    public UUID ownerUUID() {
+        return ownerUUID;
+    }
+
+    public String ownerName() {
+        return ownerName == null ? "" : ownerName;
+    }
+
+    public long lastActivityTick() {
+        return lastActivityTick;
+    }
+
     public void recordActivity() {
         lastActivityTick = level == null ? 0L : level.getGameTime();
         setChanged();

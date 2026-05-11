@@ -1,9 +1,22 @@
 package com.knoxhack.echocore.api;
 
 import com.knoxhack.echocore.EchoCore;
+import com.knoxhack.echocore.api.network.EchoDiscoveryToast;
+import com.knoxhack.echocore.api.network.INetworkBridge;
+import com.knoxhack.echocore.api.network.INetworkService;
+import com.knoxhack.echocore.api.network.NoOpNetworkService;
+import com.knoxhack.echocore.api.index.IIndexEntryProvider;
+import com.knoxhack.echocore.api.index.IIndexRecipeProvider;
+import com.knoxhack.echocore.api.index.IIndexService;
+import com.knoxhack.echocore.api.index.IndexCategory;
+import com.knoxhack.echocore.api.index.IndexEntry;
+import com.knoxhack.echocore.api.index.NoOpIndexService;
+import com.knoxhack.echocore.api.mission.IMissionRegistry;
+import com.knoxhack.echocore.api.mission.IMissionService;
+import com.knoxhack.echocore.api.mission.MissionContentRegistrar;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
+import com.knoxhack.echocore.api.mission.NoOpMissionService;
 import com.knoxhack.echocore.discovery.EchoDiscoveryData;
-import com.knoxhack.echocore.network.DiscoveryToastPacket;
-import com.knoxhack.echocore.network.EchoFactionSyncPacket;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -16,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -24,25 +36,352 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Convenience accessors around optional cross-mod ECHO services.
  */
 public final class EchoCoreServices {
     private static final EchoProfileService DEFAULT_PROFILE_SERVICE = new PersistentProfileService();
+    private static final INetworkService DEFAULT_NETWORK_SERVICE = NoOpNetworkService.INSTANCE;
+    private static final IMissionService DEFAULT_MISSION_SERVICE = NoOpMissionService.INSTANCE;
+    private static final IIndexService DEFAULT_INDEX_SERVICE = NoOpIndexService.INSTANCE;
     private static final List<EchoRouteRecordService> ROUTE_RECORD_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoDiagnosticService> DIAGNOSTIC_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoHazardTelemetryService> HAZARD_TELEMETRY_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoRecoveryService> RECOVERY_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoFactionStandingService> FACTION_STANDING_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoFactionActionHandlerService> FACTION_ACTION_SERVICES = new CopyOnWriteArrayList<>();
+    private static final List<IMapDataProvider> MAP_DATA_PROVIDERS = new CopyOnWriteArrayList<>();
+    private static final List<IIndexEntryProvider> INDEX_ENTRY_PROVIDERS = new CopyOnWriteArrayList<>();
+    private static final List<IIndexRecipeProvider> INDEX_RECIPE_PROVIDERS = new CopyOnWriteArrayList<>();
+    private static final Map<String, List<MissionContentRegistrar>> MISSION_CONTENT_REGISTRARS = new LinkedHashMap<>();
+    private static final List<ExpectedEchoModule> ECHO_MODULE_CATALOG = List.of(
+            new ExpectedEchoModule("echoashfallprotocol", "ECHO: Ashfall Protocol", "root",
+                    "Main Ashfall campaign addon."),
+            new ExpectedEchoModule("echocore", "ECHO: Core", "core/echocore",
+                    "Shared services, profiles, diagnostics, hazards, route records, rewards, factions, and mirrors."),
+            new ExpectedEchoModule("echonetcore", "ECHO: NetCore", "addons/echonetcore",
+                    "Shared packet registration, sync, action validation, and debug network contracts."),
+            new ExpectedEchoModule("echodatacore", "ECHO: DataCore", "addons/echodatacore",
+                    "Shared persistent player, world, and team progression data."),
+            new ExpectedEchoModule("echomissioncore", "ECHO: MissionCore", "addons/echomissioncore",
+                    "Shared mission, objective, reward, and Terminal feed engine."),
+            new ExpectedEchoModule("echoworldcore", "ECHO: WorldCore", "addons/echoworldcore",
+                    "Shared world regions, markers, hazards, discoveries, and world event contracts."),
+            new ExpectedEchoModule("echoterminal", "ECHO: Terminal", "addons/echoterminal",
+                    "Player-facing terminal shell, mission graph, archives, rewards, route records, and recipe index."),
+            new ExpectedEchoModule("signalos", "SignalOS", "addons/echosignalos",
+                    "Reusable chapter, mission, archive, reward, diagnostics, JSON, and KubeJS-friendly framework."),
+            new ExpectedEchoModule("signalosexample", "SignalOS Example Addon", "addons/signalosexample",
+                    "Example-only SignalOS integration addon."),
+            new ExpectedEchoModule("echoorbitalremnants", "ECHO: Orbital Remnants", "addons/echoorbitalremnants",
+                    "Post-Nexus orbital route continuation."),
+            new ExpectedEchoModule("echonexusprotocol", "ECHO: Nexus Protocol", "addons/echonexusprotocol",
+                    "Nexus corruption and memory escalation chapter."),
+            new ExpectedEchoModule("echoagriculturereclamation", "ECHO: Agriculture Reclamation",
+                    "addons/echoagriculturereclamation", "Ecology, agriculture, hydroponics, and restoration chapter."),
+            new ExpectedEchoModule("echostationfall", "ECHO: Stationfall", "addons/echostationfall",
+                    "Station ECHO horror chapter."),
+            new ExpectedEchoModule("echoblackboxprotocol", "ECHO: Blackbox Protocol",
+                    "addons/echoblackboxprotocol", "Late-game memory finale."),
+            new ExpectedEchoModule("echoindustrialnexus", "ECHO: Industrial Nexus",
+                    "addons/echoindustrialnexus", "Machines, Thermal Flux, salvage processing, ducts, and filters."),
+            new ExpectedEchoModule("echologisticsnetwork", "ECHO: Logistics Network",
+                    "addons/echologisticsnetwork", "Storage, loadouts, remote requests, courier delivery, and depots."),
+            new ExpectedEchoModule("echorendercore", "ECHO: RenderCore",
+                    "addons/echorendercore", "Shared rendering, animation, overlays, and particle anchors."),
+            new ExpectedEchoModule("echoconvoyprotocol", "ECHO: Convoy Protocol",
+                    "addons/echoconvoyprotocol", "Vehicles, fuel, cargo, checkpoint gates, and travel routes."),
+            new ExpectedEchoModule("echoholomap", "ECHO: HoloMap",
+                    "addons/echoholomap", "Terminal-integrated command map, telemetry layers, and marker registry."),
+            new ExpectedEchoModule("echoindex", "ECHO: Index",
+                    "addons/echoindex", "Shared item, recipe, usage, discovery, and archive browser."),
+            new ExpectedEchoModule("echoarmory", "ECHO: Armory", "addons/echoarmory",
+                    "Weapons, armor, modules, energy recharge, faction locks, and loadout hooks."),
+            new ExpectedEchoModule("echolens", "ECHO: Lens", "addons/echolens",
+                    "Smart scanner HUD for blocks, entities, fluids, machines, and addon context."));
     public static final Identifier ACCEPT_FACTION_CONTRACT_ACTION =
             Identifier.fromNamespaceAndPath(EchoCore.MODID, "accept_contract");
     public static final Identifier COMPLETE_FACTION_CONTRACT_ACTION =
             Identifier.fromNamespaceAndPath(EchoCore.MODID, "complete_contract");
 
     private EchoCoreServices() {
+    }
+
+    public static void registerMissionService(IMissionService service) {
+        if (service == null) {
+            return;
+        }
+        EchoServiceRegistry.register(IMissionService.class, service);
+        replayMissionContent(service);
+    }
+
+    public static IMissionService missionService() {
+        return EchoServiceRegistry.getOrDefault(IMissionService.class, DEFAULT_MISSION_SERVICE);
+    }
+
+    public static boolean missionCoreAvailable() {
+        try {
+            return missionService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission service availability", missionService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerMissionContent(String source, MissionContentRegistrar registrar) {
+        if (registrar == null) {
+            return;
+        }
+        String safeSource = source == null || source.isBlank() ? "unknown" : source;
+        synchronized (MISSION_CONTENT_REGISTRARS) {
+            MISSION_CONTENT_REGISTRARS.computeIfAbsent(safeSource, ignored -> new ArrayList<>()).add(registrar);
+        }
+        IMissionService service = missionService();
+        if (service.available()) {
+            applyMissionRegistrar(service, safeSource, registrar);
+        }
+    }
+
+    public static void replayMissionContent(IMissionRegistry registry) {
+        if (registry == null) {
+            return;
+        }
+        List<Map.Entry<String, List<MissionContentRegistrar>>> entries;
+        synchronized (MISSION_CONTENT_REGISTRARS) {
+            entries = MISSION_CONTENT_REGISTRARS.entrySet().stream()
+                    .map(entry -> Map.entry(entry.getKey(), List.copyOf(entry.getValue())))
+                    .toList();
+        }
+        for (Map.Entry<String, List<MissionContentRegistrar>> entry : entries) {
+            for (MissionContentRegistrar registrar : entry.getValue()) {
+                applyMissionRegistrar(registry, entry.getKey(), registrar);
+            }
+        }
+    }
+
+    public static boolean startMission(ServerPlayer player, Identifier missionId) {
+        try {
+            return player != null && missionId != null && missionService().startMission(player, missionId);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission start", missionService(), exception);
+            return false;
+        }
+    }
+
+    public static boolean completeMission(ServerPlayer player, Identifier missionId) {
+        try {
+            return player != null && missionId != null && missionService().completeMission(player, missionId);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission completion", missionService(), exception);
+            return false;
+        }
+    }
+
+    public static boolean claimMissionReward(ServerPlayer player, Identifier missionId) {
+        try {
+            return player != null && missionId != null && missionService().claimReward(player, missionId);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission reward claim", missionService(), exception);
+            return false;
+        }
+    }
+
+    public static boolean handleMissionAction(ServerPlayer player, Identifier missionId, String actionId) {
+        try {
+            return player != null && missionId != null && missionService().handleAction(player, missionId, actionId);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission action", missionService(), exception);
+            return false;
+        }
+    }
+
+    public static boolean recordMissionObjective(
+            ServerPlayer player,
+            MissionObjectiveType type,
+            Identifier target,
+            int amount,
+            Map<String, String> context) {
+        try {
+            return player != null && missionService().recordObjective(player, type, target, amount, context);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission objective", missionService(), exception);
+            return false;
+        }
+    }
+
+    private static void applyMissionRegistrar(IMissionRegistry registry, String source, MissionContentRegistrar registrar) {
+        try {
+            registrar.register(registry);
+        } catch (RuntimeException exception) {
+            EchoCore.LOGGER.warn("ECHO mission content registrar '{}' failed; continuing without its output.", source, exception);
+        }
+    }
+
+    public static void registerNetworkService(INetworkService service) {
+        EchoServiceRegistry.register(INetworkService.class, service);
+    }
+
+    public static INetworkService networkService() {
+        return EchoServiceRegistry.getOrDefault(INetworkService.class, DEFAULT_NETWORK_SERVICE);
+    }
+
+    public static INetworkBridge networkBridge() {
+        INetworkBridge bridge = networkService().bridge();
+        return bridge == null ? INetworkBridge.NOOP : bridge;
+    }
+
+    public static void registerDataService(IDataService service) {
+        EchoServiceRegistry.register(IDataService.class, service);
+    }
+
+    public static IDataService dataService() {
+        return EchoServiceRegistry.getOrDefault(IDataService.class, NoOpDataService.INSTANCE);
+    }
+
+    public static <T> IDataKey<T> registerDataKey(IDataKey<T> key) {
+        try {
+            return dataService().registerKey(key);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("data key registration", dataService(), exception);
+            return NoOpDataService.INSTANCE.registerKey(key);
+        }
+    }
+
+    public static IPlayerDataView playerData(Player player) {
+        IDataService service = dataService();
+        try {
+            IPlayerDataView view = service.player(player);
+            return view == null ? NoOpDataService.INSTANCE.player(player) : view;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("player data", service, exception);
+            return NoOpDataService.INSTANCE.player(player);
+        }
+    }
+
+    public static IWorldDataView worldData(Level level) {
+        IDataService service = dataService();
+        try {
+            IWorldDataView view = service.world(level);
+            return view == null ? NoOpDataService.INSTANCE.world(level) : view;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("world data", service, exception);
+            return NoOpDataService.INSTANCE.world(level);
+        }
+    }
+
+    public static ITeamDataView teamData(Level level, Identifier teamId) {
+        IDataService service = dataService();
+        try {
+            ITeamDataView view = service.team(level, teamId);
+            return view == null ? NoOpDataService.INSTANCE.team(level, teamId) : view;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("team data", service, exception);
+            return NoOpDataService.INSTANCE.team(level, teamId);
+        }
+    }
+
+    public static IDataSyncBridge dataSyncBridge() {
+        IDataService service = dataService();
+        try {
+            IDataSyncBridge bridge = service.syncBridge();
+            return bridge == null ? IDataSyncBridge.NOOP : bridge;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("data sync bridge", service, exception);
+            return IDataSyncBridge.NOOP;
+        }
+    }
+
+    public static void registerIndexService(IIndexService service) {
+        IIndexService safe = service == null ? NoOpIndexService.INSTANCE : service;
+        EchoServiceRegistry.register(IIndexService.class, safe);
+        for (IIndexEntryProvider provider : INDEX_ENTRY_PROVIDERS) {
+            safeRegisterIndexProvider(safe, provider);
+        }
+        for (IIndexRecipeProvider provider : INDEX_RECIPE_PROVIDERS) {
+            safeRegisterIndexRecipeProvider(safe, provider);
+        }
+    }
+
+    public static IIndexService indexService() {
+        return EchoServiceRegistry.getOrDefault(IIndexService.class, DEFAULT_INDEX_SERVICE);
+    }
+
+    public static boolean indexAvailable() {
+        try {
+            return indexService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index service availability", indexService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerIndexProvider(IIndexEntryProvider provider) {
+        if (provider == null) {
+            return;
+        }
+        Identifier providerId = safeIndexProviderId(provider);
+        if (providerId == null) {
+            warnInvalidProviderOutput("index entry", provider, "provider id is null");
+            return;
+        }
+        for (IIndexEntryProvider existing : INDEX_ENTRY_PROVIDERS) {
+            Identifier existingId = safeIndexProviderId(existing);
+            if (providerId.equals(existingId)) {
+                if (existing != provider) {
+                    warnInvalidProviderOutput("index entry", provider,
+                            "duplicate provider id " + providerId + " ignored");
+                }
+                return;
+            }
+        }
+        INDEX_ENTRY_PROVIDERS.add(provider);
+        safeRegisterIndexProvider(indexService(), provider);
+    }
+
+    public static void registerIndexRecipeProvider(IIndexRecipeProvider provider) {
+        if (provider == null) {
+            return;
+        }
+        Identifier providerId = safeIndexRecipeProviderId(provider);
+        if (providerId == null) {
+            warnInvalidProviderOutput("index recipe", provider, "provider id is null");
+            return;
+        }
+        for (IIndexRecipeProvider existing : INDEX_RECIPE_PROVIDERS) {
+            Identifier existingId = safeIndexRecipeProviderId(existing);
+            if (providerId.equals(existingId)) {
+                if (existing != provider) {
+                    warnInvalidProviderOutput("index recipe", provider,
+                            "duplicate provider id " + providerId + " ignored");
+                }
+                return;
+            }
+        }
+        INDEX_RECIPE_PROVIDERS.add(provider);
+        safeRegisterIndexRecipeProvider(indexService(), provider);
+    }
+
+    public static List<IndexCategory> indexCategories(Player player) {
+        IIndexService service = indexService();
+        try {
+            List<IndexCategory> categories = service.registry().categories(player);
+            return categories == null ? List.of() : categories;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index categories", service, exception);
+            return List.of();
+        }
+    }
+
+    public static List<IndexEntry> indexEntries(Player player) {
+        IIndexService service = indexService();
+        try {
+            List<IndexEntry> entries = service.registry().entries(player);
+            return entries == null ? List.of() : entries;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index entries", service, exception);
+            return List.of();
+        }
     }
 
     public static void registerPackModeService(EchoPackModeService service) {
@@ -69,7 +408,30 @@ public final class EchoCoreServices {
                 chapterCapability(player, modList, "nexus_protocol", "echonexusprotocol", "Nexus Protocol"),
                 chapterCapability(player, modList, "blackbox_protocol", "echoblackboxprotocol", "Blackbox Protocol"),
                 chapterCapability(player, modList, "agriculture_reclamation", "echoagriculturereclamation", "Agriculture Reclamation"),
-                chapterCapability(player, modList, "industrial_nexus", "echoindustrialnexus", "Industrial Nexus"));
+                chapterCapability(player, modList, "industrial_nexus", "echoindustrialnexus", "Industrial Nexus"),
+                chapterCapability(player, modList, "logistics_network", "echologisticsnetwork", "Logistics Network"),
+                chapterCapability(player, modList, "convoy_protocol", "echoconvoyprotocol", "Convoy Protocol"),
+                chapterCapability(player, modList, "armory", "echoarmory", "Armory"),
+                chapterCapability(player, modList, "lens", "echolens", "Lens"));
+    }
+
+    public static List<EchoModuleInfo> moduleReport() {
+        ModList modList = ModList.get();
+        return ECHO_MODULE_CATALOG.stream()
+                .map(module -> runtimeModuleInfo(modList, module))
+                .toList();
+    }
+
+    public static String moduleReportSummary() {
+        List<EchoModuleInfo> modules = moduleReport();
+        long loaded = modules.stream().filter(EchoModuleInfo::loaded).count();
+        String loadedModules = modules.stream()
+                .filter(EchoModuleInfo::loaded)
+                .map(module -> module.modId() + ":" + (module.version().isBlank() ? "unknown" : module.version()))
+                .sorted()
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("none");
+        return "modules=" + loaded + "/" + modules.size() + " [" + loadedModules + "]";
     }
 
     public static void registerProfileService(EchoProfileService service) {
@@ -178,7 +540,7 @@ public final class EchoCoreServices {
             return false;
         }
         EchoDiscoveryData.saveAndSync(player, data);
-        sendOptionalPayload(player, new DiscoveryToastPacket(entry.get()));
+        networkBridge().sendDiscoveryToast(player, new EchoDiscoveryToast(entry.get()));
         return true;
     }
 
@@ -207,6 +569,106 @@ public final class EchoCoreServices {
             }
         }
         return discovered;
+    }
+
+    public static void registerWorldRegionService(IWorldRegionService service) {
+        IWorldRegionService safe = service == null ? NoOpWorldService.INSTANCE : service;
+        EchoServiceRegistry.register(IWorldRegionService.class, safe);
+        EchoServiceRegistry.register(IRegionService.class, safe);
+        EchoServiceRegistry.register(IHazardService.class, safe);
+        EchoServiceRegistry.register(IWorldMarkerService.class, safe);
+        EchoServiceRegistry.register(IStructureDiscoveryService.class, safe);
+    }
+
+    public static IWorldRegionService worldRegions() {
+        return EchoServiceRegistry.getOrDefault(IWorldRegionService.class, NoOpWorldService.INSTANCE);
+    }
+
+    public static IRegionService regionService() {
+        return EchoServiceRegistry.getOrDefault(IRegionService.class, worldRegions());
+    }
+
+    public static IHazardService hazardService() {
+        return EchoServiceRegistry.getOrDefault(IHazardService.class, worldRegions());
+    }
+
+    public static IWorldMarkerService worldMarkerService() {
+        return EchoServiceRegistry.getOrDefault(IWorldMarkerService.class, worldRegions());
+    }
+
+    public static IStructureDiscoveryService structureDiscoveryService() {
+        return EchoServiceRegistry.getOrDefault(IStructureDiscoveryService.class, worldRegions());
+    }
+
+    public static void registerMapMarkerService(IMapMarkerService service) {
+        IMapMarkerService safe = service == null ? NoOpMapService.INSTANCE : service;
+        EchoServiceRegistry.register(IMapMarkerService.class, safe);
+        for (IMapDataProvider provider : MAP_DATA_PROVIDERS) {
+            safeRegisterMapProvider(safe, provider);
+        }
+    }
+
+    public static IMapMarkerService mapMarkerService() {
+        return EchoServiceRegistry.getOrDefault(IMapMarkerService.class, NoOpMapService.INSTANCE);
+    }
+
+    public static void registerMapDataProvider(IMapDataProvider provider) {
+        if (provider == null) {
+            return;
+        }
+        Identifier providerId = safeMapProviderId(provider);
+        if (providerId == null) {
+            warnInvalidProviderOutput("map data", provider, "provider id is null");
+            return;
+        }
+        for (IMapDataProvider existing : MAP_DATA_PROVIDERS) {
+            Identifier existingId = safeMapProviderId(existing);
+            if (providerId.equals(existingId)) {
+                if (existing != provider) {
+                    warnInvalidProviderOutput("map data", provider,
+                            "duplicate provider id " + providerId + " ignored");
+                }
+                return;
+            }
+        }
+        MAP_DATA_PROVIDERS.add(provider);
+        safeRegisterMapProvider(mapMarkerService(), provider);
+    }
+
+    public static List<IMapLayer> mapLayers(Player player) {
+        IMapMarkerService service = mapMarkerService();
+        try {
+            List<IMapLayer> layers = service.layers(player);
+            return layers == null ? List.of() : layers;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("map layer", service, exception);
+            return List.of();
+        }
+    }
+
+    public static List<IMapMarker> mapMarkers(Player player) {
+        IMapMarkerService service = mapMarkerService();
+        try {
+            List<IMapMarker> markers = service.markers(player);
+            return markers == null ? List.of() : markers;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("map marker", service, exception);
+            return List.of();
+        }
+    }
+
+    public static boolean refreshMapMarkers(ServerPlayer player, String reason) {
+        IMapMarkerService service = mapMarkerService();
+        try {
+            return player != null && service.refresh(player, reason == null ? "" : reason);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("map refresh", service, exception);
+            return false;
+        }
+    }
+
+    public static int mapDataProviderCount() {
+        return MAP_DATA_PROVIDERS.size();
     }
 
     public static void syncDiscoveryDataToClient(ServerPlayer player) {
@@ -473,7 +935,7 @@ public final class EchoCoreServices {
 
     public static void syncFactionDataToClient(ServerPlayer player) {
         if (player != null) {
-            sendOptionalPayload(player, new EchoFactionSyncPacket(EchoFactionDataService.exportRoot(player)));
+            networkBridge().syncFactionData(player, EchoFactionDataService.exportRoot(player));
         }
     }
 
@@ -850,17 +1312,27 @@ public final class EchoCoreServices {
         RECOVERY_SERVICES.clear();
         FACTION_STANDING_SERVICES.clear();
         FACTION_ACTION_SERVICES.clear();
+        MAP_DATA_PROVIDERS.clear();
         EchoDiscoveryRegistry.clearForTests();
+        EchoDataBus.clearForTests();
+        NoOpDataService.INSTANCE.clearRegisteredKeysForTests();
     }
 
     public static String platformProviderSummary() {
+        IDataService dataService = dataService();
         return "packMode=" + detectPackMode(null).name()
+                + ", " + moduleReportSummary()
+                + ", dataService=" + providerName(dataService)
+                + ", dataKeys=" + dataService.registeredKeys().size()
                 + ", routes=" + ROUTE_RECORD_SERVICES.size()
                 + ", diagnostics=" + DIAGNOSTIC_SERVICES.size()
                 + ", hazards=" + HAZARD_TELEMETRY_SERVICES.size()
                 + ", recovery=" + RECOVERY_SERVICES.size()
                 + ", factionStanding=" + FACTION_STANDING_SERVICES.size()
                 + ", factionActions=" + FACTION_ACTION_SERVICES.size()
+                + ", mapService=" + providerName(mapMarkerService())
+                + ", mapProviders=" + MAP_DATA_PROVIDERS.size()
+                + ", worldRegions=" + (EchoServiceRegistry.find(IWorldRegionService.class).isPresent() ? 1 : 0)
                 + ", discoveryProviders=" + EchoDiscoveryRegistry.providerCount()
                 + ", factions=" + factionDefinitions().size();
     }
@@ -906,6 +1378,66 @@ public final class EchoCoreServices {
         } catch (RuntimeException exception) {
             warnProviderFailure("faction action support", service, exception);
             return false;
+        }
+    }
+
+    private static void safeRegisterMapProvider(IMapMarkerService service, IMapDataProvider provider) {
+        if (service == null || provider == null || service == NoOpMapService.INSTANCE) {
+            return;
+        }
+        try {
+            service.registerProvider(provider);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("map data registration", provider, exception);
+        }
+    }
+
+    private static Identifier safeMapProviderId(IMapDataProvider provider) {
+        try {
+            return provider == null ? null : provider.providerId();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("map provider id", provider, exception);
+            return null;
+        }
+    }
+
+    private static void safeRegisterIndexProvider(IIndexService service, IIndexEntryProvider provider) {
+        if (service == null || provider == null || service == NoOpIndexService.INSTANCE) {
+            return;
+        }
+        try {
+            provider.register(service.registry());
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index entry registration", provider, exception);
+        }
+    }
+
+    private static void safeRegisterIndexRecipeProvider(IIndexService service, IIndexRecipeProvider provider) {
+        if (service == null || provider == null || service == NoOpIndexService.INSTANCE) {
+            return;
+        }
+        try {
+            service.recipes().registerProvider(provider);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index recipe registration", provider, exception);
+        }
+    }
+
+    private static Identifier safeIndexProviderId(IIndexEntryProvider provider) {
+        try {
+            return provider == null ? null : provider.id();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index entry provider id", provider, exception);
+            return null;
+        }
+    }
+
+    private static Identifier safeIndexRecipeProviderId(IIndexRecipeProvider provider) {
+        try {
+            return provider == null ? null : provider.id();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index recipe provider id", provider, exception);
+            return null;
         }
     }
 
@@ -1008,17 +1540,6 @@ public final class EchoCoreServices {
                 surface, providerName(provider), exception);
     }
 
-    private static void sendOptionalPayload(ServerPlayer player, CustomPacketPayload payload) {
-        try {
-            PacketDistributor.sendToPlayer(player, payload);
-        } catch (UnsupportedOperationException | IllegalStateException exception) {
-            EchoCore.LOGGER.debug("Skipped optional ECHO payload {} for {}: {}",
-                    payload.type().id(),
-                    player == null ? "<null>" : player.getScoreboardName(),
-                    exception.getMessage());
-        }
-    }
-
     private static void warnInvalidProviderOutput(String surface, Object provider, String detail) {
         EchoCore.LOGGER.warn("ECHO platform {} provider {} returned invalid output: {}.",
                 surface, providerName(provider), detail);
@@ -1051,7 +1572,10 @@ public final class EchoCoreServices {
         boolean nexus = modList.isLoaded("echonexusprotocol");
         boolean blackbox = modList.isLoaded("echoblackboxprotocol");
         boolean industrial = modList.isLoaded("echoindustrialnexus");
-        if (ashfall && orbital && stationfall && nexus && blackbox && industrial) {
+        boolean logistics = modList.isLoaded("echologisticsnetwork");
+        boolean convoy = modList.isLoaded("echoconvoyprotocol");
+        boolean armory = modList.isLoaded("echoarmory");
+        if (ashfall && orbital && stationfall && nexus && blackbox && industrial && logistics && convoy && armory) {
             return EchoPackMode.FULL_SAGA_WITH_EXTENSIONS;
         }
         if (ashfall && orbital && stationfall && nexus && blackbox) {
@@ -1093,6 +1617,25 @@ public final class EchoCoreServices {
             status = "Chapter provider failed while reporting availability.";
         }
         return new EchoChapterCapability(chapterId, provider.displayName(), installed, available, status);
+    }
+
+    private static EchoModuleInfo runtimeModuleInfo(ModList modList, ExpectedEchoModule expected) {
+        boolean loaded = modList.isLoaded(expected.modId());
+        String displayName = expected.displayName();
+        String version = "";
+        if (loaded) {
+            Optional<? extends net.neoforged.fml.ModContainer> container = modList.getModContainerById(expected.modId());
+            if (container.isPresent()) {
+                try {
+                    displayName = container.get().getModInfo().getDisplayName();
+                    version = container.get().getModInfo().getVersion().toString();
+                } catch (RuntimeException exception) {
+                    warnProviderFailure("module metadata " + expected.modId(), container.get(), exception);
+                }
+            }
+        }
+        return new EchoModuleInfo(expected.modId(), displayName, version, expected.projectPath(),
+                expected.ownership(), loaded, true);
     }
 
     private static TerminalPlacementService terminalPlacementService() {
@@ -1217,5 +1760,8 @@ public final class EchoCoreServices {
             }
             root.putInt(prefix + "_count", index);
         }
+    }
+
+    private record ExpectedEchoModule(String modId, String displayName, String projectPath, String ownership) {
     }
 }

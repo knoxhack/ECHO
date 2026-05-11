@@ -1,15 +1,20 @@
 package com.knoxhack.echoconvoyprotocol.test;
 
 import com.google.gson.JsonParser;
+import com.google.gson.JsonParseException;
 import com.knoxhack.echoconvoyprotocol.EchoConvoyProtocol;
 import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyStationBlockEntity;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyJsonReloadListener;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
 import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleEntity;
+import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleKind;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyCoreIntegration;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyMissionProvider;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyRenderCoreVisuals;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyTerminalCommonIntegration;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyTerminalIds;
+import com.knoxhack.echoconvoyprotocol.menu.ConvoyStationMenu;
 import com.knoxhack.echoconvoyprotocol.network.ConvoyTerminalClientState;
 import com.knoxhack.echoconvoyprotocol.network.ConvoyTerminalStatePacket;
 import com.knoxhack.echoconvoyprotocol.progress.ConvoyProgress;
@@ -25,6 +30,9 @@ import com.knoxhack.echocore.api.EchoDiscoveryProvider;
 import com.knoxhack.echocore.api.EchoDiscoveryState;
 import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -46,6 +54,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -54,6 +63,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -61,6 +71,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModGameTests {
    private static final String PROGRESS_ROOT = "echoconvoyprotocol";
+   private static final int TEST_PADDING = 48;
 
    private static final DeferredRegister<Consumer<GameTestHelper>> TEST_FUNCTIONS =
       DeferredRegister.create(Registries.TEST_FUNCTION, EchoConvoyProtocol.MODID);
@@ -69,8 +80,14 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("module_registration", () -> ModGameTests::moduleRegistration);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROUTE_PARSER =
       TEST_FUNCTIONS.register("route_parser", () -> ModGameTests::routeParser);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROUTE_PARSER_VALIDATION =
+      TEST_FUNCTIONS.register("route_parser_validation", () -> ModGameTests::routeParserValidation);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> VEHICLE_STATE =
       TEST_FUNCTIONS.register("vehicle_state", () -> ModGameTests::vehicleState);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> VEHICLE_DIMENSIONS =
+      TEST_FUNCTIONS.register("vehicle_dimensions", () -> ModGameTests::vehicleDimensions);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> VEHICLE_KIT_DEPLOYMENT =
+      TEST_FUNCTIONS.register("vehicle_kit_deployment", () -> ModGameTests::vehicleKitDeployment);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FUEL_CONSUMPTION =
       TEST_FUNCTIONS.register("fuel_consumption", () -> ModGameTests::fuelConsumption);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STATION_REPAIR =
@@ -87,6 +104,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("marker_mismatch", () -> ModGameTests::markerMismatch);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STATION_OWNERSHIP =
       TEST_FUNCTIONS.register("station_ownership", () -> ModGameTests::stationOwnership);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CARGO_ANCHOR_NO_DELETION =
+      TEST_FUNCTIONS.register("cargo_anchor_no_deletion", () -> ModGameTests::cargoAnchorNoDeletion);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_WIRING =
       TEST_FUNCTIONS.register("core_wiring", () -> ModGameTests::coreWiring);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_ACTIONS =
@@ -105,8 +124,12 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("core_route_telemetry", () -> ModGameTests::coreRouteTelemetry);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORLDGEN_RESOURCE_COVERAGE =
       TEST_FUNCTIONS.register("worldgen_resource_coverage", () -> ModGameTests::worldgenResourceCoverage);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RUNTIME_ASSET_COVERAGE =
+      TEST_FUNCTIONS.register("runtime_asset_coverage", () -> ModGameTests::runtimeAssetCoverage);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> PRODUCTION_RELOAD_SOAK =
       TEST_FUNCTIONS.register("production_reload_soak", () -> ModGameTests::productionReloadSoak);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RENDERCORE_ROVER_VISUALS =
+      TEST_FUNCTIONS.register("rendercore_rover_visuals", () -> ModGameTests::renderCoreRoverVisuals);
 
    private ModGameTests() {
    }
@@ -119,7 +142,10 @@ public final class ModGameTests {
       Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("convoy_protocol"));
       register(event, environment, "module_registration", MODULE_REGISTRATION.getId());
       register(event, environment, "route_parser", ROUTE_PARSER.getId());
+      register(event, environment, "route_parser_validation", ROUTE_PARSER_VALIDATION.getId());
       register(event, environment, "vehicle_state", VEHICLE_STATE.getId());
+      register(event, environment, "vehicle_dimensions", VEHICLE_DIMENSIONS.getId());
+      register(event, environment, "vehicle_kit_deployment", VEHICLE_KIT_DEPLOYMENT.getId());
       register(event, environment, "fuel_consumption", FUEL_CONSUMPTION.getId());
       register(event, environment, "station_repair", STATION_REPAIR.getId());
       register(event, environment, "route_completion", ROUTE_COMPLETION.getId());
@@ -128,6 +154,7 @@ public final class ModGameTests {
       register(event, environment, "checkpoint_progress", CHECKPOINT_PROGRESS.getId());
       register(event, environment, "marker_mismatch", MARKER_MISMATCH.getId());
       register(event, environment, "station_ownership", STATION_OWNERSHIP.getId());
+      register(event, environment, "cargo_anchor_no_deletion", CARGO_ANCHOR_NO_DELETION.getId());
       register(event, environment, "core_wiring", CORE_WIRING.getId());
       register(event, environment, "terminal_actions", TERMINAL_ACTIONS.getId());
       register(event, environment, "terminal_snapshot", TERMINAL_SNAPSHOT.getId());
@@ -137,7 +164,9 @@ public final class ModGameTests {
       register(event, environment, "relay_deployment", RELAY_DEPLOYMENT.getId());
       register(event, environment, "core_route_telemetry", CORE_ROUTE_TELEMETRY.getId());
       register(event, environment, "worldgen_resource_coverage", WORLDGEN_RESOURCE_COVERAGE.getId());
+      register(event, environment, "runtime_asset_coverage", RUNTIME_ASSET_COVERAGE.getId());
       register(event, environment, "production_reload_soak", PRODUCTION_RELOAD_SOAK.getId());
+      register(event, environment, "rendercore_rover_visuals", RENDERCORE_ROVER_VISUALS.getId());
    }
 
    private static void moduleRegistration(GameTestHelper helper) {
@@ -145,6 +174,18 @@ public final class ModGameTests {
       helper.assertTrue(ModItems.SCRAP_BIKE_KIT.get() != Items.AIR, "Scrap Bike Kit should be registered");
       helper.assertTrue(ModEntities.SCRAP_BIKE.get() != null, "Scrap Bike entity should be registered");
       helper.assertTrue(ModEntities.ARMORED_RELAY_TRUCK.get() != null, "Armored Relay Truck entity should be registered");
+      helper.succeed();
+   }
+
+   private static void renderCoreRoverVisuals(GameTestHelper helper) {
+      helper.assertTrue("DAMAGED".equals(ConvoyRenderCoreVisuals.roverVisualStateName(true, true, true, true)),
+         "Damaged rovers should use DAMAGED visuals first.");
+      helper.assertTrue("OFFLINE".equals(ConvoyRenderCoreVisuals.roverVisualStateName(false, false, false, false)),
+         "Unpowered rovers should use OFFLINE visuals.");
+      helper.assertTrue("ACTIVE".equals(ConvoyRenderCoreVisuals.roverVisualStateName(false, true, true, true)),
+         "Driven rovers should use ACTIVE visuals.");
+      helper.assertTrue("ONLINE".equals(ConvoyRenderCoreVisuals.roverVisualStateName(false, true, false, false)),
+         "Powered idle rovers should use ONLINE visuals.");
       helper.succeed();
    }
 
@@ -160,6 +201,20 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void routeParserValidation(GameTestHelper helper) {
+      assertParserRejects(helper, "missing_item",
+         "{\"title\":\"Bad Route\",\"requiredVehicle\":\"scrap_bike\",\"rewards\":[{\"item\":\"missing:nope\",\"count\":1}]}");
+      assertParserRejects(helper, "negative_count",
+         "{\"title\":\"Bad Route\",\"requiredVehicle\":\"scrap_bike\",\"rewards\":[{\"item\":\"minecraft:bread\",\"count\":0}]}");
+      assertParserRejects(helper, "unknown_vehicle",
+         "{\"title\":\"Bad Route\",\"requiredVehicle\":\"hovercraft\",\"rewards\":[{\"item\":\"minecraft:bread\",\"count\":1}]}");
+      assertParserRejects(helper, "impossible_fuel",
+         "{\"title\":\"Bad Route\",\"requiredVehicle\":\"scrap_bike\",\"minFuel\":999,\"rewards\":[{\"item\":\"minecraft:bread\",\"count\":1}]}");
+      assertParserRejects(helper, "duplicate_leg",
+         "{\"title\":\"Bad Route\",\"requiredVehicle\":\"scrap_bike\",\"rewards\":[{\"item\":\"minecraft:bread\",\"count\":1}],\"legs\":[{\"id\":\"dup\"},{\"id\":\"dup\"}]}");
+      helper.succeed();
+   }
+
    private static void vehicleState(GameTestHelper helper) {
       ConvoyVehicleEntity vehicle = spawnBike(helper, new BlockPos(1, 2, 1));
       vehicle.insertCargo(new ItemStack(Items.APPLE, 3));
@@ -168,6 +223,42 @@ public final class ModGameTests {
       helper.assertTrue(vehicle.damage() == 12, "Vehicle damage should increase");
       vehicle.repair(5);
       helper.assertTrue(vehicle.damage() == 7, "Vehicle repair should reduce damage");
+      helper.succeed();
+   }
+
+   private static void vehicleDimensions(GameTestHelper helper) {
+      assertVehicleFootprint(helper, ModEntities.SCRAP_BIKE.get(), ConvoyVehicleKind.SCRAP_BIKE, 1.2D, 1.1D, 0.8D);
+      assertVehicleFootprint(helper, ModEntities.WASTELAND_ROVER.get(), ConvoyVehicleKind.WASTELAND_ROVER, 2.2D, 1.7D, 1.3D);
+      assertVehicleFootprint(helper, ModEntities.CARGO_CRAWLER.get(), ConvoyVehicleKind.CARGO_CRAWLER, 3.0D, 2.0D, 1.55D);
+      assertVehicleFootprint(helper, ModEntities.ARMORED_RELAY_TRUCK.get(), ConvoyVehicleKind.ARMORED_RELAY_TRUCK, 2.85D, 2.05D, 1.55D);
+      helper.succeed();
+   }
+
+   private static void vehicleKitDeployment(GameTestHelper helper) {
+      for (int x = -2; x <= 6; x++) {
+         for (int z = 1; z <= 9; z++) {
+            helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+         }
+      }
+      Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+      player.setPos(helper.absolutePos(new BlockPos(2, 2, 2)).getCenter());
+      player.setYRot(0.0F);
+      ItemStack kit = new ItemStack(ModItems.WASTELAND_ROVER_KIT.get());
+      player.setItemInHand(InteractionHand.MAIN_HAND, kit);
+
+      InteractionResult result = ModItems.WASTELAND_ROVER_KIT.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+      List<ConvoyVehicleEntity> vehicles = helper.getLevel().getEntitiesOfClass(
+         ConvoyVehicleEntity.class,
+         new AABB(player.position(), player.position()).inflate(8.0D)
+      ).stream().filter(vehicle -> vehicle.kind() == ConvoyVehicleKind.WASTELAND_ROVER).toList();
+
+      helper.assertTrue(result == InteractionResult.SUCCESS_SERVER, "Wasteland Rover Kit should deploy from a clear staging area");
+      helper.assertTrue(kit.isEmpty(), "Successful vehicle deployment should consume the kit outside creative mode");
+      helper.assertTrue(vehicles.size() == 1, "Exactly one Wasteland Rover should deploy");
+      ConvoyVehicleEntity vehicle = vehicles.getFirst();
+      helper.assertTrue(vehicle.getZ() > player.getZ() + 1.0D, "Vehicle should stage in front of the player");
+      helper.assertFalse(vehicle.getBoundingBox().intersects(player.getBoundingBox()), "Vehicle deployment should not overlap the player");
+      helper.assertTrue(helper.getLevel().noBlockCollision(vehicle, vehicle.getBoundingBox()), "Deployed vehicle should have clear block collision");
       helper.succeed();
    }
 
@@ -190,14 +281,16 @@ public final class ModGameTests {
 
    private static void stationRepair(GameTestHelper helper) {
       BlockPos stationPos = new BlockPos(1, 1, 1);
+      BlockPos vehiclePos = new BlockPos(2, 2, 1);
       helper.setBlock(stationPos, (Block)ModBlocks.FIELD_REPAIR_STATION.get());
+      helper.setBlock(vehiclePos.below(), Blocks.STONE);
       ConvoyStationBlockEntity station = helper.getBlockEntity(stationPos, ConvoyStationBlockEntity.class);
       station.setItem(ConvoyStationBlockEntity.INPUT_SLOT, new ItemStack(ModItems.CONVOY_REPAIR_KIT.get()));
-      ConvoyVehicleEntity vehicle = spawnBike(helper, new BlockPos(2, 2, 1));
+      ConvoyVehicleEntity vehicle = spawnBike(helper, vehiclePos);
       vehicle.applyVehicleDamage(30);
-      helper.runAfterDelay(25L, () -> {
+      helper.succeedWhen(() -> {
+         tickStation(helper, stationPos, station);
          helper.assertTrue(vehicle.damage() < 30, "Repair station should repair nearby vehicle");
-         helper.succeed();
       });
    }
 
@@ -293,28 +386,58 @@ public final class ModGameTests {
 
    private static void stationOwnership(GameTestHelper helper) {
       BlockPos stationPos = new BlockPos(1, 1, 1);
+      BlockPos vehiclePos = new BlockPos(2, 2, 1);
       helper.setBlock(stationPos, (Block)ModBlocks.FIELD_REPAIR_STATION.get());
+      helper.setBlock(vehiclePos.below(), Blocks.STONE);
       ConvoyStationBlockEntity station = helper.getBlockEntity(stationPos, ConvoyStationBlockEntity.class);
       station.setItem(ConvoyStationBlockEntity.INPUT_SLOT, new ItemStack(ModItems.CONVOY_REPAIR_KIT.get()));
 
-      Player owner = helper.makeMockPlayer(GameType.CREATIVE);
-      Player other = helper.makeMockPlayer(GameType.CREATIVE);
-      ConvoyVehicleEntity vehicle = spawnBike(helper, new BlockPos(2, 2, 1));
+      ServerPlayer owner = helper.makeMockServerPlayerInLevel();
+      ServerPlayer other = helper.makeMockServerPlayerInLevel();
+      ConvoyVehicleEntity vehicle = spawnBike(helper, vehiclePos);
       owner.setPos(vehicle.getX(), vehicle.getY(), vehicle.getZ());
       other.setPos(vehicle.getX(), vehicle.getY(), vehicle.getZ());
       vehicle.interact(owner, InteractionHand.MAIN_HAND, vehicle.position());
+      helper.assertTrue(vehicle.isOwner(owner), "Claimed vehicle should accept its owner");
       helper.assertFalse(vehicle.isOwner(other), "Claimed vehicle should reject a different operator");
 
       vehicle.applyVehicleDamage(30);
       station.linkOwner(other);
       helper.runAfterDelay(45L, () -> {
          helper.assertTrue(vehicle.damage() == 30, "Station linked to another operator should not repair the vehicle");
+         helper.assertTrue(station.getItem(ConvoyStationBlockEntity.INPUT_SLOT).is(ModItems.CONVOY_REPAIR_KIT.get()),
+            "Owner-locked station should not consume the repair kit");
          station.linkOwner(owner);
-         helper.runAfterDelay(45L, () -> {
+         helper.succeedWhen(() -> {
+            tickStation(helper, stationPos, station);
             helper.assertTrue(vehicle.damage() < 30, "Station linked to owner should repair the vehicle");
-            helper.succeed();
+            helper.getLevel().getServer().getPlayerList().remove(owner);
+            helper.getLevel().getServer().getPlayerList().remove(other);
          });
       });
+   }
+
+   private static void cargoAnchorNoDeletion(GameTestHelper helper) {
+      BlockPos anchorPos = new BlockPos(1, 1, 1);
+      helper.setBlock(anchorPos, (Block)ModBlocks.CARGO_ANCHOR.get());
+      ConvoyStationBlockEntity anchor = helper.getBlockEntity(anchorPos, ConvoyStationBlockEntity.class);
+      for (int slot = ConvoyStationBlockEntity.STORAGE_START; slot < ConvoyStationBlockEntity.SLOT_COUNT; slot++) {
+         anchor.setItem(slot, new ItemStack(Items.STONE, 64));
+      }
+
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      ConvoyVehicleEntity vehicle = spawnBike(helper, new BlockPos(2, 2, 1));
+      player.setPos(vehicle.getX(), vehicle.getY(), vehicle.getZ());
+      vehicle.interact(player, InteractionHand.MAIN_HAND, vehicle.position());
+      vehicle.insertCargo(new ItemStack(Items.APPLE, 4));
+
+      boolean unloaded = anchor.handleMenuButton(player, ConvoyStationMenu.BUTTON_UNLOAD);
+      helper.assertFalse(unloaded, "Cargo Anchor unload should report failure when storage is full");
+      helper.assertTrue(vehicle.cargoItemCount(Items.APPLE) == 4, "Rejected cargo should be restored to the vehicle");
+      for (int slot = ConvoyStationBlockEntity.STORAGE_START; slot < ConvoyStationBlockEntity.SLOT_COUNT; slot++) {
+         helper.assertTrue(anchor.getItem(slot).is(Items.STONE), "Full anchor storage should not receive rejected cargo");
+      }
+      helper.succeed();
    }
 
    private static void coreWiring(GameTestHelper helper) {
@@ -343,6 +466,29 @@ public final class ModGameTests {
          helper.assertTrue(ConvoyProgress.get(player).completed(routeId), "Terminal signal action should complete at nearby marker");
          helper.getLevel().getServer().getPlayerList().remove(player);
       });
+      TerminalMissionRegistry.withClearedForTests(() -> TerminalActionRegistry.withClearedForTests(() -> {
+         ConvoyTerminalCommonIntegration.register();
+         helper.assertTrue(TerminalMissionRegistry.provider(ConvoyTerminalIds.CONVOY_TAB).isPresent(),
+            "Convoy Field Assistant mission provider should be registered");
+         ServerPlayer player = helper.makeMockServerPlayerInLevel();
+         var prep = ConvoyMissionProvider.INSTANCE.snapshot(player, ConvoyMissionProvider.PREP_VEHICLE);
+         helper.assertTrue(prep.actionHint().contains("Vehicle Workbench"),
+            "Convoy Field Assistant should explain starter vehicle acquisition");
+         var startDefinition = ConvoyMissionProvider.INSTANCE.missions(player).stream()
+            .filter(mission -> mission.id().equals(ConvoyMissionProvider.START_ROUTE))
+            .findFirst()
+            .orElseThrow();
+         var startSnapshot = ConvoyMissionProvider.INSTANCE.snapshot(player, ConvoyMissionProvider.START_ROUTE);
+         var startPresentation = ConvoyMissionProvider.INSTANCE.presentation(player, startDefinition, startSnapshot);
+         var startVisuals = ConvoyMissionProvider.INSTANCE.visuals(player, startDefinition, startSnapshot);
+         helper.assertTrue(startDefinition.icon().is(ModItems.SCRAP_BIKE_KIT.get()),
+            "Vehicle-missing route blocker should use the required vehicle kit icon");
+         helper.assertTrue("warning".equals(startVisuals.visualTone()),
+            "Vehicle-missing route blocker should expose warning tone");
+         helper.assertTrue(startPresentation.tags().contains("Vehicle Missing"),
+            "Field Assistant presentation should tag the current blocker");
+         helper.getLevel().getServer().getPlayerList().remove(player);
+      }));
       helper.succeed();
    }
 
@@ -363,6 +509,9 @@ public final class ModGameTests {
       helper.assertTrue(snapshot.vehicleCargo().contains("Cargo 1/18"), "Terminal snapshot should include cargo slot use");
       helper.assertTrue(snapshot.cargoLines().stream().anyMatch(line -> line.contains("Engine Core")), "Terminal snapshot should include cargo item lines");
       helper.assertTrue(snapshot.activeLegStatus().contains("Salvager Checkpoint"), "Terminal snapshot should include active route leg");
+      helper.assertTrue(snapshot.assistantStatus().contains("Active route"), "Terminal snapshot should include Field Assistant status");
+      helper.assertTrue(snapshot.assistantLines().stream().anyMatch(line -> line.contains("SIGNAL")),
+         "Field Assistant should explain route signal closeout");
       helper.assertTrue(snapshot.nearbyPoiLines().stream().anyMatch(line -> line.contains("Roadside Signal Marker")), "Terminal snapshot should include nearby POIs");
       helper.getLevel().getServer().getPlayerList().remove(player);
       helper.succeed();
@@ -386,6 +535,9 @@ public final class ModGameTests {
       helper.assertTrue(blockedIndex >= 0, "Terminal snapshot should expose route ids for selectable rows");
       helper.assertTrue("blocked".equals(blockedSnapshot.routeBoardActions().get(blockedIndex)),
          "Terminal snapshot should mark missing-cargo routes as blocked");
+      helper.assertTrue(blockedSnapshot.assistantLines().stream().anyMatch(line ->
+            line.contains("Load") || line.contains("Bring") || line.contains("Craft") || line.contains("Fuel")),
+         "Field Assistant should explain the current route blocker");
 
       TerminalActionRegistry.withClearedForTests(() -> {
          ConvoyTerminalCommonIntegration.register();
@@ -401,6 +553,8 @@ public final class ModGameTests {
          "Terminal snapshot should mark prepared selected routes as startable");
       helper.assertTrue(routeId.toString().equals(readySnapshot.recommendedStartRouteId()),
          "Prepared selected route should become the terminal start payload when it is first startable");
+      helper.assertTrue(readySnapshot.assistantStatus().contains("Ready"),
+         "Field Assistant should surface start-ready route state");
 
       TerminalActionRegistry.withClearedForTests(() -> {
          ConvoyTerminalCommonIntegration.register();
@@ -465,14 +619,17 @@ public final class ModGameTests {
 
    private static void relayDeployment(GameTestHelper helper) {
       Player player = helper.makeMockPlayer(GameType.CREATIVE);
-      ConvoyVehicleEntity relay = spawnVehicle(helper, ModEntities.ARMORED_RELAY_TRUCK.get(), new BlockPos(2, 2, 2));
+      BlockPos relayPos = new BlockPos(2, 2, 2);
+      ConvoyVehicleEntity relay = spawnVehicle(helper, ModEntities.ARMORED_RELAY_TRUCK.get(), relayPos);
       player.setPos(relay.getX(), relay.getY(), relay.getZ());
-      helper.setBlock(new BlockPos(3, 1, 2), Blocks.STONE);
+      for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+         helper.setBlock(relayPos.relative(direction).below(), Blocks.STONE);
+      }
       int battery = relay.battery();
       player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModBlocks.FIELD_REPAIR_STATION.get().asItem()));
       relay.interact(player, InteractionHand.MAIN_HAND, relay.position());
-      helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(new BlockPos(3, 2, 2))).is(ModBlocks.FIELD_REPAIR_STATION.get()),
-         "Armored Relay Truck should deploy a real Field Repair Station");
+      helper.assertTrue(hasAdjacentFieldRepairStation(helper, relayPos),
+         "Armored Relay Truck should deploy a real adjacent Field Repair Station");
       helper.assertTrue(relay.battery() == battery - 20, "Field station deployment should consume relay battery");
       helper.succeed();
    }
@@ -522,6 +679,57 @@ public final class ModGameTests {
          "roadside/routes/northern_freight_destination.nbt"
       )) {
          assertResource(helper, "structures/" + structure);
+      }
+      helper.succeed();
+   }
+
+   private static void runtimeAssetCoverage(GameTestHelper helper) {
+      for (String block : List.of(
+         "vehicle_workbench",
+         "fuel_still",
+         "battery_charging_pad",
+         "vehicle_dock",
+         "convoy_beacon",
+         "roadside_signal_marker",
+         "cargo_anchor",
+         "field_repair_station"
+      )) {
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/blockstates/" + block + ".json");
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/items/" + block + ".json");
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/models/block/" + block + ".json");
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/models/item/" + block + ".json");
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/textures/block/" + block + ".png");
+      }
+      for (String item : List.of(
+         "scrap_tire",
+         "armored_tire",
+         "vehicle_frame",
+         "fuel_canister",
+         "battery_cell",
+         "engine_core",
+         "radiation_shielding_plate",
+         "convoy_repair_kit",
+         "cargo_net",
+         "route_beacon",
+         "scrap_bike_kit",
+         "wasteland_rover_kit",
+         "cargo_crawler_kit",
+         "armored_relay_truck_kit"
+      )) {
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/items/" + item + ".json");
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/models/item/" + item + ".json");
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/textures/item/" + item + ".png");
+      }
+      for (String kit : List.of("scrap_bike_kit", "wasteland_rover_kit", "cargo_crawler_kit", "armored_relay_truck_kit")) {
+         assertPngDimensions(helper, "assets/echoconvoyprotocol/textures/item/" + kit + ".png", 16, 16);
+      }
+      for (String entity : List.of("scrap_bike", "wasteland_rover", "cargo_crawler", "armored_relay_truck")) {
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/textures/entity/" + entity + ".png");
+         assertPngDimensions(helper, "assets/echoconvoyprotocol/textures/entity/" + entity + ".png", 256, 256);
+      }
+      for (String overlay : List.of("wasteland_rover_glow", "wasteland_rover_active_overlay", "wasteland_rover_damage_overlay")) {
+         assertClasspathResource(helper, "assets/echoconvoyprotocol/textures/entity/" + overlay + ".png");
+         assertPngDimensions(helper, "assets/echoconvoyprotocol/textures/entity/" + overlay + ".png", 256, 256);
       }
       helper.succeed();
    }
@@ -637,10 +845,71 @@ public final class ModGameTests {
       });
    }
 
+   private static void assertParserRejects(GameTestHelper helper, String path, String json) {
+      try {
+         ConvoyJsonReloadListener.parseRouteForTests(id(path), JsonParser.parseString(json).getAsJsonObject());
+         helper.fail("Route parser should reject invalid convoy route " + path);
+      } catch (JsonParseException expected) {
+         helper.assertTrue(expected.getMessage() != null && expected.getMessage().contains(path),
+            "Rejected route should include the route id in its error message");
+      }
+   }
+
    private static void assertResource(GameTestHelper helper, String path) {
       Identifier resourceId = id(path);
       helper.assertTrue(helper.getLevel().getServer().getResourceManager().getResource(resourceId).isPresent(),
          "Expected resource " + resourceId);
+   }
+
+   private static void assertClasspathResource(GameTestHelper helper, String path) {
+      helper.assertTrue(ModGameTests.class.getClassLoader().getResource(path) != null,
+         "Expected packaged resource " + path);
+   }
+
+   private static void assertPngDimensions(GameTestHelper helper, String path, int expectedWidth, int expectedHeight) {
+      try (InputStream stream = ModGameTests.class.getClassLoader().getResourceAsStream(path)) {
+         helper.assertTrue(stream != null, "Expected packaged PNG " + path);
+         byte[] header = stream.readNBytes(24);
+         helper.assertTrue(header.length == 24 && header[0] == (byte)0x89 && header[1] == 0x50 && header[2] == 0x4E
+               && header[3] == 0x47,
+            "Expected valid PNG signature for " + path);
+         int width = readPngInt(header, 16);
+         int height = readPngInt(header, 20);
+         helper.assertTrue(width == expectedWidth && height == expectedHeight,
+            path + " should be " + expectedWidth + "x" + expectedHeight + " but was " + width + "x" + height);
+      } catch (IOException exception) {
+         helper.fail("Could not read PNG header for " + path + ": " + exception.getMessage());
+      }
+   }
+
+   private static int readPngInt(byte[] header, int offset) {
+      return ((header[offset] & 0xFF) << 24)
+         | ((header[offset + 1] & 0xFF) << 16)
+         | ((header[offset + 2] & 0xFF) << 8)
+         | (header[offset + 3] & 0xFF);
+   }
+
+   private static void assertVehicleFootprint(
+      GameTestHelper helper,
+      EntityType<? extends ConvoyVehicleEntity> type,
+      ConvoyVehicleKind kind,
+      double expectedWidth,
+      double expectedHeight,
+      double expectedPassengerHeight
+   ) {
+      ConvoyVehicleEntity vehicle = spawnVehicle(helper, type, new BlockPos(kind.ordinal() * 4 + 1, 2, 1));
+      helper.assertTrue(vehicle.kind() == kind, kind.displayName() + " should keep its registered vehicle kind");
+      helper.assertTrue(closeTo(vehicle.getBoundingBox().getXsize(), expectedWidth, 0.04D),
+         kind.displayName() + " hitbox width should match the production vehicle footprint");
+      helper.assertTrue(closeTo(vehicle.getBoundingBox().getYsize(), expectedHeight, 0.04D),
+         kind.displayName() + " hitbox height should match the production vehicle footprint");
+      helper.assertTrue(closeTo(vehicle.kind().passengerHeight(), expectedPassengerHeight, 0.001D),
+         kind.displayName() + " passenger height should place riders on the larger body");
+      vehicle.discard();
+   }
+
+   private static boolean closeTo(double actual, double expected, double tolerance) {
+      return Math.abs(actual - expected) <= tolerance;
    }
 
    private static ConvoyVehicleEntity spawnVehicle(GameTestHelper helper, EntityType<? extends ConvoyVehicleEntity> type, BlockPos relativePos) {
@@ -655,9 +924,23 @@ public final class ModGameTests {
       return spawnVehicle(helper, ModEntities.SCRAP_BIKE.get(), relativePos);
    }
 
+   private static boolean hasAdjacentFieldRepairStation(GameTestHelper helper, BlockPos localOrigin) {
+      for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+         if (helper.getLevel().getBlockState(helper.absolutePos(localOrigin.relative(direction))).is(ModBlocks.FIELD_REPAIR_STATION.get())) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private static void tickStation(GameTestHelper helper, BlockPos localPos, ConvoyStationBlockEntity station) {
+      BlockPos worldPos = helper.absolutePos(localPos);
+      ConvoyStationBlockEntity.tick(helper.getLevel(), worldPos, helper.getLevel().getBlockState(worldPos), station);
+   }
+
    private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String testName, Identifier functionId) {
       TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData(
-         environment, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 2
+         environment, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, TEST_PADDING
       );
       event.registerTest(id(testName), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, functionId), data));
    }

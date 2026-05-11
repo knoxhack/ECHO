@@ -1,5 +1,12 @@
 package com.knoxhack.echoorbitalremnants;
 
+import com.knoxhack.echocore.api.config.EchoConfigCategory;
+import com.knoxhack.echocore.api.config.EchoConfigEntry;
+import com.knoxhack.echocore.api.config.EchoConfigModule;
+import com.knoxhack.echocore.api.config.EchoConfigProvider;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
+import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class Config {
@@ -86,6 +93,90 @@ public class Config {
             .define("progression.midGameObjectivesEnabled", true);
 
     static final ModConfigSpec SPEC = BUILDER.build();
+
+    public static void registerEchoConfig() {
+        EchoConfigRegistry.register(EchoConfigProvider.of(EchoOrbitalRemnants.MODID, () -> new EchoConfigModule(
+                EchoOrbitalRemnants.MODID,
+                "Orbital Remnants",
+                List.of(
+                        new EchoConfigCategory("balance", "Balance", List.of(
+                                EchoConfigEntry.booleanSpec("adventure_defaults", "Adventure Defaults",
+                                        "Keep orbital survival tense but recoverable.",
+                                        EchoConfigSide.COMMON, ADVENTURE_LEAN_DEFAULTS, true, false, false),
+                                EchoConfigEntry.enumSpec("difficulty_preset", "Difficulty Preset",
+                                        "Release route tuning preset.",
+                                        EchoConfigSide.COMMON, DIFFICULTY_PRESET, DifficultyPreset.class,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("hazard_drain_multiplier", "Hazard Drain Multiplier",
+                                        "Route hazard oxygen, pressure, and radiation drain percentage.",
+                                        EchoConfigSide.COMMON, HAZARD_DRAIN_MULTIPLIER, 25, 250,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("arrival_cache_support", "Arrival Cache Support",
+                                        "Multiplier for route arrival cache support items.",
+                                        EchoConfigSide.COMMON, ARRIVAL_CACHE_SUPPORT_MULTIPLIER, 1, 5,
+                                        true, false, false))),
+                        new EchoConfigCategory("survival", "Survival", List.of(
+                                EchoConfigEntry.intSpec("oxygen_drain_ticks", "Oxygen Drain Ticks",
+                                        "Ticks between oxygen loss while exposed to vacuum.",
+                                        EchoConfigSide.COMMON, OXYGEN_DRAIN_TICKS, 10, 400,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("radiation_gain_ticks", "Radiation Gain Ticks",
+                                        "Ticks between radiation increases in orbital or Nexus exposure.",
+                                        EchoConfigSide.COMMON, RADIATION_GAIN_TICKS, 20, 800,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("vacuum_damage_ticks", "Vacuum Damage Ticks",
+                                        "Ticks between pressure damage after oxygen or suit pressure fails.",
+                                        EchoConfigSide.COMMON, VACUUM_DAMAGE_TICKS, 20, 400,
+                                        true, false, false))),
+                        new EchoConfigCategory("launch", "Launch", List.of(
+                                EchoConfigEntry.intSpec("orbital_altitude", "Orbital Altitude",
+                                        "Overworld altitude treated as low orbit.",
+                                        EchoConfigSide.COMMON, ORBITAL_ALTITUDE, 256, 319,
+                                        true, false, false),
+                                EchoConfigEntry.booleanSpec("full_launch_readiness", "Full Launch Readiness",
+                                        "Require platform, suit, fuel, oxygen, and navigation parts.",
+                                        EchoConfigSide.COMMON, REQUIRE_FULL_LAUNCH_READINESS, true, false, false))),
+                        new EchoConfigCategory("events", "Events", List.of(
+                                EchoConfigEntry.intSpec("orbital_event_frequency", "Orbital Event Frequency",
+                                        "Average ticks between ambient orbital event warnings.",
+                                        EchoConfigSide.COMMON, ORBITAL_EVENT_FREQUENCY, 200, 24000,
+                                        true, false, false),
+                                EchoConfigEntry.booleanSpec("feature_threats", "Feature Threats",
+                                        "Dense route features may spawn ambient orbital threats.",
+                                        EchoConfigSide.COMMON, FEATURE_THREATS_ENABLED, true, false, false),
+                                EchoConfigEntry.intSpec("deep_site_threat_chance", "Deep Site Threat Chance",
+                                        "Percent chance for dense route features to spawn threats.",
+                                        EchoConfigSide.COMMON, DEEP_SITE_THREAT_CHANCE, 0, 100,
+                                        true, false, false))),
+                        new EchoConfigCategory("worldgen", "Worldgen", List.of(
+                                EchoConfigEntry.intSpec("route_feature_density", "Route Feature Density",
+                                        "Repeatable deep-site density in route dimensions.",
+                                        EchoConfigSide.COMMON, ROUTE_FEATURE_DENSITY, 1, 5,
+                                        true, true, true),
+                                EchoConfigEntry.booleanSpec("deep_site_caches", "Deep Site Caches",
+                                        "Generated deep route sites include fixed survival caches.",
+                                        EchoConfigSide.COMMON, DEEP_SITE_CACHES_ENABLED, true, true, true))),
+                        new EchoConfigCategory("machines", "Machines", List.of(
+                                EchoConfigEntry.intSpec("machine_base_duration", "Machine Base Duration",
+                                        "Base processing duration in ticks for orbital machines.",
+                                        EchoConfigSide.COMMON, MACHINE_BASE_DURATION, 20, 2400,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("charge_regen_ticks", "Charge Regen Ticks",
+                                        "Ticks between passive system charge regeneration.",
+                                        EchoConfigSide.COMMON, MACHINE_CHARGE_REGEN_TICKS, 1, 400,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("machine_max_charge", "Machine Max Charge",
+                                        "Maximum internal system charge stored by one machine.",
+                                        EchoConfigSide.COMMON, MACHINE_MAX_CHARGE, 10, 1000,
+                                        true, false, false))),
+                        new EchoConfigCategory("progression", "Progression", List.of(
+                                EchoConfigEntry.booleanSpec("dimension_unlocks", "Dimension Unlocks",
+                                        "Enforce later route unlock flags through terminal progression.",
+                                        EchoConfigSide.COMMON, DIMENSION_UNLOCKS_ENABLED, true, false, false),
+                                EchoConfigEntry.booleanSpec("mid_game_objectives", "Mid-Game Objectives",
+                                        "Require objective chains before the next route opens.",
+                                        EchoConfigSide.COMMON, MID_GAME_OBJECTIVES_ENABLED, true, false, false)))))));
+    }
 
     public static int tunedMachineDuration(int recipeDuration) {
         int scaled = Math.max(1, recipeDuration) * MACHINE_BASE_DURATION.get() / 160;

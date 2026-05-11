@@ -20,6 +20,8 @@ import net.minecraft.resources.Identifier;
 public final class TerminalClientOptions {
     public static NavigationStyle navigationStyle = NavigationStyle.APP_HUB;
     public static MissionView missionView = MissionView.VISUAL_QUEST_HUB;
+    public static InterfaceDensity interfaceDensity = InterfaceDensity.BALANCED;
+    public static TerminalZoom terminalZoom = TerminalZoom.ZOOM_100;
     public static VisualLevel visualLevel = VisualLevel.BALANCED;
     public static boolean reducedMotion = false;
     public static boolean missionHudNotifications = true;
@@ -27,6 +29,8 @@ public final class TerminalClientOptions {
     private static final String THEME_KEY = "theme";
     private static final String NAVIGATION_STYLE_KEY = "navigationStyle";
     private static final String MISSION_VIEW_KEY = "missionView";
+    private static final String INTERFACE_DENSITY_KEY = "interfaceDensity";
+    private static final String TERMINAL_ZOOM_KEY = "terminalZoom";
     private static final String VISUAL_LEVEL_KEY = "visualLevel";
     private static final String REDUCED_MOTION_KEY = "reducedMotion";
     private static final String MISSION_HUD_NOTIFICATIONS_KEY = "missionHudNotifications";
@@ -57,6 +61,16 @@ public final class TerminalClientOptions {
         return TerminalThemeRegistry.byId(selectedTheme);
     }
 
+    public static InterfaceDensity interfaceDensity() {
+        ensureLoaded();
+        return interfaceDensity;
+    }
+
+    public static TerminalZoom terminalZoom() {
+        ensureLoaded();
+        return terminalZoom;
+    }
+
     public static Identifier selectedThemeId() {
         ensureLoaded();
         return TerminalThemeRegistry.contains(selectedTheme)
@@ -81,6 +95,18 @@ public final class TerminalClientOptions {
     public static void selectMissionView(MissionView view) {
         ensureLoaded();
         missionView = view == null ? MissionView.VISUAL_QUEST_HUB : view;
+        save();
+    }
+
+    public static void selectInterfaceDensity(InterfaceDensity density) {
+        ensureLoaded();
+        interfaceDensity = density == null ? InterfaceDensity.BALANCED : density;
+        save();
+    }
+
+    public static void selectTerminalZoom(TerminalZoom zoom) {
+        ensureLoaded();
+        terminalZoom = zoom == null ? TerminalZoom.ZOOM_100 : zoom;
         save();
     }
 
@@ -142,6 +168,14 @@ public final class TerminalClientOptions {
                     MissionView.class,
                     properties.getProperty(MISSION_VIEW_KEY),
                     MissionView.VISUAL_QUEST_HUB);
+            interfaceDensity = enumValue(
+                    InterfaceDensity.class,
+                    properties.getProperty(INTERFACE_DENSITY_KEY),
+                    InterfaceDensity.BALANCED);
+            terminalZoom = enumValue(
+                    TerminalZoom.class,
+                    properties.getProperty(TERMINAL_ZOOM_KEY),
+                    TerminalZoom.ZOOM_100);
             visualLevel = enumValue(
                     VisualLevel.class,
                     properties.getProperty(VISUAL_LEVEL_KEY),
@@ -178,6 +212,8 @@ public final class TerminalClientOptions {
             properties.setProperty(THEME_KEY, selectedThemeId().toString());
             properties.setProperty(NAVIGATION_STYLE_KEY, navigationStyle.name());
             properties.setProperty(MISSION_VIEW_KEY, missionView.name());
+            properties.setProperty(INTERFACE_DENSITY_KEY, interfaceDensity.name());
+            properties.setProperty(TERMINAL_ZOOM_KEY, terminalZoom.name());
             properties.setProperty(VISUAL_LEVEL_KEY, visualLevel.name());
             properties.setProperty(REDUCED_MOTION_KEY, Boolean.toString(reducedMotion));
             properties.setProperty(MISSION_HUD_NOTIFICATIONS_KEY, Boolean.toString(missionHudNotifications));
@@ -219,6 +255,49 @@ public final class TerminalClientOptions {
         GUIDED,
         VISUAL_RPG,
         MINIMAL
+    }
+
+    public enum InterfaceDensity {
+        COMFORTABLE,
+        BALANCED,
+        COMPACT;
+
+        public int compactness() {
+            return switch (this) {
+                case COMFORTABLE -> 0;
+                case BALANCED -> 1;
+                case COMPACT -> 2;
+            };
+        }
+    }
+
+    public enum TerminalZoom {
+        ZOOM_50(50),
+        ZOOM_75(75),
+        ZOOM_85(85),
+        ZOOM_90(90),
+        ZOOM_100(100),
+        ZOOM_110(110),
+        ZOOM_125(125),
+        ZOOM_150(150);
+
+        private final int percent;
+
+        TerminalZoom(int percent) {
+            this.percent = percent;
+        }
+
+        public int percent() {
+            return percent;
+        }
+
+        public double scale() {
+            return percent / 100.0D;
+        }
+
+        public String label() {
+            return percent + "%";
+        }
     }
 
     public enum VisualLevel {

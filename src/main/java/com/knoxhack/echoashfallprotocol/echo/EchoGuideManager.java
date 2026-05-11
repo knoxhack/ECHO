@@ -110,10 +110,13 @@ public class EchoGuideManager {
 
         // Drone idle chatter (sparse contextual hints via hologram)
         if (currentTick % 40 == 0) {
-            com.knoxhack.echoashfallprotocol.echo.chat.EchoDroneVoice.tickIdleChatter(player, quest);
+            boolean chatterScheduleChanged =
+                    com.knoxhack.echoashfallprotocol.echo.chat.EchoDroneVoice.tickIdleChatter(player, quest);
             // Periodically sync drone mood with ECHO-7's current personality state
             com.knoxhack.echoashfallprotocol.echo.chat.EchoDroneVoice.syncMood(player);
-            player.setData(ModAttachments.QUEST_DATA.get(), quest);
+            if (chatterScheduleChanged) {
+                player.setData(ModAttachments.QUEST_DATA.get(), quest);
+            }
         }
     }
 
@@ -959,9 +962,14 @@ public class EchoGuideManager {
      */
     private static void completeMission(ServerPlayer player, QuestData quest, Mission mission) {
         applyMissionCompletionSideEffects(player, mission);
+        boolean missionCoreHandled = EchoCoreServices.completeMission(
+                player,
+                net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                        com.knoxhack.echoashfallprotocol.EchoAshfallProtocol.MODID,
+                        mission.id()));
 
         // Mark mission as completed in quest data
-        quest.completeMission(player, mission.id(), mission.rewards());
+        quest.completeMission(player, mission.id(), missionCoreHandled ? java.util.Collections.emptyList() : mission.rewards());
         quest.clearTurnInReminder(mission.id());
 
         // Green celebratory burst on the drone, if present
@@ -972,7 +980,9 @@ public class EchoGuideManager {
         sendMessage(player, quest, mission.completionMessage(), false, true);
         
         // Store rewards through the optional terminal service when ECHO Terminal is installed.
-        storeRewardsInTerminal(player, mission);
+        if (!missionCoreHandled) {
+            storeRewardsInTerminal(player, mission);
+        }
         
         // Advance to next mission
         int previousPhase = quest.getCurrentPhase();

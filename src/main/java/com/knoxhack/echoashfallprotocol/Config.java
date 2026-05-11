@@ -2,10 +2,17 @@ package com.knoxhack.echoashfallprotocol;
 
 import com.knoxhack.echoashfallprotocol.gameplay.DifficultyProfile;
 import com.knoxhack.echoashfallprotocol.worldgen.StructureType;
+import com.knoxhack.echocore.api.config.EchoConfigCategory;
+import com.knoxhack.echocore.api.config.EchoConfigEntry;
+import com.knoxhack.echocore.api.config.EchoConfigModule;
+import com.knoxhack.echocore.api.config.EchoConfigProvider;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -345,6 +352,74 @@ public class Config {
     }
 
     static final ModConfigSpec SPEC = BUILDER.build();
+
+    public static void registerEchoConfig() {
+        List<EchoConfigCategory> categories = List.of(
+                new EchoConfigCategory("survival", "Survival", List.of(
+                        EchoConfigEntry.booleanSpec("global_toxic_air", "Global Toxic Air",
+                                "Make toxic air active everywhere after grace expires.",
+                                EchoConfigSide.COMMON, GLOBAL_TOXIC_AIR, true, false, false),
+                        EchoConfigEntry.booleanSpec("biome_hazards", "Biome Hazards",
+                                "Enable biome-profile toxic, radiation, cryogenic, and Nexus hazards.",
+                                EchoConfigSide.COMMON, ENABLE_BIOME_HAZARDS, true, false, false),
+                        EchoConfigEntry.booleanSpec("radiation_storms", "Radiation Storms",
+                                "Enable radiation exposure during environmental radiation storms.",
+                                EchoConfigSide.COMMON, ENABLE_RADIATION_STORMS, true, false, false),
+                        EchoConfigEntry.intSpec("new_player_grace", "New Player Grace",
+                                "Ticks of new-player protection from survival hazards.",
+                                EchoConfigSide.COMMON, NEW_PLAYER_GRACE_TICKS, 0, 72000,
+                                true, false, false),
+                        EchoConfigEntry.intSpec("scrubber_safe_zone", "Scrubber Safe Zone",
+                                "Atmospheric Scrubber safe-zone radius in blocks.",
+                                EchoConfigSide.COMMON, SCRUBBER_SAFE_ZONE_RADIUS, 4, 64,
+                                true, false, false))),
+                new EchoConfigCategory("machines", "Machines", List.of(
+                        EchoConfigEntry.intSpec("recycler_process_time", "Recycler Process Time",
+                                "Ticks to process one item in the Hand Recycler.",
+                                EchoConfigSide.COMMON, RECYCLER_PROCESS_TIME, 20, 600,
+                                true, false, false),
+                        EchoConfigEntry.doubleSpec("generator_failure_chance", "Generator Failure Chance",
+                                "Chance per tick of generator failure while running.",
+                                EchoConfigSide.COMMON, GENERATOR_FAILURE_CHANCE, 0.0D, 0.1D,
+                                true, false, false))),
+                new EchoConfigCategory("echo", "ECHO", List.of(
+                        EchoConfigEntry.booleanSpec("echo_enabled", "ECHO Guidance",
+                                "Enable ECHO-7 guidance messages.",
+                                EchoConfigSide.COMMON, ECHO_ENABLED, true, false, false),
+                        EchoConfigEntry.intSpec("echo_message_cooldown", "Message Cooldown",
+                                "Ticks between ECHO guidance messages.",
+                                EchoConfigSide.COMMON, ECHO_MESSAGE_COOLDOWN, 100, 6000,
+                                true, false, false),
+                        EchoConfigEntry.booleanSpec("terminal_animation", "Terminal Animation",
+                                "Enable terminal animation treatments.",
+                                EchoConfigSide.COMMON, TERMINAL_ANIMATION, true, false, false),
+                        EchoConfigEntry.booleanSpec("verbose_tooltips", "Verbose Tooltips",
+                                "Show extra ECHO details in tooltips.",
+                                EchoConfigSide.COMMON, VERBOSE_TOOLTIPS, true, false, false))),
+                new EchoConfigCategory("worldgen", "Worldgen", List.of(
+                        EchoConfigEntry.booleanSpec("procedural_structures", "Procedural Structures",
+                                "Enable Ashfall Java-driven procedural structures.",
+                                EchoConfigSide.COMMON, ENABLE_PROCEDURAL_STRUCTURES, true, true, true),
+                        EchoConfigEntry.doubleSpec("structure_density", "Structure Density",
+                                "Global multiplier for Ashfall structure density.",
+                                EchoConfigSide.COMMON, STRUCTURE_GLOBAL_DENSITY_MULTIPLIER, 0.05D, 10.0D,
+                                true, true, true),
+                        EchoConfigEntry.intSpec("faction_hub_spacing", "Faction Hub Spacing",
+                                "Chunk spacing for faction hubs.",
+                                EchoConfigSide.COMMON, FACTION_HUB_SPACING, 20, 100,
+                                true, true, true),
+                        EchoConfigEntry.intSpec("world_poi_spacing", "World POI Spacing",
+                                "Chunk spacing for world POIs.",
+                                EchoConfigSide.COMMON, WORLD_POI_SPACING, 10, 60,
+                                true, true, true))),
+                new EchoConfigCategory("difficulty", "Difficulty", List.of(
+                        EchoConfigEntry.enumSpec("default_difficulty", "Default Difficulty",
+                                "Default difficulty profile for new worlds.",
+                                EchoConfigSide.COMMON, DEFAULT_DIFFICULTY, DifficultyProfile.class,
+                                true, true, false))));
+        EchoConfigRegistry.register(EchoConfigProvider.of(EchoAshfallProtocol.MODID,
+                () -> new EchoConfigModule(EchoAshfallProtocol.MODID, "Ashfall Protocol", categories)));
+    }
 
     private static void defineStructureConfig(StructureType type, int defaultSpacing, int defaultSeparation) {
         String sectionName = type.getName();

@@ -173,6 +173,13 @@ MACHINE_ACCENTS = {
 }
 
 
+DRONE_ENTITY_TEXTURES = {
+    "echo_companion_drone",
+    "echo_drone",
+    "scout_drone",
+}
+
+
 PLANT_WORDS = (
     "grass",
     "fern",
@@ -561,6 +568,8 @@ def make_spec(path: Path, forced_type: str | None = None, width: int | None = No
             width, height = (16, 16)
     if tex_type in {"item", "block"}:
         width = height = 16
+    elif tex_type == "entity" and name in DRONE_ENTITY_TEXTURES:
+        width = height = 64
     category = category_for(name, tex_type)
     family = texture_family_for(name, tex_type, category)
     machine_role = machine_role_for(name) if tex_type == "block" and category in {"machine", "active_machine", "error_machine"} else ""
@@ -2210,7 +2219,217 @@ def draw_item(spec: TextureSpec) -> Image.Image:
     return img
 
 
+def drone_variant_palette(name: str) -> dict[str, RGBA]:
+    if name == "echo_drone":
+        return {
+            "outline": (16, 15, 15, 255),
+            "dark": (34, 34, 32, 255),
+            "mid": (57, 55, 50, 255),
+            "panel": (79, 71, 61, 255),
+            "light": (135, 109, 88, 255),
+            "accent": (255, 83, 43, 255),
+            "glow": (255, 176, 47, 255),
+            "warn": (255, 111, 15, 255),
+            "white": (255, 234, 169, 255),
+        }
+    if name == "scout_drone":
+        return {
+            "outline": (14, 22, 18, 255),
+            "dark": (34, 45, 38, 255),
+            "mid": (58, 75, 64, 255),
+            "panel": (76, 99, 80, 255),
+            "light": (138, 164, 132, 255),
+            "accent": (82, 236, 104, 255),
+            "glow": (188, 255, 154, 255),
+            "warn": (244, 169, 39, 255),
+            "white": (243, 255, 221, 255),
+        }
+    return {
+        "outline": (13, 20, 22, 255),
+        "dark": (35, 48, 51, 255),
+        "mid": (67, 86, 88, 255),
+        "panel": (94, 116, 116, 255),
+        "light": (168, 192, 188, 255),
+        "accent": (36, 231, 238, 255),
+        "glow": (169, 255, 255, 255),
+        "warn": (255, 163, 33, 255),
+        "white": (249, 255, 255, 255),
+    }
+
+
+def drone_tint(color: RGBA, amount: float) -> RGBA:
+    if amount >= 1.0:
+        return tuple(min(255, int(c + (255 - c) * (amount - 1.0))) for c in color[:3]) + (color[3],)
+    return tuple(max(0, int(c * amount)) for c in color[:3]) + (color[3],)
+
+
+def draw_drone_panel(draw: ImageDraw.ImageDraw, xy: tuple[int, int, int, int],
+                     fill: RGBA, palette: dict[str, RGBA]) -> None:
+    x0, y0, x1, y1 = xy
+    rect(draw, xy, palette["outline"])
+    if x1 - x0 <= 1 or y1 - y0 <= 1:
+        return
+    rect(draw, (x0 + 1, y0 + 1, x1 - 1, y1 - 1), fill)
+    draw.line((x0 + 1, y0 + 1, x1 - 1, y0 + 1), fill=drone_tint(palette["light"], 1.05))
+    draw.line((x0 + 1, y0 + 1, x0 + 1, y1 - 1), fill=drone_tint(palette["light"], 0.92))
+    draw.line((x0 + 1, y1 - 1, x1 - 1, y1 - 1), fill=palette["dark"])
+    draw.line((x1 - 1, y0 + 2, x1 - 1, y1 - 1), fill=palette["dark"])
+    if x1 - x0 > 7 and y1 - y0 > 5:
+        rect(draw, (x0 + 3, y0 + 3, x1 - 3, y1 - 3), drone_tint(fill, 0.82))
+        draw.line((x0 + 4, y0 + 3, x1 - 4, y0 + 3), fill=drone_tint(fill, 1.2))
+        draw.line((x0 + 4, y1 - 3, x1 - 4, y1 - 3), fill=palette["outline"])
+
+
+def draw_drone_vents(draw: ImageDraw.ImageDraw, xy: tuple[int, int, int, int],
+                     palette: dict[str, RGBA], horizontal: bool = True) -> None:
+    x0, y0, x1, y1 = xy
+    if horizontal:
+        for y in range(y0 + 2, y1 - 1, 3):
+            draw.line((x0 + 2, y, x1 - 2, y), fill=palette["outline"])
+            draw.line((x0 + 2, y + 1, x1 - 3, y + 1), fill=palette["dark"])
+    else:
+        for x in range(x0 + 2, x1 - 1, 3):
+            draw.line((x, y0 + 2, x, y1 - 2), fill=palette["outline"])
+            draw.line((x + 1, y0 + 2, x + 1, y1 - 3), fill=palette["dark"])
+
+
+def draw_drone_display(draw: ImageDraw.ImageDraw, xy: tuple[int, int, int, int],
+                       palette: dict[str, RGBA], hostile: bool = False) -> None:
+    x0, y0, x1, y1 = xy
+    draw_drone_panel(draw, xy, palette["dark"], palette)
+    rect(draw, (x0 + 2, y0 + 2, x1 - 2, y1 - 2), drone_tint(palette["accent"], 0.38))
+    rect(draw, (x0 + 3, y0 + 3, x1 - 3, y1 - 3), drone_tint(palette["accent"], 0.75))
+    cx = (x0 + x1) // 2
+    cy = (y0 + y1) // 2
+    if hostile:
+        rect(draw, (x0 + 4, cy - 1, cx - 1, cy), palette["glow"])
+        rect(draw, (cx + 1, cy - 1, x1 - 4, cy), palette["glow"])
+        draw.line((x0 + 5, cy + 2, x1 - 5, cy + 2), fill=palette["warn"])
+    else:
+        rect(draw, (cx - 1, cy - 1, cx + 1, cy + 1), palette["glow"])
+        draw.line((cx - 4, cy, cx + 4, cy), fill=palette["glow"])
+        draw.line((cx, cy - 3, cx, cy + 3), fill=palette["glow"])
+        draw.point((cx - 2, cy - 2), fill=palette["white"])
+    for corner in ((x0 + 2, y0 + 2), (x1 - 2, y0 + 2), (x0 + 2, y1 - 2), (x1 - 2, y1 - 2)):
+        draw.point(corner, fill=palette["white"])
+
+
+def draw_drone_core(draw: ImageDraw.ImageDraw, xy: tuple[int, int, int, int],
+                    palette: dict[str, RGBA]) -> None:
+    x0, y0, x1, y1 = xy
+    draw_drone_panel(draw, xy, palette["dark"], palette)
+    cx = (x0 + x1) // 2
+    cy = (y0 + y1) // 2
+    rect(draw, (cx - 2, cy - 2, cx + 2, cy + 2), palette["accent"])
+    rect(draw, (cx - 1, cy - 1, cx + 1, cy + 1), palette["glow"])
+    draw.line((x0 + 3, cy, x1 - 3, cy), fill=drone_tint(palette["accent"], 0.7))
+    draw.line((cx, y0 + 2, cx, y1 - 2), fill=drone_tint(palette["accent"], 0.7))
+
+
+def draw_drone_chip_marks(draw: ImageDraw.ImageDraw, palette: dict[str, RGBA],
+                          rng: random.Random, regions: Iterable[tuple[int, int, int, int]]) -> None:
+    region_list = list(regions)
+    for _ in range(26):
+        x0, y0, x1, y1 = rng.choice(region_list)
+        if x1 - x0 < 3 or y1 - y0 < 3:
+            continue
+        x = rng.randrange(x0 + 2, x1)
+        y = rng.randrange(y0 + 2, y1)
+        color = palette["light"] if rng.random() < 0.48 else palette["warn"]
+        rect(draw, (x, y, min(x1 - 1, x + 1), y), color)
+
+
+def draw_drone_entity(spec: TextureSpec) -> Image.Image:
+    img = transparent_image(64, 64)
+    draw = ImageDraw.Draw(img)
+    colors = drone_variant_palette(spec.name)
+    rng = stable_rng(f"drone-entity:{spec.name}")
+
+    chassis = (0, 0, 33, 10)
+    top_plate = (0, 12, 29, 20)
+    top_module = (30, 12, 45, 20)
+    front_panel = (0, 24, 20, 31)
+    front_display = (22, 24, 35, 31)
+    rear_panel = (0, 34, 20, 40)
+    rear_display = (22, 34, 35, 40)
+    side_engine = (36, 0, 55, 14)
+    engine_nozzle = (48, 16, 63, 23)
+    hover_shell = (40, 32, 51, 43)
+    hover_glow = (52, 32, 63, 38)
+    bottom_panel = (20, 44, 43, 52)
+    bottom_display = (44, 44, 62, 50)
+    wing = (0, 48, 18, 63)
+    wing_tip = (16, 48, 27, 57)
+    antenna_post = (56, 0, 60, 8)
+    antenna_tip = (56, 8, 62, 14)
+
+    draw_drone_panel(draw, chassis, colors["mid"], colors)
+    draw_drone_vents(draw, (4, 2, 15, 8), colors, horizontal=True)
+    draw_drone_vents(draw, (18, 2, 30, 8), colors, horizontal=True)
+    rect(draw, (2, 2, 3, 3), colors["light"])
+    rect(draw, (29, 7, 31, 8), colors["warn"])
+    rect(draw, (16, 4, 18, 6), colors["accent"])
+
+    draw_drone_panel(draw, top_plate, colors["panel"], colors)
+    draw_drone_vents(draw, (5, 15, 23, 18), colors, horizontal=False)
+    rect(draw, (2, 14, 4, 15), colors["warn"])
+    rect(draw, (25, 17, 27, 18), colors["warn"])
+    draw_drone_core(draw, top_module, colors)
+
+    draw_drone_panel(draw, front_panel, colors["dark"], colors)
+    draw.line((3, 29, 17, 29), fill=colors["warn"])
+    draw.line((5, 26, 15, 26), fill=colors["panel"])
+    draw_drone_display(draw, front_display, colors, hostile=spec.name == "echo_drone")
+
+    draw_drone_panel(draw, rear_panel, colors["dark"], colors)
+    draw_drone_vents(draw, (3, 36, 17, 38), colors, horizontal=True)
+    draw_drone_display(draw, rear_display, colors, hostile=False)
+
+    draw_drone_panel(draw, side_engine, colors["panel"], colors)
+    draw_drone_vents(draw, (39, 3, 45, 11), colors, horizontal=False)
+    rect(draw, (48, 4, 53, 7), drone_tint(colors["accent"], 0.5))
+    rect(draw, (49, 5, 52, 6), colors["glow"])
+    rect(draw, (38, 11, 40, 12), colors["warn"])
+
+    draw_drone_panel(draw, engine_nozzle, colors["dark"], colors)
+    draw.line((51, 19, 60, 19), fill=colors["accent"])
+    draw.line((51, 20, 60, 20), fill=colors["glow"])
+
+    draw_drone_panel(draw, hover_shell, colors["dark"], colors)
+    draw.rectangle((43, 35, 48, 40), outline=colors["accent"], fill=drone_tint(colors["accent"], 0.35))
+    rect(draw, (44, 36, 47, 39), colors["glow"])
+    draw_drone_core(draw, hover_glow, colors)
+
+    draw_drone_panel(draw, bottom_panel, colors["dark"], colors)
+    draw.line((23, 47, 40, 47), fill=colors["accent"])
+    for x in (25, 30, 35):
+        rect(draw, (x, 46, x + 2, 48), colors["glow"])
+    draw_drone_display(draw, bottom_display, colors, hostile=spec.name == "echo_drone")
+
+    draw_drone_panel(draw, wing, colors["mid"], colors)
+    draw.line((3, 51, 15, 60), fill=colors["outline"])
+    draw.line((4, 52, 16, 60), fill=colors["dark"])
+    draw.line((5, 53, 16, 58), fill=colors["accent"])
+    draw_drone_panel(draw, wing_tip, colors["dark"], colors)
+    draw.line((19, 52, 25, 52), fill=colors["glow"])
+
+    draw_drone_panel(draw, antenna_post, colors["dark"], colors)
+    draw_drone_panel(draw, antenna_tip, colors["dark"], colors)
+    rect(draw, (59, 8, 61, 10), colors["warn"])
+
+    draw_drone_chip_marks(
+        draw,
+        colors,
+        rng,
+        (chassis, top_plate, front_panel, rear_panel, side_engine, bottom_panel, wing),
+    )
+    return img
+
+
 def draw_entity(spec: TextureSpec) -> Image.Image:
+    if spec.name in DRONE_ENTITY_TEXTURES:
+        return draw_drone_entity(spec)
+
     img = transparent_image(spec.width, spec.height)
     colors = palette_rgba(spec)
     draw = ImageDraw.Draw(img)

@@ -14,8 +14,11 @@ import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
 import com.knoxhack.echoashfallprotocol.faction.AshfallFactionInteractionHandler;
+import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
+import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.survival.SurvivalData;
+import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
 import java.util.ArrayList;
 import java.util.List;
@@ -159,6 +162,25 @@ public final class AshfallCoreServices {
             List<EchoDiagnosticBlocker> blockers = new ArrayList<>();
             SurvivalData survival = player.getData(ModAttachments.SURVIVAL_DATA.get());
             QuestData quest = QuestData.get(player);
+            if (quest.getCurrentPhase() <= 0 && !quest.isDropPodInitialized()) {
+                blockers.add(blocker("ashfall_drop_pod_uninitialized", EchoDiagnosticBlocker.Severity.WARNING,
+                        "Drop pod start unconfirmed", "The Ashfall drop pod initialization flag is not set.",
+                        "Stay near the pod start, secure the lockers, and let the first recovery objective initialize."));
+            }
+            if (quest.getCurrentPhase() <= 0 && !quest.isEchoIntroPlayed()) {
+                blockers.add(blocker("ashfall_intro_pending", EchoDiagnosticBlocker.Severity.INFO,
+                        "First contact pending", "ECHO-7 onboarding has not completed for this operator.",
+                        "Open the ECHO interface or follow the first podfall prompt before leaving the crash site."));
+            }
+            if (!quest.isTerminalOnline()) {
+                blockers.add(blocker("ashfall_terminal_offline", EchoDiagnosticBlocker.Severity.BLOCKED,
+                        "Terminal offline", "The Ashfall terminal state is offline or critically damaged.",
+                        "Repair or re-open the ECHO Terminal before relying on route guidance."));
+            } else if (quest.getLastTerminalInteraction() <= 0L && quest.getCurrentPhase() <= 1) {
+                blockers.add(blocker("ashfall_terminal_unopened", EchoDiagnosticBlocker.Severity.INFO,
+                        "Terminal not yet opened", "The shared terminal has not recorded an early Ashfall interaction.",
+                        "Open the ECHO Terminal and review Command Deck, What Now, and Mission Graph."));
+            }
             if (survival.getHydration() <= 25) {
                 blockers.add(blocker("ashfall_low_hydration", EchoDiagnosticBlocker.Severity.WARNING,
                         "Hydration low", "Water is below safe field range.",
@@ -174,6 +196,43 @@ public final class AshfallCoreServices {
                         "Mission rewards pending", "Ashfall has unclaimed mission reward caches.",
                         "Open the Ashfall mission channel or shared Reward Inbox to claim support items."));
             }
+            if (quest.getCurrentPhase() >= 6) {
+                List<BiomeGuardianProfile> missingGuardians = missingGuardians(quest);
+                if (!missingGuardians.isEmpty()) {
+                    BiomeGuardianProfile next = missingGuardians.get(0);
+                    blockers.add(blocker("ashfall_guardians_unresolved", EchoDiagnosticBlocker.Severity.BLOCKED,
+                            "Guardian signals unresolved",
+                            missingGuardians.size() + " active biome guardian signal(s) still block the Nexus route.",
+                            "Track the next guardian route: " + next.title() + "."));
+                }
+            }
+            if (quest.getCurrentPhase() >= 7 && quest.getCollectedPowerNodes() < 5) {
+                blockers.add(blocker("ashfall_power_nodes_incomplete", EchoDiagnosticBlocker.Severity.BLOCKED,
+                        "Power node grid incomplete",
+                        "Only " + quest.getCollectedPowerNodes() + "/5 Ashfall Power Nodes are recorded.",
+                        "Restore five Power Nodes near the Nexus route before committing the final protocol."));
+            }
+            NexusCampaignData campaign = campaignWarfrontData(player);
+            if (campaign != null && campaign.isAwakened() && !campaign.isWarfrontComplete()) {
+                if (campaign.getScannedRelayCount() < NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT) {
+                    blockers.add(blocker("ashfall_prime_relays_unscanned", EchoDiagnosticBlocker.Severity.BLOCKED,
+                            "Prime Relays unscanned",
+                            "Prime Relay scan progress is " + campaign.getScannedRelayCount() + "/"
+                                    + NexusCampaignData.REQUIRED_RELAY_SCAN_COUNT + ".",
+                            "Scan the full Prime Relay network before resolving relay encounters."));
+                } else if (campaign.getResolvedRelayCount() < NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT) {
+                    blockers.add(blocker("ashfall_prime_relays_unresolved", EchoDiagnosticBlocker.Severity.BLOCKED,
+                            "Prime Relays unresolved",
+                            "Prime Relay resolution progress is " + campaign.getResolvedRelayCount() + "/"
+                                    + NexusCampaignData.REQUIRED_RELAY_RESOLUTION_COUNT + ".",
+                            "Complete relay encounters and resolve at least three Prime Relays."));
+                } else if (!campaign.isSiegeComplete()) {
+                    blockers.add(blocker("ashfall_countermeasure_siege_pending", EchoDiagnosticBlocker.Severity.BLOCKED,
+                            "Countermeasure siege pending",
+                            "Prime Relays are ready, but the Core countermeasure siege is not complete.",
+                            "Survive the Core countermeasure event before opening the Nexus final protocol."));
+                }
+            }
             if (!nexusProtocolLoaded()) {
                 PostNexusData postNexus = PostNexusData.get(player);
                 if (quest.getCurrentPhase() >= 7 && !postNexus.hasMadeChoice()) {
@@ -187,6 +246,28 @@ public final class AshfallCoreServices {
             EchoAshfallProtocol.LOGGER.warn("Ashfall diagnostic provider failed; returning no blockers.", exception);
             return List.of();
         }
+    }
+
+    private static NexusCampaignData campaignWarfrontData(Player player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        try {
+            return NexusCampaignData.get(level.getServer().overworld());
+        } catch (RuntimeException exception) {
+            EchoAshfallProtocol.LOGGER.warn("Ashfall Nexus Warfront diagnostics unavailable.", exception);
+            return null;
+        }
+    }
+
+    private static List<BiomeGuardianProfile> missingGuardians(QuestData quest) {
+        if (quest == null) {
+            return List.of();
+        }
+        return BiomeGuardianProfiles.all().stream()
+                .filter(profile -> !quest.isMissionCompleted(profile.missionId())
+                        && quest.getEntityKills(profile.entityId()) <= 0)
+                .toList();
     }
 
     private static List<EchoRouteRecord> routeRecords(Player player) {

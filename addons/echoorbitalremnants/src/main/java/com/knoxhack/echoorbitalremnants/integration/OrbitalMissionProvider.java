@@ -565,12 +565,12 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                 "Survey", "Endgame"),
         FACTION_CONTRACT("faction_contract", "ROUTE SURVEY", 8, 1,
                 "Faction Contract",
-                "Seal three faction relays after the survey network is stable enough for people to argue over it.",
+                "Seal Radwarden, Crashbreak, and Sporebound relay support after the survey network is stable enough for people to argue over it.",
                 "Pledge to a faction, visit faction hubs for vendor support, and complete three ECHO-tab proof contracts.",
                 "Faction", "Endgame"),
         FINAL_SEAL("final_seal", "FINAL SEAL", 9, 0,
                 "Final Network Seal",
-                "Close the Orbital Remnants arc after ECHO-0, surveys, and three faction relays prove the route belongs to the living.",
+                "Close the Orbital Remnants arc after ECHO-0, surveys, and Radwarden, Crashbreak, and Sporebound support prove the route belongs to the living.",
                 "Press SCAN once all final prerequisites are complete.",
                 "Story", "Complete");
 

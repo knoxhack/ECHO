@@ -1,114 +1,797 @@
 {
   "settings": {
-    "echoRoot": "C:/New folder/Echo",
-    "modpackModsDir": "C:/Users/Ivan/curseforge/minecraft/Instances/Axes of Tomorrow/mods",
-    "pythonExecutable": "C:/Users/hacko/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe",
+    "echoRoot": "C:/Github/Echo",
+    "modpackModsDir": "",
+    "pythonExecutable": "python",
     "runtimeLogMaxAgeMinutes": 180,
     "defaultScanMode": "quick"
   },
   "projects": [
     {
       "slug": "echo",
-      "name": "ECHO",
-      "kind": "Minecraft Modpack",
-      "status": "Almost Done",
+      "name": "ECHO Full Stack",
+      "kind": "Full Stack",
+      "status": "Release Candidate",
       "currentMilestone": "Release Candidate",
       "buildHealth": 87,
-      "criticalIssues": 4,
-      "polishTasks": 19,
-      "lastScanLabel": "Today",
-      "nextRecommendedAction": "Run full addon handoff test",
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run full-stack quick scan",
       "accent": "#58d7ff",
-      "description": "Full ECHO public release stack: Core, Terminal, Ashfall, Orbital Remnants, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol.",
-      "workspacePath": "C:/New folder/Echo",
+      "description": "Full ECHO workspace release stack across shared core services, Ashfall, Terminal, SignalOS, beta/dev modules, public release modules, HoloMap, Index, Armory, and Lens.",
+      "workspacePath": "C:/Github/Echo",
       "modules": [
-        { "modId": "echocore", "label": "ECHO Core", "version": "1.1.0", "path": "core/echocore" },
-        { "modId": "echoterminal", "label": "ECHO Terminal", "version": "1.1.0", "path": "addons/echoterminal" },
-        { "modId": "echoashfallprotocol", "label": "Ashfall Protocol", "version": "1.3.0", "path": "." },
-        { "modId": "echoorbitalremnants", "label": "Orbital Remnants", "version": "1.5.0", "path": "addons/echoorbitalremnants" },
-        { "modId": "echostationfall", "label": "Stationfall", "version": "1.1.0", "path": "addons/echostationfall" },
-        { "modId": "echonexusprotocol", "label": "Nexus Protocol", "version": "1.0.0", "path": "addons/echonexusprotocol" },
-        { "modId": "echoindustrialnexus", "label": "Industrial Nexus", "version": "0.1.0", "path": "addons/echoindustrialnexus" },
-        { "modId": "echoblackboxprotocol", "label": "Blackbox Protocol", "version": "1.0.0", "path": "addons/echoblackboxprotocol" }
+        {
+          "modId": "echocore",
+          "label": "ECHO Core",
+          "version": "1.1.0",
+          "path": "core/echocore"
+        },
+        {
+          "modId": "echonetcore",
+          "label": "NetCore",
+          "version": "1.1.0",
+          "path": "addons/echonetcore"
+        },
+        {
+          "modId": "echodatacore",
+          "label": "DataCore",
+          "version": "1.0.0",
+          "path": "addons/echodatacore"
+        },
+        {
+          "modId": "echomissioncore",
+          "label": "MissionCore",
+          "version": "0.1.0",
+          "path": "addons/echomissioncore"
+        },
+        {
+          "modId": "echoterminal",
+          "label": "ECHO Terminal",
+          "version": "1.1.0",
+          "path": "addons/echoterminal"
+        },
+        {
+          "modId": "echoashfallprotocol",
+          "label": "Ashfall Protocol",
+          "version": "1.3.0",
+          "path": "."
+        },
+        {
+          "modId": "signalos",
+          "label": "SignalOS",
+          "version": "0.1.0",
+          "path": "addons/echosignalos"
+        },
+        {
+          "modId": "signalosexample",
+          "label": "SignalOS Example Addon",
+          "version": "0.1.0",
+          "path": "addons/signalosexample"
+        },
+        {
+          "modId": "echoorbitalremnants",
+          "label": "Orbital Remnants",
+          "version": "1.5.0",
+          "path": "addons/echoorbitalremnants"
+        },
+        {
+          "modId": "echonexusprotocol",
+          "label": "Nexus Protocol",
+          "version": "1.0.0",
+          "path": "addons/echonexusprotocol"
+        },
+        {
+          "modId": "echoagriculturereclamation",
+          "label": "Agriculture Reclamation",
+          "version": "0.1.1",
+          "path": "addons/echoagriculturereclamation"
+        },
+        {
+          "modId": "echoworldcore",
+          "label": "WorldCore",
+          "version": "0.1.0",
+          "path": "addons/echoworldcore"
+        },
+        {
+          "modId": "echostationfall",
+          "label": "Stationfall",
+          "version": "1.1.0",
+          "path": "addons/echostationfall"
+        },
+        {
+          "modId": "echoblackboxprotocol",
+          "label": "Blackbox Protocol",
+          "version": "1.0.0",
+          "path": "addons/echoblackboxprotocol"
+        },
+        {
+          "modId": "echoindustrialnexus",
+          "label": "Industrial Nexus",
+          "version": "0.1.0",
+          "path": "addons/echoindustrialnexus"
+        },
+        {
+          "modId": "echologisticsnetwork",
+          "label": "Logistics Network",
+          "version": "0.1.0",
+          "path": "addons/echologisticsnetwork"
+        },
+        {
+          "modId": "echorendercore",
+          "label": "RenderCore",
+          "version": "0.5.0",
+          "path": "addons/echorendercore"
+        },
+        {
+          "modId": "echoconvoyprotocol",
+          "label": "Convoy Protocol",
+          "version": "0.1.0",
+          "path": "addons/echoconvoyprotocol"
+        },
+        {
+          "modId": "echoholomap",
+          "label": "HoloMap",
+          "version": "0.1.0",
+          "path": "addons/echoholomap"
+        },
+        {
+          "modId": "echoindex",
+          "label": "Index",
+          "version": "0.1.0",
+          "path": "addons/echoindex"
+        },
+        {
+          "modId": "echoarmory",
+          "label": "Armory",
+          "version": "0.1.0",
+          "path": "addons/echoarmory"
+        },
+        {
+          "modId": "echolens",
+          "label": "Lens",
+          "version": "0.1.0",
+          "path": "addons/echolens"
+        }
       ]
     },
     {
-      "slug": "tech-ex-nihilo-reimagined",
-      "name": "Tech Ex Nihilo Reimagined",
-      "kind": "Minecraft Mod",
-      "status": "Planning",
-      "currentMilestone": "Concept Board",
-      "buildHealth": 12,
-      "criticalIssues": 0,
-      "polishTasks": 8,
-      "lastScanLabel": "Not scanned",
-      "nextRecommendedAction": "Draft progression loop and block list",
-      "accent": "#f6c177",
-      "description": "Future technology-survival addon concept workspace.",
-      "workspacePath": "",
-      "modules": []
-    },
-    {
-      "slug": "noxterminal",
-      "name": "NoxTerminal",
-      "kind": "Tooling",
-      "status": "Queued",
-      "currentMilestone": "Architecture Notes",
+      "slug": "echocore",
+      "name": "ECHO: Core",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Shared Services",
       "buildHealth": 0,
       "criticalIssues": 0,
-      "polishTasks": 6,
+      "polishTasks": 0,
       "lastScanLabel": "Not scanned",
-      "nextRecommendedAction": "Define terminal page schema",
+      "nextRecommendedAction": "Run a scoped quick scan",
       "accent": "#7ee787",
-      "description": "Standalone terminal UI and prompt orchestration tool.",
-      "workspacePath": "",
-      "modules": []
+      "description": "Shared ECHO services, data contracts, runtime hooks, and cross-addon infrastructure.",
+      "workspacePath": "C:/Github/Echo/core/echocore",
+      "modules": [
+        {
+          "modId": "echocore",
+          "label": "ECHO Core",
+          "version": "1.1.0",
+          "path": "core/echocore"
+        }
+      ]
     },
     {
-      "slug": "noxhack-ai-studio",
-      "name": "Noxhack AI Studio",
-      "kind": "Creative Ops",
-      "status": "Queued",
-      "currentMilestone": "Prompt Library",
+      "slug": "echonetcore",
+      "name": "ECHO: NetCore",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Network Services",
+      "buildHealth": 82,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: NetCore",
+      "accent": "#7ee787",
+      "description": "Shared packet, sync, server action, rate limiting, and debug network layer for ECHO addons.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echonetcore",
+          "label": "NetCore",
+          "version": "1.1.0",
+          "path": "addons/echonetcore"
+        }
+      ]
+    },
+    {
+      "slug": "echodatacore",
+      "name": "ECHO: DataCore",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Persistent Data Services",
+      "buildHealth": 80,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: DataCore",
+      "accent": "#7ee787",
+      "description": "Shared persistent data and progression layer for ECHO services and addon state.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echodatacore",
+          "label": "DataCore",
+          "version": "1.0.0",
+          "path": "addons/echodatacore"
+        }
+      ]
+    },
+    {
+      "slug": "echomissioncore",
+      "name": "ECHO: MissionCore",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Mission Services",
+      "buildHealth": 78,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: MissionCore",
+      "accent": "#7ee787",
+      "description": "Shared mission, objective, reward, and Terminal feed backend for ECHO addon chapters.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echomissioncore",
+          "label": "MissionCore",
+          "version": "0.1.0",
+          "path": "addons/echomissioncore"
+        }
+      ]
+    },
+    {
+      "slug": "echoashfallprotocol",
+      "name": "ECHO: Ashfall Protocol",
+      "kind": "Root Module",
+      "status": "Release Candidate",
+      "currentMilestone": "Ashfall Campaign",
       "buildHealth": 0,
       "criticalIssues": 0,
-      "polishTasks": 11,
+      "polishTasks": 0,
       "lastScanLabel": "Not scanned",
-      "nextRecommendedAction": "Collect asset and trailer workflows",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#58d7ff",
+      "description": "Root survival campaign module with resources, gameplay data, POIs, factions, and the first ECHO progression route.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoashfallprotocol",
+          "label": "Ashfall Protocol",
+          "version": "1.3.0",
+          "path": "."
+        }
+      ]
+    },
+    {
+      "slug": "echoterminal",
+      "name": "ECHO: Terminal",
+      "kind": "Beta/Dev Module",
+      "status": "Active",
+      "currentMilestone": "Terminal Surface",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#58d7ff",
+      "description": "Terminal UI, mission surfaces, reward inbox, route records, and addon tab integration.",
+      "workspacePath": "C:/Github/Echo/addons/echoterminal",
+      "modules": [
+        {
+          "modId": "echoterminal",
+          "label": "ECHO Terminal",
+          "version": "1.1.0",
+          "path": "addons/echoterminal"
+        }
+      ]
+    },
+    {
+      "slug": "echosignalos",
+      "name": "SignalOS",
+      "kind": "Tooling/Example",
+      "status": "Active",
+      "currentMilestone": "Terminal Toolkit",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
       "accent": "#b9a7ff",
-      "description": "Prompt workspace for art, trailers, QA agents, and release notes.",
-      "workspacePath": "",
-      "modules": []
+      "description": "SignalOS terminal framework and shared UI primitives for ECHO-style command surfaces.",
+      "workspacePath": "C:/Github/Echo/addons/echosignalos",
+      "modules": [
+        {
+          "modId": "signalos",
+          "label": "SignalOS",
+          "version": "0.1.0",
+          "path": "addons/echosignalos"
+        }
+      ]
     },
     {
-      "slug": "future-addons",
-      "name": "Future Addons",
-      "kind": "Roadmap",
-      "status": "Ideas",
-      "currentMilestone": "Backlog",
+      "slug": "signalosexample",
+      "name": "SignalOS Example Addon",
+      "kind": "Tooling/Example",
+      "status": "Example",
+      "currentMilestone": "Integration Sample",
       "buildHealth": 0,
       "criticalIssues": 0,
-      "polishTasks": 14,
+      "polishTasks": 0,
       "lastScanLabel": "Not scanned",
-      "nextRecommendedAction": "Rank addon candidates by release dependency",
-      "accent": "#ff6b6b",
-      "description": "Parking lane for future addon plans and handoff chains.",
-      "workspacePath": "",
-      "modules": []
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#b9a7ff",
+      "description": "Example addon that exercises SignalOS integration patterns and test wiring.",
+      "workspacePath": "C:/Github/Echo/addons/signalosexample",
+      "modules": [
+        {
+          "modId": "signalosexample",
+          "label": "SignalOS Example Addon",
+          "version": "0.1.0",
+          "path": "addons/signalosexample"
+        }
+      ]
+    },
+    {
+      "slug": "echoorbitalremnants",
+      "name": "ECHO: Orbital Remnants",
+      "kind": "Beta/Dev Module",
+      "status": "Ready",
+      "currentMilestone": "Orbital QA",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#58d7ff",
+      "description": "Orbital route content, launch chain, telemetry, caches, and suit support.",
+      "workspacePath": "C:/Github/Echo/addons/echoorbitalremnants",
+      "modules": [
+        {
+          "modId": "echoorbitalremnants",
+          "label": "Orbital Remnants",
+          "version": "1.5.0",
+          "path": "addons/echoorbitalremnants"
+        }
+      ]
+    },
+    {
+      "slug": "echonexusprotocol",
+      "name": "ECHO: Nexus Protocol",
+      "kind": "Beta/Dev Module",
+      "status": "Ready",
+      "currentMilestone": "Nexus Bridge",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#58d7ff",
+      "description": "Nexus unlocks, anomaly storms, route gates, and Blackbox bridge support.",
+      "workspacePath": "C:/Github/Echo/addons/echonexusprotocol",
+      "modules": [
+        {
+          "modId": "echonexusprotocol",
+          "label": "Nexus Protocol",
+          "version": "1.0.0",
+          "path": "addons/echonexusprotocol"
+        }
+      ]
+    },
+    {
+      "slug": "echoagriculturereclamation",
+      "name": "ECHO: Agriculture Reclamation",
+      "kind": "Beta/Dev Module",
+      "status": "Active",
+      "currentMilestone": "Food Systems",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#7ee787",
+      "description": "Agriculture reclamation content for survival loops and recovery infrastructure.",
+      "workspacePath": "C:/Github/Echo/addons/echoagriculturereclamation",
+      "modules": [
+        {
+          "modId": "echoagriculturereclamation",
+          "label": "Agriculture Reclamation",
+          "version": "0.1.1",
+          "path": "addons/echoagriculturereclamation"
+        }
+      ]
+    },
+    {
+      "slug": "echoworldcore",
+      "name": "ECHO: WorldCore",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "World Services",
+      "buildHealth": 78,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: WorldCore",
+      "accent": "#7ee787",
+      "description": "Shared world vocabulary and runtime services for regions, hazards, markers, discoveries, HoloMap feeds, and RenderCore profiles.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoworldcore",
+          "label": "WorldCore",
+          "version": "0.1.0",
+          "path": "addons/echoworldcore"
+        }
+      ]
+    },
+    {
+      "slug": "echostationfall",
+      "name": "ECHO: Stationfall",
+      "kind": "Release Module",
+      "status": "Needs Pass",
+      "currentMilestone": "Stationfall QA",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#f6c177",
+      "description": "Station pressure route, crew logs, AI override chain, hostile station entities, and terminal support.",
+      "workspacePath": "C:/Github/Echo/addons/echostationfall",
+      "modules": [
+        {
+          "modId": "echostationfall",
+          "label": "Stationfall",
+          "version": "1.1.0",
+          "path": "addons/echostationfall"
+        }
+      ]
+    },
+    {
+      "slug": "echoblackboxprotocol",
+      "name": "ECHO: Blackbox Protocol",
+      "kind": "Release Module",
+      "status": "Needs Pass",
+      "currentMilestone": "Blackbox QA",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#f6c177",
+      "description": "Memory fragments, dungeon gates, archive terminal hooks, and late-route endings.",
+      "workspacePath": "C:/Github/Echo/addons/echoblackboxprotocol",
+      "modules": [
+        {
+          "modId": "echoblackboxprotocol",
+          "label": "Blackbox Protocol",
+          "version": "1.0.0",
+          "path": "addons/echoblackboxprotocol"
+        }
+      ]
+    },
+    {
+      "slug": "echoindustrialnexus",
+      "name": "ECHO: Industrial Nexus",
+      "kind": "Release Module",
+      "status": "Needs Pass",
+      "currentMilestone": "Industrial QA",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#f6c177",
+      "description": "Machine routes, compat hooks, recipe coverage, and station/blackbox industrial support.",
+      "workspacePath": "C:/Github/Echo/addons/echoindustrialnexus",
+      "modules": [
+        {
+          "modId": "echoindustrialnexus",
+          "label": "Industrial Nexus",
+          "version": "0.1.0",
+          "path": "addons/echoindustrialnexus"
+        }
+      ]
+    },
+    {
+      "slug": "echologisticsnetwork",
+      "name": "ECHO: Logistics Network",
+      "kind": "Release Module",
+      "status": "Active",
+      "currentMilestone": "Logistics QA",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#f6c177",
+      "description": "Logistics network module for route infrastructure, delivery loops, and connected storage support.",
+      "workspacePath": "C:/Github/Echo/addons/echologisticsnetwork",
+      "modules": [
+        {
+          "modId": "echologisticsnetwork",
+          "label": "Logistics Network",
+          "version": "0.1.0",
+          "path": "addons/echologisticsnetwork"
+        }
+      ]
+    },
+    {
+      "slug": "echorendercore",
+      "name": "ECHO: RenderCore",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Render Services",
+      "buildHealth": 76,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: RenderCore",
+      "accent": "#b9a7ff",
+      "description": "Shared rendering, animation, glow, overlay, particle profile, validation, and debug tools for ECHO visual states.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echorendercore",
+          "label": "RenderCore",
+          "version": "0.5.0",
+          "path": "addons/echorendercore"
+        }
+      ]
+    },
+    {
+      "slug": "echoconvoyprotocol",
+      "name": "ECHO: Convoy Protocol",
+      "kind": "Release Module",
+      "status": "Active",
+      "currentMilestone": "Convoy QA",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run a scoped quick scan",
+      "accent": "#f6c177",
+      "description": "Convoy route content, mobile operations, and support systems for late-pack traversal.",
+      "workspacePath": "C:/Github/Echo/addons/echoconvoyprotocol",
+      "modules": [
+        {
+          "modId": "echoconvoyprotocol",
+          "label": "Convoy Protocol",
+          "version": "0.1.0",
+          "path": "addons/echoconvoyprotocol"
+        }
+      ]
+    },
+    {
+      "slug": "echoholomap",
+      "name": "ECHO: HoloMap",
+      "kind": "Beta/Dev Module",
+      "status": "Active",
+      "currentMilestone": "Map Telemetry",
+      "buildHealth": 74,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: HoloMap",
+      "accent": "#58d7ff",
+      "description": "Terminal command-map tab for crash sites, routes, hazards, missions, bases, orbital overlays, anomalies, and drone scan markers.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoholomap",
+          "label": "HoloMap",
+          "version": "0.1.0",
+          "path": "addons/echoholomap"
+        }
+      ]
+    },
+    {
+      "slug": "echoindex",
+      "name": "ECHO: Index",
+      "kind": "Beta/Dev Module",
+      "status": "Active",
+      "currentMilestone": "Index Archive",
+      "buildHealth": 74,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: Index",
+      "accent": "#58d7ff",
+      "description": "Shared item, recipe, usage, archive, bookmark, and Terminal index browser for ECHO modules.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoindex",
+          "label": "Index",
+          "version": "0.1.0",
+          "path": "addons/echoindex"
+        }
+      ]
+    },
+    {
+      "slug": "echoarmory",
+      "name": "ECHO: Armory",
+      "kind": "Release Module",
+      "status": "Active",
+      "currentMilestone": "Armory QA",
+      "buildHealth": 74,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: Armory",
+      "accent": "#f6c177",
+      "description": "Modular weapons, armor, augments, energy cores, mission loadouts, faction gear, and Terminal-managed combat readiness.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoarmory",
+          "label": "Armory",
+          "version": "0.1.0",
+          "path": "addons/echoarmory"
+        }
+      ]
+    },
+    {
+      "slug": "echolens",
+      "name": "ECHO: Lens",
+      "kind": "Release Module",
+      "status": "Active",
+      "currentMilestone": "Scanner HUD QA",
+      "buildHealth": 74,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: Lens",
+      "accent": "#9ee493",
+      "description": "Modern ECHO scanner HUD for blocks, entities, fluids, machines, progression, and addon integrations.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echolens",
+          "label": "Lens",
+          "version": "0.1.0",
+          "path": "addons/echolens"
+        }
+      ]
+    },
+    {
+      "slug": "arcana",
+      "name": "ARCANA: Veilbound Studies",
+      "kind": "Standalone Mod",
+      "status": "Active",
+      "currentMilestone": "Veilbound Studies",
+      "buildHealth": 0,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run ARCANA quick scan",
+      "accent": "#c084fc",
+      "description": "Standalone NeoForge magic research mod about Veil resonance, rituals, constructs, fracture risk, and late-game Veil choices.",
+      "workspacePath": "C:/Github/ARCANA",
+      "modules": [
+        {
+          "modId": "arcanaveil",
+          "label": "ARCANA: Veilbound Studies",
+          "version": "0.1.0",
+          "path": "."
+        }
+      ]
     }
   ],
   "roadmapPhases": [
-    { "projectSlug": "echo", "title": "Core + Terminal Stability", "status": "Ready", "progress": 96, "summary": "Shared services, terminal shell, mission browser, reward inbox, diagnostics." },
-    { "projectSlug": "echo", "title": "Ashfall Campaign Polish", "status": "Ready", "progress": 92, "summary": "First-hour survival, Nexus path, POIs, scanner, factions, finale readiness." },
-    { "projectSlug": "echo", "title": "POI + Scanner Pass", "status": "Review", "progress": 88, "summary": "Route Map, POI Atlas, generated structures, scanner route records." },
-    { "projectSlug": "echo", "title": "Faction Pass", "status": "Review", "progress": 83, "summary": "Faction contracts, side ops, field archive, lore cohesion." },
-    { "projectSlug": "echo", "title": "Drone Pass", "status": "Review", "progress": 81, "summary": "Companion Link, command states, terminal feedback, reward hooks." },
-    { "projectSlug": "echo", "title": "Orbital Remnants QA", "status": "Ready", "progress": 90, "summary": "Launch chain, route telemetry, suit support, boss and cache checks." },
-    { "projectSlug": "echo", "title": "Stationfall QA", "status": "Needs Pass", "progress": 74, "summary": "Station pressure route, AI override, crew logs, terminal surface." },
-    { "projectSlug": "echo", "title": "Nexus Protocol QA", "status": "Needs Pass", "progress": 78, "summary": "Nexus unlocks, anomaly storms, Blackbox monolith bridge." },
-    { "projectSlug": "echo", "title": "Industrial Nexus QA", "status": "Needs Pass", "progress": 70, "summary": "Machine routes, compat hooks, recipe coverage, station/blackbox support." },
-    { "projectSlug": "echo", "title": "Blackbox Protocol QA", "status": "Needs Pass", "progress": 72, "summary": "Memory fragments, dungeon route gates, endings, archive terminal." },
-    { "projectSlug": "echo", "title": "Release Candidate", "status": "Active", "progress": 87, "summary": "Full stack build, validators, GameTests, jar set, runtime log scan." }
+    {
+      "projectSlug": "echo",
+      "title": "Core + Terminal Stability",
+      "status": "Ready",
+      "progress": 96,
+      "summary": "Shared services, terminal shell, mission browser, reward inbox, diagnostics."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Ashfall Campaign Polish",
+      "status": "Ready",
+      "progress": 92,
+      "summary": "First-hour survival, Nexus path, POIs, scanner, factions, finale readiness."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "POI + Scanner Pass",
+      "status": "Review",
+      "progress": 88,
+      "summary": "Route Map, POI Atlas, generated structures, scanner route records."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Faction Pass",
+      "status": "Review",
+      "progress": 83,
+      "summary": "Faction contracts, side ops, field archive, lore cohesion."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Drone Pass",
+      "status": "Review",
+      "progress": 81,
+      "summary": "Companion Link, command states, terminal feedback, reward hooks."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Orbital Remnants QA",
+      "status": "Ready",
+      "progress": 90,
+      "summary": "Launch chain, route telemetry, suit support, boss and cache checks."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Stationfall QA",
+      "status": "Needs Pass",
+      "progress": 74,
+      "summary": "Station pressure route, AI override, crew logs, terminal surface."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Nexus Protocol QA",
+      "status": "Needs Pass",
+      "progress": 78,
+      "summary": "Nexus unlocks, anomaly storms, Blackbox monolith bridge."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Industrial Nexus QA",
+      "status": "Needs Pass",
+      "progress": 70,
+      "summary": "Machine routes, compat hooks, recipe coverage, station/blackbox support."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Blackbox Protocol QA",
+      "status": "Needs Pass",
+      "progress": 72,
+      "summary": "Memory fragments, dungeon route gates, endings, archive terminal."
+    },
+    {
+      "projectSlug": "echo",
+      "title": "Release Candidate",
+      "status": "Active",
+      "progress": 87,
+      "summary": "Full stack build, validators, GameTests, jar set, runtime log scan."
+    },
+    {
+      "projectSlug": "arcana",
+      "title": "Field Journal + Research Loop",
+      "status": "Active",
+      "progress": 80,
+      "summary": "Research categories, journal progression, Veil readings, and unlock feedback for the first playable study loop."
+    },
+    {
+      "projectSlug": "arcana",
+      "title": "Ritual + Convergence Systems",
+      "status": "Review",
+      "progress": 72,
+      "summary": "Ritual validation, convergence rewards, Resonance Lens flow, and late-game Veilbound choices."
+    },
+    {
+      "projectSlug": "arcana",
+      "title": "Fracture + Construct QA",
+      "status": "Needs Pass",
+      "progress": 65,
+      "summary": "Fracture risk events, construct behaviors, entity resources, and related GameTest coverage."
+    },
+    {
+      "projectSlug": "arcana",
+      "title": "Release Verification",
+      "status": "Active",
+      "progress": 60,
+      "summary": "Gradle build, resource validator, runtime log scan, GameTests, and verifyArcanaRelease gate."
+    }
   ],
   "qaTracks": [
     {
@@ -116,36 +799,986 @@
       "key": "resources",
       "title": "Resource Completeness",
       "severity": "high",
-      "status": "mock-warning",
-      "summary": "Placeholder track for lang keys, models, blockstates, recipes, loot tables, tags, and JEI coverage.",
-      "checks": ["Missing lang keys", "Missing item models", "Missing blockstates", "Missing recipes", "Missing loot tables", "Missing tags", "Missing JEI entries"]
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
     },
     {
       "projectSlug": "echo",
-      "key": "terminal",
-      "title": "Terminal Pages",
-      "severity": "critical",
-      "status": "mock-warning",
-      "summary": "Checks Command Deck, What Now, Mission Graph, Protocol Roadmap, Signal Leads, Route Map, POI Atlas, Route Records, Survival Index, Faction Atlas, Vitals, Companion Link, Reward Inbox, Nexus Core, and addon tabs.",
-      "checks": ["Broken terminal pages", "Missing icons", "Broken click actions", "Missing translation keys", "Chapter tab load failures"]
-    },
-    {
-      "projectSlug": "echo",
-      "key": "handoffs",
-      "title": "Addon Handoffs",
-      "severity": "critical",
-      "status": "mock-warning",
-      "summary": "Audits Ashfall to Orbital, Orbital to Stationfall, Stationfall to Nexus, Nexus to Blackbox, and Industrial support hooks.",
-      "checks": ["Broken mission links", "Broken addon handoffs", "Early trigger gates", "Persistence checks", "Terminal feedback"]
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
     },
     {
       "projectSlug": "echo",
       "key": "release-ops",
       "title": "Release Operations",
       "severity": "high",
-      "status": "mock-warning",
-      "summary": "Release hardening path for selected addon sets, validators, runtime log checks, jar-set checks, copy operations, and GameTests.",
-      "checks": ["Bad config defaults", "Wrong module versions", "Stale jars", "Runtime log errors", "GameTest failures"]
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echo",
+      "key": "terminal",
+      "title": "Terminal Pages",
+      "severity": "critical",
+      "status": "active",
+      "summary": "Checks full-stack terminal page/chrome signals and addon tab coverage.",
+      "checks": [
+        "Terminal page text",
+        "Terminal tab count",
+        "Addon tab integration"
+      ]
+    },
+    {
+      "projectSlug": "echo",
+      "key": "handoffs",
+      "title": "Addon Handoffs",
+      "severity": "critical",
+      "status": "active",
+      "summary": "Audits release handoff documentation and full-stack addon chain tokens.",
+      "checks": [
+        "Handoff docs",
+        "Release overview",
+        "Full addon-set token"
+      ]
+    },
+    {
+      "projectSlug": "echocore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echocore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echocore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans ARCANA JSON, models, textures, item models, blockstates, and lang coverage.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans ARCANA run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks ARCANA build, resource validation, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
     }
   ],
   "promptTemplates": [
@@ -196,33 +1829,76 @@
       "title": "Release Trailer Thumbnail",
       "description": "Cinematic thumbnail prompt.",
       "body": "Create a cinematic trailer thumbnail for ECHO: Ashfall Protocol and its addon chain. Show a lone survivor facing a glowing Nexus Core under ruined orbital debris, with subtle terminal UI overlays and high-contrast survival sci-fi lighting. No text."
+    },
+    {
+      "projectSlug": "arcana",
+      "id": "arcana-readiness",
+      "category": "Codex QA",
+      "title": "ARCANA Readiness Sweep",
+      "description": "Audit ARCANA build, scan, and release blockers.",
+      "body": "Run a release-readiness audit for ARCANA: Veilbound Studies. Inspect Gradle tasks, validateArcanaResources, runtime log checks, GameTest coverage, current mod version, jar promotion assumptions, and docs. Do not run destructive commands. Report blockers, risky assumptions, and the next safest verification order."
+    },
+    {
+      "projectSlug": "arcana",
+      "id": "arcana-veil-icon-kit",
+      "category": "Asset Prompt",
+      "title": "Veil Icon Kit",
+      "description": "ARCANA item and UI texture prompt.",
+      "body": "Create a cohesive set of 16x16 Minecraft-style ARCANA: Veilbound Studies icons for Veil resonance, research notes, ritual focus, fracture warning, construct core, convergence reward, and Resonance Lens. Use crisp silhouettes, violet/teal/gold accents, transparent backgrounds, and readable magical research shapes."
     }
   ],
   "terminalPlanner": [
     {
       "projectSlug": "echo",
       "group": "CORE",
-      "pages": ["Command Deck", "What Now", "Mission Graph", "Protocol Roadmap", "Signal Leads"]
+      "pages": [
+        "Command Deck",
+        "What Now",
+        "Mission Graph",
+        "Protocol Roadmap",
+        "Signal Leads"
+      ]
     },
     {
       "projectSlug": "echo",
       "group": "FIELD",
-      "pages": ["Route Map", "POI Atlas", "Route Records", "Field Archive", "Faction Atlas"]
+      "pages": [
+        "Route Map",
+        "POI Atlas",
+        "Route Records",
+        "Field Archive",
+        "Faction Atlas"
+      ]
     },
     {
       "projectSlug": "echo",
       "group": "SYSTEMS",
-      "pages": ["Vitals", "Companion Link", "Reward Inbox", "Diagnostics"]
+      "pages": [
+        "Vitals",
+        "Companion Link",
+        "Reward Inbox",
+        "Diagnostics"
+      ]
     },
     {
       "projectSlug": "echo",
       "group": "NEXUS",
-      "pages": ["Nexus Core", "Prime Relays", "Path Commitment"]
+      "pages": [
+        "Nexus Core",
+        "Prime Relays",
+        "Path Commitment"
+      ]
     },
     {
       "projectSlug": "echo",
       "group": "ADDONS",
-      "pages": ["Orbital", "Stationfall", "Nexus Protocol", "Industrial Nexus", "Blackbox Protocol"]
+      "pages": [
+        "Orbital",
+        "Stationfall",
+        "Nexus Protocol",
+        "Industrial Nexus",
+        "Blackbox Protocol"
+      ]
     }
   ],
   "releaseActions": [
@@ -234,7 +1910,10 @@
       "mode": "shell",
       "risk": "medium",
       "executable": ".\\gradlew.bat",
-      "args": ["buildEchoWorkspace", "-PechoAddonSet=beta"]
+      "args": [
+        "buildEchoWorkspace",
+        "-PechoAddonSet=beta"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -244,7 +1923,10 @@
       "mode": "shell",
       "risk": "medium",
       "executable": ".\\gradlew.bat",
-      "args": ["buildEchoWorkspace", "-PechoAddonSet=all"]
+      "args": [
+        "buildEchoWorkspace",
+        "-PechoAddonSet=all"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -254,7 +1936,12 @@
       "mode": "shell",
       "risk": "high",
       "executable": ".\\gradlew.bat",
-      "args": ["verifyEchoRelease", "--warning-mode", "all", "-PechoAddonSet=all"]
+      "args": [
+        "verifyEchoRelease",
+        "--warning-mode",
+        "all",
+        "-PechoAddonSet=all"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -264,7 +1951,33 @@
       "mode": "shell",
       "risk": "high",
       "executable": ".\\gradlew.bat",
-      "args": [":echocore:runGameTestServer", "runGameTestServer", ":echoterminal:runGameTestServer", ":echoorbitalremnants:runGameTestServer", ":echostationfall:runGameTestServer", ":echonexusprotocol:runGameTestServer", ":echoindustrialnexus:runGameTestServer", ":echoblackboxprotocol:runGameTestServer", "-PechoAddonSet=all", "--warning-mode", "all"]
+      "args": [
+        ":echocore:runGameTestServer",
+        ":echonetcore:runGameTestServer",
+        ":echodatacore:runGameTestServer",
+        ":echomissioncore:runGameTestServer",
+        ":echoterminal:runGameTestServer",
+        "runGameTestServer",
+        ":echosignalos:runGameTestServer",
+        ":signalosexample:runGameTestServer",
+        ":echoorbitalremnants:runGameTestServer",
+        ":echonexusprotocol:runGameTestServer",
+        ":echoagriculturereclamation:runGameTestServer",
+        ":echoworldcore:runGameTestServer",
+        ":echostationfall:runGameTestServer",
+        ":echoblackboxprotocol:runGameTestServer",
+        ":echoindustrialnexus:runGameTestServer",
+        ":echologisticsnetwork:runGameTestServer",
+        ":echorendercore:runGameTestServer",
+        ":echoconvoyprotocol:runGameTestServer",
+        ":echoholomap:runGameTestServer",
+        ":echoindex:runGameTestServer",
+        ":echoarmory:runGameTestServer",
+        ":echolens:runGameTestServer",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -274,7 +1987,9 @@
       "mode": "shell",
       "risk": "low",
       "executable": ".\\gradlew.bat",
-      "args": ["checkEchoRuntimeLogs"]
+      "args": [
+        "checkEchoRuntimeLogs"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -284,7 +1999,10 @@
       "mode": "shell",
       "risk": "low",
       "executable": ".\\gradlew.bat",
-      "args": ["checkEchoModJarSet", "-PechoAddonSet=all"]
+      "args": [
+        "checkEchoModJarSet",
+        "-PechoAddonSet=all"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -294,7 +2012,10 @@
       "mode": "shell",
       "risk": "high",
       "executable": ".\\gradlew.bat",
-      "args": ["copyEchoJarsToModpack", "-PechoAddonSet=all"]
+      "args": [
+        "copyEchoJarsToModpack",
+        "-PechoAddonSet=all"
+      ]
     },
     {
       "projectSlug": "echo",
@@ -315,6 +2036,1342 @@
       "risk": "low",
       "executable": "",
       "args": []
+    },
+    {
+      "projectSlug": "echocore",
+      "commandId": "build-module",
+      "label": "Build ECHO Core",
+      "description": "Build ECHO: Core from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echocore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echocore",
+      "commandId": "compile-java",
+      "label": "Compile ECHO Core",
+      "description": "Run Java compilation for ECHO: Core.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echocore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echocore",
+      "commandId": "run-gametests",
+      "label": "GameTest ECHO Core",
+      "description": "Run the module GameTest server for ECHO: Core.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echocore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echocore",
+      "commandId": "validate-resources",
+      "label": "Validate ECHO Core Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Core.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "commandId": "build-module",
+      "label": "Build NetCore",
+      "description": "Build ECHO: NetCore from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echonetcore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "commandId": "compile-java",
+      "label": "Compile NetCore",
+      "description": "Run Java compilation for ECHO: NetCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echonetcore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "commandId": "run-gametests",
+      "label": "GameTest NetCore",
+      "description": "Run the module GameTest server for ECHO: NetCore.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echonetcore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonetcore",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for NetCore",
+      "description": "Run the ECHO resource validator before reviewing ECHO: NetCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "commandId": "build-module",
+      "label": "Build DataCore",
+      "description": "Build ECHO: DataCore from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echodatacore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "commandId": "compile-java",
+      "label": "Compile DataCore",
+      "description": "Run Java compilation for ECHO: DataCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echodatacore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "commandId": "run-gametests",
+      "label": "GameTest DataCore",
+      "description": "Run the module GameTest server for ECHO: DataCore.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echodatacore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echodatacore",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for DataCore",
+      "description": "Run the ECHO resource validator before reviewing ECHO: DataCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "commandId": "build-module",
+      "label": "Build MissionCore",
+      "description": "Build ECHO: MissionCore from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echomissioncore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "commandId": "compile-java",
+      "label": "Compile MissionCore",
+      "description": "Run Java compilation for ECHO: MissionCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echomissioncore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "commandId": "run-gametests",
+      "label": "GameTest MissionCore",
+      "description": "Run the module GameTest server for ECHO: MissionCore.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echomissioncore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomissioncore",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for MissionCore",
+      "description": "Run the ECHO resource validator before reviewing ECHO: MissionCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "commandId": "build-module",
+      "label": "Build Ashfall Protocol",
+      "description": "Build ECHO: Ashfall Protocol from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "commandId": "compile-java",
+      "label": "Compile Ashfall Protocol",
+      "description": "Run Java compilation for ECHO: Ashfall Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "commandId": "run-gametests",
+      "label": "GameTest Ashfall Protocol",
+      "description": "Run the module GameTest server for ECHO: Ashfall Protocol.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoashfallprotocol",
+      "commandId": "validate-resources",
+      "label": "Validate Ashfall Protocol Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Ashfall Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "commandId": "build-module",
+      "label": "Build ECHO Terminal",
+      "description": "Build ECHO: Terminal from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoterminal:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "commandId": "compile-java",
+      "label": "Compile ECHO Terminal",
+      "description": "Run Java compilation for ECHO: Terminal.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoterminal:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "commandId": "run-gametests",
+      "label": "GameTest ECHO Terminal",
+      "description": "Run the module GameTest server for ECHO: Terminal.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoterminal:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoterminal",
+      "commandId": "validate-resources",
+      "label": "Validate ECHO Terminal Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Terminal.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "commandId": "build-module",
+      "label": "Build SignalOS",
+      "description": "Build SignalOS from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echosignalos:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "commandId": "compile-java",
+      "label": "Compile SignalOS",
+      "description": "Run Java compilation for SignalOS.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echosignalos:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "commandId": "run-gametests",
+      "label": "GameTest SignalOS",
+      "description": "Run the module GameTest server for SignalOS.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echosignalos:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echosignalos",
+      "commandId": "validate-resources",
+      "label": "Validate SignalOS Resources",
+      "description": "Run the ECHO resource validator before reviewing SignalOS.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "commandId": "build-module",
+      "label": "Build SignalOS Example Addon",
+      "description": "Build SignalOS Example Addon from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":signalosexample:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "commandId": "compile-java",
+      "label": "Compile SignalOS Example Addon",
+      "description": "Run Java compilation for SignalOS Example Addon.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":signalosexample:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "commandId": "run-gametests",
+      "label": "GameTest SignalOS Example Addon",
+      "description": "Run the module GameTest server for SignalOS Example Addon.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":signalosexample:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "signalosexample",
+      "commandId": "validate-resources",
+      "label": "Validate SignalOS Example Addon Resources",
+      "description": "Run the ECHO resource validator before reviewing SignalOS Example Addon.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "commandId": "build-module",
+      "label": "Build Orbital Remnants",
+      "description": "Build ECHO: Orbital Remnants from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoorbitalremnants:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "commandId": "compile-java",
+      "label": "Compile Orbital Remnants",
+      "description": "Run Java compilation for ECHO: Orbital Remnants.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoorbitalremnants:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "commandId": "run-gametests",
+      "label": "GameTest Orbital Remnants",
+      "description": "Run the module GameTest server for ECHO: Orbital Remnants.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoorbitalremnants:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoorbitalremnants",
+      "commandId": "validate-resources",
+      "label": "Validate Orbital Remnants Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Orbital Remnants.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "commandId": "build-module",
+      "label": "Build Nexus Protocol",
+      "description": "Build ECHO: Nexus Protocol from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echonexusprotocol:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "commandId": "compile-java",
+      "label": "Compile Nexus Protocol",
+      "description": "Run Java compilation for ECHO: Nexus Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echonexusprotocol:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "commandId": "run-gametests",
+      "label": "GameTest Nexus Protocol",
+      "description": "Run the module GameTest server for ECHO: Nexus Protocol.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echonexusprotocol:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echonexusprotocol",
+      "commandId": "validate-resources",
+      "label": "Validate Nexus Protocol Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Nexus Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "commandId": "build-module",
+      "label": "Build Agriculture Reclamation",
+      "description": "Build ECHO: Agriculture Reclamation from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoagriculturereclamation:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "commandId": "compile-java",
+      "label": "Compile Agriculture Reclamation",
+      "description": "Run Java compilation for ECHO: Agriculture Reclamation.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoagriculturereclamation:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "commandId": "run-gametests",
+      "label": "GameTest Agriculture Reclamation",
+      "description": "Run the module GameTest server for ECHO: Agriculture Reclamation.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoagriculturereclamation:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoagriculturereclamation",
+      "commandId": "validate-resources",
+      "label": "Validate Agriculture Reclamation Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Agriculture Reclamation.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "commandId": "build-module",
+      "label": "Build WorldCore",
+      "description": "Build ECHO: WorldCore from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoworldcore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "commandId": "compile-java",
+      "label": "Compile WorldCore",
+      "description": "Run Java compilation for ECHO: WorldCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoworldcore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "commandId": "run-gametests",
+      "label": "GameTest WorldCore",
+      "description": "Run the module GameTest server for ECHO: WorldCore.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoworldcore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoworldcore",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for WorldCore",
+      "description": "Run the ECHO resource validator before reviewing ECHO: WorldCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "commandId": "build-module",
+      "label": "Build Stationfall",
+      "description": "Build ECHO: Stationfall from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echostationfall:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "commandId": "compile-java",
+      "label": "Compile Stationfall",
+      "description": "Run Java compilation for ECHO: Stationfall.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echostationfall:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "commandId": "run-gametests",
+      "label": "GameTest Stationfall",
+      "description": "Run the module GameTest server for ECHO: Stationfall.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echostationfall:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echostationfall",
+      "commandId": "validate-resources",
+      "label": "Validate Stationfall Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Stationfall.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "commandId": "build-module",
+      "label": "Build Blackbox Protocol",
+      "description": "Build ECHO: Blackbox Protocol from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoblackboxprotocol:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "commandId": "compile-java",
+      "label": "Compile Blackbox Protocol",
+      "description": "Run Java compilation for ECHO: Blackbox Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoblackboxprotocol:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "commandId": "run-gametests",
+      "label": "GameTest Blackbox Protocol",
+      "description": "Run the module GameTest server for ECHO: Blackbox Protocol.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoblackboxprotocol:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblackboxprotocol",
+      "commandId": "validate-resources",
+      "label": "Validate Blackbox Protocol Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Blackbox Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "commandId": "build-module",
+      "label": "Build Industrial Nexus",
+      "description": "Build ECHO: Industrial Nexus from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoindustrialnexus:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "commandId": "compile-java",
+      "label": "Compile Industrial Nexus",
+      "description": "Run Java compilation for ECHO: Industrial Nexus.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoindustrialnexus:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "commandId": "run-gametests",
+      "label": "GameTest Industrial Nexus",
+      "description": "Run the module GameTest server for ECHO: Industrial Nexus.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoindustrialnexus:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindustrialnexus",
+      "commandId": "validate-resources",
+      "label": "Validate Industrial Nexus Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Industrial Nexus.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "commandId": "build-module",
+      "label": "Build Logistics Network",
+      "description": "Build ECHO: Logistics Network from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echologisticsnetwork:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "commandId": "compile-java",
+      "label": "Compile Logistics Network",
+      "description": "Run Java compilation for ECHO: Logistics Network.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echologisticsnetwork:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "commandId": "run-gametests",
+      "label": "GameTest Logistics Network",
+      "description": "Run the module GameTest server for ECHO: Logistics Network.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echologisticsnetwork:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echologisticsnetwork",
+      "commandId": "validate-resources",
+      "label": "Validate Logistics Network Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Logistics Network.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "commandId": "build-module",
+      "label": "Build RenderCore",
+      "description": "Build ECHO: RenderCore from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echorendercore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "commandId": "compile-java",
+      "label": "Compile RenderCore",
+      "description": "Run Java compilation for ECHO: RenderCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echorendercore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "commandId": "run-gametests",
+      "label": "GameTest RenderCore",
+      "description": "Run the module GameTest server for ECHO: RenderCore.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echorendercore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echorendercore",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for RenderCore",
+      "description": "Run the ECHO resource validator before reviewing ECHO: RenderCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "commandId": "build-module",
+      "label": "Build Convoy Protocol",
+      "description": "Build ECHO: Convoy Protocol from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoconvoyprotocol:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "commandId": "compile-java",
+      "label": "Compile Convoy Protocol",
+      "description": "Run Java compilation for ECHO: Convoy Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoconvoyprotocol:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "commandId": "run-gametests",
+      "label": "GameTest Convoy Protocol",
+      "description": "Run the module GameTest server for ECHO: Convoy Protocol.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoconvoyprotocol:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoconvoyprotocol",
+      "commandId": "validate-resources",
+      "label": "Validate Convoy Protocol Resources",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Convoy Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "commandId": "build-module",
+      "label": "Build HoloMap",
+      "description": "Build ECHO: HoloMap from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoholomap:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "commandId": "compile-java",
+      "label": "Compile HoloMap",
+      "description": "Run Java compilation for ECHO: HoloMap.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoholomap:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "commandId": "run-gametests",
+      "label": "GameTest HoloMap",
+      "description": "Run the module GameTest server for ECHO: HoloMap.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoholomap:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoholomap",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for HoloMap",
+      "description": "Run the ECHO resource validator before reviewing ECHO: HoloMap.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "commandId": "build-module",
+      "label": "Build Index",
+      "description": "Build ECHO: Index from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoindex:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "commandId": "compile-java",
+      "label": "Compile Index",
+      "description": "Run Java compilation for ECHO: Index.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoindex:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "commandId": "run-gametests",
+      "label": "GameTest Index",
+      "description": "Run the module GameTest server for ECHO: Index.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoindex:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoindex",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for Index",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Index.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "commandId": "build-module",
+      "label": "Build Armory",
+      "description": "Build ECHO: Armory from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoarmory:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "commandId": "compile-java",
+      "label": "Compile Armory",
+      "description": "Run Java compilation for ECHO: Armory.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoarmory:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "commandId": "run-gametests",
+      "label": "GameTest Armory",
+      "description": "Run the module GameTest server for ECHO: Armory.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoarmory:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoarmory",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for Armory",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Armory.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "commandId": "build-module",
+      "label": "Build Lens",
+      "description": "Build ECHO: Lens from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echolens:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "commandId": "compile-java",
+      "label": "Compile Lens",
+      "description": "Run Java compilation for ECHO: Lens.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echolens:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "commandId": "run-gametests",
+      "label": "GameTest Lens",
+      "description": "Run the module GameTest server for ECHO: Lens.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echolens:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echolens",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for Lens",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Lens.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "commandId": "build-module",
+      "label": "Build ARCANA",
+      "description": "Build ARCANA: Veilbound Studies from its workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "commandId": "compile-java",
+      "label": "Compile ARCANA",
+      "description": "Run Java compilation for ARCANA: Veilbound Studies.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "commandId": "run-gametests",
+      "label": "GameTest ARCANA",
+      "description": "Run the ARCANA GameTest server.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "commandId": "validate-resources",
+      "label": "Validate ARCANA Resources",
+      "description": "Run ARCANA's resource validator before release review.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateArcanaResources",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "commandId": "scan-runtime-logs",
+      "label": "Scan ARCANA Runtime Logs",
+      "description": "Check recent ARCANA runtime logs and crash reports.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "checkArcanaRuntimeLogs"
+      ]
+    },
+    {
+      "projectSlug": "arcana",
+      "commandId": "verify-release",
+      "label": "Verify ARCANA Release",
+      "description": "Run ARCANA's release verification gate.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "verifyArcanaRelease",
+        "--warning-mode",
+        "all"
+      ]
     }
   ]
 }

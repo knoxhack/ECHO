@@ -6,6 +6,8 @@ import com.mojang.logging.LogUtils;
 
 import com.knoxhack.echoashfallprotocol.entity.ModEntities;
 import com.knoxhack.echoashfallprotocol.integration.AshfallCoreServices;
+import com.knoxhack.echoashfallprotocol.integration.AshfallIndexProvider;
+import com.knoxhack.echoashfallprotocol.integration.AshfallMissionCoreIntegration;
 import com.knoxhack.echoashfallprotocol.integration.AshfallTerminalCommonIntegration;
 import com.knoxhack.echoashfallprotocol.recipe.ScrapPressRecipe;
 import com.knoxhack.echoashfallprotocol.registry.*;
@@ -17,6 +19,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
  * ECHO: Ashfall Protocol
@@ -33,6 +37,7 @@ import net.minecraft.core.registries.Registries;
 public class EchoAshfallProtocol {
     public static final String MODID = "echoashfallprotocol";
     public static final Logger LOGGER = LogUtils.getLogger();
+    private boolean missionCoreIntegrationRegistered;
 
     public EchoAshfallProtocol(IEventBus modEventBus, ModContainer modContainer) {
         // Register the commonSetup method for modloading
@@ -61,9 +66,12 @@ public class EchoAshfallProtocol {
         // === REGISTER EVENT HANDLERS ===
         // Save migration handler for exploration progress.
         NeoForge.EVENT_BUS.register(com.knoxhack.echoashfallprotocol.data.SaveMigrationHandler.class);
+        NeoForge.EVENT_BUS.addListener(this::serverStarted);
+        NeoForge.EVENT_BUS.addListener(this::serverTickPost);
 
         // Mod initialization complete
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        Config.registerEchoConfig();
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -78,17 +86,33 @@ public class EchoAshfallProtocol {
             }
             // Register Scrap Press recipes
             registerScrapPressRecipes();
+            AshfallIndexProvider.register();
         });
 
         LOGGER.info("ECHO-7 AI Guide: ONLINE");
         LOGGER.info("Mutation System: ACTIVE");
         LOGGER.info("Smart Event Framework: ENABLED");
-        LOGGER.info("Faction System: ACTIVE (10 Echo Core Ashfall factions)");
+        LOGGER.info("Faction System: ACTIVE (3 Echo Core Ashfall factions)");
         LOGGER.info("Research System: ACTIVE (15 Perks, 5 Schematics)");
         LOGGER.info("Cold Survival: ACTIVE (Cryogenic Ruins Biome)");
         LOGGER.info("Fast Travel: ACTIVE (Radio Network)");
         LOGGER.info("POI System: ACTIVE (route-specific exploration profiles)");
         LOGGER.info("All systems initialized. Welcome to the wasteland.");
+    }
+
+    private void serverStarted(ServerStartedEvent event) {
+        tryRegisterMissionCoreIntegration();
+    }
+
+    private void serverTickPost(ServerTickEvent.Post event) {
+        tryRegisterMissionCoreIntegration();
+    }
+
+    private void tryRegisterMissionCoreIntegration() {
+        if (missionCoreIntegrationRegistered) {
+            return;
+        }
+        missionCoreIntegrationRegistered = AshfallMissionCoreIntegration.registerWhenReady();
     }
 
     private void registerScrapPressRecipes() {

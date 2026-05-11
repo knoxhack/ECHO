@@ -12,6 +12,8 @@ import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.registry.ModSounds;
 import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import java.util.Locale;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -30,7 +32,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Authoritative server-side handler for the permanent, shared Nexus choice.
@@ -76,8 +77,8 @@ public final class NexusChoiceService {
             player.sendSystemMessage(access.denialMessage());
             if (access.worldResolved()) {
                 NexusWorldData resolvedData = NexusWorldData.get(level.getServer().overworld());
-                PacketDistributor.sendToPlayer(player, NexusStatePacket.fromWorldData(
-                        resolvedData, NexusCampaignData.get(level.getServer().overworld())));
+                EchoNetSend.toPlayer(player, NexusStatePacket.fromWorldData(
+                        resolvedData, NexusCampaignData.get(level.getServer().overworld())), EchoPacketKind.CLIENTBOUND_SYNC);
                 PostNexusEventHandler.syncPlayerToWorldChoice(player);
             }
             return false;
@@ -117,7 +118,7 @@ public final class NexusChoiceService {
     private static void syncWorldState(ServerLevel level, NexusWorldData worldData) {
         NexusStatePacket packet = NexusStatePacket.fromWorldData(worldData, NexusCampaignData.get(level.getServer().overworld()));
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            PacketDistributor.sendToPlayer(player, packet);
+            EchoNetSend.toPlayer(player, packet, EchoPacketKind.CLIENTBOUND_SYNC);
         }
     }
 

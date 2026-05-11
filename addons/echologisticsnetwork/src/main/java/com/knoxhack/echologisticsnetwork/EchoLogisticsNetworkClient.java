@@ -1,6 +1,7 @@
 package com.knoxhack.echologisticsnetwork;
 
 import com.knoxhack.echologisticsnetwork.client.CourierDroneRenderer;
+import com.knoxhack.echologisticsnetwork.client.CourierDroneModel;
 import com.knoxhack.echologisticsnetwork.client.LogisticsScreen;
 import com.knoxhack.echologisticsnetwork.registry.ModEntities;
 import com.knoxhack.echologisticsnetwork.registry.ModMenus;
@@ -24,6 +25,11 @@ public class EchoLogisticsNetworkClient {
    @SubscribeEvent
    static void registerMenuScreens(RegisterMenuScreensEvent event) {
       event.register(ModMenus.LOGISTICS.get(), LogisticsScreen::new);
+   }
+
+   @SubscribeEvent
+   static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+      event.registerLayerDefinition(CourierDroneModel.LAYER_LOCATION, CourierDroneModel::createBodyLayer);
    }
 
    @SubscribeEvent

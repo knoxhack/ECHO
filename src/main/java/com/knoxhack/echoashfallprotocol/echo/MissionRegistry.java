@@ -37,8 +37,8 @@ import java.util.*;
 public class MissionRegistry {
     private static final Map<Integer, List<Mission>> PHASES = new LinkedHashMap<>();
     private static final Map<BlockProbeKey, BlockProbeResult> BLOCK_PROBE_CACHE = new HashMap<>();
-    private static final int BLOCK_PROBE_CACHE_TICKS = 20;
-    private static final int BLOCK_PROBE_CACHE_MAX = 512;
+    private static final int BLOCK_PROBE_CACHE_TICKS = 120;
+    private static final int BLOCK_PROBE_CACHE_MAX = 1024;
 
     static {
         // === PHASE 0: CRASH LANDING ===
@@ -2345,6 +2345,14 @@ public class MissionRegistry {
         BLOCK_PROBE_CACHE.put(cacheKey, new BlockProbeResult(gameTime, found));
         pruneBlockProbeCache(gameTime);
         return found;
+    }
+
+    public static void invalidateBlockProbeCache(Player player) {
+        if (player == null) return;
+        UUID playerId = player.getUUID();
+        String dimension = player.level().dimension().toString();
+        BLOCK_PROBE_CACHE.keySet().removeIf(key ->
+                key.playerId().equals(playerId) && key.dimension().equals(dimension));
     }
 
     private static void pruneBlockProbeCache(long gameTime) {

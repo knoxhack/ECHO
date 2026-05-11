@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.network;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echonetcore.api.EchoPayloadCodecs;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -14,8 +15,8 @@ public record ResearchAnalyzeFragmentPacket(String schematicType) implements Cus
     public static final Identifier ID = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "research_analyze_fragment");
 
     public static final StreamCodec<FriendlyByteBuf, ResearchAnalyzeFragmentPacket> CODEC = StreamCodec.of(
-        (buf, packet) -> buf.writeUtf(packet.schematicType),
-        buf -> new ResearchAnalyzeFragmentPacket(buf.readUtf())
+        (buf, packet) -> EchoPayloadCodecs.writeUtf(buf, packet.schematicType, EchoPayloadCodecs.ID),
+        buf -> new ResearchAnalyzeFragmentPacket(EchoPayloadCodecs.readUtf(buf, EchoPayloadCodecs.ID))
     );
 
     public static final Type<ResearchAnalyzeFragmentPacket> TYPE = new Type<>(ID);

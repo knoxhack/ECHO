@@ -1,0 +1,13 @@
+{
+  "command.echoholomap.added": "ECHO HoloMap // Marker registered.",
+  "command.echoholomap.cleared": "ECHO HoloMap // Debug markers cleared.",
+  "command.echoholomap.dump": "ECHO HoloMap // Layers %s, markers %s, providers %s.",
+  "command.echoholomap.terrain_scanned": "ECHO HoloMap // Terrain scan sampled %s loaded chunk(s) at radius %s.",
+  "command.echoholomap.terrain_cleared": "ECHO HoloMap // Cleared %s discovered terrain tile(s).",
+  "command.echoholomap.terrain_dump": "ECHO HoloMap // Terrain tiles %s in %s.",
+  "key.categories.echoholomap.holomap": "ECHO: HoloMap",
+  "key.echoholomap.toggle_minimap": "Toggle HoloMap Minimap",
+  "text.echoholomap.tab": "HOLOMAP",
+  "text.echoholomap.refresh": "SYNC",
+  "text.echoholomap.add_test_marker": "TEST"
+}

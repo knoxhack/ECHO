@@ -7,13 +7,26 @@ Canonical IDs are stable contract strings used by ECHO Core services, Terminal n
 | Chapter | Canonical ID | Mod ID | Notes |
 | --- | --- | --- | --- |
 | Core services | `core` | `echocore` | Service contracts, addon registry, route/progress/reward APIs. |
+| NetCore | `net_core` | `echonetcore` | Shared packet bridge, sync helpers, and network diagnostics. |
+| MissionCore | `mission_core` | `echomissioncore` | Shared mission service, objectives, progression, and reward contracts. |
+| DataCore | `data_core` | `echodatacore` | Shared persistent player, world, and team data contracts. |
+| WorldCore | `world_core` | `echoworldcore` | Shared regions, hazards, world markers, structure discoveries, and runtime world events. |
 | Terminal shell | `terminal` | `echoterminal` | UI/navigation shell, mission/action registries, archive surfaces, and recipe index registries. |
-| Ashfall | `ashfall` | `echoashfallprotocol` | Main survival route and release starting chapter. |
+| ECHO: Ashfall Protocol | `ashfall_protocol` | `echoashfallprotocol` | Main campaign addon for the Ashfall modpack and release starting chapter. |
+| SignalOS | `signalos` | `signalos` | Reusable terminal/content framework for missions, archives, rewards, diagnostics, JSON content, and optional KubeJS bridge. |
+| SignalOS Example | `signalos_example` | `signalosexample` | Example-only SignalOS addon; no real Ashfall canon progression depends on it. |
+| RenderCore | `render_core` | `echorendercore` | Shared visual-state, animation-profile, particle-profile, and renderer helper layer for advanced assets. |
 | Orbital Remnants | `orbital_remnants` | `echoorbitalremnants` | Post-Nexus orbital follow-up chapter after Ashfall recovery. |
 | Agriculture Reclamation | `agriculture_reclamation` | `echoagriculturereclamation` | Optional field recovery chapter for seed recovery, greenhouse safety, hydroponics, and chunk-local restoration. |
 | Stationfall | `stationfall` | `echostationfall` | Station ECHO horror chapter after Orbital route state exposes the station. |
 | Nexus Protocol | `nexus` | `echonexusprotocol` | Nexus corruption and memory escalation chapter. |
 | Industrial Nexus | `industrial_nexus` | `echoindustrialnexus` | Included infrastructure and automation support chapter. |
+| Logistics Network | `logistics_network` | `echologisticsnetwork` | Supply, storage, loadouts, drone delivery, request endpoints, and depots. |
+| Convoy Protocol | `convoy_protocol` | `echoconvoyprotocol` | Ruined-Earth vehicles, cargo routes, contracts, checkpoint gates, and travel hazards. |
+| HoloMap | `holomap` | `echoholomap` | Terminal-integrated command map, telemetry layers, and addon marker registry. |
+| Index | `index` | `echoindex` | Shared item, recipe, usage, and archive index. |
+| Armory | `armory` | `echoarmory` | Modular combat gear, armor, modules, energy recharge, faction locks, and loadout hooks. |
+| Lens | `lens` | `echolens` | Smart scanner HUD for contextual inspection and addon relevance. |
 | Blackbox Protocol | `blackbox_protocol` | `echoblackboxprotocol` | Late-game memory finale and final directive chapter. |
 
 ## Release Handoff IDs
@@ -37,13 +50,14 @@ Canonical IDs are stable contract strings used by ECHO Core services, Terminal n
 | Agriculture chunk restoration milestone | `echoagriculturereclamation:restore_chunk` | Agriculture Reclamation | Core milestone recorded when local restoration pressure reaches chunk restoration. |
 | Stationfall Blackbox recovered | `stationfall:blackbox_recovered` | Stationfall | Opens Nexus Protocol handoff context. |
 | Industrial processing recipes | `echoindustrialnexus:industrial_processing` | Industrial Nexus | Data recipe type surfaced by Industrial machine processing and Terminal Recipe Index entries. |
+| HoloMap Terminal tab | `echoholomap:terminal/holomap` | HoloMap | Shared Terminal map surface for region, route, hazard, scan, mission, and addon markers. |
 
 ## Selectable Addon Sets
 
 | Addon set | Included modules | Purpose |
 | --- | --- | --- |
-| `-PechoAddonSet=beta` | Core, Terminal, Ashfall, Orbital Remnants, Agriculture Reclamation | Smaller compatibility build. |
-| `-PechoAddonSet=all` | Core, Terminal, Ashfall, Orbital Remnants, Agriculture Reclamation, Stationfall, Nexus Protocol, Industrial Nexus, Blackbox Protocol | Current full-stack release verification target. |
+| `-PechoAddonSet=beta` | Core, NetCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, ECHO: Ashfall Protocol, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, WorldCore | Smaller compatibility build. |
+| `-PechoAddonSet=all` | Core, NetCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, RenderCore, ECHO: Ashfall Protocol, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, WorldCore, Stationfall, Blackbox Protocol, Industrial Nexus, Logistics Network, Convoy Protocol, HoloMap, Index, Armory | Current full-stack release verification target. |
 
 ## Rules
 

@@ -19,6 +19,12 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[1]
 MODID = "echoashfallprotocol"
 KNOWN_NAMESPACES = {MODID, "minecraft"}
+CANONICAL_ASHFALL_FACTION_IDS = {
+    f"{MODID}:radwarden_compact",
+    f"{MODID}:crashbreak_salvage",
+    f"{MODID}:sporebound_sanctum",
+}
+FACTION_JSON_KEYS = {"factionId", "checkpointFactionId", "factionGate"}
 JAVA_ROOT = ROOT / "src/main/java/com/knoxhack/echoashfallprotocol"
 CORE_JAVA_ROOT = ROOT / "core/echocore/src/main/java/com/knoxhack/echocore"
 ORBITAL_JAVA_ROOT = ROOT / "addons/echoorbitalremnants/src/main/java/com/knoxhack/echoorbitalremnants"
@@ -1089,7 +1095,7 @@ def check_echo_core_faction_source_guards(errors: list[str]) -> None:
         "thawbound_collective",
         "scarbound_conclave",
     )
-    orbital_ids = ("orbital_remnants", "void_salvagers", "nexus_choir")
+    orbital_faction_targets = ("radwarden_compact", "crashbreak_salvage", "sporebound_sanctum")
     for faction_id in ashfall_ids:
         if f'id("{faction_id}")' not in ashfall_factions and f'"{faction_id}"' not in ashfall_factions:
             errors.append(f"MISSING_ASHFALL_CORE_FACTION {MODID}:{faction_id}")
@@ -1098,9 +1104,11 @@ def check_echo_core_faction_source_guards(errors: list[str]) -> None:
     for tier in ("_trusted_contract", "_aligned_contract"):
         if tier not in ashfall_contracts:
             errors.append(f"MISSING_ASHFALL_FACTION_CONTRACT_TIER {tier}")
-    for faction_id in orbital_ids:
-        if f'id("{faction_id}")' not in orbital_factions and f'"{faction_id}"' not in orbital_factions:
-            errors.append(f"MISSING_ORBITAL_CORE_FACTION echoorbitalremnants:{faction_id}")
+    for faction_id in orbital_faction_targets:
+        if f'ashfall("{faction_id}")' not in orbital_factions and f'"{faction_id}"' not in orbital_factions:
+            errors.append(f"MISSING_ORBITAL_ASHFALL_FACTION_MIRROR {MODID}:{faction_id}")
+    if "registerFaction(new EchoFactionDefinition" in orbital_factions:
+        errors.append("STALE_ORBITAL_FACTION_REGISTRATION Orbital should mirror Ashfall faction ids only")
 
     require_source_tokens(
         "Ashfall faction registration and clean routing",
@@ -1110,7 +1118,7 @@ def check_echo_core_faction_source_guards(errors: list[str]) -> None:
             "AshfallBiomeFactions.register()",
             "registerFactionActionHandler",
             "Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID",
-            "CURRENT_MIGRATION_VERSION = 2",
+            "CURRENT_MIGRATION_VERSION = 3",
             "class AshfallFactionMap",
             "List<Identifier> all()",
             "boolean isAshfall(Identifier factionId)",
@@ -2070,73 +2078,60 @@ def check_lore_cohesion_source_guards(errors: list[str]) -> None:
             errors.append(f"STALE_ORBITAL_COMPAT_COPY {rel_path}")
 
 
-def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
-    """Keep the old 3-faction Ashfall runtime from leaking back in."""
+def check_global_three_faction_guards(errors: list[str]) -> None:
+    """Keep player-facing faction copy and addon data on the global three-faction model."""
 
     scan_roots = (
         JAVA_ROOT,
         DATA_ROOT,
         ASSET_ROOT,
+        ORBITAL_JAVA_ROOT,
+        ROOT / "addons/echoorbitalremnants/src/main/resources",
+        ROOT / "addons/echoagriculturereclamation/src/main",
+        ROOT / "addons/echologisticsnetwork/src/main",
+        ROOT / "addons/echoconvoyprotocol/src/main",
+        ROOT / "addons/echoarmory/src/main",
         ROOT / "tools",
+        ROOT / "docs",
         ROOT / "README.md",
+        ROOT / "MODPACK_OVERVIEW.md",
+        ROOT / "LORE_BIBLE.md",
+        ROOT / "addons/echoorbitalremnants/README.md",
+        ROOT / "addons/echoorbitalremnants/guide.md",
+        ROOT / "addons/echoorbitalremnants/BETA_TEST_PLAN.md",
+        ROOT / "addons/echoorbitalremnants/BETA_RC_NOTES.md",
+        ROOT / "addons/echoorbitalremnants/CHANGELOG.md",
     )
     suffixes = {".java", ".json", ".md", ".py", ".toml", ".properties", ".txt"}
     allow_path_parts = (
         "tools/validate_gameplay_data.py",
-    )
-    line_allow_tokens = (
-        "Orbital Remnants",
-        "Orbital Remnant",
-        "Void Salvager",
-        "echoorbitalremnants",
-        "orbital_remnant",
-        "void_salvager",
+        "src/main/java/com/knoxhack/echoashfallprotocol/faction/AshfallFactionMap.java",
+        "src/main/java/com/knoxhack/echoashfallprotocol/faction/AshfallBiomeFactions.java",
+        "src/main/java/com/knoxhack/echoashfallprotocol/data/SaveMigrationHandler.java",
     )
     legacy_patterns = (
-        r"ReputationData\.Faction",
-        r"\bReputationData\b",
-        r"\bLegacyFactionIds\b",
-        r"\bLegacyReputationData\b",
-        r"\bLegacyFactionQuestData\b",
-        r"\bLEGACY_REMNANT_SOLDIER\b",
-        r"\bLEGACY_SALVAGER_TRADER\b",
-        r"\bLEGACY_MUTANT_CREATURE\b",
-        r"\bFactionQuest(?:Data|Progression|Registry)?\b",
-        r"\bVillagerQuestHandler\b",
-        r"\bAshfallFactionBridge\b",
-        r"\bcontact_remnants\b",
-        r"\bcontact_salvagers\b",
-        r"\bcontact_mutants\b",
-        r"\bearn_remnant_trust\b",
-        r"\bmake_salvager_trade\b",
-        r"\brecover_mutant_sample\b",
-        r"\bremnant_soldier\b",
-        r"\bsalvager_trader\b",
-        r"\bmutant_creature\b",
-        r"\breputation_data\b",
-        r"\bfaction_quest_data\b",
-        r"\bremnant_village\b",
-        r"\bsalvager_village\b",
-        r"\bmutant_village\b",
-        r"\bremnant_outpost\b",
-        r"\bsalvager_trading_post\b",
-        r"\bmutant_sanctuary\b",
-        r"\bRemnants\b",
-        r"\bSalvagers\b",
-        r"\bRemnant\b",
-        r"\bSalvager\b",
-        r"\bMutants\b",
-        r"\bMutant Sanctuary\b",
-        r"\bContact Mutants\b",
-        r"\b3 Factions\b",
+        r"\bSurvivor Network\b",
+        r"\bAshland Rangers\b",
+        r"\bDustline Freeholds\b",
+        r"\bMetro Archivists\b",
+        r"\bRustworks Union\b",
+        r"\bThawbound Collective\b",
+        r"\bScarbound Conclave\b",
+        r"\bMutant Front\b",
+        r"\bSalvager Guild\b",
+        r"\bRemnant Collective\b",
+        r"\bOrbital Remnant\b",
+        r"\bVoid Salvagers?\b",
+        r"\bNexus Choir\b",
+        r"\b10 Ashfall factions\b",
+        r"\b10 Echo Core\b",
+        r"\bTen Ashfall\b",
     )
     compiled = [re.compile(pattern) for pattern in legacy_patterns]
 
     def allowed(path: Path, line: str) -> bool:
         rel_path = path.relative_to(ROOT).as_posix()
-        if any(part in rel_path for part in allow_path_parts):
-            return True
-        return any(token in line for token in line_allow_tokens)
+        return any(part in rel_path for part in allow_path_parts)
 
     for root in scan_roots:
         if not root.exists():
@@ -2155,10 +2150,33 @@ def check_clean_ashfall_faction_rebuild_guards(errors: list[str]) -> None:
                 for pattern in compiled:
                     if pattern.search(line):
                         errors.append(
-                            f"STALE_ASHFALL_3_FACTION_REFERENCE {path.relative_to(ROOT)}:{line_number}: "
+                            f"STALE_GLOBAL_3_FACTION_REFERENCE {path.relative_to(ROOT)}:{line_number}: "
                             f"{pattern.pattern}"
                         )
                         break
+
+    for root in (DATA_ROOT, ROOT / "addons"):
+        for path in json_files(root):
+            if any(part in {"build", "node_modules"} for part in path.parts):
+                continue
+            data = load_json(path, errors)
+            if data is None:
+                continue
+            check_three_faction_json_fields(path, data, errors)
+
+
+def check_three_faction_json_fields(path: Path, value: Any, errors: list[str]) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in FACTION_JSON_KEYS and isinstance(item, str) and item.strip():
+                if item not in CANONICAL_ASHFALL_FACTION_IDS:
+                    errors.append(
+                        f"NON_CANONICAL_FACTION_JSON_FIELD {path.relative_to(ROOT)}:{key}: {item}"
+                    )
+            check_three_faction_json_fields(path, item, errors)
+    elif isinstance(value, list):
+        for item in value:
+            check_three_faction_json_fields(path, item, errors)
 
 
 def main() -> int:
@@ -2189,7 +2207,7 @@ def main() -> int:
     check_guardian_structure_source_guards(errors)
     check_terminal_mission_browser_source_guards(errors)
     check_lore_cohesion_source_guards(errors)
-    check_clean_ashfall_faction_rebuild_guards(errors)
+    check_global_three_faction_guards(errors)
 
     if errors:
         print("Gameplay data validation failed:")

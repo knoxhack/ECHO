@@ -5,6 +5,8 @@ import com.knoxhack.signalos.api.TerminalChapter;
 import com.knoxhack.signalos.api.TerminalDiagnosticProvider;
 import com.knoxhack.signalos.api.TerminalMission;
 import com.knoxhack.signalos.api.TerminalPage;
+import com.knoxhack.signalos.api.SignalOsApp;
+import com.knoxhack.signalos.api.SignalOsDataRecord;
 import com.knoxhack.signalos.content.SignalOsContentRegistry;
 import com.knoxhack.signalos.menu.SignalOsTerminalMenu;
 import com.knoxhack.signalos.network.SignalOsActionPacket;
@@ -43,10 +45,12 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
     private static final int RED = 0xFFFF8FA3;
 
     private final List<HitBox> hitBoxes = new ArrayList<>();
+    private Identifier selectedAppId;
     private Identifier selectedChapterId;
     private String selectedPage = "missions";
     private Identifier selectedMissionId;
     private Identifier selectedArchiveId;
+    private Identifier selectedRecordId;
     private int ticks;
     private int panelX;
     private int panelY;
@@ -70,14 +74,15 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         ticks++;
         hitBoxes.clear();
         layout();
+        List<SignalOsApp> apps = SignalOsContentRegistry.apps();
         List<TerminalChapter> chapters = SignalOsContentRegistry.chapters();
+        normalizeAppSelection(apps);
         normalizeSelection(chapters);
 
         graphics.fill(0, 0, width, height, BG);
-        drawFrame(graphics, chapters);
-        drawSidebar(graphics, chapters, mouseX, mouseY);
-        drawPageTabs(graphics, activeChapter(chapters), mouseX, mouseY);
-        drawPage(graphics, activeChapter(chapters), mouseX, mouseY);
+        drawFrame(graphics, apps);
+        drawAppLauncher(graphics, apps, mouseX, mouseY);
+        drawDesktopApp(graphics, activeApp(apps), activeChapter(chapters), mouseX, mouseY);
     }
 
     @Override
@@ -90,8 +95,8 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
             Minecraft.getInstance().setScreen(null);
             return true;
         }
-        if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_RIGHT) {
-            return cyclePage(event.key() == GLFW.GLFW_KEY_RIGHT ? 1 : -1);
+        if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_TAB) {
+            return cycleApp(event.key() == GLFW.GLFW_KEY_LEFT ? -1 : 1);
         }
         if (event.key() == GLFW.GLFW_KEY_UP || event.key() == GLFW.GLFW_KEY_DOWN) {
             return cycleChapter(event.key() == GLFW.GLFW_KEY_DOWN ? 1 : -1);
@@ -106,6 +111,14 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                 continue;
             }
             switch (box.kind()) {
+                case APP -> {
+                    selectedAppId = box.id();
+                    selectedMissionId = null;
+                    selectedArchiveId = null;
+                    selectedRecordId = null;
+                    playClick();
+                    return true;
+                }
                 case CHAPTER -> {
                     selectedChapterId = box.id();
                     selectedMissionId = null;
@@ -134,6 +147,11 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                     } else {
                         playClick();
                     }
+                    return true;
+                }
+                case RECORD -> {
+                    selectedRecordId = box.id();
+                    playClick();
                     return true;
                 }
                 case ACTION -> {
@@ -177,23 +195,45 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         contentH = sidebarH;
     }
 
-    private void drawFrame(GuiGraphicsExtractor graphics, List<TerminalChapter> chapters) {
+    private void drawFrame(GuiGraphicsExtractor graphics, List<SignalOsApp> apps) {
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL);
         graphics.fill(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + 21, 0xFF0B1A22);
         graphics.outline(panelX, panelY, panelW, panelH, 0x884DBAF4);
         graphics.fill(panelX, panelY, panelX + Math.max(34, panelW / 5), panelY + 2, CYAN);
         graphics.fill(panelX, panelY + panelH - 2, panelX + Math.max(28, panelW / 7), panelY + panelH, CYAN);
         graphics.text(font, "SIGNALOS", panelX + 8, panelY + 7, TEXT, false);
-        String meta = Minecraft.getInstance().player == null ? "LINK OFFLINE" : "LINK ONLINE";
-        TerminalChapter chapter = activeChapter(chapters);
-        if (chapter != null) {
-            meta += "  |  " + chapter.title().toUpperCase(Locale.ROOT);
+        String meta = SignalOsClientState.networkOnline() ? "NETWORK ONLINE" : "NETWORK OFFLINE";
+        SignalOsApp app = activeApp(apps);
+        if (app != null) {
+            meta += "  |  " + app.title().toUpperCase(Locale.ROOT);
         }
         int pendingRewards = SignalOsClientState.pendingRewardCount();
         if (pendingRewards > 0) {
             meta += "  |  " + pendingRewards + " REWARD(S)";
         }
         graphics.text(font, trim(meta, panelW - 86), panelX + 80, panelY + 7, MUTED, false);
+    }
+
+    private void drawAppLauncher(GuiGraphicsExtractor graphics, List<SignalOsApp> apps, int mouseX, int mouseY) {
+        graphics.fill(sidebarX, sidebarY, sidebarX + sidebarW, sidebarY + sidebarH, PANEL_ALT);
+        graphics.outline(sidebarX, sidebarY, sidebarW, sidebarH, 0x5538DFF4);
+        graphics.text(font, "APPS", sidebarX + 7, sidebarY + 7, CYAN, false);
+        int y = sidebarY + 20;
+        for (SignalOsApp app : apps) {
+            if (y + 24 > sidebarY + sidebarH - 4) {
+                break;
+            }
+            boolean selected = app.id().equals(selectedAppId);
+            boolean hovered = inside(mouseX, mouseY, sidebarX + 5, y, sidebarW - 10, 22);
+            graphics.fill(sidebarX + 5, y, sidebarX + sidebarW - 5, y + 22,
+                    selected ? 0xD0152C38 : hovered ? ROW_HOVER : ROW);
+            graphics.outline(sidebarX + 5, y, sidebarW - 10, 22, selected ? app.accentColor() : 0x3338DFF4);
+            graphics.fill(sidebarX + 5, y, sidebarX + 8, y + 22, selected ? app.accentColor() : 0x7738DFF4);
+            graphics.text(font, trim(app.title(), sidebarW - 24), sidebarX + 13, y + 7,
+                    selected ? TEXT : MUTED, false);
+            hitBoxes.add(new HitBox(HitKind.APP, app.id(), null, "", sidebarX + 5, y, sidebarW - 10, 22));
+            y += 25;
+        }
     }
 
     private void drawSidebar(GuiGraphicsExtractor graphics, List<TerminalChapter> chapters, int mouseX, int mouseY) {
@@ -266,6 +306,184 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
             case "diagnostics" -> drawDiagnostics(graphics, bodyY, bodyH, mouseX, mouseY);
             default -> drawUnknownPage(graphics, chapter, bodyY, bodyH);
         }
+    }
+
+    private void drawDesktopApp(GuiGraphicsExtractor graphics, SignalOsApp app, TerminalChapter chapter,
+            int mouseX, int mouseY) {
+        graphics.fill(contentX, contentY, contentX + contentW, contentY + contentH, PANEL_ALT);
+        graphics.outline(contentX, contentY, contentW, contentH, 0x4438DFF4);
+        if (app == null) {
+            sectionHeader(graphics, "NO APPS", "No SignalOS apps registered.", contentX + 9, contentY + 8,
+                    contentW - 18, WARN);
+            return;
+        }
+        int bodyY = contentY + 8;
+        int bodyH = Math.max(1, contentH - 16);
+        switch (app.type()) {
+            case "home" -> drawHomeApp(graphics, app, bodyY, bodyH, mouseX, mouseY);
+            case "files" -> drawRecordsApp(graphics, app, "FILES", "record", bodyY, bodyH, mouseX, mouseY);
+            case "notes" -> drawNotesApp(graphics, app, bodyY, bodyH, mouseX, mouseY);
+            case "logs" -> drawRecordsApp(graphics, app, "LOGS", "log", bodyY, bodyH, mouseX, mouseY);
+            case "network" -> drawNetworkApp(graphics, app, bodyY, bodyH);
+            case "settings" -> drawSettingsApp(graphics, app, bodyY, bodyH, mouseX, mouseY);
+            case "data_vault" -> drawRecordsApp(graphics, app, "DATA VAULT", "", bodyY, bodyH, mouseX, mouseY);
+            case "echo_link" -> drawEchoLinkApp(graphics, app, bodyY, bodyH, mouseX, mouseY);
+            case "missions" -> {
+                int legacyY = drawChapterStrip(graphics, bodyY, app.accentColor(), mouseX, mouseY);
+                drawMissions(graphics, chapter, legacyY, Math.max(1, contentY + contentH - legacyY - 8), mouseX, mouseY);
+            }
+            case "archives" -> {
+                int legacyY = drawChapterStrip(graphics, bodyY, app.accentColor(), mouseX, mouseY);
+                drawArchives(graphics, chapter, legacyY, Math.max(1, contentY + contentH - legacyY - 8), mouseX, mouseY);
+            }
+            case "rewards", "reward_inbox" -> drawRewards(graphics, bodyY, bodyH, mouseX, mouseY);
+            case "diagnostics" -> drawDiagnostics(graphics, bodyY, bodyH, mouseX, mouseY);
+            default -> drawUnsupportedApp(graphics, app, bodyY, bodyH);
+        }
+    }
+
+    private void drawHomeApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h, int mouseX, int mouseY) {
+        sectionHeader(graphics, "HOME", SignalOsClientState.networkId(), contentX + 9, y, contentW - 18,
+                app.accentColor());
+        int cardY = y + 30;
+        int cardW = Math.max(70, (contentW - 36) / 3);
+        drawMetric(graphics, "APPS", String.valueOf(SignalOsContentRegistry.apps().size()), contentX + 10, cardY, cardW, app.accentColor());
+        drawMetric(graphics, "DEVICES", String.valueOf(SignalOsClientState.networkDeviceCount()), contentX + 18 + cardW, cardY, cardW, GREEN);
+        drawMetric(graphics, "RECORDS", String.valueOf(SignalOsClientState.dataRecords().size()), contentX + 26 + cardW * 2, cardY, cardW, WARN);
+        int feedY = cardY + 48;
+        drawWrapped(graphics,
+                "Access tier " + SignalOsClientState.accessTier() + " | anchor " + blank(SignalOsClientState.networkAnchor(), "none")
+                        + " | reward inbox " + SignalOsClientState.pendingRewardCount(),
+                contentX + 12, feedY, contentW - 24, MUTED, 3);
+        int quickY = feedY + 34;
+        drawQuickAppButton(graphics, mouseX, mouseY, "FILES", "signalos:files", contentX + 12, quickY, 68, app.accentColor());
+        drawQuickAppButton(graphics, mouseX, mouseY, "NOTES", "signalos:notes", contentX + 86, quickY, 68, WARN);
+        drawQuickAppButton(graphics, mouseX, mouseY, "ECHO", "signalos:echo_link", contentX + 160, quickY, 68, RED);
+    }
+
+    private void drawRecordsApp(GuiGraphicsExtractor graphics, SignalOsApp app, String title, String mode,
+            int y, int h, int mouseX, int mouseY) {
+        List<SignalOsDataRecord> records = filteredRecords(mode);
+        sectionHeader(graphics, title, records.size() + " record(s)", contentX + 9, y, contentW - 18,
+                app.accentColor());
+        if (records.isEmpty()) {
+            graphics.text(font, "NO RECORDS AVAILABLE", contentX + 12, y + 34, MUTED, false);
+            return;
+        }
+        normalizeRecordSelection(records);
+        boolean split = contentW >= 260;
+        int listW = split ? Math.min(150, contentW / 2) : contentW - 18;
+        int listX = contentX + 8;
+        int rowY = y + 28;
+        for (SignalOsDataRecord record : records) {
+            if (rowY + 27 > y + h - 6) {
+                break;
+            }
+            boolean selected = record.id().equals(selectedRecordId);
+            boolean hovered = inside(mouseX, mouseY, listX, rowY, listW, 25);
+            graphics.fill(listX, rowY, listX + listW, rowY + 25, selected ? 0xD0152B38 : hovered ? ROW_HOVER : ROW);
+            graphics.outline(listX, rowY, listW, 25, selected ? app.accentColor() : 0x3338DFF4);
+            graphics.fill(listX, rowY, listX + 3, rowY + 25, record.archived() ? GREEN : app.accentColor());
+            graphics.text(font, trim(record.title(), listW - 16), listX + 9, rowY + 5, selected ? TEXT : MUTED, false);
+            graphics.text(font, trim(record.type().toUpperCase(Locale.ROOT) + " | " + record.source(), listW - 16),
+                    listX + 9, rowY + 15, MUTED, false);
+            hitBoxes.add(new HitBox(HitKind.RECORD, record.id(), null, "", listX, rowY, listW, 25));
+            rowY += 28;
+        }
+        SignalOsDataRecord selected = selectedRecord(records);
+        if (selected == null) {
+            return;
+        }
+        int detailX = split ? listX + listW + 8 : listX;
+        int detailY = split ? y + 28 : Math.min(y + h - 80, rowY + 6);
+        int detailW = split ? contentX + contentW - detailX - 8 : listW;
+        int detailH = Math.max(54, y + h - detailY - 8);
+        graphics.fill(detailX, detailY, detailX + detailW, detailY + detailH, 0xAA071017);
+        graphics.outline(detailX, detailY, detailW, detailH, 0x5538DFF4);
+        graphics.fill(detailX, detailY, detailX + detailW, detailY + 2, app.accentColor());
+        graphics.text(font, trim(selected.title().toUpperCase(Locale.ROOT), detailW - 16), detailX + 8, detailY + 8, TEXT, false);
+        graphics.text(font, trim(selected.source() + " | " + selected.type(), detailW - 16), detailX + 8, detailY + 20, MUTED, false);
+        drawWrapped(graphics, selected.body(), detailX + 8, detailY + 36, detailW - 16, MUTED, Math.max(1, (detailH - 42) / 10));
+    }
+
+    private void drawNotesApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h, int mouseX, int mouseY) {
+        drawRecordsApp(graphics, app, "NOTES", "note", y, h, mouseX, mouseY);
+        int buttonY = contentY + contentH - 24;
+        drawActionButton(graphics, mouseX, mouseY, "NEW NOTE", contentX + 12, buttonY, 78, app.accentColor(),
+                SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.SAVE_NOTE,
+                "Operator Note\nCreated from SignalOS at client tick " + ticks + ".");
+        drawActionButton(graphics, mouseX, mouseY, "CLEAR", contentX + 96, buttonY, 58, RED,
+                SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.CLEAR_NOTES, "");
+    }
+
+    private void drawNetworkApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h) {
+        sectionHeader(graphics, "NETWORK MONITOR", SignalOsClientState.networkId(), contentX + 9, y,
+                contentW - 18, app.accentColor());
+        int cardY = y + 30;
+        drawMetric(graphics, "TERMINALS", String.valueOf(SignalOsClientState.terminalCount()), contentX + 12, cardY,
+                Math.max(76, contentW / 4 - 10), app.accentColor());
+        drawMetric(graphics, "WORKSTATIONS", String.valueOf(SignalOsClientState.workstationCount()), contentX + 94, cardY,
+                Math.max(76, contentW / 4 - 10), GREEN);
+        drawMetric(graphics, "RACKS", String.valueOf(SignalOsClientState.serverRackCount()), contentX + 176, cardY,
+                Math.max(70, contentW / 4 - 12), WARN);
+        int textY = cardY + 52;
+        drawWrapped(graphics,
+                "Relay count " + SignalOsClientState.relayCount() + " | radius " + SignalOsClientState.networkRadius()
+                        + " | access tier " + SignalOsClientState.accessTier(),
+                contentX + 12, textY, contentW - 24, MUTED, 4);
+    }
+
+    private void drawSettingsApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h, int mouseX, int mouseY) {
+        sectionHeader(graphics, "SETTINGS", "Local operator preferences", contentX + 9, y, contentW - 18,
+                app.accentColor());
+        int buttonY = y + 36;
+        drawActionButton(graphics, mouseX, mouseY, "THEME: SIGNAL", contentX + 12, buttonY, 104, app.accentColor(),
+                SignalOsBuiltinActions.PAGE_SETTINGS, SignalOsBuiltinActions.SET_PREFERENCE, "theme=signal");
+        drawActionButton(graphics, mouseX, mouseY, "ACCESS: USER", contentX + 122, buttonY, 96, GREEN,
+                SignalOsBuiltinActions.PAGE_SETTINGS, SignalOsBuiltinActions.SET_PREFERENCE, "access=user");
+        drawWrapped(graphics,
+                "Network " + SignalOsClientState.networkId() + " | tier " + SignalOsClientState.accessTier(),
+                contentX + 12, buttonY + 34, contentW - 24, MUTED, 3);
+    }
+
+    private void drawEchoLinkApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h, int mouseX, int mouseY) {
+        List<SignalOsDataRecord> echoRecords = filteredRecords("echo_link");
+        long modules = echoRecords.stream().filter(record -> "module".equals(record.type())).count();
+        long routes = echoRecords.stream().filter(record -> "route".equals(record.type())).count();
+        long diagnostics = echoRecords.stream().filter(record -> "diagnostic".equals(record.type())).count();
+        sectionHeader(graphics, "ECHO LINK", modules + " module(s), " + routes + " route(s), " + diagnostics + " diagnostic(s)",
+                contentX + 9, y, contentW - 18, app.accentColor());
+        drawRecordsApp(graphics, app, "ECHO LINK", "echo_link", y + 22, Math.max(1, h - 22), mouseX, mouseY);
+    }
+
+    private int drawChapterStrip(GuiGraphicsExtractor graphics, int y, int accent, int mouseX, int mouseY) {
+        List<TerminalChapter> chapters = SignalOsContentRegistry.chapters();
+        if (chapters.isEmpty()) {
+            graphics.text(font, "NO CHAPTERS", contentX + 10, y + 4, WARN, false);
+            return y + 22;
+        }
+        int x = contentX + 8;
+        for (TerminalChapter chapter : chapters) {
+            int w = Math.min(92, Math.max(54, font.width(chapter.title()) + 14));
+            if (x + w > contentX + contentW - 8) {
+                break;
+            }
+            boolean selected = chapter.id().equals(selectedChapterId);
+            boolean hovered = inside(mouseX, mouseY, x, y, w, 18);
+            graphics.fill(x, y, x + w, y + 18, selected ? 0xD0152B38 : hovered ? ROW_HOVER : ROW);
+            graphics.outline(x, y, w, 18, selected ? chapter.accentColor() : 0x3338DFF4);
+            graphics.text(font, trim(chapter.title(), w - 12), x + 6, y + 5, selected ? TEXT : MUTED, false);
+            hitBoxes.add(new HitBox(HitKind.CHAPTER, chapter.id(), null, "", x, y, w, 18));
+            x += w + 4;
+        }
+        graphics.fill(contentX + 8, y + 20, contentX + Math.max(36, contentW / 4), y + 22, accent);
+        return y + 26;
+    }
+
+    private void drawUnsupportedApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h) {
+        sectionHeader(graphics, app.title().toUpperCase(Locale.ROOT), "Registered app metadata", contentX + 9, y,
+                contentW - 18, app.accentColor());
+        drawWrapped(graphics, app.summary(), contentX + 12, y + 36, contentW - 24, MUTED, 4);
     }
 
     private void drawMissions(GuiGraphicsExtractor graphics, TerminalChapter chapter, int bodyY, int bodyH,
@@ -525,6 +743,114 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         return cursor;
     }
 
+    private void drawMetric(GuiGraphicsExtractor graphics, String label, String value, int x, int y, int w, int accent) {
+        int safeW = Math.max(1, Math.min(w, contentX + contentW - x - 8));
+        graphics.fill(x, y, x + safeW, y + 38, 0xAA071017);
+        graphics.outline(x, y, safeW, 38, 0x3338DFF4);
+        graphics.fill(x, y, x + 3, y + 38, accent);
+        graphics.text(font, trim(label, safeW - 12), x + 8, y + 7, MUTED, false);
+        graphics.text(font, trim(value, safeW - 12), x + 8, y + 21, TEXT, false);
+    }
+
+    private void drawQuickAppButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY, String label, String appId,
+            int x, int y, int w, int accent) {
+        Identifier id = Identifier.tryParse(appId);
+        if (id == null) {
+            return;
+        }
+        boolean hovered = inside(mouseX, mouseY, x, y, w, 18);
+        graphics.fill(x, y, x + w, y + 18, hovered ? ROW_HOVER : ROW);
+        graphics.outline(x, y, w, 18, accent);
+        graphics.centeredText(font, trim(label, w - 8), x + w / 2, y + 6, TEXT);
+        hitBoxes.add(new HitBox(HitKind.APP, id, null, "", x, y, w, 18));
+    }
+
+    private void drawActionButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY, String label, int x, int y,
+            int w, int accent, Identifier pageId, Identifier actionId, String payload) {
+        boolean hovered = inside(mouseX, mouseY, x, y, w, 16);
+        graphics.fill(x, y, x + w, y + 16, hovered ? 0xFF183743 : 0xFF112430);
+        graphics.outline(x, y, w, 16, accent);
+        graphics.centeredText(font, trim(label, w - 8), x + w / 2, y + 5, TEXT);
+        hitBoxes.add(new HitBox(HitKind.ACTION, actionId, pageId, payload == null ? "" : payload, x, y, w, 16));
+    }
+
+    private List<SignalOsDataRecord> filteredRecords(String mode) {
+        String filter = mode == null ? "" : mode;
+        return SignalOsClientState.dataRecords().stream()
+                .filter(record -> switch (filter) {
+                    case "note" -> "note".equals(record.type());
+                    case "echo_link" -> "echo".equals(record.type())
+                            || "module".equals(record.type())
+                            || "route".equals(record.type())
+                            || "diagnostic".equals(record.type());
+                    case "log" -> !"note".equals(record.type());
+                    default -> true;
+                })
+                .toList();
+    }
+
+    private void normalizeRecordSelection(List<SignalOsDataRecord> records) {
+        if (records == null || records.isEmpty()) {
+            selectedRecordId = null;
+            return;
+        }
+        if (selectedRecordId == null || records.stream().noneMatch(record -> record.id().equals(selectedRecordId))) {
+            selectedRecordId = records.getFirst().id();
+        }
+    }
+
+    private SignalOsDataRecord selectedRecord(List<SignalOsDataRecord> records) {
+        normalizeRecordSelection(records);
+        if (records == null || records.isEmpty()) {
+            return null;
+        }
+        return records.stream()
+                .filter(record -> record.id().equals(selectedRecordId))
+                .findFirst()
+                .orElse(records.getFirst());
+    }
+
+    private void normalizeAppSelection(List<SignalOsApp> apps) {
+        if (apps == null || apps.isEmpty()) {
+            selectedAppId = null;
+            return;
+        }
+        if (selectedAppId == null || apps.stream().noneMatch(app -> app.id().equals(selectedAppId))) {
+            selectedAppId = apps.getFirst().id();
+        }
+    }
+
+    private SignalOsApp activeApp(List<SignalOsApp> apps) {
+        if (apps == null || apps.isEmpty()) {
+            return null;
+        }
+        return apps.stream()
+                .filter(app -> app.id().equals(selectedAppId))
+                .findFirst()
+                .orElse(apps.getFirst());
+    }
+
+    private boolean cycleApp(int direction) {
+        List<SignalOsApp> apps = SignalOsContentRegistry.apps();
+        if (apps.isEmpty()) {
+            return false;
+        }
+        normalizeAppSelection(apps);
+        int index = 0;
+        for (int i = 0; i < apps.size(); i++) {
+            if (apps.get(i).id().equals(selectedAppId)) {
+                index = i;
+                break;
+            }
+        }
+        selectedAppId = apps.get(Math.floorMod(index + direction, apps.size())).id();
+        selectedMissionId = null;
+        selectedArchiveId = null;
+        selectedRecordId = null;
+        playClick();
+        return true;
+    }
+
     private boolean cyclePage(int direction) {
         List<TerminalChapter> chapters = SignalOsContentRegistry.chapters();
         TerminalChapter chapter = activeChapter(chapters);
@@ -685,6 +1011,10 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         return value + ellipsis;
     }
 
+    private static String blank(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
     private static boolean inside(double mouseX, double mouseY, int x, int y, int w, int h) {
         return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
     }
@@ -696,10 +1026,12 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
     }
 
     private enum HitKind {
+        APP,
         CHAPTER,
         PAGE,
         MISSION,
         ARCHIVE,
+        RECORD,
         ACTION
     }
 }

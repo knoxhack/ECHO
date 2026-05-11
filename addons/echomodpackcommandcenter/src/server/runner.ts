@@ -1,10 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import type { AppSettings, CommandRun, ReleaseAction } from "../shared/types.js";
-import { ECHO_ROOT } from "./paths.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import type { AppSettings, CommandRun, Project, ReleaseAction } from "../shared/types.js";
 import { CommandCenterStore } from "./db.js";
 import { quarantineStaleJars } from "./quarantine.js";
 import { generateReleaseNotes } from "./releaseNotes.js";
+import { projectWorkspaceRoot } from "./workspace.js";
 
 const OUTPUT_LIMIT = 200_000;
 const activeChildren = new Map<string, ChildProcessWithoutNullStreams>();
@@ -45,7 +48,7 @@ export function startReleaseAction(store: CommandCenterStore, projectSlug: strin
     });
   }
 
-  return startShellRun(store, projectSlug, action, settings);
+  return startShellRun(store, projectSlug, action, settings, project);
 }
 
 export function stopReleaseAction(store: CommandCenterStore, runId: string): CommandRun | null {
@@ -114,10 +117,12 @@ function startShellRun(
   store: CommandCenterStore,
   projectSlug: string,
   action: ReleaseAction,
-  settings: AppSettings
+  settings: AppSettings,
+  project: Project
 ): CommandRun {
   const args = argsWithSettings(action, settings);
   const command = [action.executable, ...args];
+  const cwd = projectWorkspaceRoot(project, settings);
   const startedAt = new Date().toISOString();
   const run = store.createCommandRun({
     id: randomUUID(),
@@ -127,12 +132,13 @@ function startShellRun(
     risk: action.risk,
     command,
     startedAt,
-    metadata: { cwd: ECHO_ROOT, mode: action.mode },
-    output: `Running in ${ECHO_ROOT}\n> ${command.join(" ")}\n\n`
+    metadata: { cwd, mode: action.mode },
+    output: `Running in ${cwd}\n> ${command.join(" ")}\n\n`
   });
 
   const child = spawn(action.executable, args, {
-    cwd: ECHO_ROOT,
+    cwd,
+    env: runnerEnvironment(),
     shell: process.platform === "win32",
     windowsHide: true
   });
@@ -196,4 +202,41 @@ function argsWithSettings(action: ReleaseAction, settings: AppSettings): string[
 
 function durationFrom(startedAt: string): number {
   return Math.max(0, Date.now() - new Date(startedAt).getTime());
+}
+
+function runnerEnvironment(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  if (env.JAVA_HOME || hasJavaOnPath(env.PATH)) {
+    return env;
+  }
+  const javaHome = discoverLocalJdk();
+  if (!javaHome) {
+    return env;
+  }
+  env.JAVA_HOME = javaHome;
+  env.PATH = `${path.join(javaHome, "bin")}${path.delimiter}${env.PATH ?? ""}`;
+  return env;
+}
+
+function hasJavaOnPath(pathValue: string | undefined): boolean {
+  if (!pathValue) {
+    return false;
+  }
+  return pathValue
+    .split(path.delimiter)
+    .some((entry) => fs.existsSync(path.join(entry, process.platform === "win32" ? "java.exe" : "java")));
+}
+
+function discoverLocalJdk(): string | null {
+  const jdkRoot = path.join(os.homedir(), ".jdks");
+  if (!fs.existsSync(jdkRoot)) {
+    return null;
+  }
+  const candidates = fs
+    .readdirSync(jdkRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(jdkRoot, entry.name))
+    .filter((candidate) => fs.existsSync(path.join(candidate, "bin", process.platform === "win32" ? "java.exe" : "java")))
+    .sort((left, right) => right.localeCompare(left));
+  return candidates[0] ?? null;
 }

@@ -20,7 +20,7 @@ import java.util.List;
 
 public class EchoTerminalProgress {
     private static final String ROOT = "echoorbitalremnants_progress";
-    private static final String FINAL_NETWORK_REPORT = "Orbital Remnants arc complete. ECHO-0 is resolved, route surveys are mapped, Nexus anchors are stable, and three faction relays prove orbit no longer owns Earth.";
+    private static final String FINAL_NETWORK_REPORT = "Orbital Remnants arc complete. ECHO-0 is resolved, route surveys are mapped, Nexus anchors are stable, and Radwarden, Crashbreak, and Sporebound relay support proves orbit no longer owns Earth.";
 
     private boolean orbitalContact;
     private boolean launchSiteTracked;
@@ -103,6 +103,7 @@ public class EchoTerminalProgress {
     private int factionContractCooldown;
     private String groundRecoverySites = "";
     private String claimedTerminalMissionCaches = "";
+    private String seededRouteArrivals = "";
 
     public static EchoTerminalProgress get(Player player) {
         return read(player.getPersistentData().getCompoundOrEmpty(ROOT));
@@ -785,7 +786,7 @@ public class EchoTerminalProgress {
         if (faction != null) {
             return contractDisplay(contractId(faction)) + " available. Press SCAN when the listed proof is ready.";
         }
-        return "Faction Contract: pledge to Orbital Remnant, Void Salvagers, or Nexus Choir to unlock route contracts.";
+        return "Faction Contract: pledge to Radwarden Compact, Crashbreak Salvage, or Sporebound Sanctum to unlock route contracts.";
     }
 
     public String factionContractRequirement() {
@@ -1563,6 +1564,23 @@ public class EchoTerminalProgress {
         return claimedTerminalMissionCaches;
     }
 
+    public boolean hasRouteArrivalSeeded(String routeId) {
+        return hasToken(seededRouteArrivals, routeId);
+    }
+
+    public boolean markRouteArrivalSeeded(Player player, String routeId) {
+        if (hasRouteArrivalSeeded(routeId)) {
+            return false;
+        }
+        seededRouteArrivals = addToken(seededRouteArrivals, routeId);
+        save(player);
+        return true;
+    }
+
+    public String seededRouteArrivals() {
+        return seededRouteArrivals;
+    }
+
     private CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("orbital_contact", orbitalContact);
@@ -1646,6 +1664,7 @@ public class EchoTerminalProgress {
         tag.putInt("factionContractCooldown", factionContractCooldown);
         tag.putString("ground_recovery_sites", groundRecoverySites);
         tag.putString("claimed_terminal_mission_caches", claimedTerminalMissionCaches);
+        tag.putString("seeded_route_arrivals", seededRouteArrivals);
         return tag;
     }
 
@@ -1751,6 +1770,7 @@ public class EchoTerminalProgress {
         progress.factionContractCooldown = tag.getIntOr("factionContractCooldown", 0);
         progress.groundRecoverySites = tag.getStringOr("ground_recovery_sites", "");
         progress.claimedTerminalMissionCaches = tag.getStringOr("claimed_terminal_mission_caches", "");
+        progress.seededRouteArrivals = tag.getStringOr("seeded_route_arrivals", "");
         return progress;
     }
 
@@ -1768,39 +1788,21 @@ public class EchoTerminalProgress {
     }
 
     private static String contractId(FactionPledgeItem.Faction faction) {
-        return switch (faction) {
-            case ORBITAL_REMNANT -> "orbital_remnant_relay";
-            case VOID_SALVAGERS -> "void_salvager_manifest";
-            case NEXUS_CHOIR -> "nexus_choir_anchor";
-        };
+        return faction.contractId();
     }
 
     private static FactionPledgeItem.Faction factionFromContract(String contract) {
-        return switch (contract) {
-            case "orbital_remnant_relay" -> FactionPledgeItem.Faction.ORBITAL_REMNANT;
-            case "void_salvager_manifest" -> FactionPledgeItem.Faction.VOID_SALVAGERS;
-            case "nexus_choir_anchor" -> FactionPledgeItem.Faction.NEXUS_CHOIR;
-            default -> null;
-        };
+        return FactionPledgeItem.Faction.fromContractId(contract);
     }
 
     private static String contractDisplay(String contract) {
-        String id = contract == null ? "" : contract.split(":", 2)[0];
-        return switch (id) {
-            case "orbital_remnant_relay" -> "Orbital Remnant Relay Survey";
-            case "void_salvager_manifest" -> "Void Salvager Manifest";
-            case "nexus_choir_anchor" -> "Nexus Choir Anchor Reading";
-            default -> "Faction Contract";
-        };
+        FactionPledgeItem.Faction faction = factionFromContract(contract);
+        return faction == null ? "Faction Contract" : faction.contractTitle();
     }
 
     private static String contractRequirement(String contract) {
-        return switch (contract) {
-            case "orbital_remnant_relay" -> "Scan a Low Orbit Signal Relay or carry Orbit Survey Data for the disciplined route record.";
-            case "void_salvager_manifest" -> "Scan orbital salvage or turn in 1 Orbital Alloy and 1 Vacuum Circuit for the manifest.";
-            case "nexus_choir_anchor" -> "After ECHO-0, scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard for a stable reading.";
-            default -> "No active faction contract.";
-        };
+        FactionPledgeItem.Faction faction = factionFromContract(contract);
+        return faction == null ? "No active faction contract." : faction.contractRequirement();
     }
 
     private static String surveyText(boolean complete, int count) {

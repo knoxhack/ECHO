@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.event;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
@@ -56,6 +57,12 @@ public class MissionProgressEventHandler {
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(killed.getType()).toString();
         QuestData quest = QuestData.get(player);
         quest.recordEntityKill(entityId);
+        EchoCoreServices.recordMissionObjective(
+                player,
+                MissionObjectiveType.KILL_ENTITY,
+                BuiltInRegistries.ENTITY_TYPE.getKey(killed.getType()),
+                1,
+                Map.of("source", EchoAshfallProtocol.MODID));
         NexusRelaySiteService.recordPressureMobKill(player, killed);
 
         var guardianProfile = BiomeGuardianProfiles.byEntityId(entityId);

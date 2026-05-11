@@ -8,9 +8,13 @@ import com.knoxhack.echocore.api.EchoServiceRegistry;
 import com.knoxhack.echocore.api.TerminalPlacementService;
 import com.knoxhack.echocore.api.TerminalRewardService;
 import com.knoxhack.signalos.SignalOS;
+import com.knoxhack.signalos.api.SignalOsApp;
+import com.knoxhack.signalos.api.SignalOsDataRecord;
+import com.knoxhack.signalos.api.SignalOsDriveData;
 import com.knoxhack.signalos.api.TerminalArchiveRecord;
 import com.knoxhack.signalos.api.TerminalChapter;
 import com.knoxhack.signalos.api.TerminalMission;
+import com.knoxhack.signalos.block.entity.SignalOsServerRackBlockEntity;
 import com.knoxhack.signalos.block.entity.SignalOsTerminalBlockEntity;
 import com.knoxhack.signalos.content.SignalOsContentRegistry;
 import com.knoxhack.signalos.content.SignalOsJsonContentLoader;
@@ -19,6 +23,7 @@ import com.knoxhack.signalos.kubejs.SignalOSEvents;
 import com.knoxhack.signalos.menu.SignalOsTerminalMenu;
 import com.knoxhack.signalos.network.SignalOsTerminalStatePacket;
 import com.knoxhack.signalos.service.SignalOsBuiltinActions;
+import com.knoxhack.signalos.service.SignalOsComputerNetworkService;
 import com.knoxhack.signalos.service.SignalOsPlayerData;
 import com.knoxhack.signalos.service.SignalOsTerminalServices;
 import java.util.ArrayList;
@@ -79,6 +84,12 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_state_snapshot", () -> ModGameTests::terminalStateSnapshot);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_MENU_VALIDITY =
             TEST_FUNCTIONS.register("terminal_menu_validity", () -> ModGameTests::terminalMenuValidity);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> APP_REGISTRY_AND_DATA =
+            TEST_FUNCTIONS.register("app_registry_and_data", () -> ModGameTests::appRegistryAndData);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DATA_DRIVE_COMPONENT_FLOW =
+            TEST_FUNCTIONS.register("data_drive_component_flow", () -> ModGameTests::dataDriveComponentFlow);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> COMPUTER_NETWORK_DISCOVERY =
+            TEST_FUNCTIONS.register("computer_network_discovery", () -> ModGameTests::computerNetworkDiscovery);
 
     private ModGameTests() {
     }
@@ -102,6 +113,9 @@ public final class ModGameTests {
         register(event, environment, "echo_core_service_guard", ECHO_CORE_SERVICE_GUARD.getId());
         register(event, environment, "terminal_state_snapshot", TERMINAL_STATE_SNAPSHOT.getId());
         register(event, environment, "terminal_menu_validity", TERMINAL_MENU_VALIDITY.getId());
+        register(event, environment, "app_registry_and_data", APP_REGISTRY_AND_DATA.getId());
+        register(event, environment, "data_drive_component_flow", DATA_DRIVE_COMPONENT_FLOW.getId());
+        register(event, environment, "computer_network_discovery", COMPUTER_NETWORK_DISCOVERY.getId());
     }
 
     private static void registrySorting(GameTestHelper helper) {
@@ -203,6 +217,8 @@ public final class ModGameTests {
             Identifier okMission = testId("ok_mission");
             Identifier javaMission = testId("java_mission");
             Identifier orphanMission = testId("orphan_mission");
+            Identifier rewardMission = testId("reward_mission");
+            Identifier missingRewardMission = testId("missing_reward_mission");
             Identifier okArchive = testId("ok_archive");
             Identifier orphanArchive = testId("orphan_archive");
 
@@ -215,11 +231,13 @@ public final class ModGameTests {
                     Map.of(
                             okMission, TerminalMission.builder(okMission).chapter(jsonChapter.toString()).build(),
                             javaMission, TerminalMission.builder(javaMission).chapter(javaChapter.toString()).build(),
-                            orphanMission, TerminalMission.builder(orphanMission).chapter(testId("missing").toString()).build()),
+                            orphanMission, TerminalMission.builder(orphanMission).chapter(testId("missing").toString()).build(),
+                            rewardMission, TerminalMission.builder(rewardMission).chapter(jsonChapter.toString()).reward("minecraft:bread", 1).build(),
+                            missingRewardMission, TerminalMission.builder(missingRewardMission).chapter(jsonChapter.toString()).reward("signalos_test:missing_reward", 1).build()),
                     Map.of(
                             okArchive, TerminalArchiveRecord.builder(okArchive).chapter(jsonChapter.toString()).build(),
                             orphanArchive, TerminalArchiveRecord.builder(orphanArchive).chapter(testId("missing").toString()).build()),
-                    new SignalOsContentRegistry.LoadReport(5, 5, 0, 0, 0));
+                    new SignalOsContentRegistry.LoadReport(7, 7, 0, 0, 0));
 
             SignalOsContentRegistry.LoadedContent validated =
                     SignalOsJsonContentLoader.validateReferencesForTests(loaded);
@@ -227,14 +245,18 @@ public final class ModGameTests {
                     "JSON missions should keep references to JSON chapters loaded in the same pass.");
             helper.assertTrue(validated.missions().containsKey(javaMission),
                     "JSON missions should keep references to already-registered Java chapters.");
+            helper.assertTrue(validated.missions().containsKey(rewardMission),
+                    "JSON missions should keep registered reward item references.");
             helper.assertFalse(validated.missions().containsKey(orphanMission),
                     "JSON missions with missing chapters should be skipped.");
+            helper.assertFalse(validated.missions().containsKey(missingRewardMission),
+                    "JSON missions with missing reward item ids should be skipped without creating reload-time stacks.");
             helper.assertTrue(validated.archives().containsKey(okArchive),
                     "JSON archives should keep references to JSON chapters loaded in the same pass.");
             helper.assertFalse(validated.archives().containsKey(orphanArchive),
                     "JSON archives with missing chapters should be skipped.");
-            helper.assertTrue(validated.report().rejectedReferences() == 2,
-                    "JSON load report should count skipped missing-chapter references.");
+            helper.assertTrue(validated.report().rejectedReferences() == 3,
+                    "JSON load report should count skipped missing references.");
         });
         helper.succeed();
     }
@@ -527,6 +549,101 @@ public final class ModGameTests {
                 ContainerLevelAccess.create(helper.getLevel(), absolute));
         helper.assertTrue(blockMenu.stillValid(player),
                 "Block-opened SignalOS terminal menus should stay valid near their terminal block.");
+
+        BlockPos workstationPos = new BlockPos(2, 1, 1);
+        helper.setBlock(workstationPos, ModBlocks.WORKSTATION.get());
+        BlockPos workstationAbsolute = helper.absolutePos(workstationPos);
+        player.setPos(workstationAbsolute.getX() + 0.5D, workstationAbsolute.getY() + 0.5D, workstationAbsolute.getZ() + 0.5D);
+        SignalOsTerminalMenu workstationMenu = new SignalOsTerminalMenu(4, player.getInventory(),
+                ContainerLevelAccess.create(helper.getLevel(), workstationAbsolute));
+        helper.assertTrue(workstationMenu.stillValid(player),
+                "Block-opened SignalOS terminal menus should accept workstation access blocks.");
+        helper.succeed();
+    }
+
+    private static void appRegistryAndData(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        SignalOsContentRegistry.withClearedForTests(() -> {
+            Identifier appA = testId("app_a");
+            Identifier appB = testId("app_b");
+            SignalOsContentRegistry.registerApp(SignalOsApp.builder(appB).title("B").order(20).build());
+            SignalOsContentRegistry.registerApp(SignalOsApp.builder(appA).title("A").order(10).build());
+            helper.assertTrue(SignalOsContentRegistry.apps().getFirst().id().equals(appA),
+                    "SignalOS apps should sort by order before id.");
+            try {
+                SignalOsContentRegistry.registerApp(SignalOsApp.builder(appA).title("Duplicate").build());
+                helper.fail("Duplicate SignalOS app ids should be rejected.");
+            } catch (IllegalArgumentException expected) {
+                helper.assertTrue(expected.getMessage().contains("Duplicate SignalOS app id"),
+                        "Duplicate app exception should name the app surface.");
+            }
+            Identifier recordId = testId("record/provider");
+            SignalOsContentRegistry.registerDataProvider(new com.knoxhack.signalos.api.SignalOsDataProvider() {
+                @Override
+                public Identifier id() {
+                    return testId("provider");
+                }
+
+                @Override
+                public List<SignalOsDataRecord> records(Player ignored) {
+                    return List.of(new SignalOsDataRecord(recordId, "Provider Record", "record", "test", "ok", 0, false));
+                }
+            });
+            helper.assertTrue(SignalOsContentRegistry.dataRecords(player).stream()
+                            .anyMatch(record -> record.id().equals(recordId)),
+                    "SignalOS data providers should feed desktop records.");
+        });
+        helper.succeed();
+    }
+
+    private static void dataDriveComponentFlow(GameTestHelper helper) {
+        Identifier recordId = testId("drive/record");
+        SignalOsDriveData driveData = new SignalOsDriveData("Test Drive", List.of(
+                new SignalOsDataRecord(recordId, "Drive Record", "record", "test", "stored", 0, false)));
+        ItemStack stack = new ItemStack(ModBlocks.DATA_DRIVE.get());
+        stack.set(ModDataComponents.DRIVE_DATA.get(), driveData);
+        helper.assertTrue(stack.get(ModDataComponents.DRIVE_DATA.get()).records().getFirst().id().equals(recordId),
+                "SignalOS data drives should persist typed records through their data component.");
+        helper.succeed();
+    }
+
+    private static void computerNetworkDiscovery(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        BlockPos workstation = new BlockPos(1, 1, 1);
+        BlockPos rackPos = new BlockPos(3, 1, 1);
+        BlockPos relayPos = new BlockPos(4, 1, 1);
+        helper.setBlock(workstation, ModBlocks.WORKSTATION.get());
+        helper.setBlock(rackPos, ModBlocks.SERVER_RACK.get());
+        helper.setBlock(relayPos, ModBlocks.NETWORK_RELAY.get());
+
+        BlockPos workstationAbsolute = helper.absolutePos(workstation);
+        player.setPos(workstationAbsolute.getX() + 0.5D, workstationAbsolute.getY() + 0.5D, workstationAbsolute.getZ() + 0.5D);
+        if (helper.getLevel().getBlockEntity(workstationAbsolute) instanceof SignalOsTerminalBlockEntity terminal) {
+            terminal.setOwnerIfMissing(player);
+            SignalOsTerminalServices.rememberTerminal(player, workstationAbsolute);
+        } else {
+            helper.fail("Workstation should create a SignalOS terminal block entity.");
+            return;
+        }
+
+        Identifier recordId = testId("network/drive_record");
+        ItemStack drive = new ItemStack(ModBlocks.DATA_DRIVE.get());
+        drive.set(ModDataComponents.DRIVE_DATA.get(), new SignalOsDriveData("Rack Drive", List.of(
+                new SignalOsDataRecord(recordId, "Rack Record", "record", "test", "rack", 0, false))));
+        if (helper.getLevel().getBlockEntity(helper.absolutePos(rackPos)) instanceof SignalOsServerRackBlockEntity rack) {
+            helper.assertTrue(rack.insertDrive(drive), "Server rack should accept SignalOS data drives.");
+        } else {
+            helper.fail("Server rack should create a SignalOS rack block entity.");
+            return;
+        }
+
+        SignalOsComputerNetworkService.NetworkSnapshot snapshot = SignalOsComputerNetworkService.snapshot(player);
+        helper.assertTrue(snapshot.online(), "Owned workstation should produce an online SignalOS network.");
+        helper.assertTrue(snapshot.workstations() >= 1, "Network scan should count workstation access blocks.");
+        helper.assertTrue(snapshot.serverRacks() >= 1, "Network scan should count server racks.");
+        helper.assertTrue(snapshot.relays() >= 1, "Network scan should count network relays.");
+        helper.assertTrue(snapshot.records().stream().anyMatch(record -> record.id().equals(recordId)),
+                "Network scan should expose records from installed rack drives.");
         helper.succeed();
     }
 

@@ -47,6 +47,14 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.echoindustrialnexus]]
+modId="echorendercore"
+type="optional"
+reason="Enables RenderCore visual profiles, particles, and state-driven machine render helpers."
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoindustrialnexus]]
 modId="echoashfallprotocol"
 type="optional"
 reason="Industrial Nexus expands Ashfall survival with automated filters, scrubbers, and salvage chains."

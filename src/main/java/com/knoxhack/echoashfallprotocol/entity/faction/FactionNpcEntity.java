@@ -4,6 +4,7 @@ import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echocore.api.EchoNpcRole;
 import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.faction.FactionNpcDialogueService;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -43,7 +44,7 @@ public class FactionNpcEntity extends PathfinderMob {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(DATA_FACTION_ID, AshfallBiomeFactions.SURVIVOR_NETWORK.toString());
+        builder.define(DATA_FACTION_ID, AshfallBiomeFactions.RADWARDEN_COMPACT.toString());
         builder.define(DATA_ROLE_ID, "quartermaster");
     }
 
@@ -63,9 +64,9 @@ public class FactionNpcEntity extends PathfinderMob {
 
     public Identifier factionId() {
         try {
-            return Identifier.parse(this.entityData.get(DATA_FACTION_ID));
+            return AshfallFactionMap.canonicalOrDefault(Identifier.parse(this.entityData.get(DATA_FACTION_ID)));
         } catch (RuntimeException ignored) {
-            return AshfallBiomeFactions.SURVIVOR_NETWORK;
+            return AshfallBiomeFactions.RADWARDEN_COMPACT;
         }
     }
 
@@ -92,7 +93,8 @@ public class FactionNpcEntity extends PathfinderMob {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
-        this.entityData.set(DATA_FACTION_ID, input.getStringOr("FactionId", AshfallBiomeFactions.SURVIVOR_NETWORK.toString()));
+        Identifier faction = AshfallFactionMap.resolveFactionId(input.getStringOr("FactionId", AshfallBiomeFactions.RADWARDEN_COMPACT.toString()));
+        this.entityData.set(DATA_FACTION_ID, faction.toString());
         this.entityData.set(DATA_ROLE_ID, input.getStringOr("RoleId", "quartermaster"));
         refreshNameplate();
     }
@@ -110,7 +112,7 @@ public class FactionNpcEntity extends PathfinderMob {
     }
 
     private static Identifier safeFactionId(Identifier factionId) {
-        return factionId == null ? AshfallBiomeFactions.SURVIVOR_NETWORK : factionId;
+        return AshfallFactionMap.canonicalOrDefault(factionId);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

@@ -30,6 +30,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
    public static final NexusTerminalMissionProvider INSTANCE = new NexusTerminalMissionProvider();
    private static final String ACTION_SCAN = "scan";
    private static final String ACTION_CLAIM_CACHE = "claim_cache";
+   private static final String ACTION_NEXT_STEP = "next_step";
    private static final int ACCENT = -8524801;
 
    private NexusTerminalMissionProvider() {
@@ -102,9 +103,15 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
       NexusTerminalMissionProvider.NexusMission mission = mission(missionId);
       if (mission == null) {
          return false;
-      } else if ("scan".equals(actionId)) {
+      } else if (ACTION_SCAN.equals(actionId)) {
          NexusPlayerData data = NexusPlayerData.get(player);
-         data.unlockResearch("nexus_theory");
+         if (mission != NexusTerminalMissionProvider.NexusMission.SIGNAL_BENEATH || !isAvailable(player, data, mission)) {
+            player.sendSystemMessage(Component.literal("[ECHO-7] Follow the current Nexus objective before scanning another route."), true);
+            return true;
+         }
+         data.unlockResearch(NexusPlayerData.RESEARCH_NEXUS_THEORY);
+         data.markScanned(NexusTerminalIds.id("terminal_field_scan"));
+         data.markGearUsed("terminal_field_scan");
          NexusPlayerData.saveAndSync(player, data);
          player.sendSystemMessage(Component.literal("ECHO-7 // Nexus field scan indexed."));
          return true;
@@ -297,11 +304,19 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
       Player player, NexusPlayerData data, NexusTerminalMissionProvider.NexusMission mission, boolean available, boolean complete, boolean claimed
    ) {
       if (!available) {
-         return List.of(TerminalMissionAction.disabled("scan", "SCAN", lockedReason(player, data, mission)));
+         return List.of(TerminalMissionAction.disabled(ACTION_NEXT_STEP, nextActionLabel(mission), lockedReason(player, data, mission)));
       } else if (mission == NexusTerminalMissionProvider.NexusMission.REBUILDS_WORLD && !complete && data.guardianDefeated() && !data.hasEndingPath()) {
          return List.of(TerminalMissionAction.enabled("choose_restore", "RESTORE"), TerminalMissionAction.enabled("choose_control", "CONTROL"), TerminalMissionAction.enabled("choose_destroy", "DESTROY"), TerminalMissionAction.enabled("choose_merge", "MERGE"));
+      } else if (!complete && mission == NexusTerminalMissionProvider.NexusMission.SIGNAL_BENEATH) {
+         return List.of(TerminalMissionAction.enabled(ACTION_SCAN, "SCAN FIELD"));
+      } else if (!complete) {
+         return List.of(TerminalMissionAction.disabled(ACTION_NEXT_STEP, nextActionLabel(mission), mission.guide()));
       } else {
-         return complete ? List.of(claimed ? TerminalMissionAction.disabled("claim_cache", "CLAIM CACHE", "Support cache already claimed.") : TerminalMissionAction.enabled("claim_cache", "CLAIM CACHE")) : List.of(TerminalMissionAction.enabled("scan", "SCAN FIELD"));
+         return List.of(
+            claimed
+               ? TerminalMissionAction.disabled(ACTION_CLAIM_CACHE, "CLAIM CACHE", "Support cache already claimed.")
+               : TerminalMissionAction.enabled(ACTION_CLAIM_CACHE, "CLAIM CACHE")
+         );
       }
    }
 
@@ -366,6 +381,21 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
       } else {
          return mission.guide();
       }
+   }
+
+   private static String nextActionLabel(NexusTerminalMissionProvider.NexusMission mission) {
+      return switch (mission) {
+         case SIGNAL_BENEATH -> "SCAN FIELD";
+         case DIRTY_CHARGE -> "BUILD RECYCLER";
+         case STABILIZE_CAMP -> "STABILIZE FIELD";
+         case TOWER_SPEAKS -> "DECODE MEMORY";
+         case DELETED_HISTORY -> "RECOVER FRAGMENTS";
+         case QUARANTINE_FAILED -> "DEFEAT WARDEN";
+         case MONOLITH_REMEMBERS -> "ACTIVATE MONOLITH";
+         case REALITY_FORGE -> "USE FORGE";
+         case CORE_DOOR -> "OPEN CORE";
+         case REBUILDS_WORLD -> "CHOOSE PATH";
+      };
    }
 
    private static List<String> prerequisites(NexusTerminalMissionProvider.NexusMission mission) {

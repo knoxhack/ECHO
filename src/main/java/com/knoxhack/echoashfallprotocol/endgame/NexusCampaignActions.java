@@ -10,6 +10,8 @@ import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
 import com.knoxhack.echoashfallprotocol.world.NexusWorldData;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.core.BlockPos;
@@ -21,7 +23,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Authoritative server actions for the Nexus Warfront and path finale layer.
@@ -347,7 +348,7 @@ public final class NexusCampaignActions {
         NexusStatePacket packet = NexusStatePacket.fromWorldData(
                 NexusWorldData.get(overworld), NexusCampaignData.get(overworld));
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            PacketDistributor.sendToPlayer(player, packet);
+            EchoNetSend.toPlayer(player, packet, EchoPacketKind.CLIENTBOUND_SYNC);
         }
     }
 
@@ -356,8 +357,8 @@ public final class NexusCampaignActions {
         if (level == null) {
             return;
         }
-        PacketDistributor.sendToPlayer(player, NexusStatePacket.fromWorldData(
-                NexusWorldData.get(level), NexusCampaignData.get(level)));
+        EchoNetSend.toPlayer(player, NexusStatePacket.fromWorldData(
+                NexusWorldData.get(level), NexusCampaignData.get(level)), EchoPacketKind.CLIENTBOUND_SYNC);
     }
 
     private static ServerLevel overworld(ServerPlayer player) {

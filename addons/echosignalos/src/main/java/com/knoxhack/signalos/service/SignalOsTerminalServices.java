@@ -241,7 +241,7 @@ public final class SignalOsTerminalServices {
 
         @Override
         public boolean isTerminalBlock(BlockState state) {
-            return state != null && state.is(ModBlocks.TERMINAL.get());
+            return state != null && ModBlocks.isComputerAccessBlock(state.getBlock());
         }
     }
 

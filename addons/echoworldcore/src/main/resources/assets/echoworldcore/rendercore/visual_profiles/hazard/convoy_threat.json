@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/green_stained_glass.png",
+  "default_state": "ACTIVE",
+  "transition_seconds": 0.18,
+  "materials": {
+    "hazard_route": {
+      "color": "#FF92F7A6",
+      "alpha": 0.56,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "route_threat_warning",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/green_stained_glass.png",
+      "material": "hazard_route",
+      "states": ["ONLINE", "ACTIVE"],
+      "alpha": 0.54,
+      "emissive": true
+    }
+  ]
+}

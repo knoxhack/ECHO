@@ -14,8 +14,8 @@ project(':echocore').projectDir = file('core/echocore')
 def echoAddonSet = (gradle.startParameter.projectProperties.get('echoAddonSet') ?: 'all')
         .toString()
         .toLowerCase(Locale.ROOT)
-def echoBetaAddons = ['echoterminal', 'echosignalos', 'signalosexample', 'echoorbitalremnants', 'echonexusprotocol', 'echoagriculturereclamation']
-def echoReleaseAddons = ['echostationfall', 'echoblackboxprotocol', 'echoindustrialnexus', 'echologisticsnetwork', 'echoconvoyprotocol']
+def echoBetaAddons = ['echonetcore', 'echoterminal', 'echomissioncore', 'echodatacore', 'echosignalos', 'signalosexample', 'echoorbitalremnants', 'echonexusprotocol', 'echoagriculturereclamation', 'echoworldcore']
+def echoReleaseAddons = ['echostationfall', 'echoblackboxprotocol', 'echorendercore', 'echoindustrialnexus', 'echologisticsnetwork', 'echoconvoyprotocol', 'echoholomap', 'echoindex', 'echoarmory', 'echolens']
 
 if (!['beta', 'all'].contains(echoAddonSet)) {
     throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")

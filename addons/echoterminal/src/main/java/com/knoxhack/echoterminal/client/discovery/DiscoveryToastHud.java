@@ -1,8 +1,9 @@
 package com.knoxhack.echoterminal.client.discovery;
 
-import com.knoxhack.echocore.network.DiscoveryToastPacket;
+import com.knoxhack.echocore.api.network.EchoDiscoveryToast;
 import com.knoxhack.echoterminal.api.TerminalUi;
 import com.knoxhack.echoterminal.api.TerminalVisualAssets;
+import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import java.util.ArrayDeque;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -10,16 +11,16 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 
 public final class DiscoveryToastHud {
-    private static final ArrayDeque<DiscoveryToastPacket> QUEUE = new ArrayDeque<>();
+    private static final ArrayDeque<EchoDiscoveryToast> QUEUE = new ArrayDeque<>();
     private static final int DURATION_FRAMES = 150;
     private static final int MAX_QUEUE = 4;
-    private static DiscoveryToastPacket active;
+    private static EchoDiscoveryToast active;
     private static int frames;
 
     private DiscoveryToastHud() {
     }
 
-    public static void push(DiscoveryToastPacket packet) {
+    public static void push(EchoDiscoveryToast packet) {
         if (packet == null) {
             return;
         }
@@ -57,7 +58,7 @@ public final class DiscoveryToastHud {
         renderToast(graphics, active, frames + partialTick);
     }
 
-    private static void renderToast(GuiGraphicsExtractor graphics, DiscoveryToastPacket packet, float age) {
+    private static void renderToast(GuiGraphicsExtractor graphics, EchoDiscoveryToast packet, float age) {
         Minecraft minecraft = Minecraft.getInstance();
         Font font = minecraft.font;
         int screenW = minecraft.getWindow().getGuiScaledWidth();
@@ -73,10 +74,12 @@ public final class DiscoveryToastHud {
         TerminalUi.flatHudPanel(graphics, x, y, w, h, accent);
         Identifier hero = Identifier.tryParse(packet.heroArt());
         if (hero != null) {
+            hero = TerminalClientOptions.currentTheme().visual(hero);
             TerminalUi.imagePanel(graphics, hero, x + 5, y + 5, 56, h - 10, accent, 0.68F, true);
         }
         Identifier icon = Identifier.tryParse(packet.iconArt());
-        TerminalUi.iconTextureBadge(graphics, icon == null ? TerminalVisualAssets.ICON_STATE_OPEN : icon,
+        icon = TerminalClientOptions.currentTheme().visual(icon == null ? TerminalVisualAssets.ICON_STATE_OPEN : icon);
+        TerminalUi.iconTextureBadge(graphics, icon,
                 x + 16, y + 19, 28, accent, true);
 
         int pulse = age % 26 < 13 ? 0xFFFFFFFF : 0xFF92F7A6;

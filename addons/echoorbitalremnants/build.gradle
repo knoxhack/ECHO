@@ -110,6 +110,7 @@ configurations {
 
 dependencies {
     implementation project(":echocore")
+    implementation project(":echonetcore")
     compileOnly project(":echoterminal")
     localRuntime project(":echoterminal")
 

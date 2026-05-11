@@ -48,24 +48,40 @@ public class NexusMobEntity extends Zombie {
       if (this.level() instanceof ServerLevel serverLevel && damageSource.getEntity() instanceof ServerPlayer player) {
          String id = BuiltInRegistries.ENTITY_TYPE.getKey(this.getType()).getPath();
          if (id.contains("corruption_warden")) {
-            NexusWorldData.get(serverLevel).markWardenDefeated();
+            boolean firstWorldDefeat = NexusWorldData.get(serverLevel).markWardenDefeated();
             NexusPlayerData data = NexusPlayerData.get(player);
             data.markWardenDefeated();
             data.refreshFieldTelemetry(player);
             NexusPlayerData.saveAndSync(player, data);
-            this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.REACTOR_CORE.get()));
-            this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.BLACKBOX_FRAGMENT.get()));
+            if (firstWorldDefeat) {
+               this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.REACTOR_CORE.get()));
+               this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.BLACKBOX_FRAGMENT.get()));
+            }
             serverLevel.playSound(null, this.blockPosition(), ModSounds.WARDEN_PULSE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 0.9F, 0.55F);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("ECHO-7 // Corruption Warden offline. The containment lab failed, but its Reactor Core is recoverable."));
+            player.sendSystemMessage(
+               net.minecraft.network.chat.Component.literal(
+                  firstWorldDefeat
+                     ? "ECHO-7 // Corruption Warden offline. The containment lab failed, but its Reactor Core is recoverable."
+                     : "ECHO-7 // Corruption Warden signal already indexed. No duplicate reactor reward authorized."
+               )
+            );
          } else if (id.contains("nexus_guardian")) {
-            NexusWorldData.get(serverLevel).markGuardianDefeated();
+            boolean firstWorldDefeat = NexusWorldData.get(serverLevel).markGuardianDefeated();
             NexusPlayerData data = NexusPlayerData.get(player);
             data.markGuardianDefeated();
             data.refreshFieldTelemetry(player);
             NexusPlayerData.saveAndSync(player, data);
-            this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.CORE_KEY_ASSEMBLY.get()));
+            if (firstWorldDefeat) {
+               this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.CORE_KEY_ASSEMBLY.get()));
+            }
             serverLevel.playSound(null, this.blockPosition(), ModSounds.ENDING_CHOICE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 0.65F);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("ECHO-7 // Nexus Guardian defeated. The Core is no longer waiting. Choose what rebuilds the world."));
+            player.sendSystemMessage(
+               net.minecraft.network.chat.Component.literal(
+                  firstWorldDefeat
+                     ? "ECHO-7 // Nexus Guardian defeated. The Core is no longer waiting. Choose what rebuilds the world."
+                     : "ECHO-7 // Guardian defeat already recorded. Final-path reward remains one-time."
+               )
+            );
          }
       }
    }

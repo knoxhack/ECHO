@@ -20,6 +20,7 @@ import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import com.knoxhack.echoterminal.api.TerminalTabDescriptor;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.api.TerminalUi;
+import com.knoxhack.echoterminal.api.TerminalVisualAssets;
 import com.knoxhack.echoterminal.api.theme.BuiltinTerminalThemes;
 import com.knoxhack.echoterminal.api.theme.TerminalChapterStyle;
 import com.knoxhack.echoterminal.api.theme.TerminalIconKey;
@@ -67,8 +68,22 @@ import com.knoxhack.echocore.api.EchoDiscoveryCategory;
 import com.knoxhack.echocore.api.EchoDiscoveryEntry;
 import com.knoxhack.echocore.api.EchoDiscoveryState;
 import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echocore.api.config.EchoConfigApplyResult;
+import com.knoxhack.echocore.api.config.EchoConfigCategory;
+import com.knoxhack.echocore.api.config.EchoConfigEntry;
+import com.knoxhack.echocore.api.config.EchoConfigEntrySnapshot;
+import com.knoxhack.echocore.api.config.EchoConfigModule;
+import com.knoxhack.echocore.api.config.EchoConfigModuleSnapshot;
+import com.knoxhack.echocore.api.config.EchoConfigProvider;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
 import com.knoxhack.echocore.discovery.EchoDiscoveryData;
+import com.knoxhack.echoterminal.network.TerminalConfigActionPacket;
+import com.knoxhack.echoterminal.network.TerminalConfigClientState;
+import com.knoxhack.echoterminal.network.TerminalConfigSyncPacket;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -79,6 +94,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.imageio.ImageIO;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
@@ -135,6 +151,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_theme_resources", () -> ModGameTests::terminalThemeResources);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_THEME_SELECTION =
             TEST_FUNCTIONS.register("terminal_theme_selection", () -> ModGameTests::terminalThemeSelection);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_ZOOM_OPTIONS =
+            TEST_FUNCTIONS.register("terminal_zoom_options", () -> ModGameTests::terminalZoomOptions);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RESOURCE_NAME_CONTRACTS =
             TEST_FUNCTIONS.register("terminal_resource_name_contracts", () -> ModGameTests::terminalResourceNameContracts);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_COMMAND_DECK_PRIORITY =
@@ -177,6 +195,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_recipe_registry", () -> ModGameTests::terminalRecipeRegistry);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RECIPE_LOOKUPS =
             TEST_FUNCTIONS.register("terminal_recipe_lookups", () -> ModGameTests::terminalRecipeLookups);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_CONFIG_WORKFLOW =
+            TEST_FUNCTIONS.register("terminal_config_workflow", () -> ModGameTests::terminalConfigWorkflow);
 
     private ModGameTests() {
     }
@@ -204,6 +224,7 @@ public final class ModGameTests {
         register(event, environment, "terminal_theme_chapter_style", TERMINAL_THEME_CHAPTER_STYLE.getId());
         register(event, environment, "terminal_theme_resources", TERMINAL_THEME_RESOURCES.getId());
         register(event, environment, "terminal_theme_selection", TERMINAL_THEME_SELECTION.getId());
+        register(event, environment, "terminal_zoom_options", TERMINAL_ZOOM_OPTIONS.getId());
         register(event, environment, "terminal_resource_name_contracts", TERMINAL_RESOURCE_NAME_CONTRACTS.getId());
         register(event, environment, "terminal_command_deck_priority", TERMINAL_COMMAND_DECK_PRIORITY.getId());
         register(event, environment, "terminal_mission_action_routing", TERMINAL_MISSION_ACTION_ROUTING.getId());
@@ -225,6 +246,7 @@ public final class ModGameTests {
         register(event, environment, "terminal_mission_hud_notifications", TERMINAL_MISSION_HUD_NOTIFICATIONS.getId());
         register(event, environment, "terminal_recipe_registry", TERMINAL_RECIPE_REGISTRY.getId());
         register(event, environment, "terminal_recipe_lookups", TERMINAL_RECIPE_LOOKUPS.getId());
+        register(event, environment, "terminal_config_workflow", TERMINAL_CONFIG_WORKFLOW.getId());
     }
 
     private static void terminalApiIds(GameTestHelper helper) {
@@ -248,6 +270,97 @@ public final class ModGameTests {
                     "Known terminal actions rejected by validators should be consumed without reporting unknown");
             helper.assertFalse(denied.get(), "Rejected terminal action handlers should not run");
         });
+        helper.succeed();
+    }
+
+    private static void terminalConfigWorkflow(GameTestHelper helper) {
+        EchoConfigRegistry.withClearedForTests(() -> {
+            AtomicInteger serverCount = new AtomicInteger(2);
+            AtomicInteger clientCount = new AtomicInteger(3);
+            EchoConfigRegistry.register(EchoConfigProvider.of(EchoTerminal.MODID, () -> new EchoConfigModule(
+                    EchoTerminal.MODID,
+                    "ECHO Terminal",
+                    List.of(
+                            new EchoConfigCategory("server", "Server", List.of(
+                                    EchoConfigEntry.intEntry("server_count", "Server Count", "",
+                                            EchoConfigSide.COMMON, 2, 0, 10, serverCount::get, serverCount::set,
+                                            null, true, false, false))),
+                            new EchoConfigCategory("client", "Client", List.of(
+                                    EchoConfigEntry.intEntry("client_count", "Client Count", "",
+                                            EchoConfigSide.CLIENT, 3, 0, 10, clientCount::get, clientCount::set,
+                                            null, true, false, false)))))));
+
+            TerminalConfigActionPacket packet = new TerminalConfigActionPacket(
+                    TerminalConfigActionPacket.Action.SET,
+                    EchoConfigSide.COMMON,
+                    "ECHOterminal",
+                    "Server_Count",
+                    "4");
+            helper.assertTrue(packet.moduleId().equals(EchoTerminal.MODID)
+                            && packet.entryId().equals("server_count")
+                            && packet.action() == TerminalConfigActionPacket.Action.SET,
+                    "Config action packets should normalize ids and preserve action intent");
+
+            List<EchoConfigModuleSnapshot> commonSnapshot = EchoConfigRegistry.snapshots(EchoConfigSide.COMMON);
+            TerminalConfigClientState.apply(new TerminalConfigSyncPacket(commonSnapshot, "Snapshot ready."));
+            helper.assertTrue(TerminalConfigClientState.commonModule("ECHOterminal").isPresent(),
+                    "Client config state should apply common snapshots from the server");
+            helper.assertTrue(TerminalConfigClientState.status().equals("Snapshot ready."),
+                    "Client config state should expose visible server status");
+
+            EchoConfigEntrySnapshot frozen = TerminalConfigClientState.commonModule(EchoTerminal.MODID).orElseThrow()
+                    .categories().get(0).entries().get(0);
+            helper.assertTrue(frozen.value().equals("2"), "Server snapshot should contain the synced value");
+            serverCount.set(8);
+            EchoConfigEntrySnapshot stillFrozen = TerminalConfigClientState.commonModule(EchoTerminal.MODID).orElseThrow()
+                    .categories().get(0).entries().get(0);
+            helper.assertTrue(stillFrozen.value().equals("2"),
+                    "Terminal common config should render from server snapshots, not local common values");
+
+            EchoConfigApplyResult applied = EchoConfigRegistry.apply(
+                    EchoConfigSide.COMMON, EchoTerminal.MODID, "server_count", "6");
+            helper.assertTrue(applied.success() && serverCount.get() == 6,
+                    "Server config edits should validate and update common entries");
+            helper.assertFalse(EchoConfigRegistry.apply(
+                    EchoConfigSide.COMMON, EchoTerminal.MODID, "client_count", "5").success(),
+                    "Server config actions should reject client-local entries");
+            helper.assertFalse(EchoConfigRegistry.apply(
+                    EchoConfigSide.COMMON, EchoTerminal.MODID, "missing", "5").success(),
+                    "Unknown config entries should be rejected");
+            helper.assertTrue(EchoConfigRegistry.apply(
+                    EchoConfigSide.CLIENT, EchoTerminal.MODID, "client_count", "5").success()
+                            && clientCount.get() == 5,
+                    "Client-local config edits should apply through the client registry side");
+
+            EchoAddonChapter aliasChapter = new EchoAddonChapter() {
+                @Override
+                public String id() {
+                    return "terminal_alias";
+                }
+
+                @Override
+                public String modId() {
+                    return EchoTerminal.MODID;
+                }
+
+                @Override
+                public String displayName() {
+                    return "Terminal Alias";
+                }
+
+                @Override
+                public String summary() {
+                    return "Alias chapter for config matching.";
+                }
+            };
+            List<String> matched = BuiltinTerminalTabs.addonConfigAwareGuideOrderForTests(List.of(aliasChapter));
+            helper.assertTrue(matched.stream().filter(entry -> entry.endsWith("|" + EchoTerminal.MODID)).count() == 1,
+                    "Addon config matching should use modId/chapterId keys and avoid duplicates");
+            List<String> synthetic = BuiltinTerminalTabs.addonConfigAwareGuideOrderForTests(List.of());
+            helper.assertTrue(synthetic.stream().anyMatch(entry -> entry.endsWith("|" + EchoTerminal.MODID)),
+                    "Loaded config-capable modules without chapters should be added to the addon guide");
+        });
+        TerminalConfigClientState.apply(null);
         helper.succeed();
     }
 
@@ -758,6 +871,7 @@ public final class ModGameTests {
     }
 
     private static void terminalThemeResources(GameTestHelper helper) {
+        TerminalTheme echo = TerminalThemeRegistry.byId(BuiltinTerminalThemes.ECHO_CONSOLE);
         TerminalTheme nexus = TerminalThemeRegistry.byId(BuiltinTerminalThemes.NEXUS_MODPACK);
         TerminalThemeContext context = new TerminalThemeContext(id("industrial_tab"), "chapters",
                 "echoindustrialnexus", "Industrial Nexus", "echoindustrialnexus", 0, true, false);
@@ -775,15 +889,41 @@ public final class ModGameTests {
                 TerminalIconKey.page("reward_inbox"),
                 TerminalIconKey.chapter("echoindustrialnexus"),
                 TerminalIconKey.fallback("unknown"));
-        for (TerminalIconKey key : keys) {
-            Identifier texture = nexus.icon(key, context, null);
-            helper.assertTrue(texture != null && classpathResourceExists(texture),
-                    "Nexus Modpack theme icon should point at a packaged PNG: " + key + " -> " + texture);
+        Identifier mission = Identifier.fromNamespaceAndPath("echoashfallprotocol", "acquire_mutagen");
+        List<Identifier> visuals = List.of(
+                TerminalVisualAssets.TERMINAL_FRAME_BACKDROP,
+                TerminalVisualAssets.MISSIONS_VISUAL_HERO,
+                TerminalVisualAssets.CARD_PANEL_DETAIL_STANDARD,
+                TerminalVisualAssets.CARD_METRIC_TILE_PLATE,
+                TerminalVisualAssets.ICON_ACTION_CLAIM,
+                TerminalVisualAssets.MISSION_ICON_SURVIVAL,
+                TerminalVisualAssets.missionIconArt(mission, "story"),
+                TerminalVisualAssets.missionHeroArt(mission, "story"));
+        for (TerminalTheme theme : List.of(echo, nexus)) {
+            for (TerminalIconKey key : keys) {
+                Identifier texture = theme.icon(key, context, null);
+                helper.assertTrue(texture != null && classpathResourceExists(texture),
+                        theme.displayName() + " semantic icon should point at a packaged PNG: " + key + " -> " + texture);
+                helper.assertTrue(pngHasTransparentCorners(texture),
+                        theme.displayName() + " semantic icon should preserve transparent corners: " + texture);
+            }
+            for (Identifier visual : visuals) {
+                Identifier themed = theme.visual(visual);
+                helper.assertTrue(themed != null && classpathResourceExists(themed),
+                        theme.displayName() + " visual override should point at a packaged PNG: " + visual + " -> " + themed);
+            }
+            helper.assertTrue(classpathResourceExists(theme.visual(theme.tokens().assets().shellBackdrop())),
+                    theme.displayName() + " shell backdrop should be packaged");
+            helper.assertTrue(classpathResourceExists(theme.chapterStyle(context).banner()),
+                    theme.displayName() + " chapter banner should be packaged");
+            helper.assertTrue(classpathResourceExists(theme.chapterStyle(context).panel()),
+                    theme.displayName() + " chapter panel should be packaged");
         }
-        helper.assertTrue(classpathResourceExists(nexus.tokens().assets().shellBackdrop()),
-                "Nexus Modpack shell backdrop should be packaged");
         helper.assertFalse(classpathResourceExists(Identifier.fromNamespaceAndPath(EchoTerminal.MODID,
                         "textures/gui/themes/nexus_modpack/backgrounds/asset_sheet_source.png")),
+                "Generated source sheet should not ship as a runtime theme asset");
+        helper.assertFalse(classpathResourceExists(Identifier.fromNamespaceAndPath(EchoTerminal.MODID,
+                        "textures/gui/themes/echo_console/backgrounds/asset_sheet_source.png")),
                 "Generated source sheet should not ship as a runtime theme asset");
         helper.succeed();
     }
@@ -795,6 +935,19 @@ public final class ModGameTests {
         TerminalClientOptions.resetThemeForTests(id("missing_theme"));
         helper.assertTrue(TerminalClientOptions.selectedThemeId().equals(TerminalThemeRegistry.defaultThemeId()),
                 "Client theme selection should fall back when the stored theme id is missing");
+        helper.succeed();
+    }
+
+    private static void terminalZoomOptions(GameTestHelper helper) {
+        List<String> labels = Arrays.stream(TerminalClientOptions.TerminalZoom.values())
+                .map(TerminalClientOptions.TerminalZoom::label)
+                .toList();
+        helper.assertTrue(labels.equals(List.of("50%", "75%", "85%", "90%", "100%", "110%", "125%", "150%")),
+                "Terminal zoom options should preserve legacy presets and add 50%, 75%, and 150%");
+        helper.assertTrue(TerminalClientOptions.TerminalZoom.ZOOM_50.scale() == 0.5D,
+                "50% terminal zoom should scale to 0.5");
+        helper.assertTrue(TerminalClientOptions.TerminalZoom.ZOOM_150.scale() == 1.5D,
+                "150% terminal zoom should scale to 1.5");
         helper.succeed();
     }
 
@@ -2111,6 +2264,32 @@ public final class ModGameTests {
         }
         String path = "assets/" + id.getNamespace() + "/" + id.getPath();
         return ModGameTests.class.getClassLoader().getResource(path) != null;
+    }
+
+    private static boolean pngHasTransparentCorners(Identifier id) {
+        if (id == null) {
+            return false;
+        }
+        String path = "assets/" + id.getNamespace() + "/" + id.getPath();
+        try (InputStream stream = ModGameTests.class.getClassLoader().getResourceAsStream(path)) {
+            if (stream == null) {
+                return false;
+            }
+            BufferedImage image = ImageIO.read(stream);
+            if (image == null || !image.getColorModel().hasAlpha()) {
+                return false;
+            }
+            return alphaAt(image, 0, 0) == 0
+                    && alphaAt(image, image.getWidth() - 1, 0) == 0
+                    && alphaAt(image, 0, image.getHeight() - 1) == 0
+                    && alphaAt(image, image.getWidth() - 1, image.getHeight() - 1) == 0;
+        } catch (IOException exception) {
+            return false;
+        }
+    }
+
+    private static int alphaAt(BufferedImage image, int x, int y) {
+        return image.getRGB(x, y) >>> 24;
     }
 
     private static List<ConfiguredMission> generatedMissions(int count) {

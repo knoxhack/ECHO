@@ -9,6 +9,7 @@ import com.knoxhack.echoorbitalremnants.registry.ModMenus;
 import com.knoxhack.echoorbitalremnants.registry.ModRecipes;
 import com.knoxhack.echoorbitalremnants.registry.ModWorldgen;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
+import com.knoxhack.echoorbitalremnants.integration.OrbitalIndexProvider;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalCommonIntegration;
 import com.knoxhack.echoorbitalremnants.network.ModNetworking;
 import com.knoxhack.echoorbitalremnants.test.ModGameTests;
@@ -48,12 +49,14 @@ public class EchoOrbitalRemnants {
         NeoForge.EVENT_BUS.register(new ModTooltipEvents());
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        Config.registerEchoConfig();
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("ECHO-7 orbital systems initialized. Quarantine route chain ready.");
         event.enqueueWork(() -> {
             AshfallCompat.registerAddonChapter();
+            OrbitalIndexProvider.register();
             if (ModList.get().isLoaded("echoterminal")) {
                 OrbitalTerminalCommonIntegration.register();
             }

@@ -12,6 +12,7 @@ import com.knoxhack.echoashfallprotocol.world.BiomeGuardianSiteData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -482,14 +483,17 @@ public class ProceduralStructureGenerator {
             return null;
         }
         StructureTemplate template = templateOpt.get();
-        clearStartingDropPodVolume(level, getDropPodPlacePos(origin, template.getSize()), template.getSize());
+        BlockPos placePos = getDropPodPlacePos(origin, template.getSize());
+        clearStartingDropPodVolume(level, placePos, template.getSize());
         if (!placeNBTDropPod(level, origin, random, template)) {
             return null;
         }
 
-        BlockPos spawn = findStartingPodSpawn(level, getDropPodPlacePos(origin, template.getSize()));
+        clearStartingPodProtectedPathDebris(level, placePos);
+        BlockPos spawn = findStartingPodSpawn(level, placePos);
         if (spawn != null) {
             polishStartingDropPod(level, spawn);
+            clearStartingPodProtectedPathDebris(level, placePos);
         }
         return spawn;
     }
@@ -627,6 +631,43 @@ public class ProceduralStructureGenerator {
 
         double trailHalfWidth = Math.max(2.0, 7.0 - rearDistance * 0.65);
         return localZ <= centerZ - 4.0 && Math.abs(localX - centerX) <= trailHalfWidth;
+    }
+
+    private static void clearStartingPodProtectedPathDebris(ServerLevel level, BlockPos placePos) {
+        for (int x = 0; x < 20; x++) {
+            for (int z = 0; z < 20; z++) {
+                if (!isStartingPodProtectedPathCell(x, z)) {
+                    continue;
+                }
+                BlockPos pos = placePos.offset(x, STARTING_POD_SPAWN_Y, z);
+                BlockState state = level.getBlockState(pos);
+                if (isStartingPodPathClutter(state)) {
+                    clearBlockEntityAndSetAir(level, pos);
+                }
+            }
+        }
+    }
+
+    private static boolean isStartingPodProtectedPathCell(int localX, int localZ) {
+        if (Math.abs(localX - STARTING_POD_SPAWN_X) <= 1 && localZ >= 7 && localZ <= STARTING_POD_SPAWN_Z) {
+            return true;
+        }
+        if ((localX == 6 || localX == 7 || localX == 12 || localX == 13) && localZ >= 6 && localZ <= 7) {
+            return true;
+        }
+        if (localX >= 6 && localX <= STARTING_POD_SPAWN_X && localZ >= 10 && localZ <= STARTING_POD_SPAWN_Z) {
+            return true;
+        }
+        return Math.abs(localX - STARTING_POD_SPAWN_X) <= 2 && localZ >= 15 && localZ <= 19;
+    }
+
+    private static boolean isStartingPodPathClutter(BlockState state) {
+        return state.is(ModBlocks.RUSTED_METAL_DEBRIS.get())
+                || state.is(ModBlocks.CABLE_BUNDLE.get())
+                || state.is(ModBlocks.TWISTED_METAL.get())
+                || Identifier.fromNamespaceAndPath("minecraft", "chain")
+                        .equals(BuiltInRegistries.BLOCK.getKey(state.getBlock()))
+                || state.is(Blocks.STONE_BUTTON);
     }
 
     private static boolean prepareStartingPodSpawn(ServerLevel level, BlockPos pos, boolean repairFloor) {

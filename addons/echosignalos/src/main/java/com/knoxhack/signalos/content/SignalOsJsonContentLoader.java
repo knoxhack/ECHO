@@ -11,6 +11,9 @@ import com.knoxhack.signalos.api.TerminalArchiveRecord;
 import com.knoxhack.signalos.api.TerminalChapter;
 import com.knoxhack.signalos.api.TerminalIds;
 import com.knoxhack.signalos.api.TerminalMission;
+import com.knoxhack.signalos.api.SignalOsApp;
+import com.knoxhack.signalos.api.SignalOsDataRecord;
+import com.knoxhack.signalos.api.SignalOsDriveData;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedHashMap;
@@ -27,16 +30,28 @@ public final class SignalOsJsonContentLoader
     private static final String CHAPTER_DIR = "signalos/chapters";
     private static final String MISSION_DIR = "signalos/missions";
     private static final String ARCHIVE_DIR = "signalos/archives";
+    private static final String APP_DIR = "signalos/apps";
+    private static final String DATA_RECORD_DIR = "signalos/data_records";
+    private static final String DRIVE_TEMPLATE_DIR = "signalos/drive_templates";
 
     @Override
     protected SignalOsContentRegistry.LoadedContent prepare(ResourceManager manager, ProfilerFiller profiler) {
         LoadedEntries<TerminalChapter> chapters = load(manager, CHAPTER_DIR, SignalOsJsonContentLoader::parseChapter);
         LoadedEntries<TerminalMission> missions = load(manager, MISSION_DIR, SignalOsJsonContentLoader::parseMission);
         LoadedEntries<TerminalArchiveRecord> archives = load(manager, ARCHIVE_DIR, SignalOsJsonContentLoader::parseArchive);
+        LoadedEntries<SignalOsApp> apps = load(manager, APP_DIR, SignalOsJsonContentLoader::parseApp);
+        LoadedEntries<SignalOsDataRecord> dataRecords =
+                load(manager, DATA_RECORD_DIR, SignalOsJsonContentLoader::parseDataRecord);
+        LoadedEntries<SignalOsDriveData> driveTemplates =
+                load(manager, DRIVE_TEMPLATE_DIR, SignalOsJsonContentLoader::parseDriveTemplate);
         SignalOsContentRegistry.LoadReport report = chapters.report()
                 .plus(missions.report())
-                .plus(archives.report());
-        return validateReferences(chapters.values(), missions.values(), archives.values(), report);
+                .plus(archives.report())
+                .plus(apps.report())
+                .plus(dataRecords.report())
+                .plus(driveTemplates.report());
+        return validateReferences(chapters.values(), missions.values(), archives.values(), apps.values(),
+                dataRecords.values(), driveTemplates.values(), report);
     }
 
     @Override
@@ -54,6 +69,14 @@ public final class SignalOsJsonContentLoader
 
     public static TerminalArchiveRecord parseArchiveForTests(Identifier id, JsonObject json) {
         return parseArchive(id, json);
+    }
+
+    public static SignalOsApp parseAppForTests(Identifier id, JsonObject json) {
+        return parseApp(id, json);
+    }
+
+    public static SignalOsDataRecord parseDataRecordForTests(Identifier id, JsonObject json) {
+        return parseDataRecord(id, json);
     }
 
     public static SignalOsContentRegistry.LoadedContent validateReferencesForTests(
@@ -148,7 +171,7 @@ public final class SignalOsJsonContentLoader
         JsonArray objectives = array(json, "objectives");
         if (objectives != null) {
             for (int i = 0; i < objectives.size(); i++) {
-                builder.objective(stringElement(objectives.get(i), "objectives[" + i + "]"));
+                builder.objective(nonBlankStringElement(objectives.get(i), "objectives[" + i + "]"));
             }
         }
         JsonArray rewards = array(json, json.has("displayRewards") ? "displayRewards" : "rewards");
@@ -160,8 +183,12 @@ public final class SignalOsJsonContentLoader
                     throw new JsonParseException("Field '" + rewardKey + "[" + i + "]' must be an object.");
                 }
                 JsonObject reward = rewardElement.getAsJsonObject();
+                int count = integer(reward, rewardKey + "[" + i + "].count", "count", 1);
+                if (count <= 0) {
+                    throw new JsonParseException("Field '" + rewardKey + "[" + i + "].count' must be at least 1.");
+                }
                 builder.reward(requiredString(reward, rewardKey + "[" + i + "].item", "item"),
-                        integer(reward, rewardKey + "[" + i + "].count", "count", 1),
+                        count,
                         string(reward, rewardKey + "[" + i + "].label", "label", ""));
             }
         }
@@ -179,10 +206,67 @@ public final class SignalOsJsonContentLoader
         JsonArray lines = array(json, "lines");
         if (lines != null) {
             for (int i = 0; i < lines.size(); i++) {
-                builder.line(stringElement(lines.get(i), "lines[" + i + "]"));
+                builder.line(nonBlankStringElement(lines.get(i), "lines[" + i + "]"));
             }
         }
         return builder.build();
+    }
+
+    private static SignalOsApp parseApp(Identifier id, JsonObject json) {
+        SignalOsApp.Builder builder = SignalOsApp.builder(id)
+                .title(string(json, "title", id.getPath()))
+                .type(string(json, "type", "custom"))
+                .summary(string(json, "summary", ""))
+                .order(integer(json, "order", 0))
+                .accentColor(integer(json, "accentColor", 0x66E8FF))
+                .permission(string(json, "permission", "user"));
+        String icon = string(json, "icon", "");
+        if (!icon.isBlank()) {
+            builder.icon(icon);
+        }
+        return builder.build();
+    }
+
+    private static SignalOsDataRecord parseDataRecord(Identifier id, JsonObject json) {
+        String body = string(json, "body", "");
+        JsonArray lines = array(json, "lines");
+        if (lines != null) {
+            StringBuilder joined = new StringBuilder();
+            for (int i = 0; i < lines.size(); i++) {
+                if (!joined.isEmpty()) {
+                    joined.append('\n');
+                }
+                joined.append(nonBlankStringElement(lines.get(i), "lines[" + i + "]"));
+            }
+            body = joined.toString();
+        }
+        return new SignalOsDataRecord(
+                id,
+                string(json, "title", id.getPath()),
+                string(json, "type", "record"),
+                string(json, "source", id.getNamespace()),
+                body,
+                integer(json, "order", 0),
+                bool(json, "archived", false));
+    }
+
+    private static SignalOsDriveData parseDriveTemplate(Identifier id, JsonObject json) {
+        String label = string(json, "label", id.getPath());
+        Map<Identifier, SignalOsDataRecord> records = new LinkedHashMap<>();
+        JsonArray recordArray = array(json, "records");
+        if (recordArray != null) {
+            for (int i = 0; i < recordArray.size(); i++) {
+                JsonElement element = recordArray.get(i);
+                if (!element.isJsonObject()) {
+                    throw new JsonParseException("Field 'records[" + i + "]' must be an object.");
+                }
+                JsonObject recordJson = element.getAsJsonObject();
+                String recordId = string(recordJson, "id", id + "/record_" + i);
+                SignalOsDataRecord record = parseDataRecord(TerminalIds.parse(recordId, "drive template record"), recordJson);
+                records.putIfAbsent(record.id(), record);
+            }
+        }
+        return new SignalOsDriveData(label, records.values().stream().toList());
     }
 
     private static String requiredString(JsonObject json, String key) {
@@ -262,10 +346,21 @@ public final class SignalOsJsonContentLoader
         return primitive.getAsString();
     }
 
+    private static String nonBlankStringElement(JsonElement element, String fieldLabel) {
+        String value = stringElement(element, fieldLabel).strip();
+        if (value.isBlank()) {
+            throw new JsonParseException("Field '" + fieldLabel + "' must not be blank.");
+        }
+        return value;
+    }
+
     private static SignalOsContentRegistry.LoadedContent validateReferences(
             Map<Identifier, TerminalChapter> chapters,
             Map<Identifier, TerminalMission> missions,
             Map<Identifier, TerminalArchiveRecord> archives,
+            Map<Identifier, SignalOsApp> apps,
+            Map<Identifier, SignalOsDataRecord> dataRecords,
+            Map<Identifier, SignalOsDriveData> driveTemplates,
             SignalOsContentRegistry.LoadReport report) {
         Map<Identifier, TerminalMission> validMissions = new LinkedHashMap<>();
         Map<Identifier, TerminalArchiveRecord> validArchives = new LinkedHashMap<>();
@@ -275,7 +370,11 @@ public final class SignalOsJsonContentLoader
         for (Map.Entry<Identifier, TerminalMission> entry : missions.entrySet()) {
             Identifier chapterId = entry.getValue().chapterId();
             if (hasResolvableChapter(chapterId, jsonChapterIds)) {
-                validMissions.put(entry.getKey(), entry.getValue());
+                if (hasResolvableRewardTargets(entry.getKey(), entry.getValue())) {
+                    validMissions.put(entry.getKey(), entry.getValue());
+                } else {
+                    rejected++;
+                }
             } else {
                 rejected++;
                 SignalOS.LOGGER.warn("SignalOS mission {} references missing chapter {}; mission skipped.",
@@ -292,12 +391,35 @@ public final class SignalOsJsonContentLoader
                         entry.getKey(), chapterId);
             }
         }
-        return new SignalOsContentRegistry.LoadedContent(chapters, validMissions, validArchives,
+        return new SignalOsContentRegistry.LoadedContent(chapters, validMissions, validArchives, apps,
+                dataRecords, driveTemplates,
                 report.withRejectedReferences(rejected));
+    }
+
+    private static SignalOsContentRegistry.LoadedContent validateReferences(
+            Map<Identifier, TerminalChapter> chapters,
+            Map<Identifier, TerminalMission> missions,
+            Map<Identifier, TerminalArchiveRecord> archives,
+            SignalOsContentRegistry.LoadReport report) {
+        return validateReferences(chapters, missions, archives, Map.of(), Map.of(), Map.of(), report);
     }
 
     private static boolean hasResolvableChapter(Identifier chapterId, Set<Identifier> jsonChapterIds) {
         return chapterId != null && (jsonChapterIds.contains(chapterId) || SignalOsContentRegistry.hasNonJsonChapter(chapterId));
+    }
+
+    private static boolean hasResolvableRewardTargets(Identifier missionId, TerminalMission mission) {
+        if (mission == null) {
+            return false;
+        }
+        for (TerminalMission.Reward reward : mission.rewards()) {
+            if (!reward.hasRegisteredItem()) {
+                SignalOS.LOGGER.warn("SignalOS mission {} references missing reward item {}; mission skipped.",
+                        missionId, reward.itemId());
+                return false;
+            }
+        }
+        return true;
     }
 
     @FunctionalInterface

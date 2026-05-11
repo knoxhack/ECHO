@@ -3,11 +3,23 @@ package com.knoxhack.echoterminal.client;
 import com.knoxhack.echocore.api.EchoAddonChapter;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.DataScope;
 import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echocore.api.EchoFactionProfile;
 import com.knoxhack.echocore.api.EchoHazardTelemetry;
+import com.knoxhack.echocore.api.EchoModuleInfo;
 import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echocore.api.IDataKey;
+import com.knoxhack.echocore.api.IDataService;
+import com.knoxhack.echocore.api.config.EchoConfigApplyResult;
+import com.knoxhack.echocore.api.config.EchoConfigCategorySnapshot;
+import com.knoxhack.echocore.api.config.EchoConfigEntrySnapshot;
+import com.knoxhack.echocore.api.config.EchoConfigModuleSnapshot;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
+import com.knoxhack.echocore.api.config.EchoConfigValueKind;
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoterminal.BuiltinTerminalCommonIntegration;
 import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.api.TerminalAddonGuide;
@@ -44,12 +56,16 @@ import com.knoxhack.echoterminal.client.recipe.TerminalRecipeIndexTab;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
 import com.knoxhack.echoterminal.mission.VanillaJourneyProvider;
+import com.knoxhack.echoterminal.network.TerminalConfigActionPacket;
+import com.knoxhack.echoterminal.network.TerminalConfigClientState;
 import com.knoxhack.echoterminal.player.TerminalPlayerData;
 import com.knoxhack.echoterminal.player.TerminalPlayerData.TrackedMission;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -63,6 +79,7 @@ public final class BuiltinTerminalTabs {
     private static final Identifier MISSION_GRAPH = id("mission_graph");
     private static final Identifier ROUTE_RECORDS = id("route_records");
     private static final Identifier VITALS = id("vitals");
+    private static final Identifier DATA_CORE = id("data_core");
     private static final Identifier REWARD_INBOX = BuiltinTerminalCommonIntegration.REWARD_INBOX;
     private static final Identifier ADDONS = id("addons");
     private static final Identifier ARCHIVES = id("archives");
@@ -179,6 +196,7 @@ public final class BuiltinTerminalTabs {
                 new BuiltinTabRegistration(new ArchivesTab(), TerminalNavigationProfile.intel(950)),
                 new BuiltinTabRegistration(new VitalsTab(), TerminalNavigationProfile.system(130)),
                 new BuiltinTabRegistration(new RewardInboxTab(), TerminalNavigationProfile.system(140)),
+                new BuiltinTabRegistration(new DataCoreStatusTab(), TerminalNavigationProfile.system(145)),
                 new BuiltinTabRegistration(new SettingsTab(), TerminalNavigationProfile.system(175)));
     }
 
@@ -225,6 +243,12 @@ public final class BuiltinTerminalTabs {
                 .toList();
     }
 
+    public static List<String> addonConfigAwareGuideOrderForTests(List<EchoAddonChapter> chapters) {
+        return addonChapterEntries(configAwareChapters(chapters, null), null).stream()
+                .map(entry -> chapterId(entry.chapter()) + "|" + chapterModId(entry.chapter()))
+                .toList();
+    }
+
     public static TerminalAddonGuide addonGuideForTests(String chapterId) {
         return fallbackGuide(chapterId, "ECHO Chapter");
     }
@@ -264,7 +288,38 @@ public final class BuiltinTerminalTabs {
     }
 
     private static List<AddonChapterEntry> addonChapterEntries(TerminalRenderContext context) {
-        return addonChapterEntries(addonChapters(), context);
+        return addonChapterEntries(configAwareChapters(addonChapters(), context), context);
+    }
+
+    private static List<EchoAddonChapter> configAwareChapters(
+            List<EchoAddonChapter> chapters, TerminalRenderContext context) {
+        List<EchoAddonChapter> entries = new ArrayList<>(chapters == null ? List.of() : chapters);
+        Set<String> knownKeys = new HashSet<>();
+        for (EchoAddonChapter chapter : entries) {
+            knownKeys.add(cleanKey(chapterId(chapter)));
+            knownKeys.add(cleanKey(chapterModId(chapter)));
+        }
+        Set<String> configModuleIds = new HashSet<>();
+        TerminalConfigClientState.commonModules().forEach(module -> configModuleIds.add(module.moduleId()));
+        EchoConfigRegistry.snapshots(EchoConfigSide.CLIENT).forEach(module -> configModuleIds.add(module.moduleId()));
+        if (configModuleIds.isEmpty()) {
+            return entries;
+        }
+        try {
+            for (EchoModuleInfo module : EchoCoreServices.moduleReport()) {
+                if (module == null || !module.loaded() || !configModuleIds.contains(module.modId())) {
+                    continue;
+                }
+                if (knownKeys.contains(module.modId())) {
+                    continue;
+                }
+                entries.add(new ModuleAddonChapter(module));
+                knownKeys.add(module.modId());
+            }
+        } catch (RuntimeException exception) {
+            EchoTerminal.LOGGER.warn("Terminal config module list failed; using registered addon chapters only.", exception);
+        }
+        return entries;
     }
 
     private static List<AddonChapterEntry> addonChapterEntries(
@@ -411,6 +466,35 @@ public final class BuiltinTerminalTabs {
             EchoAddonChapter chapter,
             TerminalAddonInfo info,
             TerminalAddonGuide guide) {
+    }
+
+    private record ModuleAddonChapter(EchoModuleInfo module) implements EchoAddonChapter {
+        @Override
+        public String id() {
+            return module.modId();
+        }
+
+        @Override
+        public String modId() {
+            return module.modId();
+        }
+
+        @Override
+        public String displayName() {
+            return module.displayName();
+        }
+
+        @Override
+        public String summary() {
+            return module.ownership().isBlank()
+                    ? "Runtime module exposes editable ECHO config."
+                    : module.ownership();
+        }
+
+        @Override
+        public String statusLine(net.minecraft.world.entity.player.Player player) {
+            return module.statusLine();
+        }
     }
 
     private static final class MainSurvivalRouteTab implements TerminalTab {
@@ -680,7 +764,7 @@ public final class BuiltinTerminalTabs {
             boolean selected = actionIndex == selectedActionIndex;
             TerminalUi.flatHudPanel(context, graphics, x, y, w, h,
                     hovered || selected ? action.color() : descriptor.accentColor());
-            TerminalUi.hybridIconBadge(graphics, action.icon(context), TerminalIcon.DEFAULT,
+            TerminalUi.hybridIconBadge(context, graphics, action.icon(context), TerminalIcon.DEFAULT,
                     x + 12, y + 30, 34, action.color(), hovered || selected);
             TerminalUi.line(context, graphics, "NEXT STEP", x + 12, y + 10, w - 24, action.color());
             TerminalUi.line(context, graphics, action.label(), x + 54, y + 32, Math.max(70, w - 166), TerminalUi.TEXT);
@@ -1179,15 +1263,17 @@ public final class BuiltinTerminalTabs {
             int w = context.contentWidth();
             int cy = TerminalUi.sectionHeader(context, graphics,
                     "INTERFACE SETTINGS", "Client-only", x, y, w, descriptor.accentColor());
-            cy = drawNavigationOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
-            cy = drawMissionOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
-            cy = drawHudNoticeOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
-            cy = drawVisualOptions(context, graphics, x, cy, w, mouseX, mouseY) + 12;
-            TerminalUi.flatDataPanel(context, graphics, x, cy, w, 58, "ACCESSIBILITY", "",
+            cy = drawNavigationOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
+            cy = drawMissionOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
+            cy = drawInterfaceDensityOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
+            cy = drawTerminalZoomOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
+            cy = drawHudNoticeOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
+            cy = drawVisualOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
+            String accessibility = "Reduced motion is persisted locally and removes the heaviest animated terminal treatments where supported.";
+            int accessH = Math.max(50, 32 + TerminalUi.wrappedHeight(context, accessibility, w - 20));
+            TerminalUi.flatDataPanel(context, graphics, x, cy, w, accessH, "ACCESSIBILITY", "",
                     descriptor.accentColor());
-            TerminalUi.wrap(context, graphics,
-                    "Reduced motion is persisted locally and removes the heaviest animated terminal treatments where supported.",
-                    x + 10, cy + 22, w - 20, TerminalUi.MUTED);
+            TerminalUi.wrap(context, graphics, accessibility, x + 10, cy + 22, w - 20, TerminalUi.MUTED);
         }
 
         @Override
@@ -1207,67 +1293,94 @@ public final class BuiltinTerminalTabs {
 
         @Override
         public int contentHeight(TerminalRenderContext context) {
-            return Math.max(context.contentHeight(), 346);
+            return Math.max(context.contentHeight(), context.contentWidth() < 420 ? 484 : 416);
         }
 
         private int drawNavigationOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int w, int mouseX, int mouseY) {
-            TerminalUi.section(context, graphics, "NAVIGATION", x, y, descriptor.accentColor());
-            int cy = y + 18;
-            int chipW = Math.max(86, Math.min(130, (w - 16) / TerminalClientOptions.NavigationStyle.values().length));
-            int chipX = x;
+            List<SettingsOption> options = new ArrayList<>();
             for (TerminalClientOptions.NavigationStyle style : TerminalClientOptions.NavigationStyle.values()) {
-                drawOptionChip(context, graphics, chipX, cy, chipW, label(style.name()),
-                        TerminalClientOptions.navigationStyle == style, mouseX, mouseY,
-                        () -> TerminalClientOptions.selectNavigationStyle(style));
-                chipX += chipW + 6;
+                options.add(new SettingsOption(label(style.name()),
+                        TerminalClientOptions.navigationStyle == style,
+                        () -> TerminalClientOptions.selectNavigationStyle(style)));
             }
-            return cy + 22;
+            return drawOptionSection(context, graphics, "NAVIGATION", x, y, w, mouseX, mouseY, options);
         }
 
         private int drawMissionOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int w, int mouseX, int mouseY) {
-            TerminalUi.section(context, graphics, "MISSION VIEW", x, y, descriptor.accentColor());
-            int cy = y + 18;
-            int chipW = Math.max(76, Math.min(118, (w - 18) / TerminalClientOptions.MissionView.values().length));
-            int chipX = x;
+            List<SettingsOption> options = new ArrayList<>();
             for (TerminalClientOptions.MissionView view : TerminalClientOptions.MissionView.values()) {
-                drawOptionChip(context, graphics, chipX, cy, chipW, label(view.name()),
-                        TerminalClientOptions.missionView == view, mouseX, mouseY,
-                        () -> TerminalClientOptions.selectMissionView(view));
-                chipX += chipW + 6;
+                options.add(new SettingsOption(label(view.name()),
+                        TerminalClientOptions.missionView == view,
+                        () -> TerminalClientOptions.selectMissionView(view)));
             }
-            return cy + 22;
+            return drawOptionSection(context, graphics, "MISSION VIEW", x, y, w, mouseX, mouseY, options);
+        }
+
+        private int drawInterfaceDensityOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            List<SettingsOption> options = new ArrayList<>();
+            for (TerminalClientOptions.InterfaceDensity density : TerminalClientOptions.InterfaceDensity.values()) {
+                options.add(new SettingsOption(label(density.name()),
+                        TerminalClientOptions.interfaceDensity == density,
+                        () -> TerminalClientOptions.selectInterfaceDensity(density)));
+            }
+            return drawOptionSection(context, graphics, "INTERFACE DENSITY", x, y, w, mouseX, mouseY, options);
+        }
+
+        private int drawTerminalZoomOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            List<SettingsOption> options = new ArrayList<>();
+            for (TerminalClientOptions.TerminalZoom zoom : TerminalClientOptions.TerminalZoom.values()) {
+                options.add(new SettingsOption(zoom.label(),
+                        TerminalClientOptions.terminalZoom == zoom,
+                        () -> TerminalClientOptions.selectTerminalZoom(zoom)));
+            }
+            return drawOptionSection(context, graphics, "TERMINAL ZOOM", x, y, w, mouseX, mouseY, options);
         }
 
         private int drawHudNoticeOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int w, int mouseX, int mouseY) {
-            TerminalUi.section(context, graphics, "HUD NOTICES", x, y, descriptor.accentColor());
-            int cy = y + 18;
-            drawOptionChip(context, graphics, x, cy, Math.min(154, Math.max(128, w / 3)),
-                    "MISSION HUD", TerminalClientOptions.missionHudNotifications, mouseX, mouseY,
-                    () -> TerminalClientOptions.setMissionHudNotifications(
-                            !TerminalClientOptions.missionHudNotifications));
-            return cy + 22;
+            return drawOptionSection(context, graphics, "HUD NOTICES", x, y, w, mouseX, mouseY,
+                    List.of(new SettingsOption("mission hud", TerminalClientOptions.missionHudNotifications,
+                            () -> TerminalClientOptions.setMissionHudNotifications(
+                                    !TerminalClientOptions.missionHudNotifications))));
         }
 
         private int drawVisualOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 int x, int y, int w, int mouseX, int mouseY) {
-            TerminalUi.section(context, graphics, "VISUAL DENSITY", x, y, descriptor.accentColor());
-            int cy = y + 18;
-            int chipW = Math.max(86, Math.min(130, (w - 16) / TerminalClientOptions.VisualLevel.values().length));
-            int chipX = x;
+            List<SettingsOption> options = new ArrayList<>();
             for (TerminalClientOptions.VisualLevel level : TerminalClientOptions.VisualLevel.values()) {
-                drawOptionChip(context, graphics, chipX, cy, chipW, label(level.name()),
-                        TerminalClientOptions.visualLevel == level, mouseX, mouseY,
-                        () -> TerminalClientOptions.selectVisualLevel(level));
-                chipX += chipW + 6;
+                options.add(new SettingsOption(label(level.name()),
+                        TerminalClientOptions.visualLevel == level,
+                        () -> TerminalClientOptions.selectVisualLevel(level)));
             }
-            cy += 24;
-            drawOptionChip(context, graphics, x, cy, 128, "REDUCED MOTION",
-                    TerminalClientOptions.reduceMotion(), mouseX, mouseY,
-                    () -> TerminalClientOptions.setReducedMotion(!TerminalClientOptions.reduceMotion()));
-            return cy + 22;
+            options.add(new SettingsOption("reduced motion", TerminalClientOptions.reduceMotion(),
+                    () -> TerminalClientOptions.setReducedMotion(!TerminalClientOptions.reduceMotion())));
+            return drawOptionSection(context, graphics, "VISUAL TREATMENTS", x, y, w, mouseX, mouseY, options);
+        }
+
+        private int drawOptionSection(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                String title, int x, int y, int w, int mouseX, int mouseY, List<SettingsOption> options) {
+            TerminalUi.section(context, graphics, title, x, y, descriptor.accentColor());
+            int chipX = x;
+            int chipY = y + 18;
+            int rowBottom = chipY + 16;
+            int gap = 6;
+            for (SettingsOption option : options) {
+                int chipW = Math.max(74, Math.min(148, context.minecraft().font.width(option.label()) + 26));
+                chipW = Math.min(chipW, Math.max(52, w));
+                if (chipX > x && chipX + chipW > x + w) {
+                    chipX = x;
+                    chipY += 21;
+                }
+                drawOptionChip(context, graphics, chipX, chipY, chipW, option.label(),
+                        option.selected(), mouseX, mouseY, option.action());
+                rowBottom = Math.max(rowBottom, chipY + 16);
+                chipX += chipW + gap;
+            }
+            return rowBottom + 4;
         }
 
         private void drawOptionChip(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -1282,12 +1395,15 @@ public final class BuiltinTerminalTabs {
             return value.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
         }
 
+        private record SettingsOption(String label, boolean selected, Runnable action) {
+        }
+
         private record SettingsHitbox(int x, int y, int w, int h, Runnable action) {
         }
     }
 
     private static final class AddonsTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 56;
+        private static final int ROW_HEIGHT = 52;
         private static final int LINK_HEIGHT = 34;
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(ADDONS, "CHAPTER GUIDE", 150, 0xFFFFD166);
@@ -1295,7 +1411,11 @@ public final class BuiltinTerminalTabs {
                 TerminalTabChrome.of("Chapter Guide", TerminalTabChrome.GROUP_CORE, "CH",
                         "Numbered chapter guide", 150);
         private final List<AddonLinkHitbox> linkHitboxes = new ArrayList<>();
+        private final List<ConfigHitbox> configHitboxes = new ArrayList<>();
         private String selectedChapterId = "";
+        private String editingConfigKey = "";
+        private String editDraft = "";
+        private int lastConfigRequestTick = -1000;
         private int lastListX;
         private int lastListY;
         private int lastListW;
@@ -1315,11 +1435,16 @@ public final class BuiltinTerminalTabs {
         public void onSelected(TerminalRenderContext context) {
             normalizeSelection(addonChapterEntries(context));
             linkHitboxes.clear();
+            configHitboxes.clear();
+            lastConfigRequestTick = -1000;
+            requestCommonConfig(context);
         }
 
         @Override
         public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             linkHitboxes.clear();
+            configHitboxes.clear();
+            maybeRequestCommonConfig(context);
             int x = context.contentX();
             int y = context.contentY();
             int w = context.contentWidth();
@@ -1435,7 +1560,9 @@ public final class BuiltinTerminalTabs {
             TerminalUi.divider(graphics, detailX + 14, dy, detailW - 32, descriptor.accentColor());
             dy = drawMetrics(context, graphics, metrics, detailX + 14, dy + 10, detailW - 32);
             dy = drawSections(context, graphics, sections, detailX + 14, dy + 6, detailW - 32);
-            drawLinks(context, graphics, guide, links, detailX + 14, dy + 8, detailW - 32, mouseX, mouseY);
+            dy = drawLinks(context, graphics, guide, links, detailX + 14, dy + 8, detailW - 32, mouseX, mouseY);
+            drawConfigSections(context, graphics, chapterModId(selected), detailX + 14, dy + 10,
+                    detailW - 32, mouseX, mouseY);
         }
 
         @Override
@@ -1462,7 +1589,52 @@ public final class BuiltinTerminalTabs {
                     return true;
                 }
             }
+            for (ConfigHitbox hitbox : List.copyOf(configHitboxes)) {
+                if (TerminalUi.inside(mouseX, mouseY, hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())) {
+                    hitbox.action().run();
+                    return true;
+                }
+            }
             return false;
+        }
+
+        @Override
+        public boolean keyPressed(TerminalRenderContext context, KeyEvent event) {
+            if (editingConfigKey.isBlank() || event == null) {
+                return false;
+            }
+            int key = event.key();
+            if (key == GLFW.GLFW_KEY_ESCAPE) {
+                editingConfigKey = "";
+                editDraft = "";
+                context.playRejectedSound();
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                if (!editDraft.isEmpty()) {
+                    editDraft = editDraft.substring(0, editDraft.length() - 1);
+                }
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                findEditingEntry().ifPresent(entry -> applyConfigValue(context, entry, editDraft));
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean charTyped(TerminalRenderContext context, CharacterEvent event) {
+            if (editingConfigKey.isBlank() || event == null || !event.isAllowedChatCharacter()
+                    || editDraft.length() >= 96) {
+                return false;
+            }
+            String typed = event.codepointAsString();
+            if (typed == null || typed.isBlank()) {
+                return false;
+            }
+            editDraft += typed;
+            return true;
         }
 
         @Override
@@ -1674,17 +1846,16 @@ public final class BuiltinTerminalTabs {
             return cy;
         }
 
-        private void drawLinks(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+        private int drawLinks(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 TerminalAddonGuide guide, List<TerminalAddonLink> links, int x, int y, int width,
                 int mouseX, int mouseY) {
             TerminalUi.line(context, graphics, "Linked Pages", x, y, width, TerminalUi.CYAN);
             TerminalUi.divider(graphics, x, y + 14, width, TerminalUi.CYAN);
             int cy = y + 22;
             if (links.isEmpty()) {
-                TerminalUi.wrap(context, graphics,
+                return TerminalUi.wrap(context, graphics,
                         "No addon terminal pages are registered. Shared intel and diagnostics still appear above.",
-                        x, cy, width, TerminalUi.MUTED);
-                return;
+                        x, cy, width, TerminalUi.MUTED) + 8;
             }
             for (TerminalAddonLink link : links) {
                 boolean enabled = context.canNavigateToTab(link.targetTabId());
@@ -1696,6 +1867,249 @@ public final class BuiltinTerminalTabs {
                 linkHitboxes.add(new AddonLinkHitbox(x, cy, width, LINK_HEIGHT - 4, link));
                 cy += LINK_HEIGHT;
             }
+            return cy;
+        }
+
+        private int drawConfigSections(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                String moduleId, int x, int y, int width, int mouseX, int mouseY) {
+            List<EchoConfigModuleSnapshot> modules = configSnapshots(moduleId);
+            TerminalUi.line(context, graphics, "Addon Config", x, y, width, TerminalUi.CYAN);
+            TerminalUi.divider(graphics, x, y + 14, width, TerminalUi.CYAN);
+            int cy = y + 22;
+            String status = TerminalConfigClientState.status();
+            if (!status.isBlank()) {
+                cy = TerminalUi.wrap(context, graphics, status, x, cy, width, TerminalUi.AMBER) + 6;
+            }
+            if (modules.isEmpty()) {
+                return TerminalUi.wrap(context, graphics,
+                        "No editable config published for this addon.",
+                        x, cy, width, TerminalUi.MUTED) + 8;
+            }
+            for (EchoConfigModuleSnapshot module : modules) {
+                String sideTitle = module.categories().stream()
+                        .flatMap(category -> category.entries().stream())
+                        .findFirst()
+                        .map(entry -> entry.side() == EchoConfigSide.CLIENT ? "Client Local" : "Server/Common")
+                        .orElse("Config");
+                TerminalUi.section(context, graphics, sideTitle, x, cy, descriptor.accentColor());
+                cy += 18;
+                for (EchoConfigCategorySnapshot category : module.categories()) {
+                    TerminalUi.line(context, graphics, category.title(), x + 6, cy, width - 6, TerminalUi.MUTED);
+                    cy += 14;
+                    for (EchoConfigEntrySnapshot entry : category.entries()) {
+                        cy = drawConfigEntry(context, graphics, entry, x + 6, cy, width - 6, mouseX, mouseY) + 5;
+                    }
+                    cy += 4;
+                }
+            }
+            return cy;
+        }
+
+        private int drawConfigEntry(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                EchoConfigEntrySnapshot entry, int x, int y, int width, int mouseX, int mouseY) {
+            int rowH = entry.kind() == EchoConfigValueKind.BOOLEAN || entry.kind() == EchoConfigValueKind.ENUM ? 44 : 58;
+            boolean hovered = TerminalUi.inside(mouseX, mouseY, x, y, width, rowH);
+            graphics.fill(x, y, x + width, y + rowH, hovered ? 0x2216E8FF : 0x14000000);
+            graphics.outline(x, y, width, rowH, 0x5536D6FF);
+            TerminalUi.line(context, graphics, entry.label(), x + 8, y + 6, Math.max(80, width - 174), TerminalUi.TEXT);
+            String detail = configDetail(entry);
+            TerminalUi.wrap(context, graphics, detail, x + 8, y + 20, Math.max(80, width - 174), TerminalUi.MUTED);
+            int buttonX = x + width - 160;
+            if (entry.kind() == EchoConfigValueKind.BOOLEAN) {
+                drawConfigButton(context, graphics, entry.value(), buttonX, y + 7, 72, entry.editable(),
+                        hovered, entryColor(entry), () -> toggleConfig(context, entry));
+                drawConfigButton(context, graphics, "RESET", buttonX + 78, y + 7, 72, entry.editable(),
+                        hovered, TerminalUi.AMBER, () -> resetConfig(context, entry));
+            } else if (entry.kind() == EchoConfigValueKind.ENUM) {
+                drawConfigButton(context, graphics, entry.value(), buttonX, y + 7, 72, entry.editable(),
+                        hovered, entryColor(entry), () -> cycleConfig(context, entry));
+                drawConfigButton(context, graphics, "RESET", buttonX + 78, y + 7, 72, entry.editable(),
+                        hovered, TerminalUi.AMBER, () -> resetConfig(context, entry));
+            } else {
+                boolean editing = configKey(entry).equals(editingConfigKey);
+                String fieldText = editing ? editDraft + "_" : entry.value();
+                graphics.fill(buttonX, y + 6, buttonX + 150, y + 24, editing ? 0x3336D6FF : 0x22000000);
+                graphics.outline(buttonX, y + 6, 150, 18, editing ? 0xAA66E8FF : 0x5536D6FF);
+                graphics.text(context.minecraft().font,
+                        TerminalUi.trim(context.minecraft().font, fieldText, 144), buttonX + 4, y + 11,
+                        TerminalUi.opaque(entry.editable() ? TerminalUi.TEXT : TerminalUi.MUTED), false);
+                configHitboxes.add(new ConfigHitbox(buttonX, y + 6, 150, 18,
+                        () -> beginConfigEdit(context, entry)));
+                drawConfigButton(context, graphics, editing ? "SAVE" : "EDIT", buttonX, y + 31, 72, entry.editable(),
+                        hovered, TerminalUi.CYAN,
+                        () -> {
+                            if (editing) {
+                                applyConfigValue(context, entry, editDraft);
+                            } else {
+                                beginConfigEdit(context, entry);
+                            }
+                        });
+                drawConfigButton(context, graphics, "RESET", buttonX + 78, y + 31, 72, entry.editable(),
+                        hovered, TerminalUi.AMBER, () -> resetConfig(context, entry));
+            }
+            return y + rowH;
+        }
+
+        private void drawConfigButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                String label, int x, int y, int width, boolean enabled, boolean hovered,
+                int color, Runnable action) {
+            TerminalUi.compactButton(context, graphics, x, y, width,
+                    label == null || label.isBlank() ? "-" : label.toLowerCase(java.util.Locale.ROOT),
+                    color, enabled, hovered && enabled);
+            configHitboxes.add(new ConfigHitbox(x, y, width, 16, () -> {
+                if (!enabled) {
+                    context.playRejectedSound();
+                    return;
+                }
+                action.run();
+            }));
+        }
+
+        private String configDetail(EchoConfigEntrySnapshot entry) {
+            List<String> badges = new ArrayList<>();
+            if (!entry.editable()) {
+                badges.add("OP required");
+            }
+            if (entry.restartRequired()) {
+                badges.add("restart");
+            }
+            if (entry.newWorldOnly()) {
+                badges.add("new chunks");
+            }
+            String range = !entry.minValue().isBlank() || !entry.maxValue().isBlank()
+                    ? " [" + entry.minValue() + ".." + entry.maxValue() + "]"
+                    : "";
+            String prefix = badges.isEmpty() ? "" : String.join(" / ", badges) + " | ";
+            String body = entry.description().isBlank() ? "Default " + entry.defaultValue() + range : entry.description();
+            return prefix + body;
+        }
+
+        private int entryColor(EchoConfigEntrySnapshot entry) {
+            return entry.side() == EchoConfigSide.CLIENT ? TerminalUi.CYAN : TerminalUi.GREEN;
+        }
+
+        private void maybeRequestCommonConfig(TerminalRenderContext context) {
+            int tick = context == null || context.themeContext() == null ? 0 : context.themeContext().tick();
+            if (tick - lastConfigRequestTick >= 80) {
+                requestCommonConfig(context);
+            }
+        }
+
+        private void requestCommonConfig(TerminalRenderContext context) {
+            lastConfigRequestTick = context == null || context.themeContext() == null ? 0 : context.themeContext().tick();
+            EchoNetClientActions.sendServerboundAction(new TerminalConfigActionPacket(
+                    TerminalConfigActionPacket.Action.REQUEST, EchoConfigSide.COMMON, "", "", ""));
+        }
+
+        private List<EchoConfigModuleSnapshot> configSnapshots(String moduleId) {
+            List<EchoConfigModuleSnapshot> modules = new ArrayList<>();
+            TerminalConfigClientState.commonModule(moduleId).ifPresent(modules::add);
+            EchoConfigRegistry.snapshot(moduleId, EchoConfigSide.CLIENT)
+                    .filter(EchoConfigModuleSnapshot::hasEntries)
+                    .ifPresent(modules::add);
+            return modules;
+        }
+
+        private static int addonConfigHeight(String moduleId, int width) {
+            List<EchoConfigModuleSnapshot> modules = new ArrayList<>();
+            TerminalConfigClientState.commonModule(moduleId).ifPresent(modules::add);
+            EchoConfigRegistry.snapshot(moduleId, EchoConfigSide.CLIENT)
+                    .filter(EchoConfigModuleSnapshot::hasEntries)
+                    .ifPresent(modules::add);
+            if (modules.isEmpty()) {
+                return 52;
+            }
+            int rows = 0;
+            int categories = 0;
+            for (EchoConfigModuleSnapshot module : modules) {
+                categories += module.categories().size() + 1;
+                for (EchoConfigCategorySnapshot category : module.categories()) {
+                    rows += category.entries().stream()
+                            .mapToInt(entry -> entry.kind() == EchoConfigValueKind.BOOLEAN
+                                    || entry.kind() == EchoConfigValueKind.ENUM ? 49 : 63)
+                            .sum();
+                }
+            }
+            return 34 + categories * 22 + rows + (width < 320 ? 30 : 0);
+        }
+
+        private void beginConfigEdit(TerminalRenderContext context, EchoConfigEntrySnapshot entry) {
+            if (!entry.editable()) {
+                context.playRejectedSound();
+                return;
+            }
+            editingConfigKey = configKey(entry);
+            editDraft = entry.value();
+            context.playCommandSound();
+        }
+
+        private void toggleConfig(TerminalRenderContext context, EchoConfigEntrySnapshot entry) {
+            applyConfigValue(context, entry, String.valueOf(!Boolean.parseBoolean(entry.value())));
+        }
+
+        private void cycleConfig(TerminalRenderContext context, EchoConfigEntrySnapshot entry) {
+            if (entry.options().isEmpty()) {
+                context.playRejectedSound();
+                return;
+            }
+            int index = Math.max(0, entry.options().indexOf(entry.value()));
+            String next = entry.options().get((index + 1) % entry.options().size());
+            applyConfigValue(context, entry, next);
+        }
+
+        private void applyConfigValue(TerminalRenderContext context, EchoConfigEntrySnapshot entry, String value) {
+            if (entry.side() == EchoConfigSide.COMMON) {
+                EchoNetClientActions.sendServerboundAction(new TerminalConfigActionPacket(
+                        TerminalConfigActionPacket.Action.SET, EchoConfigSide.COMMON,
+                        entry.moduleId(), entry.entryId(), value));
+                lastConfigRequestTick = context.themeContext().tick();
+            } else {
+                EchoConfigApplyResult result = EchoConfigRegistry.apply(EchoConfigSide.CLIENT,
+                        entry.moduleId(), entry.entryId(), value);
+                if (!result.success()) {
+                    context.playRejectedSound();
+                    return;
+                }
+            }
+            editingConfigKey = "";
+            editDraft = "";
+            context.playCommandSound();
+        }
+
+        private void resetConfig(TerminalRenderContext context, EchoConfigEntrySnapshot entry) {
+            if (entry.side() == EchoConfigSide.COMMON) {
+                EchoNetClientActions.sendServerboundAction(new TerminalConfigActionPacket(
+                        TerminalConfigActionPacket.Action.RESET, EchoConfigSide.COMMON,
+                        entry.moduleId(), entry.entryId(), ""));
+                lastConfigRequestTick = context.themeContext().tick();
+            } else {
+                EchoConfigApplyResult result = EchoConfigRegistry.reset(EchoConfigSide.CLIENT,
+                        entry.moduleId(), entry.entryId());
+                if (!result.success()) {
+                    context.playRejectedSound();
+                    return;
+                }
+            }
+            editingConfigKey = "";
+            editDraft = "";
+            context.playCommandSound();
+        }
+
+        private java.util.Optional<EchoConfigEntrySnapshot> findEditingEntry() {
+            if (editingConfigKey.isBlank()) {
+                return java.util.Optional.empty();
+            }
+            String[] parts = editingConfigKey.split("\\|", 3);
+            String moduleId = parts.length >= 2 ? parts[1] : selectedChapterId;
+            return configSnapshots(moduleId).stream()
+                    .flatMap(module -> module.categories().stream())
+                    .flatMap(category -> category.entries().stream())
+                    .filter(entry -> configKey(entry).equals(editingConfigKey))
+                    .findFirst();
+        }
+
+        private static String configKey(EchoConfigEntrySnapshot entry) {
+            return entry.side().name() + "|" + entry.moduleId() + "|" + entry.entryId();
         }
 
         private static String linkLabel(TerminalAddonGuide guide, TerminalAddonLink link) {
@@ -1744,6 +2158,7 @@ public final class BuiltinTerminalTabs {
                     ? 0
                     : TerminalUi.wrappedHeight(context, info.summary(), wrapWidth) + 8;
             int linkHeight = 26 + Math.max(1, links.size()) * LINK_HEIGHT;
+            int configHeight = addonConfigHeight(chapterModId(chapter), width);
             return Math.max(220,
                     98
                             + guideHeight
@@ -1752,6 +2167,7 @@ public final class BuiltinTerminalTabs {
                             + metricRows * 76
                             + sectionHeight
                             + linkHeight
+                            + configHeight
                             + 24);
         }
 
@@ -1785,10 +2201,13 @@ public final class BuiltinTerminalTabs {
 
         private record AddonLinkHitbox(int x, int y, int w, int h, TerminalAddonLink link) {
         }
+
+        private record ConfigHitbox(int x, int y, int w, int h, Runnable action) {
+        }
     }
 
     private static final class DiagnosticsTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 54;
+        private static final int ROW_HEIGHT = 50;
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(id("diagnostics"), "WHAT NOW", 80, 0xFFFFD166);
         private final TerminalTabChrome chrome =
@@ -1845,13 +2264,47 @@ public final class BuiltinTerminalTabs {
             for (EchoDiagnosticBlocker blocker : EchoCoreServices.diagnostics(context.player())) {
                 diagnostics.putIfAbsent(blocker.id(), blocker);
             }
-            for (TerminalMissionProvider provider : TerminalMissionRegistry.providers()) {
-                for (TerminalMissionDefinition mission : safeMissions(provider, context)) {
+            List<TerminalMissionProvider> providers = TerminalMissionRegistry.providers();
+            if (providers.isEmpty()) {
+                EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                        id("diagnostic/no_mission_providers"),
+                        EchoTerminal.MODID,
+                        EchoDiagnosticBlocker.Severity.INFO,
+                        "No mission providers linked",
+                        "Terminal has no registered mission providers in the current runtime.",
+                        "Install or enable an ECHO chapter that owns mission content.");
+                diagnostics.putIfAbsent(blocker.id(), blocker);
+            }
+            for (TerminalMissionProvider provider : providers) {
+                TerminalMissionChapter chapter = missionChapter(provider);
+                MissionProviderRead read = readMissions(provider, context, chapter);
+                if (read.failure() != null) {
+                    EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                            id("diagnostic/mission_provider_failed_" + safePath(chapter.id().toString())),
+                            chapter.id().toString(),
+                            EchoDiagnosticBlocker.Severity.BLOCKED,
+                            chapter.title() + " mission provider failed",
+                            "The mission provider threw while Terminal was collecting route state.",
+                            "Reload the world or check the owning chapter log for " + read.failure().getClass().getSimpleName() + ".");
+                    diagnostics.putIfAbsent(blocker.id(), blocker);
+                    continue;
+                }
+                if (read.missions().isEmpty()) {
+                    EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                            id("diagnostic/mission_provider_empty_" + safePath(chapter.id().toString())),
+                            chapter.id().toString(),
+                            EchoDiagnosticBlocker.Severity.INFO,
+                            chapter.title() + " has no missions",
+                            "The provider is registered but did not publish route rows for this player context.",
+                            "Open the chapter page or verify that its JSON/Java mission content is enabled.");
+                    diagnostics.putIfAbsent(blocker.id(), blocker);
+                }
+                for (TerminalMissionDefinition mission : read.missions()) {
                     TerminalMissionSnapshot snapshot = safeSnapshot(provider, context, mission);
                     if (snapshot.status() == TerminalMissionStatus.LOCKED && !snapshot.unlockReason().isBlank()) {
                         EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
                                 mission.id(),
-                                missionChapter(provider).id().toString(),
+                                chapter.id().toString(),
                                 EchoDiagnosticBlocker.Severity.BLOCKED,
                                 mission.title(),
                                 snapshot.unlockReason(),
@@ -1860,6 +2313,7 @@ public final class BuiltinTerminalTabs {
                     }
                 }
             }
+            addArchiveAndRecipeDiagnostics(context, diagnostics);
             return diagnostics.values().stream()
                     .sorted(java.util.Comparator
                             .comparingInt((EchoDiagnosticBlocker blocker) -> severityRank(blocker.severity()))
@@ -1869,14 +2323,64 @@ public final class BuiltinTerminalTabs {
                     .toList();
         }
 
-        private static List<TerminalMissionDefinition> safeMissions(TerminalMissionProvider provider, TerminalRenderContext context) {
+        private static MissionProviderRead readMissions(TerminalMissionProvider provider,
+                TerminalRenderContext context, TerminalMissionChapter chapter) {
             try {
                 List<TerminalMissionDefinition> missions = provider.missions(context == null ? null : context.player());
-                return missions == null ? List.of() : missions.stream()
+                List<TerminalMissionDefinition> safeMissions = missions == null ? List.of() : missions.stream()
                         .filter(mission -> mission != null)
                         .toList();
+                return new MissionProviderRead(safeMissions, null);
             } catch (RuntimeException ignored) {
-                return List.of();
+                EchoTerminal.LOGGER.warn("Terminal mission provider {} failed while collecting diagnostics.",
+                        chapter.id(), ignored);
+                return new MissionProviderRead(List.of(), ignored);
+            }
+        }
+
+        private static void addArchiveAndRecipeDiagnostics(TerminalRenderContext context,
+                Map<Identifier, EchoDiagnosticBlocker> diagnostics) {
+            if (TerminalArchiveRegistry.entries().isEmpty()) {
+                EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                        id("diagnostic/no_archive_entries"),
+                        EchoTerminal.MODID,
+                        EchoDiagnosticBlocker.Severity.INFO,
+                        "No archive records linked",
+                        "Terminal has no shared archive entries in the current runtime.",
+                        "Enable SignalOS or an ECHO chapter that publishes archive records.");
+                diagnostics.putIfAbsent(blocker.id(), blocker);
+            }
+            try {
+                var recipeSnapshot = com.knoxhack.echoterminal.api.recipe.TerminalRecipeRegistry
+                        .snapshot(context == null ? null : context.player());
+                if (recipeSnapshot.providerCount() <= 0) {
+                    EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                            id("diagnostic/no_recipe_providers"),
+                            EchoTerminal.MODID,
+                            EchoDiagnosticBlocker.Severity.INFO,
+                            "No recipe providers linked",
+                            "The ECHO Recipe Index has no provider-backed recipe sources.",
+                            "Enable Ashfall, Industrial Nexus, Armory, or another recipe-aware ECHO addon.");
+                    diagnostics.putIfAbsent(blocker.id(), blocker);
+                } else if (recipeSnapshot.recipes().isEmpty()) {
+                    EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                            id("diagnostic/empty_recipe_index"),
+                            EchoTerminal.MODID,
+                            EchoDiagnosticBlocker.Severity.WARNING,
+                            "Recipe index empty",
+                            recipeSnapshot.providerCount() + " provider(s) are registered, but no recipe rows were published.",
+                            "Check recipe provider data loading and gated recipe visibility.");
+                    diagnostics.putIfAbsent(blocker.id(), blocker);
+                }
+            } catch (RuntimeException exception) {
+                EchoDiagnosticBlocker blocker = new EchoDiagnosticBlocker(
+                        id("diagnostic/recipe_index_failed"),
+                        EchoTerminal.MODID,
+                        EchoDiagnosticBlocker.Severity.BLOCKED,
+                        "Recipe index failed",
+                        "Terminal could not collect provider-backed recipe data.",
+                        "Check the owning recipe provider logs and reload the world.");
+                diagnostics.putIfAbsent(blocker.id(), blocker);
             }
         }
 
@@ -1913,6 +2417,22 @@ public final class BuiltinTerminalTabs {
                 case WARNING -> 2;
                 case INFO -> 3;
             };
+        }
+
+        private static String safePath(String value) {
+            String cleaned = value == null ? "" : value.toLowerCase(java.util.Locale.ROOT)
+                    .replaceAll("[^a-z0-9_./-]", "_")
+                    .replace('/', '_')
+                    .replace('.', '_')
+                    .replaceAll("_+", "_")
+                    .replaceAll("^_|_$", "");
+            return cleaned.isBlank() ? "provider" : cleaned;
+        }
+
+        private record MissionProviderRead(List<TerminalMissionDefinition> missions, RuntimeException failure) {
+            private MissionProviderRead {
+                missions = missions == null ? List.of() : List.copyOf(missions);
+            }
         }
     }
 
@@ -2066,8 +2586,71 @@ public final class BuiltinTerminalTabs {
         }
     }
 
+    private static final class DataCoreStatusTab implements TerminalTab {
+        private static final IDataKey<String> TERMINAL_PROBE = IDataKey.string(
+                Identifier.fromNamespaceAndPath("echodatacore", "system/terminal_probe"),
+                DataScope.PLAYER, "offline", true);
+        private final TerminalTabDescriptor descriptor =
+                new TerminalTabDescriptor(DATA_CORE, "DATA CORE", 145, 0xFF7DE0A8);
+        private final TerminalTabChrome chrome =
+                TerminalTabChrome.of("Data Core", TerminalTabChrome.GROUP_SYSTEMS, "DC",
+                        "Shared data service", 145);
+
+        @Override
+        public TerminalTabDescriptor descriptor() {
+            return descriptor;
+        }
+
+        @Override
+        public TerminalTabChrome chrome() {
+            return chrome;
+        }
+
+        @Override
+        public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int mouseX, int mouseY, float partialTick) {
+            EchoCoreServices.registerDataKey(TERMINAL_PROBE);
+            IDataService service = EchoCoreServices.dataService();
+            String probe = EchoCoreServices.playerData(context.player()).get(TERMINAL_PROBE);
+            boolean online = probe != null && !"offline".equalsIgnoreCase(probe);
+            int x = context.contentX();
+            int y = context.contentY();
+            int w = context.contentWidth();
+            int panelH = Math.max(132, Math.min(context.contentHeight(), 220));
+            int cy = TerminalUi.flatDataPanel(context, graphics, x, y, w, panelH,
+                    "DATA CORE", online ? "ONLINE" : "NO-OP", descriptor.accentColor()) + 8;
+            cy = TerminalUi.keyValue(context, graphics, x + 14, cy, w - 28,
+                    "Service", service.getClass().getSimpleName(), online ? TerminalUi.GREEN : TerminalUi.MUTED) + 2;
+            cy = TerminalUi.keyValue(context, graphics, x + 14, cy, w - 28,
+                    "Probe", probe == null ? "offline" : probe, online ? TerminalUi.GREEN : TerminalUi.MUTED) + 2;
+            cy = TerminalUi.keyValue(context, graphics, x + 14, cy, w - 28,
+                    "Registered keys", Integer.toString(service.registeredKeys().size()), descriptor.accentColor()) + 8;
+            List<IDataKey<?>> keys = service.registeredKeys().stream()
+                    .filter(key -> key.synced() || key.id().getNamespace().startsWith("echo"))
+                    .limit(6)
+                    .toList();
+            if (keys.isEmpty()) {
+                TerminalUi.wrap(context, graphics,
+                        "Shared progression is waiting for DataCore or another addon to register keys.",
+                        x + 14, cy, w - 28, TerminalUi.MUTED);
+                return;
+            }
+            for (IDataKey<?> key : keys) {
+                TerminalUi.line(context, graphics,
+                        key.scope() + " / " + key.kind() + " / " + key.id(),
+                        x + 14, cy, w - 28, TerminalUi.MUTED);
+                cy += 14;
+            }
+        }
+
+        @Override
+        public int contentHeight(TerminalRenderContext context) {
+            return Math.max(context.contentHeight(), 220);
+        }
+    }
+
     private static final class RouteRecordsTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 54;
+        private static final int ROW_HEIGHT = 50;
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(id("route_records"), "ROUTE RECORDS", 125, 0xFF9FD1FF);
         private final TerminalTabChrome chrome =
@@ -2120,7 +2703,7 @@ public final class BuiltinTerminalTabs {
     }
 
     private static final class FactionAtlasTab implements TerminalTab {
-        private static final int ROW_HEIGHT = 66;
+        private static final int ROW_HEIGHT = 60;
         private static final int FILTER_HEIGHT = 20;
         private final TerminalTabDescriptor descriptor =
                 new TerminalTabDescriptor(id("faction_atlas"), "FACTIONS", 128, 0xFFB889F5);

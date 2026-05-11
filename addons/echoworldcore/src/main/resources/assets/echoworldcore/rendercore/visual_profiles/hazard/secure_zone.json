@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/yellow_stained_glass.png",
+  "default_state": "COMPLETE",
+  "transition_seconds": 0.35,
+  "materials": {
+    "secure_zone": {
+      "color": "#FFFFD166",
+      "alpha": 0.48,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "secure_zone_field",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/yellow_stained_glass.png",
+      "material": "secure_zone",
+      "states": ["ONLINE", "ACTIVE", "COMPLETE"],
+      "alpha": 0.46,
+      "emissive": true
+    }
+  ]
+}

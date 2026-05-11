@@ -23,7 +23,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
- * Spawns low-density 10-faction contact patrols near discovered affinity sites.
+ * Spawns low-density three-faction contact patrols near discovered affinity sites.
  */
 @EventBusSubscriber(modid = EchoAshfallProtocol.MODID)
 public class FactionPatrolSpawner {

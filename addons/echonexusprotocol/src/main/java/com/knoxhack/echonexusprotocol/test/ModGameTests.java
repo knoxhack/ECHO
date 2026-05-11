@@ -9,6 +9,7 @@ import com.knoxhack.echonexusprotocol.compat.jei.NexusJeiRecipeCatalog;
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
 import com.knoxhack.echonexusprotocol.entity.NexusMobEntity;
 import com.knoxhack.echonexusprotocol.event.NexusArmorEvents;
+import com.knoxhack.echonexusprotocol.event.NexusWorldEvents;
 import com.knoxhack.echonexusprotocol.integration.NexusTerminalIds;
 import com.knoxhack.echonexusprotocol.integration.NexusTerminalMissionProvider;
 import com.knoxhack.echonexusprotocol.integration.NexusProgression;
@@ -18,8 +19,13 @@ import com.knoxhack.echonexusprotocol.item.NexusUtilityItem;
 import com.knoxhack.echonexusprotocol.registry.ModBlocks;
 import com.knoxhack.echonexusprotocol.registry.ModEntities;
 import com.knoxhack.echonexusprotocol.registry.ModItems;
+import com.knoxhack.echonexusprotocol.world.ModDimensions;
 import com.knoxhack.echonexusprotocol.world.NexusWorldData;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
 import java.util.Set;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -32,6 +38,8 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -46,6 +54,8 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
@@ -117,6 +127,36 @@ public final class ModGameTests {
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RELEASE_RISK_FIXES = TEST_FUNCTIONS.register(
       "release_risk_fixes", () -> ModGameTests::releaseRiskFixes
    );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RESOURCE_COMPLETENESS = TEST_FUNCTIONS.register(
+      "resource_completeness_release_gate", () -> ModGameTests::resourceCompletenessReleaseGate
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STARTER_PATH = TEST_FUNCTIONS.register(
+      "terminal_starter_path", () -> ModGameTests::terminalStarterPath
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ONE_TIME_REWARDS = TEST_FUNCTIONS.register(
+      "one_time_boss_reward_gates", () -> ModGameTests::oneTimeBossRewardGates
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STORM_SPAWN_CAP = TEST_FUNCTIONS.register(
+      "storm_spawn_cap", () -> ModGameTests::stormSpawnCap
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> JEI_JSON_PARITY = TEST_FUNCTIONS.register(
+      "jei_json_recipe_parity", () -> ModGameTests::jeiJsonRecipeParity
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORLD_DATA_CODEC = TEST_FUNCTIONS.register(
+      "world_data_codec_round_trip", () -> ModGameTests::worldDataCodecRoundTrip
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STRICT_PLAYABLE_STARTER_LOOP = TEST_FUNCTIONS.register(
+      "strict_playable_starter_loop", () -> ModGameTests::strictPlayableStarterLoop
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> PLAYER_DATA_PERSISTENCE = TEST_FUNCTIONS.register(
+      "nexus_player_data_persistence_round_trip", () -> ModGameTests::nexusPlayerDataPersistenceRoundTrip
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MACHINE_PERSISTENCE = TEST_FUNCTIONS.register(
+      "nexus_machine_persistence_round_trip", () -> ModGameTests::nexusMachinePersistenceRoundTrip
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_ACCESS_ROUTE = TEST_FUNCTIONS.register(
+      "core_access_key_route", () -> ModGameTests::coreAccessKeyRoute
+   );
 
    private ModGameTests() {
    }
@@ -147,6 +187,16 @@ public final class ModGameTests {
       register(event, environment, "collapsed_recovery_tools", RECOVERY_TOOLS.getId());
       register(event, environment, "ending_world_effects", ENDING_EFFECTS.getId());
       register(event, environment, "release_risk_fixes", RELEASE_RISK_FIXES.getId());
+      register(event, environment, "resource_completeness_release_gate", RESOURCE_COMPLETENESS.getId());
+      register(event, environment, "terminal_starter_path", STARTER_PATH.getId());
+      register(event, environment, "one_time_boss_reward_gates", ONE_TIME_REWARDS.getId());
+      register(event, environment, "storm_spawn_cap", STORM_SPAWN_CAP.getId());
+      register(event, environment, "jei_json_recipe_parity", JEI_JSON_PARITY.getId());
+      register(event, environment, "world_data_codec_round_trip", WORLD_DATA_CODEC.getId());
+      register(event, environment, "strict_playable_starter_loop", STRICT_PLAYABLE_STARTER_LOOP.getId());
+      register(event, environment, "nexus_player_data_persistence_round_trip", PLAYER_DATA_PERSISTENCE.getId());
+      register(event, environment, "nexus_machine_persistence_round_trip", MACHINE_PERSISTENCE.getId());
+      register(event, environment, "core_access_key_route", CORE_ACCESS_ROUTE.getId());
    }
 
    private static void energyStorageTransfer(GameTestHelper helper) {
@@ -409,7 +459,8 @@ public final class ModGameTests {
    private static void mobSignatureBehaviors(GameTestHelper helper) {
       Player player = helper.makeMockPlayer(GameType.SURVIVAL);
       player.getInventory().add(new ItemStack((ItemLike)ModItems.MEMORY_SHARD.get()));
-      BlockPos pos = helper.absolutePos(new BlockPos(2, 1, 2));
+      // Keep the Warden pulse away from neighboring full-stack mob-cap tests.
+      BlockPos pos = helper.absolutePos(new BlockPos(2, 32, 2));
 
       NexusMobEntity archiveSeeker = (NexusMobEntity)((EntityType)ModEntities.ARCHIVE_SEEKER.get()).create(helper.getLevel(), EntitySpawnReason.EVENT);
       helper.assertTrue(archiveSeeker != null, "Archive Seeker should create");
@@ -432,10 +483,6 @@ public final class ModGameTests {
             corruptionWarden.pulse(helper.getLevel());
          }
          helper.assertTrue(data.corruptionPressure(warden.chunkPosition()) >= 4, "Corruption Warden should pulse corruption into the chunk");
-         helper.assertTrue(
-            !helper.getLevel().getEntitiesOfClass(NexusMobEntity.class, new AABB(pos).inflate(5.0D), mob -> mob.getType() == ModEntities.STATIC_CRAWLER.get()).isEmpty(),
-            "Corruption Warden should summon Static Crawlers"
-         );
       }
 
       NexusMobEntity guardian = (NexusMobEntity)((EntityType)ModEntities.NEXUS_GUARDIAN.get()).create(helper.getLevel(), EntitySpawnReason.EVENT);
@@ -444,7 +491,12 @@ public final class ModGameTests {
          nexusGuardian.setHealth(nexusGuardian.getMaxHealth() * 0.2F);
          helper.assertTrue(nexusGuardian.phase() == 4, "Nexus Guardian should enter phase 4 below 25% health");
       }
-      helper.succeed();
+      helper.succeedWhen(() -> {
+         helper.assertTrue(
+            !helper.getLevel().getEntitiesOfClass(NexusMobEntity.class, new AABB(pos).inflate(5.0D), mob -> mob.getType() == ModEntities.STATIC_CRAWLER.get()).isEmpty(),
+            "Corruption Warden should summon Static Crawlers after pulsing"
+         );
+      });
    }
 
    private static void scannerResearchUnlocks(GameTestHelper helper) {
@@ -640,6 +692,468 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void resourceCompletenessReleaseGate(GameTestHelper helper) {
+      String lang = readResource("assets/echonexusprotocol/lang/en_us.json");
+      String[] blocks = {
+         "fragmented_soil",
+         "data_cracked_stone",
+         "signal_burned_grass",
+         "glassed_dust",
+         "hollow_signal_wood",
+         "dead_signal_leaves",
+         "corrupted_ferrite_ore",
+         "blackbox_deepslate",
+         "static_fluid_block",
+         "nexus_crystal_cluster",
+         "blackbox_plate",
+         "signal_glass",
+         "core_brick",
+         "core_glass_block",
+         "white_signal_log",
+         "white_signal_leaves",
+         "blackbox_monolith_core",
+         "reality_tear",
+         "nexus_recycler",
+         "nexus_charge_tank",
+         "corruption_filter",
+         "nexus_field_stabilizer",
+         "nexus_infuser",
+         "memory_decoder",
+         "reality_forge",
+         "corruption_reactor",
+         "protocol_seal"
+      };
+      for (String block : blocks) {
+         assertResourcePresent(helper, "assets/echonexusprotocol/blockstates/" + block + ".json");
+         assertResourcePresent(helper, "assets/echonexusprotocol/items/" + block + ".json");
+         assertResourcePresent(helper, "assets/echonexusprotocol/models/block/" + block + ".json");
+         assertResourcePresent(helper, "assets/echonexusprotocol/textures/block/" + block + ".png");
+         assertResourcePresent(helper, "data/echonexusprotocol/loot_table/blocks/" + block + ".json");
+         helper.assertTrue(lang.contains("\"block.echonexusprotocol." + block + "\""), "Missing block lang key: " + block);
+      }
+
+      String[] items = {
+         "nexus_shard",
+         "stable_nexus_core",
+         "blackbox_fragment",
+         "corrupted_ferrite",
+         "static_fluid",
+         "white_signal_bark",
+         "nexus_gel",
+         "reality_dust",
+         "field_membrane",
+         "core_glass",
+         "signal_wire",
+         "filter_membrane",
+         "stabilized_alloy",
+         "echo_crystal_dust",
+         "clean_resonance_battery",
+         "memory_shard",
+         "data_fragment",
+         "reactor_core",
+         "core_access_key",
+         "core_key_assembly",
+         "nexus_scanner_visor",
+         "nexus_pickaxe",
+         "signal_blade",
+         "reality_anchor",
+         "field_anchor",
+         "purity_charge",
+         "stabilized_purity_charge",
+         "collapse_charge",
+         "nexus_helmet",
+         "nexus_chestplate",
+         "nexus_leggings",
+         "nexus_boots"
+      };
+      for (String item : items) {
+         assertResourcePresent(helper, "assets/echonexusprotocol/items/" + item + ".json");
+         assertResourcePresent(helper, "assets/echonexusprotocol/models/item/" + item + ".json");
+         assertResourcePresent(helper, "assets/echonexusprotocol/textures/item/" + item + ".png");
+         helper.assertTrue(lang.contains("\"item.echonexusprotocol." + item + "\""), "Missing item lang key: " + item);
+      }
+
+      for (String entity : new String[]{"nexus_husk", "data_wraith", "static_crawler", "core_soldier", "archive_seeker", "corruption_warden", "nexus_guardian"}) {
+         assertResourcePresent(helper, "assets/echonexusprotocol/textures/entity/" + entity + ".png");
+         assertResourcePresent(helper, "data/echonexusprotocol/loot_table/entities/" + entity + ".json");
+         helper.assertTrue(lang.contains("\"entity.echonexusprotocol." + entity + "\""), "Missing entity lang key: " + entity);
+      }
+      helper.succeed();
+   }
+
+   private static void terminalStarterPath(GameTestHelper helper) {
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      if (!(player instanceof ServerPlayer serverPlayer)) {
+         helper.succeed();
+         return;
+      }
+
+      var locked = NexusTerminalMissionProvider.INSTANCE.snapshot(player, NexusTerminalIds.id("the_signal_beneath"));
+      helper.assertTrue(locked.status() == TerminalMissionStatus.LOCKED, "First Nexus mission should be locked before Stationfall/dev unlock");
+      NexusProgression.grantDevelopmentUnlock(serverPlayer);
+      var unlocked = NexusTerminalMissionProvider.INSTANCE.snapshot(player, NexusTerminalIds.id("the_signal_beneath"));
+      helper.assertTrue(unlocked.status() == TerminalMissionStatus.UNLOCKED, "First Nexus mission should unlock from development handoff");
+      helper.assertTrue(
+         unlocked.actions().stream().anyMatch(action -> action.enabled() && "scan".equals(action.id())),
+         "Unlocked first mission should expose exactly the starter scan route"
+      );
+
+      helper.assertTrue(
+         NexusTerminalMissionProvider.INSTANCE.handleAction(serverPlayer, NexusTerminalIds.id("the_signal_beneath"), "scan"),
+         "SCAN FIELD should be a handled starter action"
+      );
+      NexusPlayerData data = NexusPlayerData.get(player);
+      helper.assertTrue(data.hasResearch(NexusPlayerData.RESEARCH_NEXUS_THEORY), "SCAN FIELD should unlock Nexus Theory");
+      helper.assertTrue(data.scanCount() > 0, "SCAN FIELD should record real scan progress");
+      var claimable = NexusTerminalMissionProvider.INSTANCE.snapshot(player, NexusTerminalIds.id("the_signal_beneath"));
+      helper.assertTrue(claimable.status() == TerminalMissionStatus.CLAIMABLE, "SCAN FIELD should make the starter cache claimable");
+
+      helper.assertTrue(
+         NexusTerminalMissionProvider.INSTANCE.handleAction(serverPlayer, NexusTerminalIds.id("the_signal_beneath"), "claim_cache"),
+         "Starter cache claim should be handled"
+      );
+      helper.assertTrue(data.isTerminalCacheClaimed("the_signal_beneath"), "Starter cache claim should persist on player data");
+      int pendingAfterClaim = EchoCoreServices.pendingTerminalRewardCount(serverPlayer);
+      int shardsAfterClaim = countItem(player, (ItemLike)ModItems.NEXUS_SHARD.get());
+      int wireAfterClaim = countItem(player, (ItemLike)ModItems.SIGNAL_WIRE.get());
+      helper.assertTrue(
+         NexusTerminalMissionProvider.INSTANCE.handleAction(serverPlayer, NexusTerminalIds.id("the_signal_beneath"), "claim_cache"),
+         "Repeated starter cache claim should be safely handled"
+      );
+      helper.assertTrue(
+         EchoCoreServices.pendingTerminalRewardCount(serverPlayer) == pendingAfterClaim
+            && countItem(player, (ItemLike)ModItems.NEXUS_SHARD.get()) == shardsAfterClaim
+            && countItem(player, (ItemLike)ModItems.SIGNAL_WIRE.get()) == wireAfterClaim,
+         "Repeated starter cache claim should not duplicate pending rewards or fallback inventory rewards"
+      );
+      helper.succeed();
+   }
+
+   private static void strictPlayableStarterLoop(GameTestHelper helper) {
+      Player mockPlayer = helper.makeMockPlayer(GameType.SURVIVAL);
+      if (!(mockPlayer instanceof ServerPlayer player)) {
+         helper.succeed();
+         return;
+      }
+      BlockPos playerLocal = new BlockPos(2, 1, 2);
+      BlockPos playerPos = helper.absolutePos(playerLocal);
+      player.teleportTo(helper.getLevel(), playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D, Set.of(), 0.0F, 0.0F, true);
+
+      Identifier signalMission = NexusTerminalIds.id("the_signal_beneath");
+      var locked = NexusTerminalMissionProvider.INSTANCE.snapshot(player, signalMission);
+      helper.assertTrue(locked.status() == TerminalMissionStatus.LOCKED, "Starter Nexus mission should be locked before the Stationfall/dev handoff");
+      helper.assertTrue(!locked.actionHint().isBlank(), "Locked starter mission should explain the missing handoff");
+      helper.assertTrue(
+         locked.actions().stream().anyMatch(action -> !action.enabled() && !action.disabledReason().isBlank()),
+         "Locked starter mission should expose a disabled next action with a reason"
+      );
+
+      NexusProgression.grantDevelopmentUnlock(player);
+      var unlocked = NexusTerminalMissionProvider.INSTANCE.snapshot(player, signalMission);
+      helper.assertTrue(unlocked.status() == TerminalMissionStatus.UNLOCKED, "Starter Nexus mission should unlock after the handoff");
+      helper.assertTrue(
+         unlocked.actions().stream().anyMatch(action -> action.enabled() && "scan".equals(action.id()) && "SCAN FIELD".equals(action.label())),
+         "Unlocked starter mission should expose the SCAN FIELD player action"
+      );
+      helper.assertTrue(
+         NexusTerminalMissionProvider.INSTANCE.handleAction(player, signalMission, "scan"),
+         "SCAN FIELD should be handled from the Terminal"
+      );
+
+      NexusPlayerData data = NexusPlayerData.get(player);
+      helper.assertTrue(data.hasResearch(NexusPlayerData.RESEARCH_NEXUS_THEORY), "Terminal scan should unlock Nexus Theory");
+      helper.assertTrue(data.scanCount() > 0, "Terminal scan should create real server-side scan state");
+      var claimable = NexusTerminalMissionProvider.INSTANCE.snapshot(player, signalMission);
+      helper.assertTrue(claimable.status() == TerminalMissionStatus.CLAIMABLE, "Terminal scan should make the starter cache claimable");
+      helper.assertTrue(claimable.actionHint().contains("Claim"), "Claimable starter mission should point to the support cache");
+      helper.assertTrue(
+         claimable.actions().stream().anyMatch(action -> action.enabled() && "claim_cache".equals(action.id())),
+         "Claimable starter mission should expose a cache claim action"
+      );
+
+      int pendingBeforeClaim = EchoCoreServices.pendingTerminalRewardCount(player);
+      helper.assertTrue(
+         NexusTerminalMissionProvider.INSTANCE.handleAction(player, signalMission, "claim_cache"),
+         "Starter support cache should be claimable"
+      );
+      helper.assertTrue(data.isTerminalCacheClaimed("the_signal_beneath"), "Starter cache claim should persist on player state");
+      EchoCoreServices.claimTerminalRewards(player);
+      int starterShards = countItem(player, (ItemLike)ModItems.NEXUS_SHARD.get());
+      int starterWire = countItem(player, (ItemLike)ModItems.SIGNAL_WIRE.get());
+      helper.assertTrue(starterShards >= 2 && starterWire >= 2, "Starter cache should grant enough Nexus materials for scanner/recycler onboarding");
+      assertRecipe(helper, "nexus_scanner_visor");
+      assertRecipe(helper, "nexus_recycler");
+
+      int pendingAfterClaim = EchoCoreServices.pendingTerminalRewardCount(player);
+      int shardsAfterClaim = countItem(player, (ItemLike)ModItems.NEXUS_SHARD.get());
+      int wireAfterClaim = countItem(player, (ItemLike)ModItems.SIGNAL_WIRE.get());
+      helper.assertTrue(
+         NexusTerminalMissionProvider.INSTANCE.handleAction(player, signalMission, "claim_cache"),
+         "Repeated starter cache claim should be safely handled"
+      );
+      helper.assertTrue(
+         EchoCoreServices.pendingTerminalRewardCount(player) == pendingAfterClaim
+            && countItem(player, (ItemLike)ModItems.NEXUS_SHARD.get()) == shardsAfterClaim
+            && countItem(player, (ItemLike)ModItems.SIGNAL_WIRE.get()) == wireAfterClaim,
+         "Repeated starter cache claim should not duplicate pending rewards or fallback inventory rewards"
+      );
+      helper.assertTrue(pendingAfterClaim <= pendingBeforeClaim + 1, "Starter cache should create at most one pending reward bundle");
+
+      NexusMachineBlockEntity recycler = placeMachine(helper, new BlockPos(4, 1, 2), (Block)ModBlocks.NEXUS_RECYCLER.get());
+      recycler.setItem(NexusMachineBlockEntity.INPUT_SLOT, new ItemStack((ItemLike)ModItems.NEXUS_SHARD.get(), 2));
+      tickMachine(helper, recycler, 130);
+      helper.assertTrue(recycler.getItem(NexusMachineBlockEntity.INPUT_SLOT).getCount() == 1, "Recycler should consume exactly one Nexus Shard per process");
+      helper.assertTrue(
+         recycler.getItem(NexusMachineBlockEntity.OUTPUT_SLOT).is(ModItems.REALITY_DUST.get())
+            && recycler.getItem(NexusMachineBlockEntity.OUTPUT_SLOT).getCount() == 1,
+         "Recycler should output exactly one Reality Dust for the first process"
+      );
+      helper.assertTrue(recycler.energyStored() >= 700, "Recycler should produce Nexus Charge from the first craftable input");
+      helper.assertTrue(data.hasUsedMachine("nexus_recycler"), "Recycler completion should mark player progression near the machine");
+      helper.assertFalse(recycler.acceptsInput(new ItemStack(Items.DIRT)), "Recycler should reject invalid input instead of silently eating it");
+
+      var dirtyCharge = NexusTerminalMissionProvider.INSTANCE.snapshot(player, NexusTerminalIds.id("dirty_charge"));
+      helper.assertTrue(dirtyCharge.status() == TerminalMissionStatus.CLAIMABLE, "Using the recycler should advance the Dirty Charge Terminal objective");
+      helper.assertTrue(dirtyCharge.actionHint().contains("Claim"), "Completed Dirty Charge mission should direct the player to claim the next cache");
+      helper.succeed();
+   }
+
+   private static void nexusPlayerDataPersistenceRoundTrip(GameTestHelper helper) {
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      BlockPos returnPos = helper.absolutePos(new BlockPos(3, 1, 3));
+      player.teleportTo(helper.getLevel(), returnPos.getX() + 0.25D, returnPos.getY(), returnPos.getZ() + 0.75D, Set.of(), 123.0F, -12.0F, true);
+      NexusWorldData worldData = NexusWorldData.get(helper.getLevel());
+      ChunkPos center = new ChunkPos(returnPos.getX() >> 4, returnPos.getZ() >> 4);
+      worldData.setFieldValue(center, 64);
+      worldData.setCorruptionPressure(center, 37);
+      worldData.quarantineChunk(center, 222);
+      worldData.startAnomalyStorm(center, helper.getLevel().getGameTime());
+      worldData.activateBlackboxMonolith();
+      worldData.markWardenDefeated();
+      worldData.markGuardianDefeated();
+      worldData.commitEndingState("");
+      worldData.commitEndingState("restore");
+
+      NexusPlayerData original = new NexusPlayerData();
+      original.unlockResearch(NexusPlayerData.RESEARCH_NEXUS_THEORY);
+      original.unlockResearch(NexusPlayerData.RESEARCH_MEMORY_RECOVERY);
+      original.markScanned(id("scan/persistence"));
+      original.markTerminalCacheClaimed("the_signal_beneath");
+      original.markMachineUsed("nexus_recycler");
+      original.markMachineUsed("memory_decoder");
+      original.markSealUsed("repair");
+      original.markGearUsed("nexus_scanner_visor");
+      original.addBlackboxFragment();
+      original.addBlackboxFragment();
+      original.addBlackboxFragment();
+      original.activateBlackboxMonolith();
+      original.markWardenDefeated();
+      original.markGuardianDefeated();
+      original.markCoreEntered();
+      original.setEndingPath("merge");
+      original.setArmorLockCooldown(37);
+      original.setNexusReturn(player);
+      original.setFinalChoiceState("committed");
+      original.refreshFieldTelemetry(player);
+      int expectedField = original.telemetryFieldValue();
+      int expectedCorruption = original.telemetryCorruptionPressure();
+      int expectedQuarantine = original.telemetryQuarantineTicks();
+      boolean expectedStorm = original.telemetryActiveStorm();
+      int expectedTears = original.telemetryRealityTears();
+      int centerIndex = NexusPlayerData.FIELD_MAP_RADIUS * NexusPlayerData.FIELD_MAP_DIAMETER + NexusPlayerData.FIELD_MAP_RADIUS;
+      int expectedMapField = original.telemetryMapField(centerIndex);
+      int expectedMapCorruption = original.telemetryMapCorruption(centerIndex);
+      boolean expectedMapStorm = original.telemetryMapStorm(centerIndex);
+
+      NexusPlayerData restored = roundTripNexusPlayerData(helper, original);
+      helper.assertTrue(restored.hasResearch(NexusPlayerData.RESEARCH_NEXUS_THEORY), "Research unlocks should survive player-data serialization");
+      helper.assertTrue(restored.hasResearch(NexusPlayerData.RESEARCH_MEMORY_RECOVERY), "Secondary research unlocks should survive player-data serialization");
+      helper.assertTrue(restored.scannedIds().contains(id("scan/persistence").toString()), "Scanned ids should survive player-data serialization");
+      helper.assertTrue(restored.isTerminalCacheClaimed("the_signal_beneath"), "Claimed Terminal caches should survive player-data serialization");
+      helper.assertTrue(restored.hasUsedMachine("nexus_recycler") && restored.hasUsedMachine("memory_decoder"), "Used machines should survive player-data serialization");
+      helper.assertTrue(restored.hasUsedSeal("repair"), "Used Protocol Seal modes should survive player-data serialization");
+      helper.assertTrue(restored.hasUsedGear("nexus_scanner_visor"), "Used Nexus gear should survive player-data serialization");
+      helper.assertTrue(restored.blackboxFragments() == 3, "Blackbox fragment count should survive player-data serialization");
+      helper.assertTrue(restored.blackboxMonolithActivated(), "Monolith player state should survive player-data serialization");
+      helper.assertTrue(restored.wardenDefeated() && restored.guardianDefeated(), "Boss defeat state should survive player-data serialization");
+      helper.assertTrue(restored.coreEntered(), "Core entry state should survive player-data serialization");
+      helper.assertTrue("merge".equals(restored.endingPath()) && "committed".equals(restored.finalChoiceState()), "Final path state should survive player-data serialization");
+      helper.assertTrue(restored.armorLockCooldown() == 37, "Armor lock cooldown should survive player-data serialization");
+      helper.assertTrue(restored.hasNexusReturn(), "Return-vector presence should survive player-data serialization");
+      helper.assertTrue("minecraft:overworld".equals(restored.nexusReturnDimension()), "Return dimension should survive player-data serialization");
+      helper.assertTrue(Math.abs(restored.nexusReturnX() - (returnPos.getX() + 0.25D)) < 0.01D, "Return X should survive player-data serialization");
+      helper.assertTrue(Math.abs(restored.nexusReturnZ() - (returnPos.getZ() + 0.75D)) < 0.01D, "Return Z should survive player-data serialization");
+      helper.assertTrue(Math.abs(restored.nexusReturnYRot() - 123.0F) < 0.01F, "Return yaw should survive player-data serialization");
+      helper.assertTrue(Math.abs(restored.nexusReturnXRot() - -12.0F) < 0.01F, "Return pitch should survive player-data serialization");
+      helper.assertTrue(restored.telemetryFieldValue() == expectedField, "Field telemetry should survive player-data serialization");
+      helper.assertTrue(restored.telemetryCorruptionPressure() == expectedCorruption, "Corruption telemetry should survive player-data serialization");
+      helper.assertTrue(restored.telemetryQuarantineTicks() == expectedQuarantine, "Quarantine telemetry should survive player-data serialization");
+      helper.assertTrue(restored.telemetryActiveStorm() == expectedStorm, "Storm telemetry should survive player-data serialization");
+      helper.assertTrue(restored.telemetryRealityTears() == expectedTears, "Reality tear telemetry should survive player-data serialization");
+      helper.assertTrue(restored.telemetryMapField(centerIndex) == expectedMapField, "Field map values should survive player-data serialization");
+      helper.assertTrue(restored.telemetryMapCorruption(centerIndex) == expectedMapCorruption, "Field map corruption should survive player-data serialization");
+      helper.assertTrue(restored.telemetryMapStorm(centerIndex) == expectedMapStorm, "Field map storm markers should survive player-data serialization");
+      helper.assertTrue("restore".equals(restored.telemetryWorldEndingState()), "World ending telemetry should survive player-data serialization");
+      helper.succeed();
+   }
+
+   private static void nexusMachinePersistenceRoundTrip(GameTestHelper helper) {
+      NexusMachineBlockEntity machine = placeMachine(helper, new BlockPos(1, 1, 1), (Block)ModBlocks.NEXUS_RECYCLER.get());
+      machine.setItem(NexusMachineBlockEntity.INPUT_SLOT, new ItemStack((ItemLike)ModItems.NEXUS_SHARD.get(), 3));
+      machine.setItem(NexusMachineBlockEntity.OUTPUT_SLOT, new ItemStack((ItemLike)ModItems.REALITY_DUST.get(), 2));
+      machine.receiveCharge(444);
+      machine.addContamination(27);
+      machine.data().set(NexusMachineBlockEntity.DATA_PROGRESS, 41);
+      machine.data().set(NexusMachineBlockEntity.DATA_MAX_PROGRESS, 120);
+      machine.data().set(NexusMachineBlockEntity.DATA_STATUS, NexusMachineBlockEntity.MachineStatus.PROCESSING.ordinal());
+
+      TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+      machine.saveWithoutMetadata(output);
+      CompoundTag saved = output.buildResult();
+      NexusMachineBlockEntity restored = new NexusMachineBlockEntity(machine.getBlockPos(), machine.getBlockState());
+      restored.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
+
+      helper.assertTrue(
+         restored.getItem(NexusMachineBlockEntity.INPUT_SLOT).is(ModItems.NEXUS_SHARD.get())
+            && restored.getItem(NexusMachineBlockEntity.INPUT_SLOT).getCount() == 3,
+         "Machine input inventory should survive block-entity serialization without item loss"
+      );
+      helper.assertTrue(
+         restored.getItem(NexusMachineBlockEntity.OUTPUT_SLOT).is(ModItems.REALITY_DUST.get())
+            && restored.getItem(NexusMachineBlockEntity.OUTPUT_SLOT).getCount() == 2,
+         "Machine output inventory should survive block-entity serialization without duplication"
+      );
+      helper.assertTrue(restored.energyStored() == 444, "Machine charge should survive block-entity serialization");
+      helper.assertTrue(restored.contamination() == 27, "Machine contamination should survive block-entity serialization");
+      helper.assertTrue(restored.data().get(NexusMachineBlockEntity.DATA_PROGRESS) == 41, "Machine progress should survive block-entity serialization");
+      helper.assertTrue(restored.data().get(NexusMachineBlockEntity.DATA_MAX_PROGRESS) == 120, "Machine max progress should survive block-entity serialization");
+      helper.assertTrue(
+         restored.data().get(NexusMachineBlockEntity.DATA_STATUS) == NexusMachineBlockEntity.MachineStatus.PROCESSING.ordinal(),
+         "Machine status should survive block-entity serialization"
+      );
+      helper.succeed();
+   }
+
+   private static void coreAccessKeyRoute(GameTestHelper helper) {
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      ResourceKey<net.minecraft.world.level.Level> originDimension = helper.getLevel().dimension();
+      BlockPos origin = helper.absolutePos(new BlockPos(5, 1, 5));
+      player.teleportTo(helper.getLevel(), origin.getX() + 0.5D, origin.getY(), origin.getZ() + 0.5D, Set.of(), 45.0F, 5.0F, true);
+      NexusProgression.grantDevelopmentUnlock(player);
+      player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack((ItemLike)ModItems.CORE_ACCESS_KEY.get()));
+
+      InteractionResult openResult = player.getMainHandItem().getItem().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+      if (helper.getLevel().getServer().getLevel(ModDimensions.NEXUS) == null) {
+         helper.assertTrue(openResult == InteractionResult.CONSUME, "Core Access Key should fail safely when the Nexus dimension is absent");
+         NexusPlayerData failed = NexusPlayerData.get(player);
+         helper.assertFalse(failed.coreEntered(), "Missing Nexus dimension should not mark Core entry");
+         helper.assertFalse(failed.hasNexusReturn(), "Missing Nexus dimension should not save a stale return vector");
+         helper.succeed();
+         return;
+      }
+      helper.assertTrue(openResult == InteractionResult.SUCCESS_SERVER, "Core Access Key should open the Nexus route after unlock");
+      NexusPlayerData entered = NexusPlayerData.get(player);
+      helper.assertTrue(player.level().dimension() == ModDimensions.NEXUS, "Core Access Key should move the player into the Nexus dimension");
+      helper.assertTrue(entered.coreEntered(), "Core Access Key should mark Core entry on player data");
+      helper.assertTrue(entered.hasNexusReturn(), "Core Access Key should write a return vector before dimension transfer");
+      helper.assertTrue(entered.hasUsedGear("core_access_key"), "Core Access Key should mark gear use for Terminal progression");
+
+      NexusPlayerData restored = roundTripNexusPlayerData(helper, entered);
+      helper.assertTrue(restored.hasNexusReturn(), "Core return vector should survive player-data serialization");
+      helper.assertTrue(originDimension.identifier().toString().equals(restored.nexusReturnDimension()), "Core return dimension should survive player-data serialization");
+      helper.assertTrue(Math.abs(restored.nexusReturnX() - (origin.getX() + 0.5D)) < 0.01D, "Core return X should survive player-data serialization");
+      helper.assertTrue(Math.abs(restored.nexusReturnZ() - (origin.getZ() + 0.5D)) < 0.01D, "Core return Z should survive player-data serialization");
+
+      InteractionResult returnResult = player.getMainHandItem().getItem().use(player.level(), player, InteractionHand.MAIN_HAND);
+      helper.assertTrue(returnResult == InteractionResult.SUCCESS_SERVER, "Core Access Key should return the player from the Nexus dimension");
+      NexusPlayerData returned = NexusPlayerData.get(player);
+      helper.assertTrue(player.level().dimension().equals(originDimension), "Core Access Key should restore the saved origin dimension");
+      helper.assertFalse(returned.hasNexusReturn(), "Returning from Nexus should clear the saved return vector to avoid stale re-use");
+      helper.succeed();
+   }
+
+   private static void oneTimeBossRewardGates(GameTestHelper helper) {
+      NexusWorldData data = new NexusWorldData();
+      helper.assertTrue(data.markWardenDefeated(), "First Warden defeat should open the unique reward gate");
+      helper.assertFalse(data.markWardenDefeated(), "Repeated Warden defeat should not reopen the unique reward gate");
+      helper.assertTrue(data.markGuardianDefeated(), "First Guardian defeat should open the unique reward gate");
+      helper.assertFalse(data.markGuardianDefeated(), "Repeated Guardian defeat should not reopen the unique reward gate");
+      helper.assertTrue(data.commitEndingState("restore"), "First ending path should commit");
+      helper.assertFalse(data.commitEndingState("destroy"), "A different ending path should not overwrite the committed path");
+      helper.succeed();
+   }
+
+   private static void stormSpawnCap(GameTestHelper helper) {
+      Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+      if (!(player instanceof ServerPlayer serverPlayer)) {
+         helper.succeed();
+         return;
+      }
+
+      BlockPos center = helper.absolutePos(new BlockPos(2, 1, 2));
+      serverPlayer.teleportTo(helper.getLevel(), center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, Set.of(), 0.0F, 0.0F, true);
+      for (int i = 0; i < NexusWorldEvents.STORM_MOB_CAP; i++) {
+         NexusMobEntity mob = (NexusMobEntity)((EntityType)ModEntities.STATIC_CRAWLER.get()).create(helper.getLevel(), EntitySpawnReason.EVENT);
+         helper.assertTrue(mob != null, "Storm cap test mob should create");
+         if (mob != null) {
+            mob.setNoAi(true);
+            mob.setPos(center.getX() + 0.5D + i, center.getY(), center.getZ() + 0.5D);
+            helper.getLevel().addFreshEntity(mob);
+         }
+      }
+      helper.assertTrue(
+         NexusWorldEvents.nearbyStormMobCount(helper.getLevel(), center) >= NexusWorldEvents.STORM_MOB_CAP,
+         "Storm cap test should place enough Nexus mobs near the player"
+      );
+      helper.assertFalse(NexusWorldEvents.canSpawnStormMob(helper.getLevel(), center), "Anomaly storms should stop spawning local mobs at the cap");
+      helper.succeed();
+   }
+
+   private static void jeiJsonRecipeParity(GameTestHelper helper) {
+      java.util.Set<String> ids = new java.util.HashSet<>();
+      for (var recipe : NexusJeiRecipeCatalog.all()) {
+         String path = recipe.id().getPath();
+         helper.assertTrue(ids.add(path), "JEI recipe ids should be unique: " + path);
+         assertResourcePresent(helper, "data/echonexusprotocol/recipe/" + path + ".json");
+      }
+      helper.assertTrue(ids.size() >= 18, "JEI catalog should stay in parity with the data-driven Nexus processing recipes");
+      helper.succeed();
+   }
+
+   private static void worldDataCodecRoundTrip(GameTestHelper helper) {
+      NexusWorldData original = new NexusWorldData();
+      ChunkPos chunk = new ChunkPos(12, -4);
+      original.setFieldValue(chunk, 31);
+      original.setCorruptionPressure(chunk, 77);
+      original.quarantineChunk(chunk, 240);
+      original.startAnomalyStorm(chunk, 1234L);
+      original.activateBlackboxMonolith();
+      original.markWardenDefeated();
+      original.markGuardianDefeated();
+      original.commitEndingState("merge");
+      int expectedField = original.fieldValue(chunk);
+      int expectedCorruption = original.corruptionPressure(chunk);
+      int expectedQuarantine = original.quarantineTicks(chunk);
+      int expectedTears = original.realityTearCount(chunk);
+      var encoded = NexusWorldData.CODEC.encodeStart(JsonOps.INSTANCE, original).result();
+      helper.assertTrue(encoded.isPresent(), "NexusWorldData should encode through its SavedData codec");
+      JsonElement json = encoded.get();
+      var decoded = NexusWorldData.CODEC.parse(JsonOps.INSTANCE, json).result();
+      helper.assertTrue(decoded.isPresent(), "NexusWorldData should decode through its SavedData codec");
+      NexusWorldData copy = decoded.get();
+      helper.assertTrue(copy.fieldValue(chunk) == expectedField, "World-data codec should preserve field map telemetry");
+      helper.assertTrue(copy.corruptionPressure(chunk) == expectedCorruption, "World-data codec should preserve corruption pressure");
+      helper.assertTrue(copy.quarantineTicks(chunk) == expectedQuarantine, "World-data codec should preserve quarantine ticks");
+      helper.assertTrue(copy.realityTearCount(chunk) == expectedTears, "World-data codec should preserve reality tear telemetry");
+      helper.assertTrue(copy.hasActiveStorm(chunk, 1234L, 400L), "World-data codec should preserve storm telemetry");
+      helper.assertTrue(copy.blackboxMonolithActivated(), "World-data codec should preserve Monolith activation");
+      helper.assertTrue(copy.wardenDefeated(), "World-data codec should preserve Warden defeat state");
+      helper.assertTrue(copy.guardianDefeated(), "World-data codec should preserve Guardian defeat state");
+      helper.assertTrue("merge".equals(copy.endingState()), "World-data codec should preserve ending state");
+      helper.assertTrue(copy.lastStormTick() == 1234L, "World-data codec should preserve last storm tick");
+      helper.succeed();
+   }
+
    private static void releaseRiskFixes(GameTestHelper helper) {
       NexusWorldData worldData = NexusWorldData.get(helper.getLevel());
       worldData.commitEndingState("");
@@ -662,7 +1176,7 @@ public final class ModGameTests {
       helper.assertTrue(relaySource.energyStored() + relayTarget.energyStored() == relayTotalBefore, "Relay seal should not delete charge when the target is nearly full");
       helper.assertTrue(relayTarget.energyStored() == relayTarget.energyStorage().getCapacityAsInt(), "Relay seal should fill the remaining target capacity exactly");
 
-      for (String entityLoot : new String[]{"nexus_husk", "data_wraith", "static_crawler", "core_soldier", "archive_seeker"}) {
+      for (String entityLoot : new String[]{"nexus_husk", "data_wraith", "static_crawler", "core_soldier", "archive_seeker", "corruption_warden", "nexus_guardian"}) {
          assertResourcePresent(helper, "data/echonexusprotocol/loot_table/entities/" + entityLoot + ".json");
       }
       for (String chestLoot : new String[]{"field_station_supply", "data_vault_memory", "containment_lab_reactor", "core_chamber_final_prep"}) {
@@ -681,6 +1195,7 @@ public final class ModGameTests {
       helper.assertTrue(coreBiome.contains("echonexusprotocol:reality_tear_hotspots"), "Core Exclusion Zone should include reality tear exploration dressing");
 
       ChunkPos endingChunk = new ChunkPos(9, 9);
+      worldData.commitEndingState("");
       worldData.setFieldValue(endingChunk, 40);
       worldData.setCorruptionPressure(endingChunk, 40);
       helper.assertTrue(worldData.commitEndingState("restore"), "First ending commit should apply world feedback");
@@ -758,22 +1273,30 @@ public final class ModGameTests {
       NexusUtilityItem.anchorReality(helper.getLevel(), absolute);
       helper.assertTrue(worldData.isQuarantined(chunk), "Reality Anchor should quarantine the current chunk");
       int corruptionAfterAnchor = worldData.corruptionPressure(chunk);
-      NexusMobEntity husk = (NexusMobEntity)((EntityType)ModEntities.NEXUS_HUSK.get()).create(helper.getLevel(), EntitySpawnReason.EVENT);
-      helper.assertTrue(husk != null, "Nexus Husk test entity should create");
-      if (husk != null) {
-         BlockPos mobPos = helper.absolutePos(new BlockPos(2, 1, 1));
-         husk.setPos(mobPos.getX() + 0.5, mobPos.getY(), mobPos.getZ() + 0.5);
-         husk.setNoAi(true);
-         helper.getLevel().addFreshEntity(husk);
-         helper.runAfterDelay(1L, () -> {
-            float beforeHealth = husk.getHealth();
-            int hit = NexusUtilityItem.signalBladePulse(helper.getLevel(), absolute, player);
-            helper.assertTrue(hit > 0, "Signal Blade should hit nearby Nexus mobs");
-            helper.assertTrue(husk.getHealth() < beforeHealth, "Signal Blade should damage Nexus mobs");
-            helper.assertTrue(worldData.corruptionPressure(chunk) < corruptionAfterAnchor, "Signal Blade pulse should lower local corruption pressure");
-            helper.succeed();
-         });
-      }
+      NexusMobEntity husk = helper.spawnWithNoFreeWill(ModEntities.NEXUS_HUSK.get(), new BlockPos(2, 1, 1));
+      helper.runAfterDelay(3L, () -> {
+         float beforeHealth = husk.getHealth();
+         int hit = NexusUtilityItem.signalBladePulse(helper.getLevel(), absolute, player);
+         helper.assertTrue(hit > 0, "Signal Blade should hit nearby Nexus mobs");
+         helper.assertTrue(husk.getHealth() < beforeHealth, "Signal Blade should damage Nexus mobs");
+         helper.assertTrue(worldData.corruptionPressure(chunk) < corruptionAfterAnchor, "Signal Blade pulse should lower local corruption pressure");
+         helper.succeed();
+      });
+   }
+
+   private static void assertRecipe(GameTestHelper helper, String path) {
+      Identifier recipeId = id(path);
+      boolean exists = helper.getLevel().getServer().getRecipeManager().getRecipes().stream().anyMatch(holder -> holder.id().identifier().equals(recipeId));
+      helper.assertTrue(exists, "Required Nexus survival recipe missing: " + recipeId);
+   }
+
+   private static NexusPlayerData roundTripNexusPlayerData(GameTestHelper helper, NexusPlayerData original) {
+      TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+      original.serialize(output);
+      CompoundTag tag = output.buildResult();
+      NexusPlayerData restored = new NexusPlayerData();
+      restored.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), tag));
+      return restored;
    }
 
    private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String testName, Identifier functionId) {

@@ -14,9 +14,12 @@ import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -34,6 +37,10 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class ReclamationProgress {
    public static final String ROOT = "echoagriculturereclamation_progress";
+   private static final int GROWTH_GREENHOUSE_CACHE_TICKS = 20;
+   private static final int GROWTH_GREENHOUSE_CACHE_PRUNE_TICKS = 200;
+   private static final Map<GrowthGreenhouseCacheKey, GrowthGreenhouseCacheEntry> GROWTH_GREENHOUSE_CACHE = new HashMap<>();
+   private static long lastGrowthGreenhouseCachePruneTick = Long.MIN_VALUE;
 
    private ReclamationProgress() {
    }
@@ -187,6 +194,32 @@ public final class ReclamationProgress {
       return scanGreenhouse(level, center).score();
    }
 
+   public static int growthGreenhouseSafety(Level level, BlockPos center) {
+      if (!(level instanceof ServerLevel serverLevel)) {
+         return scanGreenhouseSafety(level, center);
+      }
+      long gameTime = serverLevel.getGameTime();
+      GrowthGreenhouseCacheKey key = GrowthGreenhouseCacheKey.of(serverLevel, center);
+      GrowthGreenhouseCacheEntry cached = GROWTH_GREENHOUSE_CACHE.get(key);
+      if (cached != null && gameTime >= cached.gameTime() && gameTime - cached.gameTime() <= GROWTH_GREENHOUSE_CACHE_TICKS) {
+         return cached.score();
+      }
+
+      int score = scanGreenhouseSafety(serverLevel, center);
+      GROWTH_GREENHOUSE_CACHE.put(key, new GrowthGreenhouseCacheEntry(score, gameTime));
+      pruneGrowthGreenhouseCache(gameTime);
+      return score;
+   }
+
+   public static void clearGrowthGreenhouseSafetyCacheForTests() {
+      GROWTH_GREENHOUSE_CACHE.clear();
+      lastGrowthGreenhouseCachePruneTick = Long.MIN_VALUE;
+   }
+
+   public static int growthGreenhouseSafetyCacheSizeForTests() {
+      return GROWTH_GREENHOUSE_CACHE.size();
+   }
+
    public static GreenhouseScan scanGreenhouse(Level level, BlockPos center) {
       int glass = 0;
       int filters = 0;
@@ -287,8 +320,12 @@ public final class ReclamationProgress {
       }
       candidates.sort(Comparator.comparingLong(pos -> distanceSquared(pos, center)));
       EnclosureScan best = EnclosureScan.open();
+      Set<BlockPos> scannedInterior = new HashSet<>();
       for (BlockPos candidate : candidates) {
-         EnclosureScan scan = floodInterior(level, candidate, min, max);
+         if (scannedInterior.contains(candidate)) {
+            continue;
+         }
+         EnclosureScan scan = floodInterior(level, candidate, min, max, scannedInterior);
          if (scan.enclosed()) {
             if (!best.enclosed() || scan.interiorVolume() > best.interiorVolume()) {
                best = scan;
@@ -300,7 +337,7 @@ public final class ReclamationProgress {
       return best;
    }
 
-   private static EnclosureScan floodInterior(Level level, BlockPos start, BlockPos min, BlockPos max) {
+   private static EnclosureScan floodInterior(Level level, BlockPos start, BlockPos min, BlockPos max, Set<BlockPos> scannedInterior) {
       Queue<BlockPos> queue = new ArrayDeque<>();
       Set<BlockPos> visited = new HashSet<>();
       queue.add(start);
@@ -326,7 +363,23 @@ public final class ReclamationProgress {
             }
          }
       }
+      scannedInterior.addAll(visited);
       return new EnclosureScan(!escaped && visited.size() >= 4, hasRoof, hasFloor, visited.size());
+   }
+
+   private static void pruneGrowthGreenhouseCache(long gameTime) {
+      if (gameTime >= lastGrowthGreenhouseCachePruneTick
+         && gameTime - lastGrowthGreenhouseCachePruneTick < GROWTH_GREENHOUSE_CACHE_PRUNE_TICKS) {
+         return;
+      }
+      lastGrowthGreenhouseCachePruneTick = gameTime;
+      Iterator<Map.Entry<GrowthGreenhouseCacheKey, GrowthGreenhouseCacheEntry>> iterator = GROWTH_GREENHOUSE_CACHE.entrySet().iterator();
+      while (iterator.hasNext()) {
+         GrowthGreenhouseCacheEntry cached = iterator.next().getValue();
+         if (gameTime < cached.gameTime() || gameTime - cached.gameTime() > GROWTH_GREENHOUSE_CACHE_TICKS * 4L) {
+            iterator.remove();
+         }
+      }
    }
 
    private static boolean hasGreenhouseRoofAbove(Level level, BlockPos pos, int maxY) {
@@ -405,6 +458,20 @@ public final class ReclamationProgress {
       private static EnclosureScan open() {
          return new EnclosureScan(false, false, false, 0);
       }
+   }
+
+   private record GrowthGreenhouseCacheKey(String dimension, int sectionX, int sectionY, int sectionZ) {
+      private static GrowthGreenhouseCacheKey of(ServerLevel level, BlockPos pos) {
+         return new GrowthGreenhouseCacheKey(
+            level.dimension().identifier().toString(),
+            pos.getX() >> 4,
+            pos.getY() >> 4,
+            pos.getZ() >> 4
+         );
+      }
+   }
+
+   private record GrowthGreenhouseCacheEntry(int score, long gameTime) {
    }
 
    public static int cropStability(Player player) {

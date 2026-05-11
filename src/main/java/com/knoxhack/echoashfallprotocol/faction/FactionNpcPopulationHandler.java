@@ -73,7 +73,7 @@ public final class FactionNpcPopulationHandler {
         }
 
         List<EchoFactionDefinition> candidates = EchoCoreServices.factionDefinitions().stream()
-                .filter(definition -> definition.id().toString().startsWith(EchoAshfallProtocol.MODID + ":"))
+                .filter(definition -> AshfallFactionMap.all().contains(definition.id()))
                 .filter(definition -> matchesPlayerPoi(player, definition, normalizedTrigger))
                 .toList();
         if (candidates.isEmpty() || countNearby(level, player, null) >= MAX_NEARBY_TOTAL) {
@@ -120,8 +120,9 @@ public final class FactionNpcPopulationHandler {
     }
 
     private static int countNearby(ServerLevel level, ServerPlayer player, Identifier factionId) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(factionId);
         return level.getEntitiesOfClass(FactionNpcEntity.class, player.getBoundingBox().inflate(NEARBY_RADIUS),
-                npc -> npc.isAlive() && (factionId == null || npc.factionId().equals(factionId))).size();
+                npc -> npc.isAlive() && (canonical == null || npc.factionId().equals(canonical))).size();
     }
 
     private static BlockPos findSpawnPos(ServerLevel level, BlockPos center) {

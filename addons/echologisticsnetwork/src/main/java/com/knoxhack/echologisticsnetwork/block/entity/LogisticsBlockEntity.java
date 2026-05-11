@@ -1,6 +1,7 @@
 package com.knoxhack.echologisticsnetwork.block.entity;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echologisticsnetwork.block.LogisticsBlock;
 import com.knoxhack.echologisticsnetwork.block.LogisticsBlock.LogisticsKind;
 import com.knoxhack.echologisticsnetwork.content.FactionDepotOffer;
@@ -17,8 +18,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -262,6 +265,14 @@ public class LogisticsBlockEntity extends BaseContainerBlockEntity implements Wo
                + ", ready loadouts " + ready + "/" + snapshot.loadoutReadiness().size()
                + ", active drones " + snapshot.activeDeliveries() + "."));
             EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
+            if (ready > 0 || snapshot.activeDeliveries() > 0) {
+               EchoCoreServices.recordMissionObjective(
+                  serverPlayer,
+                  MissionObjectiveType.ESTABLISH_ROUTE,
+                  Identifier.fromNamespaceAndPath("echologisticsnetwork", "logistics_route"),
+                  1,
+                  java.util.Map.of("network", snapshot.networkId(), "source", "logistics_scan"));
+            }
             yield true;
          }
          case LogisticsMenu.BUTTON_REQUEST_LOADOUT -> requestSelectedLoadout(serverPlayer);
@@ -310,6 +321,14 @@ public class LogisticsBlockEntity extends BaseContainerBlockEntity implements Wo
       this.cooldown = dispatched ? 40 : 10;
       this.lastManifest = dispatched ? "Request queued: " + displayLoadout() : "Request blocked: " + displayLoadout();
       this.refreshSnapshot(player);
+      if (dispatched && player instanceof ServerPlayer serverPlayer) {
+         EchoCoreServices.recordMissionObjective(
+            serverPlayer,
+            MissionObjectiveType.ESTABLISH_ROUTE,
+            Identifier.fromNamespaceAndPath("echologisticsnetwork", "logistics_route"),
+            1,
+            java.util.Map.of("network", networkId(), "source", "loadout_request"));
+      }
       this.setChanged();
       return dispatched;
    }
@@ -469,6 +488,18 @@ public class LogisticsBlockEntity extends BaseContainerBlockEntity implements Wo
    @Override
    public void writeClientSideData(AbstractContainerMenu menu, RegistryFriendlyByteBuf buffer) {
       buffer.writeBlockPos(this.getBlockPos());
+   }
+
+   @Override
+   public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+      if (level == null || level.isClientSide()) {
+         return;
+      }
+      Containers.dropContents(level, pos, this);
+      for (int slot = 0; slot < items.size(); slot++) {
+         items.set(slot, ItemStack.EMPTY);
+      }
+      setChanged();
    }
 
    @Override

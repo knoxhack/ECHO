@@ -20,10 +20,14 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 
 public class NexusWorldEvents {
+   public static final int STORM_MOB_CAP = 5;
+   public static final int STORM_MOB_CAP_RADIUS = 18;
+
    @SubscribeEvent
    public void onLevelTick(Post event) {
       if (event.getLevel() instanceof ServerLevel level && (Boolean)Config.CHUNK_CORRUPTION_TICK_ENABLED.get()) {
@@ -74,7 +78,7 @@ public class NexusWorldEvents {
       if (level.getGameTime() % 160L == 0L) {
          level.playSound(null, player.blockPosition(), ModSounds.REALITY_TEAR_PULSE.get(), SoundSource.AMBIENT, 0.35F, data.fieldValue(chunk) < 20 ? 0.65F : 0.9F);
       }
-      if (level.getRandom().nextInt(data.fieldValue(chunk) < 20 ? 3 : 8) == 0) {
+      if (level.getRandom().nextInt(data.fieldValue(chunk) < 20 ? 3 : 8) == 0 && canSpawnStormMob(level, player.blockPosition())) {
          EntityType<?> type = data.fieldValue(chunk) < 20 ? (EntityType<?>)ModEntities.DATA_WRAITH.get() : (EntityType<?>)ModEntities.STATIC_CRAWLER.get();
          if (type.create(level, EntitySpawnReason.EVENT) instanceof NexusMobEntity mob) {
             BlockPos pos = player.blockPosition().offset(level.getRandom().nextInt(9) - 4, 0, level.getRandom().nextInt(9) - 4);
@@ -83,6 +87,14 @@ public class NexusWorldEvents {
             level.addFreshEntity(mob);
          }
       }
+   }
+
+   public static boolean canSpawnStormMob(ServerLevel level, BlockPos center) {
+      return nearbyStormMobCount(level, center) < STORM_MOB_CAP;
+   }
+
+   public static int nearbyStormMobCount(ServerLevel level, BlockPos center) {
+      return level.getEntitiesOfClass(NexusMobEntity.class, new AABB(center).inflate(STORM_MOB_CAP_RADIUS), NexusMobEntity::isAlive).size();
    }
 
    private static void mutateOneBlock(ServerLevel level, NexusWorldData data, ChunkPos chunk) {

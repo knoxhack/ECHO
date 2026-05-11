@@ -3,13 +3,16 @@ package com.knoxhack.signalos.network;
 import com.knoxhack.signalos.SignalOS;
 import com.knoxhack.signalos.api.TerminalArchiveRecord;
 import com.knoxhack.signalos.api.TerminalMission;
+import com.knoxhack.signalos.api.SignalOsDataRecord;
 import com.knoxhack.signalos.content.SignalOsContentRegistry;
 import com.knoxhack.signalos.service.SignalOsBuiltinActions;
 import com.knoxhack.signalos.service.SignalOsPlayerData;
+import com.knoxhack.signalos.service.SignalOsComputerNetworkService;
 import com.knoxhack.signalos.service.SignalOsTerminalServices;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -27,9 +30,21 @@ public record SignalOsTerminalStatePacket(
         Set<Identifier> completedMissions,
         Set<Identifier> claimedMissions,
         Set<Identifier> readArchives,
-        int pendingRewardCount) implements CustomPacketPayload {
+        int pendingRewardCount,
+        String networkId,
+        boolean networkOnline,
+        int accessTier,
+        int networkRadius,
+        String networkAnchor,
+        int terminalCount,
+        int workstationCount,
+        int serverRackCount,
+        int relayCount,
+        List<SignalOsDataRecord> dataRecords) implements CustomPacketPayload {
     private static final int MAX_ID = 160;
     private static final int MAX_IDS = 4096;
+    private static final int MAX_RECORDS = 256;
+    private static final int MAX_TEXT = 4096;
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(SignalOS.MODID, "terminal_state");
     public static final Type<SignalOsTerminalStatePacket> TYPE = new Type<>(ID);
@@ -41,6 +56,23 @@ public record SignalOsTerminalStatePacket(
         claimedMissions = copyIds(claimedMissions);
         readArchives = copyIds(readArchives);
         pendingRewardCount = Math.max(0, pendingRewardCount);
+        networkId = networkId == null || networkId.isBlank() ? "offline" : networkId;
+        accessTier = Math.max(0, accessTier);
+        networkRadius = Math.max(0, networkRadius);
+        networkAnchor = networkAnchor == null ? "" : networkAnchor;
+        terminalCount = Math.max(0, terminalCount);
+        workstationCount = Math.max(0, workstationCount);
+        serverRackCount = Math.max(0, serverRackCount);
+        relayCount = Math.max(0, relayCount);
+        dataRecords = List.copyOf(dataRecords == null ? List.of() : dataRecords);
+    }
+
+    public SignalOsTerminalStatePacket(Set<Identifier> completedMissions,
+            Set<Identifier> claimedMissions,
+            Set<Identifier> readArchives,
+            int pendingRewardCount) {
+        this(completedMissions, claimedMissions, readArchives, pendingRewardCount,
+                "offline", false, 0, 0, "", 0, 0, 0, 0, List.of());
     }
 
     public static SignalOsTerminalStatePacket empty() {
@@ -51,18 +83,21 @@ public record SignalOsTerminalStatePacket(
         if (player == null) {
             return empty();
         }
+        SignalOsComputerNetworkService.NetworkSnapshot snapshot = SignalOsComputerNetworkService.snapshot(player);
         return create(player,
                 mission -> SignalOsBuiltinActions.completed(player, mission),
-                SignalOsTerminalServices.pendingRewardCount(player));
+                SignalOsTerminalServices.pendingRewardCount(player),
+                snapshot);
     }
 
     public static SignalOsTerminalStatePacket createForTests(Player player,
             Predicate<TerminalMission> completionResolver, int pendingRewardCount) {
-        return create(player, completionResolver, pendingRewardCount);
+        return create(player, completionResolver, pendingRewardCount, SignalOsComputerNetworkService.NetworkSnapshot.offline());
     }
 
     private static SignalOsTerminalStatePacket create(Player player,
-            Predicate<TerminalMission> completionResolver, int pendingRewardCount) {
+            Predicate<TerminalMission> completionResolver, int pendingRewardCount,
+            SignalOsComputerNetworkService.NetworkSnapshot snapshot) {
         LinkedHashSet<Identifier> completed = new LinkedHashSet<>();
         LinkedHashSet<Identifier> claimed = new LinkedHashSet<>();
         LinkedHashSet<Identifier> read = new LinkedHashSet<>();
@@ -83,7 +118,11 @@ public record SignalOsTerminalStatePacket(
             }
         }
 
-        return new SignalOsTerminalStatePacket(completed, claimed, read, pendingRewardCount);
+        SignalOsComputerNetworkService.NetworkSnapshot safe =
+                snapshot == null ? SignalOsComputerNetworkService.NetworkSnapshot.offline() : snapshot;
+        return new SignalOsTerminalStatePacket(completed, claimed, read, pendingRewardCount,
+                safe.networkId(), safe.online(), safe.accessTier(), safe.radius(), safe.anchor(),
+                safe.terminals(), safe.workstations(), safe.serverRacks(), safe.relays(), safe.records());
     }
 
     @Override
@@ -96,6 +135,16 @@ public record SignalOsTerminalStatePacket(
         writeIds(buffer, packet.claimedMissions());
         writeIds(buffer, packet.readArchives());
         buffer.writeVarInt(packet.pendingRewardCount());
+        buffer.writeUtf(packet.networkId(), MAX_TEXT);
+        buffer.writeBoolean(packet.networkOnline());
+        buffer.writeVarInt(packet.accessTier());
+        buffer.writeVarInt(packet.networkRadius());
+        buffer.writeUtf(packet.networkAnchor(), MAX_TEXT);
+        buffer.writeVarInt(packet.terminalCount());
+        buffer.writeVarInt(packet.workstationCount());
+        buffer.writeVarInt(packet.serverRackCount());
+        buffer.writeVarInt(packet.relayCount());
+        writeRecords(buffer, packet.dataRecords());
     }
 
     private static SignalOsTerminalStatePacket read(RegistryFriendlyByteBuf buffer) {
@@ -103,7 +152,17 @@ public record SignalOsTerminalStatePacket(
                 readIds(buffer),
                 readIds(buffer),
                 readIds(buffer),
-                buffer.readVarInt());
+                buffer.readVarInt(),
+                buffer.readUtf(MAX_TEXT),
+                buffer.readBoolean(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readUtf(MAX_TEXT),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                readRecords(buffer));
     }
 
     private static void writeIds(RegistryFriendlyByteBuf buffer, Set<Identifier> ids) {
@@ -138,5 +197,41 @@ public record SignalOsTerminalStatePacket(
                 .sorted(Comparator.comparing(Identifier::toString))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         return Collections.unmodifiableSet(copy);
+    }
+
+    private static void writeRecords(RegistryFriendlyByteBuf buffer, List<SignalOsDataRecord> records) {
+        List<SignalOsDataRecord> safe = records == null ? List.of() : records;
+        if (safe.size() > MAX_RECORDS) {
+            throw new IllegalArgumentException("SignalOS terminal state exceeded " + MAX_RECORDS + " data records.");
+        }
+        buffer.writeVarInt(safe.size());
+        for (SignalOsDataRecord record : safe) {
+            buffer.writeUtf(record.id().toString(), MAX_ID);
+            buffer.writeUtf(record.title(), MAX_TEXT);
+            buffer.writeUtf(record.type(), MAX_ID);
+            buffer.writeUtf(record.source(), MAX_TEXT);
+            buffer.writeUtf(record.body(), MAX_TEXT);
+            buffer.writeVarInt(record.order());
+            buffer.writeBoolean(record.archived());
+        }
+    }
+
+    private static List<SignalOsDataRecord> readRecords(RegistryFriendlyByteBuf buffer) {
+        int count = buffer.readVarInt();
+        if (count < 0 || count > MAX_RECORDS) {
+            throw new IllegalArgumentException("Invalid SignalOS data record count: " + count);
+        }
+        java.util.ArrayList<SignalOsDataRecord> records = new java.util.ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            records.add(new SignalOsDataRecord(
+                    Identifier.parse(buffer.readUtf(MAX_ID)),
+                    buffer.readUtf(MAX_TEXT),
+                    buffer.readUtf(MAX_ID),
+                    buffer.readUtf(MAX_TEXT),
+                    buffer.readUtf(MAX_TEXT),
+                    buffer.readVarInt(),
+                    buffer.readBoolean()));
+        }
+        return List.copyOf(records);
     }
 }

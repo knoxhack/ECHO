@@ -39,8 +39,11 @@ In all cases, `:echocore` and root `:` (`echoashfallprotocol`) are required.
 
 ## Suggested Release Sequence
 
-1. Build and verify release modules.
-2. Run `validateReleaseArtifacts`.
-3. Generate `release-manifest.txt` via `printReleaseManifest`.
-4. Publish only after checks pass.
-5. Attach module jars plus `release-manifest.txt` to the GitHub release.
+1. Run resource and gameplay validators.
+2. Build and verify release modules.
+3. Run `validateReleaseArtifacts`.
+4. Run the root Ashfall GameTest server plus full-stack release verification.
+5. Run the Ashfall fresh-world manual smoke pass and record the result in the matching release note.
+6. Generate `release-manifest.txt` via `printReleaseManifest`.
+7. Publish only after checks pass.
+8. Attach module jars plus `release-manifest.txt` to the GitHub release.

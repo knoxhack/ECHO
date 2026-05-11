@@ -2,6 +2,7 @@ package com.knoxhack.echoashfallprotocol.integration;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoFactionProfile;
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.block.NexusCoreBlock;
 import com.knoxhack.echoashfallprotocol.block.entity.NexusCoreBlockEntity;
@@ -95,7 +96,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
  * Optional bridge that contributes Ashfall content to the modular ECHO Terminal.
@@ -272,8 +272,8 @@ public final class AshfallTerminalIntegration {
                 "Guardian Threat Dossier",
                 "OPEN",
                 List.of(
-                        "Eight active biome guardian signals hold the old grid in place. Each one is buried beneath a region that still remembers how the world failed.",
-                        "Each guardian has a unique threat profile, surface entrance, arena route, defender set, and reward bundle. Scan, prepare, descend, and leave nothing unresolved."),
+                        "Eight active biome guardian signals hold the old grid in place. Each one is tied to Radwarden containment, Crashbreak salvage, or Sporebound anomaly interpretation.",
+                        "Each guardian has a unique threat profile, owner faction thread, surface entrance, arena route, defender set, and reward bundle. Scan, prepare, descend, and leave nothing unresolved."),
                 false));
         TerminalArchiveRegistry.register(new TerminalArchiveEntry(
                 id("ashfall_drone_manual"),
@@ -321,9 +321,9 @@ public final class AshfallTerminalIntegration {
                 "Faction Signal Threads",
                 "OPEN",
                 List.of(
-                        "Ten Ashfall factions now report through Echo Core: shelters, rangers, freeholds, archivists, workers, sanctums, salvage crews, wardens, thaw crews, and scar witnesses.",
+                        "Three Ashfall factions now report through Echo Core: Radwarden Compact containment crews, Crashbreak Salvage route builders, and Sporebound Sanctum anomaly interpreters.",
                         "Faction work is not separate from the main route: contacts, contracts, services, and standing all feed the same synced Echo Core record.",
-                        "Orbital Remnant, Void Salvager, and Nexus Choir signals echo those same pressures after the Nexus choice reaches orbit, where quarantine turns politics into pressure suits."),
+                        "Orbital lanes mirror those same three pressures after the Nexus choice reaches orbit: Radwarden containment, Crashbreak salvage, and Sporebound anomaly reading."),
                 false));
     }
 
@@ -1226,7 +1226,7 @@ public final class AshfallTerminalIntegration {
                         4,
                         1,
                         "Resolve the first buried guardian signal and classify the node lattice.",
-                        "Every guardian is a local scar with a system role: sentinel, colossus, stalker, juggernaut, hive, behemoth, overseer, warlord, or avatar. The first defeat proves the chain is physical, not just signal noise.",
+                        "Every guardian is a local scar claimed by one of the three faction threads: Radwarden containment, Crashbreak salvage, or Sporebound anomaly reading. The first defeat proves the chain is physical, not just signal noise.",
                         "Neutralize any biome guardian through the main Ashfall route.",
                         "Guardian lattice archived. The Nexus Core is defended by places, not just weapons.",
                         "deploy_stationary_scanner",
@@ -1651,7 +1651,7 @@ public final class AshfallTerminalIntegration {
             if (entry.dataLog() && "NEW".equals(entry.status())) {
                 EchoIntel intel = EchoIntel.get(player);
                 intel.markAsRead(entry.sourceIntelId());
-                ClientPacketDistributor.sendToServer(new ArchiveIntelReadPacket(entry.sourceIntelId()));
+                EchoNetClientActions.sendServerboundAction(new ArchiveIntelReadPacket(entry.sourceIntelId()));
             }
         }
 
@@ -2529,7 +2529,8 @@ public final class AshfallTerminalIntegration {
             return entry(state, "guardian_" + profile.bossPath(), CodexCategory.GUARDIANS, CodexEntryType.BOSS,
                     profile.title(), defeated ? "DEFEATED" : "GUARDIAN SIGNAL",
                     CodexUnlockRule.MISSION_UNLOCKED, profile.missionId(),
-                    polish.codexSummary() + " " + profile.lore(),
+                    polish.codexSummary() + " " + profile.lore() + " Faction owner: "
+                            + AshfallFactionMap.displayName(profile.ownerFaction()) + ".",
                     profile.mechanicHint(),
                     profile.prepHint(),
                     (defeated ? "Defeated. " : "Mission state: ")
@@ -2537,6 +2538,7 @@ public final class AshfallTerminalIntegration {
                     rewardLines(profile),
                     List.of("Entrance: " + profile.surfaceEntrance(),
                             "Arena: " + profile.undergroundSite(),
+                            "Faction thread: " + AshfallFactionMap.displayName(profile.ownerFaction()),
                             "Arena feature: " + polish.arenaSetPiece(),
                             "Counterplay: " + polish.counterplayObject(),
                             "Add pressure: " + polish.addPressurePattern(),

@@ -11,9 +11,12 @@ import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.world.StartingDropPodData;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -21,15 +24,20 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Server-side tick handler for all survival systems:
@@ -56,12 +64,24 @@ public class SurvivalTickHandler {
     private static final int POD_RETURN_RADIUS_BLOCKS = 48;
     private static final int SEVERE_RADIATION_SUSTAINED_TICKS = 20 * 30;
     private static final float SCRUBBER_RADIATION_DECAY_MULTIPLIER = 4.0f;
+    private static final int OPENING_BASICS_CACHE_TICKS = 100;
+    private static final int HAZARD_SCAN_CACHE_TICKS = 60;
+    private static final int CACHE_REUSE_RADIUS_BLOCKS = 4;
+    private static final int RADIATION_HISTORY_SAMPLE_TICKS = 100;
+    private static final long SLOW_SECTION_WARN_NANOS = 12_000_000L;
+    private static final long SLOW_SUBSECTION_WARN_NANOS = 8_000_000L;
+    private static final long SLOW_LOG_COOLDOWN_TICKS = 200L;
+    private static final String LAST_GRACE_COUNTDOWN_SECOND_KEY = "ashes_of_tomorrow.last_grace_countdown_second";
+    private static final Map<UUID, CachedOpeningBasics> OPENING_BASICS_CACHE = new HashMap<>();
+    private static final Map<UUID, CachedHazardSnapshot> HAZARD_SNAPSHOT_CACHE = new HashMap<>();
+    private static final Map<String, Long> SLOW_LOG_TICKS = new HashMap<>();
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         long currentTick = player.level().getGameTime();
         if (currentTick % TICK_INTERVAL != 0) return;
+        long tickStart = System.nanoTime();
 
         SurvivalData data = player.getData(ModAttachments.SURVIVAL_DATA.get());
         boolean changed = false;
@@ -79,7 +99,7 @@ public class SurvivalTickHandler {
         handleOpeningGuidance(player, data, currentTick, graceTicks, graceActive);
         handleGraceExpiryNotice(player, data, currentTick, graceTicks, graceActive);
 
-        HazardZoneManager.HazardSnapshot hazardState = HazardZoneManager.scan(player);
+        HazardZoneManager.HazardSnapshot hazardState = cachedHazardSnapshot(player, currentTick);
         changed |= data.setHazardSnapshot(hazardState);
 
         // === AIR FILTER SYSTEM ===
@@ -103,6 +123,21 @@ public class SurvivalTickHandler {
         if (changed) {
             player.setData(ModAttachments.SURVIVAL_DATA.get(), data);
             player.syncData(ModAttachments.SURVIVAL_DATA.get());
+        }
+        logSlow(player, "survival.tick", tickStart, currentTick, SLOW_SECTION_WARN_NANOS);
+    }
+
+    @SubscribeEvent
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            invalidatePassiveCaches(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onBlockBreak(BreakBlockEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer player) {
+            invalidatePassiveCaches(player);
         }
     }
 
@@ -132,7 +167,7 @@ public class SurvivalTickHandler {
         }
 
         long elapsed = currentTick - data.getGraceStartTick();
-        OpeningBasics basics = OpeningBasics.of(player, data);
+        OpeningBasics basics = cachedOpeningBasics(player, data, currentTick);
 
         if (elapsed >= OPENING_WATER_PROMPT_TICKS && !basics.hasCleanWaterHandled() && markSpecialOnce(player, OPENING_PROMPT_PREFIX + "drink_water")) {
             player.sendSystemMessage(Component.translatable("message.EchoAshfallProtocol.opening.drink_water"), true);
@@ -224,6 +259,7 @@ public class SurvivalTickHandler {
 
     private static boolean handleRadiation(ServerPlayer player, SurvivalData data, boolean graceActive,
                                            HazardZoneManager.HazardSnapshot hazardState, long currentTick) {
+        float beforeRadiation = data.getRadiationLevel();
         boolean nearRadiation = hazardState.radiationZone();
         if (nearRadiation) {
             recordRadiationZoneScout(player);
@@ -273,9 +309,13 @@ public class SurvivalTickHandler {
         }
 
         // Modernization - Sample radiation for the Terminal Graph
-        data.updateRadiationHistory(data.getRadiationLevel());
+        boolean radiationChanged = Math.abs(data.getRadiationLevel() - beforeRadiation) > 0.001F;
+        boolean sampleHistory = currentTick % RADIATION_HISTORY_SAMPLE_TICKS == 0;
+        if (radiationChanged || sampleHistory) {
+            data.updateRadiationHistory(data.getRadiationLevel());
+        }
 
-        return true;
+        return radiationChanged || sampleHistory;
     }
 
     private static void handleCold(ServerPlayer player, HazardZoneManager.HazardSnapshot hazardState, boolean graceActive) {
@@ -360,13 +400,21 @@ public class SurvivalTickHandler {
 
         long remainingTicks = data.getGraceTicksRemaining(currentTick, graceTicks);
         if (graceActive && remainingTicks > 0L) {
-            PacketDistributor.sendToPlayer(player, new GraceCountdownPacket(remainingTicks, true));
+            long displayedSecond = (remainingTicks + 19L) / 20L;
+            long lastDisplayedSecond = playerData.getLong(LAST_GRACE_COUNTDOWN_SECOND_KEY).orElse(Long.MIN_VALUE);
+            if (displayedSecond != lastDisplayedSecond) {
+                playerData.putLong(LAST_GRACE_COUNTDOWN_SECOND_KEY, displayedSecond);
+                EchoNetSend.toPlayer(player, new GraceCountdownPacket(remainingTicks, true), EchoPacketKind.CLIENTBOUND_SYNC);
+            }
             return;
         }
 
         boolean graceExpired = currentTick - data.getGraceStartTick() >= graceTicks;
-        if (graceExpired && !playerData.getBoolean(GRACE_PERIOD_NOTICE_SHOWN_KEY).orElse(false)) {
-            PacketDistributor.sendToPlayer(player, new GraceCountdownPacket(0L, false));
+        long lastDisplayedSecond = playerData.getLong(LAST_GRACE_COUNTDOWN_SECOND_KEY).orElse(Long.MIN_VALUE);
+        if (graceExpired && lastDisplayedSecond != 0L
+                && !playerData.getBoolean(GRACE_PERIOD_NOTICE_SHOWN_KEY).orElse(false)) {
+            playerData.putLong(LAST_GRACE_COUNTDOWN_SECOND_KEY, 0L);
+            EchoNetSend.toPlayer(player, new GraceCountdownPacket(0L, false), EchoPacketKind.CLIENTBOUND_SYNC);
         }
     }
 
@@ -383,7 +431,7 @@ public class SurvivalTickHandler {
 
         boolean graceExpired = currentTick - data.getGraceStartTick() >= graceTicks;
         if (graceExpired && !playerData.getBoolean(GRACE_PERIOD_NOTICE_SHOWN_KEY).orElse(false)) {
-            OpeningBasics basics = OpeningBasics.of(player, data);
+            OpeningBasics basics = cachedOpeningBasics(player, data, currentTick);
             Component message = basics.isStable()
                     ? Component.translatable("message.EchoAshfallProtocol.grace.expired.ready")
                     : Component.translatable("message.EchoAshfallProtocol.grace.expired.missing", basics.missingList());
@@ -523,6 +571,89 @@ public class SurvivalTickHandler {
             }
         }
         return false;
+    }
+
+    private static OpeningBasics cachedOpeningBasics(ServerPlayer player, SurvivalData data, long currentTick) {
+        UUID playerId = player.getUUID();
+        CachedOpeningBasics cached = OPENING_BASICS_CACHE.get(playerId);
+        BlockPos currentPos = player.blockPosition();
+        ResourceKey<Level> dimension = player.level().dimension();
+        if (cached != null && cached.validFor(dimension, currentPos, currentTick, OPENING_BASICS_CACHE_TICKS)) {
+            return cached.basics();
+        }
+
+        long start = System.nanoTime();
+        OpeningBasics basics = OpeningBasics.of(player, data);
+        OPENING_BASICS_CACHE.put(playerId, new CachedOpeningBasics(dimension, currentPos.immutable(), currentTick, basics));
+        logSlow(player, "survival.opening_basics", start, currentTick, SLOW_SUBSECTION_WARN_NANOS);
+        return basics;
+    }
+
+    private static HazardZoneManager.HazardSnapshot cachedHazardSnapshot(ServerPlayer player, long currentTick) {
+        UUID playerId = player.getUUID();
+        CachedHazardSnapshot cached = HAZARD_SNAPSHOT_CACHE.get(playerId);
+        BlockPos currentPos = player.blockPosition();
+        ResourceKey<Level> dimension = player.level().dimension();
+        if (cached != null && cached.validFor(dimension, currentPos, currentTick, HAZARD_SCAN_CACHE_TICKS)) {
+            return cached.snapshot();
+        }
+
+        long start = System.nanoTime();
+        HazardZoneManager.HazardSnapshot snapshot = HazardZoneManager.scan(player);
+        HAZARD_SNAPSHOT_CACHE.put(playerId, new CachedHazardSnapshot(dimension, currentPos.immutable(), currentTick, snapshot));
+        logSlow(player, "survival.hazard_scan", start, currentTick, SLOW_SUBSECTION_WARN_NANOS);
+        return snapshot;
+    }
+
+    private static void invalidatePassiveCaches(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        OPENING_BASICS_CACHE.remove(playerId);
+        HAZARD_SNAPSHOT_CACHE.remove(playerId);
+    }
+
+    private static boolean cacheUsable(ResourceKey<Level> cachedDimension, BlockPos cachedPos,
+                                       ResourceKey<Level> currentDimension, BlockPos currentPos,
+                                       long cachedTick, long currentTick, int maxAgeTicks) {
+        return cachedDimension.equals(currentDimension)
+                && currentTick - cachedTick <= maxAgeTicks
+                && cachedPos.distSqr(currentPos) <= CACHE_REUSE_RADIUS_BLOCKS * CACHE_REUSE_RADIUS_BLOCKS;
+    }
+
+    private static void logSlow(ServerPlayer player, String section, long startNanos, long currentTick, long thresholdNanos) {
+        long elapsed = System.nanoTime() - startNanos;
+        if (elapsed < thresholdNanos) {
+            return;
+        }
+        String key = section + ":" + player.getUUID();
+        long lastLogTick = SLOW_LOG_TICKS.getOrDefault(key, Long.MIN_VALUE);
+        if (lastLogTick != Long.MIN_VALUE && currentTick - lastLogTick < SLOW_LOG_COOLDOWN_TICKS) {
+            return;
+        }
+        SLOW_LOG_TICKS.put(key, currentTick);
+        EchoAshfallProtocol.LOGGER.warn("{} for {} took {} ms.",
+                section,
+                player.getName().getString(),
+                String.format(java.util.Locale.ROOT, "%.2f", elapsed / 1_000_000.0D));
+    }
+
+    private record CachedOpeningBasics(
+            ResourceKey<Level> dimension,
+            BlockPos position,
+            long gameTime,
+            OpeningBasics basics) {
+        boolean validFor(ResourceKey<Level> currentDimension, BlockPos currentPos, long currentTick, int maxAgeTicks) {
+            return cacheUsable(dimension, position, currentDimension, currentPos, gameTime, currentTick, maxAgeTicks);
+        }
+    }
+
+    private record CachedHazardSnapshot(
+            ResourceKey<Level> dimension,
+            BlockPos position,
+            long gameTime,
+            HazardZoneManager.HazardSnapshot snapshot) {
+        boolean validFor(ResourceKey<Level> currentDimension, BlockPos currentPos, long currentTick, int maxAgeTicks) {
+            return cacheUsable(dimension, position, currentDimension, currentPos, gameTime, currentTick, maxAgeTicks);
+        }
     }
 
     private record OpeningBasics(boolean hasMask, boolean hasCleanWaterHandled, boolean hasShelter, boolean hasTool) {

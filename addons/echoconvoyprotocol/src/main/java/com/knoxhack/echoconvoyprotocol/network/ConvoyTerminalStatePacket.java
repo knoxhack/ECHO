@@ -36,6 +36,8 @@ public record ConvoyTerminalStatePacket(
    String activeRouteStatus,
    String activeLegStatus,
    String checkpointStatus,
+   String assistantStatus,
+   List<String> assistantLines,
    List<String> nearbyPoiLines,
    List<String> routeBoardLines,
    List<String> routeBoardRouteIds,
@@ -63,6 +65,8 @@ public record ConvoyTerminalStatePacket(
       activeRouteStatus = safe(activeRouteStatus, "Start a route at a Convoy Beacon or from this terminal.");
       activeLegStatus = safe(activeLegStatus, "No active roadside leg.");
       checkpointStatus = safe(checkpointStatus, "No checkpoint warning.");
+      assistantStatus = safe(assistantStatus, "Field Assistant standing by.");
+      assistantLines = copyLines(assistantLines);
       nearbyPoiLines = copyLines(nearbyPoiLines);
       routeBoardLines = copyLines(routeBoardLines);
       routeBoardRouteIds = copyLines(routeBoardRouteIds);
@@ -82,6 +86,8 @@ public record ConvoyTerminalStatePacket(
          "Awaiting field sync.",
          "No active roadside leg.",
          "No checkpoint warning.",
+         "Field Assistant offline until the next scan.",
+         List.of("Press SCAN to refresh Convoy guidance."),
          List.of(),
          List.of(),
          List.of(),
@@ -120,6 +126,8 @@ public record ConvoyTerminalStatePacket(
          activeRouteStatus(activeRoute, progress, vehicle),
          activeLegStatus(activeRoute, progress, vehicle),
          checkpointStatus(player, activeRoute, progress),
+         assistantStatus(player, vehicle, progress, activeRoute, routeBoard),
+         assistantLines(player, vehicle, progress, activeRoute, routeBoard),
          nearbyPoiLines(player),
          routeBoard.stream().map(RouteBoardEntry::line).toList(),
          routeBoard.stream().map(RouteBoardEntry::routeId).toList(),
@@ -303,12 +311,113 @@ public record ConvoyTerminalStatePacket(
             + " | " + route.requiredVehicle().replace('_', ' ')
             + " | fuel " + route.minFuel()
             + " | " + route.threat().label()
-            + " | " + state));
+            + " | " + state,
+            routeHint(route, action, state, player, vehicle)));
          if (entries.size() >= 7) {
             break;
          }
       }
       return entries;
+   }
+
+   private static String routeHint(
+      ConvoyRouteDefinition route,
+      String action,
+      String state,
+      ServerPlayer player,
+      ConvoyVehicleEntity vehicle
+   ) {
+      return switch (action) {
+         case "start" -> "Ready: select START, use a Convoy Beacon nearby, or launch from Field Assistant.";
+         case "claim" -> "Reward ready: claim payout from the Convoy tab. Completed rewards are protected from duplicate claims.";
+         case "active" -> "Active: drive to the next route leg, then use SIGNAL beside the matching Roadside Signal Marker.";
+         case "claimed" -> "Complete: this route payout has already been claimed.";
+         default -> "active route in progress".equals(state)
+            ? "Finish or close the active convoy route before starting another."
+            : ConvoyRouteService.readinessHint(player, vehicle, route);
+      };
+   }
+
+   private static String assistantStatus(
+      ServerPlayer player,
+      ConvoyVehicleEntity vehicle,
+      ConvoyProgress progress,
+      Optional<ConvoyRouteDefinition> activeRoute,
+      List<RouteBoardEntry> routeBoard
+   ) {
+      Optional<RouteBoardEntry> claim = firstAction(routeBoard, "claim");
+      if (claim.isPresent()) {
+         return "Reward ready: " + routeTitle(claim.get().routeId());
+      }
+      if (activeRoute.isPresent()) {
+         return vehicle == null
+            ? "Active route: paired vehicle telemetry missing"
+            : "Active route: " + activeRoute.get().title();
+      }
+      Optional<RouteBoardEntry> start = firstAction(routeBoard, "start");
+      if (start.isPresent()) {
+         return "Ready to launch: " + routeTitle(start.get().routeId());
+      }
+      if (vehicle == null) {
+         return "Setup needed: deploy a convoy vehicle";
+      }
+      Optional<RouteBoardEntry> blocked = firstAction(routeBoard, "blocked");
+      return blocked.map(entry -> "Prep needed: " + routeTitle(entry.routeId())).orElse("Routes unavailable");
+   }
+
+   private static List<String> assistantLines(
+      ServerPlayer player,
+      ConvoyVehicleEntity vehicle,
+      ConvoyProgress progress,
+      Optional<ConvoyRouteDefinition> activeRoute,
+      List<RouteBoardEntry> routeBoard
+   ) {
+      Optional<RouteBoardEntry> claim = firstAction(routeBoard, "claim");
+      if (claim.isPresent()) {
+         return List.of(claim.get().hint(), "If your inventory is full, rewards drop safely at your feet.");
+      }
+      if (activeRoute.isPresent()) {
+         List<String> lines = new ArrayList<>();
+         if (vehicle == null) {
+            lines.add("Move near the paired vehicle or use a Route Beacon on it to relink route telemetry.");
+         } else {
+            ConvoyRouteDefinition.RouteLeg leg = activeRoute.get().leg(progress.activeRouteLeg());
+            lines.add("Find " + leg.title() + ", keep the paired vehicle nearby, then press SIGNAL beside the correct marker.");
+         }
+         String checkpoint = checkpointStatus(player, activeRoute, progress);
+         if (checkpoint.toLowerCase(java.util.Locale.ROOT).contains("blocked")
+            || checkpoint.toLowerCase(java.util.Locale.ROOT).contains("requires")) {
+            lines.add(checkpoint);
+         } else {
+            lines.add("Roadside Signal Markers only close a leg after its distance and route requirements are met.");
+         }
+         return lines;
+      }
+      Optional<RouteBoardEntry> start = firstAction(routeBoard, "start");
+      if (start.isPresent()) {
+         return List.of(start.get().hint(), "Load extra fuel, repair kits, and route beacons before leaving the beacon.");
+      }
+      if (vehicle == null) {
+         return List.of(
+            "Craft a Vehicle Workbench with iron, copper, redstone, and a piston.",
+            "Process a Vehicle Frame, two Scrap Tires, and a Fuel Canister into a Scrap Bike Kit.",
+            "Deploy the kit on flat ground, then keep the terminal within 12 blocks for route telemetry."
+         );
+      }
+      Optional<RouteBoardEntry> blocked = firstAction(routeBoard, "blocked");
+      if (blocked.isPresent()) {
+         return List.of(blocked.get().hint(), "Use SCAN after loading cargo or fuel so the route board refreshes.");
+      }
+      return List.of("No convoy route definitions are loaded. Check data packs, then reload or reopen the world.");
+   }
+
+   private static Optional<RouteBoardEntry> firstAction(List<RouteBoardEntry> routeBoard, String action) {
+      return routeBoard.stream().filter(entry -> action.equals(entry.action())).findFirst();
+   }
+
+   private static String routeTitle(String routeId) {
+      Identifier id = Identifier.tryParse(routeId);
+      return id == null ? routeId : ConvoyContent.route(id).map(ConvoyRouteDefinition::title).orElse(routeId);
    }
 
    private static int remainingDistance(ConvoyProgress progress, BlockPos current, ConvoyRouteDefinition.RouteLeg leg) {
@@ -338,6 +447,8 @@ public record ConvoyTerminalStatePacket(
       buffer.writeUtf(packet.activeRouteStatus(), MAX_TEXT);
       buffer.writeUtf(packet.activeLegStatus(), MAX_TEXT);
       buffer.writeUtf(packet.checkpointStatus(), MAX_TEXT);
+      buffer.writeUtf(packet.assistantStatus(), MAX_TEXT);
+      writeLines(buffer, packet.assistantLines());
       writeLines(buffer, packet.nearbyPoiLines());
       writeLines(buffer, packet.routeBoardLines());
       writeLines(buffer, packet.routeBoardRouteIds());
@@ -358,6 +469,8 @@ public record ConvoyTerminalStatePacket(
          buffer.readUtf(MAX_TEXT),
          buffer.readUtf(MAX_TEXT),
          buffer.readUtf(MAX_TEXT),
+         buffer.readUtf(MAX_TEXT),
+         readLines(buffer),
          readLines(buffer),
          readLines(buffer),
          readLines(buffer),
@@ -404,6 +517,6 @@ public record ConvoyTerminalStatePacket(
    private record PoiLine(int distance, String line) {
    }
 
-   private record RouteBoardEntry(String routeId, String action, String line) {
+   private record RouteBoardEntry(String routeId, String action, String line, String hint) {
    }
 }

@@ -11,6 +11,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionVisuals;
+import com.knoxhack.echoterminal.client.screen.EchoTerminalScreens;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
 import java.util.ArrayDeque;
@@ -29,10 +30,13 @@ import net.minecraft.world.item.ItemStack;
 
 public final class TerminalMissionHudController {
     private static final TerminalMissionHudController INSTANCE = new TerminalMissionHudController();
-    private static final int POLL_INTERVAL_TICKS = 10;
+    private static final int PASSIVE_POLL_INTERVAL_TICKS = 100;
+    private static final int TERMINAL_OPEN_POLL_INTERVAL_TICKS = 20;
     private static final int NOTICE_DURATION_FRAMES = 220;
     private static final int NOTICE_COOLDOWN_TICKS = 80;
     private static final int MAX_PENDING_NOTICES = 3;
+    private static final long SLOW_SCAN_WARN_NANOS = 12_000_000L;
+    private static final long SLOW_SCAN_LOG_COOLDOWN_TICKS = 200L;
     private static final Identifier SUMMARY_ID =
             Identifier.fromNamespaceAndPath(EchoTerminal.MODID, "mission_notice_summary");
 
@@ -45,6 +49,9 @@ public final class TerminalMissionHudController {
     private UUID playerId;
     private String worldKey = "";
     private long lastPollTick = Long.MIN_VALUE;
+    private long lastSlowScanLogTick = Long.MIN_VALUE;
+    private int nextProviderIndex;
+    private int baselineProviderScans;
     private boolean baselineReady;
 
     public static void tick() {
@@ -59,7 +66,7 @@ public final class TerminalMissionHudController {
     }
 
     public void scanForTests(Player player, long gameTime) {
-        scan(player, TerminalMissionRegistry.providers(), gameTime);
+        scanAll(player, TerminalMissionRegistry.providers(), gameTime);
     }
 
     public List<TerminalMissionNotice> drainQueuedNoticesForTests() {
@@ -85,9 +92,14 @@ public final class TerminalMissionHudController {
 
         ensureScope(player);
         long gameTime = player.level() == null ? 0L : player.level().getGameTime();
-        if (lastPollTick == Long.MIN_VALUE || gameTime - lastPollTick >= POLL_INTERVAL_TICKS) {
+        int pollInterval = EchoTerminalScreens.isManagedTerminalScreen(minecraft.screen)
+                ? TERMINAL_OPEN_POLL_INTERVAL_TICKS
+                : PASSIVE_POLL_INTERVAL_TICKS;
+        if (lastPollTick == Long.MIN_VALUE || gameTime - lastPollTick >= pollInterval) {
             lastPollTick = gameTime;
-            scan(player, TerminalMissionRegistry.providers(), gameTime);
+            long start = System.nanoTime();
+            scanNextProvider(player, TerminalMissionRegistry.providers(), gameTime);
+            logSlowScan(gameTime, start);
         }
 
         if (minecraft.screen == null && !minecraft.options.hideGui) {
@@ -104,44 +116,76 @@ public final class TerminalMissionHudController {
         renderNotice(graphics, activeNotice, activeFrames + partialTick, TerminalClientOptions.reduceMotion());
     }
 
-    private void scan(Player player, List<TerminalMissionProvider> providers, long gameTime) {
+    private void scanAll(Player player, List<TerminalMissionProvider> providers, long gameTime) {
         cleanupCooldowns(gameTime);
+        boolean initializing = !baselineReady;
+        List<TerminalMissionNotice> notices = new ArrayList<>();
+        for (TerminalMissionProvider provider : activeProviders(providers)) {
+            notices.addAll(scanProvider(player, provider, initializing));
+        }
+        baselineReady = true;
+        baselineProviderScans = 0;
+        nextProviderIndex = 0;
+        enqueueNotices(notices, gameTime);
+    }
+
+    private void scanNextProvider(Player player, List<TerminalMissionProvider> providers, long gameTime) {
+        cleanupCooldowns(gameTime);
+        List<TerminalMissionProvider> activeProviders = activeProviders(providers);
+        if (activeProviders.isEmpty()) {
+            baselineReady = true;
+            baselineProviderScans = 0;
+            nextProviderIndex = 0;
+            return;
+        }
+        if (nextProviderIndex >= activeProviders.size()) {
+            nextProviderIndex = 0;
+        }
+        boolean initializing = !baselineReady;
+        TerminalMissionProvider provider = activeProviders.get(nextProviderIndex);
+        nextProviderIndex = (nextProviderIndex + 1) % activeProviders.size();
+        List<TerminalMissionNotice> notices = scanProvider(player, provider, initializing);
+        if (initializing && ++baselineProviderScans >= activeProviders.size()) {
+            baselineReady = true;
+            baselineProviderScans = 0;
+        }
+        enqueueNotices(notices, gameTime);
+    }
+
+    private List<TerminalMissionNotice> scanProvider(
+            Player player,
+            TerminalMissionProvider provider,
+            boolean initializing) {
+        TerminalMissionChapter chapter = safeChapter(provider);
+        if (chapter == null || MainSurvivalQuestProvider.CHAPTER_ID.equals(chapter.id())) {
+            return List.of();
+        }
+
         Map<MissionKey, MissionState> nextMissions = new HashMap<>();
         Map<PhaseKey, PhaseState> nextPhases = new HashMap<>();
         List<TerminalMissionNotice> notices = new ArrayList<>();
-        boolean initializing = !baselineReady;
-
-        for (TerminalMissionProvider provider : providers == null ? List.<TerminalMissionProvider>of() : providers) {
-            if (skipProvider(provider)) {
+        for (TerminalMissionDefinition definition : safeMissions(provider, player)) {
+            if (definition == null) {
                 continue;
             }
-            TerminalMissionChapter chapter = safeChapter(provider);
-            if (chapter == null || MainSurvivalQuestProvider.CHAPTER_ID.equals(chapter.id())) {
-                continue;
+            TerminalMissionSnapshot snapshot = safeSnapshot(provider, player, definition);
+            TerminalMissionPresentation presentation = safePresentation(provider, player, definition, snapshot);
+            TerminalMissionVisuals visuals = safeVisuals(provider, player, definition, snapshot);
+            TerminalMissionRole role = safeRole(provider, player, definition, snapshot);
+            MissionState state = MissionState.of(chapter, definition, snapshot, presentation, visuals, role);
+            MissionKey key = new MissionKey(chapter.id(), definition.id());
+            nextMissions.put(key, state);
+
+            if (state.phaseActive()) {
+                nextPhases.putIfAbsent(state.phaseKey(), state.phaseState());
             }
-            for (TerminalMissionDefinition definition : safeMissions(provider, player)) {
-                if (definition == null) {
-                    continue;
-                }
-                TerminalMissionSnapshot snapshot = safeSnapshot(provider, player, definition);
-                TerminalMissionPresentation presentation = safePresentation(provider, player, definition, snapshot);
-                TerminalMissionVisuals visuals = safeVisuals(provider, player, definition, snapshot);
-                TerminalMissionRole role = safeRole(provider, player, definition, snapshot);
-                MissionState state = MissionState.of(chapter, definition, snapshot, presentation, visuals, role);
-                MissionKey key = new MissionKey(chapter.id(), definition.id());
-                nextMissions.put(key, state);
 
-                if (state.phaseActive()) {
-                    nextPhases.putIfAbsent(state.phaseKey(), state.phaseState());
-                }
-
-                if (!initializing) {
-                    MissionState previous = missionStates.get(key);
-                    if (previous == null) {
-                        noticeForNewMission(state).ifPresent(notices::add);
-                    } else {
-                        notices.addAll(noticesForTransition(previous, state));
-                    }
+            if (!initializing) {
+                MissionState previous = missionStates.get(key);
+                if (previous == null) {
+                    noticeForNewMission(state).ifPresent(notices::add);
+                } else {
+                    notices.addAll(noticesForTransition(previous, state));
                 }
             }
         }
@@ -154,12 +198,25 @@ public final class TerminalMissionHudController {
             }
         }
 
-        missionStates.clear();
+        Identifier chapterId = chapter.id();
+        missionStates.keySet().removeIf(key -> chapterId.equals(key.chapterId()));
         missionStates.putAll(nextMissions);
-        phaseStates.clear();
+        phaseStates.keySet().removeIf(key -> chapterId.equals(key.chapterId()));
         phaseStates.putAll(nextPhases);
-        baselineReady = true;
-        enqueueNotices(notices, gameTime);
+        return notices;
+    }
+
+    private static List<TerminalMissionProvider> activeProviders(List<TerminalMissionProvider> providers) {
+        if (providers == null || providers.isEmpty()) {
+            return List.of();
+        }
+        List<TerminalMissionProvider> active = new ArrayList<>();
+        for (TerminalMissionProvider provider : providers) {
+            if (!skipProvider(provider)) {
+                active.add(provider);
+            }
+        }
+        return active;
     }
 
     private static boolean skipProvider(TerminalMissionProvider provider) {
@@ -281,6 +338,9 @@ public final class TerminalMissionHudController {
         activeNotice = null;
         activeFrames = 0;
         lastPollTick = Long.MIN_VALUE;
+        lastSlowScanLogTick = Long.MIN_VALUE;
+        nextProviderIndex = 0;
+        baselineProviderScans = 0;
         baselineReady = false;
     }
 
@@ -293,6 +353,20 @@ public final class TerminalMissionHudController {
                 || status == TerminalMissionStatus.CLAIMABLE
                 || status == TerminalMissionStatus.COMPLETED
                 || status == TerminalMissionStatus.CLAIMED;
+    }
+
+    private void logSlowScan(long gameTime, long startNanos) {
+        long elapsed = System.nanoTime() - startNanos;
+        if (elapsed < SLOW_SCAN_WARN_NANOS) {
+            return;
+        }
+        if (lastSlowScanLogTick != Long.MIN_VALUE
+                && gameTime - lastSlowScanLogTick < SLOW_SCAN_LOG_COOLDOWN_TICKS) {
+            return;
+        }
+        lastSlowScanLogTick = gameTime;
+        EchoTerminal.LOGGER.warn("Mission HUD provider poll took {} ms.",
+                String.format(java.util.Locale.ROOT, "%.2f", elapsed / 1_000_000.0D));
     }
 
     private static TerminalMissionChapter safeChapter(TerminalMissionProvider provider) {

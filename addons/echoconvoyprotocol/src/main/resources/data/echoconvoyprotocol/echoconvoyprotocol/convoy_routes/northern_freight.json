@@ -23,11 +23,11 @@
     "spawnRadius": 11.0,
     "warning": "%threat% closing on %route%. Keep the crawler rolling."
   },
-  "checkpointFactionId": "echocore:survivors",
+  "checkpointFactionId": "echoashfallprotocol:crashbreak_salvage",
   "minReputation": 0,
   "checkpoint": {
     "label": "Freight Checkpoint",
-    "warning": "%checkpoint% blocked: survivors reputation %reputation%/%required%.",
+    "warning": "%checkpoint% blocked: Crashbreak reputation %reputation%/%required%.",
     "clearedMessage": "%checkpoint% verifies the manifest."
   },
   "destinationHint": "Freight bypass corridor",

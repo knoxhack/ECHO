@@ -65,15 +65,17 @@ public class FactionTerritory implements ValueIOSerializable {
     }
 
     public int getBiomeInfluence(Identifier faction, String biomeKey) {
-        return biomeInfluence.getOrDefault(faction, Collections.emptyMap())
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
+        return biomeInfluence.getOrDefault(canonical, Collections.emptyMap())
                 .getOrDefault(normalizeBiome(biomeKey), 0);
     }
 
     public void setBiomeInfluence(Identifier faction, String biomeKey, int value) {
-        if (faction == null) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
+        if (canonical == null) {
             return;
         }
-        biomeInfluence.computeIfAbsent(faction, key -> new HashMap<>())
+        biomeInfluence.computeIfAbsent(canonical, key -> new HashMap<>())
                 .put(normalizeBiome(biomeKey), clamp(value));
     }
 
@@ -123,6 +125,7 @@ public class FactionTerritory implements ValueIOSerializable {
     }
 
     public List<String> getFactionBiomes(Identifier faction, TerritoryStatus minStatus) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
         List<String> biomes = new ArrayList<>();
         int threshold = switch (minStatus) {
             case UNCLAIMED -> 0;
@@ -130,7 +133,7 @@ public class FactionTerritory implements ValueIOSerializable {
             case DOMINANT -> DOMINANT_THRESHOLD;
             case CONTROLLED -> CONTROLLED_THRESHOLD;
         };
-        for (Map.Entry<String, Integer> entry : biomeInfluence.getOrDefault(faction, Collections.emptyMap()).entrySet()) {
+        for (Map.Entry<String, Integer> entry : biomeInfluence.getOrDefault(canonical, Collections.emptyMap()).entrySet()) {
             if (entry.getValue() >= threshold) {
                 biomes.add(entry.getKey());
             }
@@ -139,8 +142,9 @@ public class FactionTerritory implements ValueIOSerializable {
     }
 
     public void setChunkOwner(ChunkPos pos, Level level, Identifier faction) {
-        if (pos != null && level != null && faction != null) {
-            chunkOwnership.put(chunkKey(pos, level), faction);
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
+        if (pos != null && level != null && canonical != null) {
+            chunkOwnership.put(chunkKey(pos, level), canonical);
         }
     }
 
@@ -152,14 +156,16 @@ public class FactionTerritory implements ValueIOSerializable {
     }
 
     public void addVillage(BlockPos center, Identifier controllingFaction, String villageName) {
-        if (center != null && controllingFaction != null) {
-            factionVillages.add(new VillageControl(center, controllingFaction, villageName, System.currentTimeMillis()));
+        Identifier canonical = AshfallFactionMap.canonicalFaction(controllingFaction);
+        if (center != null && canonical != null) {
+            factionVillages.add(new VillageControl(center, canonical, villageName, System.currentTimeMillis()));
         }
     }
 
     public List<VillageControl> getFactionVillages(Identifier faction) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
         return factionVillages.stream()
-                .filter(village -> village.controllingFaction.equals(faction))
+                .filter(village -> village.controllingFaction.equals(canonical))
                 .toList();
     }
 
@@ -168,12 +174,13 @@ public class FactionTerritory implements ValueIOSerializable {
     }
 
     public boolean transferVillageControl(BlockPos villageCenter, Identifier newFaction) {
-        if (newFaction == null) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(newFaction);
+        if (canonical == null) {
             return false;
         }
         for (VillageControl village : factionVillages) {
             if (village.center.closerThan(villageCenter, 16.0D)) {
-                village.controllingFaction = newFaction;
+                village.controllingFaction = canonical;
                 village.captureTime = System.currentTimeMillis();
                 return true;
             }
@@ -182,10 +189,11 @@ public class FactionTerritory implements ValueIOSerializable {
     }
 
     public VillageControl getNearestVillage(BlockPos pos, Identifier faction) {
+        Identifier canonical = AshfallFactionMap.canonicalFaction(faction);
         VillageControl nearest = null;
         double nearestDistance = Double.MAX_VALUE;
         for (VillageControl village : factionVillages) {
-            if (faction != null && !village.controllingFaction.equals(faction)) {
+            if (canonical != null && !village.controllingFaction.equals(canonical)) {
                 continue;
             }
             double distance = village.center.distSqr(pos);

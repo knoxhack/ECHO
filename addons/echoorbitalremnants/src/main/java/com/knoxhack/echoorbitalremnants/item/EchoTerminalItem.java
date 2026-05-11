@@ -1,6 +1,8 @@
 package com.knoxhack.echoorbitalremnants.item;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import com.knoxhack.echoorbitalremnants.Config;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
@@ -30,7 +32,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public class EchoTerminalItem extends Item {
     public EchoTerminalItem(Properties properties) {
@@ -61,7 +62,7 @@ public class EchoTerminalItem extends Item {
             return;
         }
         Level level = player.level();
-        if (SuitEvents.isOrbitalExposure(player)) {
+        if (SuitEvents.isOrbitalProgressionScan(player)) {
             progress.scanOrbit(player);
             String midGameReport = tryMidGameRepair(player, progress);
             progress = EchoTerminalProgress.get(player);
@@ -440,7 +441,7 @@ public class EchoTerminalItem extends Item {
                     + progress.factionContractRequirement();
         }
         if (faction == null) {
-            return "Faction support hub online. No pledge detected; use an Orbital Remnant Badge, Void Salvager Marker, or Nexus Choir Sigil to authorize beta barter caches.";
+            return "Faction support hub online. No pledge detected; use a Radwarden Badge, Crashbreak Marker, or Sporebound Sigil to authorize barter caches.";
         }
         String vendorId = "vendor:" + faction.name().toLowerCase(java.util.Locale.ROOT)
                 + ":" + player.level().dimension().identifier().getPath()
@@ -451,11 +452,7 @@ public class EchoTerminalItem extends Item {
         }
         grantFactionVendorReward(player, faction);
         playObjectiveFeedback(player, ParticleTypes.HAPPY_VILLAGER, 1.25F);
-        return switch (faction) {
-            case ORBITAL_REMNANT -> "Orbital Remnant aligned support cache authorized: oxygen, sealant, and route support delivered.";
-            case VOID_SALVAGERS -> "Void Salvager aligned barter cache authorized: circuits, alloy, and repair salvage delivered.";
-            case NEXUS_CHOIR -> "Nexus Choir aligned support cache authorized: stabilizers and anomaly supplies delivered.";
-        };
+        return faction.vendorCacheReport();
     }
 
     private static FactionPledgeItem.Faction alignedFaction(EchoTerminalProgress progress) {
@@ -529,7 +526,7 @@ public class EchoTerminalItem extends Item {
                     : "Faction contract waiting for a Signal Relay/Docking Beacon scan, or 1 Orbit Survey Data.";
             case VOID_SALVAGERS -> "Faction contract waiting for orbital salvage, or 1 Orbital Alloy plus 1 Vacuum Circuit.";
             case NEXUS_CHOIR -> !progress.echoZeroEncountered()
-                    ? "Faction contract sealed: Nexus Choir anchor readings unlock only after ECHO-0 is resolved."
+                    ? "Faction contract sealed: Sporebound anomaly readings unlock only after ECHO-0 is resolved."
                     : player.level().dimension() != ModDimensions.NEXUS_ANOMALY_BELT
                     ? "Faction contract waiting for the Nexus Anomaly Belt, or 1 Nexus Stabilizer Shard."
                     : "Faction contract waiting for a Nexus Anchor/Growth scan, or 1 Nexus Stabilizer Shard.";
@@ -689,7 +686,8 @@ public class EchoTerminalItem extends Item {
 
     public static void openTerminal(Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new OpenEchoTerminalPayload(EchoTerminalSnapshot.from(player)));
+            EchoNetSend.toPlayer(serverPlayer, new OpenEchoTerminalPayload(EchoTerminalSnapshot.from(player)),
+                    EchoPacketKind.CLIENTBOUND_SYNC);
         }
     }
 

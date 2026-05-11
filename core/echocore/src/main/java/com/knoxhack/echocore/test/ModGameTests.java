@@ -18,6 +18,8 @@ import com.knoxhack.echocore.api.EchoFactionRegistry;
 import com.knoxhack.echocore.api.EchoFactionStanding;
 import com.knoxhack.echocore.api.EchoHazardTelemetry;
 import com.knoxhack.echocore.api.EchoHandoffs;
+import com.knoxhack.echocore.api.EchoMapLayer;
+import com.knoxhack.echocore.api.EchoMapMarker;
 import com.knoxhack.echocore.api.EchoProfile;
 import com.knoxhack.echocore.api.EchoProfileService;
 import com.knoxhack.echocore.api.EchoNpcRole;
@@ -25,10 +27,28 @@ import com.knoxhack.echocore.api.EchoPackMode;
 import com.knoxhack.echocore.api.EchoProgressLedger;
 import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echocore.api.EchoServiceRegistry;
+import com.knoxhack.echocore.api.IMapDataProvider;
+import com.knoxhack.echocore.api.IMapLayer;
+import com.knoxhack.echocore.api.IMapMarker;
+import com.knoxhack.echocore.api.IMapMarkerService;
 import com.knoxhack.echocore.api.NexusCampaignService;
+import com.knoxhack.echocore.api.NoOpMapService;
 import com.knoxhack.echocore.api.TerminalPlacementService;
 import com.knoxhack.echocore.api.TerminalRewardService;
+import com.knoxhack.echocore.api.config.EchoConfigApplyResult;
+import com.knoxhack.echocore.api.config.EchoConfigCategory;
+import com.knoxhack.echocore.api.config.EchoConfigEntry;
+import com.knoxhack.echocore.api.config.EchoConfigModule;
+import com.knoxhack.echocore.api.config.EchoConfigModuleSnapshot;
+import com.knoxhack.echocore.api.config.EchoConfigProvider;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -61,6 +81,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("core_faction_data", () -> ModGameTests::coreFactionData);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_DISCOVERY_GRID =
             TEST_FUNCTIONS.register("core_discovery_grid", () -> ModGameTests::coreDiscoveryGrid);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_MAP_CONTRACTS =
+            TEST_FUNCTIONS.register("core_map_contracts", () -> ModGameTests::coreMapContracts);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_CONFIG_REGISTRY =
+            TEST_FUNCTIONS.register("core_config_registry", () -> ModGameTests::coreConfigRegistry);
 
     private ModGameTests() {
     }
@@ -79,6 +103,8 @@ public final class ModGameTests {
         register(event, environment, "core_beta_service_contracts", CORE_BETA_SERVICE_CONTRACTS.getId());
         register(event, environment, "core_faction_data", CORE_FACTION_DATA.getId());
         register(event, environment, "core_discovery_grid", CORE_DISCOVERY_GRID.getId());
+        register(event, environment, "core_map_contracts", CORE_MAP_CONTRACTS.getId());
+        register(event, environment, "core_config_registry", CORE_CONFIG_REGISTRY.getId());
     }
 
     private static void coreServiceNoops(GameTestHelper helper) {
@@ -311,7 +337,7 @@ public final class ModGameTests {
             helper.assertTrue(duplicate != null && "First Duplicate".equals(duplicate.revealedTitle()),
                     "Discovery registry should keep the first duplicate id");
 
-            var player = (ServerPlayer) helper.makeMockPlayer(GameType.SURVIVAL);
+            ServerPlayer player = helper.makeMockServerPlayerInLevel();
             helper.assertTrue(EchoCoreServices.discoveryState(player, alpha) == EchoDiscoveryState.LOCKED,
                     "Undiscovered provider-locked features should remain locked");
             helper.assertTrue(EchoCoreServices.discoverFeature(player, alpha.id()),
@@ -390,6 +416,70 @@ public final class ModGameTests {
                     "Visible route discovery should persist the route feature id");
             helper.assertTrue(EchoCoreServices.discoverVisibleRouteRecords(player) == 0,
                     "Visible route discovery should be once-only for already recorded routes");
+        });
+        helper.succeed();
+    }
+
+    private static void coreMapContracts(GameTestHelper helper) {
+        EchoServiceRegistry.withClearedForTests(() -> {
+            EchoCoreServices.clearPlatformServicesForTests();
+            helper.assertTrue(EchoCoreServices.mapMarkerService() == NoOpMapService.INSTANCE,
+                    "Map marker service should no-op when HoloMap is absent");
+            helper.assertTrue(EchoCoreServices.mapLayers(null).isEmpty(),
+                    "No-op map service should expose no layers");
+            helper.assertTrue(EchoCoreServices.mapMarkers(null).isEmpty(),
+                    "No-op map service should expose no markers");
+
+            Identifier layerId = id("map/test_layer");
+            Identifier markerId = id("map/test_marker");
+            EchoCoreServices.registerMapDataProvider(new IMapDataProvider() {
+                @Override
+                public Identifier providerId() {
+                    return id("map/test_provider");
+                }
+
+                @Override
+                public List<IMapLayer> layers(net.minecraft.world.entity.player.Player player) {
+                    return List.of(new EchoMapLayer(layerId, "Test Layer", 20, 0xFF66E8FF, true));
+                }
+
+                @Override
+                public List<IMapMarker> markers(net.minecraft.world.entity.player.Player player) {
+                    return List.of(
+                            new EchoMapMarker(markerId, layerId, providerId(),
+                                    IMapMarker.MarkerKind.CRASH_SITE, IMapMarker.MarkerState.LOCKED,
+                                    "Locked Test Marker", "A locked marker should stay visible to map UIs.",
+                                    net.minecraft.world.level.Level.OVERWORLD, 12, 64, -8, 24,
+                                    null, null, -1, true),
+                            new EchoMapMarker(markerId, layerId, providerId(),
+                                    IMapMarker.MarkerKind.CRASH_SITE, IMapMarker.MarkerState.DISCOVERED,
+                                    "Duplicate Test Marker", "Duplicate id should be ignored by the test service.",
+                                    net.minecraft.world.level.Level.OVERWORLD, 12, 64, -8, 24,
+                                    null, null, -1, true),
+                            new EchoMapMarker(id("map/hidden_marker"), layerId, providerId(),
+                                    IMapMarker.MarkerKind.DRONE_SCAN, IMapMarker.MarkerState.HIDDEN,
+                                    "Hidden Test Marker", "Hidden state should remain available to consumers.",
+                                    net.minecraft.world.level.Level.OVERWORLD, 0, 64, 0, 0,
+                                    null, null, -1, false));
+                }
+            });
+
+            TestMapMarkerService service = new TestMapMarkerService();
+            EchoCoreServices.registerMapMarkerService(service);
+            helper.assertTrue(service.providerCount() == 1,
+                    "Map service registration should replay providers registered before the service");
+            helper.assertTrue(EchoCoreServices.mapLayers(null).size() == 1,
+                    "Map layer providers should be reachable through EchoCoreServices");
+            List<IMapMarker> markers = EchoCoreServices.mapMarkers(null);
+            helper.assertTrue(markers.size() == 2,
+                    "Map marker services should expose de-duplicated marker ids");
+            helper.assertTrue(markers.get(0).state() == IMapMarker.MarkerState.HIDDEN
+                            || markers.get(1).state() == IMapMarker.MarkerState.HIDDEN,
+                    "Map marker states should preserve hidden markers for service consumers");
+            helper.assertTrue(markers.stream().anyMatch(marker -> marker.state() == IMapMarker.MarkerState.LOCKED),
+                    "Map marker states should preserve locked markers");
+
+            EchoCoreServices.clearPlatformServicesForTests();
         });
         helper.succeed();
     }
@@ -601,6 +691,109 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void coreConfigRegistry(GameTestHelper helper) {
+        EchoConfigRegistry.withClearedForTests(() -> {
+            AtomicInteger intValue = new AtomicInteger(5);
+            AtomicReference<TestConfigMode> modeValue = new AtomicReference<>(TestConfigMode.STANDARD);
+            AtomicReference<String> localValue = new AtomicReference<>("local");
+
+            EchoConfigRegistry.register(EchoConfigProvider.of("zeta", () -> new EchoConfigModule(
+                    "zeta",
+                    "Zeta",
+                    List.of(new EchoConfigCategory("general", "General", List.of(
+                            EchoConfigEntry.intEntry("z_count", "Z Count", "",
+                                    EchoConfigSide.COMMON, 2, 0, 10, () -> 2, ignored -> { },
+                                    null, true, false, false)))))));
+            EchoConfigRegistry.register(EchoConfigProvider.of("alpha", () -> new EchoConfigModule(
+                    "alpha",
+                    "Alpha",
+                    List.of(
+                            new EchoConfigCategory("general", "General", List.of(
+                                    EchoConfigEntry.booleanEntry("enabled", "Enabled", "",
+                                            EchoConfigSide.COMMON, true, () -> true, ignored -> { },
+                                            null, true, false, false),
+                                    EchoConfigEntry.intEntry("count", "Count", "",
+                                            EchoConfigSide.COMMON, 5, 0, 10, intValue::get, intValue::set,
+                                            null, true, false, false),
+                                    EchoConfigEntry.enumEntry("mode", "Mode", "",
+                                            EchoConfigSide.COMMON, TestConfigMode.STANDARD, TestConfigMode.class,
+                                            modeValue::get, modeValue::set, null, true, false, false))),
+                            new EchoConfigCategory("client", "Client", List.of(
+                                    EchoConfigEntry.stringEntry("local_text", "Local Text", "",
+                                            EchoConfigSide.CLIENT, "local", localValue::get, localValue::set,
+                                            null, true, false, false)))))));
+
+            helper.assertTrue(EchoConfigRegistry.providers().get(0).moduleId().equals("alpha"),
+                    "Config providers should be sorted by lowercase module id");
+            helper.assertTrue(EchoConfigRegistry.snapshots(EchoConfigSide.COMMON).size() == 2,
+                    "Common snapshots should include common config modules");
+            List<EchoConfigModuleSnapshot> clientSnapshots = EchoConfigRegistry.snapshots(EchoConfigSide.CLIENT);
+            helper.assertTrue(clientSnapshots.size() == 1 && clientSnapshots.get(0).moduleId().equals("alpha"),
+                    "Client snapshots should filter out common-only modules");
+
+            EchoConfigApplyResult result = EchoConfigRegistry.apply(EchoConfigSide.COMMON, "alpha", "count", "7");
+            helper.assertTrue(result.success() && intValue.get() == 7,
+                    "Valid integer config edits should apply live values");
+            helper.assertFalse(EchoConfigRegistry.apply(EchoConfigSide.COMMON, "alpha", "count", "14").success(),
+                    "Integer values outside range should be rejected");
+            helper.assertTrue(EchoConfigRegistry.apply(EchoConfigSide.COMMON, "alpha", "mode", "hard").success()
+                            && modeValue.get() == TestConfigMode.HARD,
+                    "Enum values should parse case-insensitively");
+            helper.assertFalse(EchoConfigRegistry.apply(EchoConfigSide.COMMON, "alpha", "mode", "missing").success(),
+                    "Unknown enum options should be rejected");
+            helper.assertTrue(EchoConfigRegistry.reset(EchoConfigSide.COMMON, "alpha", "mode").success()
+                            && modeValue.get() == TestConfigMode.STANDARD,
+                    "Reset should restore default values");
+            helper.assertTrue(EchoConfigRegistry.apply(EchoConfigSide.CLIENT, "alpha", "local_text", "edited").success()
+                            && localValue.get().equals("edited"),
+                    "Client-side entries should apply through client filtering");
+            helper.assertFalse(EchoConfigRegistry.apply(EchoConfigSide.COMMON, "alpha", "local_text", "server").success(),
+                    "Common updates must not target client-only entries");
+            helper.assertFalse(EchoConfigRegistry.apply(EchoConfigSide.COMMON, "alpha", "unknown", "1").success(),
+                    "Unknown entries should be rejected");
+
+            boolean duplicateRejected = false;
+            try {
+                EchoConfigRegistry.register(EchoConfigProvider.of("alpha", () -> null));
+            } catch (IllegalArgumentException exception) {
+                duplicateRejected = true;
+            }
+            helper.assertTrue(duplicateRejected, "Duplicate config providers should be rejected");
+
+            boolean uppercaseRejected = false;
+            try {
+                EchoConfigRegistry.register(EchoConfigProvider.of("Uppercase", () -> null));
+            } catch (IllegalArgumentException exception) {
+                uppercaseRejected = true;
+            }
+            helper.assertTrue(uppercaseRejected, "Provider ids must be lowercase");
+
+            boolean duplicateEntryRejected = false;
+            try {
+                new EchoConfigModule("dupes", "Dupes", List.of(new EchoConfigCategory("general", "General", List.of(
+                        EchoConfigEntry.stringEntry("same", "Same", "", EchoConfigSide.COMMON,
+                                "", () -> "", ignored -> { }, null, true, false, false),
+                        EchoConfigEntry.stringEntry("same", "Same Again", "", EchoConfigSide.COMMON,
+                                "", () -> "", ignored -> { }, null, true, false, false)))));
+            } catch (IllegalArgumentException exception) {
+                duplicateEntryRejected = true;
+            }
+            helper.assertTrue(duplicateEntryRejected, "Duplicate entry ids should be rejected");
+
+            EchoConfigRegistry.register(EchoConfigProvider.of("omega", () -> {
+                throw new IllegalStateException("test provider failure");
+            }));
+            helper.assertTrue(EchoConfigRegistry.snapshots(EchoConfigSide.COMMON).size() == 2,
+                    "Failing providers should be ignored while building snapshots");
+        });
+        helper.succeed();
+    }
+
+    private enum TestConfigMode {
+        STANDARD,
+        HARD
+    }
+
     private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment,
             String testName, Identifier functionId) {
         TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(
@@ -633,6 +826,50 @@ public final class ModGameTests {
                 0xFF66E8FF,
                 null,
                 sortOrder);
+    }
+
+    private static final class TestMapMarkerService implements IMapMarkerService {
+        private final List<IMapDataProvider> providers = new ArrayList<>();
+
+        @Override
+        public boolean registerProvider(IMapDataProvider provider) {
+            if (provider == null || providers.contains(provider)) {
+                return false;
+            }
+            providers.add(provider);
+            return true;
+        }
+
+        @Override
+        public List<IMapLayer> layers(net.minecraft.world.entity.player.Player player) {
+            Map<Identifier, IMapLayer> layers = new LinkedHashMap<>();
+            for (IMapDataProvider provider : providers) {
+                for (IMapLayer layer : provider.layers(player)) {
+                    if (layer != null) {
+                        layers.putIfAbsent(layer.id(), layer);
+                    }
+                }
+            }
+            return List.copyOf(layers.values());
+        }
+
+        @Override
+        public List<IMapMarker> markers(net.minecraft.world.entity.player.Player player) {
+            Map<Identifier, IMapMarker> markers = new LinkedHashMap<>();
+            for (IMapDataProvider provider : providers) {
+                for (IMapMarker marker : provider.markers(player)) {
+                    if (marker != null) {
+                        markers.putIfAbsent(marker.id(), marker);
+                    }
+                }
+            }
+            return List.copyOf(markers.values());
+        }
+
+        @Override
+        public int providerCount() {
+            return providers.size();
+        }
     }
 
     private static boolean shouldRegisterTests() {

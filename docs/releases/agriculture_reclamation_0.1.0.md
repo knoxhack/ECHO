@@ -23,12 +23,12 @@ Body:
 - Adds optional cross-addon compatibility for Ashfall ruined soils, Restoration Project-style soil ids, Nexus restore alignment, and ECHO faction-biased seed recovery.
 
 ## Player Route
-1. Recover or open a Recovered Seed Capsule.
+1. Recover a Recovered Seed Capsule from ECHO ruin loot, or craft one from wheat seeds, bone meal, a glass bottle, and copper.
 2. Identify a profiled Contaminated Seed through the Seed Vault Terminal or direct capsule use.
-3. Purify soil or grow the seed in a Hydroponic Tray.
+3. Plant it on dirt, grass, farmland, or compatible reclamation soil, or grow it in a Hydroponic Tray.
 4. Harvest food or restoration crops.
-5. Process crop matter into Bio-Gel or Soil Nutrient Mix.
-6. Stabilize genetics through the Gene Stabilizer.
+5. Craft a Bio-Reactor with Soil Nutrient Mix and process any crop matter into Bio-Gel.
+6. Craft and use the Gene Stabilizer with a contaminated seed plus Bio-Gel or Gene Sample.
 7. Build greenhouse support and scan FIELD > Reclamation.
 8. Mature restoration crops and scan ecology until local soil conversion pressure improves the chunk.
 
@@ -48,12 +48,12 @@ Body:
 - `.\gradlew.bat -PechoPythonExecutable="C:/Users/hacko/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe" -PechoAddonSet=all validateEchoResources buildEchoWorkspace --warning-mode all`
 
 ## GameTest Evidence
-- Agriculture batch: 12 focused tests registered under `echoagriculturereclamation:agriculture_reclamation`.
-- Latest run: all 59 required loaded-stack tests passed.
+- Agriculture batch: 21 focused tests registered under `echoagriculturereclamation:agriculture_reclamation`.
+- Latest focused Agriculture run should cover recipe-chain playability, Core recovery once-only behavior, and player progress NBT round trip.
 
 ## Compatibility Notes
 - Required: `echocore`.
-- Optional runtime integration: `echoterminal`, `echoashfallprotocol`, `echoorbitalremnants`, `echonexusprotocol`, Stationfall/Blackbox runtime context when present.
+- Optional runtime integration: `echoterminal`, `echoashfallprotocol`, `echoorbitalremnants`, `echonexusprotocol`, `echoindustrialnexus`, Stationfall/Blackbox runtime context when present.
 - The addon remains technically optional and communicates through registry ids, ModList checks, and ECHO Core services.
 ```
 
@@ -68,12 +68,13 @@ Body:
 - Recovered Seed Capsule, Contaminated Seed, Stabilized Seed, Gene Sample, Soil Nutrient Mix, Purification Enzyme, and Bio-Gel.
 - Hydroponic Tray, Seed Vault Terminal, Soil Purifier, Gene Stabilizer, Bio-Reactor, Greenhouse Controller, Pollinator Drone Dock, Spore Filter, Compost Recycler, Ecology Scanner, and Greenhouse Glass.
 - Data-driven crop, soil, machine, and progression rule files under `data/echoagriculturereclamation/echoagriculturereclamation`.
-- Global loot modifiers for seed capsules and gene samples across ruined-world recovery sources.
+- Global loot modifiers for seed capsules and gene samples across ruined-world recovery sources, packaged under NeoForge `loot_modifiers`.
+- Standalone first-capsule crafting route using wheat seeds, bone meal, glass bottle, and copper.
 - FIELD > Reclamation terminal page, report action, scan action, and six mission milestones.
 - ECHO Core chapter, route records, diagnostics, recovery cache, and milestone recording.
 - Ashfall/Restoration Project soil compatibility by registry id.
-- Optional faction-biased seed recovery for Remnant, Salvager, and Mutant Front preference paths.
-- Focused GameTests for seed recovery, soil conversion, hydroponics, greenhouse scoring, stabilization, Terminal metrics, restoration pressure, Core records, cross-addon soil mapping, milestones, faction bias, and main loop regression.
+- Optional faction-biased seed recovery for Radwarden, Crashbreak, and Sporebound preference paths.
+- Focused GameTests for seed recovery, standalone recipe-chain playability, soil conversion, hydroponics, greenhouse scoring, stabilization, Terminal metrics and one-time rewards, Core recovery once-only behavior, player/saved-data and block-entity persistence, loot modifier packaging, restoration pressure, Core records, cross-addon soil mapping, milestones, faction bias, and main loop regression.
 
 ### Changed
 
@@ -118,7 +119,7 @@ Use this checklist from a clean working tree after the PR branch is ready.
 6. Launch the modpack profile.
    - Confirm the mod list shows `ECHO: Agriculture Reclamation 0.1.0`.
    - Confirm `FIELD > Reclamation` appears when ECHO Terminal is installed.
-   - Confirm a `Recovered Seed Capsule` can become a profiled seed.
+   - Confirm a `Recovered Seed Capsule` can be crafted or found through ECHO ruin loot, then becomes a profiled seed.
    - Confirm a Hydroponic Tray can accept that seed and preserve status after save/reload.
 
 7. Run final manual smoke.

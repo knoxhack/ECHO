@@ -15,7 +15,7 @@ Production Completion pass.
 - Required compile/runtime dependency: `echocore`
 - Optional soft integrations: `echoterminal`, Ashfall Protocol, Nexus Protocol, Orbital Remnants, Stationfall, Blackbox Protocol
 
-Industrial Nexus loads and plays without optional sibling chapters. When ECHO Terminal is present, it registers a shared Industrial Nexus chapter, mission provider, archive entries, actions for factory scans, POI location hints, reward cache claims, and a terminal recipe provider for Industrial processing data.
+Industrial Nexus loads and plays without optional sibling chapters. When ECHO Terminal is present, it registers a shared Industrial Nexus chapter, mission provider, archive entries, actions for factory scans, POI hints, reward cache claims, and a terminal recipe provider for Industrial processing data.
 
 ## Production Features
 
@@ -42,11 +42,14 @@ python tools\validate_resources.py
 
 Manual smoke checklist after the client launches:
 
+- Craft a Scrap Dynamo, Copper Flux Duct, Ore Grinder, Scrap Fuel, and Thermal Wrench from survival materials or Industrial POI loot.
+- Start the Scrap Dynamo with Scrap Fuel or a lava bucket and confirm Thermal Flux stores in the generator, the lava bucket returns an empty bucket, and the Ore Grinder receives power through a Copper Flux Duct.
+- Process iron ore into Iron Dust, retrieve output by shift-use, then break the machine and Smart Duct to confirm machine inventory and duct filter stacks drop once.
 - Open a machine GUI and confirm progress, Thermal Flux, heat, fluid bars, warnings, side config, and scrubber mode render.
 - Build dirty power, automate filters, and complete the Dense Alloy chain.
 - Fill/drain the Fluid Refiner and Water Purifier through cells and fluid pipes.
 - Cycle Industrial Scrubber modes and confirm safe-zone progress updates.
-- Use ECHO Terminal Industrial Nexus actions: scan factory, locate POI, claim cache.
+- Use ECHO Terminal Industrial Nexus actions: scan factory, view POI hint, claim cache once.
 - Open the ECHO Terminal Recipe Index and confirm Industrial machine categories show JSON-driven processing recipes, fluid notes, heat, Thermal Flux, catalysts, and byproducts.
 - Generate or locate a procedural POI and verify loot/hazard placement.
 - Activate and defeat the Furnace Warden and verify participant reward credit.

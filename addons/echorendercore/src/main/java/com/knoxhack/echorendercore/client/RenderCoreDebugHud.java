@@ -1,0 +1,94 @@
+package com.knoxhack.echorendercore.client;
+
+import com.knoxhack.echorendercore.api.IAdvancedVisualBlockEntity;
+import com.knoxhack.echorendercore.api.IAdvancedVisualEntity;
+import com.knoxhack.echorendercore.api.VisualState;
+import com.knoxhack.echorendercore.profile.RenderCoreProfiles;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+
+public final class RenderCoreDebugHud {
+   private RenderCoreDebugHud() {
+   }
+
+   public static void render(RenderGuiEvent.Post event) {
+      if (!DebugVisualOverrides.hudEnabled()) {
+         return;
+      }
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.player == null) {
+         return;
+      }
+      GuiGraphicsExtractor graphics = event.getGuiGraphics();
+      Font font = minecraft.font;
+      int x = 8;
+      int y = 8;
+      graphics.fill(x - 4, y - 4, x + 290, y + 78, 0xAA061018);
+      line(graphics, font, "RenderCore HUD", x, y, 0xFF66E8FF);
+      y += 10;
+      var loaded = RenderCoreProfiles.loaded();
+      var metrics = loaded.cacheMetrics();
+      line(graphics, font, "profiles " + metrics.visualProfileCount() + " / anim " + metrics.animationProfileCount()
+         + " / particles " + metrics.particleProfileCount(), x, y, 0xFFE6F8FF);
+      y += 10;
+      line(graphics, font, "json " + metrics.loadedJsonCount() + "/" + metrics.discoveredJsonCount()
+         + " failed " + metrics.failedJsonCount() + " / W:" + metrics.validationWarningCount()
+         + " E:" + metrics.validationErrorCount() + " P:" + metrics.performanceWarningCount(), x, y, 0xFFE6F8FF);
+      y += 10;
+      TargetInfo target = target(minecraft);
+      line(graphics, font, target.line(), x, y, target.color());
+      y += 10;
+      line(graphics, font, target.detail(), x, y, target.color());
+      y += 10;
+      line(graphics, font, "anchors " + (DebugVisualOverrides.anchorsEnabled() ? "on" : "off")
+         + " / missing parts " + (DebugVisualOverrides.missingPartWarnings() ? "on" : "off"), x, y, 0xFF8DB3C7);
+   }
+
+   private static TargetInfo target(Minecraft minecraft) {
+      var debugTarget = RenderCoreDebugTargets.lookedAt(minecraft);
+      if (debugTarget.isPresent()) {
+         RenderCoreDebugTargets.DebugTarget target = debugTarget.get();
+         return new TargetInfo(
+            "target " + target.profileId() + " state " + target.state().name(),
+            "variant " + target.variant().id() + " layers " + target.activeLayers() + " anchors " + target.anchors()
+               + " warnings " + target.validationWarnings(),
+            0xFFE6F8FF
+         );
+      }
+      HitResult hit = minecraft.hitResult;
+      if (minecraft.level == null || hit == null) {
+         return new TargetInfo("target none", "", 0xFF8DB3C7);
+      }
+      if (hit instanceof EntityHitResult entityHit) {
+         Entity entity = entityHit.getEntity();
+         if (entity instanceof IAdvancedVisualEntity visual) {
+            VisualState state = DebugVisualOverrides.entity(entity.getUUID()).orElse(visual.visualState());
+            return new TargetInfo("entity " + visual.visualProfileId() + " state " + state.name(), "variant " + visual.visualVariant().id(), 0xFFE6F8FF);
+         }
+         return new TargetInfo("entity " + entity.getName().getString(), "", 0xFF8DB3C7);
+      }
+      if (hit instanceof BlockHitResult blockHit) {
+         BlockEntity blockEntity = minecraft.level.getBlockEntity(blockHit.getBlockPos());
+         if (blockEntity instanceof IAdvancedVisualBlockEntity visual) {
+            VisualState state = DebugVisualOverrides.block(minecraft.level, blockHit.getBlockPos()).orElse(visual.visualState());
+            return new TargetInfo("block " + visual.visualProfileId() + " state " + state.name(), "variant " + visual.visualVariant().id(), 0xFFE6F8FF);
+         }
+         return new TargetInfo("block " + blockHit.getBlockPos().toShortString(), "", 0xFF8DB3C7);
+      }
+      return new TargetInfo("target unsupported", "", 0xFF8DB3C7);
+   }
+
+   private static void line(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
+      graphics.text(font, font.plainSubstrByWidth(text, 282), x, y, color, false);
+   }
+
+   private record TargetInfo(String line, String detail, int color) {
+   }
+}

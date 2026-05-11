@@ -2,6 +2,7 @@ package com.knoxhack.echocore.api;
 
 public enum EchoDiscoveryCategory {
     STRUCTURE("Structures"),
+    REGION("Regions"),
     BIOME("Biomes"),
     GUARDIAN("Guardians"),
     EVENT("Events"),

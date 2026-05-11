@@ -62,14 +62,11 @@ public final class FactionProgressionHelper {
     }
 
     private static String schematicFor(Identifier factionId) {
-        if (AshfallBiomeFactions.RADWARDEN_COMPACT.equals(factionId)
-                || AshfallBiomeFactions.ASHLAND_RANGERS.equals(factionId)
-                || AshfallBiomeFactions.DUSTLINE_FREEHOLDS.equals(factionId)) {
+        Identifier canonical = AshfallFactionMap.canonicalOrDefault(factionId);
+        if (AshfallBiomeFactions.RADWARDEN_COMPACT.equals(canonical)) {
             return "weapons";
         }
-        if (AshfallBiomeFactions.CRASHBREAK_SALVAGE.equals(factionId)
-                || AshfallBiomeFactions.RUSTWORKS_UNION.equals(factionId)
-                || AshfallBiomeFactions.METRO_ARCHIVISTS.equals(factionId)) {
+        if (AshfallBiomeFactions.CRASHBREAK_SALVAGE.equals(canonical)) {
             return "machines";
         }
         return "medical";

@@ -41,6 +41,14 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="echonetcore"
+type="required"
+reason="Provides shared ECHO packet registration, safe sends, and action rate limiting."
+versionRange="[0.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
 reason="Allows Orbital records and actions to appear inside the modular ECHO Terminal."

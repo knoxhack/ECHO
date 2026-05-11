@@ -32,7 +32,7 @@ public class HydroponicTrayBlock extends Block implements EntityBlock {
 
    @Override
    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-      return type == ModBlockEntities.HYDROPONIC_TRAY.get()
+      return !level.isClientSide() && type == ModBlockEntities.HYDROPONIC_TRAY.get()
          ? (tickLevel, pos, blockState, blockEntity) -> HydroponicTrayBlockEntity.tick(tickLevel, pos, blockState, (HydroponicTrayBlockEntity)blockEntity)
          : null;
    }

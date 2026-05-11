@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/purple_stained_glass.png",
+  "default_state": "CORRUPTED",
+  "transition_seconds": 0.2,
+  "materials": {
+    "scar_glow": {
+      "color": "#FFFF8FEA",
+      "alpha": 0.52,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "nexus_scar_pulse",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/purple_stained_glass.png",
+      "material": "scar_glow",
+      "states": ["ACTIVE", "SCANNING", "CORRUPTED"],
+      "alpha": 0.5,
+      "emissive": true
+    }
+  ]
+}

@@ -32,8 +32,8 @@ public class FactionPledgeItem extends Item {
                 player.getItemInHand(hand).shrink(1);
             }
             String message = alreadyAligned
-                    ? "ECHO-7 // Faction alignment already active: " + faction.displayName + ". Contract remains on terminal."
-                    : "ECHO-7 // Faction alignment accepted: " + faction.displayName + ". Relay contract assigned on terminal.";
+                    ? "ECHO-7 // Faction alignment already active: " + faction.displayName() + ". Contract remains on terminal."
+                    : "ECHO-7 // Faction alignment accepted: " + faction.displayName() + ". Relay contract assigned on terminal.";
             player.sendSystemMessage(Component.literal(message));
         }
         return InteractionResult.SUCCESS_SERVER;
@@ -54,14 +54,26 @@ public class FactionPledgeItem extends Item {
     }
 
     public enum Faction {
-        ORBITAL_REMNANT("Orbital Remnant") {
+        ORBITAL_REMNANT(
+                "Radwarden Compact",
+                "Radwarden Orbital Containment",
+                "orbital_remnant_relay",
+                "Scan a Low Orbit Signal Relay or carry Orbit Survey Data for Radwarden orbital containment.",
+                "Radwarden orbital containment cache authorized: oxygen, sealant, and route support delivered.",
+                "Use to align with Radwarden orbital containment and receive suit-support rewards.") {
             @Override
             void grantReward(Player player) {
                 give(player, new ItemStack(ModItems.OXYGEN_BOOSTER.get()));
                 give(player, new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 3));
             }
         },
-        VOID_SALVAGERS("Void Salvagers") {
+        VOID_SALVAGERS(
+                "Crashbreak Salvage",
+                "Crashbreak Orbital Salvage Manifest",
+                "void_salvager_manifest",
+                "Scan orbital salvage or turn in 1 Orbital Alloy and 1 Vacuum Circuit for Crashbreak salvage manifests.",
+                "Crashbreak orbital salvage cache authorized: circuits, alloy, and repair salvage delivered.",
+                "Use to align with Crashbreak orbital salvage and receive salvage rewards.") {
             @Override
             void grantReward(Player player) {
                 give(player, new ItemStack(ModItems.ORBITAL_ALLOY.get(), 4));
@@ -69,7 +81,13 @@ public class FactionPledgeItem extends Item {
                 give(player, new ItemStack(ModItems.CARGO_BAY_MODULE.get()));
             }
         },
-        NEXUS_CHOIR("Nexus Choir") {
+        NEXUS_CHOIR(
+                "Sporebound Sanctum",
+                "Sporebound Anomaly Interpretation",
+                "nexus_choir_anchor",
+                "After ECHO-0, scan a Nexus Anchor/Growth or spend 1 Nexus Stabilizer Shard for Sporebound anomaly interpretation.",
+                "Sporebound anomaly support cache authorized: stabilizers and anomaly supplies delivered.",
+                "Use to align with Sporebound anomaly interpretation and receive forbidden rewards.") {
             @Override
             void grantReward(Player player) {
                 give(player, new ItemStack(ModItems.NEXUS_DUST.get(), 3));
@@ -78,13 +96,54 @@ public class FactionPledgeItem extends Item {
         };
 
         private final String displayName;
+        private final String contractTitle;
+        private final String contractId;
+        private final String contractRequirement;
+        private final String vendorCacheReport;
+        private final String tooltip;
 
-        Faction(String displayName) {
+        Faction(String displayName, String contractTitle, String contractId, String contractRequirement,
+                String vendorCacheReport, String tooltip) {
             this.displayName = displayName;
+            this.contractTitle = contractTitle;
+            this.contractId = contractId;
+            this.contractRequirement = contractRequirement;
+            this.vendorCacheReport = vendorCacheReport;
+            this.tooltip = tooltip;
         }
 
         public String displayName() {
             return displayName;
+        }
+
+        public String contractTitle() {
+            return contractTitle;
+        }
+
+        public String contractId() {
+            return contractId;
+        }
+
+        public String contractRequirement() {
+            return contractRequirement;
+        }
+
+        public String vendorCacheReport() {
+            return vendorCacheReport;
+        }
+
+        public String tooltip() {
+            return tooltip;
+        }
+
+        public static Faction fromContractId(String contract) {
+            String id = contract == null ? "" : contract.split(":", 2)[0];
+            for (Faction faction : values()) {
+                if (faction.contractId.equals(id)) {
+                    return faction;
+                }
+            }
+            return null;
         }
 
         abstract void grantReward(Player player);

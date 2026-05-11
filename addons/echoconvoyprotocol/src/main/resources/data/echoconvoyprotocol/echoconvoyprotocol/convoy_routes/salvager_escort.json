@@ -23,11 +23,11 @@
     "spawnRadius": 10.0,
     "warning": "%threat% hitting %route%. Protect the cargo."
   },
-  "checkpointFactionId": "echocore:survivors",
+  "checkpointFactionId": "echoashfallprotocol:crashbreak_salvage",
   "minReputation": 0,
   "checkpoint": {
     "label": "Salvager Checkpoint",
-    "warning": "%checkpoint% blocked: survivors reputation %reputation%/%required%.",
+    "warning": "%checkpoint% blocked: Crashbreak reputation %reputation%/%required%.",
     "clearedMessage": "%checkpoint% logs the convoy and opens the lane."
   },
   "destinationHint": "Scavenger checkpoint road",

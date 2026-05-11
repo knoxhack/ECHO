@@ -152,7 +152,7 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
 
    @SuppressWarnings("unchecked")
    private static RecipeHolder<ConvoyStationRecipe> findRecipe(ServerLevel level, ConvoyBlockKind kind, List<ItemStack> inputs) {
-      return level.recipeAccess().getRecipes().stream()
+      return level.getServer().getRecipeManager().getRecipes().stream()
          .filter(holder -> holder.value().getType() == ModRecipes.CONVOY_STATION_PROCESSING_TYPE.get())
          .map(holder -> (RecipeHolder<ConvoyStationRecipe>)holder)
          .filter(holder -> holder.value().matches(kind, inputs, level))
@@ -348,9 +348,27 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
          ConvoyVehicleEntity vehicle = nearestVehicle(player.level(), worldPosition, player);
          if (vehicle != null) {
             ItemStack stack = vehicle.removeFirstCargo();
-            if (!stack.isEmpty() && insertStationStorage(stack).isEmpty()) {
-               player.sendSystemMessage(Component.literal("ECHO CONVOY // Cargo moved from " + vehicle.kind().displayName() + "."));
-               return true;
+            if (!stack.isEmpty()) {
+               int before = stack.getCount();
+               ItemStack remainder = insertStationStorage(stack);
+               if (!remainder.isEmpty()) {
+                  ItemStack rejected = vehicle.insertCargo(remainder);
+                  if (!rejected.isEmpty()) {
+                     if (!player.getInventory().add(rejected.copy())) {
+                        player.drop(rejected.copy(), false);
+                     }
+                  }
+               }
+               if (remainder.isEmpty()) {
+                  player.sendSystemMessage(Component.literal("ECHO CONVOY // Cargo moved from " + vehicle.kind().displayName() + "."));
+                  return true;
+               }
+               if (remainder.getCount() < before) {
+                  player.sendSystemMessage(Component.literal("ECHO CONVOY // Cargo partially moved; remaining stack stayed with the vehicle."));
+                  return true;
+               }
+               player.sendSystemMessage(Component.literal("ECHO CONVOY // Cargo Anchor storage is full."));
+               return false;
             }
          } else {
             player.sendSystemMessage(Component.literal("ECHO CONVOY // No owned convoy vehicle in anchor range."));

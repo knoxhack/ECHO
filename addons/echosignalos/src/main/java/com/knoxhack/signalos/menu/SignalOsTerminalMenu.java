@@ -33,7 +33,9 @@ public class SignalOsTerminalMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return remoteAccess || stillValid(access, player, ModBlocks.TERMINAL.get());
+        return remoteAccess
+                || stillValid(access, player, ModBlocks.TERMINAL.get())
+                || stillValid(access, player, ModBlocks.WORKSTATION.get());
     }
 
     @Override

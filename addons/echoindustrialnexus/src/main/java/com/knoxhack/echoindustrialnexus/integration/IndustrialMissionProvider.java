@@ -23,7 +23,7 @@ import net.minecraft.world.item.Items;
 public final class IndustrialMissionProvider implements TerminalMissionProvider {
    public static final IndustrialMissionProvider INSTANCE = new IndustrialMissionProvider();
    private static final String ACTION_SCAN = "scan_factory";
-   private static final String ACTION_LOCATE = "locate_poi";
+   private static final String ACTION_POI_HINT = "poi_hint";
    private static final String ACTION_CLAIM = "claim_cache";
    private static final List<Mission> MISSIONS = List.of(
       mission("reclaim_power", "Reclaim Power", "Generate 1,000 Thermal Flux and power the first ore line.", "Stage 1", 0, "scrap_dynamo", 1000, rewards("copper_flux_duct", 8, "scrap_fuel", 8)),
@@ -75,7 +75,7 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
       String detail = player == null ? "Telemetry offline." : mission.progressDetail(player, progress);
       List<TerminalMissionAction> actions = List.of(
          TerminalMissionAction.enabled(ACTION_SCAN, "SCAN FACTORY"),
-         TerminalMissionAction.enabled(ACTION_LOCATE, "LOCATE POI"),
+         TerminalMissionAction.enabled(ACTION_POI_HINT, "POI HINT"),
          claimed ? TerminalMissionAction.disabled(ACTION_CLAIM, "CLAIM CACHE", "Reward cache already claimed.") : complete ? TerminalMissionAction.enabled(ACTION_CLAIM, "CLAIM CACHE") : TerminalMissionAction.disabled(ACTION_CLAIM, "CLAIM CACHE", "Complete mission objectives first.")
       );
       return new TerminalMissionSnapshot(mission.id(), status, progress, claimed ? "CLAIMED" : complete ? "CACHE READY" : "ACTIVE", detail,
@@ -92,9 +92,8 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
          player.sendSystemMessage(Component.literal("ECHO INDUSTRIAL // Scan complete. Machines " + scan.machines() + ", ducts " + (scan.itemDucts() + scan.fluxDucts()) + ", stored " + scan.storedFlux() + " TF."));
          return true;
       }
-      if (ACTION_LOCATE.equals(actionId)) {
-         IndustrialProgress.markPoiLocated(player, mission.key());
-         player.sendSystemMessage(Component.literal("ECHO INDUSTRIAL // Locator hint: " + mission.poiHint()));
+      if (ACTION_POI_HINT.equals(actionId)) {
+         player.sendSystemMessage(Component.literal("ECHO INDUSTRIAL // POI hint: " + mission.poiHint()));
          return true;
       }
       if (!ACTION_CLAIM.equals(actionId) || IndustrialProgress.progress(player, mission.key()) < 1.0F || IndustrialProgress.claimed(player, mission.key())) {

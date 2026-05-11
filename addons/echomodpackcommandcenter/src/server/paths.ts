@@ -1,7 +1,7 @@
 import path from "node:path";
 
 export const APP_ROOT = process.cwd();
-export const DEFAULT_PYTHON_EXECUTABLE = "C:/Users/hacko/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe";
+export const DEFAULT_PYTHON_EXECUTABLE = "python";
 export const ECHO_ROOT = process.env.ECHO_ROOT
   ? path.resolve(process.env.ECHO_ROOT)
   : path.resolve(APP_ROOT, "../..");

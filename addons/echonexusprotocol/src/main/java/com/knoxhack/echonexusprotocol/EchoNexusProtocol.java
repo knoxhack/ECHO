@@ -53,15 +53,26 @@ public class EchoNexusProtocol {
       NeoForge.EVENT_BUS.register(new NexusArmorEvents());
       NeoForge.EVENT_BUS.register(new NexusCommandHandler());
       modContainer.registerConfig(Type.COMMON, Config.SPEC);
+      Config.registerEchoConfig();
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
       LOGGER.info("ECHO-7 Nexus systems initialized. Reality field telemetry online.");
       event.enqueueWork(() -> {
          NexusCoreIntegration.register();
-         if (ModList.get().isLoaded("echoterminal")) {
-            NexusTerminalCommonIntegration.register();
-         }
+         registerTerminalCommonIntegration();
       });
+   }
+
+   private static void registerTerminalCommonIntegration() {
+      if (!ModList.get().isLoaded("echoterminal")) {
+         return;
+      }
+
+      try {
+         NexusTerminalCommonIntegration.register();
+      } catch (LinkageError error) {
+         LOGGER.warn("ECHO-7 Nexus Terminal common integration skipped because echoterminal APIs were unavailable.", error);
+      }
    }
 }

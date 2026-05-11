@@ -77,9 +77,9 @@ public class ModTooltipEvents {
             case "gravity_hammer" -> "Right-click or strike to deliver heavy knockback.";
             case "solar_lance" -> "Right-click for a focused mid-range beam hit.";
             case "nexus_pulse_blade" -> "Right-click for a dangerous Nexus pulse strike.";
-            case "orbital_remnant_badge" -> "Use to align with the Orbital Remnant and receive suit-support rewards.";
-            case "void_salvager_marker" -> "Use to align with Void Salvagers and receive salvage rewards.";
-            case "nexus_choir_sigil" -> "Use to align with the Nexus Choir and receive forbidden rewards.";
+            case "orbital_remnant_badge" -> FactionPledgeItem.Faction.ORBITAL_REMNANT.tooltip();
+            case "void_salvager_marker" -> FactionPledgeItem.Faction.VOID_SALVAGERS.tooltip();
+            case "nexus_choir_sigil" -> FactionPledgeItem.Faction.NEXUS_CHOIR.tooltip();
             default -> resourceTooltip(id.getPath());
         };
 

@@ -16,6 +16,7 @@ import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -23,15 +24,17 @@ import net.minecraft.world.item.ItemStack;
 
 public final class ReclamationCoreIntegration {
    public static final String CHAPTER_ID = "agriculture_reclamation";
+   private static final String RECOVERY_SEED_CACHE = "agriculture_seed_cache";
+   private static final String RECOVERY_SEED_CACHE_CLAIM = "recovery_agriculture_seed_cache";
    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
    private static final EchoRouteRecordService ROUTE_SERVICE = ReclamationCoreIntegration::routeRecords;
    private static final EchoDiagnosticService DIAGNOSTIC_SERVICE = ReclamationCoreIntegration::diagnostics;
    private static final EchoRecoveryService RECOVERY_SERVICE = ReclamationCoreIntegration::recover;
    private static final List<CoreMission> CORE_MISSIONS = List.of(
-      new CoreMission("recover_seed", "Recover Seed", "Recover or open a seed capsule from ruined ecology sources.", "Seed Recovery", "Seed", "Search Seed Vaults, Bio Labs, caches, toxic salvage, and cryogenic ruins."),
+      new CoreMission("recover_seed", "Recover Seed", "Recover or open a seed capsule from ruined ecology sources.", "Seed Recovery", "Seed", "Craft a capsule from wheat seeds, bone meal, glass bottle, and copper, or search ruined ecology caches."),
       new CoreMission("analyze_soil", "Analyze Soil", "Scan contaminated ground and run the first purification pass.", "Soil Recovery", "Soil", "Use Ecology Scanner or Soil Purifier near dead ecology blocks."),
       new CoreMission("first_growth", "First Growth", "Grow and harvest a recovered crop in soil or hydroponics.", "Cultivation", "Growth", "Plant a profiled seed on supported soil or insert it into a Hydroponic Tray."),
-      new CoreMission("gene_stabilization", "Gene Stabilization", "Stabilize one contaminated seed route.", "Cultivation", "Genes", "Use Gene Stabilizer with a contaminated seed and Gene Sample or Bio-Gel."),
+      new CoreMission("gene_stabilization", "Gene Stabilization", "Stabilize one contaminated seed route.", "Cultivation", "Genes", "Use Bio-Reactor crop output to make Bio-Gel, then use Gene Stabilizer with a contaminated seed and Bio-Gel or Gene Sample."),
       new CoreMission("greenhouse_online", "Greenhouse Online", "Build a greenhouse that reaches safe growth envelope.", "Greenhouse", "Safety", "Use Greenhouse Glass, Spore Filter, Pollinator Dock, trays, and controller scan."),
       new CoreMission("restore_chunk", "Restore a Chunk", "Raise local restoration score to 100 through crops, restored soil, and safe greenhouse support.", "Restoration", "Restoration", "Mature restoration crops and keep scanning ecology while soil improves.")
    );
@@ -126,14 +129,21 @@ public final class ReclamationCoreIntegration {
    }
 
    private static boolean recover(ServerPlayer player, String recoveryId) {
-      if (player == null || recoveryId == null || !recoveryId.equals("agriculture_seed_cache")) {
+      if (player == null || recoveryId == null || !recoveryId.equals(RECOVERY_SEED_CACHE)) {
+         return false;
+      }
+      if (ReclamationProgress.claimed(player, RECOVERY_SEED_CACHE_CLAIM)) {
+         player.sendSystemMessage(Component.literal("ECHO FIELD // Agriculture seed recovery cache already claimed."));
          return false;
       }
       ItemStack capsule = new ItemStack(ModItems.RECOVERED_SEED_CAPSULE.get(), 2);
       if (!player.getInventory().add(capsule)) {
          player.drop(capsule, false);
       }
+      ReclamationProgress.claim(player, RECOVERY_SEED_CACHE_CLAIM);
       ReclamationProgress.mark(player, "seed_recovered");
+      EchoCoreServices.discoverVisibleRouteRecords(player);
+      player.sendSystemMessage(Component.literal("ECHO FIELD // Agriculture seed recovery cache restored: 2x Recovered Seed Capsule."));
       return true;
    }
 

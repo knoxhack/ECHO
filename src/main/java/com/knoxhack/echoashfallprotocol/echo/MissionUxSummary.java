@@ -49,11 +49,19 @@ public record MissionUxSummary(
     }
 
     public static MissionUxSummary of(Player player, QuestData quest, Mission mission) {
+        return of(player, quest, mission, true);
+    }
+
+    public static MissionUxSummary forHud(Player player, QuestData quest, Mission mission) {
+        return of(player, quest, mission, false);
+    }
+
+    private static MissionUxSummary of(Player player, QuestData quest, Mission mission, boolean evaluateCompletion) {
         QuestData.MissionStatus status = quest.getMissionStatus(mission.id());
         boolean current = isCurrentMission(quest, mission);
         boolean preview = mission.isPathPreview(player);
         boolean pendingRewards = quest.hasPendingRewards(mission.id());
-        boolean completeNow = safeComplete(mission, player);
+        boolean completeNow = evaluateCompletion && safeComplete(mission, player);
         DisplayState display = displayState(status, preview, pendingRewards);
         String nextStep = nextStep(player, quest, mission, status, current, completeNow, pendingRewards, preview);
         return new MissionUxSummary(

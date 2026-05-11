@@ -392,19 +392,19 @@ Weapons are active right-click tools with cooldown and durability use.
 
 ## Factions
 
-Faction pledge items are consumable alignment contracts. After pledging, the ECHO tab assigns lightweight faction contracts. Saturn/Titan deep sites can include Faction Vendor Kiosks and Faction Relay Hubs; in this beta they are deterministic support/barter caches and contract relays, not full NPC shops or settlements. Contracts are completed with SCAN, persist in the terminal progress data, and use a short cooldown so one scan cannot double-grant rewards. Blocked reports distinguish no pledge, already-serviced hubs, active contract chains, authorized cache rewards, wrong dimension, missing proof item, Nexus Choir before ECHO-0, and cooldown states.
+Faction pledge items are consumable alignment contracts. After pledging, the ECHO tab assigns lightweight faction contracts. Saturn/Titan deep sites can include Faction Vendor Kiosks and Faction Relay Hubs; in this beta they are deterministic support/barter caches and contract relays, not full NPC shops or settlements. Contracts are completed with SCAN, persist in the terminal progress data, and use a short cooldown so one scan cannot double-grant rewards. Blocked reports distinguish no pledge, already-serviced hubs, active contract chains, authorized cache rewards, wrong dimension, missing proof item, Sporebound anomaly interpretation before ECHO-0, and cooldown states.
 
-In the full ECHO stack, Orbital Remnant, Void Salvagers, and Nexus Choir standing is also mirrored into ECHO Core so the shared Faction Atlas can show service state, last contact, active contract context, and route affinity beside Ashfall factions.
+In the full ECHO stack, Orbital lane standing mirrors into Radwarden Compact, Crashbreak Salvage, and Sporebound Sanctum so the shared Faction Atlas shows one global three-faction model across Ashfall and orbit.
 
 | Faction Item | Alignment | Pledge Reward | Contract Proof | Contract Reward Style |
 |---|---|---|---|---|
-| Orbital Remnant Badge | Orbital Remnant | Oxygen Booster and suit sealant support | Low Orbit Signal Relay or Orbit Survey Data | oxygen, canisters, and sealant |
-| Void Salvager Marker | Void Salvagers | Orbital alloy, vacuum circuits, and cargo upgrade materials | orbital salvage scan or Orbital Alloy plus Vacuum Circuit | machine inputs and navigation parts |
-| Nexus Choir Sigil | Nexus Choir | Nexus dust and risky endgame pulse weapon access | post-ECHO-0 Nexus Anchor/Growth or Nexus Stabilizer Shard | Nexus dust, cryo support, and emergency oxygen |
+| Radwarden Orbital Badge | Radwarden Compact | Oxygen Booster and suit sealant support | Low Orbit Signal Relay or Orbit Survey Data | oxygen, canisters, and sealant |
+| Crashbreak Salvage Marker | Crashbreak Salvage | Orbital alloy, vacuum circuits, and cargo upgrade materials | orbital salvage scan or Orbital Alloy plus Vacuum Circuit | machine inputs and navigation parts |
+| Sporebound Anomaly Sigil | Sporebound Sanctum | Nexus dust and risky endgame pulse weapon access | post-ECHO-0 Nexus Anchor/Growth or Nexus Stabilizer Shard | Nexus dust, cryo support, and emergency oxygen |
 
-The Nexus Choir contract is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any faction contract grants the Faction Contract Complete advancement; the final network seal requires three completed faction contracts.
+The Sporebound anomaly contract is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any faction contract grants the Faction Contract Complete advancement; the final network seal requires three completed faction contracts.
 
-Inside ECHO: Ashfall Protocol, Orbital Remnant maps to Remnants-style recovery notes, Void Salvagers map to Salvager-style notes, and Nexus Choir remains an endgame archive/intel thread about dangerous post-ECHO-0 anchor readings.
+Inside ECHO: Ashfall Protocol, orbital containment maps to Radwarden recovery notes, orbital salvage maps to Crashbreak route manifests, and anomaly interpretation maps to Sporebound endgame archive/intel about dangerous post-ECHO-0 anchor readings.
 
 ## Advancements
 

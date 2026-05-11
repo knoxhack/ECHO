@@ -38,24 +38,40 @@ public final class BuiltinTerminalThemes {
                 TerminalThemeTokens.Dividers.defaults(),
                 TerminalThemeTokens.Effects.defaults(),
                 new TerminalThemeTokens.Assets(
-                        TerminalVisualAssets.TERMINAL_FRAME_BACKDROP,
-                        TerminalVisualAssets.CARD_PANEL_DETAIL_STANDARD,
-                        TerminalVisualAssets.CARD_METRIC_TILE_PLATE,
-                        TerminalVisualAssets.CARD_PANEL_LIST_COMPACT,
-                        null,
-                        null,
-                        TerminalVisualAssets.MISSIONS_VISUAL_HERO,
-                        TerminalVisualAssets.OVERVIEW_PROTOCOL_DASHBOARD,
-                        null));
+                        echo("backgrounds/terminal_backdrop"),
+                        echo("panels/panel_plate"),
+                        echo("panels/panel_selected"),
+                        echo("panels/panel_hover"),
+                        echo("borders/divider_rune"),
+                        echo("borders/prompt_ornament"),
+                        echo("backgrounds/loading_portal"),
+                        echo("banners/echo_console"),
+                        echo("borders/panel_border")));
+        TerminalIconSet icons = themeIcons("echo_console");
         return TerminalTheme.builder(ECHO_CONSOLE, "ECHO Console")
                 .tokens(tokens)
-                .icons(defaultIcons())
+                .icons(icons)
                 .fallbackChapterStyle(TerminalChapterStyle.builder("echo", "ECHO")
                         .colors(tokens.colors().accent(), tokens.colors().accentDim())
-                        .banner(TerminalVisualAssets.OVERVIEW_PROTOCOL_DASHBOARD)
-                        .panel(TerminalVisualAssets.CARD_PANEL_DETAIL_STANDARD)
-                        .icons(defaultIcons())
+                        .banner(echo("banners/echo_console"))
+                        .panel(echo("panels/panel_plate"))
+                        .border(echo("borders/panel_border"))
+                        .icons(icons)
                         .build())
+                .chapterStyle(style("echo_console", "minecraft", "Baseline", 0xFF66E8FF, 0xFF92F7A6,
+                        "banners/baseline", "icons/chapter_baseline"))
+                .chapterStyle(style("echo_console", "echoashfallprotocol", "Ashfall", 0xFFFF9A5A, 0xFFFF8FA3,
+                        "banners/ashfall", "icons/chapter_ashfall"))
+                .chapterStyle(style("echo_console", "echoindustrialnexus", "Industrial Nexus", 0xFF66E8FF, 0xFFFFD166,
+                        "banners/industrial", "icons/chapter_industrial"))
+                .chapterStyle(style("echo_console", "echonexusprotocol", "Nexus Protocol", 0xFF9EB0FF, 0xFF66E8FF,
+                        "banners/nexus_protocol", "icons/chapter_nexus_protocol"))
+                .chapterStyle(style("echo_console", "echoorbitalremnants", "Orbital Remnants", 0xFF9FD1FF, 0xFF66E8FF,
+                        "banners/orbital", "icons/chapter_orbital"))
+                .chapterStyle(style("echo_console", "echostationfall", "Stationfall", 0xFFFF8FA3, 0xFFFFD166,
+                        "banners/stationfall", "icons/chapter_stationfall"))
+                .chapterStyle(style("echo_console", "echoblackboxprotocol", "Blackbox Protocol", 0xFF9EB0FF, 0xFF8CA7B5,
+                        "banners/blackbox", "icons/chapter_blackbox"))
                 .build();
     }
 
@@ -87,29 +103,30 @@ public final class BuiltinTerminalThemes {
                         nexus("backgrounds/loading_portal"),
                         nexus("banners/nexus_modpack"),
                         nexus("borders/panel_border")));
+        TerminalIconSet icons = themeIcons("nexus_modpack");
         return TerminalTheme.builder(NEXUS_MODPACK, "Nexus Modpack")
                 .tokens(tokens)
-                .icons(nexusIcons())
+                .icons(icons)
                 .fallbackChapterStyle(TerminalChapterStyle.builder("nexus_modpack", "Nexus Modpack")
                         .colors(tokens.colors().accent(), tokens.colors().info())
                         .banner(nexus("banners/nexus_modpack"))
                         .panel(nexus("panels/panel_plate"))
                         .border(nexus("borders/panel_border"))
-                        .icons(nexusIcons())
+                        .icons(icons)
                         .build())
-                .chapterStyle(style("minecraft", "Baseline", 0xFF8FE36B, 0xFFB8874A,
+                .chapterStyle(style("nexus_modpack", "minecraft", "Baseline", 0xFF8FE36B, 0xFFB8874A,
                         "banners/baseline", "icons/chapter_baseline"))
-                .chapterStyle(style("echoashfallprotocol", "Ashfall", 0xFFFF9A5A, 0xFFFF6E6E,
+                .chapterStyle(style("nexus_modpack", "echoashfallprotocol", "Ashfall", 0xFFFF9A5A, 0xFFFF6E6E,
                         "banners/ashfall", "icons/chapter_ashfall"))
-                .chapterStyle(style("echoindustrialnexus", "Industrial Nexus", 0xFFFFC85A, 0xFF74D9FF,
+                .chapterStyle(style("nexus_modpack", "echoindustrialnexus", "Industrial Nexus", 0xFFFFC85A, 0xFF74D9FF,
                         "banners/industrial", "icons/chapter_industrial"))
-                .chapterStyle(style("echonexusprotocol", "Nexus Protocol", 0xFFA66CFF, 0xFF74D9FF,
+                .chapterStyle(style("nexus_modpack", "echonexusprotocol", "Nexus Protocol", 0xFFA66CFF, 0xFF74D9FF,
                         "banners/nexus_protocol", "icons/chapter_nexus_protocol"))
-                .chapterStyle(style("echoorbitalremnants", "Orbital Remnants", 0xFF74D9FF, 0xFFA66CFF,
+                .chapterStyle(style("nexus_modpack", "echoorbitalremnants", "Orbital Remnants", 0xFF74D9FF, 0xFFA66CFF,
                         "banners/orbital", "icons/chapter_orbital"))
-                .chapterStyle(style("echostationfall", "Stationfall", 0xFFFF6E6E, 0xFFFFC85A,
+                .chapterStyle(style("nexus_modpack", "echostationfall", "Stationfall", 0xFFFF6E6E, 0xFFFFC85A,
                         "banners/stationfall", "icons/chapter_stationfall"))
-                .chapterStyle(style("echoblackboxprotocol", "Blackbox Protocol", 0xFFC6A8FF, 0xFF8D8475,
+                .chapterStyle(style("nexus_modpack", "echoblackboxprotocol", "Blackbox Protocol", 0xFFC6A8FF, 0xFF8D8475,
                         "banners/blackbox", "icons/chapter_blackbox"))
                 .build();
     }
@@ -184,38 +201,47 @@ public final class BuiltinTerminalThemes {
                 .build();
     }
 
-    private static TerminalIconSet nexusIcons() {
+    private static TerminalIconSet themeIcons(String themeFolder) {
         TerminalIconSet.Builder builder = TerminalIconSet.builder()
-                .fallback(nexus("icons/fallback_unknown"));
+                .fallback(themeAsset(themeFolder, "icons/fallback_unknown"));
         for (TerminalIconKey key : defaultIcons().icons().keySet()) {
-            builder.icon(key, nexus("icons/" + key.category() + "_" + key.name().replace(':', '_').replace('/', '_')));
+            builder.icon(key, themeAsset(themeFolder,
+                    "icons/" + key.category() + "_" + key.name().replace(':', '_').replace('/', '_')));
         }
-        builder.icon(TerminalIconKey.chapter("minecraft"), nexus("icons/chapter_baseline"))
-                .icon(TerminalIconKey.chapter("echoashfallprotocol"), nexus("icons/chapter_ashfall"))
-                .icon(TerminalIconKey.chapter("echoindustrialnexus"), nexus("icons/chapter_industrial"))
-                .icon(TerminalIconKey.chapter("echonexusprotocol"), nexus("icons/chapter_nexus_protocol"))
-                .icon(TerminalIconKey.chapter("echoorbitalremnants"), nexus("icons/chapter_orbital"))
-                .icon(TerminalIconKey.chapter("echostationfall"), nexus("icons/chapter_stationfall"))
-                .icon(TerminalIconKey.chapter("echoblackboxprotocol"), nexus("icons/chapter_blackbox"));
+        builder.icon(TerminalIconKey.chapter("minecraft"), themeAsset(themeFolder, "icons/chapter_baseline"))
+                .icon(TerminalIconKey.chapter("echoashfallprotocol"), themeAsset(themeFolder, "icons/chapter_ashfall"))
+                .icon(TerminalIconKey.chapter("echoindustrialnexus"), themeAsset(themeFolder, "icons/chapter_industrial"))
+                .icon(TerminalIconKey.chapter("echonexusprotocol"), themeAsset(themeFolder, "icons/chapter_nexus_protocol"))
+                .icon(TerminalIconKey.chapter("echoorbitalremnants"), themeAsset(themeFolder, "icons/chapter_orbital"))
+                .icon(TerminalIconKey.chapter("echostationfall"), themeAsset(themeFolder, "icons/chapter_stationfall"))
+                .icon(TerminalIconKey.chapter("echoblackboxprotocol"), themeAsset(themeFolder, "icons/chapter_blackbox"));
         return builder.build();
     }
 
-    private static TerminalChapterStyle style(String key, String displayName, int accent, int secondary,
-            String banner, String chapterIcon) {
+    private static TerminalChapterStyle style(String themeFolder, String key, String displayName, int accent,
+            int secondary, String banner, String chapterIcon) {
         TerminalIconSet icons = TerminalIconSet.builder()
-                .icon(TerminalIconKey.chapter(key), nexus(chapterIcon))
+                .icon(TerminalIconKey.chapter(key), themeAsset(themeFolder, chapterIcon))
                 .build();
         return TerminalChapterStyle.builder(key, displayName)
                 .colors(accent, secondary)
-                .banner(nexus(banner))
-                .panel(nexus("panels/panel_" + key))
-                .border(nexus("borders/panel_border"))
+                .banner(themeAsset(themeFolder, banner))
+                .panel(themeAsset(themeFolder, "panels/panel_" + key))
+                .border(themeAsset(themeFolder, "borders/panel_border"))
                 .icons(icons)
                 .build();
     }
 
+    private static Identifier echo(String path) {
+        return themeAsset("echo_console", path);
+    }
+
     private static Identifier nexus(String path) {
+        return themeAsset("nexus_modpack", path);
+    }
+
+    private static Identifier themeAsset(String themeFolder, String path) {
         return Identifier.fromNamespaceAndPath(EchoTerminal.MODID,
-                "textures/gui/themes/nexus_modpack/" + path + ".png");
+                "textures/gui/themes/" + themeFolder + "/" + path + ".png");
     }
 }

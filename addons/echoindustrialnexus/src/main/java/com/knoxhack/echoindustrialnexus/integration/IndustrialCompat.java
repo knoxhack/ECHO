@@ -1,10 +1,7 @@
 package com.knoxhack.echoindustrialnexus.integration;
 
-import com.knoxhack.echoblackboxprotocol.integration.BlackboxIndustrialCompat;
-import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
 import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
-import com.knoxhack.echonexusprotocol.integration.NexusIndustrialCompat;
-import com.knoxhack.echostationfall.integration.StationfallIndustrialCompat;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -34,27 +31,28 @@ public final class IndustrialCompat {
    }
 
    public static void recordNexusThermalPressure(ServerLevel level, BlockPos pos, int intensity) {
-      if (!ModList.get().isLoaded("echonexusprotocol")) {
-         return;
-      }
-      try {
-         NexusIndustrialCompat.recordThermalPressure(level, pos, Math.max(1, intensity));
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Nexus Industrial typed compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echonexusprotocol",
+         "com.knoxhack.echonexusprotocol.integration.NexusIndustrialCompat",
+         "recordThermalPressure",
+         level,
+         pos,
+         Math.max(1, intensity)
+      );
    }
 
    public static void recordStaticFluidLeak(ServerLevel level, BlockPos pos, int fluidId, int amount) {
       if (fluidId != IndustrialMachineBlockEntity.FLUID_STATIC && fluidId != IndustrialMachineBlockEntity.FLUID_NEXUS_GEL) {
          return;
       }
-      if (ModList.get().isLoaded("echonexusprotocol")) {
-         try {
-            NexusIndustrialCompat.recordStaticFluidLeak(level, pos, Math.max(1, amount));
-         } catch (LinkageError exception) {
-            EchoIndustrialNexus.LOGGER.debug("Nexus static leak compat unavailable.", exception);
-         }
-      }
+      invokeStatic(
+         "echonexusprotocol",
+         "com.knoxhack.echonexusprotocol.integration.NexusIndustrialCompat",
+         "recordStaticFluidLeak",
+         level,
+         pos,
+         Math.max(1, amount)
+      );
    }
 
    public static void recordIndustrialOutput(Level level, BlockPos pos, ItemStack output) {
@@ -85,25 +83,27 @@ public final class IndustrialCompat {
    }
 
    private static void applyNexusBlightScrubber(ServerLevel level, BlockPos pos, int radius, int intensity) {
-      if (!ModList.get().isLoaded("echonexusprotocol")) {
-         return;
-      }
-      try {
-         NexusIndustrialCompat.stabilizeIndustrialBlight(level, pos, radius, intensity);
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Nexus scrubber typed compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echonexusprotocol",
+         "com.knoxhack.echonexusprotocol.integration.NexusIndustrialCompat",
+         "stabilizeIndustrialBlight",
+         level,
+         pos,
+         radius,
+         intensity
+      );
    }
 
    private static void applyStationScrubber(ServerLevel level, BlockPos pos, int radius, int intensity) {
-      if (!ModList.get().isLoaded("echostationfall")) {
-         return;
-      }
-      try {
-         StationfallIndustrialCompat.stabilizeStationScrubber(level, pos, radius, intensity);
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Stationfall scrubber typed compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echostationfall",
+         "com.knoxhack.echostationfall.integration.StationfallIndustrialCompat",
+         "stabilizeStationScrubber",
+         level,
+         pos,
+         radius,
+         intensity
+      );
    }
 
    private static void recordOrbitalComponent(ServerPlayer player, String itemId) {
@@ -115,47 +115,46 @@ public final class IndustrialCompat {
    }
 
    private static void recordStationfallComponent(ServerPlayer player, String itemId) {
-      if (!ModList.get().isLoaded("echostationfall")) {
-         return;
-      }
-      try {
-         StationfallIndustrialCompat.recordIndustrialComponent(player, itemId);
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Stationfall Industrial component compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echostationfall",
+         "com.knoxhack.echostationfall.integration.StationfallIndustrialCompat",
+         "recordIndustrialComponent",
+         player,
+         itemId
+      );
    }
 
    private static void supportStationfallSuit(ServerPlayer player, int oxygen, int pressure, int panic) {
-      if (!ModList.get().isLoaded("echostationfall")) {
-         return;
-      }
-      try {
-         StationfallIndustrialCompat.supportSuit(player, oxygen, pressure, panic);
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Stationfall Industrial suit compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echostationfall",
+         "com.knoxhack.echostationfall.integration.StationfallIndustrialCompat",
+         "supportSuit",
+         player,
+         oxygen,
+         pressure,
+         panic
+      );
    }
 
    private static void recordBlackboxComponent(ServerPlayer player, String itemId) {
-      if (!ModList.get().isLoaded("echoblackboxprotocol")) {
-         return;
-      }
-      try {
-         BlackboxIndustrialCompat.recordIndustrialComponent(player, itemId);
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Blackbox Industrial component compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echoblackboxprotocol",
+         "com.knoxhack.echoblackboxprotocol.integration.BlackboxIndustrialCompat",
+         "recordIndustrialComponent",
+         player,
+         itemId
+      );
    }
 
    private static void stabilizeBlackboxMemory(ServerPlayer player, int stabilityGain, int falseSignalRelief) {
-      if (!ModList.get().isLoaded("echoblackboxprotocol")) {
-         return;
-      }
-      try {
-         BlackboxIndustrialCompat.stabilizeMemory(player, stabilityGain, falseSignalRelief);
-      } catch (LinkageError exception) {
-         EchoIndustrialNexus.LOGGER.debug("Blackbox Industrial memory compat unavailable.", exception);
-      }
+      invokeStatic(
+         "echoblackboxprotocol",
+         "com.knoxhack.echoblackboxprotocol.integration.BlackboxIndustrialCompat",
+         "stabilizeMemory",
+         player,
+         stabilityGain,
+         falseSignalRelief
+      );
    }
 
    private static void invokeStatic(String modId, String className, String methodName, Object... args) {

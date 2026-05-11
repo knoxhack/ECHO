@@ -1,5 +1,6 @@
 package com.knoxhack.echoorbitalremnants.client;
 
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoorbitalremnants.network.EchoTerminalActionPayload;
 import com.knoxhack.echoorbitalremnants.network.EchoTerminalSnapshot;
 import java.util.List;
@@ -7,7 +8,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 public class EchoTerminalScreen extends Screen {
     private static final String[] TABS = {"COMMAND", "LAUNCH", "ROUTES", "SURVEY", "ECHO"};
@@ -188,9 +188,9 @@ public class EchoTerminalScreen extends Screen {
         int rightX = x + width / 2 + 12;
         int rightWidth = width - (rightX - x);
         graphics.text(font, Component.literal("FACTION RELAY"), rightX, y + 18, 0x66E8FF, true);
-        graphics.text(font, Component.literal("Remnant " + snapshot.orbitalRemnantStanding()), rightX, y + 34, 0xD8F6FF, false);
-        graphics.text(font, Component.literal("Salvagers " + snapshot.voidSalvagerStanding()), rightX, y + 48, 0xD8F6FF, false);
-        graphics.text(font, Component.literal("Choir " + snapshot.nexusChoirStanding()), rightX, y + 62, 0xD8F6FF, false);
+        graphics.text(font, Component.literal("Radwarden " + snapshot.orbitalRemnantStanding()), rightX, y + 34, 0xD8F6FF, false);
+        graphics.text(font, Component.literal("Crashbreak " + snapshot.voidSalvagerStanding()), rightX, y + 48, 0xD8F6FF, false);
+        graphics.text(font, Component.literal("Sporebound " + snapshot.nexusChoirStanding()), rightX, y + 62, 0xD8F6FF, false);
         graphics.text(font, Component.literal("CONTRACT"), rightX, y + 80, 0xFFD166, true);
         graphics.textWithWordWrap(font, Component.literal(snapshot.factionContract()), rightX, y + 94, rightWidth, 0xD8F6FF);
         graphics.text(font, Component.literal("ECHO NOTE"), x, y + 128, 0xFFD166, true);
@@ -278,7 +278,7 @@ public class EchoTerminalScreen extends Screen {
     }
 
     private void sendAction(EchoTerminalActionPayload.Action action) {
-        ClientPacketDistributor.sendToServer(new EchoTerminalActionPayload(action));
+        EchoNetClientActions.sendServerboundAction(new EchoTerminalActionPayload(action));
     }
 
     private int actionY() {

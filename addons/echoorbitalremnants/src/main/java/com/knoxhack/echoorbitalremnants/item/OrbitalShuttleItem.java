@@ -65,8 +65,10 @@ public class OrbitalShuttleItem extends Item {
                 double targetY = targetLevel.dimension() == ModDimensions.LUNAR_SCAR_ZONE ? 96.0D : Config.ORBITAL_ALTITUDE.get();
                 double targetZ = targetLevel.dimension() == ModDimensions.LUNAR_SCAR_ZONE ? 0.0D : player.getZ() + 128.0D;
                 BlockPos target = BlockPos.containing(targetX, targetY, targetZ);
-                LunarScarZone.seedLandingSite(targetLevel, target);
-                spawnNexusHusks(targetLevel, target);
+                if (progress.markRouteArrivalSeeded(player, "lunar_scar_zone")) {
+                    LunarScarZone.seedLandingSite(targetLevel, target);
+                    spawnNexusHusks(targetLevel, target);
+                }
                 progress.markLunarSignalInvestigated(player);
                 playShuttleFeedback(serverLevel, player.blockPosition(), 0.95F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);

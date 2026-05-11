@@ -2,6 +2,7 @@ package com.knoxhack.echoconvoyprotocol;
 
 import com.knoxhack.echoconvoyprotocol.content.ConvoyReloaders;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyCoreIntegration;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyIndexProvider;
 import com.knoxhack.echoconvoyprotocol.network.ModNetwork;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlocks;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlockEntities;
@@ -44,6 +45,7 @@ public class EchoConvoyProtocol {
       LOGGER.info("ECHO Convoy Protocol initialized. Road crews are improvising.");
       event.enqueueWork(() -> {
          ConvoyCoreIntegration.registerAddonChapter();
+         ConvoyIndexProvider.register();
          if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalIntegration();
          }

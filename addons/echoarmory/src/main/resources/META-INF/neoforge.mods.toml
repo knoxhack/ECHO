@@ -1,0 +1,92 @@
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/knoxhack/echo/issues"
+
+[[mods]]
+modId="echoarmory"
+version="0.1.0"
+displayName="ECHO: Armory"
+displayURL="https://github.com/knoxhack/echo"
+authors="KnoxHack"
+credits="Built as the modular combat and loadout chapter for the ECHO release stack."
+description='''
+ECHO: Armory adds modular weapons, armor, augments, energy cores,
+mission loadouts, faction gear, and Terminal-managed combat readiness.
+'''
+
+[[dependencies.echoarmory]]
+modId="neoforge"
+type="required"
+versionRange="[26.1.2.29-beta,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="minecraft"
+type="required"
+versionRange="[26.1.2,26.2)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echocore"
+type="required"
+reason="Provides shared ECHO addon, route, diagnostic, reward, faction, and hazard APIs."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echoterminal"
+type="optional"
+reason="Adds the SYSTEM > Armory command surface and terminal action routing."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echologisticsnetwork"
+type="optional"
+reason="Allows Armory mission kits to be delivered through Logistics loadouts."
+versionRange="[0.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echoindustrialnexus"
+type="optional"
+reason="Shares industrial materials and production-route context."
+versionRange="[0.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echoorbitalremnants"
+type="optional"
+reason="Adds orbital progression context and late-game armory material routes."
+versionRange="[1.5.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echostationfall"
+type="optional"
+reason="Adds station route context and boarding-kit readiness targets."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echonexusprotocol"
+type="optional"
+reason="Adds Nexus progression context for convergence gear readiness."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echoblackboxprotocol"
+type="optional"
+reason="Adds blackbox material context for endgame armory upgrades."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"

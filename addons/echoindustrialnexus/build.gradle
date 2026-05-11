@@ -32,14 +32,8 @@ configurations { runtimeClasspath.extendsFrom localRuntime }
 dependencies {
     implementation project(":echocore")
     compileOnly project(":echoterminal")
-    compileOnly project(":echonexusprotocol")
-    compileOnly project(":echoorbitalremnants")
-    compileOnly project(":echostationfall")
-    compileOnly project(":echoblackboxprotocol")
+    compileOnly project(":echorendercore")
     localRuntime project(":echoterminal")
-    localRuntime project(":echonexusprotocol")
-    localRuntime project(":echoorbitalremnants")
-    localRuntime project(":echostationfall")
-    localRuntime project(":echoblackboxprotocol")
+    localRuntime project(":echorendercore")
 }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }

@@ -74,8 +74,10 @@ public class NexusDriveVesselItem extends Item {
                 double targetY = targetLevel.dimension() == ModDimensions.NEXUS_ANOMALY_BELT ? 96.0D : Config.ORBITAL_ALTITUDE.get();
                 double targetZ = targetLevel.dimension() == ModDimensions.NEXUS_ANOMALY_BELT ? 0.0D : player.getZ() - 512.0D;
                 BlockPos target = BlockPos.containing(targetX, targetY, targetZ);
-                NexusAnomalyBelt.seedEntrySite(targetLevel, target);
-                spawnAnomalyThreats(targetLevel, target);
+                if (progress.markRouteArrivalSeeded(player, "nexus_anomaly_belt")) {
+                    NexusAnomalyBelt.seedEntrySite(targetLevel, target);
+                    spawnAnomalyThreats(targetLevel, target);
+                }
                 progress.markAnomalyBeltEntered(player);
                 playNexusFeedback(serverLevel, player.blockPosition(), 0.65F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);

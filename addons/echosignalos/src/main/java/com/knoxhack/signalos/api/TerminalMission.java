@@ -61,9 +61,20 @@ public record TerminalMission(
             return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item, count);
         }
 
+        public boolean hasRegisteredItem() {
+            return BuiltInRegistries.ITEM.getOptional(itemId)
+                    .filter(item -> item != Items.AIR)
+                    .isPresent();
+        }
+
         public String displayLabel() {
-            ItemStack stack = stack();
-            return label.isBlank() ? (stack.isEmpty() ? itemId.toString() : stack.getHoverName().getString()) : label;
+            if (!label.isBlank()) {
+                return label;
+            }
+            return BuiltInRegistries.ITEM.getOptional(itemId)
+                    .filter(item -> item != Items.AIR)
+                    .map(Item::getDescriptionId)
+                    .orElse(itemId.toString());
         }
     }
 

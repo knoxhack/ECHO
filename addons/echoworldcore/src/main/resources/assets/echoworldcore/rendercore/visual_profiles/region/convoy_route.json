@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/green_stained_glass.png",
+  "default_state": "ACTIVE",
+  "transition_seconds": 0.2,
+  "materials": {
+    "route_line": {
+      "color": "#FF92F7A6",
+      "alpha": 0.5,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "convoy_corridor",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/green_stained_glass.png",
+      "material": "route_line",
+      "states": ["ONLINE", "ACTIVE", "SCANNING"],
+      "alpha": 0.5,
+      "emissive": true
+    }
+  ]
+}

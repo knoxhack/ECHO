@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/rendercore/visual_profile.schema.json",
+  "title": "ECHO RenderCore Visual Profile",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "base_texture": { "type": "string" },
+    "baseTexture": { "type": "string" },
+    "glow_texture": { "type": "string" },
+    "damaged_overlay_texture": { "type": "string" },
+    "corrupted_overlay_texture": { "type": "string" },
+    "active_overlay_texture": { "type": "string" },
+    "animation_profile": { "type": "string" },
+    "particle_profile": { "type": "string" },
+    "default_state": { "type": "string" },
+    "transition_seconds": { "type": "number", "minimum": 0 },
+    "materials": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "color": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+          "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+          "emissive": { "type": "boolean" },
+          "blend_mode": { "type": "string" },
+          "blendMode": { "type": "string" }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "type": "string" },
+          "type": { "type": "string" },
+          "texture": { "type": "string" },
+          "material": { "type": "string" },
+          "state": { "type": "string" },
+          "states": { "type": "array", "items": { "type": "string" } },
+          "variant": { "type": "string" },
+          "variants": { "type": "array", "items": { "type": "string" } },
+          "parts": { "type": "array", "items": { "type": "string" } },
+          "part_filter": { "type": "array", "items": { "type": "string" } },
+          "partFilter": { "type": "array", "items": { "type": "string" } },
+          "color": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+          "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+          "emissive": { "type": "boolean" }
+        }
+      }
+    },
+    "state_animations": { "type": "object", "additionalProperties": { "type": "string" } },
+    "stateAnimations": { "type": "object", "additionalProperties": { "type": "string" } },
+    "state_overlays": { "type": "object" },
+    "state_texture_variants": { "type": "object", "additionalProperties": { "type": "string" } },
+    "variants": { "type": "object", "additionalProperties": { "type": "string" } },
+    "anchors": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/vector3" },
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "part": { "type": "string" },
+              "offset": { "$ref": "#/$defs/vector3" }
+            }
+          }
+        ]
+      }
+    },
+    "block_parts": { "$ref": "#/$defs/blockParts" },
+    "blockParts": { "$ref": "#/$defs/blockParts" }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    },
+    "colorArray": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 4,
+      "items": { "type": "number" }
+    },
+    "blockStateRule": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "array", "items": { "type": "string" } }
+        ]
+      }
+    },
+    "blockParts": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "array", "items": { "type": "integer" } },
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "indices": { "type": "array", "items": { "type": "integer" } },
+              "index": {
+                "oneOf": [
+                  { "type": "integer" },
+                  { "type": "array", "items": { "type": "integer" } }
+                ]
+              },
+              "directions": { "type": "array", "items": { "type": "string" } },
+              "direction": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ]
+              },
+              "material_flags": { "type": "integer" },
+              "materialFlags": { "type": "integer" },
+              "ambient_occlusion": { "type": "boolean" },
+              "ambientOcclusion": { "type": "boolean" },
+              "tint_indices": { "type": "array", "items": { "type": "integer" } },
+              "tintIndices": { "type": "array", "items": { "type": "integer" } },
+              "block_state": { "$ref": "#/$defs/blockStateRule" },
+              "blockState": { "$ref": "#/$defs/blockStateRule" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

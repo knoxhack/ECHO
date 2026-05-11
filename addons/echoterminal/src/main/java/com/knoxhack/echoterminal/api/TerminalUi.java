@@ -80,13 +80,13 @@ public final class TerminalUi {
     public static Identifier chapterPanel(TerminalRenderContext context) {
         TerminalChapterStyle style = chapterStyle(context);
         Identifier panel = style == null ? null : style.panel();
-        return panel == null ? tokens(context).assets().panelPlate() : panel;
+        return themedVisual(context, panel == null ? tokens(context).assets().panelPlate() : panel);
     }
 
     public static Identifier chapterBanner(TerminalRenderContext context) {
         TerminalChapterStyle style = chapterStyle(context);
         Identifier banner = style == null ? null : style.banner();
-        return banner == null ? tokens(context).assets().defaultBanner() : banner;
+        return themedVisual(context, banner == null ? tokens(context).assets().defaultBanner() : banner);
     }
 
     public static int text(TerminalRenderContext context) {
@@ -121,6 +121,10 @@ public final class TerminalUi {
         return theme(context).icon(key, context == null ? null : context.themeContext(), fallback);
     }
 
+    public static Identifier themedVisual(TerminalRenderContext context, Identifier texture) {
+        return theme(context).visual(texture);
+    }
+
     public static Identifier themedGroupIcon(TerminalRenderContext context, String group) {
         return themedIcon(context, TerminalIconKey.group(group), TerminalVisualAssets.terminalGroupIcon(group));
     }
@@ -141,14 +145,15 @@ public final class TerminalUi {
             TerminalRenderContext context, Identifier missionId, String category) {
         Identifier fallback = TerminalVisualAssets.missionIconArt(missionId, category);
         if (fallback != null && fallback.getPath().startsWith("textures/gui/mission_icons/")) {
-            return fallback;
+            return themedVisual(context, fallback);
         }
         Identifier chapter = missionId == null ? null : themedIcon(context,
                 TerminalIconKey.chapter(missionId.getNamespace()), null);
         if (chapter != null && category == null) {
             return chapter;
         }
-        return themedIcon(context, TerminalIconKey.missionCategory(missionCategoryKey(category)), fallback);
+        return themedIcon(context, TerminalIconKey.missionCategory(missionCategoryKey(category)),
+                themedVisual(context, fallback));
     }
 
     public static Identifier themedSemanticIcon(TerminalRenderContext context, String name, Identifier fallback) {
@@ -295,18 +300,18 @@ public final class TerminalUi {
 
     public static void imagePanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame) {
-        imagePanel(graphics, texture, x, y, w, h, color, darken, frame);
+        imagePanel(graphics, themedVisual(context, texture), x, y, w, h, color, darken, frame);
     }
 
     public static void imagePanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame, ImageFit fit) {
-        imagePanel(graphics, texture, x, y, w, h, color, darken, frame, fit);
+        imagePanel(graphics, themedVisual(context, texture), x, y, w, h, color, darken, frame, fit);
     }
 
     public static void imagePanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, int color, float darken, boolean frame,
             ImageFit fit, float sourceAspect) {
-        imagePanel(graphics, texture, x, y, w, h, color, darken, frame, fit, sourceAspect);
+        imagePanel(graphics, themedVisual(context, texture), x, y, w, h, color, darken, frame, fit, sourceAspect);
     }
 
     public static void imagePanel(GuiGraphicsExtractor graphics,
@@ -517,6 +522,7 @@ public final class TerminalUi {
 
     private static void drawPanelTexture(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int w, int h, float darken) {
+        texture = themedVisual(context, texture);
         if (context == null || !context.themeContext().visualAssets() || !textureAvailable(texture)) {
             return;
         }
@@ -1062,6 +1068,7 @@ public final class TerminalUi {
     public static void iconTextureBadge(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, int x, int y, int size, int color, boolean active) {
         TerminalThemeTokens tokens = tokens(context);
+        texture = themedVisual(context, texture);
         boolean hasTexture = textureAvailable(texture) && size > 12;
         graphics.fill(x, y, x + size, y + size, active ? tokens.colors().rowSelected() : tokens.colors().row());
         if (hasTexture) {
@@ -1105,6 +1112,7 @@ public final class TerminalUi {
 
     public static void hybridIconBadge(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             Identifier texture, TerminalIcon fallback, int x, int y, int size, int color, boolean active) {
+        texture = themedVisual(context, texture);
         if (textureAvailable(texture)) {
             iconTextureBadge(context, graphics, texture, x, y, size, color, active);
         } else {
@@ -1124,7 +1132,7 @@ public final class TerminalUi {
 
     public static int statusLineRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int width, TerminalIcon icon, Identifier texture, String label, String value, int color) {
-        drawHybridIcon(graphics, texture, icon, x, y - 2, 14, color, false);
+        drawHybridIcon(graphics, themedVisual(context, texture), icon, x, y - 2, 14, color, false);
         line(context, graphics, label, x + 20, y, Math.max(24, width - 92), muted(context));
         line(context, graphics, value, x + Math.max(80, width - 84), y, Math.min(84, width / 3), color);
         return y + 18;
@@ -1241,7 +1249,7 @@ public final class TerminalUi {
     public static void appShellBackdrop(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, int color) {
         TerminalThemeTokens tokens = tokens(context);
-        Identifier texture = tokens.assets().shellBackdrop();
+        Identifier texture = themedVisual(context, tokens.assets().shellBackdrop());
         boolean visuals = context == null || context.themeContext().visualAssets();
         boolean reducedMotion = context != null && context.themeContext().reducedMotion();
         int screenW = graphics.guiWidth();
@@ -1260,7 +1268,7 @@ public final class TerminalUi {
             drawTerminalGrid(graphics, screenW, screenH, reducedMotion ? 34 : 28, tokens.dividers().gridLine());
         }
         graphics.fill(x, y, x + w, y + h, tokens.colors().shell());
-        graphics.outline(x, y, w, h, tokens.borders().glow());
+        graphics.outline(x, y, w, h, tokens.borders().normal());
         graphics.fill(x + 1, y + 1, x + w - 1, y + 18, tokens.panels().headerFill());
         graphics.fill(x + 12, y + 10, x + Math.min(x + 278, x + w / 3), y + 11, opaque(color));
         graphics.fill(x + 12, y + 10, x + 14, y + 68, opaque(color));
@@ -1269,7 +1277,7 @@ public final class TerminalUi {
         graphics.fill(x + 12, y + h - 18, x + Math.min(x + 250, x + w / 3), y + h - 17,
                 tokens.dividers().line());
         graphics.fill(x + w - 18, y + 18, x + w, y + 34, tokens.colors().background());
-        graphics.fill(x + w - 34, y + 18, x + w - 18, y + 20, tokens.borders().glow());
+        graphics.fill(x + w - 34, y + 18, x + w - 18, y + 20, tokens.borders().normal());
     }
 
     private static void drawTerminalGrid(GuiGraphicsExtractor graphics, int width, int height, int step) {
@@ -1290,55 +1298,88 @@ public final class TerminalUi {
 
     public static void topMetaBar(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String title, String subtitle, String meta, int color) {
-        graphics.fill(x, y, x + w, y + 52, 0xDE020A10);
-        graphics.fill(x + 12, y + 44, x + w - 12, y + 45, 0x3E38DFF4);
-        graphics.fill(x + 1, y + 1, x + w - 1, y + 14, 0x1C163843);
-        hybridIconBadge(graphics, TerminalVisualAssets.ICON_BRAND_ECHO, TerminalIcon.CORE, x + 18, y + 8, 34, color, true);
+        topMetaBar(graphics, font, x, y, w, 52, title, subtitle, meta, color);
+    }
+
+    public static void topMetaBar(GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, String title, String subtitle, String meta, int color) {
+        int barH = Math.max(42, h);
+        graphics.fill(x, y, x + w, y + barH, 0xDE020A10);
+        graphics.fill(x + 12, y + barH - 8, x + w - 12, y + barH - 7, 0x3E38DFF4);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(14, barH - 12), 0x1C163843);
+        int iconSize = Math.min(34, Math.max(28, barH - 14));
+        int iconY = y + Math.max(5, (barH - iconSize) / 2);
+        hybridIconBadge(graphics, TerminalVisualAssets.ICON_BRAND_ECHO, TerminalIcon.CORE, x + 18, iconY, iconSize, color, true);
         String online = meta == null || meta.isBlank() ? "LINK: STANDBY  |  USER: OPERATOR  |  ONLINE" : meta;
         boolean offline = online.toUpperCase().contains("OFFLINE");
         String rightSource = w < 640 ? (offline ? "OFFLINE" : "ONLINE") : online;
-        int rightMax = Math.max(64, Math.min(w - 110, w < 640 ? 86 : w / 3));
+        int rightMax = Math.max(64, Math.min(w - 100, w < 640 ? 86 : w * 34 / 100));
         String right = trim(font, rightSource, rightMax);
         int rightColor = right.toUpperCase().contains("OFFLINE") ? RED : MUTED;
         int rightX = x + w - 26 - font.width(right);
-        int textX = x + 58;
+        int textX = x + 18 + iconSize + 12;
         int leftMax = Math.max(72, rightX - textX - 12);
-        graphics.text(font, trim(font, title, leftMax), textX, y + 10, opaque(color), false);
-        graphics.text(font, trim(font, subtitle, leftMax), textX, y + 27, MUTED, false);
-        graphics.text(font, right, rightX, y + 22, rightColor, false);
+        int titleY = y + Math.max(7, (barH - 28) / 2);
+        int subtitleY = Math.min(y + barH - 15, titleY + 15);
+        int rightY = y + Math.max(16, (barH - 8) / 2);
+        graphics.text(font, trim(font, title, leftMax), textX, titleY, opaque(color), false);
+        graphics.text(font, trim(font, subtitle, leftMax), textX, subtitleY, MUTED, false);
+        graphics.text(font, right, rightX, rightY, rightColor, false);
         int dotColor = right.toUpperCase().contains("OFFLINE") ? RED : GREEN;
-        graphics.fill(x + w - 18, y + 23, x + w - 12, y + 29, opaque(dotColor));
+        int dotY = rightY + 1;
+        graphics.fill(x + w - 18, dotY, x + w - 12, dotY + 6, opaque(dotColor));
     }
 
     public static void topMetaBar(TerminalRenderContext context, GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String title, String subtitle, String meta, int color) {
+        topMetaBar(context, graphics, font, x, y, w, 52, title, subtitle, meta, color);
+    }
+
+    public static void topMetaBar(TerminalRenderContext context, GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, String title, String subtitle, String meta, int color) {
         TerminalThemeTokens tokens = tokens(context);
-        graphics.fill(x, y, x + w, y + 52, tokens.colors().shell());
-        graphics.fill(x + 12, y + 44, x + w - 12, y + 45, tokens.dividers().majorLine());
-        graphics.fill(x + 1, y + 1, x + w - 1, y + 14, tokens.panels().headerFill());
+        int barH = Math.max(42, h);
+        graphics.fill(x, y, x + w, y + barH, tokens.colors().shell());
+        graphics.fill(x + 12, y + barH - 8, x + w - 12, y + barH - 7, tokens.dividers().majorLine());
+        graphics.fill(x + 1, y + 1, x + w - 1, y + Math.min(14, barH - 12), tokens.panels().headerFill());
+        int iconSize = Math.min(34, Math.max(28, barH - 14));
+        int iconY = y + Math.max(5, (barH - iconSize) / 2);
         hybridIconBadge(graphics,
                 themedIcon(context, TerminalIconKey.theme("brand"), TerminalVisualAssets.ICON_BRAND_ECHO),
-                TerminalIcon.CORE, x + 18, y + 8, 34, color, true);
+                TerminalIcon.CORE, x + 18, iconY, iconSize, color, true);
         String online = meta == null || meta.isBlank() ? "LINK: STANDBY  |  USER: OPERATOR  |  ONLINE" : meta;
         boolean offline = online.toUpperCase().contains("OFFLINE");
         String rightSource = w < 640 ? (offline ? "OFFLINE" : "ONLINE") : online;
-        int rightMax = Math.max(64, Math.min(w - 110, w < 640 ? 86 : w / 3));
+        int rightMax = Math.max(64, Math.min(w - 100, w < 640 ? 86 : w * 34 / 100));
         String right = trim(font, rightSource, rightMax);
         int rightColor = right.toUpperCase().contains("OFFLINE") ? tokens.colors().danger() : tokens.colors().muted();
         int rightX = x + w - 26 - font.width(right);
-        int textX = x + 58;
+        int textX = x + 18 + iconSize + 12;
         int leftMax = Math.max(72, rightX - textX - 12);
-        graphics.text(font, trim(font, title, leftMax), textX, y + 10, opaque(color), false);
-        graphics.text(font, trim(font, subtitle, leftMax), textX, y + 27, tokens.colors().muted(), false);
-        graphics.text(font, right, rightX, y + 22, rightColor, false);
+        int titleY = y + Math.max(7, (barH - 28) / 2);
+        int subtitleY = Math.min(y + barH - 15, titleY + 15);
+        int rightY = y + Math.max(16, (barH - 8) / 2);
+        graphics.text(font, trim(font, title, leftMax), textX, titleY, opaque(color), false);
+        graphics.text(font, trim(font, subtitle, leftMax), textX, subtitleY, tokens.colors().muted(), false);
+        graphics.text(font, right, rightX, rightY, rightColor, false);
         int dotColor = right.toUpperCase().contains("OFFLINE") ? tokens.colors().danger() : tokens.colors().success();
-        graphics.fill(x + w - 18, y + 23, x + w - 12, y + 29, opaque(dotColor));
+        int dotY = rightY + 1;
+        graphics.fill(x + w - 18, dotY, x + w - 12, dotY + 6, opaque(dotColor));
     }
 
     public static void bottomShortcutBar(GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String left, String right, int color) {
-        graphics.fill(x, y, x + w, y + 30, 0xD8020A10);
-        graphics.outline(x, y, w, 30, 0x2838DFF4);
+        bottomShortcutBar(graphics, font, x, y, w, 30, left, right, color);
+    }
+
+    public static void bottomShortcutBar(GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, String left, String right, int color) {
+        int barH = Math.max(24, h);
+        int keyH = 16;
+        int keyY = y + Math.max(4, (barH - keyH) / 2);
+        int textY = keyY + 5;
+        graphics.fill(x, y, x + w, y + barH, 0xD8020A10);
+        graphics.outline(x, y, w, barH, 0x2838DFF4);
         String r = trimBreadcrumb(font, right == null ? "" : right, Math.max(110, Math.min(420, w * 38 / 100)));
         int rightX = x + w - 16 - font.width(r);
         int leftLimit = Math.max(x + 80, rightX - 18);
@@ -1355,24 +1396,33 @@ public final class TerminalUi {
             if (cx + keyW + font.width(label) + 18 > leftLimit) {
                 break;
             }
-            graphics.fill(cx, y + 7, cx + keyW, y + 23, 0x88071117);
-            graphics.outline(cx, y + 7, keyW, 16, 0x3438DFF4);
-            graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, y + 12, opaque(color));
+            graphics.fill(cx, keyY, cx + keyW, keyY + keyH, 0x88071117);
+            graphics.outline(cx, keyY, keyW, keyH, 0x3438DFF4);
+            graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, textY, opaque(color));
             cx += keyW + 7;
             if (!label.isBlank()) {
                 String shortLabel = trim(font, label, 82);
-                graphics.text(font, shortLabel, cx, y + 12, MUTED, false);
+                graphics.text(font, shortLabel, cx, textY, MUTED, false);
                 cx += font.width(shortLabel) + 18;
             }
         }
-        graphics.text(font, r, rightX, y + 12, opaque(color), false);
+        graphics.text(font, r, rightX, textY, opaque(color), false);
     }
 
     public static void bottomShortcutBar(TerminalRenderContext context, GuiGraphicsExtractor graphics, Font font,
             int x, int y, int w, String left, String right, int color) {
+        bottomShortcutBar(context, graphics, font, x, y, w, 30, left, right, color);
+    }
+
+    public static void bottomShortcutBar(TerminalRenderContext context, GuiGraphicsExtractor graphics, Font font,
+            int x, int y, int w, int h, String left, String right, int color) {
         TerminalThemeTokens tokens = tokens(context);
-        graphics.fill(x, y, x + w, y + 30, tokens.colors().shell());
-        graphics.outline(x, y, w, 30, tokens.borders().subtle());
+        int barH = Math.max(24, h);
+        int keyH = 16;
+        int keyY = y + Math.max(4, (barH - keyH) / 2);
+        int textY = keyY + 5;
+        graphics.fill(x, y, x + w, y + barH, tokens.colors().shell());
+        graphics.outline(x, y, w, barH, tokens.borders().subtle());
         String r = trimBreadcrumb(font, right == null ? "" : right, Math.max(110, Math.min(420, w * 38 / 100)));
         int rightX = x + w - 16 - font.width(r);
         int leftLimit = Math.max(x + 80, rightX - 18);
@@ -1389,17 +1439,17 @@ public final class TerminalUi {
             if (cx + keyW + font.width(label) + 18 > leftLimit) {
                 break;
             }
-            graphics.fill(cx, y + 7, cx + keyW, y + 23, tokens.colors().row());
-            graphics.outline(cx, y + 7, keyW, 16, tokens.borders().normal());
-            graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, y + 12, opaque(color));
+            graphics.fill(cx, keyY, cx + keyW, keyY + keyH, tokens.colors().row());
+            graphics.outline(cx, keyY, keyW, keyH, tokens.borders().normal());
+            graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, textY, opaque(color));
             cx += keyW + 7;
             if (!label.isBlank()) {
                 String shortLabel = trim(font, label, 82);
-                graphics.text(font, shortLabel, cx, y + 12, tokens.colors().muted(), false);
+                graphics.text(font, shortLabel, cx, textY, tokens.colors().muted(), false);
                 cx += font.width(shortLabel) + 18;
             }
         }
-        graphics.text(font, r, rightX, y + 12, opaque(color), false);
+        graphics.text(font, r, rightX, textY, opaque(color), false);
     }
 
     public static void iconRailButton(GuiGraphicsExtractor graphics, Font font,
@@ -1431,7 +1481,8 @@ public final class TerminalUi {
         if (selected) {
             graphics.fill(x, y, x + 3, y + h, opaque(color));
         }
-        drawHybridIcon(graphics, texture, icon, x + 9, y + 8, 24, selected ? color : tokens.colors().accentDim(), selected);
+        drawHybridIcon(graphics, themedVisual(context, texture), icon, x + 9, y + 8, 24,
+                selected ? color : tokens.colors().accentDim(), selected);
         graphics.text(font, trim(font, label, w - 46), x + 42, y + Math.max(8, (h - 8) / 2),
                 selected ? tokens.colors().text() : tokens.colors().muted(), false);
     }
@@ -1536,7 +1587,8 @@ public final class TerminalUi {
             graphics.fill(x, y + h - 1, x + w, y + h, withAlpha(color, 0xAA));
         }
         int iconSize = Math.min(22, Math.max(16, h - 8));
-        drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(3, (h - iconSize) / 2), iconSize,
+        drawHybridIcon(graphics, themedVisual(context, texture), icon,
+                x + 7, y + Math.max(3, (h - iconSize) / 2), iconSize,
                 selected ? color : tokens.colors().accentDim(), selected);
         graphics.text(font, trim(font, label.toUpperCase(), w - 42), x + 34,
                 y + Math.max(5, (h - 8) / 2), selected ? tokens.colors().text() : tokens.colors().muted(), false);
@@ -1590,7 +1642,7 @@ public final class TerminalUi {
         } else if (hovered) {
             graphics.fill(x, y + h - 1, x + w, y + h, tokens.borders().normal());
         }
-        drawHybridIcon(graphics, texture, icon, x + 7, y + Math.max(4, (h - 20) / 2),
+        drawHybridIcon(graphics, themedVisual(context, texture), icon, x + 7, y + Math.max(4, (h - 20) / 2),
                 Math.min(24, Math.max(16, h - 10)), selected ? color : tokens.colors().accentDim(), selected);
         graphics.text(font, trim(font, label, w - 42), x + 34, y + Math.max(5, h >= 30 ? 6 : (h - 8) / 2),
                 selected ? tokens.colors().text() : tokens.colors().muted(), false);
@@ -1632,7 +1684,7 @@ public final class TerminalUi {
         graphics.outline(x, y, w, h, hovered ? tokens.borders().normal() : tokens.borders().subtle());
         graphics.fill(x, y, x + Math.max(44, Math.min(w, w / 7)), y + 2, opaque(color));
         graphics.fill(x, y + h - 2, x + Math.max(36, Math.min(w, w / 8)), y + h, opaque(color));
-        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), tokens.borders().glow());
+        graphics.fill(x + w - 2, y, x + w, y + Math.min(h, 46), tokens.borders().normal());
         graphics.fill(x + w - Math.min(w, 60), y + h - 2, x + w, y + h, tokens.borders().normal());
         if (w > 80 && h > 56) {
             graphics.fill(x + 10, y + 10, x + w - 10, y + 11, tokens.dividers().line());
@@ -1786,10 +1838,12 @@ public final class TerminalUi {
         if (maxScroll <= 0 || h <= 16) {
             return;
         }
-        graphics.fill(x, y, x + 3, y + h, 0x55244352);
+        int trackW = 4;
+        graphics.fill(x, y, x + trackW, y + h, 0x44244352);
+        graphics.outline(x, y, trackW, h, 0x22244352);
         int thumbH = Math.max(18, h * h / (h + maxScroll));
         int thumbY = y + Math.round((h - thumbH) * (scroll / (float) maxScroll));
-        graphics.fill(x, thumbY, x + 3, thumbY + thumbH, opaque(color));
+        graphics.fill(x, thumbY, x + trackW, thumbY + thumbH, opaque(color));
     }
 
     public static boolean inside(double mx, double my, int x, int y, int w, int h) {
@@ -1878,6 +1932,7 @@ public final class TerminalUi {
 
     private static void drawCommandLabel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, int h, String label, Identifier texture, int iconColor, int textColor, boolean active) {
+        texture = themedVisual(context, texture);
         boolean drawIcon = textureAvailable(texture) && w >= 70 && h >= 16;
         int iconSize = Math.min(16, Math.max(12, h - 8));
         int textMax = drawIcon ? Math.max(28, w - 42) : w - 18;

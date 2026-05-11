@@ -146,7 +146,7 @@ public final class TerminalMissionBrowser {
             int treeH = Math.min(treePaneHeight(context, state, w), Math.max(168, h * 44 / 100));
             drawRoadmapPane(context, graphics, state, x, y, w, treeH, mouseX, mouseY);
             drawDetailPane(context, graphics, selected, x, y + treeH + 10, w,
-                    Math.max(180, detailBodyHeight(context, selected, w) + ACTION_BAR_HEIGHT + 18),
+                    Math.max(180, detailBodyHeight(context, selected, w) + actionBarHeight() + 18),
                     mouseX, mouseY, false);
         }
     }
@@ -256,7 +256,23 @@ public final class TerminalMissionBrowser {
         }
         MissionRecord selected = selectedRecord(state);
         return Math.max(context.contentHeight(), treePaneHeight(context, state, w)
-                + detailBodyHeight(context, selected, w) + ACTION_BAR_HEIGHT + 38);
+                + detailBodyHeight(context, selected, w) + actionBarHeight() + 38);
+    }
+
+    private int densityStep() {
+        return TerminalClientOptions.interfaceDensity().compactness();
+    }
+
+    private int phaseRowHeight() {
+        return Math.max(20, PHASE_ROW_HEIGHT - densityStep());
+    }
+
+    private int missionRowHeight() {
+        return Math.max(26, MISSION_ROW_HEIGHT - densityStep() * 2);
+    }
+
+    private int actionBarHeight() {
+        return Math.max(78, ACTION_BAR_HEIGHT - densityStep() * 6);
     }
 
     public boolean hasCachedStateForTests() {
@@ -565,6 +581,8 @@ public final class TerminalMissionBrowser {
             return;
         }
         int cy = y;
+        int phaseH = phaseRowHeight();
+        int missionH = missionRowHeight();
         if (viewMode == MissionViewMode.GUIDED) {
             cy = drawGuidedLanes(context, graphics, state, x, cy, w, viewportY, viewportH, mouseX, mouseY);
             cy += 4;
@@ -577,28 +595,24 @@ public final class TerminalMissionBrowser {
             int total = phaseAll.size();
             boolean expanded = isPhaseExpanded(phase);
             int phaseColor = phase.locked() ? TerminalUi.MUTED : phase.complete() ? TerminalUi.GREEN : chapter().accentColor();
-            boolean hover = TerminalUi.inside(mouseX, mouseY, x, cy, w - 8, PHASE_ROW_HEIGHT - 2);
-            graphics.fill(x, cy, x + w - 8, cy + PHASE_ROW_HEIGHT - 2, hover ? 0xFF102630 : 0xAA0A151C);
-            graphics.fill(x, cy, x + 3, cy + PHASE_ROW_HEIGHT - 2, phaseColor);
+            boolean hover = TerminalUi.inside(mouseX, mouseY, x, cy, w - 8, phaseH - 2);
+            graphics.fill(x, cy, x + w - 8, cy + phaseH - 2, hover ? 0xFF102630 : 0xAA0A151C);
+            graphics.fill(x, cy, x + 3, cy + phaseH - 2, phaseColor);
             TerminalUi.line(context, graphics, (expanded ? "- " : "+ ") + phase.label(),
                     x + 8, cy + 4, w - 116, phaseColor);
             TerminalUi.line(context, graphics, phase.stateLabel() + " " + complete + "/" + total,
                     x + w - 110, cy + 4, 104, phaseColor);
-            String detail = phase.locked()
-                    ? phase.contextTitle() + " / " + phase.unlockHint()
-                    : phase.contextTitle();
-            TerminalUi.line(context, graphics, detail, x + 8, cy + 18, w - 20, TerminalUi.MUTED);
-            if (visible(cy, PHASE_ROW_HEIGHT, viewportY, viewportH)) {
+            if (visible(cy, phaseH, viewportY, viewportH)) {
                 PhaseGroup hitPhase = phase;
-                addHitbox(x, cy, w - 8, PHASE_ROW_HEIGHT - 2, true, () -> togglePhase(hitPhase));
+                addHitbox(x, cy, w - 8, phaseH - 2, true, () -> togglePhase(hitPhase));
             }
-            cy += PHASE_ROW_HEIGHT;
+            cy += phaseH;
             if (!expanded) {
                 continue;
             }
             for (MissionRecord record : phase.records()) {
                 drawMissionRow(context, graphics, record, x + 8, cy, w - 18, viewportY, viewportH, mouseX, mouseY);
-                cy += MISSION_ROW_HEIGHT;
+                cy += missionH;
             }
         }
     }
@@ -642,9 +656,10 @@ public final class TerminalMissionBrowser {
         List<MissionRecord> rows = records.isEmpty() ? fallback : records;
         int cy = TerminalUi.missionLaneHeader(context, graphics, x, y, w - 8, title,
                 rows.isEmpty() ? "0" : String.valueOf(rows.size()), color);
+        int missionH = missionRowHeight();
         for (MissionRecord record : rows) {
             drawMissionRow(context, graphics, record, x + 8, cy, w - 18, viewportY, viewportH, mouseX, mouseY);
-            cy += MISSION_ROW_HEIGHT;
+            cy += missionH;
         }
         return cy + 2;
     }
@@ -759,32 +774,37 @@ public final class TerminalMissionBrowser {
         int textX = rowX + 34;
         int titleW = Math.max(42, chipX - textX - 8);
         int progressW = Math.max(48, chipX - textX);
-        boolean hovered = TerminalUi.inside(mouseX, mouseY, rowX, y, rowW, MISSION_ROW_HEIGHT - 4);
+        int missionH = missionRowHeight();
+        int rowH = missionH - 4;
+        boolean hovered = TerminalUi.inside(mouseX, mouseY, rowX, y, rowW, rowH);
         TerminalRenderContext recordContext = context.withChapterTheme(record.definition().id().getNamespace(),
                 chapter().title(), record.definition().id().getNamespace());
-        TerminalUi.selectableRow(recordContext, graphics, rowX, y, rowW, MISSION_ROW_HEIGHT - 4,
+        TerminalUi.selectableRow(recordContext, graphics, rowX, y, rowW, rowH,
                 selected, hovered, color);
         if (selected) {
-            graphics.fill(rowX, y, rowX + 3, y + MISSION_ROW_HEIGHT - 4, color);
-            graphics.outline(rowX, y, rowW, MISSION_ROW_HEIGHT - 4, color);
+            graphics.fill(rowX, y, rowX + 3, y + rowH, color);
+            graphics.outline(rowX, y, rowW, rowH, color);
         } else if (!locked
                 && (snapshot.status() == TerminalMissionStatus.UNLOCKED
                         || snapshot.status() == TerminalMissionStatus.CLAIMABLE)) {
-            graphics.fill(rowX, y, rowX + 2, y + MISSION_ROW_HEIGHT - 4, color);
+            graphics.fill(rowX, y, rowX + 2, y + rowH, color);
         }
+        int iconSize = Math.min(22, Math.max(18, missionH - 6));
+        int iconY = y + Math.max(2, (rowH - iconSize) / 2);
         TerminalUi.iconTextureBadge(recordContext, graphics,
                 TerminalUi.themedMissionIcon(recordContext, record.definition().id(), record.definition().category()),
-                rowX + 5, y + 2, 22, color,
-                selected || TerminalUi.inside(mouseX, mouseY, rowX + 5, y + 2, 22, 22));
+                rowX + 5, iconY, iconSize, color,
+                selected || TerminalUi.inside(mouseX, mouseY, rowX + 5, iconY, iconSize, iconSize));
         String rolePrefix = record.role() == TerminalMissionRole.OPTIONAL ? "OPT " : "";
         TerminalUi.line(context, graphics, rolePrefix + record.definition().missionOrder() + ". " + record.presentation().shortTitle(),
                 textX, y + 3, titleW, locked ? selected ? TerminalUi.TEXT : TerminalUi.MUTED
                         : missionTitleColor(snapshot.status(), selected, color));
         TerminalUi.missionStatusPill(context, graphics, locked ? "PREVIEW" : compactStatusLabel(snapshot),
                 chipX, y + 3, chipW);
-        TerminalUi.progress(recordContext, graphics, textX, y + 20, progressW, 4, snapshot.progress(), color);
-        if (visible(y, MISSION_ROW_HEIGHT, viewportY, viewportH)) {
-            addHitbox(rowX, y, rowW, MISSION_ROW_HEIGHT - 4, true, () -> selectMission(record.id(), false));
+        TerminalUi.progress(recordContext, graphics, textX, y + Math.max(17, missionH - 10), progressW, 4,
+                snapshot.progress(), color);
+        if (visible(y, missionH, viewportY, viewportH)) {
+            addHitbox(rowX, y, rowW, rowH, true, () -> selectMission(record.id(), false));
         }
     }
 
@@ -800,9 +820,9 @@ public final class TerminalMissionBrowser {
         int bodyX = x + 12;
         int bodyW = w - 30;
         int bodyY = y + 12;
-        int actionH = Math.min(ACTION_BAR_HEIGHT, Math.max(84, h / 5));
+        int actionH = Math.min(actionBarHeight(), Math.max(78, h / 5));
         int actionY = y + h - actionH - 10;
-        int bodyH = Math.max(70, actionY - bodyY - 10);
+        int bodyH = Math.max(64, actionY - bodyY - 8);
         lastDetailX = bodyX;
         lastDetailY = bodyY;
         lastDetailW = bodyW;
@@ -948,11 +968,12 @@ public final class TerminalMissionBrowser {
         TerminalUi.flatHudPanel(context, graphics, x, y, w - 4, h,
                 TerminalUi.chapterAccent(context, chapter().accentColor()));
         TerminalUi.line(context, graphics, "COMMAND", x + 8, y + 8, w - 20, chapter().accentColor());
-        TerminalUi.line(context, graphics, summary, x + 8, y + 21, w - 20, TerminalUi.TEXT);
-        int buttonY = y + 43;
+        int summaryBottom = TerminalUi.wrap(context, graphics, summary, x + 8, y + 21, w - 20, TerminalUi.TEXT);
+        int buttonY = Math.min(y + h - 28, Math.max(y + 42, summaryBottom + 6));
         if (record.phaseLocked()) {
-            TerminalUi.disabledReasonRow(context, graphics, x + 8, buttonY, w - 20, record.phaseUnlockHint(),
-                    TerminalUi.MUTED);
+            if (buttonY + 22 < y + h) {
+                TerminalUi.line(context, graphics, record.phaseUnlockHint(), x + 8, buttonY, w - 20, TerminalUi.MUTED);
+            }
             return;
         }
         List<TerminalMissionAction> actions = record.snapshot().actions();
@@ -974,7 +995,8 @@ public final class TerminalMissionBrowser {
                 TerminalUi.themedActionIcon(context, "track", TerminalVisualAssets.ICON_ACTION_VIEW),
                 () -> sendTrackingAction(context, record.definition().id(), tracking)));
         int buttonH = 22;
-        int gaps = Math.max(0, buttons.size() - 1) * 8;
+        int gap = buttons.size() > 3 ? 6 : 8;
+        int gaps = Math.max(0, buttons.size() - 1) * gap;
         int buttonW = buttons.size() == 1
                 ? Math.min(220, w - 20)
                 : Math.min(150, Math.max(72, (w - 16 - gaps) / buttons.size()));
@@ -989,13 +1011,13 @@ public final class TerminalMissionBrowser {
                         button.label(), button.icon());
             }
             addHitbox(bx, buttonY, buttonW, buttonH, button.enabled(), button.action());
-            bx += buttonW + 8;
+            bx += buttonW + gap;
         }
         String reason = firstDisabledReason(actions);
         if (reason.isBlank() && actions.isEmpty()) {
             reason = "No mission command is available; tracking still pins this record to the Command Deck.";
         }
-        if (!reason.isBlank()) {
+        if (!reason.isBlank() && buttonY + 39 < y + h) {
             TerminalUi.line(context, graphics, reason, x + 8, buttonY + 29, w - 20, 0xFFC2D4DC);
         }
     }
@@ -1070,16 +1092,18 @@ public final class TerminalMissionBrowser {
 
     private int treeRowsHeight(TerminalRenderContext context, MissionRenderState state) {
         int height = 0;
+        int phaseH = phaseRowHeight();
+        int missionH = missionRowHeight();
         if (viewMode == MissionViewMode.GUIDED) {
-            height += 20 + Math.max(1, Math.min(3, laneMain(state).size())) * MISSION_ROW_HEIGHT + 2;
-            height += 20 + Math.max(0, Math.min(3, laneReady(state).size())) * MISSION_ROW_HEIGHT + 2;
-            height += 20 + Math.max(0, Math.min(3, laneOptional(state).size())) * MISSION_ROW_HEIGHT + 16;
+            height += 20 + Math.max(1, Math.min(3, laneMain(state).size())) * missionH + 2;
+            height += 20 + Math.max(0, Math.min(3, laneReady(state).size())) * missionH + 2;
+            height += 20 + Math.max(0, Math.min(3, laneOptional(state).size())) * missionH + 16;
             height += 20;
         }
         for (PhaseGroup phase : state.visiblePhases()) {
-            height += PHASE_ROW_HEIGHT;
+            height += phaseH;
             if (isPhaseExpanded(phase)) {
-                height += phase.records().size() * MISSION_ROW_HEIGHT;
+                height += phase.records().size() * missionH;
             }
         }
         return height + 6;
@@ -1119,7 +1143,8 @@ public final class TerminalMissionBrowser {
     }
 
     private int briefingHeaderHeight(MissionRecord record) {
-        return viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets() ? 118 : 104;
+        boolean visualHeader = viewMode == MissionViewMode.VISUAL_RPG && TerminalClientOptions.useVisualAssets();
+        return Math.max(92, (visualHeader ? 112 : 98) - densityStep() * 5);
     }
 
     private int nextStepCalloutHeight(TerminalRenderContext context, MissionRecord record, int width) {
@@ -1303,19 +1328,21 @@ public final class TerminalMissionBrowser {
         }
         if (rowY < treeScroll) {
             treeScroll = Math.max(0, rowY - TREE_FOCUS_EXTRA);
-        } else if (rowY + MISSION_ROW_HEIGHT > treeScroll + lastTreeH) {
-            treeScroll = Math.max(0, rowY + MISSION_ROW_HEIGHT - lastTreeH + TREE_FOCUS_EXTRA);
+        } else if (rowY + missionRowHeight() > treeScroll + lastTreeH) {
+            treeScroll = Math.max(0, rowY + missionRowHeight() - lastTreeH + TREE_FOCUS_EXTRA);
         }
         pendingTreeFocus = false;
     }
 
     private int selectedRowOffset(MissionRenderState state) {
         int cy = 0;
+        int phaseH = phaseRowHeight();
+        int missionH = missionRowHeight();
         if (viewMode == MissionViewMode.GUIDED) {
             cy += treeRowsHeightForGuidedLanes(state) + 20;
         }
         for (PhaseGroup phase : state.visiblePhases()) {
-            cy += PHASE_ROW_HEIGHT;
+            cy += phaseH;
             if (!isPhaseExpanded(phase)) {
                 continue;
             }
@@ -1323,16 +1350,17 @@ public final class TerminalMissionBrowser {
                 if (record.id().equals(selectedMissionId)) {
                     return cy;
                 }
-                cy += MISSION_ROW_HEIGHT;
+                cy += missionH;
             }
         }
         return -1;
     }
 
     private int treeRowsHeightForGuidedLanes(MissionRenderState state) {
-        return 20 + Math.max(1, laneMain(state).size()) * MISSION_ROW_HEIGHT + 2
-                + 20 + laneReady(state).size() * MISSION_ROW_HEIGHT + 2
-                + 20 + laneOptional(state).size() * MISSION_ROW_HEIGHT + 16;
+        int missionH = missionRowHeight();
+        return 20 + Math.max(1, laneMain(state).size()) * missionH + 2
+                + 20 + laneReady(state).size() * missionH + 2
+                + 20 + laneOptional(state).size() * missionH + 16;
     }
 
     private boolean isPhaseExpanded(PhaseGroup phase) {

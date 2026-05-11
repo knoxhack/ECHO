@@ -7,7 +7,7 @@
     "dev": "concurrently -k \"tsx watch src/server/index.ts\" \"vite --host 127.0.0.1\"",
     "server:dev": "tsx watch src/server/index.ts",
     "client:dev": "vite --host 127.0.0.1",
-    "build": "tsc -p tsconfig.server.json && vite build",
+    "build": "tsc -p tsconfig.server.json && tsc -p tsconfig.json --noEmit && vite build",
     "preview": "node dist-server/index.js",
     "test": "node --import tsx --test tests/*.test.mjs",
     "self-check": "node scripts/self-check.mjs"

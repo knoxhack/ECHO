@@ -1,6 +1,7 @@
 package com.knoxhack.echoterminal.api;
 
 import com.knoxhack.echoterminal.network.TerminalActionPacket;
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoterminal.api.theme.TerminalTheme;
 import com.knoxhack.echoterminal.api.theme.TerminalThemeContext;
 import com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry;
@@ -11,7 +12,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 public record TerminalRenderContext(
         Minecraft minecraft,
@@ -52,7 +52,7 @@ public record TerminalRenderContext(
 
     public void sendAction(Identifier tabId, Identifier actionId, String payload) {
         playCommandSound();
-        ClientPacketDistributor.sendToServer(new TerminalActionPacket(tabId, actionId, payload == null ? "" : payload));
+        EchoNetClientActions.sendServerboundAction(new TerminalActionPacket(tabId, actionId, payload == null ? "" : payload));
     }
 
     public boolean canNavigateToTab(Identifier tabId) {

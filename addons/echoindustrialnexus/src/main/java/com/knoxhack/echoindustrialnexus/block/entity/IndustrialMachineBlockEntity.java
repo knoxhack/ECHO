@@ -209,7 +209,7 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
          long dayTime = level.getGameTime() % 24000L;
          if (dayTime < 13000L && level.canSeeSky(this.worldPosition.above())) {
             int output = this.adjustedGeneratorOutput(kind);
-            this.receiveFlux(output, false);
+            this.generateFlux(output);
             IndustrialProgress.recordFluxGeneratedNearby(level, this.worldPosition, output);
             this.heat = Math.min(100, this.heat + this.adjustedHeat(1));
             this.status = this.heat >= 90 ? IndustrialMachineBlockEntity.MachineStatus.CRITICAL_HEAT : IndustrialMachineBlockEntity.MachineStatus.GENERATING;
@@ -229,7 +229,7 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
          } else {
             this.burnTime--;
             int output = this.adjustedGeneratorOutput(kind);
-            this.receiveFlux(output, false);
+            this.generateFlux(output);
             IndustrialProgress.recordFluxGeneratedNearby(level, this.worldPosition, output);
             this.heat = Math.min(100, this.heat + this.adjustedHeat(kind == IndustrialMachineBlock.MachineKind.SCRAP_DYNAMO ? 1 : 2));
             this.status = this.heat >= 90 ? IndustrialMachineBlockEntity.MachineStatus.CRITICAL_HEAT : IndustrialMachineBlockEntity.MachineStatus.GENERATING;
@@ -360,7 +360,8 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
    }
 
    private static @Nullable RecipeHolder<IndustrialProcessingRecipe> findRecipe(ServerLevel level, IndustrialMachineBlock.MachineKind kind, ItemStack input) {
-      return level.recipeAccess()
+      return level.getServer()
+         .getRecipeManager()
          .getRecipes()
          .stream()
          .filter(holder -> holder.value().getType() == ModRecipes.INDUSTRIAL_PROCESSING_TYPE.get())
@@ -371,7 +372,7 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
    }
 
    private static @Nullable RecipeHolder<IndustrialProcessingRecipe> findFluidRecipe(ServerLevel level, IndustrialMachineBlock.MachineKind kind, int inputFluidId) {
-      int recipeCount = level.recipeAccess().getRecipes().size();
+      int recipeCount = level.getServer().getRecipeManager().getRecipes().size();
       if (recipeCount != cachedRecipeCount) {
          FLUID_RECIPE_CACHE.clear();
          cachedRecipeCount = recipeCount;
@@ -380,7 +381,8 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
       if (FLUID_RECIPE_CACHE.containsKey(cacheKey)) {
          return FLUID_RECIPE_CACHE.get(cacheKey);
       }
-      RecipeHolder<IndustrialProcessingRecipe> holder = level.recipeAccess()
+      RecipeHolder<IndustrialProcessingRecipe> holder = level.getServer()
+         .getRecipeManager()
          .getRecipes()
          .stream()
          .filter(candidate -> candidate.value().getType() == ModRecipes.INDUSTRIAL_PROCESSING_TYPE.get())
@@ -642,7 +644,15 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
       if (burn <= 0) {
          return 0;
       } else {
-         fuel.shrink(1);
+         if (fuel.is(Items.LAVA_BUCKET)) {
+            this.items.set(INPUT_SLOT, new ItemStack(Items.BUCKET));
+         } else {
+            fuel.shrink(1);
+            if (fuel.isEmpty()) {
+               this.items.set(INPUT_SLOT, ItemStack.EMPTY);
+            }
+         }
+         this.setChanged();
          return burn;
       }
    }
@@ -756,7 +766,10 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
          return false;
       } else if (stack.is((Item)ModItems.COOLANT_CELL.get()) && this.heat > 0) {
          this.reduceHeat(35);
-         stack.shrink(1);
+         if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
+            player.setItemInHand(hand, stack);
+         }
          player.sendSystemMessage(Component.literal("ECHO INDUSTRIAL // Coolant cell injected. Heat now " + this.heat + "%."));
          return true;
       } else if (isUpgrade(stack)) {
@@ -768,8 +781,10 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
             ItemStack one = stack.copy();
             one.setCount(1);
             this.items.set(upgradeSlot, one);
-            stack.shrink(1);
-            player.setItemInHand(hand, stack);
+            if (!player.getAbilities().instabuild) {
+               stack.shrink(1);
+               player.setItemInHand(hand, stack);
+            }
             player.sendSystemMessage(
                Component.literal("ECHO INDUSTRIAL // Installed " + one.getHoverName().getString() + " in " + this.kind().displayName() + ".")
             );
@@ -780,8 +795,10 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
          ItemStack one = stack.copy();
          one.setCount(1);
          this.drainCellFromTemporary(one);
-         stack.shrink(1);
-         player.setItemInHand(hand, stack);
+         if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
+            player.setItemInHand(hand, stack);
+         }
          player.sendSystemMessage(Component.literal("ECHO INDUSTRIAL // Loaded " + fluidLabel(this.inputFluidId) + " into internal tank (" + this.inputFluidAmount + " mB)."));
          return true;
       } else if (!this.canInsertIntoSlot(0, stack)) {
@@ -790,8 +807,10 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
          ItemStack one = stack.copy();
          one.setCount(1);
          this.mergeIntoSlot(0, one);
-         stack.shrink(1);
-         player.setItemInHand(hand, stack);
+         if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
+            player.setItemInHand(hand, stack);
+         }
          String warning = isUnsafeNexusInput(this.kind(), one) ? " WARNING: non-stabilized machine field drift detected." : "";
          player.sendSystemMessage(
             Component.literal("ECHO INDUSTRIAL // Inserted " + one.getHoverName().getString() + " into " + this.kind().displayName() + "." + warning)
@@ -1302,6 +1321,10 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
       return this.maxProgress;
    }
 
+   public IndustrialMachineBlockEntity.MachineStatus machineStatus() {
+      return this.status;
+   }
+
    public String statusLabel() {
       return this.status.label();
    }
@@ -1395,6 +1418,18 @@ public class IndustrialMachineBlockEntity extends BaseContainerBlockEntity imple
       } else {
          return 0;
       }
+   }
+
+   private int generateFlux(int amount) {
+      if (amount <= 0) {
+         return 0;
+      }
+      int generated = Math.min(amount, this.getMaxFluxStored() - this.thermalFlux);
+      if (generated > 0) {
+         this.thermalFlux += generated;
+         this.setChanged();
+      }
+      return generated;
    }
 
    @Override

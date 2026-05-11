@@ -83,6 +83,9 @@ public class OrbitalMachineMenu extends AbstractContainerMenu {
             ItemStack stack = slot.getItem();
             copy = stack.copy();
             if (slotIndex == OrbitalMachineBlockEntity.OUTPUT_SLOT) {
+                if (!slot.mayPickup(player)) {
+                    return ItemStack.EMPTY;
+                }
                 if (!moveItemStackTo(stack, PLAYER_INV_START, HOTBAR_END, true)) {
                     return ItemStack.EMPTY;
                 }

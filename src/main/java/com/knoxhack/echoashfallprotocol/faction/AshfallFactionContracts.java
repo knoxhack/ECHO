@@ -12,66 +12,33 @@ import java.util.Optional;
 import net.minecraft.resources.Identifier;
 
 /**
- * Contract catalogue for the 10 Ashfall Echo Core factions.
+ * Contract catalogue for the three Ashfall Echo Core factions.
  */
 public final class AshfallFactionContracts {
     private static final Map<String, Loadout> LOADOUTS = new LinkedHashMap<>();
 
     static {
-        loadout("survivor_network", "Survivor Network", "Shelter", ServiceKind.SUPPLY,
-                List.of("survivor_cache", "abandoned_camp", "relay_station"),
-                item("echoashfallprotocol:clean_water_bottle", 2, "Deliver clean water to the shelter channel"),
-                objective(ObjectiveType.REPAIR, List.of("relay", "power_node"), 1, "Restore one route utility node"),
-                List.of("echoashfallprotocol:bandage", "echoashfallprotocol:emergency_ration"));
-        loadout("ashland_rangers", "Ashland Rangers", "Stormline", ServiceKind.HAZARD,
-                List.of("crash_zone_wasteland", "wasteland_outpost", "ash_checkpoint"),
-                item("echoashfallprotocol:filter_cartridge_basic", 2, "Deliver spare respirator filters"),
-                objective(ObjectiveType.KILL, List.of("ash_wraith", "feral_human", "scavenger"), 3, "Clear threats from an exposed route"),
-                List.of("echoashfallprotocol:filter_cartridge_advanced", "echoashfallprotocol:clean_water_bottle"));
-        loadout("dustline_freeholds", "Dustline Freeholds", "Freehold", ServiceKind.SALVAGE,
-                List.of("ruined_plains", "scavenger_camp", "survivor_cache"),
-                item("echoashfallprotocol:scrap_metal", 10, "Deliver trade scrap for camp repairs"),
-                objective(ObjectiveType.KILL, List.of("scavenger_bandit", "bandit", "raider"), 4, "Break a bandit pressure line"),
-                List.of("echoashfallprotocol:scrap_wire", "echoashfallprotocol:clean_water_bottle"));
-        loadout("metro_archivists", "Metro Archivists", "Archive", ServiceKind.ARCHIVE,
-                List.of("ruined_cityscape", "data_center_ruin", "subway_station"),
-                item("echoashfallprotocol:circuit_board", 2, "Deliver recovered civic electronics"),
-                objective(ObjectiveType.POI_DISCOVERY, List.of("data_center_ruin", "subway_station", "ruined_cityscape"), 2,
-                        "Index two urban route records"),
-                List.of("echoashfallprotocol:schematic_fragment_energy", "echoashfallprotocol:circuit_board"));
-        loadout("rustworks_union", "Rustworks Union", "Work Order", ServiceKind.REPAIR,
-                List.of("industrial_ruins", "industrial_factory", "train_yard"),
-                item("echoashfallprotocol:dense_alloy_chunk", 2, "Deliver dense alloy for machine lanes"),
-                objective(ObjectiveType.REPAIR, List.of("relay", "factory", "power_node"), 2, "Repair two industrial route systems"),
-                List.of("echoashfallprotocol:machine_casing", "echoashfallprotocol:energy_cell"));
-        loadout("sporebound_sanctum", "Sporebound Sanctum", "Sample", ServiceKind.MEDICAL,
-                List.of("toxic_swamp", "bio_lab", "sporebound_sanctum"),
-                item("echoashfallprotocol:mutated_tissue", 2, "Deliver controlled biological samples"),
-                objective(ObjectiveType.KILL, List.of("toxic_slime", "mutated_crawler", "mutant", "zombie"), 4,
-                        "Cull unstable bioforms near a route"),
-                List.of("echoashfallprotocol:rad_away", "echoashfallprotocol:mutagen_vial"));
-        loadout("crashbreak_salvage", "Crashbreak Salvage", "Blackbox", ServiceKind.SALVAGE,
-                List.of("crash_zone_wasteland", "drop_pod", "train_yard"),
-                item("echoashfallprotocol:scrap_circuit", 3, "Deliver intact wreck circuits"),
-                objective(ObjectiveType.POI_DISCOVERY, List.of("crash_zone_wasteland", "drop_pod", "train_yard"), 2,
-                        "Survey two crash or wreck routes"),
-                List.of("echoashfallprotocol:power_cell", "echoashfallprotocol:scrap_metal"));
         loadout("radwarden_compact", "Radwarden Compact", "Containment", ServiceKind.RADIATION,
-                List.of("radiation_zone", "reactor_ruin", "military_vault"),
-                item("echoashfallprotocol:rad_away", 2, "Deliver RadAway for containment crews"),
-                objective(ObjectiveType.REPAIR, List.of("relay", "beacon", "power_node"), 2, "Restore two warning or power nodes"),
-                List.of("echoashfallprotocol:filter_cartridge_advanced", "echoashfallprotocol:uranium_shard"));
-        loadout("thawbound_collective", "Thawbound Collective", "Thaw", ServiceKind.COLD,
-                List.of("cryogenic_ruins", "cryo_lab", "frozen_outpost"),
-                item("echoashfallprotocol:hand_warmer", 2, "Deliver heat supplies for thaw crews"),
-                objective(ObjectiveType.POI_DISCOVERY, List.of("cryogenic_ruins", "frozen_cache", "ice_covered_ruin"), 2,
-                        "Log two cryogenic route readings"),
-                List.of("echoashfallprotocol:thermal_liner", "echoashfallprotocol:energy_cell"));
-        loadout("scarbound_conclave", "Scarbound Conclave", "Scar", ServiceKind.NEXUS,
-                List.of("nexus_scar", "scar_anchor", "nexus_anomaly"),
-                item("echoashfallprotocol:nexus_crystal", 1, "Offer a stable Nexus crystal reading"),
-                objective(ObjectiveType.REPAIR, List.of("anchor", "nexus", "relay"), 1, "Stabilize one anomaly route anchor"),
-                List.of("echoashfallprotocol:nexus_crystal", "echoashfallprotocol:filter_cartridge_elite"));
+                List.of("survivor_cache", "relay_station", "radiation_zone", "reactor_ruin", "military_vault",
+                        "cryogenic_ruins", "cryo_lab", "frozen_outpost", "thermal_station"),
+                item("echoashfallprotocol:rad_away", 2, "Deliver RadAway and filter stock for containment crews"),
+                objective(ObjectiveType.REPAIR, List.of("relay", "beacon", "power_node", "thermal_station"), 2,
+                        "Restore two warning, power, or thermal nodes"),
+                List.of("echoashfallprotocol:filter_cartridge_advanced", "echoashfallprotocol:hand_warmer"));
+        loadout("crashbreak_salvage", "Crashbreak Salvage", "Salvage", ServiceKind.SALVAGE,
+                List.of("crash_zone_wasteland", "drop_pod", "train_yard", "ruined_cityscape", "data_center_ruin",
+                        "subway_station", "industrial_ruins", "industrial_factory", "ruined_plains", "scavenger_camp"),
+                item("echoashfallprotocol:scrap_circuit", 3, "Deliver intact wreck circuits and route records"),
+                objective(ObjectiveType.POI_DISCOVERY,
+                        List.of("crash_zone_wasteland", "drop_pod", "train_yard", "ruined_cityscape", "industrial_ruins"),
+                        2, "Survey two crash, city, or industrial salvage routes"),
+                List.of("echoashfallprotocol:power_cell", "echoashfallprotocol:scrap_metal"));
+        loadout("sporebound_sanctum", "Sporebound Sanctum", "Sample", ServiceKind.MEDICAL,
+                List.of("toxic_swamp", "bio_lab", "sporebound_sanctum", "nexus_scar", "scar_anchor", "nexus_anomaly"),
+                item("echoashfallprotocol:mutated_tissue", 2, "Deliver controlled biological samples"),
+                objective(ObjectiveType.REPAIR, List.of("anchor", "nexus", "scar", "bio_lab"), 1,
+                        "Stabilize one bio-anomaly or scar route anchor"),
+                List.of("echoashfallprotocol:rad_away", "echoashfallprotocol:mutagen_vial"));
     }
 
     private AshfallFactionContracts() {
@@ -115,7 +82,8 @@ public final class AshfallFactionContracts {
     }
 
     public static ServiceKind serviceKind(Identifier factionId) {
-        return loadout(factionId == null ? "" : factionId.getPath()).serviceKind();
+        Identifier canonical = AshfallFactionMap.canonicalOrDefault(factionId);
+        return loadout(canonical.getPath()).serviceKind();
     }
 
     private static List<Spec> specs(String path, String fieldTitle, String fieldSummary, String fieldObjective,
@@ -160,7 +128,8 @@ public final class AshfallFactionContracts {
     }
 
     private static Loadout loadout(String path) {
-        return LOADOUTS.getOrDefault(path, LOADOUTS.get("survivor_network"));
+        String canonicalPath = AshfallFactionMap.resolveFactionId(path).getPath();
+        return LOADOUTS.getOrDefault(canonicalPath, LOADOUTS.get("radwarden_compact"));
     }
 
     private static void loadout(String path, String displayName, String routeName, ServiceKind serviceKind,

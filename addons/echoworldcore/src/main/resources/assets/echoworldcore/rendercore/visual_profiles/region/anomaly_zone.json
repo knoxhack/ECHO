@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/magenta_stained_glass.png",
+  "default_state": "CORRUPTED",
+  "transition_seconds": 0.18,
+  "materials": {
+    "anomaly_field": {
+      "color": "#FFFF8FEA",
+      "alpha": 0.54,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "anomaly_lattice",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/magenta_stained_glass.png",
+      "material": "anomaly_field",
+      "states": ["ACTIVE", "SCANNING", "CORRUPTED"],
+      "alpha": 0.5,
+      "emissive": true
+    }
+  ]
+}

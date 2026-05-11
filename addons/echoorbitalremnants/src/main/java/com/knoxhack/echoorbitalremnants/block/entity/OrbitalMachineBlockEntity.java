@@ -13,6 +13,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
@@ -136,7 +137,7 @@ public class OrbitalMachineBlockEntity extends BaseContainerBlockEntity {
 
     @SuppressWarnings("unchecked")
     private static RecipeHolder<OrbitalProcessingRecipe> findRecipe(ServerLevel level, MachineKind kind, ItemStack input) {
-        return level.recipeAccess().getRecipes().stream()
+        return level.getServer().getRecipeManager().getRecipes().stream()
                 .filter(holder -> holder.value().getType() == ModRecipes.ORBITAL_PROCESSING_TYPE.get())
                 .map(holder -> (RecipeHolder<OrbitalProcessingRecipe>) holder)
                 .filter(holder -> holder.value().matches(kind, input, level))
@@ -194,6 +195,9 @@ public class OrbitalMachineBlockEntity extends BaseContainerBlockEntity {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         ContainerHelper.loadAllItems(input, items);
+        if (kind() == MachineKind.ROCKET_ASSEMBLY_FRAME) {
+            items.set(OUTPUT_SLOT, ItemStack.EMPTY);
+        }
         progress = input.getIntOr("progress", 0);
         maxProgress = input.getIntOr("max_progress", 0);
         charge = input.getIntOr("charge", Config.MACHINE_MAX_CHARGE.get() / 2);
@@ -203,11 +207,56 @@ public class OrbitalMachineBlockEntity extends BaseContainerBlockEntity {
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        ContainerHelper.saveAllItems(output, items);
+        if (kind() == MachineKind.ROCKET_ASSEMBLY_FRAME) {
+            NonNullList<ItemStack> storedItems = NonNullList.withSize(items.size(), ItemStack.EMPTY);
+            for (int i = 0; i < items.size(); i++) {
+                if (i != OUTPUT_SLOT) {
+                    storedItems.set(i, items.get(i));
+                }
+            }
+            ContainerHelper.saveAllItems(output, storedItems);
+        } else {
+            ContainerHelper.saveAllItems(output, items);
+        }
         output.putInt("progress", progress);
         output.putInt("max_progress", maxProgress);
         output.putInt("charge", charge);
         output.putInt("status", status.ordinal());
+    }
+
+    public void dropStoredContents(Level level, BlockPos pos) {
+        dropStoredContents(level, pos, kind());
+    }
+
+    private void dropStoredContents(Level level, BlockPos pos, MachineKind removalKind) {
+        if (level.isClientSide()) {
+            return;
+        }
+        for (int slot = 0; slot < items.size(); slot++) {
+            if (removalKind == MachineKind.ROCKET_ASSEMBLY_FRAME && slot == OUTPUT_SLOT) {
+                items.set(slot, ItemStack.EMPTY);
+                continue;
+            }
+            ItemStack stack = items.get(slot);
+            if (!stack.isEmpty()) {
+                Containers.dropItemStack(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, stack.copy());
+                items.set(slot, ItemStack.EMPTY);
+            }
+        }
+        progress = 0;
+        maxProgress = 0;
+        status = MachineStatus.IDLE;
+        setChanged();
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level != null) {
+            MachineKind removalKind = state.getBlock() instanceof OrbitalMachineBlock machineBlock
+                    ? machineBlock.kind()
+                    : kind();
+            dropStoredContents(level, pos, removalKind);
+        }
     }
 
     private void regenerateCharge() {

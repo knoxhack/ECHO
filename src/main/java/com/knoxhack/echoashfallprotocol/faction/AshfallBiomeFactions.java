@@ -30,95 +30,32 @@ public final class AshfallBiomeFactions {
     }
 
     public static void register() {
-        registerFaction("survivor_network", "Survivor Network", "Network", "Shelter Route",
-                "Shelter operators keeping starter pods, cache relays, and distress channels alive one night at a time.",
-                "Supply pressure and roaming threats", "Water, bandages, and a charged scanner",
-                "Bedroll caches, starter repairs, and quiet route warnings", 0x6ED6A5, true,
-                roles("Quartermaster", "Medic", "Route Caller"),
-                "Shelter Handshake", "Stabilize a shelter route before the next distress channel goes quiet.",
-                "Deliver supplies or scan a nearby cache beacon.", "Shelter service calls and cache priority.",
-                List.of("starter_shelter", "survivor_cache", "abandoned_camp"));
+        registerFaction("radwarden_compact", "Radwarden Compact", "Radwardens", "Containment Route",
+                "Containment crews, old rangers, thaw technicians, and orbital wardens united around one rule: mark what can kill you before it kills someone else.",
+                "Radiation, cryogenic failure, exposure fronts, and sealed military doctrine", "Rad meds, filters, warm gear, and a charged scanner",
+                "Shelter routing, decon warnings, thermal support, and guardian containment briefs", 0xD8D65F, true,
+                roles("Quartermaster", "Containment Guard", "Decon Tech"),
+                "Compact Perimeter", "Reinforce a shelter or hazard perimeter before the hot zone edits another map.",
+                "Scan a containment, shelter, or cryogenic route marker.", "Radwarden warning codes and field support.",
+                List.of("survivor_cache", "radiation_zone", "cryogenic_ruins"));
 
-        registerFaction("ashland_rangers", "Ashland Rangers", "Rangers", "Ash Wastes",
-                "Mask-wearing patrols guiding caravans through ashfall basins where the wind erases bad decisions slowly.",
-                "Toxic air, ash storms, exposed approach paths", "Respirator filters and spare water",
-                "Patrol escorts, storm warnings, and ridge-line field maps", 0xBFC469, false,
-                roles("Scout", "Storm Reader", "Trail Guard"),
-                "Stormline Survey", "Map an ash route before the next front closes visibility and leaves only guesswork.",
-                "Scan an ashland POI or clear a route marker.", "Updated storm approach markers.",
-                List.of("crash_zone_wasteland", "wasteland_outpost", "ash_checkpoint"));
+        registerFaction("crashbreak_salvage", "Crashbreak Salvage", "Crashbreak", "Salvage Route",
+                "Wreck crews, freehold brokers, archivists, and factory hands who decided civilization comes back one recovered part at a time.",
+                "Wreck interiors, city blind spots, industrial machinery, and road-bandit pressure", "Fire resistance, blocks, spare tools, and a backup weapon",
+                "Blackbox pulls, route manifests, workshop access, convoy context, and salvage contracts", 0xE5B85C, true,
+                roles("Hull Cutter", "Route Broker", "Loadmaster"),
+                "Blackbox Pull", "Recover a signal core or route record before scavengers strip out the last useful witness.",
+                "Scan a crash, city, industrial, or convoy POI.", "Priority salvage callouts and workshop credit.",
+                List.of("crash_zone_wasteland", "ruined_cityscape", "industrial_ruins"));
 
-        registerFaction("dustline_freeholds", "Dustline Freeholds", "Freeholds", "Ruined Plains",
-                "Camp federations holding old farms, watchfires, and open-road trade against the horizon.",
-                "Bandit pressure and low-cover plains", "Ranged weapon, food, and bedroll",
-                "Camp barter, work boards, and road rumors paid for in water", 0xD0A057, false,
-                roles("Camp Boss", "Fence", "Lookout"),
-                "Freehold Marker", "Secure a ruined-plains trail and return with camp intel before the fires move.",
-                "Visit a camp or watchtower POI and confirm the route.", "Freehold barter credit.",
-                List.of("ruined_plains_camp", "watchtower", "roadside_cache"));
-
-        registerFaction("metro_archivists", "Metro Archivists", "Archivists", "Collapsed City",
-                "Archivists catalog vertical ruins, buried terminals, and civic records that survived their cities.",
-                "Falling debris, close interiors, signal blind spots", "Blocks, lights, and a backup weapon",
-                "Archive leads, locked-door hints, and data recovery with names still attached", 0x74B7D8, true,
-                roles("Indexer", "Elevator Tech", "Field Scribe"),
-                "Vertical Index", "Recover a civic trace from a collapsed city landmark without letting the tower choose the exit.",
-                "Scan or search an urban ruin and return the index key.", "Archive context and terminal hints.",
-                List.of("collapsed_city_highrise", "metro_station", "data_archive"));
-
-        registerFaction("rustworks_union", "Rustworks Union", "Union", "Industrial Belt",
-                "Pipefitters, machinists, and gantry crews keeping refinery yards useful after the quotas outlived the workers.",
-                "Crushing machinery, sparks, and enclosed catwalks", "Repair kit, fire protection, and blocks",
-                "Workbench access, scrap orders, and machine repairs that still smell hot", 0xC47D4C, false,
-                roles("Foreman", "Pipe Tech", "Scrap Broker"),
-                "Gantry Work Order", "Reopen a machine lane and tag hardware before the yard grinds it into scrap.",
-                "Clear or scan an industrial POI.", "Union scrap ledger credit.",
-                List.of("industrial_ruins", "pipe_gantry", "refinery_yard"));
-
-        registerFaction("sporebound_sanctum", "Sporebound Sanctum", "Sanctum", "Toxic Groves",
-                "Adaptation circles studying living contamination instead of pretending fire solves everything.",
-                "Spores, poison clouds, and infected floors", "Antitoxin, mask, and ranged control",
-                "Biomass analysis, antidote rumors, and living-route warnings", 0x68B86A, false,
-                roles("Spore Tender", "Antitoxin Brewer", "Myco Scout"),
-                "Spore Sample", "Gather a clean read from a toxic growth without letting the route learn your lungs.",
-                "Scan a toxic POI or recover a sample marker.", "Antitoxin service priority.",
-                List.of("toxic_grove", "spore_lab", "sporebound_den"));
-
-        registerFaction("crashbreak_salvage", "Crashbreak Salvage", "Crashbreak", "Crash Fields",
-                "Wreck crews carving aircraft hulls and pod debris into usable route infrastructure.",
-                "Sharp wreckage, fuel pockets, unstable interiors", "Fire resistance, axe, and spare tools",
-                "Wreck maps, hull salvage, and emergency beacon repair", 0xE5B85C, true,
-                roles("Hull Cutter", "Beacon Ratchet", "Loadmaster"),
-                "Blackbox Pull", "Recover a signal core from crash wreckage before raiders strip out the last witness.",
-                "Scan or search a crash-zone POI.", "Priority salvage callouts.",
-                List.of("crash_wreckage", "drop_pod_field", "airframe_shelter"));
-
-        registerFaction("radwarden_compact", "Radwarden Compact", "Radwardens", "Hot Zone",
-                "Containment crews marking hot soil, sealing breached labs, and keeping warning beacons lit for people who ignore them.",
-                "Radiation, sealed rooms, and contaminated water", "Rad meds, filters, and lead-lined gear",
-                "Containment codes, warning markers, and decon routing", 0xD8D65F, false,
-                roles("Dosimeter", "Containment Guard", "Decon Tech"),
-                "Warning Beacon", "Restore a containment marker before the hot zone forgets where it ends.",
-                "Scan a radiation POI or service a warning station.", "Decon and warning route support.",
-                List.of("radiation_bunker", "containment_site", "warning_tower"));
-
-        registerFaction("thawbound_collective", "Thawbound Collective", "Thawbound", "Cryo Flats",
-                "Cold-tech survivors keeping cryogenic chambers and frost-buried machinery operational because thawing wrong is still dying.",
-                "Cold exposure, brittle floors, and frozen machinery", "Warm gear, fuel, and heat sources",
-                "Cryo battery service, thaw routes, thermal shelter leads", 0x8CC7E8, false,
-                roles("Cryo Keeper", "Thermal Tech", "Frost Runner"),
-                "Thaw Relay", "Restart a frozen relay and log the safe heat radius before the cold edits the map.",
-                "Scan a cryogenic POI or relight a heat station.", "Thermal service priority.",
-                List.of("cryo_lab", "frozen_outpost", "thermal_station"));
-
-        registerFaction("scarbound_conclave", "Scarbound Conclave", "Conclave", "Nexus Scar",
-                "Anomaly witnesses reading scar tissue in terrain, memory loops, and routes that should not fit inside the world.",
-                "Reality shear, hostile echoes, and unstable navigation", "Scanner charge, anchors, and escape blocks",
-                "Anomaly warnings, scar-route readings, and late-game guidance with the names sanded off", 0xB889F5, true,
-                roles("Scar Reader", "Anchor Tender", "Oath Speaker"),
-                "Scar Witness", "Confirm a Nexus scar without letting the route back become theoretical.",
-                "Scan an anomaly POI or stabilize a scar anchor.", "Anomaly-route interpretation.",
-                List.of("nexus_anomaly", "scar_anchor", "anomaly_shrine"));
+        registerFaction("sporebound_sanctum", "Sporebound Sanctum", "Sanctum", "Adaptation Route",
+                "Adaptation circles, scar readers, and anomaly witnesses studying living contamination because fire cannot explain every wound the world kept.",
+                "Spores, poison clouds, unstable bioforms, and Nexus shear", "Antitoxin, mask, anchors, and ranged control",
+                "Biomass analysis, antitoxin priority, anomaly interpretation, and scar-route warnings", 0x68B86A, true,
+                roles("Spore Tender", "Antitoxin Brewer", "Scar Reader"),
+                "Spore Witness", "Gather a clean bio-anomaly read without letting the route learn your lungs or your name.",
+                "Scan a toxic, bio, or Nexus scar POI.", "Sanctum antidotes and anomaly-route interpretation.",
+                List.of("toxic_swamp", "bio_lab", "nexus_scar"));
     }
 
     private static void registerFaction(String path, String displayName, String shortName, String route,

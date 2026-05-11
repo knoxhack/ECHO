@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/light_blue_stained_glass.png",
+  "default_state": "ACTIVE",
+  "transition_seconds": 0.45,
+  "materials": {
+    "cryo_field": {
+      "color": "#FFA5F3FF",
+      "alpha": 0.5,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "cold_shear",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/light_blue_stained_glass.png",
+      "material": "cryo_field",
+      "states": ["ONLINE", "ACTIVE", "SCANNING"],
+      "alpha": 0.46,
+      "emissive": true
+    }
+  ]
+}

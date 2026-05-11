@@ -74,8 +74,10 @@ public class PlanetaryRouteItem extends Item {
                 double targetY = targetLevel.dimension() == target.dimension ? 96.0D : Config.ORBITAL_ALTITUDE.get();
                 double targetZ = targetLevel.dimension() == target.dimension ? 0.0D : player.getZ() + target.fallbackZ;
                 BlockPos arrival = BlockPos.containing(targetX, targetY, targetZ);
-                target.seed(targetLevel, arrival);
-                target.spawnThreats(targetLevel, arrival);
+                if (progress.markRouteArrivalSeeded(player, target.seedToken())) {
+                    target.seed(targetLevel, arrival);
+                    target.spawnThreats(targetLevel, arrival);
+                }
                 target.mark(progress, player);
                 playRouteFeedback(serverLevel, player.blockPosition(), ParticleTypes.PORTAL, 28, 0.75F);
                 serverPlayer.teleportTo(targetLevel, targetX, targetY, targetZ, Set.of(), player.getYRot(), player.getXRot(), false);
@@ -277,6 +279,10 @@ public class PlanetaryRouteItem extends Item {
         abstract void spawnThreats(ServerLevel level, BlockPos arrival);
 
         abstract void mark(EchoTerminalProgress progress, Player player);
+
+        String seedToken() {
+            return dimension.identifier().getPath();
+        }
 
         net.minecraft.core.particles.ParticleOptions particle() {
             return switch (this) {

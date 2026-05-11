@@ -1,1 +1,1 @@
-{"type":"minecraft:entity","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":"echoindustrialnexus:warden_thermal_core"},{"type":"minecraft:item","name":"echoindustrialnexus:overclock_core"},{"type":"minecraft:item","name":"echoindustrialnexus:furnace_warden_trophy"}],"conditions":[{"condition":"minecraft:killed_by_player"}]}]}
+{"type":"minecraft:entity","pools":[]}

@@ -1,11 +1,13 @@
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
+import featureCatalog from "../shared/feature-catalog.json" with { type: "json" };
 import seedData from "../shared/seed-data.json" with { type: "json" };
 import type {
   AppSettings,
   CommandRun,
   CommandRunStatus,
+  FeatureRecord,
   Project,
   ProjectDetail,
   PromptTemplate,
@@ -138,6 +140,13 @@ export class CommandCenterStore {
       .prepare("SELECT * FROM release_actions WHERE project_slug = ? AND command_id = ?")
       .get(projectSlug, commandId);
     return row ? rowToReleaseAction(row) : null;
+  }
+
+  getFeatures(projectSlug: string): FeatureRecord[] {
+    return this.db
+      .prepare("SELECT * FROM feature_records WHERE project_slug = ? ORDER BY order_index ASC, id ASC")
+      .all(projectSlug)
+      .map(rowToFeatureRecord);
   }
 
   getProjectDetail(slug: string): ProjectDetail | null {
@@ -476,6 +485,23 @@ export class CommandCenterStore {
         args_json TEXT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS feature_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_slug TEXT NOT NULL,
+        feature_id TEXT NOT NULL,
+        order_index INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        status TEXT NOT NULL,
+        player_promise TEXT NOT NULL,
+        lore_context TEXT NOT NULL,
+        implementation_summary TEXT NOT NULL,
+        next_action TEXT NOT NULL,
+        sources_json TEXT NOT NULL,
+        evidence_json TEXT NOT NULL,
+        UNIQUE(project_slug, feature_id)
+      );
+
       CREATE TABLE IF NOT EXISTS command_runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id TEXT UNIQUE NOT NULL,
@@ -521,10 +547,27 @@ export class CommandCenterStore {
 
   private seed(): void {
     fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
-    const existing = this.db.prepare("SELECT COUNT(*) AS count FROM projects").get();
-    if (Number(existing?.count ?? 0) > 0) {
+    this.db.exec("BEGIN");
+    try {
+      this.syncProjects();
+      this.replaceRoadmap();
+      this.replaceQaTracks();
+      this.replacePrompts();
+      this.replaceTerminalPlanner();
+      this.replaceReleaseActions();
+      this.replaceFeatures();
       this.ensureSettings();
-      return;
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  private syncProjects(): void {
+    const slugs = seedData.projects.map((project) => project.slug);
+    if (slugs.length > 0) {
+      this.db.prepare(`DELETE FROM projects WHERE slug NOT IN (${slugs.map(() => "?").join(", ")})`).run(...slugs);
     }
 
     const insertProject = this.db.prepare(`
@@ -532,25 +575,55 @@ export class CommandCenterStore {
       (slug, name, kind, status, current_milestone, build_health, critical_issues, polish_tasks, last_scan_label, next_recommended_action, accent, description, workspace_path, modules_json)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
+    const updateProject = this.db.prepare(`
+      UPDATE projects SET
+        name = ?,
+        kind = ?,
+        status = ?,
+        current_milestone = ?,
+        accent = ?,
+        description = ?,
+        workspace_path = ?,
+        modules_json = ?
+      WHERE slug = ?
+    `);
     for (const project of seedData.projects) {
-      insertProject.run(
-        project.slug,
-        project.name,
-        project.kind,
-        project.status,
-        project.currentMilestone,
-        project.buildHealth,
-        project.criticalIssues,
-        project.polishTasks,
-        project.lastScanLabel,
-        project.nextRecommendedAction,
-        project.accent,
-        project.description,
-        project.workspacePath,
-        json(project.modules)
-      );
+      const existing = this.db.prepare("SELECT slug FROM projects WHERE slug = ?").get(project.slug);
+      if (existing) {
+        updateProject.run(
+          project.name,
+          project.kind,
+          project.status,
+          project.currentMilestone,
+          project.accent,
+          project.description,
+          project.workspacePath,
+          json(project.modules),
+          project.slug
+        );
+      } else {
+        insertProject.run(
+          project.slug,
+          project.name,
+          project.kind,
+          project.status,
+          project.currentMilestone,
+          project.buildHealth,
+          project.criticalIssues,
+          project.polishTasks,
+          project.lastScanLabel,
+          project.nextRecommendedAction,
+          project.accent,
+          project.description,
+          project.workspacePath,
+          json(project.modules)
+        );
+      }
     }
+  }
 
+  private replaceRoadmap(): void {
+    this.db.exec("DELETE FROM roadmap_phases");
     const insertRoadmap = this.db.prepare(`
       INSERT INTO roadmap_phases (project_slug, order_index, title, status, progress, summary)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -558,7 +631,10 @@ export class CommandCenterStore {
     seedData.roadmapPhases.forEach((phase, index) => {
       insertRoadmap.run(phase.projectSlug, index, phase.title, phase.status, phase.progress, phase.summary);
     });
+  }
 
+  private replaceQaTracks(): void {
+    this.db.exec("DELETE FROM qa_tracks");
     const insertTrack = this.db.prepare(`
       INSERT INTO qa_tracks (project_slug, track_key, title, severity, status, summary, checks_json)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -566,7 +642,10 @@ export class CommandCenterStore {
     for (const track of seedData.qaTracks) {
       insertTrack.run(track.projectSlug, track.key, track.title, track.severity, track.status, track.summary, json(track.checks));
     }
+  }
 
+  private replacePrompts(): void {
+    this.db.exec("DELETE FROM prompt_templates");
     const insertPrompt = this.db.prepare(`
       INSERT INTO prompt_templates (project_slug, template_id, category, title, description, body)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -574,7 +653,10 @@ export class CommandCenterStore {
     for (const prompt of seedData.promptTemplates) {
       insertPrompt.run(prompt.projectSlug, prompt.id, prompt.category, prompt.title, prompt.description, prompt.body);
     }
+  }
 
+  private replaceTerminalPlanner(): void {
+    this.db.exec("DELETE FROM terminal_planner");
     const insertPlanner = this.db.prepare(`
       INSERT INTO terminal_planner (project_slug, order_index, group_name, pages_json)
       VALUES (?, ?, ?, ?)
@@ -582,7 +664,10 @@ export class CommandCenterStore {
     seedData.terminalPlanner.forEach((group, index) => {
       insertPlanner.run(group.projectSlug, index, group.group, json(group.pages));
     });
+  }
 
+  private replaceReleaseActions(): void {
+    this.db.exec("DELETE FROM release_actions");
     const insertAction = this.db.prepare(`
       INSERT INTO release_actions (project_slug, command_id, label, description, mode, risk, executable, args_json)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -599,14 +684,44 @@ export class CommandCenterStore {
         json(action.args)
       );
     }
+  }
 
-    this.ensureSettings();
+  private replaceFeatures(): void {
+    this.db.exec("DELETE FROM feature_records");
+    const insertFeature = this.db.prepare(`
+      INSERT INTO feature_records
+      (project_slug, feature_id, order_index, title, category, status, player_promise, lore_context, implementation_summary, next_action, sources_json, evidence_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const feature of featureCatalog.features) {
+      insertFeature.run(
+        feature.projectSlug,
+        feature.id,
+        Number(feature.order ?? 0),
+        feature.title,
+        feature.category,
+        feature.status,
+        feature.playerPromise,
+        feature.loreContext,
+        feature.implementationSummary,
+        feature.nextAction,
+        json(feature.sources ?? []),
+        json(feature.evidence ?? [])
+      );
+    }
   }
 
   private ensureSettings(): void {
-    const current = this.getSettings();
-    for (const [key, value] of Object.entries({ ...DEFAULT_SETTINGS, ...current })) {
-      if (this.getSetting(key) == null) {
+    const staleDefaults: Partial<Record<keyof AppSettings, string[]>> = {
+      echoRoot: ["C:/New folder/Echo"],
+      modpackModsDir: ["C:/Users/Ivan/curseforge/minecraft/Instances/Axes of Tomorrow/mods"],
+      pythonExecutable: ["C:/Users/hacko/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe"]
+    };
+    for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+      const existing = this.getSetting(key);
+      const staleValues = staleDefaults[key as keyof AppSettings] ?? [];
+      const normalizedExisting = existing?.replaceAll("\\", "/");
+      if (existing == null || staleValues.includes(normalizedExisting ?? "")) {
         this.setSetting(key, String(value));
       }
     }
@@ -703,6 +818,23 @@ function rowToReleaseAction(row: Record<string, unknown>): ReleaseAction {
     risk: String(row.risk) as ReleaseAction["risk"],
     executable: String(row.executable),
     args: parseJson<string[]>(row.args_json, [])
+  };
+}
+
+function rowToFeatureRecord(row: Record<string, unknown>): FeatureRecord {
+  return {
+    projectSlug: String(row.project_slug),
+    id: String(row.feature_id),
+    title: String(row.title),
+    category: String(row.category),
+    status: String(row.status) as FeatureRecord["status"],
+    playerPromise: String(row.player_promise),
+    loreContext: String(row.lore_context),
+    implementationSummary: String(row.implementation_summary),
+    nextAction: String(row.next_action),
+    sources: parseJson<FeatureRecord["sources"]>(row.sources_json, []),
+    evidence: parseJson<FeatureRecord["evidence"]>(row.evidence_json, []),
+    order: Number(row.order_index)
   };
 }
 

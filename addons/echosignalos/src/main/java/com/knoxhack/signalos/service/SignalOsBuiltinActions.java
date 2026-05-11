@@ -18,9 +18,14 @@ public final class SignalOsBuiltinActions {
     public static final Identifier PAGE_REWARDS = id("rewards");
     public static final Identifier PAGE_MISSIONS = id("missions");
     public static final Identifier PAGE_ARCHIVES = id("archives");
+    public static final Identifier PAGE_NOTES = id("notes");
+    public static final Identifier PAGE_SETTINGS = id("settings");
     public static final Identifier CLAIM_REWARDS = id("claim_rewards");
     public static final Identifier CLAIM_MISSION = id("claim_mission");
     public static final Identifier MARK_ARCHIVE_READ = id("mark_archive_read");
+    public static final Identifier SAVE_NOTE = id("save_note");
+    public static final Identifier CLEAR_NOTES = id("clear_notes");
+    public static final Identifier SET_PREFERENCE = id("set_preference");
     private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
 
     private SignalOsBuiltinActions() {
@@ -34,6 +39,10 @@ public final class SignalOsBuiltinActions {
                 (player, payload) -> SignalOsTerminalServices.claimRewards(player));
         TerminalActionRegistry.register(PAGE_MISSIONS, CLAIM_MISSION, SignalOsBuiltinActions::claimMission);
         TerminalActionRegistry.register(PAGE_ARCHIVES, MARK_ARCHIVE_READ, SignalOsBuiltinActions::markArchiveRead);
+        TerminalActionRegistry.register(PAGE_NOTES, SAVE_NOTE, SignalOsBuiltinActions::saveNote);
+        TerminalActionRegistry.register(PAGE_NOTES, CLEAR_NOTES,
+                (player, payload) -> SignalOsPlayerData.clearNotes(player));
+        TerminalActionRegistry.register(PAGE_SETTINGS, SET_PREFERENCE, SignalOsBuiltinActions::setPreference);
     }
 
     private static void claimMission(ServerPlayer player, String payload) {
@@ -101,6 +110,34 @@ public final class SignalOsBuiltinActions {
         }
         AdvancementHolder holder = player.level().getServer().getAdvancements().get(mission.completionAdvancement());
         return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
+
+    private static void saveNote(ServerPlayer player, String payload) {
+        String safe = payload == null ? "" : payload;
+        String title = "Operator Note";
+        String body = "Created from the SignalOS Notes app.";
+        int split = safe.indexOf('\n');
+        if (split >= 0) {
+            title = safe.substring(0, split).strip();
+            body = safe.substring(split + 1).strip();
+        } else if (!safe.isBlank()) {
+            body = safe.strip();
+        }
+        SignalOsPlayerData.addNote(player, title, body);
+        status(player, "[SignalOS] Note saved.");
+    }
+
+    private static void setPreference(ServerPlayer player, String payload) {
+        String safe = payload == null ? "" : payload;
+        int split = safe.indexOf('=');
+        if (split <= 0) {
+            status(player, "[SignalOS] Invalid setting payload.");
+            return;
+        }
+        String key = safe.substring(0, split).strip();
+        String value = safe.substring(split + 1).strip();
+        SignalOsPlayerData.setPreference(player, key, value);
+        status(player, "[SignalOS] Setting updated.");
     }
 
     private static Identifier id(String path) {

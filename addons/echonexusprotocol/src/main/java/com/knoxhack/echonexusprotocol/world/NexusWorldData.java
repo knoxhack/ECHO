@@ -247,18 +247,28 @@ public class NexusWorldData extends SavedData {
       return this.blackboxMonolithActivated;
    }
 
-   public void markWardenDefeated() {
+   public boolean markWardenDefeated() {
+      boolean changed = !this.wardenDefeated;
       this.wardenDefeated = true;
-      this.setDirty();
+      if (changed) {
+         this.setDirty();
+      }
+
+      return changed;
    }
 
    public boolean wardenDefeated() {
       return this.wardenDefeated;
    }
 
-   public void markGuardianDefeated() {
+   public boolean markGuardianDefeated() {
+      boolean changed = !this.guardianDefeated;
       this.guardianDefeated = true;
-      this.setDirty();
+      if (changed) {
+         this.setDirty();
+      }
+
+      return changed;
    }
 
    public boolean guardianDefeated() {
@@ -281,11 +291,28 @@ public class NexusWorldData extends SavedData {
    }
 
    public void setEndingState(String endingState) {
-      this.commitEndingState(endingState);
+      String next = normalizeEnding(endingState);
+      if (next.isBlank()) {
+         if (!this.endingState.isBlank() || this.endingFeedbackApplied) {
+            this.endingState = "";
+            this.endingFeedbackApplied = false;
+            this.setDirty();
+         }
+         return;
+      }
+
+      boolean changedPath = !this.endingState.equals(next);
+      this.endingState = next;
+      this.guardianDefeated = true;
+      if (changedPath || !this.endingFeedbackApplied) {
+         this.applyEndingFeedback();
+         this.endingFeedbackApplied = true;
+         this.setDirty();
+      }
    }
 
    public boolean commitEndingState(String endingState) {
-      String next = endingState == null ? "" : endingState.trim().toLowerCase(java.util.Locale.ROOT);
+      String next = normalizeEnding(endingState);
       if (next.isBlank()) {
          if (!this.endingState.isBlank() || this.endingFeedbackApplied) {
             this.endingState = "";
@@ -424,6 +451,10 @@ public class NexusWorldData extends SavedData {
 
    private static int clampPercent(int value) {
       return Math.max(0, Math.min(100, value));
+   }
+
+   private static String normalizeEnding(String value) {
+      return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
    }
 
    public static enum FieldState {

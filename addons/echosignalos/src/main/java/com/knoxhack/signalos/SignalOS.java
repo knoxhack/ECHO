@@ -5,6 +5,7 @@ import com.knoxhack.signalos.content.SignalOsServerReloaders;
 import com.knoxhack.signalos.registry.ModBlockEntities;
 import com.knoxhack.signalos.registry.ModBlocks;
 import com.knoxhack.signalos.registry.ModCreativeTabs;
+import com.knoxhack.signalos.registry.ModDataComponents;
 import com.knoxhack.signalos.registry.ModGameTests;
 import com.knoxhack.signalos.registry.ModMenus;
 import com.knoxhack.signalos.service.SignalOsBuiltinActions;
@@ -25,6 +26,7 @@ public class SignalOS {
     public SignalOS(IEventBus modEventBus) {
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
+        ModDataComponents.register(modEventBus);
         ModMenus.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         ModGameTests.register(modEventBus);
@@ -41,6 +43,6 @@ public class SignalOS {
             SignalOsBuiltinContent.register();
             SignalOsTerminalServices.registerEchoCoreServices();
         });
-        LOGGER.info("SignalOS terminal framework online.");
+        LOGGER.info("SignalOS computer OS online.");
     }
 }

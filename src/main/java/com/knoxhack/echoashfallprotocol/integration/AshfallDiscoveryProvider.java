@@ -9,6 +9,7 @@ import com.knoxhack.echoashfallprotocol.echo.QuestData;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventData;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventProfile;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventProfiles;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
@@ -85,7 +86,8 @@ public final class AshfallDiscoveryProvider implements EchoDiscoveryProvider {
                     profile.title(),
                     "Buried Guardian Signature",
                     "A hostile guardian route is sealed beneath a matching biome. Follow missions or scanner leads to reveal it.",
-                    profile.lore() + " Counterplay: " + profile.mechanicHint(),
+                    profile.lore() + " Faction thread: " + AshfallFactionMap.displayName(profile.ownerFaction())
+                            + ". Counterplay: " + profile.mechanicHint(),
                     ICON_GUARDIAN,
                     HERO_FIELD,
                     profile.color(),

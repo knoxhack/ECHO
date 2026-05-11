@@ -12,12 +12,12 @@ Agriculture Reclamation is the ECHO field recovery chapter for ruined-world farm
 
 ## Player Smoke Route
 
-1. Recover or open a `Recovered Seed Capsule`.
+1. Recover a `Recovered Seed Capsule` from ECHO ruin loot, or craft one from wheat seeds, bone meal, a glass bottle, and copper.
 2. Use the `Seed Vault Terminal` or direct capsule use to get a profiled `Contaminated Seed`.
-3. Use `Soil Purifier` with `Purification Enzyme` or `Soil Nutrient Mix`, or insert the seed into a `Hydroponic Tray`.
+3. Plant the profiled seed on dirt, grass, farmland, or compatible reclamation soil, or insert it into a `Hydroponic Tray`.
 4. Grow and harvest at least one crop output.
-5. Convert crop matter in the `Bio-Reactor` or `Compost Recycler`.
-6. Use `Gene Stabilizer` with a contaminated seed plus `Gene Sample` or `Bio-Gel`.
+5. Craft a `Bio-Reactor` with `Soil Nutrient Mix`, then convert any crop matter into `Bio-Gel`.
+6. Craft and use `Gene Stabilizer` with a contaminated seed plus `Gene Sample` or `Bio-Gel`.
 7. Build a sealed greenhouse with glass, filters, dock support, trays, and controller scan.
 8. Mature restoration crops and scan ecology until local soil conversion pressure is visible.
 
@@ -25,9 +25,9 @@ Agriculture Reclamation is the ECHO field recovery chapter for ruined-world farm
 
 - `Medicinal Aloe` feeds the Bio-Reactor for Bio-Gel and can award Ashfall bandage output when that addon is loaded.
 - `Signal Fungus` is a stronger Bio-Reactor input and also composts into extra nutrient mix.
-- `Cryo Moss` converts to Purification Enzyme in the Bio-Reactor or extra nutrient mix in the Compost Recycler.
+- `Cryo Moss` converts to Bio-Gel plus Purification Enzyme in the Bio-Reactor or extra nutrient mix in the Compost Recycler.
 - `Filter Reed` composts into extra nutrient mix, can award Ashfall plant fiber when present, and crafts into paper for Spore Filter recovery.
-- `Nexus Orchid` converts to Gene Sample and can award Nexus gel when Nexus Protocol is loaded.
+- `Nexus Orchid` converts to Bio-Gel plus Gene Sample and can award Nexus gel when Nexus Protocol is loaded.
 
 ## Validation
 
@@ -47,6 +47,7 @@ If Python is not on `PATH`, pass `-PechoPythonExecutable="C:/path/to/python.exe"
 - The pollinator dock contributes greenhouse safety when it can service nearby crops or Hydroponic Trays; no drone entity is spawned.
 - Greenhouse safety is enclosure-aware: open support helps, but a sealed Greenhouse Glass shell with overhead glass is required for full safe-envelope rating.
 - Crop, soil, machine, and progression rules live under `data/echoagriculturereclamation/echoagriculturereclamation`.
+- Global seed and gene recovery injections live under NeoForge `data/echoagriculturereclamation/loot_modifiers`.
 - Mature crop loot is conservative: immature crops do not drop produce.
 - Generic seed items must carry the `seed_profile` data component before planting or tray growth.
 - 0.1.1 development adds modest utility outputs for harvested non-food crops without changing Terminal, milestone, or biome-restoration behavior.

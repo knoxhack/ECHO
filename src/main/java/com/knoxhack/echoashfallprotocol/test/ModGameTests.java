@@ -137,6 +137,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -385,6 +386,8 @@ public final class ModGameTests {
                 EnumSet.noneOf(BiomeGuardianProfile.GuardianAbility.class);
         Set<String> missions = new HashSet<>();
         for (BiomeGuardianProfile profile : BiomeGuardianProfiles.all()) {
+            helper.assertTrue(AshfallFactionMap.all().contains(profile.ownerFaction()),
+                    "Guardian owner faction should be one of the three Ashfall factions: " + profile.bossPath());
             helper.assertTrue(abilities.add(profile.ability()), "Guardian ability should be unique: " + profile.bossPath());
             helper.assertTrue(missions.add(profile.missionId()), "Guardian mission should be unique: " + profile.missionId());
             helper.assertTrue(profile.bossType().get() != null, "Guardian boss type missing: " + profile.bossPath());
@@ -1020,6 +1023,10 @@ public final class ModGameTests {
                 "Curated drop pod should expose visible starter lockers");
         helper.assertTrue(countBlocks(helper, placePos, size, "minecraft:chest") >= 1,
                 "Curated drop pod should retain starter cache storage");
+        helper.assertTrue(countStarterPodProtectedPathClutter(helper, placePos) == 0,
+                "Curated drop pod should keep spawn, lockers, bed route, terminal access, and ramp clear of debris clutter");
+        helper.assertTrue(countStarterPodOffPathClutter(helper, placePos, size) > 0,
+                "Curated drop pod should retain off-path decorative crash debris");
         helper.assertTrue(countInvalidBlockEntities(helper, placePos, size) == 0,
                 "Curated drop pod placement should not leave block entities on air or non-entity blocks");
         helper.succeed();
@@ -1228,6 +1235,57 @@ public final class ModGameTests {
             }
         }
         return count;
+    }
+
+    private static int countStarterPodProtectedPathClutter(GameTestHelper helper, BlockPos origin) {
+        int count = 0;
+        for (int x = 0; x < 20; x++) {
+            for (int z = 0; z < 20; z++) {
+                if (!isStarterPodProtectedPathCell(x, z)) {
+                    continue;
+                }
+                if (isStarterPodPathClutter(helper, origin.offset(x, 3, z))) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private static int countStarterPodOffPathClutter(GameTestHelper helper, BlockPos origin, Vec3i size) {
+        int count = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int z = 0; z < size.getZ(); z++) {
+                if (!isStarterPodProtectedPathCell(x, z)
+                        && isStarterPodPathClutter(helper, origin.offset(x, 3, z))) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private static boolean isStarterPodProtectedPathCell(int localX, int localZ) {
+        if (Math.abs(localX - 9) <= 1 && localZ >= 7 && localZ <= 12) {
+            return true;
+        }
+        if ((localX == 6 || localX == 7 || localX == 12 || localX == 13) && localZ >= 6 && localZ <= 7) {
+            return true;
+        }
+        if (localX >= 6 && localX <= 9 && localZ >= 10 && localZ <= 12) {
+            return true;
+        }
+        return Math.abs(localX - 9) <= 2 && localZ >= 15 && localZ <= 19;
+    }
+
+    private static boolean isStarterPodPathClutter(GameTestHelper helper, BlockPos pos) {
+        var state = helper.getLevel().getBlockState(pos);
+        return state.is(ModBlocks.RUSTED_METAL_DEBRIS.get())
+                || state.is(ModBlocks.CABLE_BUNDLE.get())
+                || state.is(ModBlocks.TWISTED_METAL.get())
+                || Identifier.fromNamespaceAndPath("minecraft", "chain")
+                        .equals(BuiltInRegistries.BLOCK.getKey(state.getBlock()))
+                || state.is(Blocks.STONE_BUTTON);
     }
 
     private static int countInvalidBlockEntities(GameTestHelper helper, BlockPos origin, Vec3i size) {
@@ -1546,10 +1604,15 @@ public final class ModGameTests {
         AshfallTerminalCommonIntegration.register();
         Identifier missions = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "missions");
         Identifier sideOps = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "ashfall_side_ops");
-        helper.assertTrue(TerminalMissionRegistry.provider(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "ashfall_protocol")).isPresent(),
-                "Ashfall common setup should register the main mission provider");
-        helper.assertTrue(TerminalMissionRegistry.provider(sideOps).isPresent(),
-                "Ashfall common setup should register the side ops mission provider");
+        if (ModList.get().isLoaded("echomissioncore")) {
+            helper.assertTrue(TerminalMissionRegistry.provider(Identifier.fromNamespaceAndPath("echomissioncore", "missions")).isPresent(),
+                    "MissionCore should own the shared mission feed when loaded");
+        } else {
+            helper.assertTrue(TerminalMissionRegistry.provider(Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "ashfall_protocol")).isPresent(),
+                    "Ashfall common setup should register the main mission provider");
+            helper.assertTrue(TerminalMissionRegistry.provider(sideOps).isPresent(),
+                    "Ashfall common setup should register the side ops mission provider");
+        }
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         if (player instanceof ServerPlayer serverPlayer) {
             helper.assertTrue(TerminalActionRegistry.handle(serverPlayer, missions,
@@ -1743,13 +1806,18 @@ public final class ModGameTests {
         if (EchoCoreServices.factionDefinitions().stream().noneMatch(definition -> AshfallFactionMap.isAshfall(definition.id()))) {
             AshfallBiomeFactions.register();
         }
+        long activeAshfallDefinitions = EchoCoreServices.factionDefinitions().stream()
+                .filter(definition -> AshfallFactionMap.all().contains(definition.id()))
+                .count();
+        helper.assertTrue(activeAshfallDefinitions == 3,
+                "Echo Core should expose exactly three active Ashfall faction definitions");
 
         List<EchoFactionDefinition> definitions = AshfallFactionMap.all().stream()
                 .map(factionId -> EchoCoreServices.factionDefinition(factionId).orElse(null))
                 .toList();
         helper.assertTrue(definitions.stream().allMatch(java.util.Objects::nonNull),
-                "All 10 Ashfall Echo Core factions should be registered");
-        helper.assertTrue(definitions.size() == 10, "Ashfall should expose exactly 10 Echo Core factions");
+                "All three Ashfall Echo Core factions should be registered");
+        helper.assertTrue(definitions.size() == 3, "Ashfall should expose exactly three Echo Core factions");
 
         int contractCount = 0;
         for (EchoFactionDefinition definition : definitions) {
@@ -1770,14 +1838,14 @@ public final class ModGameTests {
                 }
             }
         }
-        helper.assertTrue(contractCount == 30, "Ashfall should expose 30 Echo Core contracts");
+        helper.assertTrue(contractCount == 9, "Ashfall should expose nine Echo Core contracts");
 
         assertContractHasObjective(helper, "crashbreak_salvage_field_contract",
                 AshfallFactionContracts.ObjectiveType.POI_DISCOVERY);
         assertContractHasObjective(helper, "radwarden_compact_aligned_contract",
                 AshfallFactionContracts.ObjectiveType.REPAIR);
         assertContractHasObjective(helper, "sporebound_sanctum_aligned_contract",
-                AshfallFactionContracts.ObjectiveType.KILL);
+                AshfallFactionContracts.ObjectiveType.REPAIR);
 
         helper.assertTrue("industrial_factory".equals(ExplorationSiteRegistry.normalize("derelict_workshop")),
                 "Legacy derelict workshop alias should still resolve to industrial factory profile");
@@ -1974,7 +2042,7 @@ public final class ModGameTests {
         FactionDiplomacy diplomacy = player.getData(ModAttachments.FACTION_DIPLOMACY.get());
         diplomacy.setRelation(
                 FactionDiplomacy.FactionPair.fromFactions(
-                        AshfallBiomeFactions.SURVIVOR_NETWORK,
+                        AshfallBiomeFactions.RADWARDEN_COMPACT,
                         AshfallBiomeFactions.CRASHBREAK_SALVAGE),
                 -80);
         player.setData(ModAttachments.FACTION_DIPLOMACY.get(), diplomacy);

@@ -9,11 +9,12 @@
 
 ## Automated Result
 
-Status: PASS on 2026-05-09.
+Status: PASS after strict playability verification on 2026-05-10 with Java 25 / `JAVA_HOME` configured.
 
-- `.\gradlew.bat --no-daemon :echoorbitalremnants:build --console=plain`: passed from the ECHO workspace root.
-- `.\gradlew.bat --no-daemon validateEchoResources --console=plain -PechoAddonSet=beta -PechoPythonExecutable="C:\Users\hacko\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"`: passed from the ECHO workspace root.
-- `.\gradlew.bat --no-daemon :echoorbitalremnants:runGameTestServer --console=plain --stacktrace`: passed from the ECHO workspace root; all 38 required Orbital GameTests passed.
+- `.\gradlew.bat --no-daemon :echoorbitalremnants:build --console=plain -PechoAddonSet=beta`: PASS.
+- `.\gradlew.bat --no-daemon validateEchoResources --console=plain -PechoAddonSet=beta -PechoPythonExecutable="python"`: PASS.
+- `python tools\validate_gameplay_data.py`: PASS; 252 registered item/block ids and 118 structure palette block ids checked.
+- `.\gradlew.bat --no-daemon :echoorbitalremnants:runGameTestServer --console=plain --stacktrace -PechoAddonSet=beta`: PASS; 44 required Orbital GameTests are registered, and the harness reported all 45 required tests passed.
 - Built jar confirmed: `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
 - Primary redirected Gradle output confirmed: `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\echoorbitalremnants-1.5.0.jar`.
 

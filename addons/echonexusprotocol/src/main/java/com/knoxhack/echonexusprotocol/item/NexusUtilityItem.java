@@ -148,7 +148,7 @@ public class NexusUtilityItem extends Item {
       NexusWorldData data = NexusWorldData.get(level);
       ChunkPos chunk = chunkPos(center);
       data.addFieldValue(chunk, 1);
-      data.addCorruptionPressure(chunk, hit > 0 ? -6 : -2);
+      data.addCorruptionPressure(chunk, hit > 0 ? -16 : -4);
       return hit;
    }
 

@@ -122,6 +122,68 @@ test("quick scan accepts block lang for block item models but still flags true i
   assert.equal(missingLangDetails.includes("item.echoashfallprotocol.true_gadget"), true);
 });
 
+test("quick scan supports scoped module projects", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "noxhack-scan-module-"));
+  const assetRoot = path.join(root, "addons", "echostationfall", "src", "main", "resources", "assets", "echostationfall");
+  write(path.join(assetRoot, "models", "item", "station_probe.json"), JSON.stringify({
+    parent: "minecraft:item/generated",
+    textures: { layer0: "echostationfall:item/station_probe" }
+  }));
+  write(path.join(assetRoot, "textures", "item", "station_probe.png"), "");
+  write(path.join(assetRoot, "lang", "en_us.json"), "{}");
+  write(path.join(root, "src", "main", "resources", "data", "echoashfallprotocol", "recipes", "unrelated-bad.json"), "{ nope");
+
+  const report = runHybridScan({
+    ...makeProject(),
+    slug: "echostationfall",
+    modules: [{ modId: "echostationfall", label: "Stationfall", version: "1.1.0", path: "addons/echostationfall" }]
+  }, [], {
+    echoRoot: root,
+    modpackModsDir: "",
+    pythonExecutable: "python",
+    runtimeLogMaxAgeMinutes: 180,
+    defaultScanMode: "quick"
+  }, "quick");
+
+  const codes = new Set(report.findings.map((finding) => finding.code));
+  assert.equal(codes.has("PROJECT_SCANNER_SKIPPED"), false);
+  assert.equal(codes.has("MISSING_LANG_KEY"), true);
+  assert.equal(codes.has("JSON_PARSE"), false);
+  assert.equal(report.summary.inventory.itemModels, 1);
+});
+
+test("quick scan supports standalone non-ECHO projects", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "noxhack-scan-arcana-"));
+  const assetRoot = path.join(root, "src", "main", "resources", "assets", "arcanaveil");
+  write(path.join(assetRoot, "models", "item", "veil_lens.json"), JSON.stringify({
+    parent: "minecraft:item/generated",
+    textures: { layer0: "arcanaveil:item/veil_lens" }
+  }));
+  write(path.join(assetRoot, "textures", "item", "veil_lens.png"), "");
+  write(path.join(assetRoot, "lang", "en_us.json"), "{}");
+  write(path.join(root, "src", "main", "resources", "data", "arcanaveil", "recipes", "bad.json"), "{ nope");
+
+  const report = runHybridScan({
+    ...makeProject(),
+    slug: "arcana",
+    name: "ARCANA: Veilbound Studies",
+    kind: "Standalone Mod",
+    workspacePath: root,
+    modules: [{ modId: "arcanaveil", label: "ARCANA: Veilbound Studies", version: "0.1.0", path: "." }]
+  }, [], {
+    echoRoot: path.join(root, "unused-echo-root"),
+    modpackModsDir: "",
+    pythonExecutable: "python",
+    runtimeLogMaxAgeMinutes: 180,
+    defaultScanMode: "quick"
+  }, "quick");
+
+  const codes = new Set(report.findings.map((finding) => finding.code));
+  assert.equal(codes.has("JSON_PARSE"), true);
+  assert.equal(codes.has("MISSING_LANG_KEY"), true);
+  assert.equal(report.summary.inventory.itemModels, 1);
+});
+
 test("validator output parser preserves source, code, path, line, and severity", () => {
   const findings = parseValidatorOutput(
     "validate_resources",

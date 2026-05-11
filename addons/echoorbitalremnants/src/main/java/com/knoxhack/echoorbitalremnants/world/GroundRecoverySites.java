@@ -1,11 +1,16 @@
 package com.knoxhack.echoorbitalremnants.world;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.WorldMarker;
+import com.knoxhack.echocore.api.WorldMarkerType;
+import com.knoxhack.echoorbitalremnants.EchoOrbitalRemnants;
 import com.knoxhack.echoorbitalremnants.registry.ModBlocks;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
@@ -23,6 +28,7 @@ public final class GroundRecoverySites {
         sites.add(placeCritical(level, origin.offset(-18, 0, -18), GroundRecoverySiteType.CRYO_CREW_BUNKER, GroundRecoverySites::placeCryoCrewBunker));
         sites.add(placeCritical(level, origin.offset(22, 0, 18), GroundRecoverySiteType.FALLEN_ESCAPE_POD, GroundRecoverySites::placeFallenEscapePod));
         placeAmbientRuins(level, origin);
+        sites.forEach(site -> recordWorldMarker(level, site));
         return List.copyOf(sites);
     }
 
@@ -148,6 +154,27 @@ public final class GroundRecoverySites {
         RouteCache.place(level, origin.offset(0, 0, 1),
                 new ItemStack(ModItems.SUIT_SEALANT_PATCH.get(), 2),
                 new ItemStack(ModItems.OXYGEN_CANISTER.get()));
+    }
+
+    private static void recordWorldMarker(ServerLevel level, GroundRecoverySite site) {
+        if (level == null || site == null) {
+            return;
+        }
+        BlockPos pos = site.pos();
+        Identifier markerId = Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID,
+                "world_marker/ground_recovery/" + site.type().id() + "/" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ());
+        WorldMarker marker = new WorldMarker(
+                markerId,
+                Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, "orbital_debris_field"),
+                WorldMarkerType.ORBITAL_DEBRIS,
+                site.type().displayName(),
+                "Earth recovery landmark: " + site.type().rewardRole(),
+                level.dimension(),
+                pos,
+                64,
+                true,
+                level.getGameTime());
+        EchoCoreServices.worldMarkerService().revealMarker(level, marker);
     }
 
     private static BlockPos surface(ServerLevel level, BlockPos approximate) {

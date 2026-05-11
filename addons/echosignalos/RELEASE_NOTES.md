@@ -1,19 +1,22 @@
-# SignalOS 0.1.0 RC Notes
+# SignalOS Standalone Computer OS Notes
 
-SignalOS 0.1.0 is the first reusable terminal-framework release candidate extracted from the ECHO stack. It is an MVP library for NeoForge modpacks and addons that want an in-game terminal with chapters, missions, archives, a reward inbox, and diagnostics.
+SignalOS has evolved from a terminal-framework MVP into a standalone Echo-compatible computer OS addon. This pass keeps the existing mission/archive/reward/diagnostic APIs, but routes them through a desktop shell with real computer blocks, network identity, data records, and optional Echo Core state.
 
 ## Highlights
 
-- Adds the `signalos:terminal` block and item.
-- Provides a client terminal screen with chapter navigation and built-in pages for missions, archives, rewards, and diagnostics.
-- Supports Java registration for chapters, pages, missions, archive records, themes, actions, and diagnostics providers.
-- Loads simple datapack JSON content from:
-  - `data/<namespace>/signalos/chapters/*.json`
-  - `data/<namespace>/signalos/missions/*.json`
-  - `data/<namespace>/signalos/archives/*.json`
-- Tracks mission claimed state, archive read state, and pending terminal reward counts through server-to-client sync.
-- Stores and claims mission rewards through the linked SignalOS terminal block entity.
-- Includes `signalosexample`, a separate example addon with Java content, JSON content, and KubeJS-friendly script examples.
+- Upgrades `signalos:terminal` into the base SignalOS access point.
+- Adds `signalos:workstation`, `signalos:server_rack`, `signalos:network_relay`, and `signalos:data_drive`.
+- Adds a desktop shell with app launcher, status bar, active app panel, notifications, settings, and shared theme tokens.
+- Adds built-in apps: Home, Files, Notes, Logs, Network Monitor, Settings, Data Vault, Echo Link, Missions, Archives, Rewards, and Diagnostics.
+- Adds Java APIs for `SignalOsApp`, `SignalOsDataProvider`, and `SignalOsPeripheralProvider`.
+- Loads datapack JSON from:
+  - `data/<namespace>/signalos/apps/*.json`
+  - `data/<namespace>/signalos/data_records/*.json`
+  - `data/<namespace>/signalos/drive_templates/*.json`
+  - existing chapter, mission, and archive paths.
+- Syncs network state, access tier, linked block counts, and data records to the client terminal state packet.
+- Persists player notes and preferences, and persists drive records with the new data-drive component.
+- Bridges to Echo Core defensively through module reports, platform summaries, diagnostics, and route records where available.
 
 ## Requirements
 
@@ -22,36 +25,33 @@ SignalOS 0.1.0 is the first reusable terminal-framework release candidate extrac
 - Java `25+`
 - `echocore` `1.1.0+`
 
-## Verified For This RC
+## Verified In This Pass
 
-- `:echosignalos:build` passes.
-- `:signalosexample:build` passes.
-- Beta resource validation passes.
-- SignalOS GameTests pass: 13 required tests.
-- Example client launch reaches Minecraft client initialization with `echocore`, `signalos`, and `signalosexample` loaded.
-- Example client launch registers SignalOS example content during common setup.
-- Dedicated example server loads combined core/example JSON content: 2 chapters, 2 missions, and 2 archive records.
+- `:echosignalos:build --warning-mode all` passes.
+- `:echosignalos:runGameTestServer --warning-mode all` returned successfully.
+- Added GameTests for app registration and duplicate rejection, data-drive component flow, workstation access validity, and computer-network discovery.
+- Existing `signalosexample` chapter/mission/archive content remains compatible through the legacy app views.
 
 ## Known Limitations
 
-- Terminal art is still a vanilla-textured model, not final production art.
-- `TerminalTheme` is API data only; theme rendering is not implemented yet.
-- Custom `TerminalPage` entries provide tab metadata only unless the page type is one of `missions`, `archives`, `rewards`, or `diagnostics`.
-- KubeJS support is a soft `Java.loadClass` bridge, not a native KubeJS plugin event.
-- Mission graph, POI route map, faction atlas, JEI/GameStages/FTB/Patchouli bridges, and terminal modes are not included in this RC.
-- `/reload` was not fully verified in an interactive client session during this RC pass; server startup JSON loading was verified, and the reload command should receive one more manual check before publishing.
+- V1 uses one active app at a time, not draggable multi-window management.
+- Notes can be created and cleared from the app surface, but full typed editing is still a follow-up.
+- Data Vault exposes and archives records conceptually through the current record browser; deeper import/export workflows can build on the drive component model.
+- JSON apps without a known app `type` are launcher metadata until a custom renderer path is added.
+- Computer block art is placeholder-quality and should be replaced before a production content pass.
 
-## Manual Smoke Checklist Before Publishing
+## Manual Smoke Checklist
 
 1. Launch `:signalosexample:runExampleClient`.
 2. Create or open a local test world.
 3. Place `signalos:terminal` and open it by interacting with the block.
-4. Press the SignalOS keybind and confirm the terminal opens remotely.
-5. Confirm chapters include SignalOS core content and `signalosexample` Java/JSON content.
-6. Confirm Missions, Archives, Rewards, and Diagnostics tabs render without overlap.
-7. Complete `minecraft:story/root`, claim the example mission reward, then claim the terminal reward inbox.
-8. Open the example archive and confirm it changes from unread to read.
-9. Run `/reload` and confirm JSON content remains present afterward.
+4. Confirm the launcher shows Home, Files, Notes, Logs, Network Monitor, Settings, Data Vault, Echo Link, Missions, Archives, Rewards, and Diagnostics.
+5. Place a workstation, server rack, network relay, and data drive; confirm Network Monitor updates after reopening the terminal.
+6. Open Files, Logs, Data Vault, and Echo Link and confirm records render without overlap.
+7. Create a note, reopen the terminal, and confirm the note appears.
+8. Open Settings and change theme, UI scale, and access mode.
+9. Confirm Missions, Archives, Rewards, and Diagnostics still expose existing `signalosexample` content.
+10. Run `/reload` and confirm JSON app/data/legacy content remains present afterward.
 
 ## Build Commands
 

@@ -44,15 +44,18 @@ import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -61,6 +64,8 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -78,6 +83,12 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("data_parsers", () -> ModGameTests::dataParsers);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DATA_BACKED_TOOLS =
       TEST_FUNCTIONS.register("data_backed_tools", () -> ModGameTests::dataBackedTools);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BLOCK_STATE_PERSISTENCE =
+      TEST_FUNCTIONS.register("block_state_persistence", () -> ModGameTests::blockStatePersistence);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CONTAINER_BREAK_DROPS_INVENTORY =
+      TEST_FUNCTIONS.register("container_break_drops_inventory", () -> ModGameTests::containerBreakDropsInventory);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> COURIER_PAYLOAD_PERSISTENCE =
+      TEST_FUNCTIONS.register("courier_payload_persistence", () -> ModGameTests::courierPayloadPersistence);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STOCK_AND_READINESS =
       TEST_FUNCTIONS.register("stock_counting_and_readiness", () -> ModGameTests::stockCountingAndReadiness);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ITEM_RESERVATION =
@@ -131,13 +142,16 @@ public final class ModGameTests {
       register(event, "module_registration", MODULE_REGISTRATION.getId());
       register(event, "data_parsers", DATA_PARSERS.getId());
       register(event, "data_backed_tools", DATA_BACKED_TOOLS.getId());
+      register(event, "block_state_persistence", BLOCK_STATE_PERSISTENCE.getId());
+      register(event, "container_break_drops_inventory", CONTAINER_BREAK_DROPS_INVENTORY.getId());
+      register(event, "courier_payload_persistence", COURIER_PAYLOAD_PERSISTENCE.getId());
       register(event, "stock_counting_and_readiness", STOCK_AND_READINESS.getId());
       register(event, "item_reservation_extraction", ITEM_RESERVATION.getId());
       register(event, "target_capacity_precheck", TARGET_CAPACITY.getId());
       register(event, "target_block_type_enforcement", TARGET_BLOCK_TYPES.getId());
       register(event, "depot_offer_selection_cooldown", DEPOT_SELECTION.getId());
-      register(event, "remote_tablet_route_requester_loop", REMOTE_TABLET_LOOP.getId());
-      register(event, "auto_restock_station_loop", AUTO_RESTOCK_LOOP.getId());
+      register(event, "remote_tablet_route_requester_loop", REMOTE_TABLET_LOOP.getId(), 1200);
+      register(event, "auto_restock_station_loop", AUTO_RESTOCK_LOOP.getId(), 800);
       register(event, "route_discovery", ROUTE_DISCOVERY.getId());
       register(event, "courier_drone_delivery", DRONE_DELIVERY.getId());
       register(event, "courier_failure_recovery", FAILURE_RECOVERY.getId());
@@ -168,7 +182,7 @@ public final class ModGameTests {
       helper.assertTrue(preset.requirements().size() == 1 && preset.deliveryTicks() == 80, "Loadout parser should load requirements");
       helper.assertTrue(preset.targetBlockTypes().contains(id("loadout_locker")), "Loadout parser should load target block restrictions");
       FactionDepotOffer offer = LogisticsJsonReloadListener.parseOfferForTests(id("offer"),
-         JsonParser.parseString("{\"factionId\":\"echocore:survivors\",\"input\":{\"item\":\"minecraft:emerald\",\"count\":1},\"output\":{\"item\":\"minecraft:bread\",\"count\":2},\"cooldownTicks\":77}").getAsJsonObject());
+         JsonParser.parseString("{\"factionId\":\"echoashfallprotocol:crashbreak_salvage\",\"input\":{\"item\":\"minecraft:emerald\",\"count\":1},\"output\":{\"item\":\"minecraft:bread\",\"count\":2},\"cooldownTicks\":77}").getAsJsonObject());
       helper.assertTrue(offer.output().getCount() == 2, "Faction offer parser should load output stacks");
       helper.assertTrue(offer.cooldownTicks() == 77, "Faction offer parser should load cooldown ticks");
       assertJsonParseFails(helper, () -> LogisticsJsonReloadListener.parseLoadoutForTests(id("bad_loadout"),
@@ -217,6 +231,96 @@ public final class ModGameTests {
       InteractionResult scanResult = ((LogisticsToolItem)tablet.getItem()).use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
       helper.assertTrue(scanResult == InteractionResult.SUCCESS_SERVER, "Remote Request Tablet should handle its bound route");
       helper.assertTrue(categoryBeforeScan.equals(logistics.categoryId()) && networkBeforeScan.equals(logistics.networkId()), "Remote tablet use should not mutate bound block state");
+      helper.succeed();
+   }
+
+   private static void blockStatePersistence(GameTestHelper helper) {
+      BlockPos depotPos = new BlockPos(1, 1, 1);
+      helper.setBlock(depotPos, (Block)ModBlocks.FACTION_TRADE_DEPOT.get());
+      LogisticsBlockEntity depot = helper.getBlockEntity(depotPos, LogisticsBlockEntity.class);
+      depot.setNetworkId("Persist Net 01");
+      depot.setCategoryId("echologisticsnetwork:faction_goods");
+      depot.setLoadoutId("echologisticsnetwork:toxic_expedition_kit");
+      depot.setDepotOfferId("echologisticsnetwork:salvage_water_exchange");
+      depot.setCooldownTicks(73);
+      depot.recordManifest("Persisted manifest for release smoke");
+      depot.setItem(0, new ItemStack(Items.EMERALD, 3));
+      depot.setItem(1, new ItemStack(Items.COPPER_INGOT, 7));
+
+      TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+      depot.saveWithoutMetadata(output);
+      CompoundTag saved = output.buildResult();
+      LogisticsBlockEntity loaded = new LogisticsBlockEntity(helper.absolutePos(depotPos), depot.getBlockState());
+      loaded.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
+
+      helper.assertTrue("persist_net_01".equals(loaded.networkId()), "Logistics block should persist sanitized network ids");
+      helper.assertTrue("echologisticsnetwork:faction_goods".equals(loaded.categoryId()), "Logistics block should persist category labels");
+      helper.assertTrue("echologisticsnetwork:toxic_expedition_kit".equals(loaded.loadoutId()), "Logistics block should persist selected loadouts");
+      helper.assertTrue("echologisticsnetwork:salvage_water_exchange".equals(loaded.depotOfferId()), "Logistics block should persist selected depot offers");
+      helper.assertTrue(loaded.cooldownTicks() == 73, "Logistics block should persist cooldowns");
+      helper.assertTrue(countItem(loaded, Items.EMERALD) == 3 && countItem(loaded, Items.COPPER_INGOT) == 7,
+         "Logistics block should persist inventory contents without changing counts");
+      helper.assertTrue(loaded.statusLine().contains("Persisted manifest"), "Logistics block should persist the last manifest/status line");
+      helper.succeed();
+   }
+
+   private static void containerBreakDropsInventory(GameTestHelper helper) {
+      BlockPos cratePos = new BlockPos(1, 1, 1);
+      helper.setBlock(cratePos, (Block)ModBlocks.SUPPLY_CRATE.get());
+      LogisticsBlockEntity crate = helper.getBlockEntity(cratePos, LogisticsBlockEntity.class);
+      crate.setItem(0, new ItemStack(Items.EMERALD, 3));
+      crate.setItem(1, new ItemStack(Items.COPPER_INGOT, 7));
+      crate.setItem(2, new ItemStack(Items.APPLE, 2));
+      int emeraldDropsBefore = countDroppedItems(helper, cratePos, Items.EMERALD);
+      int copperDropsBefore = countDroppedItems(helper, cratePos, Items.COPPER_INGOT);
+      int appleDropsBefore = countDroppedItems(helper, cratePos, Items.APPLE);
+
+      helper.getLevel().destroyBlock(helper.absolutePos(cratePos), false);
+
+      int emeraldDelta = countDroppedItems(helper, cratePos, Items.EMERALD) - emeraldDropsBefore;
+      int copperDelta = countDroppedItems(helper, cratePos, Items.COPPER_INGOT) - copperDropsBefore;
+      int appleDelta = countDroppedItems(helper, cratePos, Items.APPLE) - appleDropsBefore;
+      helper.assertTrue(emeraldDelta == 3 && copperDelta == 7 && appleDelta == 2,
+         "Breaking a stocked Logistics container should drop exact stored contents once; emerald="
+            + emeraldDelta + ", copper=" + copperDelta + ", apple=" + appleDelta);
+      helper.assertTrue(countItem(crate, Items.EMERALD) == 0 && countItem(crate, Items.COPPER_INGOT) == 0 && countItem(crate, Items.APPLE) == 0,
+         "Dropped Logistics contents should be cleared from the removed block entity to prevent duplicate drops");
+
+      crate.preRemoveSideEffects(helper.absolutePos(cratePos), crate.getBlockState());
+      helper.assertTrue(countDroppedItems(helper, cratePos, Items.EMERALD) - emeraldDropsBefore == 3
+            && countDroppedItems(helper, cratePos, Items.COPPER_INGOT) - copperDropsBefore == 7
+            && countDroppedItems(helper, cratePos, Items.APPLE) - appleDropsBefore == 2,
+         "Repeated removal side effects should not duplicate already-dropped Logistics contents");
+      helper.succeed();
+   }
+
+   private static void courierPayloadPersistence(GameTestHelper helper) {
+      UUID jobId = UUID.fromString("00000000-0000-0000-0000-000000000123");
+      UUID owner = UUID.fromString("00000000-0000-0000-0000-000000000456");
+      BlockPos sourceDock = helper.absolutePos(new BlockPos(1, 1, 1));
+      BlockPos target = helper.absolutePos(new BlockPos(6, 1, 1));
+      CourierDroneEntity drone = ModEntities.COURIER_DRONE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+      helper.assertTrue(drone != null, "Courier drone should instantiate for persistence");
+      drone.configureDelivery(jobId, owner, "persist-net", sourceDock, target, id("toxic_expedition_kit"),
+         List.of(new ItemStack(Items.POTION, 5), new ItemStack(Items.APPLE, 3)), 90);
+
+      TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+      drone.saveWithoutId(output);
+      CompoundTag saved = output.buildResult();
+      CourierDroneEntity loaded = ModEntities.COURIER_DRONE.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+      helper.assertTrue(loaded != null, "Reloaded courier drone should instantiate");
+      loaded.load(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
+
+      LogisticsNetworkService.DeliveryJob job = loaded.deliveryJob();
+      helper.assertTrue(job.id().equals(jobId), "Courier should persist its job id");
+      helper.assertTrue(owner.equals(job.owner()), "Courier should persist its owner id");
+      helper.assertTrue("persist-net".equals(loaded.networkId()), "Courier should persist its network id");
+      helper.assertTrue(sourceDock.equals(job.sourceDock()) && target.equals(job.targetPos()), "Courier should persist source and target positions");
+      helper.assertTrue(id("toxic_expedition_kit").equals(job.presetId()), "Courier should persist the requested preset id");
+      helper.assertTrue(job.etaTick() - job.createdTick() == 90, "Courier should persist its delivery timing");
+      helper.assertTrue("in_transit".equals(job.status()), "Courier should reload as an in-transit job");
+      helper.assertTrue(countPayload(job, Items.POTION) == 5 && countPayload(job, Items.APPLE) == 3,
+         "Courier payload should survive save/load without changing item counts");
       helper.succeed();
    }
 
@@ -371,8 +475,8 @@ public final class ModGameTests {
 
    private static void remoteTabletRouteRequesterLoop(GameTestHelper helper) {
       BlockPos dockPos = new BlockPos(1, 1, 1);
-      BlockPos cratePos = new BlockPos(2, 1, 1);
-      BlockPos requesterPos = new BlockPos(5, 1, 1);
+      BlockPos requesterPos = new BlockPos(2, 1, 1);
+      BlockPos cratePos = new BlockPos(4, 1, 1);
       helper.setBlock(dockPos, (Block)ModBlocks.DRONE_DELIVERY_DOCK.get());
       helper.setBlock(cratePos, (Block)ModBlocks.SUPPLY_CRATE.get());
       helper.setBlock(requesterPos, (Block)ModBlocks.ROUTE_REQUESTER.get());
@@ -402,8 +506,8 @@ public final class ModGameTests {
 
    private static void autoRestockStationLoop(GameTestHelper helper) {
       BlockPos dockPos = new BlockPos(1, 1, 1);
-      BlockPos cratePos = new BlockPos(2, 1, 1);
-      BlockPos restockPos = new BlockPos(5, 1, 1);
+      BlockPos restockPos = new BlockPos(2, 1, 1);
+      BlockPos cratePos = new BlockPos(4, 1, 1);
       helper.setBlock(dockPos, (Block)ModBlocks.DRONE_DELIVERY_DOCK.get());
       helper.setBlock(cratePos, (Block)ModBlocks.SUPPLY_CRATE.get());
       helper.setBlock(restockPos, (Block)ModBlocks.AUTO_RESTOCK_STATION.get());
@@ -422,13 +526,16 @@ public final class ModGameTests {
          LogisticsNetworkService.LogisticsSnapshot snapshot = LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(restockPos), "restock-loop", player);
          helper.assertTrue(snapshot.activeDeliveries() == 1, "Auto-restock dispatch should create a tracked drone delivery");
       });
-      helper.succeedWhen(() -> helper.assertTrue(countItem(restock, Items.POTION) > 0 && countItem(restock, Items.APPLE) > 0,
-         "Auto-Restock Station should receive the selected loadout payload; restock="
-            + totals(countItem(restock, Items.POTION), countItem(restock, Items.APPLE), countItem(restock, Items.PAPER), countItem(restock, Items.GOLDEN_APPLE))
-            + ", crate="
-            + totals(countItem(crate, Items.POTION), countItem(crate, Items.APPLE), countItem(crate, Items.PAPER), countItem(crate, Items.GOLDEN_APPLE))
-            + ", active="
-            + LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(restockPos), "restock-loop", player).activeDeliveries()));
+      helper.succeedWhen(() -> {
+         tickNetworkDrones(helper, restockPos, "restock-loop");
+         helper.assertTrue(countItem(restock, Items.POTION) > 0 && countItem(restock, Items.APPLE) > 0,
+            "Auto-Restock Station should receive the selected loadout payload; restock="
+               + totals(countItem(restock, Items.POTION), countItem(restock, Items.APPLE), countItem(restock, Items.PAPER), countItem(restock, Items.GOLDEN_APPLE))
+               + ", crate="
+               + totals(countItem(crate, Items.POTION), countItem(crate, Items.APPLE), countItem(crate, Items.PAPER), countItem(crate, Items.GOLDEN_APPLE))
+               + ", active="
+               + LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(restockPos), "restock-loop", player).activeDeliveries());
+      });
    }
 
    private static void routeDiscovery(GameTestHelper helper) {
@@ -981,6 +1088,16 @@ public final class ModGameTests {
       return count;
    }
 
+   private static int countPayload(LogisticsNetworkService.DeliveryJob job, Item item) {
+      int count = 0;
+      for (ItemStack stack : job.payload()) {
+         if (stack.is(item)) {
+            count += stack.getCount();
+         }
+      }
+      return count;
+   }
+
    private static int countItemAcross(Item item, Container... containers) {
       int count = 0;
       for (Container container : containers) {
@@ -1005,6 +1122,16 @@ public final class ModGameTests {
       return count;
    }
 
+   private static void tickNetworkDrones(GameTestHelper helper, BlockPos localOrigin, String networkId) {
+      for (CourierDroneEntity drone : helper.getLevel().getEntitiesOfClass(
+         CourierDroneEntity.class,
+         new net.minecraft.world.phys.AABB(helper.absolutePos(localOrigin)).inflate(16.0D))) {
+         if (networkId.equals(drone.networkId())) {
+            drone.tick();
+         }
+      }
+   }
+
    private static void assertJsonParseFails(GameTestHelper helper, Runnable parse, String message) {
       try {
          parse.run();
@@ -1019,9 +1146,18 @@ public final class ModGameTests {
       register(event, environment, testName, functionId);
    }
 
+   private static void register(RegisterGameTestsEvent event, String testName, Identifier functionId, int maxTicks) {
+      Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(id("logistics_network_" + testName));
+      register(event, environment, testName, functionId, maxTicks);
+   }
+
    private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String testName, Identifier functionId) {
+      register(event, environment, testName, functionId, 400);
+   }
+
+   private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String testName, Identifier functionId, int maxTicks) {
       TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(
-         environment, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, TEST_PADDING
+         environment, Identifier.withDefaultNamespace("empty"), maxTicks, 0, true, Rotation.NONE, false, 1, 1, false, TEST_PADDING
       );
       event.registerTest(id(testName), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, functionId), data));
    }

@@ -2,6 +2,7 @@ package com.knoxhack.echoashfallprotocol.guardian;
 
 import com.knoxhack.echoashfallprotocol.entity.ModEntities;
 import com.knoxhack.echoashfallprotocol.entity.boss.BiomeBossEntity;
+import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
 import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.worldgen.StructureType;
 import net.minecraft.world.BossEvent;
@@ -31,6 +32,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_plains_warlord",
                 "plains_warlord",
                 "Plains Warlord",
+                AshfallBiomeFactions.RADWARDEN_COMPACT,
                 StructureType.RADWARDEN_OUTPOST,
                 Set.of(StructureType.BIO_LAB, StructureType.RADIO_TOWER, StructureType.CRASHBREAK_SALVAGE_YARD, StructureType.DROP_POD),
                 "reinforced bunker door",
@@ -67,6 +69,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_city_ruin_stalker",
                 "city_ruin_stalker",
                 "City Ruin Stalker",
+                AshfallBiomeFactions.CRASHBREAK_SALVAGE,
                 StructureType.DATA_CENTER,
                 Set.of(StructureType.SUBWAY_STATION, StructureType.SEWER_JUNCTION, StructureType.TRAIN_YARD, StructureType.ABANDONED_MINE),
                 "subway service stair",
@@ -103,6 +106,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_industrial_juggernaut",
                 "industrial_juggernaut",
                 "Industrial Juggernaut",
+                AshfallBiomeFactions.CRASHBREAK_SALVAGE,
                 StructureType.DATA_CENTER,
                 Set.of(StructureType.TRAIN_YARD, StructureType.ABANDONED_MINE, StructureType.DERELICT_WORKSHOP, StructureType.SUBWAY_STATION),
                 "ruined freight lift",
@@ -139,6 +143,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_toxic_hive_matriarch",
                 "toxic_hive_matriarch",
                 "Toxic Hive Matriarch",
+                AshfallBiomeFactions.SPOREBOUND_SANCTUM,
                 StructureType.SPOREBOUND_SANCTUM,
                 Set.of(StructureType.BIO_LAB, StructureType.SEWER_JUNCTION, StructureType.REACTOR_RUIN),
                 "toxic sinkhole",
@@ -175,6 +180,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_crash_zone_colossus",
                 "crash_zone_colossus",
                 "Crash Zone Colossus",
+                AshfallBiomeFactions.CRASHBREAK_SALVAGE,
                 StructureType.MILITARY_VAULT,
                 Set.of(StructureType.DROP_POD, StructureType.TRAIN_YARD, StructureType.SATELLITE_ARRAY),
                 "impact vault breach",
@@ -211,6 +217,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_radiation_behemoth",
                 "radiation_behemoth",
                 "Radiation Behemoth",
+                AshfallBiomeFactions.RADWARDEN_COMPACT,
                 StructureType.REACTOR_RUIN,
                 Set.of(StructureType.MILITARY_VAULT, StructureType.RADIO_TOWER, StructureType.SATELLITE_ARRAY),
                 "reactor access hatch",
@@ -247,6 +254,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_cryogenic_overseer",
                 "cryogenic_overseer",
                 "Cryogenic Overseer",
+                AshfallBiomeFactions.RADWARDEN_COMPACT,
                 StructureType.CRYOGENIC_RUINS,
                 Set.of(StructureType.OBSERVATION_POST, StructureType.RELAY_STATION),
                 "frozen service shaft",
@@ -283,6 +291,7 @@ public final class BiomeGuardianProfiles {
                 "neutralize_nexus_scar_avatar",
                 "nexus_scar_avatar",
                 "Nexus Scar Avatar",
+                AshfallBiomeFactions.SPOREBOUND_SANCTUM,
                 StructureType.REACTOR_RUIN,
                 Set.of(StructureType.BIO_LAB, StructureType.MILITARY_VAULT, StructureType.SATELLITE_ARRAY),
                 "folded Nexus breach",
@@ -323,6 +332,7 @@ public final class BiomeGuardianProfiles {
                                                 String missionId,
                                                 String bossPath,
                                                 String title,
+                                                net.minecraft.resources.Identifier ownerFaction,
                                                 StructureType mainStructure,
                                                 Set<StructureType> supportStructures,
                                                 String surfaceEntrance,
@@ -359,6 +369,7 @@ public final class BiomeGuardianProfiles {
                 missionId,
                 bossPath,
                 title,
+                ownerFaction,
                 mainStructure,
                 supportStructures,
                 surfaceEntrance,

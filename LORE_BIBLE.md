@@ -39,14 +39,20 @@ This guide keeps the official ECHO stack aligned across missions, terminal tabs,
 
 ## Factions
 
-- **Remnants:** Order, patrols, stockpiles, weapons, and defensive logistics.
-- **Salvagers:** Trade, maps, routes, schematics, and the economy of ruin.
-- **Mutant enclaves:** Medicine, adaptation, samples, and the biological cost of survival.
-- **Orbital Remnant:** Recovery discipline carried into orbit.
-- **Void Salvagers:** Salvage culture pushed into vacuum and debris fields.
-- **Nexus Choir:** Post-ECHO anomaly worship, forbidden readings, and risky endgame contracts.
+- **Radwarden Compact:** Containment, patrol law, reactor cleanup, cold-route discipline, and the belief that survival starts by limiting the damage.
+- **Crashbreak Salvage:** Crash-site crews, route builders, machine recovery, trade manifests, and the economy of making ruins move again.
+- **Sporebound Sanctum:** Biological recovery, adaptation doctrine, toxic-route expertise, Nexus anomaly interpretation, and risky field medicine.
+- **Orbital lanes:** Orbital Remnants mirrors into those same three pressures: Radwarden containment, Crashbreak salvage, and Sporebound anomaly reading. Old orbital save lanes are compatibility keys, not separate active factions.
 
 Faction writing should treat standing, contracts, NPC roles, local POI affinity, and last contact as field memory. A faction contact is a person in a ruined logistics chain, not a menu wearing a name.
+
+## Biome Guardians
+
+- Eight guardian arcs remain active. They are not separate factions; they are buried Gridfall control nodes interpreted through the three faction threads.
+- Radwarden owns the containment guardians: Plains Warlord, Radiation Behemoth, and Cryogenic Overseer.
+- Crashbreak owns the salvage guardians: City Ruin Stalker, Industrial Juggernaut, and Crash Zone Colossus.
+- Sporebound owns the anomaly guardians: Toxic Hive Matriarch and Nexus Scar Avatar.
+- Defeating a guardian should grant faction-flavored lore and reputation without changing the all-eight guardian gate into the Nexus Core.
 
 ## Drop Pod Opening
 

@@ -163,7 +163,8 @@ public class NexusMachineBlockEntity extends BaseContainerBlockEntity {
    }
 
    private static RecipeHolder<NexusProcessingRecipe> findRecipe(ServerLevel level, NexusMachineBlock.MachineKind kind, ItemStack input) {
-      return level.recipeAccess()
+      return level.getServer()
+         .getRecipeManager()
          .getRecipes()
          .stream()
          .filter(holder -> holder.value().getType() == ModRecipes.NEXUS_PROCESSING_TYPE.get())

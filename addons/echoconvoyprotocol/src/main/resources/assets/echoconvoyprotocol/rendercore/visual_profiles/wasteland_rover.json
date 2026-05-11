@@ -1,0 +1,64 @@
+{
+  "schema_version": 3,
+  "base_texture": "echoconvoyprotocol:textures/entity/wasteland_rover.png",
+  "glow_texture": "echoconvoyprotocol:textures/entity/wasteland_rover_glow.png",
+  "damaged_overlay_texture": "echoconvoyprotocol:textures/entity/wasteland_rover_damage_overlay.png",
+  "active_overlay_texture": "echoconvoyprotocol:textures/entity/wasteland_rover_active_overlay.png",
+  "animation_profile": "echoconvoyprotocol:wasteland_rover",
+  "particle_profile": "echoconvoyprotocol:wasteland_rover",
+  "default_state": "ONLINE",
+  "transition_seconds": 0.18,
+  "materials": {
+    "echo_cyan": {
+      "color": "#FF66E8FF",
+      "alpha": 0.95,
+      "emissive": true,
+      "blend_mode": "additive"
+    },
+    "damage_heat": {
+      "color": "#FFFF7A28",
+      "alpha": 0.82,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "cyan_rover_glow",
+      "kind": "glow",
+      "texture": "echoconvoyprotocol:textures/entity/wasteland_rover_glow.png",
+      "material": "echo_cyan",
+      "states": ["ONLINE", "ACTIVE", "WORKING", "SCANNING", "CHARGING", "COMPLETE"],
+      "parts": ["headlight_left", "headlight_right", "scanner_lens", "core"]
+    },
+    {
+      "id": "driving_cyan_overlay",
+      "kind": "overlay",
+      "texture": "echoconvoyprotocol:textures/entity/wasteland_rover_active_overlay.png",
+      "material": "echo_cyan",
+      "states": ["ACTIVE"],
+      "parts": ["wheel_front_left", "wheel_front_right", "wheel_back_left", "wheel_back_right", "scanner"]
+    },
+    {
+      "id": "damaged_heat_overlay",
+      "kind": "overlay",
+      "texture": "echoconvoyprotocol:textures/entity/wasteland_rover_damage_overlay.png",
+      "material": "damage_heat",
+      "states": ["DAMAGED", "FAILED", "OVERHEATED"],
+      "parts": ["exhaust_left", "exhaust_right", "core"]
+    }
+  ],
+  "state_animations": {
+    "OFFLINE": "idle",
+    "ONLINE": "scanner_rotate",
+    "ACTIVE": "rover_drive",
+    "DAMAGED": "damaged_flicker"
+  },
+  "anchors": {
+    "exhaust_left": { "part": "exhaust_left", "offset": [-0.75, 0.55, 1.35] },
+    "exhaust_right": { "part": "exhaust_right", "offset": [0.75, 0.55, 1.35] },
+    "scanner_lens": { "part": "scanner", "offset": [0.0, 1.9, -0.2] },
+    "wheel_back_left": { "part": "wheel_back_left", "offset": [-1.15, 0.05, 0.75] },
+    "wheel_back_right": { "part": "wheel_back_right", "offset": [1.15, 0.05, 0.75] }
+  }
+}

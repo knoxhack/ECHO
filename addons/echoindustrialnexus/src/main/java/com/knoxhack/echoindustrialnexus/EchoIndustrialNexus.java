@@ -42,6 +42,7 @@ public class EchoIndustrialNexus {
       modEventBus.addListener(ModGameTests::registerTests);
       modEventBus.addListener(this::commonSetup);
       modContainer.registerConfig(Type.COMMON, Config.SPEC);
+      Config.registerEchoConfig();
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {

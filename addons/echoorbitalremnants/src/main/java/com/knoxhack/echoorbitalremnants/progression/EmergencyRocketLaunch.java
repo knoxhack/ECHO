@@ -35,11 +35,13 @@ public final class EmergencyRocketLaunch {
                     ? 96.0D
                     : Math.max(serverPlayer.getY() + 80.0D, Config.ORBITAL_ALTITUDE.get());
             BlockPos target = BlockPos.containing(serverPlayer.getX(), orbitY, serverPlayer.getZ());
-            OrbitalDebrisField.seedArrivalField(targetLevel, target);
-            Entity dockingAi = ModEntities.CORRUPTED_DOCKING_AI.get().create(targetLevel, EntitySpawnReason.EVENT);
-            if (dockingAi != null) {
-                dockingAi.setPos(target.getX() + 6.0D, target.getY() + 1.0D, target.getZ() - 6.0D);
-                targetLevel.addFreshEntity(dockingAi);
+            if (progress.markRouteArrivalSeeded(player, "low_earth_orbit")) {
+                OrbitalDebrisField.seedArrivalField(targetLevel, target);
+                Entity dockingAi = ModEntities.CORRUPTED_DOCKING_AI.get().create(targetLevel, EntitySpawnReason.EVENT);
+                if (dockingAi != null) {
+                    dockingAi.setPos(target.getX() + 6.0D, target.getY() + 1.0D, target.getZ() - 6.0D);
+                    targetLevel.addFreshEntity(dockingAi);
+                }
             }
             serverPlayer.teleportTo(targetLevel, serverPlayer.getX(), orbitY, serverPlayer.getZ(), Set.of(),
                     serverPlayer.getYRot(), serverPlayer.getXRot(), false);

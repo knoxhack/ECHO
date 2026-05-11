@@ -2,7 +2,8 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { AppSettings, Project, QaFinding, QaTrack, ScanMode, ScanReport, ScanStatus } from "../shared/types.js";
-import { DEFAULT_PYTHON_EXECUTABLE, ECHO_ROOT, toDisplayPath } from "./paths.js";
+import { DEFAULT_PYTHON_EXECUTABLE, toDisplayPath } from "./paths.js";
+import { projectWorkspaceRoot } from "./workspace.js";
 
 const SKIPPED_DIRS = new Set([".git", ".gradle", "build", "dist", "dist-server", "node_modules", ".local"]);
 const FINDING_LIMIT_PER_CODE = 40;
@@ -74,19 +75,24 @@ interface ValidatorResult {
 export function runHybridScan(project: Project, tracks: QaTrack[], settings: AppSettings, mode: ScanMode): ScannerOutput {
   const startedAt = new Date().toISOString();
   const start = Date.now();
-  const echoRoot = path.resolve(settings.echoRoot || ECHO_ROOT);
+  const workspaceRoot = projectWorkspaceRoot(project, settings);
+  const scanRoot = projectScanRoot(project, workspaceRoot);
+  const runtimeRoot = projectRuntimeRoot(project, workspaceRoot);
+  const fullStack = project.slug === "echo";
   const findings: QaFinding[] = [];
   const rawOutput: string[] = [];
   const source: Record<string, unknown> = {
-    quickChecks: ["json", "resources", "terminal", "handoffs", "runtime-logs", "jar-set"],
+    quickChecks: fullStack
+      ? ["json", "resources", "terminal", "handoffs", "runtime-logs", "jar-set"]
+      : ["json", "resources", "runtime-logs", "jar-set"],
     deepValidators: []
   };
 
-  const inventory = workspaceInventory(echoRoot);
-  findings.push(...quickScan(project, echoRoot, settings, inventory));
+  const inventory = workspaceInventory(scanRoot);
+  findings.push(...quickScan(project, workspaceRoot, scanRoot, runtimeRoot, settings));
 
-  if (mode === "deep") {
-    const validators = runDeepValidators(settings, echoRoot);
+  if (mode === "deep" && fullStack) {
+    const validators = runDeepValidators(settings, workspaceRoot);
     source.deepValidators = validators.map((result) => ({
       source: result.source,
       status: result.status,
@@ -168,42 +174,44 @@ export function parseValidatorOutput(source: string, output: string, exitCode: n
   return findings;
 }
 
-function quickScan(project: Project, echoRoot: string, settings: AppSettings, inventory: Record<string, number>): QaFinding[] {
-  if (project.slug !== "echo") {
+function quickScan(project: Project, workspaceRoot: string, scanRoot: string, runtimeRoot: string, settings: AppSettings): QaFinding[] {
+  if (!fs.existsSync(workspaceRoot)) {
     return [
       {
-        track: "resources",
-        title: "Project scanner not configured",
-        severity: "low",
-        status: "Skipped",
-        detail: "Full scanner support is currently focused on ECHO operations.",
-        code: "PROJECT_SCANNER_SKIPPED",
+        track: "release-ops",
+        title: "Project workspace missing",
+        severity: "critical",
+        status: "Failed",
+        detail: `Configured project workspace does not exist: ${workspaceRoot}`,
+        code: "PROJECT_WORKSPACE_MISSING",
         source: "quick"
       }
     ];
   }
-  if (!fs.existsSync(echoRoot)) {
+  if (!fs.existsSync(scanRoot)) {
     return [
       {
         track: "release-ops",
-        title: "ECHO root missing",
+        title: "Project workspace missing",
         severity: "critical",
         status: "Failed",
-        detail: `Configured ECHO root does not exist: ${echoRoot}`,
-        code: "ECHO_ROOT_MISSING",
+        detail: `Configured project workspace does not exist: ${scanRoot}`,
+        code: "PROJECT_ROOT_MISSING",
         source: "quick"
       }
     ];
   }
 
-  return [
-    ...checkJsonValidity(echoRoot),
-    ...checkResources(project, echoRoot),
-    ...checkTerminalPages(echoRoot),
-    ...checkHandoffs(echoRoot),
-    ...checkRuntimeLogs(echoRoot, settings.runtimeLogMaxAgeMinutes),
-    ...checkJarSet(project, settings.modpackModsDir)
+  const findings = [
+    ...checkJsonValidity(scanRoot),
+    ...checkResources(project, workspaceRoot),
+    ...checkRuntimeLogs(runtimeRoot, settings.runtimeLogMaxAgeMinutes),
+    ...checkJarSet(project, settings.modpackModsDir, project.slug === "echo")
   ];
+  if (project.slug === "echo") {
+    findings.push(...checkTerminalPages(workspaceRoot), ...checkHandoffs(workspaceRoot));
+  }
+  return findings;
 }
 
 function checkJsonValidity(echoRoot: string): QaFinding[] {
@@ -406,8 +414,11 @@ function isRuntimeLogFile(root: string, file: string): boolean {
   return (parent === "logs" && file.endsWith(".log")) || (parent === "crash-reports" && file.endsWith(".txt"));
 }
 
-function checkJarSet(project: Project, modsDir: string): QaFinding[] {
+function checkJarSet(project: Project, modsDir: string, requireConfigured: boolean): QaFinding[] {
   if (!modsDir) {
+    if (!requireConfigured) {
+      return [];
+    }
     return [
       {
         track: "release-ops",
@@ -490,7 +501,7 @@ function runDeepValidators(settings: AppSettings, echoRoot: string): ValidatorRe
 
 function runValidator(python: string, source: string, args: string[], cwd: string): ValidatorResult {
   const start = Date.now();
-  if (!fs.existsSync(python)) {
+  if (isPathLikeExecutable(python) && !fs.existsSync(python)) {
     const output = `Python executable not found: ${python}`;
     return {
       source,
@@ -518,6 +529,32 @@ function runValidator(python: string, source: string, args: string[], cwd: strin
     output,
     findings: parseValidatorOutput(source, output, exitCode)
   };
+}
+
+function projectScanRoot(project: Project, echoRoot: string): string {
+  if (project.slug === "echo") {
+    return echoRoot;
+  }
+  const modulePath = project.modules[0]?.path ?? project.workspacePath;
+  if (!modulePath || modulePath === ".") {
+    return path.join(echoRoot, "src", "main");
+  }
+  return path.resolve(echoRoot, modulePath);
+}
+
+function projectRuntimeRoot(project: Project, echoRoot: string): string {
+  if (project.slug === "echo") {
+    return echoRoot;
+  }
+  const modulePath = project.modules[0]?.path ?? project.workspacePath;
+  if (!modulePath || modulePath === ".") {
+    return echoRoot;
+  }
+  return path.resolve(echoRoot, modulePath);
+}
+
+function isPathLikeExecutable(executable: string): boolean {
+  return path.isAbsolute(executable) || executable.includes("/") || executable.includes("\\");
 }
 
 function workspaceInventory(root: string): Record<string, number> {

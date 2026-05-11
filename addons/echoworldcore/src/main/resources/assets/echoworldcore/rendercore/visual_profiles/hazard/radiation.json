@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/yellow_stained_glass.png",
+  "default_state": "OVERHEATED",
+  "transition_seconds": 0.2,
+  "materials": {
+    "hazard_radiation": {
+      "color": "#FFFFF26A",
+      "alpha": 0.62,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "radiation_warning",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/yellow_stained_glass.png",
+      "material": "hazard_radiation",
+      "states": ["ACTIVE", "OVERHEATED"],
+      "alpha": 0.6,
+      "emissive": true
+    }
+  ]
+}

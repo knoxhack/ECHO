@@ -1,14 +1,16 @@
 package com.knoxhack.echoagriculturereclamation.test;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.knoxhack.echocore.api.EchoRouteRecord;
-import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
-import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoagriculturereclamation.EchoAgricultureReclamation;
 import com.knoxhack.echoagriculturereclamation.block.ReclamationMachineBlock;
 import com.knoxhack.echoagriculturereclamation.block.entity.HydroponicTrayBlockEntity;
+import com.knoxhack.echoagriculturereclamation.block.entity.ReclamationCropBlockEntity;
 import com.knoxhack.echoagriculturereclamation.content.CropSpec;
 import com.knoxhack.echoagriculturereclamation.content.ReclamationContent;
 import com.knoxhack.echoagriculturereclamation.content.ReclamationMetrics;
@@ -17,13 +19,17 @@ import com.knoxhack.echoagriculturereclamation.content.SoilState;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCoreIntegration;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCrossAddonIntegration;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCrossAddonIntegration.FactionPreference;
-import com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationProgress;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationRestoration;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationWorldData;
 import com.knoxhack.echoagriculturereclamation.registry.ModBlocks;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
+import com.mojang.serialization.JsonOps;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -34,9 +40,12 @@ import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -47,7 +56,10 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -64,6 +76,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("hydroponic_tray_persistence", () -> ModGameTests::hydroponicTrayPersistence);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> GREENHOUSE =
       TEST_FUNCTIONS.register("greenhouse_safety_scoring", () -> ModGameTests::greenhouseSafetyScoring);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> GROWTH_GREENHOUSE_CACHE =
+      TEST_FUNCTIONS.register("growth_greenhouse_cache_regression", () -> ModGameTests::growthGreenhouseCacheRegression);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SEED_STABILIZATION =
       TEST_FUNCTIONS.register("seed_stabilization_profile", () -> ModGameTests::seedStabilizationProfile);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL =
@@ -84,6 +98,20 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("bio_reactor_utility_outputs", () -> ModGameTests::bioReactorUtilityOutputs);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> COMPOST_RECYCLER_UTILITY =
       TEST_FUNCTIONS.register("compost_recycler_utility_outputs", () -> ModGameTests::compostRecyclerUtilityOutputs);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORLD_DATA_CODEC =
+      TEST_FUNCTIONS.register("world_data_codec_round_trip", () -> ModGameTests::worldDataCodecRoundTrip);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BLOCK_ENTITY_PERSISTENCE =
+      TEST_FUNCTIONS.register("block_entity_persistence_round_trip", () -> ModGameTests::blockEntityPersistenceRoundTrip);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_REWARD_ONCE =
+      TEST_FUNCTIONS.register("terminal_reward_claim_once", () -> ModGameTests::terminalRewardClaimOnce);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> LOOT_MODIFIER_PACKAGING =
+      TEST_FUNCTIONS.register("loot_modifier_packaging", () -> ModGameTests::lootModifierPackaging);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> STANDALONE_RECIPE_CHAIN =
+      TEST_FUNCTIONS.register("standalone_recipe_chain", () -> ModGameTests::standaloneRecipeChain);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_RECOVERY_ONCE =
+      TEST_FUNCTIONS.register("core_recovery_once", () -> ModGameTests::coreRecoveryOnce);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> PLAYER_PROGRESS_NBT =
+      TEST_FUNCTIONS.register("player_progress_nbt_round_trip", () -> ModGameTests::playerProgressNbtRoundTrip);
 
    private ModGameTests() {
    }
@@ -98,6 +126,7 @@ public final class ModGameTests {
       register(event, environment, "soil_state_conversion", SOIL_CONVERSION.getId());
       register(event, environment, "hydroponic_tray_persistence", HYDROPONIC_TRAY.getId());
       register(event, environment, "greenhouse_safety_scoring", GREENHOUSE.getId());
+      register(event, environment, "growth_greenhouse_cache_regression", GROWTH_GREENHOUSE_CACHE.getId());
       register(event, environment, "seed_stabilization_profile", SEED_STABILIZATION.getId());
       register(event, environment, "terminal_status_metrics", TERMINAL.getId());
       register(event, environment, "restoration_score_conversion", RESTORATION.getId());
@@ -108,14 +137,23 @@ public final class ModGameTests {
       register(event, environment, "main_progression_loop_regression", MAIN_LOOP.getId());
       register(event, environment, "bio_reactor_utility_outputs", BIO_REACTOR_UTILITY.getId());
       register(event, environment, "compost_recycler_utility_outputs", COMPOST_RECYCLER_UTILITY.getId());
+      register(event, environment, "world_data_codec_round_trip", WORLD_DATA_CODEC.getId());
+      register(event, environment, "block_entity_persistence_round_trip", BLOCK_ENTITY_PERSISTENCE.getId());
+      register(event, environment, "terminal_reward_claim_once", TERMINAL_REWARD_ONCE.getId());
+      register(event, environment, "loot_modifier_packaging", LOOT_MODIFIER_PACKAGING.getId());
+      register(event, environment, "standalone_recipe_chain", STANDALONE_RECIPE_CHAIN.getId());
+      register(event, environment, "core_recovery_once", CORE_RECOVERY_ONCE.getId());
+      register(event, environment, "player_progress_nbt_round_trip", PLAYER_PROGRESS_NBT.getId());
    }
 
    private static void seedCapsuleAnalysis(GameTestHelper helper) {
       Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-      ItemStack capsule = new ItemStack(ModItems.RECOVERED_SEED_CAPSULE.get());
+      ItemStack capsule = new ItemStack(ModItems.RECOVERED_SEED_CAPSULE.get(), 2);
       player.setItemInHand(InteractionHand.MAIN_HAND, capsule);
       InteractionResult result = ModItems.RECOVERED_SEED_CAPSULE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
       helper.assertTrue(result == InteractionResult.SUCCESS_SERVER, "Recovered seed capsule should analyze on use");
+      helper.assertTrue(player.getItemInHand(InteractionHand.MAIN_HAND).getCount() == 1, "Capsule use should consume exactly one capsule");
+      helper.assertTrue(countProfiledSeeds(player) == 1, "Capsule use should create exactly one profiled contaminated seed");
       helper.assertTrue(!ReclamationProgress.knownSeeds(player).isEmpty(), "Capsule use should record a known seed");
       helper.assertTrue(ReclamationProgress.flag(player, "seed_recovered"), "Capsule use should mark seed recovery");
       helper.succeed();
@@ -170,6 +208,47 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void growthGreenhouseCacheRegression(GameTestHelper helper) {
+      ReclamationProgress.clearGrowthGreenhouseSafetyCacheForTests();
+      ServerLevel level = helper.getLevel();
+      BlockPos controller = new BlockPos(8, 2, 8);
+      buildSealedGreenhouse(helper, controller);
+      int exact = ReclamationProgress.scanGreenhouseSafety(level, helper.absolutePos(controller));
+      int cached = ReclamationProgress.growthGreenhouseSafety(level, helper.absolutePos(controller));
+      helper.assertTrue(cached == exact, "Growth greenhouse cache should match exact scoring for the first section scan");
+
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      List<HydroponicTrayBlockEntity> trays = new java.util.ArrayList<>();
+      for (int x = controller.getX() - 1; x <= controller.getX() + 1; x++) {
+         for (int z = controller.getZ() - 1; z <= controller.getZ() + 1; z++) {
+            BlockPos trayLocal = new BlockPos(x, controller.getY() + 1, z);
+            helper.setBlock(trayLocal, (Block)ModBlocks.HYDROPONIC_TRAY.get());
+            HydroponicTrayBlockEntity tray = helper.getBlockEntity(trayLocal, HydroponicTrayBlockEntity.class);
+            ItemStack seed = new ItemStack(ModItems.STABILIZED_SEED.get());
+            seed.set(ModItems.seedProfileComponent(), new SeedProfile("clean_corn", 0, 100));
+            helper.assertTrue(tray.insertSeed(player, seed), "Growth cache regression tray should accept a profiled seed");
+            tray.addNutrient(player, new ItemStack(ModItems.SOIL_NUTRIENT_MIX.get()));
+            trays.add(tray);
+         }
+      }
+
+      for (int ticks = 0; ticks < ReclamationContent.machines().hydroponicGrowthTicks() * 10; ticks++) {
+         for (HydroponicTrayBlockEntity tray : trays) {
+            HydroponicTrayBlockEntity.tick(level, tray.getBlockPos(), tray.getBlockState(), tray);
+         }
+      }
+      int agedTrays = 0;
+      for (HydroponicTrayBlockEntity tray : trays) {
+         if (tray.age() > 0) {
+            agedTrays++;
+         }
+      }
+      helper.assertTrue(agedTrays > 0, "Cached greenhouse growth checks should still let seeded trays advance");
+      helper.assertTrue(ReclamationProgress.growthGreenhouseSafetyCacheSizeForTests() == 1,
+         "Many growth checks in one block section should share one greenhouse safety cache entry");
+      helper.succeed();
+   }
+
    private static void seedStabilizationProfile(GameTestHelper helper) {
       SeedProfile contaminated = new SeedProfile("ash_wheat", 3, 22);
       SeedProfile stable = contaminated.stabilized();
@@ -179,15 +258,181 @@ public final class ModGameTests {
    }
 
    private static void terminalStatusMetrics(GameTestHelper helper) {
+      if (!ModList.get().isLoaded("echoterminal")) {
+         helper.succeed();
+         return;
+      }
       Player player = helper.makeMockPlayer(GameType.CREATIVE);
       ReclamationProgress.discoverSeed(player, CropSpec.byPath("ash_wheat"));
       ReclamationProgress.max(player, "crop_stability", 100);
       ReclamationProgress.max(player, "food_security", 30);
-      TerminalMissionSnapshot snapshot = ReclamationMissionProvider.INSTANCE.snapshot(player, ReclamationMissionProvider.routeMissions().get(0).id());
-      helper.assertTrue(snapshot.status() == TerminalMissionStatus.CLAIMABLE || snapshot.status() == TerminalMissionStatus.UNLOCKED,
+      String status = terminalSnapshotStatus(player, firstTerminalMissionId());
+      helper.assertTrue("CLAIMABLE".equals(status) || "UNLOCKED".equals(status),
          "Terminal mission snapshot should render seed recovery state");
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
       helper.assertTrue(metrics.knownSeeds() >= 1, "Terminal metrics should include known seeds");
+      helper.succeed();
+   }
+
+   private static void worldDataCodecRoundTrip(GameTestHelper helper) {
+      ChunkPos chunk = new ChunkPos(3, -2);
+      ReclamationWorldData saved = new ReclamationWorldData();
+      saved.setRestorationScore(chunk, 77);
+      saved.setGreenhouseSafety(chunk, 64);
+      saved.setLastSoilState(chunk, SoilState.STABILIZED.displayName());
+      saved.addStat("soil_purified", 5);
+
+      JsonElement encoded = ReclamationWorldData.CODEC.encodeStart(JsonOps.INSTANCE, saved)
+         .result()
+         .orElseThrow(() -> new IllegalStateException("Reclamation world data should encode"));
+      ReclamationWorldData decoded = ReclamationWorldData.CODEC.parse(JsonOps.INSTANCE, encoded)
+         .result()
+         .orElseThrow(() -> new IllegalStateException("Reclamation world data should decode"));
+
+      helper.assertTrue(decoded.restorationScore(chunk) == 77, "Restoration score should survive saved-data serialization");
+      helper.assertTrue(decoded.greenhouseSafety(chunk) == 64, "Greenhouse safety should survive saved-data serialization");
+      helper.assertTrue(decoded.lastSoilState(chunk).equals(SoilState.STABILIZED.displayName()), "Last soil state should survive saved-data serialization");
+      helper.assertTrue(decoded.stat("soil_purified") == 5, "World stats should survive saved-data serialization");
+      helper.succeed();
+   }
+
+   private static void blockEntityPersistenceRoundTrip(GameTestHelper helper) {
+      BlockPos trayLocal = new BlockPos(1, 1, 1);
+      helper.setBlock(trayLocal, (Block)ModBlocks.HYDROPONIC_TRAY.get());
+      HydroponicTrayBlockEntity tray = helper.getBlockEntity(trayLocal, HydroponicTrayBlockEntity.class);
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      ItemStack seed = new ItemStack(ModItems.STABILIZED_SEED.get());
+      seed.set(ModItems.seedProfileComponent(), new SeedProfile("clean_corn", 0, 100));
+      helper.assertTrue(tray.insertSeed(player, seed), "Hydroponic tray should accept seed before persistence test");
+      tray.addNutrient(player, new ItemStack(ModItems.SOIL_NUTRIENT_MIX.get()));
+      for (int i = 0; i < 1800 && tray.age() == 0; i++) {
+         HydroponicTrayBlockEntity.tick(helper.getLevel(), tray.getBlockPos(), tray.getBlockState(), tray);
+      }
+
+      TagValueOutput trayOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+      tray.saveWithoutMetadata(trayOutput);
+      CompoundTag trayTag = trayOutput.buildResult();
+      HydroponicTrayBlockEntity loadedTray = new HydroponicTrayBlockEntity(helper.absolutePos(trayLocal), tray.getBlockState());
+      loadedTray.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), trayTag));
+
+      helper.assertTrue(loadedTray.profile() != null && loadedTray.profile().cropId().equals("clean_corn"), "Tray seed profile should survive block-entity serialization");
+      helper.assertTrue(loadedTray.age() == tray.age(), "Tray crop age should survive block-entity serialization");
+      helper.assertTrue(loadedTray.nutrient() == tray.nutrient(), "Tray nutrient buffer should survive block-entity serialization");
+
+      SeedProfile cropProfile = new SeedProfile("clean_corn", 1, 43);
+      ReclamationCropBlockEntity crop = new ReclamationCropBlockEntity(
+         helper.absolutePos(new BlockPos(2, 1, 1)),
+         ModBlocks.CLEAN_CORN_CROP.get().plantedState(cropProfile)
+      );
+      crop.setProfile(cropProfile);
+      TagValueOutput cropOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+      crop.saveWithoutMetadata(cropOutput);
+      ReclamationCropBlockEntity loadedCrop = new ReclamationCropBlockEntity(crop.getBlockPos(), crop.getBlockState());
+      loadedCrop.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), cropOutput.buildResult()));
+      helper.assertTrue(loadedCrop.profile() != null && loadedCrop.profile().cropId().equals("clean_corn"), "Crop block entity should preserve crop id");
+      helper.assertTrue(loadedCrop.profile().contaminationTier() == 1 && loadedCrop.profile().stability() == 43, "Crop block entity should preserve seed profile values");
+      helper.succeed();
+   }
+
+   private static void terminalRewardClaimOnce(GameTestHelper helper) {
+      if (!ModList.get().isLoaded("echoterminal")) {
+         helper.succeed();
+         return;
+      }
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      ReclamationProgress.discoverSeed(player, CropSpec.byPath("ash_wheat"));
+      Identifier missionId = firstTerminalMissionId();
+      int nutrientBefore = ReclamationProgress.count(player, ModItems.SOIL_NUTRIENT_MIX.get());
+      int enzymeBefore = ReclamationProgress.count(player, ModItems.PURIFICATION_ENZYME.get());
+
+      helper.assertTrue(invokeTerminalAction(player, missionId, "claim_cache"), "Completed terminal mission should claim its cache once");
+      int nutrientAfterFirst = ReclamationProgress.count(player, ModItems.SOIL_NUTRIENT_MIX.get());
+      int enzymeAfterFirst = ReclamationProgress.count(player, ModItems.PURIFICATION_ENZYME.get());
+      helper.assertTrue(nutrientAfterFirst - nutrientBefore == 2, "Recover Seed cache should grant exactly two nutrient mix");
+      helper.assertTrue(enzymeAfterFirst - enzymeBefore == 1, "Recover Seed cache should grant exactly one purification enzyme");
+      helper.assertTrue(ReclamationProgress.claimed(player, "recover_seed"), "Claim should persist the terminal mission claim flag");
+
+      helper.assertFalse(invokeTerminalAction(player, missionId, "claim_cache"), "Already claimed terminal mission should reject duplicate rewards");
+      helper.assertTrue(ReclamationProgress.count(player, ModItems.SOIL_NUTRIENT_MIX.get()) == nutrientAfterFirst, "Duplicate claim should not add nutrient mix");
+      helper.assertTrue(ReclamationProgress.count(player, ModItems.PURIFICATION_ENZYME.get()) == enzymeAfterFirst, "Duplicate claim should not add purification enzyme");
+      helper.succeed();
+   }
+
+   private static void lootModifierPackaging(GameTestHelper helper) {
+      ClassLoader loader = ModGameTests.class.getClassLoader();
+      helper.assertTrue(
+         loader.getResource("data/echoagriculturereclamation/loot_modifiers/seed_vault_capsules.json") != null,
+         "Agriculture loot modifiers should be packaged under NeoForge's plural loot_modifiers directory"
+      );
+      helper.assertTrue(
+         loader.getResource("data/echoagriculturereclamation/loot_modifier/seed_vault_capsules.json") == null,
+         "Agriculture should not package stale singular loot_modifier resources"
+      );
+      helper.succeed();
+   }
+
+   private static void standaloneRecipeChain(GameTestHelper helper) {
+      JsonObject bioReactor = recipe("bio_reactor");
+      helper.assertTrue(containsJsonString(bioReactor, "echoagriculturereclamation:soil_nutrient_mix"),
+         "Bio-Reactor should be craftable from early soil nutrient mix");
+      helper.assertFalse(containsJsonString(bioReactor, "echoagriculturereclamation:bio_gel"),
+         "Bio-Reactor recipe should not require Bio-Gel");
+
+      JsonObject compostRecycler = recipe("compost_recycler");
+      helper.assertTrue(containsJsonString(compostRecycler, "echoagriculturereclamation:soil_nutrient_mix"),
+         "Compost Recycler should be craftable from early soil nutrient mix");
+      helper.assertFalse(containsJsonString(compostRecycler, "echoagriculturereclamation:bio_gel"),
+         "Compost Recycler recipe should not require Bio-Gel");
+
+      JsonObject geneStabilizer = recipe("gene_stabilizer");
+      helper.assertTrue(containsJsonString(geneStabilizer, "echoagriculturereclamation:bio_gel"),
+         "Gene Stabilizer should still require player-made Bio-Gel");
+      helper.assertTrue(containsJsonString(geneStabilizer, "echoagriculturereclamation:soil_nutrient_mix"),
+         "Gene Stabilizer should use early Agriculture material instead of Gene Sample");
+      helper.assertFalse(containsJsonString(geneStabilizer, "echoagriculturereclamation:gene_sample"),
+         "Gene Stabilizer recipe should not require Gene Sample");
+      helper.succeed();
+   }
+
+   private static void coreRecoveryOnce(GameTestHelper helper) {
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      int capsulesBefore = ReclamationProgress.count(player, ModItems.RECOVERED_SEED_CAPSULE.get());
+
+      helper.assertTrue(EchoCoreServices.recover(player, "agriculture_seed_cache"), "Core recovery should grant the Agriculture seed cache once");
+      helper.assertTrue(
+         ReclamationProgress.count(player, ModItems.RECOVERED_SEED_CAPSULE.get()) == capsulesBefore + 2,
+         "Core recovery should grant exactly two recovered seed capsules"
+      );
+      helper.assertTrue(ReclamationProgress.flag(player, "seed_recovered"), "Core recovery should mark the seed recovery route");
+      helper.assertTrue(ReclamationProgress.claimed(player, "recovery_agriculture_seed_cache"), "Core recovery should persist a local claim flag");
+
+      helper.assertFalse(EchoCoreServices.recover(player, "agriculture_seed_cache"), "Core recovery should reject duplicate seed cache claims");
+      helper.assertTrue(
+         ReclamationProgress.count(player, ModItems.RECOVERED_SEED_CAPSULE.get()) == capsulesBefore + 2,
+         "Duplicate Core recovery should not grant more capsules"
+      );
+      helper.succeed();
+   }
+
+   private static void playerProgressNbtRoundTrip(GameTestHelper helper) {
+      Player original = helper.makeMockPlayer(GameType.SURVIVAL);
+      ReclamationProgress.discoverSeed(original, CropSpec.byPath("ash_wheat"));
+      ReclamationProgress.mark(original, "first_growth");
+      ReclamationProgress.add(original, "crops_grown", 3);
+      ReclamationProgress.add(original, "soil_purified", 4);
+      ReclamationProgress.claim(original, "recover_seed");
+      ReclamationProgress.claim(original, "recovery_agriculture_seed_cache");
+
+      CompoundTag saved = original.getPersistentData().getCompoundOrEmpty(ReclamationProgress.ROOT).copy();
+      Player loaded = helper.makeMockPlayer(GameType.SURVIVAL);
+      loaded.getPersistentData().put(ReclamationProgress.ROOT, saved);
+
+      helper.assertTrue(ReclamationProgress.knownSeeds(loaded).contains("ash_wheat"), "Known seed list should survive player NBT round trip");
+      helper.assertTrue(ReclamationProgress.flag(loaded, "first_growth"), "Progress flags should survive player NBT round trip");
+      helper.assertTrue(ReclamationProgress.value(loaded, "crops_grown") == 3, "Progress counters should survive player NBT round trip");
+      helper.assertTrue(ReclamationProgress.value(loaded, "soil_purified") == 4, "Soil counters should survive player NBT round trip");
+      helper.assertTrue(ReclamationProgress.claimed(loaded, "recover_seed"), "Terminal claim flags should survive player NBT round trip");
+      helper.assertTrue(ReclamationProgress.claimed(loaded, "recovery_agriculture_seed_cache"), "Core recovery claim flags should survive player NBT round trip");
       helper.succeed();
    }
 
@@ -255,8 +500,8 @@ public final class ModGameTests {
 
    private static void factionBiasedSeedRecovery(GameTestHelper helper) {
       Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-      Identifier remnant = Identifier.fromNamespaceAndPath("echoashfallprotocol", "remnant_collective");
-      ensureFaction(remnant, "Remnant Collective");
+      Identifier remnant = Identifier.fromNamespaceAndPath("echoashfallprotocol", "radwarden_compact");
+      ensureFaction(remnant, "Radwarden Compact");
       EchoCoreServices.setFactionReputation(player, remnant, 55);
 
       CropSpec spec = CropSpec.byPath("clean_corn");
@@ -264,10 +509,10 @@ public final class ModGameTests {
       SeedProfile biased = ReclamationCrossAddonIntegration.recoveredProfile(player, spec, RandomSource.create(311L));
       helper.assertTrue(
          ReclamationCrossAddonIntegration.factionPreference(player) == FactionPreference.REMNANT,
-         "Trusted Remnant standing should be detected as Agriculture seed preference"
+         "Trusted Radwarden standing should be detected as Agriculture seed preference"
       );
-      helper.assertTrue(biased.stability() > baseline.stability(), "Remnant seed recovery should improve stability");
-      helper.assertTrue(biased.contaminationTier() < baseline.contaminationTier(), "Remnant seed recovery should reduce contamination");
+      helper.assertTrue(biased.stability() > baseline.stability(), "Radwarden seed recovery should improve stability");
+      helper.assertTrue(biased.contaminationTier() < baseline.contaminationTier(), "Radwarden seed recovery should reduce contamination");
       helper.succeed();
    }
 
@@ -280,10 +525,18 @@ public final class ModGameTests {
       int purified = ReclamationRestoration.purifyArea(level, helper.absolutePos(soilLocal), 1, 1);
       helper.assertTrue(purified == 1, "Main loop should purify contaminated soil before cultivation");
 
+      ItemStack capsule = new ItemStack(ModItems.RECOVERED_SEED_CAPSULE.get());
+      player.setItemInHand(InteractionHand.MAIN_HAND, capsule);
+      helper.assertTrue(
+         ModItems.RECOVERED_SEED_CAPSULE.get().use(level, player, InteractionHand.MAIN_HAND) == InteractionResult.SUCCESS_SERVER,
+         "Main loop should open a recovered seed capsule"
+      );
+      ItemStack seed = firstProfiledSeed(player, ModItems.CONTAMINATED_SEED.get());
+      helper.assertFalse(seed.isEmpty(), "Main loop should create a profiled contaminated seed");
+      SeedProfile profile = seed.get(ModItems.seedProfileComponent());
+
       helper.setBlock(trayLocal, (Block)ModBlocks.HYDROPONIC_TRAY.get());
       HydroponicTrayBlockEntity tray = helper.getBlockEntity(trayLocal, HydroponicTrayBlockEntity.class);
-      ItemStack seed = new ItemStack(ModItems.CONTAMINATED_SEED.get());
-      seed.set(ModItems.seedProfileComponent(), new SeedProfile("clean_corn", 1, 45));
       helper.assertTrue(tray.insertSeed(player, seed), "Main loop should insert a profiled seed into hydroponics");
       ItemStack nutrient = new ItemStack(ModItems.SOIL_NUTRIENT_MIX.get(), 4);
       for (int i = 0; i < 4; i++) {
@@ -296,10 +549,26 @@ public final class ModGameTests {
       helper.assertTrue(tray.harvest(player), "Main loop should harvest hydroponic crop output");
       helper.assertTrue(ReclamationProgress.flag(player, "first_growth"), "Harvest should mark first growth");
       helper.assertTrue(ReclamationProgress.value(player, "crops_grown") >= 1, "Harvest should increment grown crop count");
-      helper.assertTrue(ReclamationProgress.count(player, ModItems.CLEAN_CORN.get()) > 0, "Harvest should grant the correct produce");
+      ItemStack produce = firstItem(player, ModItems.produceFor(profile.spec()).get());
+      helper.assertFalse(produce.isEmpty(), "Harvest should grant the correct produce");
       helper.assertTrue(ReclamationProgress.flag(player, "stabilization_seed_recovered"), "Unstable harvest should return a seed for stabilization");
-      ReclamationProgress.recordStabilization(player);
+      ReclamationMachineBlock bioReactor = (ReclamationMachineBlock)ModBlocks.BIO_REACTOR.get();
+      helper.assertTrue(runMachine(bioReactor, "runBioReactor", produce, player) == InteractionResult.SUCCESS_SERVER,
+         "Main loop should process first harvest in the Bio-Reactor");
+      helper.assertTrue(ReclamationProgress.count(player, ModItems.BIO_GEL.get()) > 0,
+         "Bio-Reactor should make Bio-Gel from any first crop matter");
+
+      ItemStack stabilizationSeed = firstProfiledSeed(player, ModItems.CONTAMINATED_SEED.get());
+      int catalystBefore = ReclamationProgress.count(player, ModItems.BIO_GEL.get()) + ReclamationProgress.count(player, ModItems.GENE_SAMPLE.get());
+      int stabilizedBefore = ReclamationProgress.count(player, ModItems.STABILIZED_SEED.get());
+      ReclamationMachineBlock stabilizer = (ReclamationMachineBlock)ModBlocks.GENE_STABILIZER.get();
+      helper.assertTrue(runMachine(stabilizer, "stabilizeSeed", stabilizationSeed, player) == InteractionResult.SUCCESS_SERVER,
+         "Main loop should stabilize one recovered contaminated seed with machine catalyst");
       helper.assertTrue(ReclamationProgress.flag(player, "gene_stabilization"), "Stabilization should update progression");
+      helper.assertTrue(ReclamationProgress.count(player, ModItems.STABILIZED_SEED.get()) == stabilizedBefore + 1,
+         "Gene Stabilizer should output exactly one stabilized seed");
+      int catalystAfter = ReclamationProgress.count(player, ModItems.BIO_GEL.get()) + ReclamationProgress.count(player, ModItems.GENE_SAMPLE.get());
+      helper.assertTrue(catalystAfter == catalystBefore - 1, "Gene Stabilizer should consume exactly one machine catalyst");
       helper.assertTrue(ReclamationProgress.value(player, "restoration_score") > 0, "Harvest should add local restoration pressure");
       helper.succeed();
    }
@@ -318,10 +587,15 @@ public final class ModGameTests {
          "Signal Fungus should yield increased Bio-Gel");
 
       runMachine(block, "runBioReactor", new ItemStack(ModItems.CRYO_MOSS.get()), player);
+      helper.assertTrue(ReclamationProgress.count(player, ModItems.BIO_GEL.get()) >= bioGelBefore + 3,
+         "Cryo Moss should still produce Bio-Gel for the standalone stabilization loop");
       helper.assertTrue(ReclamationProgress.count(player, ModItems.PURIFICATION_ENZYME.get()) >= 1,
          "Cryo Moss should yield Purification Enzyme");
 
+      bioGelBefore = ReclamationProgress.count(player, ModItems.BIO_GEL.get());
       runMachine(block, "runBioReactor", new ItemStack(ModItems.NEXUS_ORCHID.get()), player);
+      helper.assertTrue(ReclamationProgress.count(player, ModItems.BIO_GEL.get()) >= bioGelBefore + 1,
+         "Nexus Orchid should still produce Bio-Gel for the standalone stabilization loop");
       helper.assertTrue(ReclamationProgress.count(player, ModItems.GENE_SAMPLE.get()) >= 1,
          "Nexus Orchid should yield Gene Sample");
       BuiltInRegistries.ITEM.getOptional(Identifier.fromNamespaceAndPath("echonexusprotocol", "nexus_gel")).ifPresent(item ->
@@ -396,6 +670,110 @@ public final class ModGameTests {
          return (InteractionResult)method.invoke(block, stack, player);
       } catch (ReflectiveOperationException exception) {
          throw new AssertionError("Unable to invoke Agriculture machine test hook " + methodName, exception);
+      }
+   }
+
+   private static JsonObject recipe(String name) {
+      String path = "data/echoagriculturereclamation/recipe/" + name + ".json";
+      try (InputStream input = ModGameTests.class.getClassLoader().getResourceAsStream(path)) {
+         if (input == null) {
+            throw new AssertionError("Missing recipe resource: " + path);
+         }
+         try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
+         }
+      } catch (IOException exception) {
+         throw new AssertionError("Unable to read recipe resource: " + path, exception);
+      }
+   }
+
+   private static boolean containsJsonString(JsonElement element, String expected) {
+      if (element == null || element.isJsonNull()) {
+         return false;
+      }
+      if (element.isJsonPrimitive()) {
+         return element.getAsJsonPrimitive().isString() && expected.equals(element.getAsString());
+      }
+      if (element.isJsonArray()) {
+         for (JsonElement child : element.getAsJsonArray()) {
+            if (containsJsonString(child, expected)) {
+               return true;
+            }
+         }
+         return false;
+      }
+      if (element.isJsonObject()) {
+         for (JsonElement child : element.getAsJsonObject().entrySet().stream().map(java.util.Map.Entry::getValue).toList()) {
+            if (containsJsonString(child, expected)) {
+               return true;
+            }
+         }
+      }
+      return false;
+   }
+
+   private static ItemStack firstProfiledSeed(Player player, Item item) {
+      for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+         ItemStack stack = player.getInventory().getItem(slot);
+         if (!stack.isEmpty() && stack.is(item) && stack.get(ModItems.seedProfileComponent()) != null) {
+            return stack;
+         }
+      }
+      return ItemStack.EMPTY;
+   }
+
+   private static ItemStack firstItem(Player player, Item item) {
+      for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+         ItemStack stack = player.getInventory().getItem(slot);
+         if (!stack.isEmpty() && stack.is(item)) {
+            return stack;
+         }
+      }
+      return ItemStack.EMPTY;
+   }
+
+   private static int countProfiledSeeds(Player player) {
+      int total = 0;
+      for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+         ItemStack stack = player.getInventory().getItem(slot);
+         if (stack.is(ModItems.CONTAMINATED_SEED.get()) && stack.get(ModItems.seedProfileComponent()) != null) {
+            total += stack.getCount();
+         }
+      }
+      return total;
+   }
+
+   private static Identifier firstTerminalMissionId() {
+      try {
+         Class<?> providerClass = Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider");
+         List<?> missions = (List<?>)providerClass.getMethod("routeMissions").invoke(null);
+         Object first = missions.get(0);
+         return (Identifier)first.getClass().getMethod("id").invoke(first);
+      } catch (ReflectiveOperationException exception) {
+         throw new AssertionError("Unable to inspect Agriculture terminal missions.", exception);
+      }
+   }
+
+   private static String terminalSnapshotStatus(Player player, Identifier missionId) {
+      try {
+         Class<?> providerClass = Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider");
+         Object provider = providerClass.getField("INSTANCE").get(null);
+         Object snapshot = providerClass.getMethod("snapshot", Player.class, Identifier.class).invoke(provider, player, missionId);
+         Object status = snapshot.getClass().getMethod("status").invoke(snapshot);
+         return status instanceof Enum<?> value ? value.name() : String.valueOf(status);
+      } catch (ReflectiveOperationException exception) {
+         throw new AssertionError("Unable to inspect Agriculture terminal snapshot.", exception);
+      }
+   }
+
+   private static boolean invokeTerminalAction(ServerPlayer player, Identifier missionId, String actionId) {
+      try {
+         Class<?> providerClass = Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider");
+         Object provider = providerClass.getField("INSTANCE").get(null);
+         return (Boolean)providerClass.getMethod("handleAction", ServerPlayer.class, Identifier.class, String.class)
+            .invoke(provider, player, missionId, actionId);
+      } catch (ReflectiveOperationException exception) {
+         throw new AssertionError("Unable to invoke Agriculture terminal action.", exception);
       }
    }
 

@@ -69,3 +69,11 @@ reason="Cryogenic ruins and orbital caches can feed seed recovery when present."
 versionRange="[1.5.0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.echoagriculturereclamation]]
+modId="echoindustrialnexus"
+type="optional"
+reason="Industrial salvage caches can import rare recovered seed material when present."
+versionRange="[0.1.0,)"
+ordering="AFTER"
+side="BOTH"

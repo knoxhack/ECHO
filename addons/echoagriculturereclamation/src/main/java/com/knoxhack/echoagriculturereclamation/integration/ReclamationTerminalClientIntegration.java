@@ -81,9 +81,9 @@ public final class ReclamationTerminalClientIntegration {
          return TerminalAddonGuide.optional(240, "Field route",
             "Agriculture Reclamation is optional recovery progression: start with seed capsules, then stabilize soil, crops, greenhouse safety, and local ecology.",
             List.of(
-               "Identify seed capsules in a Seed Vault Terminal.",
-               "Use Soil Purifier or reusable Hydroponic Tray cultures for the first crop route.",
-               "Process crop matter into Bio-Gel, then stabilize recovered seed cuttings before scaling restoration crops."
+               "Craft a seed capsule from wheat seeds, bone meal, glass bottle, and copper, then open it directly or identify it in a Seed Vault Terminal.",
+               "Plant the profiled seed on dirt, grass, farmland, or a reusable Hydroponic Tray, then harvest the first crop.",
+               "Craft a Bio-Reactor with Soil Nutrient Mix, turn crop matter into Bio-Gel, then stabilize recovered seed cuttings before scaling restoration crops."
             ));
       }
 

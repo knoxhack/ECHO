@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.world;
 
 import com.knoxhack.echoashfallprotocol.faction.AshfallBiomeFactions;
+import com.knoxhack.echoashfallprotocol.faction.AshfallFactionMap;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -434,7 +435,8 @@ public final class ExplorationSiteRegistry {
     ) {
         return new SiteProfile(
                 id, displayName, route, description, kind, dangerLevel, hazardProfile,
-                prepHint, rewardTrack, resourceProfile, objective, lootTable, faction,
+                prepHint, rewardTrack, resourceProfile, objective, lootTable,
+                faction == null ? null : AshfallFactionMap.canonicalOrDefault(faction),
                 researchPoints, fastTravel,
                 Set.copyOf(structureIds), Set.copyOf(aliases)
         );

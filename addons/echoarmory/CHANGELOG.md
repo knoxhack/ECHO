@@ -1,0 +1,20 @@
+# Changelog
+
+## 0.1.0 - First Playable Release
+
+- Completed the v1 survival loop: craft Armory Alloy Plate, craft Armory Bench, craft first gear, craft Module Upgrade Table, install modules, recharge energy gear with real fuel, and inspect readiness through Terminal/Core diagnostics.
+- Fixed `veil_shield` resources for Minecraft 26.1 by replacing removed `minecraft:scute` references with `minecraft:turtle_scute`.
+- Added Armory-specific resource validation for unresolved recipe item references and vanilla item-model texture references.
+- Hardened module installation so duplicate, incompatible, full-slot, and locked installs reject before consuming module items.
+- Removed the unsafe post-craft deletion guard for faction gear; locked gear now stays in the stack but cannot provide survival use/protection until unlocked.
+- Made station and Terminal recharge consume `veil_crystal` or `resonance_shard`; failed recharge now leaves gear and resources unchanged.
+- Split station behavior for v1: Armory Bench repairs/tunes, Weapon Forge upgrades weapons, Armor Forge upgrades armor, Energy Core Charging Station recharges, Sigil Engraver trims, Module Upgrade Table/Veil Infuser/Construct Dock install modules, and racks are storage/display-lite scans.
+- Updated the Terminal Armory tab with selected loadout, augment, and boss rows so Equip, Install, Preview, and Logistics send explicit server-authoritative payloads.
+- Moved synergy checks to data-driven `SynergyDefinition` effects while retaining legacy fallbacks for existing gear combinations.
+- Expanded Armory GameTests to cover duplicate/incompatible/full-slot install safety, no-target ranged resource safety, ammo-before-energy ranged shots, fuel-gated recharge, faction locks that do not delete gear, Terminal actions, and bundled gameplay-data validation.
+- Added smoke-test and acquisition-path docs for first survival, module, energy, faction depot, Terminal, Logistics, and reload checks.
+
+## Non-Armory Follow-Up
+
+- Full gameplay-data validation is blocked by existing Orbital/Ashfall source-token checks outside Armory.
+- Root release manifest/artifact tasks require `--no-configuration-cache` until their execution-time project references are made configuration-cache compatible.

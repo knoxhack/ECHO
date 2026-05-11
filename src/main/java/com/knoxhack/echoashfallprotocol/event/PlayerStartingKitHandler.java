@@ -7,26 +7,23 @@ import com.knoxhack.echoashfallprotocol.network.WelcomeScreenPacket;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.world.StartingDropPodData;
 import com.knoxhack.echoashfallprotocol.worldgen.ProceduralStructureGenerator;
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.LevelData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import com.mojang.datafixers.util.Pair;
 
 /**
  * Handles giving the player their starting kit on first join.
@@ -37,17 +34,12 @@ public class PlayerStartingKitHandler {
     private static final Identifier FIND_DROP_POD_ADVANCEMENT =
             Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "find_drop_pod");
     private static final String FIND_DROP_POD_CRITERION = "found_drop_pod";
-    private static final ResourceKey<Biome> THE_WASTELAND = ResourceKey.create(
-            Registries.BIOME,
-            Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "the_wasteland"));
-    private static final int STARTING_BIOME_SEARCH_RADIUS = 8192;
-    private static final int STARTING_BIOME_SEARCH_STEP = 64;
-    private static final int MIN_STARTING_POD_RADIUS_CHUNKS = 10;
-    private static final int MAX_STARTING_POD_RADIUS_CHUNKS = 500;
-    private static final int MIN_STARTING_POD_SPACING_CHUNKS = 8;
+    private static final int MIN_STARTING_POD_RADIUS_CHUNKS = 2;
+    private static final int MAX_STARTING_POD_RADIUS_CHUNKS = 8;
+    private static final int MIN_STARTING_POD_SPACING_CHUNKS = 3;
     private static final int CHUNK_SIZE = 16;
-    private static final int STARTING_POD_CANDIDATE_ATTEMPTS = 128;
-    private static final int STARTING_SURFACE_SEARCH_RADIUS = 64;
+    private static final int STARTING_POD_CANDIDATE_ATTEMPTS = 16;
+    private static final int STARTING_SURFACE_SEARCH_RADIUS = 24;
     private static final int STARTING_SURFACE_SEARCH_STEP = 4;
     private static final int MIN_SAFE_SURFACE_ABOVE_BOTTOM = 16;
     private static final int MIN_STARTING_SURFACE_Y = 48;
@@ -125,7 +117,7 @@ public class PlayerStartingKitHandler {
 
         // Mark kit as received
         playerData.putBoolean("ashes_of_tomorrow.received_kit", true);
-        PacketDistributor.sendToPlayer(player, new WelcomeScreenPacket());
+        EchoNetSend.toPlayer(player, new WelcomeScreenPacket(), EchoPacketKind.CLIENTBOUND_SYNC);
 
         // Welcome message
         player.sendSystemMessage(Component.literal(""));
@@ -212,12 +204,6 @@ public class PlayerStartingKitHandler {
 
         for (int attempt = 0; attempt < STARTING_POD_CANDIDATE_ATTEMPTS; attempt++) {
             BlockPos candidate = randomSurfaceAround(level, serverSpawn, random, false);
-            BlockPos preferred = findStartingWastelandSurface(level, candidate);
-            if (isWithinStartingRadius(serverSpawn, preferred)
-                    && podData.isFarEnoughFromExistingPods(preferred, MIN_STARTING_POD_SPACING_BLOCKS)) {
-                return preferred;
-            }
-
             if (podData.isFarEnoughFromExistingPods(candidate, MIN_STARTING_POD_SPACING_BLOCKS)) {
                 return candidate;
             }
@@ -262,73 +248,6 @@ public class PlayerStartingKitHandler {
         int x = center.getX() + (int) Math.round(Math.cos(angle) * radiusBlocks);
         int z = center.getZ() + (int) Math.round(Math.sin(angle) * radiusBlocks);
         return resolveSafeStartingSurface(level, x, z);
-    }
-
-    private static boolean isWithinStartingRadius(BlockPos serverSpawn, BlockPos candidate) {
-        int dx = candidate.getX() - serverSpawn.getX();
-        int dz = candidate.getZ() - serverSpawn.getZ();
-        int minSqr = MIN_STARTING_POD_RADIUS_BLOCKS * MIN_STARTING_POD_RADIUS_BLOCKS;
-        int maxSqr = MAX_STARTING_POD_RADIUS_BLOCKS * MAX_STARTING_POD_RADIUS_BLOCKS;
-        int distanceSqr = dx * dx + dz * dz;
-        return distanceSqr >= minSqr && distanceSqr <= maxSqr;
-    }
-
-    private static BlockPos findStartingWastelandSurface(ServerLevel level, BlockPos around) {
-        if (level.getBiome(around).is(THE_WASTELAND)) {
-            return around;
-        }
-
-        Pair<BlockPos, net.minecraft.core.Holder<Biome>> located = level.findClosestBiome3d(
-                holder -> holder.is(THE_WASTELAND),
-                around,
-                STARTING_BIOME_SEARCH_RADIUS,
-                STARTING_BIOME_SEARCH_STEP,
-                32);
-        if (located != null) {
-            BlockPos found = located.getFirst();
-            BlockPos surface = resolveSafeStartingSurface(level, found.getX(), found.getZ());
-            if (level.getBiome(surface).is(THE_WASTELAND)) {
-                EchoAshfallProtocol.LOGGER.info("Located echoashfallprotocol:the_wasteland for first-start drop pod at {}.", surface);
-                return surface;
-            }
-            EchoAshfallProtocol.LOGGER.warn(
-                    "Nearest echoashfallprotocol:the_wasteland sample at {} did not match the surface biome at {}; continuing surface scan.",
-                    found,
-                    surface);
-        }
-
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (int radius = STARTING_BIOME_SEARCH_STEP; radius <= STARTING_BIOME_SEARCH_RADIUS; radius += STARTING_BIOME_SEARCH_STEP) {
-            for (int dx = -radius; dx <= radius; dx += STARTING_BIOME_SEARCH_STEP) {
-                for (int dz = -radius; dz <= radius; dz += STARTING_BIOME_SEARCH_STEP) {
-                    if (Math.abs(dx) != radius && Math.abs(dz) != radius) {
-                        continue;
-                    }
-                    int x = around.getX() + dx;
-                    int z = around.getZ() + dz;
-                    BlockPos candidate = resolveSafeStartingSurface(level, x, z);
-                    if (!level.getBiome(candidate).is(THE_WASTELAND)) {
-                        continue;
-                    }
-                    double distance = around.distSqr(candidate);
-                    if (distance < bestDistance) {
-                        best = candidate;
-                        bestDistance = distance;
-                    }
-                }
-            }
-            if (best != null) {
-                EchoAshfallProtocol.LOGGER.info("Moved first-start drop pod target to {} in echoashfallprotocol:the_wasteland.", best);
-                return best;
-            }
-        }
-
-        EchoAshfallProtocol.LOGGER.warn(
-                "Could not find echoashfallprotocol:the_wasteland within {} blocks of {}. Using original world spawn for starting pod.",
-                STARTING_BIOME_SEARCH_RADIUS,
-                around);
-        return around;
     }
 
     private static BlockPos resolveSafeStartingSurface(ServerLevel level, int x, int z) {

@@ -204,6 +204,17 @@ public class IndustrialItemDuctBlockEntity extends BlockEntity {
       this.setChanged();
    }
 
+   public void dropFilterContents(Level level, BlockPos pos) {
+      ItemStack filterStack = this.filter.get(0);
+      if (!filterStack.isEmpty()) {
+         ItemEntity droppedFilter = new ItemEntity(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, filterStack.copy());
+         droppedFilter.setDefaultPickUpDelay();
+         level.addFreshEntity(droppedFilter);
+         this.filter.set(0, ItemStack.EMPTY);
+         this.setChanged();
+      }
+   }
+
    public Component filterStatus(IndustrialItemDuctBlock duct) {
       String safety = duct.nexusSafe() ? "Nexus-safe" : "Nexus blocked";
       if (!duct.smart()) {

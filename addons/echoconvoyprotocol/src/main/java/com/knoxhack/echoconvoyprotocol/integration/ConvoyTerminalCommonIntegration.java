@@ -5,6 +5,7 @@ import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyStationBlockEntity;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
 import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleEntity;
+import com.knoxhack.echoconvoyprotocol.network.ConvoyTerminalStatePacket;
 import com.knoxhack.echoconvoyprotocol.network.ConvoyTerminalSync;
 import com.knoxhack.echoconvoyprotocol.progress.ConvoyProgress;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlocks;
@@ -13,6 +14,8 @@ import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -34,6 +37,9 @@ public final class ConvoyTerminalCommonIntegration {
             player.sendSystemMessage(Component.literal("ECHO CONVOY // Routes " + ConvoyContent.routes().size() + ", rewards " + claimable + "."));
             if (player instanceof ServerPlayer serverPlayer) {
                EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
+               ConvoyTerminalStatePacket snapshot = ConvoyTerminalStatePacket.from(serverPlayer);
+               String guidance = snapshot.assistantLines().isEmpty() ? snapshot.assistantStatus() : snapshot.assistantLines().getFirst();
+               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // Field Assistant: " + guidance));
                ConvoyTerminalSync.send(serverPlayer);
             }
          }
@@ -45,9 +51,9 @@ public final class ConvoyTerminalCommonIntegration {
                routeId = firstStartableRoute(serverPlayer).map(ConvoyRouteDefinition::id).orElse(null);
             }
             if (routeId == null) {
-               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // No startable convoy route selected."));
+               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // No startable convoy route selected. " + routeBlockerHint(serverPlayer)));
             } else if (!ConvoyProgress.get(serverPlayer).activeRouteId().isBlank()) {
-               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // Finish the active convoy route before starting another."));
+               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // Finish the active convoy route before starting another. Use SIGNAL at the next matching Roadside Signal Marker."));
             } else if (ConvoyContent.route(routeId).isEmpty()) {
                serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // Selected convoy route is not loaded: " + routeId + "."));
             } else if (ConvoyProgress.get(serverPlayer).completed(routeId)) {
@@ -66,7 +72,7 @@ public final class ConvoyTerminalCommonIntegration {
             }
             SignalMarker marker = nearestSignalMarker(serverPlayer);
             if (marker == null) {
-               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // No Roadside Signal Marker in terminal range."));
+               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // No Roadside Signal Marker in terminal range. Drive to the route marker, satisfy the distance requirement, then scan again."));
                return;
             }
             ConvoyRouteService.advanceRouteAtSignal(serverPlayer, nearestVehicle(serverPlayer), marker.pos(), marker.station());
@@ -85,10 +91,14 @@ public final class ConvoyTerminalCommonIntegration {
             }
             if (routeId != null) {
                ConvoyRouteService.claimRouteRewards(serverPlayer, routeId);
+            } else {
+               serverPlayer.sendSystemMessage(Component.literal("ECHO CONVOY // No completed convoy route has unclaimed rewards."));
             }
             ConvoyTerminalSync.send(serverPlayer);
          }
       });
+        TerminalMissionRegistry.register(ConvoyMissionProvider.INSTANCE);
+      TerminalMissionActions.registerForTab(ConvoyTerminalIds.CONVOY_TAB);
       registerArchive();
       EchoConvoyProtocol.LOGGER.info("ECHO Convoy Protocol terminal actions registered.");
    }
@@ -115,6 +125,16 @@ public final class ConvoyTerminalCommonIntegration {
          .filter(route -> !progress.completed(route.id()))
          .filter(route -> ConvoyRouteService.readiness(player, vehicle, route).ready())
          .findFirst();
+   }
+
+   private static String routeBlockerHint(ServerPlayer player) {
+      ConvoyProgress progress = ConvoyProgress.get(player);
+      ConvoyVehicleEntity vehicle = nearestVehicle(player);
+      return ConvoyContent.routes().stream()
+         .filter(route -> !progress.completed(route.id()) && !progress.claimed(route.id()))
+         .findFirst()
+         .map(route -> ConvoyRouteService.readinessHint(player, vehicle, route))
+         .orElse("No unclaimed route definitions are loaded.");
    }
 
    @Nullable

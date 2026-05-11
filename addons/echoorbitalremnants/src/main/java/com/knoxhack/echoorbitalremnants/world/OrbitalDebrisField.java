@@ -1,8 +1,13 @@
 package com.knoxhack.echoorbitalremnants.world;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.WorldMarker;
+import com.knoxhack.echocore.api.WorldMarkerType;
+import com.knoxhack.echoorbitalremnants.EchoOrbitalRemnants;
 import com.knoxhack.echoorbitalremnants.registry.ModBlocks;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 
@@ -27,6 +32,7 @@ public final class OrbitalDebrisField {
                 new ItemStack(ModItems.OXYGEN_CANISTER.get(), 2),
                 new ItemStack(ModItems.VACUUM_CIRCUIT.get()),
                 new ItemStack(ModItems.EMERGENCY_OXYGEN_CELL.get(), 3));
+        recordWorldMarker(level, origin, "Station ECHO Debris Field", "Arrival field seeded with docking deck, relay, and salvage cache.");
     }
 
     public static void seedAmbientDebris(ServerLevel level, BlockPos origin) {
@@ -39,6 +45,7 @@ public final class OrbitalDebrisField {
                 level.setBlock(pos.above(), ModBlocks.FROZEN_CABLE.get().defaultBlockState(), 3);
             }
         }
+        recordWorldMarker(level, center, "Ambient Orbital Debris", "Ambient orbital wreckage seeded near the route.");
     }
 
     private static void placeDockingDeck(ServerLevel level, BlockPos origin) {
@@ -93,5 +100,25 @@ public final class OrbitalDebrisField {
         level.setBlock(origin, ModBlocks.DOCKING_BEACON.get().defaultBlockState(), 3);
         level.setBlock(origin.below(), ModBlocks.NEXUS_TOUCHED_STONE.get().defaultBlockState(), 3);
         level.setBlock(origin.below(2), ModBlocks.ORBITAL_ALLOY_BLOCK.get().defaultBlockState(), 3);
+    }
+
+    private static void recordWorldMarker(ServerLevel level, BlockPos pos, String title, String summary) {
+        if (level == null || pos == null) {
+            return;
+        }
+        Identifier markerId = Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID,
+                "world_marker/orbital_debris/" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ());
+        WorldMarker marker = new WorldMarker(
+                markerId,
+                Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, "orbital_debris_field"),
+                WorldMarkerType.ORBITAL_DEBRIS,
+                title,
+                summary,
+                level.dimension(),
+                pos,
+                96,
+                true,
+                level.getGameTime());
+        EchoCoreServices.worldMarkerService().revealMarker(level, marker);
     }
 }

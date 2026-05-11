@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import java.util.Locale;
 
 public class ConvoyStationScreen extends AbstractContainerScreen<ConvoyStationMenu> {
    public ConvoyStationScreen(ConvoyStationMenu menu, Inventory inventory, Component title) {
@@ -22,10 +23,10 @@ public class ConvoyStationScreen extends AbstractContainerScreen<ConvoyStationMe
    @Override
    protected void init() {
       super.init();
-      addRenderableWidget(Button.builder(Component.literal("SCAN"), button -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, ConvoyStationMenu.BUTTON_SCAN))
+      addRenderableWidget(Button.builder(Component.translatable("screen.echoconvoyprotocol.convoy_station.scan"), button -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, ConvoyStationMenu.BUTTON_SCAN))
          .bounds(leftPos + 22, topPos + 108, 58, 18)
          .build());
-      addRenderableWidget(Button.builder(Component.literal("UNLOAD"), button -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, ConvoyStationMenu.BUTTON_UNLOAD))
+      addRenderableWidget(Button.builder(Component.translatable("screen.echoconvoyprotocol.convoy_station.unload"), button -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, ConvoyStationMenu.BUTTON_UNLOAD))
          .bounds(leftPos + 22, topPos + 130, 58, 18)
          .build());
    }
@@ -46,13 +47,13 @@ public class ConvoyStationScreen extends AbstractContainerScreen<ConvoyStationMe
       graphics.fill(x + 118, y + 88, x + 230, y + 96, 0xFF34413A);
       graphics.fill(x + 118, y + 88, x + 118 + energyPixels(112), y + 96, 0xFF66E8FF);
       super.extractContents(graphics, mouseX, mouseY, partialTick);
-      graphics.text(font, Component.literal("Vehicles nearby: " + menu.nearbyVehicles()), x + 118, y + 106, 0xD8F6FF, false);
-      graphics.text(font, Component.literal(StationStatus.byId(menu.statusId()).label()), x + 118, y + 120, 0xFFD166, false);
+      graphics.text(font, Component.translatable("screen.echoconvoyprotocol.convoy_station.vehicles_nearby", menu.nearbyVehicles()), x + 118, y + 106, 0xD8F6FF, false);
+      graphics.text(font, statusLabel(menu.statusId()), x + 118, y + 120, 0xFFD166, false);
    }
 
    @Override
    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-      graphics.text(font, Component.literal("ECHO " + menu.kind().displayName()), titleLabelX, titleLabelY, 0x92D66B, true);
+      graphics.text(font, Component.translatable("screen.echoconvoyprotocol.convoy_station.title", menu.kind().displayName()), titleLabelX, titleLabelY, 0x92D66B, true);
       graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xD8F6FF, false);
    }
 
@@ -68,5 +69,10 @@ public class ConvoyStationScreen extends AbstractContainerScreen<ConvoyStationMe
 
    private int energyPixels(int width) {
       return Math.min(width, menu.energy() * width / Math.max(1, menu.maxEnergy()));
+   }
+
+   private static Component statusLabel(int statusId) {
+      StationStatus status = StationStatus.byId(statusId);
+      return Component.translatable("screen.echoconvoyprotocol.convoy_station.status." + status.name().toLowerCase(Locale.ROOT));
    }
 }

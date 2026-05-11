@@ -1,8 +1,10 @@
 # ECHO Modpack Overview
 
-ECHO is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. ECHO: Ashfall Protocol is the main terrestrial campaign, and the broader ECHO ecosystem now spans the shared Core and Terminal layers plus the Orbital Remnants, Agriculture Reclamation, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol addon chapters.
+Ashfall is the modpack. ECHO is the first-party ecosystem. ECHO: Ashfall Protocol is the main terrestrial campaign addon and root `echoashfallprotocol` artifact.
 
-The current full-stack release set is `echocore` `1.1.0`, `echoterminal` `1.1.0`, `echoashfallprotocol` `1.3.0`, `echoorbitalremnants` `1.5.0`, `echoagriculturereclamation` `0.1.0`, `echostationfall` `1.1.0`, `echonexusprotocol` `1.0.0`, `echoindustrialnexus` `0.1.0`, and `echoblackboxprotocol` `1.0.0`.
+ECHO is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. The simplified public stack can be described as Core, Terminal, Ashfall Protocol, Orbital, Agriculture, Stationfall, Nexus, Industrial, and Blackbox. The full Gradle `all` stack also includes NetCore, MissionCore, DataCore, WorldCore, SignalOS, SignalOS Example, RenderCore, Logistics Network, Convoy Protocol, HoloMap, Index, Armory, and Lens.
+
+The current full-stack release set is `echocore` `1.1.0`, `echonetcore` `0.1.0`, `echomissioncore` `0.1.0`, `echodatacore` `1.0.0`, `echoworldcore` `0.1.0`, `echoterminal` `1.1.0`, `signalos` `0.1.0`, `signalosexample` `0.1.0`, `echorendercore` `0.5.0`, `echoashfallprotocol` `1.3.0`, `echoorbitalremnants` `1.5.0`, `echonexusprotocol` `1.0.0`, `echoagriculturereclamation` `0.1.1`, `echostationfall` `1.1.0`, `echoblackboxprotocol` `1.0.0`, `echoindustrialnexus` `0.1.0`, `echologisticsnetwork` `0.1.0`, `echoconvoyprotocol` `0.1.0`, `echoholomap` `0.1.0`, `echoindex` `0.1.0`, `echoarmory` `0.1.0`, and `echolens` `0.1.0`.
 
 Ashfall starts with a compact `20x10x20` armored drop pod, a damaged ECHO-7 AI, and a dead world full of toxic pockets, emergency water choices, unstable radiation, failed machines, faction pressure, and the still-running Nexus Core.
 
@@ -13,13 +15,26 @@ The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions w
 | Module | Version | Role |
 |---|---:|---|
 | `echocore` | `1.1.0` | Shared service layer for pack mode, profile state, progress ledgers, diagnostics, hazards, route records, factions, POI affinity, terminal reward storage, archives, intel mirrors, terminal placement, and Nexus campaign state. |
+| `echonetcore` | `0.1.0` | Shared packet bridge, sync helpers, packet diagnostics, and server action validation. |
+| `echomissioncore` | `0.1.0` | Shared mission service, objective registry, progression state, and reward contracts. |
+| `echodatacore` | `1.0.0` | Shared persistent player, world, and team data service. |
+| `echoworldcore` | `0.1.0` | Shared world regions, markers, hazards, structure discoveries, and world event contracts. |
 | `echoterminal` | `1.1.0` | Shared ECHO terminal shell, mission browser, chapter navigation, archive surfaces, reward inbox, diagnostics, and addon-facing navigation/profile API. |
+| `signalos` | `0.1.0` | Reusable terminal/content framework for chapters, missions, archives, rewards, diagnostics, JSON loading, validation, and soft KubeJS bridge integration. |
+| `signalosexample` | `0.1.0` | Example-only SignalOS addon demonstrating Java registration, datapack JSON, diagnostics, rewards, archives, and KubeJS-friendly content. |
+| `echorendercore` | `0.5.0` | Shared visual-state, animation-profile, particle-profile, and renderer helper layer for advanced ECHO/Ashfall assets. |
 | `echoashfallprotocol` | `1.3.0` | Main ruined-Earth survival campaign with the compact drop pod, hazards, machines, factions, guardians, Prime Relay warfront, Nexus choice, Warden finale, and addon handoff. |
 | `echoorbitalremnants` | `1.5.0` | Post-Nexus orbital route chain from Earth calibration through launch, Low Orbit, Station Network, Moon, Mars, Europa, Saturn, Titan, Deep Space Protocol, ECHO-0, surveys, faction contracts, and final network seal. |
-| `echoagriculturereclamation` | `0.1.0` | Field agriculture recovery with recovered seeds, contaminated soils, hydroponics, greenhouse safety, gene stabilization, bio-reactor support, and chunk-local restoration scores. |
+| `echoagriculturereclamation` | `0.1.1` | Field agriculture recovery with recovered seeds, contaminated soils, hydroponics, greenhouse safety, gene stabilization, bio-reactor support, and chunk-local restoration scores. |
 | `echostationfall` | `1.1.0` | Station ECHO horror chapter with station boarding, nine section power/log recovery, oxygen/pressure/panic telemetry, AI override, Station Mother, and Blackbox handoff. |
 | `echonexusprotocol` | `1.0.0` | Chapter IV Nexus corruption and memory chapter with Nexus Charge, field stabilization, corrupted biomes, Core access, matter rewriting, the Nexus Guardian, and Restore/Control/Destroy/Merge path commitment. |
 | `echoindustrialnexus` | `0.1.0` | Industrial automation chapter with Thermal Flux, ducts, factories, machine heat, scrubber safe zones, filter automation, hybrid Nexus processing, POIs, and the Furnace Warden. |
+| `echologisticsnetwork` | `0.1.0` | Supply crates, labels, loadouts, drone delivery docks, remote requests, faction depots, courier persistence, and Terminal logistics integration. |
+| `echoconvoyprotocol` | `0.1.0` | Ruined-Earth vehicles, fuel, cargo, roadside contracts, checkpoint gates, Convoy terminal routes, and travel hazards. |
+| `echoholomap` | `0.1.0` | Terminal-integrated command map for regions, routes, hazards, scans, missions, and addon markers. |
+| `echoindex` | `0.1.0` | Shared item, recipe, usage, and archive index for Terminal-facing reference surfaces. |
+| `echoarmory` | `0.1.0` | Modular weapons, armor, workstations, modules, energy recharge, faction locks, Terminal hooks, and Logistics loadout hooks. |
+| `echolens` | `0.1.0` | Smart scanner HUD for blocks, entities, fluids, machines, inventory privacy, and addon context. |
 | `echoblackboxprotocol` | `1.0.0` | Late-game memory finale with typed Blackbox fragments, archive dungeons, memory stability, hostile recordings, boss proofs, Nexus Core Access Key, Truth Engine, and final directives. |
 
 ## Core Loop
@@ -33,7 +48,7 @@ The shared lore tone is tactical eerie: ECHO-7 gives direct field instructions w
 7. Wake the Nexus campaign, scan Prime Relays, resolve the warfront, and restore enough grid infrastructure to access the Nexus Core.
 8. Make the irreversible Nexus choice.
 9. Finish the chosen Restore, Destroy, or Control branch through the Pre-Fall Archives, The Warden, and the final epilogue.
-10. Continue through the release addon chain: Orbital Remnants, Agriculture Reclamation, Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol.
+10. Continue through the release addon chain: Orbital Remnants, Agriculture Reclamation, Stationfall, Nexus Protocol, Industrial Nexus, Logistics Network, Convoy Protocol, Armory, and Blackbox Protocol.
 
 ## ECHO Ecosystem
 
@@ -48,15 +63,15 @@ Chapter handoffs are milestone driven:
 | Handoff | Trigger |
 |---|---|
 | Ashfall -> Orbital Remnants | Any Ashfall Nexus path unlocks Earth orbital calibration unless Orbital is running standalone. |
-| Ashfall ecology -> Agriculture Reclamation | Recovered seed capsules, Bio Labs, Data Centers, Remnant caches, Salvager imports, toxic salvage, and cryogenic ruins feed the FIELD > Reclamation loop. |
+| Ashfall ecology -> Agriculture Reclamation | Recovered seed capsules, Bio Labs, Data Centers, Radwarden caches, Crashbreak imports, toxic salvage, and cryogenic ruins feed the FIELD > Reclamation loop. |
 | Orbital Remnants -> Stationfall | Station coordinates or the restored Station Network opens Station ECHO boarding. |
 | Stationfall -> Nexus Protocol | `stationfall:blackbox_recovered` opens the Nexus Protocol chain. |
 | Nexus Protocol -> Blackbox Protocol | Nexus memory/Core escalation exposes deeper Blackbox evidence, Core keys, and final path context. |
 | Industrial Nexus | Runs as infrastructure support across the stack, feeding filters, factory recovery, Thermal Flux, hybrid materials, and late-game machine safety. |
 
-The Gradle workspace supports a small beta addon set and the full stack. `-PechoAddonSet=beta` includes Terminal, Orbital Remnants, and Agriculture Reclamation; `-PechoAddonSet=all` includes Stationfall, Nexus Protocol, Industrial Nexus, and Blackbox Protocol as well.
+The Gradle workspace supports a small beta addon set and the full stack. `-PechoAddonSet=beta` includes NetCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, and WorldCore, plus Core and ECHO: Ashfall Protocol. `-PechoAddonSet=all` adds Stationfall, Blackbox Protocol, Industrial Nexus, Logistics Network, RenderCore, Convoy Protocol, HoloMap, Index, and Armory.
 
-Release verification is also part of the ecosystem. `buildEchoWorkspace` builds the selected stack, `verifyEchoRelease` runs resource validation, gameplay-data validation, POI checks, runtime-log checks, jar-set checks, builds, and GameTests, and `copyEchoJarsToModpack` copies the selected jars into the local `Axes of Tomorrow` CurseForge profile. The private `tools/echo-release-terminal` dashboard supports release drafting and QA state, but it is not shipped as a mod artifact.
+Release verification is also part of the ecosystem. `build -PechoAddonSet=all` is the required full-stack build command for this workspace pass. `verifyEchoRelease` also runs resource validation, gameplay-data validation, POI checks, runtime-log checks, jar-set checks, builds, and GameTests, but should only be used after `echoModpackModsDir` is configured for the intended Ashfall profile. The private `tools/echo-release-terminal` dashboard supports release drafting and QA state, but it is not shipped as a mod artifact.
 
 ## Progression
 
@@ -113,18 +128,18 @@ Radiation and Mutagen Vials can rewrite the player. Mutations may grant useful t
 
 The scrap economy turns ruined-world junk into survival infrastructure.
 
-Early crafting does not require a healthy vanilla forest. Players can recover sticks and plant fiber from ash bushes, dry grass, burnt grass, wasteland grass, reeds, mutated leaves, and debris. Dead Wood Logs and Charred Wood Logs drop by hand and craft into 4 Oak Planks, and Mutated Saplings provide a renewable but contaminated tree route on ruined soils. Healthy vanilla saplings are rare restoration finds from labs, data centers, survivor caches, Remnant/Salvager caches, and positive Salvager trader access.
+Early crafting does not require a healthy vanilla forest. Players can recover sticks and plant fiber from ash bushes, dry grass, burnt grass, wasteland grass, reeds, mutated leaves, and debris. Dead Wood Logs and Charred Wood Logs drop by hand and craft into 4 Oak Planks, and Mutated Saplings provide a renewable but contaminated tree route on ruined soils. Healthy vanilla saplings are rare restoration finds from labs, data centers, survivor caches, Radwarden/Crashbreak caches, and positive Crashbreak trader access.
 
-Vanilla biome resources are explicit recovery rewards instead of normal-biome dependencies. Wasteland Reeds craft into paper, Irradiated Cactus crafts into Green Dye, toxic substrate processing yields clay, and cryogenic stone can be broken down into snowballs. Seed Vaults, Bio Labs, Data Centers, Remnant caches, Salvager posts, sewers, subways, abandoned mines, cryogenic ruins, and Mutant sanctuaries now cover desert, jungle, swamp, ocean, flower, cold-biome, cave, and animal-economy resources without restoring vanilla biome generation.
+Vanilla biome resources are explicit recovery rewards instead of normal-biome dependencies. Wasteland Reeds craft into paper, Irradiated Cactus crafts into Green Dye, toxic substrate processing yields clay, and cryogenic stone can be broken down into snowballs. Seed Vaults, Bio Labs, Data Centers, Radwarden caches, Crashbreak posts, sewers, subways, abandoned mines, cryogenic ruins, and Sporebound sanctuaries now cover desert, jungle, swamp, ocean, flower, cold-biome, cave, and animal-economy resources without restoring vanilla biome generation.
 
 | Missing Vanilla Ecology | Primary ECHO Source |
 |---|---|
-| Sugar cane, cactus, bamboo, cocoa, crop seeds | Seed Vaults, Bio Labs, Data Centers, Salvager imports. |
-| Flowers, dyes, mushrooms, moss, honey samples | Seed Vaults, Bio Labs, Remnant restoration caches, Mutant sanctuaries. |
+| Sugar cane, cactus, bamboo, cocoa, crop seeds | Seed Vaults, Bio Labs, Data Centers, Crashbreak imports. |
+| Flowers, dyes, mushrooms, moss, honey samples | Seed Vaults, Bio Labs, Radwarden restoration caches, Sporebound sanctuaries. |
 | Clay, vines, lily pads, mangrove samples | Sewers, toxic wetland salvage, contaminated soil processing. |
-| Kelp, seagrass, coral, prismarine, ink sacs, nautilus shells | Salvager ocean salvage caches and trader imports. |
+| Kelp, seagrass, coral, prismarine, ink sacs, nautilus shells | Crashbreak ocean salvage caches and trader imports. |
 | Snowballs, ice, packed ice, blue ice | Cryogenic ruins and cryogenic fractured stone. |
-| Wool, eggs, milk, animal goods | Remnant restoration caches and survival salvage. |
+| Wool, eggs, milk, animal goods | Radwarden restoration caches and survival salvage. |
 
 | System | Role |
 |---|---|
@@ -165,15 +180,15 @@ The wasteland has three major social pressures:
 
 | Faction | Identity | Typical Rewards |
 |---|---|---|
-| Remnant Collective | Order, restoration, power-grid discipline. | Safer routes, tech support, discounts. |
-| Salvager Guild | Trade, salvage rights, opportunistic logistics. | Better trades, cargo help, rare materials. |
-| Mutant Front | Adaptation, mutation, anti-old-world survival. | Mutation support, safe zones, biological advantages. |
+| Radwarden Compact | Containment crews, patrol discipline, reactor cleanup, and cold-route survival law. | Safer routes, exposure cleanup, defensive supplies, containment intelligence. |
+| Crashbreak Salvage | Crash-site crews, route builders, depot pragmatists, and machine recovery brokers. | Salvage contracts, cargo help, rare materials, fabrication support. |
+| Sporebound Sanctum | Biological recovery, adaptation doctrine, Nexus anomaly interpretation, and risky field medicine. | Filtration support, biological samples, anomaly readings, late-route survival supplies. |
 
 Reputation affects hostility, trade, patrol behavior, faction quests, village safety, and diplomacy. Factions can drift through alliance, truce, tension, skirmish, or open war. Raids and patrols make faction choices visible in the world.
 
 ECHO intelligence is gathered through drones, faction proximity, faction NPC conversations, accepted contracts, POI affinity, intercepted transmissions, dossiers, historical records, and tactical reports. The ECHO terminal exposes these through Field Archive, Route Map, Survival Index, Faction Atlas, and faction-related panels.
 
-Faction NPCs use ECHO Core roles and dialogue snapshots. Ashfall registers Remnant, Salvager, and Mutant-side field contacts; Orbital Remnants mirrors Orbital Remnant, Void Salvagers, and Nexus Choir standings after the post-Nexus handoff.
+Faction NPCs use ECHO Core roles and dialogue snapshots. Ashfall registers three active factions: Radwarden Compact, Crashbreak Salvage, and Sporebound Sanctum. Orbital lanes mirror into those same three standings after the post-Nexus handoff.
 
 ## ECHO-7 Terminal
 
@@ -208,11 +223,11 @@ Schematic Fragments unlock advanced perks across power, mechanical, biological, 
 
 Implemented perk themes include weapon damage, health regeneration, machine efficiency, radiation resistance, trade prices, and faster looting. Fragments are primarily recovered from POI loot and are meant to reward exploration.
 
-Elite Salvager reputation unlocks a Rare Tech Schematic trade. Four generic Schematic Fragments can be exchanged for one Rare Tech Schematic, which decodes at a Research Lab into the first missing schematic branch in enum order plus 75 RP. If every branch is already unlocked, it archives for 125 RP instead.
+Elite Crashbreak reputation unlocks a Rare Tech Schematic trade. Four generic Schematic Fragments can be exchanged for one Rare Tech Schematic, which decodes at a Research Lab into the first missing schematic branch in enum order plus 75 RP. If every branch is already unlocked, it archives for 125 RP instead.
 
 ## Nexus Endgame
 
-The Nexus Core is the final ECHO: Ashfall Protocol decision point. Before the Core route opens, all eight active biome guardians must be defeated. They are buried Gridfall control nodes: Plains Warlord, City Ruin Stalker, Industrial Juggernaut, Toxic Hive Matriarch, Crash Zone Colossus, Radiation Behemoth, Cryogenic Overseer, and Nexus Scar Avatar.
+The Nexus Core is the final ECHO: Ashfall Protocol decision point. Before the Core route opens, all eight active biome guardians must be defeated. They are buried Gridfall control nodes with faction ownership: Radwarden tracks Plains Warlord, Radiation Behemoth, and Cryogenic Overseer; Crashbreak tracks City Ruin Stalker, Industrial Juggernaut, and Crash Zone Colossus; Sporebound tracks Toxic Hive Matriarch and Nexus Scar Avatar.
 
 Once the guardian chain is clear, the current warfront pass adds a final readiness layer: wake the Nexus campaign, scan six Prime Relays, resolve three relays by stabilizing/severing/overriding them, survive the Core countermeasure siege, and prepare the chosen path. Once that chain and enough grid infrastructure are restored, the player chooses one path:
 
@@ -235,8 +250,8 @@ ECHO: Orbital Remnants becomes the ORBITAL / ECHO-0 Route Chain after the Nexus 
 - The route now includes Saturn and Titan transfer windows, Saturn Ring Relays, Titan Methane Pumps, Saturn Ring Fragments, Saturn Relay Lenses, Titan Methane Cells, Titan Survey Cores, Saturn Relay Sentinels, and Titan Methane Stalkers.
 - The route world set now covers Orbital Debris Field, Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, and Nexus Anomaly Belt.
 - The ECHO terminal displays ECHO-0 Route Chain objectives, launch readiness, rocket status, route surveys, route records, field records, support caches, suit telemetry, station power, orbital faction standings, and final network seal state.
-- Orbital factions include Orbital Remnants, Void Salvagers, and Nexus Choir. The current route requires three faction proof contracts before the final seal.
-- Orbital Remnants progress is not merged into the main Ashfall turn-in system; it is rendered as owned ORBITAL channels and mirrored through ECHO Core where shared UI needs it.
+- Orbital lanes map into Radwarden orbital containment, Crashbreak orbital salvage, and Sporebound anomaly interpretation. The current route requires three faction proof contracts before the final seal.
+- Orbital Remnants progress is not merged into the main Ashfall turn-in system; it is rendered as owned ORBITAL channels and mirrored through Ashfall's three ECHO Core factions where shared UI needs it.
 
 Orbital gameplay adds pressure suit gear, oxygen cells/canisters, sealant patches, radiation/thermal/scanner suit modules, launch infrastructure, fuel/oxygen/heat-shield machines, station relay nodes, planetary route keys, survey markers, faction relay hubs, faction vendor kiosks, orbital weapons, and a route-long ECHO-0 quarantine story.
 
@@ -310,7 +325,7 @@ Recommended fresh-world checks:
 - Nexus Protocol checks: Stationfall blackbox gate, Nexus Scanner Visor, Nexus Recycler, Corruption Filter, Nexus Field Stabilizer, Memory Decoder, Blackbox Monolith, Corruption Warden, Reality Forge, Core Access Key, Nexus Guardian, and Restore/Control/Destroy/Merge commit actions.
 - Industrial checks: Thermal Flux generation, factory scans, duct networks, filter automation, scrubber safe zones, heat/overload handling, Nexus-thermal warning, Industrial POI locator hints, and Furnace Warden reward state.
 - Blackbox checks: typed fragment decoding, memory stability/false signal pressure, Vault/Bunker/Labyrinth/Temple/Core Chamber monolith access, False ECHO, Command Remnant, Nexus Core Access Key, Nexus Guardian, Truth Engine directives, and support cache claims.
-- Release-ops checks: `-PechoAddonSet=all` workspace build, resource validators, gameplay-data validator, runtime-log scan, jar-set check, and copy to the local `Axes of Tomorrow` modpack profile only after stale jars are removed.
+- Release-ops checks: `-PechoAddonSet=all` workspace build, resource validators, gameplay-data validator, runtime-log scan, jar-set check, and copy only to an explicitly configured Ashfall modpack profile after stale jars are removed.
 
 Known constraints:
 

@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/orange_stained_glass.png",
+  "default_state": "ACTIVE",
+  "transition_seconds": 0.35,
+  "materials": {
+    "impact_field": {
+      "color": "#FFFFA05B",
+      "alpha": 0.5,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "impact_heat_haze",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/orange_stained_glass.png",
+      "material": "impact_field",
+      "states": ["ONLINE", "ACTIVE", "SCANNING"],
+      "alpha": 0.45,
+      "emissive": true
+    }
+  ]
+}

@@ -72,32 +72,33 @@ public class SmartEventHandler {
             return;
         }
 
+        var pickedUpStack = event.getOriginalStack();
+        if (pickedUpStack.isEmpty()) {
+            return;
+        }
+
         SmartEventData data = player.getData(ModAttachments.SMART_EVENT_DATA.get());
         data.addHoarding(1);
         player.setData(ModAttachments.SMART_EVENT_DATA.get(), data);
 
-        var itemEntity = event.getItemEntity();
-        if (itemEntity != null && itemEntity.getItem().is(com.knoxhack.echoashfallprotocol.registry.ModBlocks.NEXUS_CORE.get().asItem())) {
+        if (pickedUpStack.is(com.knoxhack.echoashfallprotocol.registry.ModBlocks.NEXUS_CORE.get().asItem())) {
             com.knoxhack.echoashfallprotocol.echo.EchoGuideManager.tick(player);
         }
 
         com.knoxhack.echoashfallprotocol.echo.QuestData quest =
                 player.getData(com.knoxhack.echoashfallprotocol.registry.ModAttachments.QUEST_DATA.get());
-        if (itemEntity == null) {
-            return;
-        }
 
-        String itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(itemEntity.getItem().getItem()).toString();
+        String itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(pickedUpStack.getItem()).toString();
         if (!quest.isAssetDiscovered(itemId)) {
             quest.discoverAsset(itemId);
             player.setData(com.knoxhack.echoashfallprotocol.registry.ModAttachments.QUEST_DATA.get(), quest);
             player.sendSystemMessage(Component.literal("[ECHO-7] ")
                     .withStyle(ChatFormatting.AQUA)
                     .append(Component.literal("New item profile registered: "
-                            + itemEntity.getItem().getItem().getName(itemEntity.getItem()).getString())
+                            + pickedUpStack.getItem().getName(pickedUpStack).getString())
                             .withStyle(ChatFormatting.WHITE)));
         }
-        if (itemEntity.getItem().is(com.knoxhack.echoashfallprotocol.registry.ModItems.MUTATED_TISSUE.get())) {
+        if (pickedUpStack.is(com.knoxhack.echoashfallprotocol.registry.ModItems.MUTATED_TISSUE.get())) {
             recordSampleRecovered(player, quest);
         }
     }

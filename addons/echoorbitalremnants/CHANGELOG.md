@@ -13,9 +13,11 @@
 - Moved Orbital shared-Terminal action and mission registration to common setup so server-side actions work on dedicated servers.
 - Expanded Orbital archive handoff notes and tester coverage for Terminal mission cache state and action registration.
 - Added ECHO Core route records for Earth Recontact, Launch Chain, Route Worlds, and ECHO-0 Quarantine.
-- Added ECHO Core diagnostics, hazard telemetry, and Faction Atlas integration for Orbital Remnant, Void Salvagers, and Nexus Choir standings.
+- Added ECHO Core diagnostics, hazard telemetry, and Faction Atlas integration for Radwarden containment, Crashbreak salvage, and Sporebound anomaly standings.
 - Hardened the Ashfall handoff so Earth calibration waits for a real Ashfall Nexus choice when Ashfall is installed while standalone Orbital uses the recovered ECHO-7 handoff.
-- Added a Core integration contract GameTest and expanded release coverage to 38 required Orbital GameTests.
+- Added a Core integration contract GameTest as part of the Orbital release coverage.
+- Hardened release safety with machine inventory drops, virtual Rocket Assembly Frame output, once-only route arrival seeds, high-altitude scan gating, and ambient threat caps.
+- Expanded release coverage to 44 required Orbital GameTests, including a strict playable-path test and a progress persistence round-trip.
 - Polished route-vessel and rocket blocked/success feedback with action-bar summaries, route handoff particles, and concrete next-proof guidance.
 - Synced the redirected Gradle jar into the addon-local `build/libs` release path and made resource validation part of the release gate.
 - Synced docs to the full Echo stack versions: Core `1.1.0`, Terminal `1.1.0`, Ashfall `1.3.0`, and Orbital `1.5.0`.
@@ -57,13 +59,13 @@
 ## 1.2.1-beta.3 - Beta Release Candidate Completion
 
 - Added ECHO Terminal ECHO NOTE guidance for blocked scans, post-ECHO-0 surveys, faction contracts, and final arc completion.
-- Hardened faction contract blocked reports for wrong dimension, missing proof, Nexus Choir pre-ECHO lock, cooldown, and no-pledge states.
-- Expanded GameTests with independent Orbital Remnant, Void Salvager, and Nexus Choir contract coverage.
+- Hardened faction contract blocked reports for wrong dimension, missing proof, Sporebound pre-ECHO lock, cooldown, and no-pledge states.
+- Expanded GameTests with independent Radwarden, Crashbreak, and Sporebound contract coverage.
 - Updated tester docs, test plan, known issues, and release notes for the release-candidate pass.
 
 ## 1.2.1-beta.2 - Tester Missing-Work Completion
 
-- Added terminal-driven faction contracts for Orbital Remnants, Void Salvagers, and Nexus Choir.
+- Added terminal-driven faction contracts for Radwarden orbital containment, Crashbreak orbital salvage, and Sporebound anomaly interpretation.
 - Added persistent faction contract state, cooldowns, one-time completion rewards, and the First Faction Contract advancement.
 - Added ECHO Terminal contract status so pledged players can see the active proof and reward loop.
 - Updated tester metadata, release URLs, docs, known issues, and manual smoke-test checklist.

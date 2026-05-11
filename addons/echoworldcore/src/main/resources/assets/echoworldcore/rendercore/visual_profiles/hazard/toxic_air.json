@@ -1,0 +1,25 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/lime_stained_glass.png",
+  "default_state": "OVERHEATED",
+  "transition_seconds": 0.25,
+  "materials": {
+    "hazard_toxic": {
+      "color": "#FF8CFF6A",
+      "alpha": 0.6,
+      "emissive": true,
+      "blend_mode": "additive"
+    }
+  },
+  "layers": [
+    {
+      "id": "toxic_warning",
+      "kind": "glow",
+      "texture": "minecraft:textures/block/lime_stained_glass.png",
+      "material": "hazard_toxic",
+      "states": ["ACTIVE", "OVERHEATED"],
+      "alpha": 0.58,
+      "emissive": true
+    }
+  ]
+}

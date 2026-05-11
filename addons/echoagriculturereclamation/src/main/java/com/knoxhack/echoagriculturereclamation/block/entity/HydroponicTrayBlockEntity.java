@@ -10,11 +10,17 @@ import com.knoxhack.echoagriculturereclamation.progress.ReclamationRestoration;
 import com.knoxhack.echoagriculturereclamation.registry.ModBlockEntities;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -39,14 +45,14 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
          return;
       }
       tray.growthTicks = 0;
-      int greenhouse = ReclamationProgress.scanGreenhouseSafety(level, pos);
+      int greenhouse = ReclamationProgress.growthGreenhouseSafety(level, pos);
       int chance = ReclamationCropLogic.growthChance(tray.profile.spec(), SoilState.STABILIZED, tray.profile, greenhouse, tray.nutrient);
       if (level.getRandom().nextInt(100) < chance) {
          tray.age++;
          if (tray.nutrient > 0) {
             tray.nutrient--;
          }
-         tray.setChanged();
+         tray.sync();
       }
    }
 
@@ -64,7 +70,7 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
       profile = next;
       age = 0;
       growthTicks = 0;
-      setChanged();
+      sync();
       if (!player.getAbilities().instabuild) {
          stack.shrink(1);
       }
@@ -83,7 +89,7 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
          return false;
       }
       nutrient = Math.min(cap, nutrient + ReclamationContent.machines().hydroponicNutrientPerMix());
-      setChanged();
+      sync();
       if (!player.getAbilities().instabuild) {
          stack.shrink(1);
       }
@@ -120,7 +126,7 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
       }
       age = 0;
       growthTicks = 0;
-      setChanged();
+      sync();
       player.sendSystemMessage(Component.literal("ECHO FIELD // Hydroponic harvest complete: " + Math.max(1, count) + "x " + spec.displayName()
          + ". " + (returnSeed ? "Seed culture shed a contaminated cutting for stabilization." : "Tray culture reset for regrowth.")));
       return true;
@@ -139,7 +145,7 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
       profile = null;
       age = 0;
       growthTicks = 0;
-      setChanged();
+      sync();
       return true;
    }
 
@@ -190,6 +196,24 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
       output.putInt("age", age);
       output.putInt("growth_ticks", growthTicks);
       output.putInt("nutrient", nutrient);
+   }
+
+   @Override
+   public Packet<ClientGamePacketListener> getUpdatePacket() {
+      return ClientboundBlockEntityDataPacket.create(this);
+   }
+
+   @Override
+   public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+      return saveWithoutMetadata(provider);
+   }
+
+   private void sync() {
+      setChanged();
+      if (level != null && !level.isClientSide()) {
+         BlockState state = getBlockState();
+         level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
+      }
    }
 
    private static void give(Player player, ItemStack stack) {

@@ -1,0 +1,24 @@
+{
+  "schema_version": 4,
+  "base_texture": "minecraft:textures/block/gray_stained_glass.png",
+  "default_state": "DAMAGED",
+  "transition_seconds": 0.3,
+  "materials": {
+    "hazard_debris": {
+      "color": "#FFB6C0C8",
+      "alpha": 0.52,
+      "emissive": false,
+      "blend_mode": "replace"
+    }
+  },
+  "layers": [
+    {
+      "id": "debris_warning",
+      "kind": "overlay",
+      "texture": "minecraft:textures/block/gray_stained_glass.png",
+      "material": "hazard_debris",
+      "states": ["ACTIVE", "DAMAGED"],
+      "alpha": 0.5
+    }
+  ]
+}

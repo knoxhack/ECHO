@@ -1,5 +1,7 @@
 package com.knoxhack.echoorbitalremnants.suit;
 
+import com.knoxhack.echocore.api.network.EchoPacketKind;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import com.knoxhack.echoorbitalremnants.Config;
 import com.knoxhack.echoorbitalremnants.network.OrbitalEventVisualPayload;
 import com.knoxhack.echoorbitalremnants.progression.OrbitalEventType;
@@ -26,15 +28,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public class SuitEvents {
     private static final Map<UUID, BlockScanCache> BLOCK_SCAN_CACHE = new HashMap<>();
+    private static final int MAX_LOCAL_AMBIENT_THREATS = 6;
 
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent.Post event) {
@@ -133,6 +136,16 @@ public class SuitEvents {
 
     public static boolean isOrbitalExposure(Player player) {
         return ModDimensions.isSpaceLevel(player.level()) || player.getY() >= Config.ORBITAL_ALTITUDE.get() - 32;
+    }
+
+    public static boolean isOrbitalProgressionScan(Player player) {
+        if (ModDimensions.isSpaceLevel(player.level())) {
+            return true;
+        }
+        if (player.getY() < Config.ORBITAL_ALTITUDE.get() - 32) {
+            return false;
+        }
+        return player.hasInfiniteMaterials() || EchoTerminalProgress.get(player).lowOrbitReached();
     }
 
     private static void tryAutoRecovery(Player player, SuitState state) {
@@ -290,15 +303,18 @@ public class SuitEvents {
             case STATION_BLACKOUT -> 0xFF66E8FF;
             case NEXUS_PULSE -> 0xFFE09CFF;
         };
-        PacketDistributor.sendToPlayer(serverPlayer, new OrbitalEventVisualPayload(
+        EchoNetSend.toPlayer(serverPlayer, new OrbitalEventVisualPayload(
                 event.name(),
                 overlay,
                 particle,
                 1.0F,
-                player.getRandom().nextLong()));
+                player.getRandom().nextLong()), EchoPacketKind.CLIENTBOUND_SYNC);
     }
 
     private static void spawnOrbitalThreat(ServerLevel level, Player player, OrbitalEventType event) {
+        if (localThreatCapReached(level, player)) {
+            return;
+        }
         Entity entity = switch (event) {
             case DEBRIS_STORM, SOLAR_FLARE -> ModEntities.ECHO_DEFENSE_DRONE.get().create(level, EntitySpawnReason.EVENT);
             case STATION_BLACKOUT -> ModEntities.VACUUM_WRAITH.get().create(level, EntitySpawnReason.EVENT);
@@ -315,6 +331,9 @@ public class SuitEvents {
     }
 
     private static void spawnFeatureThreat(ServerLevel level, Player player) {
+        if (localThreatCapReached(level, player)) {
+            return;
+        }
         Entity entity;
         if (player.level().dimension() == ModDimensions.SATURN_RING_GRAVEYARD) {
             entity = ModEntities.SATURN_RELAY_SENTINEL.get().create(level, EntitySpawnReason.EVENT);
@@ -338,6 +357,23 @@ public class SuitEvents {
         double dz = player.getRandom().nextInt(9) - 4;
         entity.setPos(player.getX() + dx, player.getY() + 1.0D, player.getZ() + dz);
         level.addFreshEntity(entity);
+    }
+
+    public static boolean localThreatCapReached(ServerLevel level, Player player) {
+        AABB area = new AABB(player.getX() - 18.0D, player.getY() - 8.0D, player.getZ() - 18.0D,
+                player.getX() + 18.0D, player.getY() + 8.0D, player.getZ() + 18.0D);
+        return level.getEntities((Entity) null, area, SuitEvents::isOrbitalThreat).size() >= MAX_LOCAL_AMBIENT_THREATS;
+    }
+
+    private static boolean isOrbitalThreat(Entity entity) {
+        return entity.getType() == ModEntities.ECHO_DEFENSE_DRONE.get()
+                || entity.getType() == ModEntities.VACUUM_WRAITH.get()
+                || entity.getType() == ModEntities.BROKEN_ASTRONAUT.get()
+                || entity.getType() == ModEntities.NEXUS_HUSK.get()
+                || entity.getType() == ModEntities.LUNAR_NEXUS_HUSK.get()
+                || entity.getType() == ModEntities.EUROPA_CRYO_WARDEN.get()
+                || entity.getType() == ModEntities.SATURN_RELAY_SENTINEL.get()
+                || entity.getType() == ModEntities.TITAN_METHANE_STALKER.get();
     }
 
     public static boolean isFeatureThreatZone(Player player) {

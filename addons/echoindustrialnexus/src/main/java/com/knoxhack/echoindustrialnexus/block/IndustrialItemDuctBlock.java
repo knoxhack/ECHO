@@ -96,4 +96,13 @@ public class IndustrialItemDuctBlock extends Block implements EntityBlock {
       }
       return InteractionResult.SUCCESS;
    }
+
+   @Override
+   public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity, ItemStack tool) {
+      if (!level.isClientSide() && blockEntity instanceof IndustrialItemDuctBlockEntity duct) {
+         duct.dropFilterContents(level, pos);
+      }
+
+      super.playerDestroy(level, player, pos, state, blockEntity, tool);
+   }
 }

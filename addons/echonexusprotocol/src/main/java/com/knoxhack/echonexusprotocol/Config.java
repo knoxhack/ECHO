@@ -1,5 +1,12 @@
 package com.knoxhack.echonexusprotocol;
 
+import com.knoxhack.echocore.api.config.EchoConfigCategory;
+import com.knoxhack.echocore.api.config.EchoConfigEntry;
+import com.knoxhack.echocore.api.config.EchoConfigModule;
+import com.knoxhack.echocore.api.config.EchoConfigProvider;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
+import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.common.ModConfigSpec.BooleanValue;
 import net.neoforged.neoforge.common.ModConfigSpec.Builder;
@@ -48,6 +55,69 @@ public final class Config {
    public static final IntValue DUNGEON_LOOT_SCALE_PERCENT;
 
    private Config() {
+   }
+
+   public static void registerEchoConfig() {
+      EchoConfigRegistry.register(EchoConfigProvider.of(EchoNexusProtocol.MODID, () -> new EchoConfigModule(
+         EchoNexusProtocol.MODID,
+         "Nexus Protocol",
+         List.of(
+            new EchoConfigCategory("progression", "Progression", List.of(
+               EchoConfigEntry.stringSpec("balance_preset", "Balance Preset",
+                  "Admin label for pack tuning; numeric values remain authoritative.",
+                  EchoConfigSide.COMMON, BALANCE_PRESET, true, false, false))),
+            new EchoConfigCategory("machines", "Machines", List.of(
+               EchoConfigEntry.intSpec("machine_capacity", "Machine Capacity", "",
+                  EchoConfigSide.COMMON, MACHINE_CAPACITY, 1000, 1000000, true, false, false),
+               EchoConfigEntry.intSpec("machine_transfer", "Machine Transfer", "",
+                  EchoConfigSide.COMMON, MACHINE_TRANSFER, 1, 100000, true, false, false),
+               EchoConfigEntry.intSpec("duration_percent", "Duration Percent",
+                  "Percent multiplier for Nexus processing recipe duration.",
+                  EchoConfigSide.COMMON, MACHINE_DURATION_PERCENT, 10, 500, true, false, false),
+               EchoConfigEntry.intSpec("charge_cost_percent", "Charge Cost Percent",
+                  "Percent multiplier for machine Nexus Charge costs.",
+                  EchoConfigSide.COMMON, MACHINE_CHARGE_COST_PERCENT, 0, 500, true, false, false),
+               EchoConfigEntry.intSpec("charge_output_percent", "Charge Output Percent",
+                  "Percent multiplier for machine Nexus Charge output.",
+                  EchoConfigSide.COMMON, MACHINE_CHARGE_OUTPUT_PERCENT, 0, 500, true, false, false),
+               EchoConfigEntry.intSpec("reactor_output_percent", "Reactor Output Percent",
+                  "Extra percent multiplier applied to passive Corruption Reactor generation.",
+                  EchoConfigSide.COMMON, REACTOR_OUTPUT_PERCENT, 0, 500, true, false, false))),
+            new EchoConfigCategory("field", "Reality Field", List.of(
+               EchoConfigEntry.intSpec("field_tick_interval", "Field Tick Interval", "",
+                  EchoConfigSide.COMMON, FIELD_TICK_INTERVAL, 20, 1200, true, false, false),
+               EchoConfigEntry.booleanSpec("chunk_corruption_tick", "Chunk Corruption Tick",
+                  "Enable chunk-level field and pressure ticks.",
+                  EchoConfigSide.COMMON, CHUNK_CORRUPTION_TICK_ENABLED, true, false, false),
+               EchoConfigEntry.intSpec("low_pressure_decay", "Low Pressure Decay", "",
+                  EchoConfigSide.COMMON, FIELD_DECAY_LOW_PRESSURE, 0, 20, true, false, false),
+               EchoConfigEntry.intSpec("high_pressure_decay", "High Pressure Decay", "",
+                  EchoConfigSide.COMMON, FIELD_DECAY_HIGH_PRESSURE, 0, 20, true, false, false),
+               EchoConfigEntry.intSpec("storm_window_multiplier", "Storm Window Multiplier", "",
+                  EchoConfigSide.COMMON, STORM_WINDOW_MULTIPLIER, 1, 20, true, false, false),
+               EchoConfigEntry.intSpec("field_map_radius", "Field Map Radius",
+                  "Fixed terminal field-map display radius in chunks.",
+                  EchoConfigSide.COMMON, FIELD_MAP_RADIUS, 1, 2, true, false, false))),
+            new EchoConfigCategory("seals", "Protocol Seals", List.of(
+               EchoConfigEntry.intSpec("seal_tick_interval", "Seal Tick Interval", "",
+                  EchoConfigSide.COMMON, SEAL_TICK_INTERVAL, 10, 1200, true, false, false),
+               EchoConfigEntry.intSpec("seal_radius", "Seal Radius", "",
+                  EchoConfigSide.COMMON, SEAL_RADIUS, 1, 16, true, false, false),
+               EchoConfigEntry.intSpec("seal_relay_amount", "Seal Relay Amount", "",
+                  EchoConfigSide.COMMON, SEAL_RELAY_AMOUNT, 1, 10000, true, false, false),
+               EchoConfigEntry.intSpec("seal_defense_damage", "Seal Defense Damage", "",
+                  EchoConfigSide.COMMON, SEAL_DEFENSE_DAMAGE, 1, 100, true, false, false),
+               EchoConfigEntry.intSpec("purify_pressure_reduction", "Purify Pressure Reduction", "",
+                  EchoConfigSide.COMMON, SEAL_PURIFY_PRESSURE_REDUCTION, 0, 100, true, false, false))),
+            new EchoConfigCategory("bosses", "Bosses", List.of(
+               EchoConfigEntry.intSpec("boss_health_percent", "Boss Health Percent", "",
+                  EchoConfigSide.COMMON, BOSS_HEALTH_PERCENT, 10, 1000, true, false, false),
+               EchoConfigEntry.intSpec("boss_damage_percent", "Boss Damage Percent", "",
+                  EchoConfigSide.COMMON, BOSS_DAMAGE_PERCENT, 10, 1000, true, false, false))),
+            new EchoConfigCategory("dungeons", "Dungeons", List.of(
+               EchoConfigEntry.intSpec("loot_scale_percent", "Loot Scale Percent",
+                  "Loot intensity hint used by dungeon templates and tests.",
+                  EchoConfigSide.COMMON, DUNGEON_LOOT_SCALE_PERCENT, 0, 500, true, false, false)))))));
    }
 
    static {

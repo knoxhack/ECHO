@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
@@ -23,6 +24,26 @@ ROOT = Path(__file__).resolve().parents[1]
 MODS = (
     ("echocore", ROOT / "core/echocore/src/main/resources", ROOT / "core/echocore/src/main/java/com/knoxhack/echocore"),
     (
+        "echonetcore",
+        ROOT / "addons/echonetcore/src/main/resources",
+        ROOT / "addons/echonetcore/src/main/java/com/knoxhack/echonetcore",
+    ),
+    (
+        "echomissioncore",
+        ROOT / "addons/echomissioncore/src/main/resources",
+        ROOT / "addons/echomissioncore/src/main/java/com/knoxhack/echomissioncore",
+    ),
+    (
+        "echodatacore",
+        ROOT / "addons/echodatacore/src/main/resources",
+        ROOT / "addons/echodatacore/src/main/java/com/knoxhack/echodatacore",
+    ),
+    (
+        "echoworldcore",
+        ROOT / "addons/echoworldcore/src/main/resources",
+        ROOT / "addons/echoworldcore/src/main/java/com/knoxhack/echoworldcore",
+    ),
+    (
         "echoterminal",
         ROOT / "addons/echoterminal/src/main/resources",
         ROOT / "addons/echoterminal/src/main/java/com/knoxhack/echoterminal",
@@ -31,6 +52,16 @@ MODS = (
         "signalos",
         ROOT / "addons/echosignalos/src/main/resources",
         ROOT / "addons/echosignalos/src/main/java/com/knoxhack/signalos",
+    ),
+    (
+        "signalosexample",
+        ROOT / "addons/signalosexample/src/main/resources",
+        ROOT / "addons/signalosexample/src/main/java/com/knoxhack/signalosexample",
+    ),
+    (
+        "echorendercore",
+        ROOT / "addons/echorendercore/src/main/resources",
+        ROOT / "addons/echorendercore/src/main/java/com/knoxhack/echorendercore",
     ),
     ("echoashfallprotocol", ROOT / "src/main/resources", ROOT / "src/main/java/com/knoxhack/echoashfallprotocol"),
     (
@@ -69,34 +100,100 @@ MODS = (
         ROOT / "addons/echoconvoyprotocol/src/main/java/com/knoxhack/echoconvoyprotocol",
     ),
     (
+        "echoholomap",
+        ROOT / "addons/echoholomap/src/main/resources",
+        ROOT / "addons/echoholomap/src/main/java/com/knoxhack/echoholomap",
+    ),
+    (
+        "echoindex",
+        ROOT / "addons/echoindex/src/main/resources",
+        ROOT / "addons/echoindex/src/main/java/com/knoxhack/echoindex",
+    ),
+    (
         "echostationfall",
         ROOT / "addons/echostationfall/src/main/resources",
         ROOT / "addons/echostationfall/src/main/java/com/knoxhack/echostationfall",
     ),
+    (
+        "echoarmory",
+        ROOT / "addons/echoarmory/src/main/resources",
+        ROOT / "addons/echoarmory/src/main/java/com/knoxhack/echoarmory",
+    ),
+    (
+        "echolens",
+        ROOT / "addons/echolens/src/main/resources",
+        ROOT / "addons/echolens/src/main/java/com/knoxhack/echolens",
+    ),
 )
 BETA_MOD_IDS = {
     "echocore",
+    "echonetcore",
     "echoterminal",
+    "echomissioncore",
+    "echodatacore",
     "signalos",
+    "signalosexample",
     "echoashfallprotocol",
     "echoorbitalremnants",
     "echonexusprotocol",
     "echoagriculturereclamation",
+    "echoworldcore",
 }
 ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
 ADDON_DIR_TO_MODID = {
     "echosignalos": "signalos",
 }
+BUILD_TRUTH_DOCS = (
+    ROOT / "README.md",
+    ROOT / "MODPACK_OVERVIEW.md",
+    ROOT / "wiki/Modules-and-Versions.md",
+    ROOT / "docs/FULL_GRADLE_STACK.md",
+)
+MODULE_ID_DOCS = BUILD_TRUTH_DOCS + (
+    ROOT / "docs/chapter_handoff_ids.md",
+)
+REQUIRED_NAMING_PHRASES = (
+    "Ashfall is the modpack",
+    "ECHO is the ecosystem",
+    "ECHO: Ashfall Protocol",
+    "echoashfallprotocol",
+)
+REQUIRED_LOCAL_TOOLING_PHRASES = (
+    "addons/echomodpackcommandcenter",
+    "tools/echo-release-terminal",
+    "not an active mod artifact",
+)
+STALE_DOC_TOKENS = (
+    "echoagriculturereclamation` | `0.1.0",
+    "echoagriculturereclamation-0.1.0.jar",
+    "Axes of Tomorrow",
+)
 SKIPPED_SCAN_DIRS = {".git", ".gradle", "build", "run", "__pycache__"}
 TEXT_SCAN_SUFFIXES = {".gradle", ".java", ".json", ".md", ".properties", ".py", ".toml", ".yaml", ".yml"}
 RELEASE_POLISH_SCAN_ROOTS = (
     ROOT / "src/main/java",
     ROOT / "src/main/resources",
     ROOT / "core/echocore/src/main",
+    ROOT / "addons/echonetcore/src/main",
+    ROOT / "addons/echomissioncore/src/main",
+    ROOT / "addons/echodatacore/src/main",
+    ROOT / "addons/echoworldcore/src/main",
     ROOT / "addons/echoterminal/src/main",
+    ROOT / "addons/echosignalos/src/main",
+    ROOT / "addons/signalosexample/src/main",
+    ROOT / "addons/echorendercore/src/main",
     ROOT / "addons/echoorbitalremnants/src/main",
+    ROOT / "addons/echonexusprotocol/src/main",
     ROOT / "addons/echoagriculturereclamation/src/main",
     ROOT / "addons/echostationfall/src/main",
+    ROOT / "addons/echoblackboxprotocol/src/main",
+    ROOT / "addons/echoindustrialnexus/src/main",
+    ROOT / "addons/echologisticsnetwork/src/main",
+    ROOT / "addons/echoconvoyprotocol/src/main",
+    ROOT / "addons/echoholomap/src/main",
+    ROOT / "addons/echoindex/src/main",
+    ROOT / "addons/echoarmory/src/main",
+    ROOT / "addons/echolens/src/main",
     ROOT / ".github",
     ROOT / "README.md",
     ROOT / "GETTING_STARTED.md",
@@ -130,8 +227,13 @@ STALE_RELEASE_TOKENS = (
 )
 MODID_CONSTANTS = {
     "EchoCore.MODID": "echocore",
+    "EchoNetCore.MODID": "echonetcore",
+    "EchoMissionCore.MODID": "echomissioncore",
+    "EchoDataCore.MODID": "echodatacore",
+    "EchoWorldCore.MODID": "echoworldcore",
     "EchoTerminal.MODID": "echoterminal",
     "SignalOS.MODID": "signalos",
+    "SignalOsExample.MODID": "signalosexample",
     "EchoAshfallProtocol.MODID": "echoashfallprotocol",
     "EchoOrbitalRemnants.MODID": "echoorbitalremnants",
     "EchoNexusProtocol.MODID": "echonexusprotocol",
@@ -140,7 +242,14 @@ MODID_CONSTANTS = {
     "EchoIndustrialNexus.MODID": "echoindustrialnexus",
     "EchoLogisticsNetwork.MODID": "echologisticsnetwork",
     "EchoConvoyProtocol.MODID": "echoconvoyprotocol",
+    "EchoHoloMap.MODID": "echoholomap",
+    "EchoIndex.MODID": "echoindex",
     "EchoStationfall.MODID": "echostationfall",
+    "EchoArmory.MODID": "echoarmory",
+    "EchoLens.MODID": "echolens",
+}
+ALLOWED_PACKET_NAMESPACE_CONSTANTS = {
+    ("echonetcore", "EchoCore.MODID"),
 }
 TEXTURE_QUALITY_MOD_IDS = {
     "echoashfallprotocol",
@@ -152,8 +261,10 @@ TEXTURE_QUALITY_MOD_IDS = {
     "echoconvoyprotocol",
     "echonexusprotocol",
     "signalos",
+    "signalosexample",
     "echostationfall",
     "echoterminal",
+    "echoarmory",
 }
 LOW_DETAIL_BLOCK_EXEMPTIONS = {
     "ash_layer",
@@ -290,6 +401,27 @@ STATIONFALL_REQUIRED_CHEST_LOOT = {
     "station_salvage_common",
     "station_salvage_command",
 }
+RENAMED_VANILLA_RESOURCE_HINTS = {
+    "minecraft:scute": "minecraft:turtle_scute",
+    "minecraft:item/scute": "minecraft:item/turtle_scute",
+}
+VANILLA_RECIPE_ITEM_FALLBACKS = {
+    "blast_furnace",
+    "chiseled_bookshelf",
+    "compass",
+    "copper_block",
+    "crafting_table",
+    "crying_obsidian",
+    "oak_planks",
+    "observer",
+    "piston",
+    "smithing_table",
+}
+VANILLA_ITEM_TEXTURE_FALLBACKS = {
+    "observer",
+    "piston",
+    "shield",
+}
 
 
 def expected_terminal_gui_size(file_name: str) -> tuple[int, int] | None:
@@ -313,8 +445,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--addon-set",
         choices=("beta", "all"),
-        default="beta",
-        help="Addon validation set. beta excludes unfinished future chapters.",
+        default="all",
+        help="Addon validation set. all matches the workspace default.",
     )
     return parser.parse_args()
 
@@ -332,8 +464,102 @@ def configure_addon_set(addon_set: str) -> None:
     MODS = tuple(mod for mod in MODS if mod[0] in ACTIVE_MOD_IDS)
     RELEASE_POLISH_SCAN_ROOTS = tuple(
         root for root in RELEASE_POLISH_SCAN_ROOTS
-        if "echostationfall" not in root.parts
+        if release_polish_root_active(root)
     )
+
+
+def release_polish_root_active(root: Path) -> bool:
+    parts = root.relative_to(ROOT).parts if root.is_relative_to(ROOT) else root.parts
+    if len(parts) < 2 or parts[0] != "addons":
+        return True
+    addon_modid = ADDON_DIR_TO_MODID.get(parts[1], parts[1])
+    return addon_modid in ACTIVE_MOD_IDS
+
+
+def check_build_truth_docs(errors: list[str], addon_set: str) -> None:
+    truth = build_truth_modules(addon_set)
+    active_truth_ids = {module["mod_id"] for module in truth}
+    missing_validator_mods = sorted(active_truth_ids - ACTIVE_MOD_IDS)
+    if missing_validator_mods:
+        errors.append("VALIDATOR_STACK_DRIFT missing active module(s): " + ", ".join(missing_validator_mods))
+
+    for doc_path in BUILD_TRUTH_DOCS:
+        if not doc_path.exists():
+            errors.append(f"MISSING_BUILD_TRUTH_DOC {rel(doc_path)}")
+            continue
+        text = doc_path.read_text(encoding="utf-8", errors="ignore")
+        for module in truth:
+            mod_id = module["mod_id"]
+            version = module["version"]
+            if mod_id not in text:
+                errors.append(f"DOC_MISSING_MODULE {rel(doc_path)}: {mod_id}")
+            if version and f"`{version}`" not in text:
+                errors.append(f"DOC_MISSING_VERSION {rel(doc_path)}: {mod_id} {version}")
+        for token in STALE_DOC_TOKENS:
+            if token in text:
+                errors.append(f"STALE_BUILD_TRUTH_DOC {rel(doc_path)}: {token}")
+
+    for doc_path in MODULE_ID_DOCS:
+        if not doc_path.exists():
+            continue
+        text = doc_path.read_text(encoding="utf-8", errors="ignore")
+        for module in truth:
+            if module["mod_id"] not in text:
+                errors.append(f"DOC_MISSING_MODULE_ID {rel(doc_path)}: {module['mod_id']}")
+
+    full_stack_doc = ROOT / "docs/FULL_GRADLE_STACK.md"
+    full_stack_text = full_stack_doc.read_text(encoding="utf-8", errors="ignore") if full_stack_doc.exists() else ""
+    for phrase in REQUIRED_NAMING_PHRASES:
+        if phrase not in full_stack_text:
+            errors.append(f"DOC_MISSING_NAMING_RULE {rel(full_stack_doc)}: {phrase}")
+    for phrase in REQUIRED_LOCAL_TOOLING_PHRASES:
+        if phrase not in full_stack_text:
+            errors.append(f"DOC_MISSING_TOOLING_RULE {rel(full_stack_doc)}: {phrase}")
+
+
+def build_truth_modules(addon_set: str) -> list[dict[str, str]]:
+    settings = (ROOT / "settings.gradle").read_text(encoding="utf-8")
+    beta_addons = parse_gradle_string_list(settings, "echoBetaAddons")
+    release_addons = parse_gradle_string_list(settings, "echoReleaseAddons")
+    addon_names = beta_addons + (release_addons if addon_set == "all" else [])
+
+    modules = [
+        module_from_properties("root", ROOT / "gradle.properties"),
+        module_from_properties("core/echocore", ROOT / "core/echocore/gradle.properties"),
+    ]
+    for addon_name in addon_names:
+        props_path = ROOT / f"addons/{addon_name}/gradle.properties"
+        if props_path.exists():
+            modules.append(module_from_properties(f"addons/{addon_name}", props_path))
+    return modules
+
+
+def parse_gradle_string_list(settings_text: str, variable_name: str) -> list[str]:
+    match = re.search(rf"def\s+{re.escape(variable_name)}\s*=\s*\[(.*?)\]", settings_text, re.S)
+    if not match:
+        return []
+    return re.findall(r"'([^']+)'", match.group(1))
+
+
+def module_from_properties(project_path: str, props_path: Path) -> dict[str, str]:
+    props = read_gradle_properties(props_path)
+    return {
+        "project_path": project_path,
+        "mod_id": props.get("mod_id", ""),
+        "mod_name": props.get("mod_name", ""),
+        "version": props.get("mod_version", ""),
+    }
+
+
+def read_gradle_properties(path: Path) -> dict[str, str]:
+    props: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        props[key.strip()] = value.strip()
+    return props
 
 
 def load_json(path: Path, errors: list[str]) -> Any | None:
@@ -380,6 +606,118 @@ def collect_resource_set(root: Path, suffix: str) -> set[str]:
     if not root.exists():
         return set()
     return {path.relative_to(root).as_posix().removesuffix(suffix) for path in root.rglob(f"*{suffix}")}
+
+
+def collect_minecraft_artifact_entries(prefix: str, suffix: str) -> set[str] | None:
+    artifact_roots = [
+        ROOT / "build",
+        ROOT / ".gradle",
+    ]
+    local_appdata = os.environ.get("LOCALAPPDATA")
+    if local_appdata:
+        artifact_roots.append(Path(local_appdata) / "EchoGradleBuild" / "Echo")
+
+    jars: list[Path] = []
+    for artifact_root in artifact_roots:
+        if artifact_root.exists():
+            jars.extend(artifact_root.rglob("minecraft-patched-*.jar"))
+    if not jars:
+        return None
+
+    jar_path = max(jars, key=lambda path: path.stat().st_mtime)
+    try:
+        with zipfile.ZipFile(jar_path) as jar:
+            return {
+                name.removeprefix(prefix).removesuffix(suffix)
+                for name in jar.namelist()
+                if name.startswith(prefix) and name.endswith(suffix)
+            }
+    except (OSError, zipfile.BadZipFile):
+        return None
+
+
+def recipe_item_refs(recipe: Any) -> Iterable[str]:
+    def refs_from_ingredient(value: Any) -> Iterable[str]:
+        if isinstance(value, str) and ":" in value:
+            yield value
+        elif isinstance(value, dict):
+            item = value.get("item")
+            if isinstance(item, str):
+                yield item
+            elif isinstance(item, list):
+                for item_value in item:
+                    if isinstance(item_value, str):
+                        yield item_value
+            if "items" in value:
+                yield from refs_from_ingredient(value["items"])
+        elif isinstance(value, list):
+            for entry in value:
+                yield from refs_from_ingredient(entry)
+
+    if not isinstance(recipe, dict):
+        return
+
+    for key_value in recipe.get("key", {}).values() if isinstance(recipe.get("key"), dict) else ():
+        yield from refs_from_ingredient(key_value)
+    yield from refs_from_ingredient(recipe.get("ingredients", []))
+
+    result = recipe.get("result")
+    if isinstance(result, str):
+        yield result
+    elif isinstance(result, dict):
+        for key in ("id", "item"):
+            value = result.get(key)
+            if isinstance(value, str):
+                yield value
+
+
+def check_armory_recipe_and_model_references(errors: list[str]) -> None:
+    if "echoarmory" not in ACTIVE_MOD_IDS:
+        return
+
+    resource_root = ROOT / "addons/echoarmory/src/main/resources"
+    vanilla_items = collect_minecraft_artifact_entries("assets/minecraft/models/item/", ".json")
+    vanilla_item_textures = collect_minecraft_artifact_entries("assets/minecraft/textures/item/", ".png")
+    armory_items = collect_resource_set(resource_root / "assets/echoarmory/models/item", ".json")
+
+    recipe_root = resource_root / "data/echoarmory/recipe"
+    if recipe_root.exists():
+        for path in sorted(recipe_root.rglob("*.json")):
+            recipe = load_json(path, errors)
+            for ref in recipe_item_refs(recipe):
+                parsed = parse_ref(ref, "minecraft")
+                if parsed is None:
+                    continue
+                namespace, item_path = parsed
+                full_ref = f"{namespace}:{item_path}"
+                if full_ref in RENAMED_VANILLA_RESOURCE_HINTS:
+                    errors.append(f"RENAMED_VANILLA_ITEM_REF {rel(path)}: {full_ref} -> {RENAMED_VANILLA_RESOURCE_HINTS[full_ref]}")
+                    continue
+                if namespace == "echoarmory" and item_path not in armory_items:
+                    errors.append(f"UNKNOWN_ARMORY_RECIPE_ITEM {rel(path)}: {full_ref}")
+                if (namespace == "minecraft"
+                        and vanilla_items is not None
+                        and item_path not in vanilla_items
+                        and item_path not in VANILLA_RECIPE_ITEM_FALLBACKS):
+                    errors.append(f"UNKNOWN_VANILLA_RECIPE_ITEM {rel(path)}: {full_ref}")
+
+    model_root = resource_root / "assets/echoarmory/models/item"
+    if model_root.exists():
+        for path in sorted(model_root.rglob("*.json")):
+            model = load_json(path, errors)
+            if not isinstance(model, dict) or not isinstance(model.get("textures"), dict):
+                continue
+            for texture in model["textures"].values():
+                if not isinstance(texture, str) or not texture.startswith("minecraft:item/"):
+                    continue
+                if texture in RENAMED_VANILLA_RESOURCE_HINTS:
+                    errors.append(f"RENAMED_VANILLA_TEXTURE_REF {rel(path)}: {texture} -> {RENAMED_VANILLA_RESOURCE_HINTS[texture]}")
+                    continue
+                texture_path = texture.removeprefix("minecraft:item/")
+                if (vanilla_item_textures is not None
+                        and texture_path not in vanilla_item_textures
+                        and texture_path not in VANILLA_ITEM_TEXTURE_FALLBACKS):
+                    errors.append(f"UNKNOWN_VANILLA_ITEM_TEXTURE {rel(path)}: {texture}")
 
 
 def check_assets(modid: str, resource_root: Path, errors: list[str]) -> None:
@@ -457,6 +795,32 @@ def check_assets(modid: str, resource_root: Path, errors: list[str]) -> None:
                         errors.append(f"MISSING_LANG_TRANSLATE {rel(path)}: {key}")
 
 
+def check_global_loot_modifier_paths(modid: str, resource_root: Path, errors: list[str]) -> None:
+    data_root = resource_root / f"data/{modid}"
+    if not data_root.exists():
+        return
+
+    singular = data_root / "loot_modifier"
+    if singular.exists():
+        files = sorted(path for path in singular.rglob("*.json") if path.is_file())
+        if files:
+            errors.append(
+                f"SINGULAR_LOOT_MODIFIER_DIR {rel(singular)}: "
+                "NeoForge loads global loot modifiers from loot_modifiers"
+            )
+
+    plural = data_root / "loot_modifiers"
+    if not plural.exists():
+        return
+    for path in sorted(plural.rglob("*.json")):
+        data = load_json(path, errors)
+        if not isinstance(data, dict):
+            continue
+        modifier_type = data.get("type")
+        if not isinstance(modifier_type, str) or not modifier_type:
+            errors.append(f"BAD_LOOT_MODIFIER_TYPE {rel(path)}")
+
+
 def check_packet_namespaces(modid: str, java_root: Path, errors: list[str]) -> None:
     if not java_root.exists():
         return
@@ -483,6 +847,8 @@ def check_packet_namespaces(modid: str, java_root: Path, errors: list[str]) -> N
                 continue
 
             expected_namespace = MODID_CONSTANTS.get(modid_constant)
+            if (modid, modid_constant) in ALLOWED_PACKET_NAMESPACE_CONSTANTS:
+                continue
             if expected_namespace != modid:
                 errors.append(f"WRONG_PACKET_NAMESPACE_CONSTANT {rel(path)}: {modid_constant}, expected {modid}")
 
@@ -979,12 +1345,107 @@ def check_stationfall_resource_completeness(errors: list[str]) -> None:
                 errors.append(f"BAD_STATIONFALL_TEXTURE_SIZE {rel(path)}: {size[0]}x{size[1]}, expected {expected}")
 
 
+def collect_nexus_registry_ids(java_root: Path, class_name: str, pattern: str) -> set[str]:
+    path = java_root / f"registry/{class_name}.java"
+    if not path.exists():
+        return set()
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    return {match.group(1) for match in re.finditer(pattern, text, re.DOTALL)}
+
+
+def collect_nexus_explicit_items(java_root: Path) -> set[str]:
+    path = java_root / "registry/ModItems.java"
+    if not path.exists():
+        return set()
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    items: set[str] = set()
+    for statement in text.split(";"):
+        if "public static final DeferredItem" not in statement:
+            continue
+        match = re.search(r'"([a-z0-9_]+)"', statement)
+        if match:
+            items.add(match.group(1))
+    return items
+
+
+def check_nexus_lang(lang: Any | None, key: str, errors: list[str]) -> None:
+    if not isinstance(lang, dict) or key not in lang:
+        errors.append(f"MISSING_NEXUS_LANG {key}")
+
+
+def check_nexus_paths(paths: Iterable[Path], errors: list[str]) -> None:
+    for path in paths:
+        if not path.exists():
+            errors.append(f"MISSING_NEXUS_RESOURCE {rel(path)}")
+
+
+def check_nexus_resource_completeness(errors: list[str]) -> None:
+    resources = ROOT / "addons/echonexusprotocol/src/main/resources"
+    java_root = ROOT / "addons/echonexusprotocol/src/main/java/com/knoxhack/echonexusprotocol"
+    asset_root = resources / "assets/echonexusprotocol"
+    data_root = resources / "data/echonexusprotocol"
+    lang = load_json(asset_root / "lang/en_us.json", errors)
+
+    blocks = collect_nexus_registry_ids(
+        java_root,
+        "ModBlocks",
+        r"public\s+static\s+final\s+DeferredBlock<[^>]+>\s+\w+\s*=\s*(?:BLOCKS\.register(?:SimpleBlock|Block)|dust|stone|glass|wood|leaves|metal|machine)\(\s*\"([a-z0-9_]+)\"",
+    )
+    items = collect_nexus_explicit_items(java_root)
+    entities = collect_nexus_registry_ids(java_root, "ModEntities", r'ENTITIES\.registerEntityType\(\s*"([a-z0-9_]+)"')
+
+    for block in sorted(blocks):
+        check_nexus_paths(
+            (
+                asset_root / f"blockstates/{block}.json",
+                asset_root / f"items/{block}.json",
+                asset_root / f"models/block/{block}.json",
+                asset_root / f"textures/block/{block}.png",
+                data_root / f"loot_table/blocks/{block}.json",
+            ),
+            errors,
+        )
+        check_nexus_lang(lang, f"block.echonexusprotocol.{block}", errors)
+
+    for item in sorted(items):
+        check_nexus_paths(
+            (
+                asset_root / f"items/{item}.json",
+                asset_root / f"models/item/{item}.json",
+                asset_root / f"textures/item/{item}.png",
+            ),
+            errors,
+        )
+        check_nexus_lang(lang, f"item.echonexusprotocol.{item}", errors)
+
+    for entity in sorted(entities):
+        check_nexus_paths(
+            (
+                asset_root / f"textures/entity/{entity}.png",
+                data_root / f"loot_table/entities/{entity}.json",
+            ),
+            errors,
+        )
+        check_nexus_lang(lang, f"entity.echonexusprotocol.{entity}", errors)
+
+    jei_catalog = java_root / "compat/jei/NexusJeiRecipeCatalog.java"
+    if not jei_catalog.exists():
+        errors.append(f"MISSING_NEXUS_JEI_CATALOG {rel(jei_catalog)}")
+        return
+    text = jei_catalog.read_text(encoding="utf-8", errors="ignore")
+    for recipe_id in sorted(set(re.findall(r'\brecipe\(\s*"([a-z0-9_]+)"', text))):
+        path = data_root / f"recipe/{recipe_id}.json"
+        if not path.exists():
+            errors.append(f"MISSING_NEXUS_JEI_RECIPE_JSON {rel(path)}")
+
+
 def main() -> int:
     args = parse_args()
     configure_addon_set(args.addon_set)
     errors: list[str] = []
     for modid, resources, java_root in MODS:
         check_assets(modid, resources, errors)
+        check_global_loot_modifier_paths(modid, resources, errors)
         check_packet_namespaces(modid, java_root, errors)
         check_pixel_texture_quality(modid, resources, errors)
     check_uppercase_resource_namespaces(errors)
@@ -994,8 +1455,12 @@ def main() -> int:
     check_terminal_visual_assets(errors)
     check_terminal_mission_visual_assets(errors)
     check_ashfall_block_model_texture_namespaces(errors)
+    check_armory_recipe_and_model_references(errors)
+    if "echonexusprotocol" in ACTIVE_MOD_IDS:
+        check_nexus_resource_completeness(errors)
     if "echostationfall" in ACTIVE_MOD_IDS:
         check_stationfall_resource_completeness(errors)
+    check_build_truth_docs(errors, args.addon_set)
 
     if errors:
         for error in errors:

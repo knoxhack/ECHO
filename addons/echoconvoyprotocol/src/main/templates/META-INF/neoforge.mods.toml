@@ -31,6 +31,13 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="echonetcore"
+type="required"
+versionRange="[0.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
 versionRange="[0,)"
@@ -39,6 +46,13 @@ side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echologisticsnetwork"
+type="optional"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echorendercore"
 type="optional"
 versionRange="[0,)"
 ordering="AFTER"

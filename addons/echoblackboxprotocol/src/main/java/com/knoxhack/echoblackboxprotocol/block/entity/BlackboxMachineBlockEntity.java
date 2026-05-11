@@ -404,7 +404,8 @@ public class BlackboxMachineBlockEntity extends BaseContainerBlockEntity {
    }
 
    private static RecipeHolder<BlackboxProcessingRecipe> findRecipe(ServerLevel level, BlackboxMachineKind kind, ItemStack input) {
-      return level.recipeAccess()
+      return level.getServer()
+         .getRecipeManager()
          .getRecipes()
          .stream()
          .filter(holder -> holder.value().getType() == ModRecipes.BLACKBOX_PROCESSING_TYPE.get())

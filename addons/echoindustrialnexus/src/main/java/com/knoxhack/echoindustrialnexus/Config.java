@@ -1,5 +1,12 @@
 package com.knoxhack.echoindustrialnexus;
 
+import com.knoxhack.echocore.api.config.EchoConfigCategory;
+import com.knoxhack.echocore.api.config.EchoConfigEntry;
+import com.knoxhack.echocore.api.config.EchoConfigModule;
+import com.knoxhack.echocore.api.config.EchoConfigProvider;
+import com.knoxhack.echocore.api.config.EchoConfigRegistry;
+import com.knoxhack.echocore.api.config.EchoConfigSide;
+import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.common.ModConfigSpec.BooleanValue;
 import net.neoforged.neoforge.common.ModConfigSpec.Builder;
@@ -23,6 +30,57 @@ public final class Config {
    public static final IntValue NEXUS_EXCHANGER_SPACING_BONUS;
 
    private Config() {
+   }
+
+   public static void registerEchoConfig() {
+      EchoConfigRegistry.register(EchoConfigProvider.of(EchoIndustrialNexus.MODID, () -> new EchoConfigModule(
+         EchoIndustrialNexus.MODID,
+         "Industrial Nexus",
+         List.of(
+            new EchoConfigCategory("thermal_flux", "Thermal Flux", List.of(
+               EchoConfigEntry.intSpec("scrap_dynamo_output", "Scrap Dynamo Output",
+                  "Thermal Flux generated per tick while the Scrap Dynamo burns fuel.",
+                  EchoConfigSide.COMMON, SCRAP_DYNAMO_OUTPUT, 1, 4096, true, false, false),
+               EchoConfigEntry.intSpec("thermal_array_output", "Thermal Array Output",
+                  "Thermal Flux generated per tick while the Thermal Array burns a heat source.",
+                  EchoConfigSide.COMMON, THERMAL_ARRAY_OUTPUT, 1, 8192, true, false, false),
+               EchoConfigEntry.intSpec("processor_capacity", "Processor Capacity",
+                  "Internal Thermal Flux buffer for Industrial Nexus processors.",
+                  EchoConfigSide.COMMON, PROCESSOR_FLUX_CAPACITY, 100, 1000000, true, false, false),
+               EchoConfigEntry.intSpec("capacitor_capacity", "Capacitor Capacity",
+                  "Thermal Flux stored by the basic Flux Capacitor Bank.",
+                  EchoConfigSide.COMMON, CAPACITOR_FLUX_CAPACITY, 1000, 10000000, true, false, false),
+               EchoConfigEntry.intSpec("duct_transfer_rate", "Duct Transfer Rate",
+                  "Thermal Flux a Copper Flux Duct network can move per pull.",
+                  EchoConfigSide.COMMON, DUCT_TRANSFER_RATE, 1, 8192, true, false, false),
+               EchoConfigEntry.intSpec("scrubber_flux_per_tick", "Scrubber Flux Per Tick",
+                  "Thermal Flux consumed per tick by an active Industrial Scrubber.",
+                  EchoConfigSide.COMMON, SCRUBBER_FLUX_PER_TICK, 1, 1024, true, false, false))),
+            new EchoConfigCategory("worldgen", "Worldgen", List.of(
+               EchoConfigEntry.booleanSpec("procedural_pois", "Procedural POIs",
+                  "Generate compact Industrial Nexus POIs during new chunk loads.",
+                  EchoConfigSide.COMMON, PROCEDURAL_POIS_ENABLED, true, true, true),
+               EchoConfigEntry.intSpec("poi_spacing_chunks", "POI Spacing Chunks",
+                  "Base chunk spacing for Industrial Nexus POI attempts.",
+                  EchoConfigSide.COMMON, POI_SPACING_CHUNKS, 12, 160, true, true, true),
+               EchoConfigEntry.intSpec("poi_search_radius", "POI Search Radius",
+                  "Surface search radius used when placing Industrial Nexus POIs.",
+                  EchoConfigSide.COMMON, POI_SEARCH_RADIUS, 2, 32, true, true, true),
+               EchoConfigEntry.intSpec("thermal_plant_bonus", "Thermal Plant Bonus",
+                  "Extra chunks between Abandoned Thermal Plant attempts.",
+                  EchoConfigSide.COMMON, THERMAL_PLANT_SPACING_BONUS, 0, 120, true, true, true),
+               EchoConfigEntry.intSpec("factory_bonus", "Factory Bonus",
+                  "Extra chunks between Rusted Factory Complex attempts.",
+                  EchoConfigSide.COMMON, FACTORY_SPACING_BONUS, 0, 120, true, true, true),
+               EchoConfigEntry.intSpec("geothermal_bonus", "Geothermal Bonus",
+                  "Extra chunks between Geothermal Drill Site attempts.",
+                  EchoConfigSide.COMMON, GEOTHERMAL_SPACING_BONUS, 0, 120, true, true, true),
+               EchoConfigEntry.intSpec("reactor_bonus", "Reactor Bonus",
+                  "Extra chunks between Reactor Cooling Station attempts.",
+                  EchoConfigSide.COMMON, REACTOR_SPACING_BONUS, 0, 120, true, true, true),
+               EchoConfigEntry.intSpec("nexus_exchanger_bonus", "Nexus Exchanger Bonus",
+                  "Extra chunks between Nexus Heat Exchanger Ruins attempts.",
+                  EchoConfigSide.COMMON, NEXUS_EXCHANGER_SPACING_BONUS, 0, 120, true, true, true)))))));
    }
 
    static {

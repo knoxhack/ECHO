@@ -98,6 +98,38 @@ def _near_exit_path(x: int, z: int) -> bool:
     return abs(x - _DOOR_X) <= 2 and _POD_Z1 <= z < _SITE_SIZE
 
 
+def _protected_path_cell(x: int, z: int) -> bool:
+    if abs(x - _SPAWN_X) <= 1 and _POD_Z0 + 3 <= z <= _SPAWN_Z:
+        return True
+    if x in (_POD_X0 + 2, _POD_X0 + 3, _POD_X1 - 3, _POD_X1 - 2) and _POD_Z0 + 2 <= z <= _POD_Z0 + 3:
+        return True
+    if _POD_X0 + 2 <= x <= _POD_CX and _POD_CZ + 1 <= z <= _SPAWN_Z:
+        return True
+    return _near_exit_path(x, z)
+
+
+def _path_blocking_clutter(block_id: str) -> bool:
+    return block_id in {
+        _DEBRIS,
+        _CABLE,
+        _TWISTED,
+        "minecraft:chain",
+        "minecraft:stone_button",
+    }
+
+
+def _clear_protected_path_clutter(blocks: BlockList) -> None:
+    blocks[:] = [
+        block
+        for block in blocks
+        if not (
+            block[1] == _SPAWN_Y
+            and _protected_path_cell(block[0], block[2])
+            and _path_blocking_clutter(block[3])
+        )
+    ]
+
+
 def _barrel_nbt(loot_table: str) -> Dict[str, Any]:
     return {"id": "minecraft:barrel", "LootTable": loot_table}
 
@@ -178,7 +210,7 @@ def _build_site(blocks: BlockList, rng: random.Random) -> None:
         (x, z)
         for x in range(_SITE_SIZE)
         for z in range(_SITE_SIZE)
-        if not _in_pod_footprint(x, z) and not _near_exit_path(x, z)
+        if not _in_pod_footprint(x, z) and not _protected_path_cell(x, z)
     ]
     rng.shuffle(debris_cells)
 
@@ -426,5 +458,6 @@ def generate_drop_pod(seed: int) -> BlockList:
     _build_roof(blocks)
     _build_struts_and_pipes(blocks)
     _build_interior(blocks)
+    _clear_protected_path_clutter(blocks)
 
     return blocks

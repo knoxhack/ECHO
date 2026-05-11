@@ -12,6 +12,7 @@ public record TerminalTheme(
         String displayName,
         TerminalThemeTokens tokens,
         TerminalIconSet icons,
+        Map<Identifier, Identifier> visualOverrides,
         Map<String, TerminalChapterStyle> chapterStyles,
         TerminalChapterStyle fallbackChapterStyle) {
     public TerminalTheme {
@@ -21,6 +22,7 @@ public record TerminalTheme(
         }
         tokens = Objects.requireNonNull(tokens, "Terminal theme tokens are required.");
         icons = icons == null ? TerminalIconSet.builder().build() : icons;
+        visualOverrides = Map.copyOf(visualOverrides == null ? Map.of() : visualOverrides);
         chapterStyles = Map.copyOf(chapterStyles == null ? Map.of() : chapterStyles);
         fallbackChapterStyle = fallbackChapterStyle == null
                 ? TerminalChapterStyle.builder("", displayName).colors(tokens.colors().accent(), tokens.colors().muted()).build()
@@ -57,6 +59,24 @@ public record TerminalTheme(
         return resolved == null ? icons.resolve(key, fallback) : resolved;
     }
 
+    public Identifier visual(Identifier texture) {
+        if (texture == null) {
+            return null;
+        }
+        Identifier resolved = visualOverrides.get(texture);
+        if (resolved != null) {
+            return resolved;
+        }
+        String path = texture.getPath();
+        if (texture.getNamespace().equals(id.getNamespace())
+                && path.startsWith("textures/gui/")
+                && !path.startsWith("textures/gui/themes/")) {
+            return Identifier.fromNamespaceAndPath(texture.getNamespace(),
+                    "textures/gui/themes/" + id.getPath() + "/" + path.substring("textures/gui/".length()));
+        }
+        return texture;
+    }
+
     private static String clean(String value) {
         return value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
     }
@@ -66,6 +86,7 @@ public record TerminalTheme(
         private final String displayName;
         private TerminalThemeTokens tokens;
         private TerminalIconSet icons = TerminalIconSet.builder().build();
+        private final Map<Identifier, Identifier> visualOverrides = new LinkedHashMap<>();
         private final Map<String, TerminalChapterStyle> chapterStyles = new LinkedHashMap<>();
         private TerminalChapterStyle fallbackChapterStyle;
 
@@ -84,6 +105,20 @@ public record TerminalTheme(
             return this;
         }
 
+        public Builder visualOverride(Identifier source, Identifier replacement) {
+            visualOverrides.put(
+                    Objects.requireNonNull(source, "Source texture is required."),
+                    Objects.requireNonNull(replacement, "Replacement texture is required."));
+            return this;
+        }
+
+        public Builder visualOverrides(Map<Identifier, Identifier> overrides) {
+            if (overrides != null) {
+                overrides.forEach(this::visualOverride);
+            }
+            return this;
+        }
+
         public Builder chapterStyle(TerminalChapterStyle style) {
             if (style != null && !style.key().isBlank()) {
                 chapterStyles.put(style.key(), style);
@@ -97,7 +132,7 @@ public record TerminalTheme(
         }
 
         public TerminalTheme build() {
-            return new TerminalTheme(id, displayName, tokens, icons, chapterStyles, fallbackChapterStyle);
+            return new TerminalTheme(id, displayName, tokens, icons, visualOverrides, chapterStyles, fallbackChapterStyle);
         }
     }
 }

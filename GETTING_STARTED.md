@@ -56,7 +56,7 @@ ECHO: Ashfall Protocol does not assume you spawn beside a healthy vanilla forest
 - **Plant fiber:** break dry/burnt/wasteland grasses, then craft 2 Plant Fiber into 2 Sticks.
 - **Planks:** craft Dead Wood Logs or Charred Wood Logs into 4 Oak Planks.
 - **Renewable wood:** mutated leaves can drop Mutated Saplings, which grow only on ruined soils such as wasteland, toxic, mutated, burnt, ashen, or contaminated ground.
-- **Healthy saplings:** vanilla saplings are rare pre-Gridfall recovery items found later in bio labs, data centers, survivor caches, Remnant/Salvager caches, or Salvager trader deals.
+- **Healthy saplings:** vanilla saplings are rare pre-Gridfall recovery items found later in bio labs, data centers, survivor caches, Radwarden recovery caches, Crashbreak salvage caches, or Crashbreak trader deals.
 - **Starter salvage:** pod lockers and landing debris include sticks, planks, plant fiber, scrap metal, scrap wire, and first-night supplies. The starter inventory stays intentionally minimal; the pod itself teaches the survival loop.
 
 ## Recovered Biome Goods
@@ -67,13 +67,13 @@ Normal deserts, jungles, swamps, oceans, flower fields, and cold biomes are not 
 |---|---|
 | Paper | Craft Wasteland Reeds into paper, or find paper in data caches. |
 | Green dye | Craft Irradiated Cactus into Green Dye; healthy cactus is rare lab/seed-vault loot. |
-| Sugar cane, cactus, bamboo, cocoa | Seed Vaults, Bio Labs, Data Centers, Remnant caches, Salvager caches, and Salvager trader imports. |
-| Pumpkin/melon seeds and flowers | Seed Vaults, Bio Labs, Remnant restoration caches, and data-center ecology samples. |
-| Mushrooms, moss, vines, glow berries, dripstone, amethyst | Sewers, subways, abandoned mines, Bio Labs, Mutant sanctuaries, and toxic moss conversion. |
+| Sugar cane, cactus, bamboo, cocoa | Seed Vaults, Bio Labs, Data Centers, Radwarden caches, Crashbreak caches, and Crashbreak trader imports. |
+| Pumpkin/melon seeds and flowers | Seed Vaults, Bio Labs, Radwarden restoration caches, and data-center ecology samples. |
+| Mushrooms, moss, vines, glow berries, dripstone, amethyst | Sewers, subways, abandoned mines, Bio Labs, Sporebound sanctuaries, and toxic moss conversion. |
 | Clay, lily pads, mangrove samples | Sewers, toxic wetland salvage, and contaminated soil processing. |
-| Kelp, seagrass, coral, prismarine, ink sacs, nautilus shells | Salvager ocean salvage caches and imported biome goods. |
+| Kelp, seagrass, coral, prismarine, ink sacs, nautilus shells | Crashbreak ocean salvage caches and imported biome goods. |
 | Snowballs and ice | Cryogenic ruins and Cryogenic Fractured Stone processing. |
-| Wool, eggs, milk, animal goods | Remnant restoration caches and survival caches until passive mobs are reliable. |
+| Wool, eggs, milk, animal goods | Radwarden restoration caches and survival caches until passive mobs are reliable. |
 
 ## Survival Basics
 
@@ -185,9 +185,9 @@ Goal: live with the choice and finish the branch finale.
 
 Reputation is not cosmetic. Factions change trade, patrol hostility, raids, village safety, and mission opportunities.
 
-- **Remnant Collective:** restoration, order, and grid discipline.
-- **Salvager Guild:** trade, logistics, and rare salvage.
-- **Mutant Front:** adaptation and survival through biological change.
+- **Radwarden Compact:** restoration, containment, and grid discipline.
+- **Crashbreak Salvage:** trade, logistics, and rare salvage.
+- **Sporebound Sanctum:** adaptation, biology, and anomaly interpretation.
 
 Helping one side can anger another. Use the terminal's World and Archives sections to read faction state, dossiers, and intercepted intel.
 

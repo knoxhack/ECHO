@@ -4,10 +4,10 @@ import java.util.Locale;
 import net.minecraft.util.StringRepresentable;
 
 public enum ConvoyVehicleKind implements StringRepresentable {
-   SCRAP_BIKE("scrap_bike", "Scrap Bike", 80, 0, 45, 6, 0.19D, 4.8F, 0.04D, 0.45D, 0.55D, 0, 0, false),
-   WASTELAND_ROVER("wasteland_rover", "Wasteland Rover", 160, 80, 80, 18, 0.16D, 3.5F, 0.12D, 0.85D, 0.72D, 2, 96, false),
-   CARGO_CRAWLER("cargo_crawler", "Cargo Crawler", 260, 120, 120, 36, 0.10D, 2.4F, 0.2D, 1.1D, 0.9D, 2, 48, false),
-   ARMORED_RELAY_TRUCK("armored_relay_truck", "Armored Relay Truck", 220, 180, 160, 27, 0.13D, 2.8F, 0.32D, 1.0D, 0.82D, 4, 144, true);
+   SCRAP_BIKE("scrap_bike", "Scrap Bike", 80, 0, 45, 6, 0.19D, 4.8F, 0.04D, 0.8D, 0.55D, 0, 0, false),
+   WASTELAND_ROVER("wasteland_rover", "Wasteland Rover", 160, 80, 80, 18, 0.16D, 3.5F, 0.12D, 1.3D, 0.72D, 2, 96, false),
+   CARGO_CRAWLER("cargo_crawler", "Cargo Crawler", 260, 120, 120, 36, 0.10D, 2.4F, 0.2D, 1.55D, 0.9D, 2, 48, false),
+   ARMORED_RELAY_TRUCK("armored_relay_truck", "Armored Relay Truck", 220, 180, 160, 27, 0.13D, 2.8F, 0.32D, 1.55D, 0.82D, 4, 144, true);
 
    private final String id;
    private final String displayName;

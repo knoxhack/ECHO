@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Survival HUD overlay — supports COMPACT and NORMAL display modes.
@@ -691,7 +692,7 @@ public class SurvivalHudOverlay {
         Player player = mc.player;
         MissionUxSummary summary = player == null
                 ? null
-                : MissionUxSummary.of(player, data, current);
+                : MissionUxSummary.forHud(player, data, current);
         int pw = PW - 8;
         int ph = 52;
         graphics.fill(x, y, x + pw, y + ph, 0x4A111B28);
@@ -1021,15 +1022,31 @@ public class SurvivalHudOverlay {
     }
 
     // Cache for drone status to avoid checking every frame
-    private static long lastDroneCheck = 0;
+    private static final long DRONE_STATUS_CACHE_TICKS = 100L;
+    private static UUID cachedDronePlayer = null;
+    private static String cachedDroneDimension = "";
+    private static long lastDroneCheckTick = Long.MIN_VALUE;
     private static boolean cachedDroneStatus = false;
+    private static final long RADAR_THREAT_CACHE_TICKS = 20L;
+    private static UUID cachedThreatPlayer = null;
+    private static String cachedThreatDimension = "";
+    private static BlockPos cachedThreatBlock = BlockPos.ZERO;
+    private static long lastThreatScanTick = Long.MIN_VALUE;
+    private static List<Vec3> cachedThreatPositions = List.of();
 
     private static boolean hasActiveDrone(Player player) {
-        long now = System.currentTimeMillis();
-        if (now - lastDroneCheck < 2000) { // Check once per 2 seconds
+        long now = player.level().getGameTime();
+        UUID playerId = player.getUUID();
+        String dimension = player.level().dimension().toString();
+        if (playerId.equals(cachedDronePlayer)
+                && dimension.equals(cachedDroneDimension)
+                && now >= lastDroneCheckTick
+                && now - lastDroneCheckTick < DRONE_STATUS_CACHE_TICKS) {
             return cachedDroneStatus;
         }
-        lastDroneCheck = now;
+        cachedDronePlayer = playerId;
+        cachedDroneDimension = dimension;
+        lastDroneCheckTick = now;
 
         // Check for ScoutDrone in vicinity - this works on both sides
         var level = player.level();
@@ -1124,14 +1141,10 @@ public class SurvivalHudOverlay {
         g.fill(cx - 1, cy - 2, cx + 2, cy, COL_SUCCESS);
         g.fill(cx - 2, cy - 1, cx + 3, cy - 1, COL_SUCCESS);
 
-        // Threat dots - find nearby monsters
         Vec3 playerPos = player.position();
-        List<Monster> threats = player.level().getEntitiesOfClass(Monster.class,
-                player.getBoundingBox().inflate(32.0));
+        List<Vec3> threats = radarThreatPositions(player);
 
-        for (Monster threat : threats) {
-            if (threats.size() > 5) break; // Limit dots
-            Vec3 threatPos = threat.position();
+        for (Vec3 threatPos : threats) {
             double dx = threatPos.x - playerPos.x;
             double dz = threatPos.z - playerPos.z;
 
@@ -1143,6 +1156,34 @@ public class SurvivalHudOverlay {
 
             g.fill(dotX - 1, dotY - 1, dotX + 2, dotY + 2, COL_DANGER);
         }
+    }
+
+    private static List<Vec3> radarThreatPositions(Player player) {
+        long now = player.level().getGameTime();
+        UUID playerId = player.getUUID();
+        String dimension = player.level().dimension().toString();
+        BlockPos block = player.blockPosition();
+        if (playerId.equals(cachedThreatPlayer)
+                && dimension.equals(cachedThreatDimension)
+                && block.equals(cachedThreatBlock)
+                && now >= lastThreatScanTick
+                && now - lastThreatScanTick < RADAR_THREAT_CACHE_TICKS) {
+            return cachedThreatPositions;
+        }
+
+        List<Monster> threats = player.level().getEntitiesOfClass(Monster.class,
+                player.getBoundingBox().inflate(32.0));
+        List<Vec3> positions = new ArrayList<>();
+        for (Monster threat : threats) {
+            if (positions.size() >= 5) break;
+            positions.add(threat.position());
+        }
+        cachedThreatPlayer = playerId;
+        cachedThreatDimension = dimension;
+        cachedThreatBlock = block;
+        lastThreatScanTick = now;
+        cachedThreatPositions = List.copyOf(positions);
+        return cachedThreatPositions;
     }
 
     private static void renderExtendedMissionTracker(GuiGraphicsExtractor g, int x, int y, QuestData quest) {
@@ -1174,7 +1215,7 @@ public class SurvivalHudOverlay {
         Player player = mc.player;
         MissionUxSummary summary = player == null
                 ? null
-                : MissionUxSummary.of(player, quest, current);
+                : MissionUxSummary.forHud(player, quest, current);
 
         // Phase label
         int totalPhases = Math.max(1, MissionRegistry.getPhaseCount());

@@ -200,7 +200,7 @@ public class BlackboxMachineBlock extends Block implements EntityBlock {
 
    @SuppressWarnings("unchecked")
    private static BlackboxProcessingRecipe findRecipe(ServerLevel level, BlackboxMachineKind kind, ItemStack stack) {
-      return level.recipeAccess().getRecipes().stream()
+      return level.getServer().getRecipeManager().getRecipes().stream()
          .filter(holder -> holder.value().getType() == ModRecipes.BLACKBOX_PROCESSING_TYPE.get())
          .map(holder -> (RecipeHolder<BlackboxProcessingRecipe>)holder)
          .filter(holder -> holder.value().matches(kind, stack, level))

@@ -49,13 +49,13 @@ final class ReclamationTerminalReport {
 
    private static String nextStep(Player player, ReclamationMetrics metrics) {
       if (metrics.knownSeeds() <= 0 && !ReclamationProgress.flag(player, "seed_recovered")) {
-         return "recover a seed capsule and identify it at a Seed Vault Terminal.";
+         return "craft a seed capsule from wheat seeds, bone meal, glass bottle, and copper, then open it or identify it at a Seed Vault Terminal.";
       }
       if (!ReclamationProgress.flag(player, "soil_analyzed") && ReclamationProgress.value(player, "soil_purified") <= 0) {
-         return "scan local soil or run a Soil Purifier pass before scaling crops.";
+         return "scan local soil, or grow the first profiled seed on dirt, grass, farmland, or a Hydroponic Tray while purifier parts come online.";
       }
       if (ReclamationProgress.value(player, "crops_grown") <= 0) {
-         return "plant a profiled seed on compatible soil or start a Hydroponic Tray culture.";
+         return "plant a profiled seed on compatible soil or start a Hydroponic Tray culture, then harvest the first crop.";
       }
       if (!ReclamationProgress.flag(player, "stabilization_seed_recovered")) {
          return "harvest one unstable crop to recover a seed cutting for stabilization.";
@@ -63,10 +63,10 @@ final class ReclamationTerminalReport {
       if (ReclamationProgress.count(player, ModItems.BIO_GEL.get()) <= 0
          && ReclamationProgress.count(player, ModItems.GENE_SAMPLE.get()) <= 0
          && ReclamationProgress.value(player, "bio_gel_created") <= 0) {
-         return "process crop matter in the Bio-Reactor to make Bio-Gel.";
+         return "craft a Bio-Reactor with Soil Nutrient Mix, then process any crop matter into Bio-Gel.";
       }
       if (!ReclamationProgress.flag(player, "gene_stabilization")) {
-         return "use the Gene Stabilizer with a contaminated seed and Bio-Gel or Gene Sample.";
+         return "craft the Gene Stabilizer with Bio-Gel and Soil Nutrient Mix, then use it with a contaminated seed and Bio-Gel or Gene Sample.";
       }
       if (metrics.greenhouseSafety() < ReclamationContent.progression().greenhouseSafeThreshold()) {
          return "raise greenhouse safety with glass, filters, trays, controller, and dock blocks.";

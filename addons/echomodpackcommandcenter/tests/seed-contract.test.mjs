@@ -5,29 +5,127 @@ import path from "node:path";
 
 const root = process.cwd();
 const seed = JSON.parse(fs.readFileSync(path.join(root, "src", "shared", "seed-data.json"), "utf-8"));
+const featureCatalog = JSON.parse(fs.readFileSync(path.join(root, "src", "shared", "feature-catalog.json"), "utf-8"));
 
 test("ECHO project seeds release modules", () => {
   const echo = seed.projects.find((project) => project.slug === "echo");
   assert.ok(echo);
-  assert.equal(echo.modules.length, 8);
+  assert.equal(echo.modules.length, 22);
   assert.deepEqual(
     echo.modules.map((module) => module.modId),
     [
       "echocore",
+      "echonetcore",
+      "echodatacore",
+      "echomissioncore",
       "echoterminal",
       "echoashfallprotocol",
+      "signalos",
+      "signalosexample",
       "echoorbitalremnants",
-      "echostationfall",
       "echonexusprotocol",
+      "echoagriculturereclamation",
+      "echoworldcore",
+      "echostationfall",
+      "echoblackboxprotocol",
       "echoindustrialnexus",
-      "echoblackboxprotocol"
+      "echologisticsnetwork",
+      "echorendercore",
+      "echoconvoyprotocol",
+      "echoholomap",
+      "echoindex",
+      "echoarmory",
+      "echolens"
     ]
   );
 });
 
-test("release actions are a closed allowlist", () => {
+test("new ECHO addon projects are seeded as first-class modules", () => {
+  const projects = new Map(seed.projects.map((project) => [project.slug, project]));
   assert.deepEqual(
-    seed.releaseActions.map((action) => action.commandId),
+    [
+      "echonetcore",
+      "echodatacore",
+      "echomissioncore",
+      "echoworldcore",
+      "echorendercore",
+      "echoholomap",
+      "echoindex",
+      "echoarmory",
+      "echolens"
+    ].map((slug) => projects.get(slug)?.modules[0]?.modId),
+    [
+      "echonetcore",
+      "echodatacore",
+      "echomissioncore",
+      "echoworldcore",
+      "echorendercore",
+      "echoholomap",
+      "echoindex",
+      "echoarmory",
+      "echolens"
+    ]
+  );
+});
+
+test("ECHO modules follow the active Gradle workspace addon set", () => {
+  const echo = seed.projects.find((project) => project.slug === "echo");
+  const workspaceModules = new Set(echo.modules.map((module) => module.modId));
+  for (const modId of [
+    "echonetcore",
+    "echodatacore",
+    "echomissioncore",
+    "echoworldcore",
+    "echorendercore",
+    "echoholomap",
+    "echoindex",
+    "echoarmory",
+    "echolens"
+  ]) {
+    assert.equal(workspaceModules.has(modId), true, `${modId} missing from ECHO full-stack modules`);
+  }
+});
+
+test("ECHO RenderCore uses the current module version", () => {
+  const echo = seed.projects.find((project) => project.slug === "echo");
+  assert.equal(echo.modules.find((module) => module.modId === "echorendercore").version, "0.5.0");
+});
+
+test("project seeds contain real modules only", () => {
+  assert.deepEqual(
+    seed.projects.map((project) => project.slug),
+    [
+      "echo",
+      "echocore",
+      "echonetcore",
+      "echodatacore",
+      "echomissioncore",
+      "echoashfallprotocol",
+      "echoterminal",
+      "echosignalos",
+      "signalosexample",
+      "echoorbitalremnants",
+      "echonexusprotocol",
+      "echoagriculturereclamation",
+      "echoworldcore",
+      "echostationfall",
+      "echoblackboxprotocol",
+      "echoindustrialnexus",
+      "echologisticsnetwork",
+      "echorendercore",
+      "echoconvoyprotocol",
+      "echoholomap",
+      "echoindex",
+      "echoarmory",
+      "echolens",
+      "arcana"
+    ]
+  );
+});
+
+test("full-stack release actions are a closed allowlist", () => {
+  assert.deepEqual(
+    seed.releaseActions.filter((action) => action.projectSlug === "echo").map((action) => action.commandId),
     [
       "build-beta-stack",
       "build-full-stack",
@@ -42,6 +140,32 @@ test("release actions are a closed allowlist", () => {
   );
 });
 
+test("module projects seed scoped release actions", () => {
+  const moduleProjects = seed.projects.filter((project) => project.slug !== "echo" && project.slug !== "arcana");
+  for (const project of moduleProjects) {
+    const actions = seed.releaseActions.filter((action) => action.projectSlug === project.slug).map((action) => action.commandId).sort();
+    assert.deepEqual(actions, ["build-module", "compile-java", "run-gametests", "validate-resources"]);
+  }
+});
+
+test("ARCANA seeds standalone project actions", () => {
+  const arcana = seed.projects.find((project) => project.slug === "arcana");
+  assert.ok(arcana);
+  assert.equal(arcana.workspacePath, "C:/Github/ARCANA");
+  assert.deepEqual(arcana.modules, [
+    {
+      modId: "arcanaveil",
+      label: "ARCANA: Veilbound Studies",
+      version: "0.1.0",
+      path: "."
+    }
+  ]);
+  assert.deepEqual(
+    seed.releaseActions.filter((action) => action.projectSlug === "arcana").map((action) => action.commandId).sort(),
+    ["build-module", "compile-java", "run-gametests", "scan-runtime-logs", "validate-resources", "verify-release"]
+  );
+});
+
 test("local actions cannot carry shell command payloads", () => {
   for (const action of seed.releaseActions.filter((candidate) => candidate.mode !== "shell")) {
     assert.equal(action.executable, "");
@@ -51,11 +175,40 @@ test("local actions cannot carry shell command payloads", () => {
 
 test("scanner tracks cover ECHO QA lanes", () => {
   const tracks = seed.qaTracks.filter((track) => track.projectSlug === "echo").map((track) => track.key).sort();
-  assert.deepEqual(tracks, ["handoffs", "release-ops", "resources", "terminal"]);
+  assert.deepEqual(tracks, ["handoffs", "release-ops", "resources", "runtime-logs", "terminal"]);
 });
 
 test("exports have both prompt categories available", () => {
   const categories = new Set(seed.promptTemplates.map((prompt) => prompt.category));
   assert.equal(categories.has("Codex QA"), true);
   assert.equal(categories.has("Asset Prompt"), true);
+});
+
+test("feature catalog covers every seeded project with real source-backed rows", () => {
+  const projectSlugs = new Set(seed.projects.map((project) => project.slug));
+  const featureSlugs = new Set(featureCatalog.features.map((feature) => feature.projectSlug));
+  for (const slug of projectSlugs) {
+    assert.equal(featureSlugs.has(slug), true, `${slug} missing feature coverage`);
+  }
+  for (const feature of featureCatalog.features) {
+    assert.equal(projectSlugs.has(feature.projectSlug), true, `${feature.id} references an unknown project`);
+    assert.match(feature.id, /^[a-z0-9-]+$/);
+    assert.ok(feature.title.trim());
+    assert.ok(feature.playerPromise.trim());
+    assert.ok(feature.loreContext.trim());
+    assert.ok(feature.implementationSummary.trim());
+    assert.ok(feature.nextAction.trim());
+    assert.equal(feature.sources.length > 0, true, `${feature.id} missing sources`);
+    assert.equal(feature.evidence.length > 0, true, `${feature.id} missing evidence`);
+    assert.equal(JSON.stringify(feature).includes("placeholder"), false, `${feature.id} contains placeholder text`);
+  }
+});
+
+test("feature catalog uses conservative status vocabulary", () => {
+  const statuses = new Set(["implemented", "partial", "planned", "deferred", "blocked"]);
+  for (const feature of featureCatalog.features) {
+    assert.equal(statuses.has(feature.status), true, `${feature.id} has invalid status ${feature.status}`);
+  }
+  assert.equal(featureCatalog.features.some((feature) => feature.projectSlug === "echo" && feature.status === "partial"), true);
+  assert.equal(featureCatalog.features.some((feature) => feature.projectSlug === "arcana" && feature.status === "implemented"), true);
 });

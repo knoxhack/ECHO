@@ -37,6 +37,14 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="echonetcore"
+type="required"
+reason="Provides shared ECHO packet registration, sync, action validation, and rate limiting."
+versionRange="[0.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
 reason="Enables Ashfall mission, route, faction, and discovery surfaces inside the modular ECHO Terminal."

@@ -1,6 +1,8 @@
 package com.knoxhack.echoashfallprotocol.network;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echonetcore.api.EchoNetPayloads;
+import com.knoxhack.echonetcore.api.EchoRateLimitPolicy;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -18,122 +20,102 @@ public class ModNetwork {
     
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar(VERSION)
-            .optional();
+        final PayloadRegistrar registrar = EchoNetPayloads.optional(event, VERSION);
         
         // Register Nexus state sync packet
-        registrar.playToClient(
+        EchoNetPayloads.clientboundSync(registrar,
             NexusStatePacket.TYPE,
             NexusStatePacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleNexusState(packet));
-            }
+            (packet, player, ctx) -> handleNexusState(packet)
         );
         
         // Register Mission Turn-In packet (Client to Server)
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             MissionTurnInPacket.TYPE,
             MissionTurnInPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleMissionTurnIn(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(10, "mission_turn_in"),
+            (packet, player, ctx) -> handleMissionTurnIn(packet, player)
         );
 
         // Register Nexus Choice packet (Client to Server)
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             NexusChoicePacket.TYPE,
             NexusChoicePacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleNexusChoice(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(20, "nexus_choice"),
+            (packet, player, ctx) -> handleNexusChoice(packet, player)
         );
 
         // Register Research Purchase packet (Client to Server)
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             ResearchPurchasePacket.TYPE,
             ResearchPurchasePacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleResearchPurchase(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(10, "research_purchase"),
+            (packet, player, ctx) -> handleResearchPurchase(packet, player)
         );
 
         // Register Research Fragment Analysis packet (Client to Server)
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             ResearchAnalyzeFragmentPacket.TYPE,
             ResearchAnalyzeFragmentPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleResearchAnalyzeFragment(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(10, "research_analyze"),
+            (packet, player, ctx) -> handleResearchAnalyzeFragment(packet, player)
         );
 
         // Register Companion Drone command packet (Client to Server)
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             DroneCommandPacket.TYPE,
             DroneCommandPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleDroneCommand(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(10, "drone_command"),
+            (packet, player, ctx) -> handleDroneCommand(packet, player)
         );
 
         // Register Archive intel read-state packet (Client to Server)
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             ArchiveIntelReadPacket.TYPE,
             ArchiveIntelReadPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleArchiveIntelRead(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(4, "archive_intel_read"),
+            (packet, player, ctx) -> handleArchiveIntelRead(packet, player)
         );
 
-        registrar.playToClient(
+        EchoNetPayloads.clientboundSync(registrar,
             FactionDialogueOpenPacket.TYPE,
             FactionDialogueOpenPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleFactionDialogueOpen(packet));
-            }
+            (packet, player, ctx) -> handleFactionDialogueOpen(packet)
         );
 
-        registrar.playToServer(
+        EchoNetPayloads.serverboundAction(registrar,
             FactionNpcActionPacket.TYPE,
             FactionNpcActionPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleFactionNpcAction(packet, (net.minecraft.server.level.ServerPlayer) ctx.player()));
-            }
+            EchoRateLimitPolicy.of(10, "faction_npc_action"),
+            (packet, player, ctx) -> handleFactionNpcAction(packet, player)
         );
 
         // Register Environmental Sync packet (Server to Client)
-        registrar.playToClient(
+        EchoNetPayloads.clientboundSync(registrar,
             EnvironmentalSyncPacket.TYPE,
             EnvironmentalSyncPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleEnvironmentalSync(packet));
-            }
+            (packet, player, ctx) -> handleEnvironmentalSync(packet)
         );
 
         // Register Grace Countdown packet (Server to Client)
-        registrar.playToClient(
+        EchoNetPayloads.clientboundSync(registrar,
             GraceCountdownPacket.TYPE,
             GraceCountdownPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleGraceCountdown(packet));
-            }
+            (packet, player, ctx) -> handleGraceCountdown(packet)
         );
 
         // Register ECHO boss HUD/navigation target packet (Server to Client)
-        registrar.playToClient(
+        EchoNetPayloads.clientboundSync(registrar,
             BossNavigationPacket.TYPE,
             BossNavigationPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleBossNavigation(packet));
-            }
+            (packet, player, ctx) -> handleBossNavigation(packet)
         );
 
         // Register first-join welcome screen packet (Server to Client)
-        registrar.playToClient(
+        EchoNetPayloads.clientboundSync(registrar,
             WelcomeScreenPacket.TYPE,
             WelcomeScreenPacket.CODEC,
-            (packet, ctx) -> {
-                ctx.enqueueWork(() -> handleWelcomeScreen(packet));
-            }
+            (packet, player, ctx) -> handleWelcomeScreen(packet)
         );
     }
 
@@ -389,9 +371,12 @@ public class ModNetwork {
         if (!(player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
             return java.util.List.of();
         }
+        net.minecraft.world.phys.AABB searchArea = new net.minecraft.world.phys.AABB(
+            player.getX() - 128.0D, player.getY() - 64.0D, player.getZ() - 128.0D,
+            player.getX() + 128.0D, player.getY() + 64.0D, player.getZ() + 128.0D);
         return serverLevel.getEntitiesOfClass(
             com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone.class,
-            player.getBoundingBox().inflate(128.0),
+            searchArea,
             drone -> !drone.isRemoved() && drone.isAlive() && player.getUUID().equals(drone.getOwnerUUID()));
     }
 
@@ -425,7 +410,7 @@ public class ModNetwork {
         if ("RECALL".equals(command)) {
             scout.setMode(com.knoxhack.echoashfallprotocol.entity.ScoutDrone.DroneMode.FOLLOW);
             net.minecraft.world.phys.Vec3 target = player.position().add(0.0D, 1.5D, 0.0D);
-            scout.setPos(target.x, target.y, target.z);
+            scout.teleportTo(target.x, target.y, target.z);
             scout.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             playEchoCue(player, com.knoxhack.echoashfallprotocol.registry.ModSounds.ECHO_COMPLETE.get(), 1.1f);
             sendDroneStatus(player,

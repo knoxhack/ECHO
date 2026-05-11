@@ -25,6 +25,7 @@ public class EchoStationfall {
         modEventBus.addListener(this::commonSetup); modEventBus.addListener(ModEntities::registerAttributes); modEventBus.addListener(ModGameTests::registerTests);
         NeoForge.EVENT_BUS.register(new StationfallEvents()); NeoForge.EVENT_BUS.register(new ModTooltipEvents());
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        Config.registerEchoConfig();
     }
     private void commonSetup(FMLCommonSetupEvent event) { event.enqueueWork(() -> { StationfallCoreIntegration.register(); if (ModList.get().isLoaded("echoterminal")) StationfallTerminalCommonIntegration.register(); }); }
 }

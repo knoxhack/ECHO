@@ -1,0 +1,35 @@
+{
+  "modid": "echologisticsnetwork",
+  "key": [255, 0, 255],
+  "items": {
+    "source": "items_source.png",
+    "output_dir": "src/main/resources/assets/echologisticsnetwork/textures/item",
+    "sprites": [
+      { "name": "supply_tag", "box": [121, 121, 444, 447] },
+      { "name": "logistics_chip", "box": [633, 113, 905, 447] },
+      { "name": "courier_drone_module", "box": [1056, 142, 1408, 395] },
+      { "name": "route_manifest", "box": [129, 580, 417, 891] },
+      { "name": "loadout_card", "box": [584, 636, 932, 866] },
+      { "name": "remote_request_tablet", "box": [1064, 552, 1416, 888] }
+    ]
+  },
+  "blocks": {
+    "source": "blocks_source.png",
+    "output_dir": "src/main/resources/assets/echologisticsnetwork/textures/block",
+    "sprites": [
+      { "name": "logistics_terminal", "box": [102, 96, 388, 376] },
+      { "name": "supply_crate", "box": [489, 95, 767, 377] },
+      { "name": "smart_storage_label", "box": [873, 95, 1154, 377] },
+      { "name": "drone_delivery_dock", "box": [102, 482, 386, 764] },
+      { "name": "route_requester", "box": [489, 482, 767, 765] },
+      { "name": "loadout_locker", "box": [873, 482, 1154, 765] },
+      { "name": "faction_trade_depot", "box": [102, 871, 386, 1153] },
+      { "name": "remote_reward_relay", "box": [489, 871, 767, 1153] },
+      { "name": "auto_restock_station", "box": [873, 871, 1154, 1153] }
+    ]
+  },
+  "entity": {
+    "source": "courier_drone_source.png",
+    "output": "src/main/resources/assets/echologisticsnetwork/textures/entity/courier_drone.png"
+  }
+}

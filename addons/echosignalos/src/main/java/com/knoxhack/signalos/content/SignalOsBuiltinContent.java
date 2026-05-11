@@ -1,7 +1,14 @@
 package com.knoxhack.signalos.content;
 
+import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
+import com.knoxhack.echocore.api.EchoModuleInfo;
+import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.signalos.SignalOS;
 import com.knoxhack.signalos.api.SignalOsApi;
+import com.knoxhack.signalos.api.SignalOsApp;
+import com.knoxhack.signalos.api.SignalOsDataProvider;
+import com.knoxhack.signalos.api.SignalOsDataRecord;
 import com.knoxhack.signalos.api.TerminalArchiveRecord;
 import com.knoxhack.signalos.api.TerminalDiagnosticProvider;
 import com.knoxhack.signalos.api.TerminalPage;
@@ -18,9 +25,36 @@ public final class SignalOsBuiltinContent {
     }
 
     public static void register() {
+        registerDesktopApps();
         registerCorePages();
         registerCoreArchive();
         SignalOsApi.registerDiagnostics(new CoreDiagnosticsProvider());
+        SignalOsApi.registerDataProvider(new EchoLinkDataProvider());
+    }
+
+    private static void registerDesktopApps() {
+        app("home", "Home", "home", "System overview and launch surface.", 0, 0xFF66E8FF);
+        app("files", "Files", "files", "Browse records available on the current SignalOS network.", 10, 0xFF8BD7FF);
+        app("notes", "Notes", "notes", "Create and review local operator notes.", 20, 0xFFFFD166);
+        app("logs", "Logs", "logs", "Read system logs, archive lines, and Echo-linked reports.", 30, 0xFF91F7A5);
+        app("network_monitor", "Network Monitor", "network", "Inspect linked terminals, workstations, racks, and relays.", 40, 0xFF66E8FF);
+        app("settings", "Settings", "settings", "Operator preferences and SignalOS shell state.", 50, 0xFFB6A7FF);
+        app("data_vault", "Data Vault", "data_vault", "Archive and inspect discovered data records.", 60, 0xFF9FD1FF);
+        app("echo_link", "Echo Link", "echo_link", "Optional bridge into Echo Core module, route, and diagnostic state.", 70, 0xFFFF8FA3);
+        app("missions", "Missions", "missions", "Legacy SignalOS mission surface.", 100, 0xFFFFD166);
+        app("archives", "Archives", "archives", "Legacy SignalOS archive surface.", 110, 0xFF9FD1FF);
+        app("rewards", "Rewards", "rewards", "Shared terminal reward inbox.", 120, 0xFF91F7A5);
+        app("diagnostics", "Diagnostics", "diagnostics", "SignalOS provider diagnostics.", 130, 0xFFFFB454);
+    }
+
+    private static void app(String path, String title, String type, String summary, int order, int accent) {
+        SignalOsApi.registerApp(SignalOsApp.builder(id(path))
+                .title(title)
+                .type(type)
+                .summary(summary)
+                .order(order)
+                .accentColor(accent)
+                .build());
     }
 
     private static void registerCorePages() {
@@ -91,6 +125,74 @@ public final class SignalOsBuiltinContent {
         @Override
         public int order() {
             return 0;
+        }
+    }
+
+    private static final class EchoLinkDataProvider implements SignalOsDataProvider {
+        @Override
+        public Identifier id() {
+            return SignalOsBuiltinContent.id("echo_link_data");
+        }
+
+        @Override
+        public List<SignalOsDataRecord> records(Player player) {
+            List<SignalOsDataRecord> records = new ArrayList<>();
+            records.add(new SignalOsDataRecord(
+                    SignalOsBuiltinContent.id("record/platform_summary"),
+                    "Echo Platform Summary",
+                    "echo",
+                    "Echo Core",
+                    EchoCoreServices.platformProviderSummary(),
+                    10,
+                    false));
+            int index = 0;
+            for (EchoModuleInfo module : EchoCoreServices.moduleReport()) {
+                records.add(new SignalOsDataRecord(
+                        SignalOsBuiltinContent.id("record/module/" + module.modId()),
+                        module.displayName(),
+                        "module",
+                        "Echo Module Catalog",
+                        (module.loaded() ? "Loaded" : "Missing") + " | " + module.modId()
+                                + (module.version().isBlank() ? "" : " | " + module.version())
+                                + " | " + module.projectPath(),
+                        100 + index++,
+                        !module.loaded()));
+            }
+            index = 0;
+            for (EchoDiagnosticBlocker blocker : EchoCoreServices.diagnostics(player)) {
+                records.add(new SignalOsDataRecord(
+                        SignalOsBuiltinContent.id("record/diagnostic/" + safePath(blocker.id())),
+                        blocker.title(),
+                        "diagnostic",
+                        "Echo Diagnostics",
+                        blocker.severity().name() + " | " + blocker.detail(),
+                        300 + index++,
+                        false));
+            }
+            index = 0;
+            for (EchoRouteRecord route : EchoCoreServices.routeRecords(player)) {
+                records.add(new SignalOsDataRecord(
+                        SignalOsBuiltinContent.id("record/route/" + safePath(route.id())),
+                        route.title(),
+                        "route",
+                        "Echo Route Records",
+                        route.status() + " | " + route.summary(),
+                        500 + index++,
+                        route.complete()));
+            }
+            return records;
+        }
+
+        @Override
+        public int order() {
+            return 0;
+        }
+
+        private static String safePath(Identifier id) {
+            if (id == null) {
+                return "unknown";
+            }
+            return (id.getNamespace() + "/" + id.getPath()).replaceAll("[^a-z0-9_./-]", "_");
         }
     }
 }

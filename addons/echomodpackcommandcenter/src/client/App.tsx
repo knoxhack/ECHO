@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  Archive,
   Boxes,
+  CheckCircle2,
   Clipboard,
+  Copy,
   Database,
   Download,
   FileJson,
@@ -13,6 +16,8 @@ import {
   Layers,
   ListChecks,
   Map,
+  Package,
+  PackageCheck,
   Play,
   RefreshCw,
   Rocket,
@@ -25,10 +30,18 @@ import {
 import type {
   AppSettings,
   CommandRun,
+  FeatureCatalogResponse,
+  FeatureRecord,
+  FeatureStatus,
+  JarManifest,
+  ModpackInventory,
+  ModpackPipelineRun,
   Project,
   ProjectDetail,
   PromptTemplate,
   QaFinding,
+  ReadinessChecklistItem,
+  ReadinessReport,
   ReleaseAction,
   RoadmapPhase,
   ScanMode,
@@ -37,43 +50,57 @@ import type {
 } from "../shared/types";
 import {
   getHealth,
+  getFeatures,
+  getJars,
+  getModpackRuns,
+  getModpackSummary,
   getProject,
   getProjects,
+  getReadiness,
   getRelease,
   getRun,
   getSettings,
   listScans,
   renderPrompt,
+  buildJars,
+  promoteJars,
+  rebuildModpack,
   runReleaseAction,
   runScan,
   saveSettings,
   stopRun
 } from "./api";
-
-type ViewKey =
-  | "projects"
-  | "dashboard"
-  | "roadmap"
-  | "qa"
-  | "prompts"
-  | "release"
-  | "terminal"
-  | "assets"
-  | "exports"
-  | "settings";
-
-const views: Array<{ key: ViewKey; label: string; icon: typeof Activity }> = [
-  { key: "projects", label: "Projects", icon: Boxes },
-  { key: "dashboard", label: "Dashboard", icon: Gauge },
-  { key: "roadmap", label: "Roadmap", icon: Map },
-  { key: "qa", label: "QA Scanner", icon: ShieldCheck },
-  { key: "prompts", label: "Codex Prompts", icon: TerminalSquare },
-  { key: "release", label: "Release Deck", icon: Rocket },
-  { key: "terminal", label: "Terminal Planner", icon: Layers },
-  { key: "assets", label: "Asset Prompts", icon: Image },
-  { key: "exports", label: "Exports", icon: Download },
-  { key: "settings", label: "Settings", icon: Settings }
-];
+import {
+  ActionTile,
+  Alert,
+  BrandPanel,
+  EmptyState,
+  FeatureStatusBadge,
+  InfoBanner,
+  JarStatusBadge,
+  LoadingPanel,
+  Metric,
+  ModpackStatusBadge,
+  Nav,
+  OutputPanel,
+  PageHeader,
+  Risk,
+  RunHistoryPanel,
+  SectionTitle,
+  Severity,
+  TopBar
+} from "./ui";
+import { ConfirmJarModal, ConfirmModal, ReadinessChecklistPanel, type JarActionKind } from "./workflow";
+import {
+  commandStatusClass,
+  displayCommand,
+  formatBytes,
+  formatDate,
+  mergeRun,
+  promoteDisabledReason,
+  selectedRunFrom,
+  type ViewKey
+} from "./view-model";
 
 const emptySettings: AppSettings = {
   echoRoot: "",
@@ -90,10 +117,17 @@ export function App(): JSX.Element {
   const [settings, setSettings] = useState<AppSettings>(emptySettings);
   const [scanHistory, setScanHistory] = useState<ScanReport[]>([]);
   const [runs, setRuns] = useState<CommandRun[]>([]);
+  const [jarManifest, setJarManifest] = useState<JarManifest | null>(null);
+  const [readiness, setReadiness] = useState<ReadinessReport | null>(null);
+  const [featureCatalog, setFeatureCatalog] = useState<FeatureCatalogResponse | null>(null);
+  const [modpackSummary, setModpackSummary] = useState<ModpackInventory | null>(null);
+  const [modpackRuns, setModpackRuns] = useState<ModpackPipelineRun[]>([]);
   const [activeView, setActiveView] = useState<ViewKey>("projects");
   const [status, setStatus] = useState("Booting command center");
   const [error, setError] = useState<string | null>(null);
   const [activeRun, setActiveRun] = useState<CommandRun | null>(null);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [selectedModpackRunId, setSelectedModpackRunId] = useState<string | null>(null);
   const [scanBusy, setScanBusy] = useState<ScanMode | null>(null);
 
   useEffect(() => {
@@ -129,29 +163,56 @@ export function App(): JSX.Element {
         .then((run) => {
           setActiveRun(run);
           setRuns((current) => mergeRun(current, run));
+          if (run.status !== "running") {
+            void refreshAll();
+          }
         })
         .catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
     }, 1400);
     return () => window.clearInterval(timer);
   }, [activeRun]);
 
+  useEffect(() => {
+    if (!modpackRuns.some((run) => run.status === "running")) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      refreshModpack().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+    }, 1600);
+    return () => window.clearInterval(timer);
+  }, [modpackRuns]);
+
   const selectedProject = useMemo(
     () => projects.find((project) => project.slug === selectedSlug) ?? detail?.project ?? null,
     [projects, selectedSlug, detail]
   );
+  const selectedRun = useMemo(
+    () => selectedRunFrom(runs, selectedRunId, activeRun?.projectSlug === selectedSlug ? activeRun : null),
+    [activeRun, runs, selectedRunId, selectedSlug]
+  );
 
   async function refreshAll(): Promise<void> {
     try {
-      const [projectDetail, scans, release, loadedSettings] = await Promise.all([
+      const [projectDetail, features, scans, release, jars, loadedReadiness, loadedSettings, loadedModpackSummary, loadedModpackRuns] = await Promise.all([
         getProject(selectedSlug),
+        getFeatures(selectedSlug),
         listScans(selectedSlug),
         getRelease(selectedSlug),
-        getSettings()
+        getJars(selectedSlug),
+        getReadiness(selectedSlug),
+        getSettings(),
+        getModpackSummary(),
+        getModpackRuns()
       ]);
       setDetail(projectDetail);
+      setFeatureCatalog(features);
       setScanHistory(scans);
       setRuns(release.runs);
+      setJarManifest(jars);
+      setReadiness(loadedReadiness);
       setSettings(loadedSettings);
+      setModpackSummary(loadedModpackSummary);
+      setModpackRuns(loadedModpackRuns);
       setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -170,21 +231,89 @@ export function App(): JSX.Element {
   }
 
   async function handleRunAction(action: ReleaseAction, confirmed = false): Promise<void> {
-    const run = await runReleaseAction(selectedSlug, action.commandId, confirmed);
-    setActiveRun(run);
-    setRuns((current) => mergeRun(current, run));
+    try {
+      const run = await runReleaseAction(selectedSlug, action.commandId, confirmed);
+      setActiveRun(run);
+      setSelectedRunId(run.id);
+      setRuns((current) => mergeRun(current, run));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  async function refreshModpack(): Promise<void> {
+    const [loadedSummary, loadedRuns] = await Promise.all([getModpackSummary(), getModpackRuns()]);
+    setModpackSummary(loadedSummary);
+    setModpackRuns(loadedRuns);
   }
 
   async function handleStopRun(runId: string): Promise<void> {
     const run = await stopRun(runId);
-    setActiveRun(run);
-    setRuns((current) => mergeRun(current, run));
+      setActiveRun(run);
+      setSelectedRunId(run.id);
+      setRuns((current) => mergeRun(current, run));
   }
 
   async function handleSaveSettings(next: AppSettings): Promise<void> {
     const saved = await saveSettings(next);
     setSettings(saved);
     await refreshAll();
+  }
+
+  async function handleBuildJars(confirmed = false): Promise<void> {
+    try {
+      const result = await buildJars(selectedSlug, confirmed);
+      setJarManifest(result.manifest);
+      setActiveRun(result.run);
+      setSelectedRunId(result.run.id);
+      setRuns((current) => mergeRun(current, result.run));
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  async function handlePromoteJars(confirmed = false): Promise<void> {
+    try {
+      const result = await promoteJars(selectedSlug, confirmed);
+      setJarManifest(result.manifest);
+      setActiveRun(result.run);
+      setSelectedRunId(result.run.id);
+      setRuns((current) => mergeRun(current, result.run));
+      if (result.scanReport) {
+        setDetail((current) =>
+          current
+            ? {
+                ...current,
+                latestReport: result.scanReport ?? current.latestReport,
+                project: {
+                  ...current.project,
+                  buildHealth: result.scanReport?.summary.buildHealth ?? current.project.buildHealth,
+                  criticalIssues: result.scanReport?.summary.criticalIssues ?? current.project.criticalIssues,
+                  polishTasks: result.scanReport?.summary.polishTasks ?? current.project.polishTasks
+                }
+              }
+            : current
+        );
+      }
+      await refreshAll();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  async function handleRebuildModpack(confirmed = false): Promise<void> {
+    try {
+      const result = await rebuildModpack(confirmed);
+      setModpackSummary(result.summary);
+      setModpackRuns((current) => [result.run, ...current.filter((run) => run.id !== result.run.id)].slice(0, 25));
+      setSelectedModpackRunId(result.run.id);
+      setError(null);
+      await refreshModpack();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      await refreshModpack().catch(() => undefined);
+    }
   }
 
   return (
@@ -221,92 +350,30 @@ export function App(): JSX.Element {
               onRunAction={handleRunAction}
               onStopRun={handleStopRun}
               activeRun={activeRun}
+              selectedRun={selectedRun}
+              onSelectRun={(run) => setSelectedRunId(run.id)}
               runs={runs}
               scans={scanHistory}
               scanBusy={scanBusy}
               settings={settings}
               onSaveSettings={handleSaveSettings}
+              jarManifest={jarManifest}
+              readiness={readiness}
+              featureCatalog={featureCatalog}
+              modpackSummary={modpackSummary}
+              modpackRuns={modpackRuns}
+              selectedModpackRunId={selectedModpackRunId}
+              onSelectModpackRun={(run) => setSelectedModpackRunId(run.id)}
+              onRebuildModpack={handleRebuildModpack}
+              onRefreshModpack={refreshModpack}
+              onRefreshJars={refreshAll}
+              onBuildJars={handleBuildJars}
+              onPromoteJars={handlePromoteJars}
             />
           )}
         </main>
       </div>
     </div>
-  );
-}
-
-function BrandPanel({ status }: { status: string }): JSX.Element {
-  return (
-    <section className="surface p-4">
-      <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-lg border border-signal-cyan/40 bg-signal-cyan/10">
-          <TerminalSquare className="h-5 w-5 text-signal-cyan" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">Noxhack</h1>
-          <p className="truncate text-xs text-slate-400">Command Center</p>
-        </div>
-      </div>
-      <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-        <span className="h-2 w-2 rounded-full bg-signal-green shadow-[0_0_12px_rgba(126,231,135,0.8)]" />
-        <span className="truncate">{status}</span>
-      </div>
-    </section>
-  );
-}
-
-function Nav({ activeView, setActiveView }: { activeView: ViewKey; setActiveView: (view: ViewKey) => void }): JSX.Element {
-  return (
-    <nav className="surface p-2">
-      {views.map((view) => {
-        const Icon = view.icon;
-        const selected = activeView === view.key;
-        return (
-          <button key={view.key} className={`nav-button ${selected ? "nav-button-active" : ""}`} title={view.label} onClick={() => setActiveView(view.key)}>
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{view.label}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-
-function TopBar({
-  projects,
-  selectedSlug,
-  setSelectedSlug,
-  activeView,
-  setActiveView
-}: {
-  projects: Project[];
-  selectedSlug: string;
-  setSelectedSlug: (slug: string) => void;
-  activeView: ViewKey;
-  setActiveView: (view: ViewKey) => void;
-}): JSX.Element {
-  return (
-    <header className="surface flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
-      <div className="min-w-0">
-        <p className="text-xs uppercase tracking-[0.18em] text-signal-cyan">Local Release Ops</p>
-        <h2 className="truncate text-xl font-semibold text-white">Noxhack Modpack Command Center</h2>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <select className="control min-w-52" value={selectedSlug} onChange={(event) => setSelectedSlug(event.target.value)}>
-          {projects.map((project) => (
-            <option key={project.slug} value={project.slug}>
-              {project.name}
-            </option>
-          ))}
-        </select>
-        <select className="control lg:hidden" value={activeView} onChange={(event) => setActiveView(event.target.value as ViewKey)}>
-          {views.map((view) => (
-            <option key={view.key} value={view.key}>
-              {view.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    </header>
   );
 }
 
@@ -321,11 +388,25 @@ function View({
   onRunAction,
   onStopRun,
   activeRun,
+  selectedRun,
+  onSelectRun,
   runs,
   scans,
   scanBusy,
   settings,
-  onSaveSettings
+  onSaveSettings,
+  jarManifest,
+  readiness,
+  featureCatalog,
+  modpackSummary,
+  modpackRuns,
+  selectedModpackRunId,
+  onSelectModpackRun,
+  onRebuildModpack,
+  onRefreshModpack,
+  onRefreshJars,
+  onBuildJars,
+  onPromoteJars
 }: {
   view: ViewKey;
   detail: ProjectDetail;
@@ -337,26 +418,71 @@ function View({
   onRunAction: (action: ReleaseAction, confirmed?: boolean) => Promise<void>;
   onStopRun: (runId: string) => Promise<void>;
   activeRun: CommandRun | null;
+  selectedRun: CommandRun | null;
+  onSelectRun: (run: CommandRun) => void;
   runs: CommandRun[];
   scans: ScanReport[];
   scanBusy: ScanMode | null;
   settings: AppSettings;
   onSaveSettings: (settings: AppSettings) => Promise<void>;
+  jarManifest: JarManifest | null;
+  readiness: ReadinessReport | null;
+  featureCatalog: FeatureCatalogResponse | null;
+  modpackSummary: ModpackInventory | null;
+  modpackRuns: ModpackPipelineRun[];
+  selectedModpackRunId: string | null;
+  onSelectModpackRun: (run: ModpackPipelineRun) => void;
+  onRebuildModpack: (confirmed?: boolean) => Promise<void>;
+  onRefreshModpack: () => Promise<void>;
+  onRefreshJars: () => Promise<void>;
+  onBuildJars: (confirmed?: boolean) => Promise<void>;
+  onPromoteJars: (confirmed?: boolean) => Promise<void>;
 }): JSX.Element {
   if (view === "projects") {
     return <ProjectsView projects={projects} selectedSlug={selectedSlug} setSelectedSlug={setSelectedSlug} setActiveView={setActiveView} />;
   }
   if (view === "roadmap") return <RoadmapView phases={detail.roadmap} />;
-  if (view === "qa") return <QaView detail={detail} scans={scans} onRunScan={onRunScan} scanBusy={scanBusy} />;
+  if (view === "features") return <FeaturesView detail={detail} catalog={featureCatalog} />;
+  if (view === "qa") return <QaView detail={detail} scans={scans} readiness={readiness} onRunScan={onRunScan} scanBusy={scanBusy} setActiveView={setActiveView} />;
   if (view === "prompts") return <PromptsView detail={detail} category="Codex QA" />;
   if (view === "release") {
-    return <ReleaseView detail={detail} onRunAction={onRunAction} onStopRun={onStopRun} activeRun={activeRun} runs={runs} settings={settings} />;
+    return <ReleaseView detail={detail} onRunAction={onRunAction} onStopRun={onStopRun} activeRun={activeRun} selectedRun={selectedRun} onSelectRun={onSelectRun} runs={runs} settings={settings} />;
+  }
+  if (view === "modpack") {
+    return (
+      <ModpackView
+        summary={modpackSummary}
+        runs={modpackRuns}
+        selectedRunId={selectedModpackRunId}
+        onSelectRun={onSelectModpackRun}
+        onRebuild={onRebuildModpack}
+        onRefresh={onRefreshModpack}
+        setActiveView={setActiveView}
+      />
+    );
+  }
+  if (view === "jars") {
+    return (
+      <JarsView
+        detail={detail}
+        settings={settings}
+        manifest={jarManifest}
+        activeRun={activeRun}
+        selectedRun={selectedRun}
+        onSelectRun={onSelectRun}
+        runs={runs}
+        onRefresh={onRefreshJars}
+        onBuild={onBuildJars}
+        onPromote={onPromoteJars}
+        onStopRun={onStopRun}
+      />
+    );
   }
   if (view === "terminal") return <TerminalPlannerView groups={detail.terminalPlanner} />;
   if (view === "assets") return <PromptsView detail={detail} category="Asset Prompt" />;
   if (view === "exports") return <ExportsView detail={detail} />;
   if (view === "settings") return <SettingsView settings={settings} onSave={onSaveSettings} />;
-  return <DashboardView detail={detail} scans={scans} runs={runs} onRunScan={onRunScan} scanBusy={scanBusy} setActiveView={setActiveView} />;
+  return <DashboardView detail={detail} scans={scans} runs={runs} readiness={readiness} featureCatalog={featureCatalog} modpackSummary={modpackSummary} onRunScan={onRunScan} scanBusy={scanBusy} setActiveView={setActiveView} />;
 }
 
 function ProjectsView({
@@ -370,51 +496,81 @@ function ProjectsView({
   setSelectedSlug: (slug: string) => void;
   setActiveView: (view: ViewKey) => void;
 }): JSX.Element {
+  const groups = groupProjects(projects);
   return (
-    <section className="grid gap-4 xl:grid-cols-2">
-      {projects.map((project) => (
-        <article key={project.slug} className={`surface p-5 ${project.slug === selectedSlug ? "ring-1 ring-signal-cyan/50" : ""}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{project.kind}</p>
-              <h3 className="mt-1 truncate text-2xl font-semibold text-white">{project.name}</h3>
-            </div>
-            <span className="status-pill" style={{ borderColor: project.accent, color: project.accent }}>
-              {project.status}
-            </span>
+    <div className="space-y-6">
+      <PageHeader icon={Boxes} title="Projects" description="Open a real workspace project, review its current readiness signals, and jump into the next operational action." />
+      {groups.length === 0 ? <EmptyState title="No projects synced" detail="Seed data did not return any project cards." /> : null}
+      {groups.map((group) => (
+        <section key={group.label} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <Boxes className="h-5 w-5 text-signal-cyan" />
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">{group.label}</h2>
           </div>
-          <p className="mt-3 line-clamp-2 text-sm text-slate-300">{project.description}</p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-4">
-            <Metric label="Milestone" value={project.currentMilestone} />
-            <Metric label="Build Health" value={`${project.buildHealth}%`} />
-            <Metric label="Critical" value={project.criticalIssues} tone="red" />
-            <Metric label="Polish" value={project.polishTasks} tone="amber" />
+          <div className="grid gap-4 xl:grid-cols-2">
+            {group.projects.map((project) => (
+              <article key={project.slug} className={`surface project-card p-5 ${project.slug === selectedSlug ? "project-card-selected" : ""}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{project.kind}</p>
+                    <h3 className="mt-1 truncate text-2xl font-semibold text-white">{project.name}</h3>
+                  </div>
+                  <span className="status-pill" style={{ borderColor: project.accent, color: project.accent }}>
+                    {project.status}
+                  </span>
+                </div>
+                <p className="mt-3 line-clamp-2 text-sm text-slate-300">{project.description}</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                  <Metric label="Milestone" value={project.currentMilestone} />
+                  <Metric label="Build Health" value={`${project.buildHealth}%`} />
+                  <Metric label="Critical" value={project.criticalIssues} tone="red" />
+                  <Metric label="Polish" value={project.polishTasks} tone="amber" />
+                </div>
+                <div className="mt-5 flex flex-col gap-3 border-t border-deck-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="min-w-0 text-sm text-slate-300">
+                    <span className="text-slate-500">Next:</span> {project.nextRecommendedAction}
+                  </p>
+                  <button
+                    className="primary-button"
+                    onClick={() => {
+                      setSelectedSlug(project.slug);
+                      setActiveView("dashboard");
+                    }}
+                  >
+                    <Gauge className="h-4 w-4" />
+                    Open
+                  </button>
+                </div>
+              </article>
+            ))}
           </div>
-          <div className="mt-5 flex flex-col gap-3 border-t border-deck-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="min-w-0 text-sm text-slate-300">
-              <span className="text-slate-500">Next:</span> {project.nextRecommendedAction}
-            </p>
-            <button
-              className="primary-button"
-              onClick={() => {
-                setSelectedSlug(project.slug);
-                setActiveView("dashboard");
-              }}
-            >
-              <Gauge className="h-4 w-4" />
-              Open
-            </button>
-          </div>
-        </article>
+        </section>
       ))}
-    </section>
+    </div>
   );
+}
+
+function groupProjects(projects: Project[]): Array<{ label: string; projects: Project[] }> {
+  const laneOrder = ["Full Stack", "Core Module", "Root Module", "Beta/Dev Module", "Release Module", "Standalone Mod", "Tooling/Example"];
+  return laneOrder
+    .map((label) => ({
+      label,
+      projects: projects.filter((project) => project.kind === label)
+    }))
+    .filter((group) => group.projects.length > 0);
+}
+
+function uniqueSourceCount(features: FeatureRecord[]): number {
+  return new Set(features.flatMap((feature) => feature.sources.map((source) => `${source.path}#${source.section}`))).size;
 }
 
 function DashboardView({
   detail,
   scans,
   runs,
+  readiness,
+  featureCatalog,
+  modpackSummary,
   onRunScan,
   scanBusy,
   setActiveView
@@ -422,31 +578,62 @@ function DashboardView({
   detail: ProjectDetail;
   scans: ScanReport[];
   runs: CommandRun[];
+  readiness: ReadinessReport | null;
+  featureCatalog: FeatureCatalogResponse | null;
+  modpackSummary: ModpackInventory | null;
   onRunScan: (mode: ScanMode) => Promise<void>;
   scanBusy: ScanMode | null;
   setActiveView: (view: ViewKey) => void;
 }): JSX.Element {
   const latest = detail.latestReport;
   const failedRuns = runs.filter((run) => run.status === "failed").length;
+  const readinessScore = readiness?.score ?? latest?.summary.readinessScore ?? detail.project.buildHealth;
+  const featureSummary = featureCatalog?.summary;
+  const implementedFeatures = featureSummary?.statusCounts.implemented ?? 0;
+  const incompleteFeatures = featureSummary ? featureSummary.total - implementedFeatures : 0;
   return (
     <div className="space-y-4">
-      <section className="surface p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.18em] text-signal-cyan">{detail.project.kind}</p>
-            <h2 className="mt-1 text-3xl font-semibold text-white">{detail.project.name}</h2>
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">{detail.project.description}</p>
-          </div>
+      <section className="surface page-header p-5">
+        <div className="min-w-0">
+          <p className="eyebrow text-signal-cyan">{detail.project.kind}</p>
+          <h2 className="mt-1 break-words text-3xl font-semibold text-white">{detail.project.name}</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">{detail.project.description}</p>
+          <p className="mt-3 break-all font-mono text-xs text-slate-500">{detail.project.workspacePath}</p>
+        </div>
           <button className="primary-button" disabled={Boolean(scanBusy)} onClick={() => onRunScan("quick")}>
             <RefreshCw className={`h-4 w-4 ${scanBusy ? "animate-spin" : ""}`} />
             Quick Scan
           </button>
-        </div>
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Metric label="Readiness" value={`${latest?.summary.readinessScore ?? detail.project.buildHealth}%`} tone="green" />
+      </section>
+      <section className="surface p-4">
+        <div className="grid gap-3 md:grid-cols-4">
+          <Metric label="To 100%" value={`${readinessScore}%`} tone={readinessScore === 100 ? "green" : "amber"} />
           <Metric label="Scan Status" value={latest?.status ?? "No scan"} />
           <Metric label="Critical Issues" value={latest?.summary.criticalIssues ?? detail.project.criticalIssues} tone="red" />
           <Metric label="Failed Runs" value={failedRuns} tone={failedRuns ? "red" : "green"} />
+        </div>
+      </section>
+
+      <ReadinessChecklistPanel readiness={readiness} setActiveView={setActiveView} />
+
+      <section className="surface p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <SectionTitle icon={FileText} title="Feature Implementation" />
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+              Curated from lore docs, mod plans, release notes, and concrete project evidence so the selected project can say what is built, what is partial, and what still needs proof.
+            </p>
+          </div>
+          <button className="secondary-button justify-center" onClick={() => setActiveView("features")}>
+            <FileText className="h-4 w-4" />
+            Open Features
+          </button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <Metric label="Feature Rows" value={featureSummary?.total ?? 0} />
+          <Metric label="Implemented" value={implementedFeatures} tone="green" />
+          <Metric label="Still Needs Proof" value={incompleteFeatures} tone={incompleteFeatures ? "amber" : "green"} />
+          <Metric label="Sources" value={featureCatalog ? uniqueSourceCount(featureCatalog.features) : 0} />
         </div>
       </section>
 
@@ -454,10 +641,13 @@ function DashboardView({
         <div className="surface p-5">
           <SectionTitle icon={ListChecks} title="Recommended Actions" />
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <ActionTile label="Open QA findings" detail={detail.project.nextRecommendedAction} onClick={() => setActiveView("qa")} />
-            <ActionTile label="Build release stack" detail="Confirm and run allowlisted release commands." onClick={() => setActiveView("release")} />
-            <ActionTile label="Review settings" detail="Check Python and mods folder paths before deep scans." onClick={() => setActiveView("settings")} />
-            <ActionTile label="Export report" detail={`${scans.length} scan report(s), ${runs.length} release run(s).`} onClick={() => setActiveView("exports")} />
+            <ActionTile icon={ShieldCheck} label="Open QA findings" detail={detail.project.nextRecommendedAction} onClick={() => setActiveView("qa")} />
+            <ActionTile icon={FileText} label="Review features" detail={`${featureSummary?.total ?? 0} lore-backed feature row(s) for this project.`} onClick={() => setActiveView("features")} />
+            <ActionTile icon={Rocket} label="Build release stack" detail="Confirm and run allowlisted release commands." onClick={() => setActiveView("release")} />
+            <ActionTile icon={PackageCheck} label="Update modpack" detail={modpackSummary?.blockers[0] ?? `${modpackSummary?.summary.current ?? 0}/${modpackSummary?.summary.expected ?? 0} managed jar(s) current.`} onClick={() => setActiveView("modpack")} />
+            <ActionTile icon={Package} label="Manage jars" detail="Build, compare, quarantine, promote, and verify expected mod jars." onClick={() => setActiveView("jars")} />
+            <ActionTile icon={Settings} label="Review settings" detail="Check Python and mods folder paths before deep scans." onClick={() => setActiveView("settings")} />
+            <ActionTile icon={Download} label="Export report" detail={`${scans.length} scan report(s), ${runs.length} release run(s).`} onClick={() => setActiveView("exports")} />
           </div>
         </div>
         <div className="surface p-5">
@@ -480,6 +670,7 @@ function RoadmapView({ phases }: { phases: RoadmapPhase[] }): JSX.Element {
   return (
     <section className="surface p-5">
       <SectionTitle icon={Map} title="Roadmap" />
+      {phases.length === 0 ? <EmptyState icon={Map} title="No roadmap phases" detail="Roadmap items will appear when they are seeded for the selected project." /> : null}
       <div className="mt-5 space-y-3">
         {phases.map((phase, index) => (
           <div key={phase.title} className="roadmap-row">
@@ -504,16 +695,149 @@ function RoadmapView({ phases }: { phases: RoadmapPhase[] }): JSX.Element {
   );
 }
 
+const featureStatuses: Array<FeatureStatus | "all"> = ["all", "implemented", "partial", "planned", "deferred", "blocked"];
+
+function FeaturesView({ detail, catalog }: { detail: ProjectDetail; catalog: FeatureCatalogResponse | null }): JSX.Element {
+  const [statusFilter, setStatusFilter] = useState<FeatureStatus | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const features = catalog?.features ?? [];
+  const categories = ["all", ...Array.from(new Set(features.map((feature) => feature.category)))];
+  const filtered = features.filter((feature) => {
+    const statusMatch = statusFilter === "all" || feature.status === statusFilter;
+    const categoryMatch = categoryFilter === "all" || feature.category === categoryFilter;
+    return statusMatch && categoryMatch;
+  });
+  const summary = catalog?.summary;
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        icon={FileText}
+        title="Features"
+        description={`Feature-level implementation intelligence for ${detail.project.name}, curated from lore docs, mod plans, release notes, and concrete project evidence.`}
+      />
+
+      <section className="surface p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <Metric label="Total" value={summary?.total ?? 0} />
+          <Metric label="Implemented" value={summary?.statusCounts.implemented ?? 0} tone="green" />
+          <Metric label="Partial" value={summary?.statusCounts.partial ?? 0} tone="amber" />
+          <Metric label="Planned" value={summary?.statusCounts.planned ?? 0} />
+          <Metric label="Deferred" value={summary?.statusCounts.deferred ?? 0} />
+          <Metric label="Blocked" value={summary?.statusCounts.blocked ?? 0} tone="red" />
+        </div>
+      </section>
+
+      <section className="surface p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <SectionTitle icon={ListChecks} title="Implementation Catalog" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <select className="control" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as FeatureStatus | "all")} aria-label="Feature status filter">
+              {featureStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status === "all" ? "all statuses" : status}
+                </option>
+              ))}
+            </select>
+            <select className="control" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Feature category filter">
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category === "all" ? "all categories" : category}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {filtered.length === 0 ? (
+            <EmptyState icon={FileText} title="No feature rows for this filter" detail="Clear the filters to see the curated feature catalog for this project." />
+          ) : (
+            filtered.map((feature) => <FeatureCard key={feature.id} feature={feature} />)
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function FeatureCard({ feature }: { feature: FeatureRecord }): JSX.Element {
+  return (
+    <article className="feature-row">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <FeatureStatusBadge status={feature.status} />
+            <span className="chip">{feature.category}</span>
+          </div>
+          <h3 className="mt-3 break-words text-lg font-semibold text-white">{feature.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{feature.playerPromise}</p>
+        </div>
+        <p className="path-chip shrink-0">#{String(feature.order).padStart(2, "0")}</p>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        <div className="feature-note">
+          <p className="eyebrow text-signal-cyan">Lore Context</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{feature.loreContext}</p>
+        </div>
+        <div className="feature-note">
+          <p className="eyebrow text-signal-green">Implemented</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{feature.implementationSummary}</p>
+        </div>
+        <div className="feature-note">
+          <p className="eyebrow text-signal-amber">Next</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{feature.nextAction}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="feature-note">
+          <p className="text-xs font-semibold uppercase text-slate-500">Sources</p>
+          <div className="mt-3 space-y-2">
+            {feature.sources.map((source) => (
+              <div key={`${source.path}-${source.section}`} className="rounded-lg border border-deck-line bg-deck-950/70 p-3">
+                <p className="text-sm font-semibold text-white">{source.label}</p>
+                <p className="mt-1 text-xs text-slate-400">{source.section}</p>
+                <p className="mt-2 break-all font-mono text-xs text-slate-500">{source.path}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="feature-note">
+          <p className="text-xs font-semibold uppercase text-slate-500">Evidence</p>
+          <div className="mt-3 space-y-2">
+            {feature.evidence.map((item) => (
+              <div key={`${item.kind}-${item.label}`} className="rounded-lg border border-deck-line bg-deck-950/70 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="chip">{item.kind}</span>
+                  <p className="min-w-0 break-words text-sm font-semibold text-white">{item.label}</p>
+                </div>
+                {item.detail ? <p className="mt-2 text-sm leading-6 text-slate-400">{item.detail}</p> : null}
+                {item.path ? <p className="mt-2 break-all font-mono text-xs text-slate-500">{item.path}</p> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function QaView({
   detail,
   scans,
+  readiness,
   onRunScan,
-  scanBusy
+  scanBusy,
+  setActiveView
 }: {
   detail: ProjectDetail;
   scans: ScanReport[];
+  readiness: ReadinessReport | null;
   onRunScan: (mode: ScanMode) => Promise<void>;
   scanBusy: ScanMode | null;
+  setActiveView: (view: ViewKey) => void;
 }): JSX.Element {
   const findings = detail.latestReport?.findings ?? [];
   const inventory = detail.latestReport?.summary.inventory ?? {};
@@ -522,14 +846,12 @@ function QaView({
   const sources = ["all", ...Array.from(new Set(findings.map((finding) => finding.source ?? "quick")))];
   return (
     <div className="space-y-4">
-      <section className="surface flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <SectionTitle icon={ShieldCheck} title="QA Scanner" />
-          <p className="mt-2 max-w-3xl text-sm text-slate-400">
-            Quick scans inspect local resources and logs. Deep scans also run ECHO Python validators and parse their output.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+      <PageHeader
+        icon={ShieldCheck}
+        title="QA Scanner"
+        description="Quick scans inspect local resources, references, runtime logs, and jar expectations. Deep scans run project validators where available."
+        actions={
+          <>
           <button className="primary-button" disabled={Boolean(scanBusy)} onClick={() => onRunScan("quick")}>
             <RefreshCw className={`h-4 w-4 ${scanBusy === "quick" ? "animate-spin" : ""}`} />
             Quick Scan
@@ -538,25 +860,30 @@ function QaView({
             <ShieldCheck className={`h-4 w-4 ${scanBusy === "deep" ? "animate-spin" : ""}`} />
             Deep Scan
           </button>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       {detail.latestReport ? (
         <section className="grid gap-3 md:grid-cols-5">
           <Metric label="Scan Status" value={`${detail.latestReport.mode} ${detail.latestReport.status}`} />
-          <Metric label="Readiness" value={`${detail.latestReport.summary.readinessScore ?? detail.latestReport.summary.buildHealth}%`} tone="green" />
+          <Metric label="To 100%" value={`${readiness?.score ?? detail.latestReport.summary.readinessScore ?? detail.latestReport.summary.buildHealth}%`} tone={readiness?.score === 100 ? "green" : "amber"} />
           <Metric label="Critical" value={detail.latestReport.summary.criticalIssues} tone="red" />
           <Metric label="Findings" value={detail.latestReport.findings.length} tone="amber" />
           <Metric label="Duration" value={`${Math.round(detail.latestReport.durationMs / 1000)}s`} />
         </section>
-      ) : null}
+      ) : (
+        <EmptyState icon={ShieldCheck} title="No scan report yet" detail="Run a quick scan to seed readiness, inventory, and findings for this project." />
+      )}
+
+      <ReadinessChecklistPanel readiness={readiness} setActiveView={setActiveView} />
 
       <section className="surface p-5">
         <SectionTitle icon={Database} title="Inventory" />
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {Object.entries(inventory).map(([key, value]) => (
+          {Object.entries(inventory).length ? Object.entries(inventory).map(([key, value]) => (
             <Metric key={key} label={key} value={value} />
-          ))}
+          )) : <EmptyState title="No inventory yet" detail="Inventory appears after the first scan." />}
         </div>
       </section>
 
@@ -629,6 +956,7 @@ function PromptsView({ detail, category }: { detail: ProjectDetail; category: "C
   const prompts = detail.prompts.filter((prompt) => prompt.category === category);
   const [selectedId, setSelectedId] = useState(prompts[0]?.id ?? "");
   const [rendered, setRendered] = useState<PromptTemplate | null>(prompts[0] ?? null);
+  const [copied, setCopied] = useState(false);
   const selected = prompts.find((prompt) => prompt.id === selectedId) ?? prompts[0] ?? null;
 
   useEffect(() => {
@@ -646,6 +974,8 @@ function PromptsView({ detail, category }: { detail: ProjectDetail; category: "C
   async function handleCopy(): Promise<void> {
     if (rendered) {
       await navigator.clipboard.writeText(rendered.body);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
     }
   }
 
@@ -654,7 +984,7 @@ function PromptsView({ detail, category }: { detail: ProjectDetail; category: "C
       <div className="surface p-5">
         <SectionTitle icon={category === "Codex QA" ? TerminalSquare : Image} title={category} />
         <div className="mt-4 space-y-2">
-          {prompts.map((prompt) => (
+          {prompts.length ? prompts.map((prompt) => (
             <button
               key={prompt.id}
               className={`prompt-row ${selectedId === prompt.id ? "prompt-row-active" : ""}`}
@@ -666,7 +996,7 @@ function PromptsView({ detail, category }: { detail: ProjectDetail; category: "C
               <span className="truncate font-semibold">{prompt.title}</span>
               <span className="line-clamp-2 text-left text-xs text-slate-400">{prompt.description}</span>
             </button>
-          ))}
+          )) : <EmptyState title="No prompts for this project" detail="Prompt templates will appear here when they are seeded for the selected category." />}
         </div>
       </div>
 
@@ -682,6 +1012,7 @@ function PromptsView({ detail, category }: { detail: ProjectDetail; category: "C
             </button>
           </div>
         </div>
+        {copied ? <p className="mt-3 text-sm text-signal-green">Prompt copied.</p> : null}
         <pre className="prompt-output mt-4 whitespace-pre-wrap text-sm leading-6">{rendered?.body ?? "Select a prompt."}</pre>
       </div>
     </section>
@@ -693,27 +1024,30 @@ function ReleaseView({
   onRunAction,
   onStopRun,
   activeRun,
+  selectedRun,
+  onSelectRun,
   runs,
   settings
 }: {
   detail: ProjectDetail;
-  onRunAction: (action: ReleaseAction) => Promise<void>;
+  onRunAction: (action: ReleaseAction, confirmed?: boolean) => Promise<void>;
   onStopRun: (runId: string) => Promise<void>;
   activeRun: CommandRun | null;
+  selectedRun: CommandRun | null;
+  onSelectRun: (run: CommandRun) => void;
   runs: CommandRun[];
   settings: AppSettings;
 }): JSX.Element {
   const [pending, setPending] = useState<ReleaseAction | null>(null);
-  const running = activeRun?.status === "running" ? activeRun : runs.find((run) => run.status === "running") ?? null;
+  const running = activeRun?.status === "running" && activeRun.projectSlug === detail.project.slug ? activeRun : runs.find((run) => run.status === "running") ?? null;
   return (
     <div className="space-y-4">
-      <section className="surface p-5">
-        <SectionTitle icon={Rocket} title="Release Deck" />
-        <p className="mt-2 max-w-4xl text-sm text-slate-400">
-          Medium and high risk actions require confirmation. Commands remain allowlisted and include the configured mods folder where relevant.
-        </p>
-        <p className="mt-3 font-mono text-xs text-slate-500">Mods folder: {settings.modpackModsDir || "not configured"}</p>
-      </section>
+      <PageHeader
+        icon={Rocket}
+        title="Release Deck"
+        description="Run allowlisted build, verification, GameTest, validator, notes, and local release operations for the selected project."
+        actions={<span className="path-chip">Mods folder: {settings.modpackModsDir || "not configured"}</span>}
+      />
 
       {running ? (
         <section className="surface flex flex-col gap-3 border-signal-cyan/50 p-4 md:flex-row md:items-center md:justify-between">
@@ -750,27 +1084,8 @@ function ReleaseView({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="surface p-5">
-          <SectionTitle icon={TerminalSquare} title="Command Output" />
-          <pre className="mt-4 max-h-[420px] overflow-auto rounded-lg border border-deck-line bg-black/40 p-4 text-xs leading-5 text-slate-300">
-            {activeRun ? activeRun.output || `${activeRun.commandId} ${activeRun.status}` : "No command run selected."}
-          </pre>
-        </div>
-        <div className="surface p-5">
-          <SectionTitle icon={Activity} title="Run History" />
-          <div className="mt-4 space-y-2">
-            {runs.length === 0 ? (
-              <p className="text-sm text-slate-400">No release runs yet.</p>
-            ) : (
-              runs.map((run) => (
-                <div key={run.id} className="module-row">
-                  <span className="truncate">{run.commandId}</span>
-                  <span className={`font-mono text-xs ${run.status === "failed" ? "text-signal-red" : run.status === "succeeded" ? "text-signal-green" : "text-slate-400"}`}>{run.status}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <OutputPanel title="Command Output" run={selectedRun} empty="No command run selected." />
+        <RunHistoryPanel title="Run History" runs={runs} selectedRun={selectedRun} empty="No release runs yet." onSelectRun={onSelectRun} />
       </section>
 
       {pending ? (
@@ -789,36 +1104,394 @@ function ReleaseView({
   );
 }
 
-function ConfirmModal({
-  action,
-  settings,
+function ModpackView({
+  summary,
+  runs,
+  selectedRunId,
+  onSelectRun,
+  onRebuild,
+  onRefresh,
+  setActiveView
+}: {
+  summary: ModpackInventory | null;
+  runs: ModpackPipelineRun[];
+  selectedRunId: string | null;
+  onSelectRun: (run: ModpackPipelineRun) => void;
+  onRebuild: (confirmed?: boolean) => Promise<void>;
+  onRefresh: () => Promise<void>;
+  setActiveView: (view: ViewKey) => void;
+}): JSX.Element {
+  const [confirming, setConfirming] = useState(false);
+  const running = runs.find((run) => run.status === "running") ?? null;
+  const selectedRun = runs.find((run) => run.id === selectedRunId) ?? running ?? runs[0] ?? null;
+  const disabledReason = modpackDisabledReason(summary, running);
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        icon={PackageCheck}
+        title="Modpack Management"
+        description="Rebuild and update first-party managed jars across ECHO and ARCANA with one confirmed pipeline: build, quarantine stale jars, copy current jars, verify checksums, and rescan."
+        actions={
+          <>
+            <button className="secondary-button justify-center" onClick={() => void onRefresh()}>
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+            <button className="primary-button justify-center" disabled={Boolean(disabledReason)} onClick={() => setConfirming(true)}>
+              <PackageCheck className="h-4 w-4" />
+              Rebuild & Update All
+            </button>
+          </>
+        }
+      />
+
+      {disabledReason ? <InfoBanner tone={running ? "cyan" : "amber"} title="Pipeline blocked" detail={disabledReason} /> : null}
+
+      <section className="surface p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
+          <Metric label="Status" value={summary?.status ?? "loading"} />
+          <Metric label="Projects" value={summary?.summary.projects ?? 0} />
+          <Metric label="Expected" value={summary?.summary.expected ?? 0} />
+          <Metric label="Built" value={summary?.summary.built ?? 0} tone={(summary?.summary.missing ?? 0) ? "amber" : "green"} />
+          <Metric label="Current" value={summary?.summary.current ?? 0} tone={summary && summary.summary.current === summary.summary.expected ? "green" : "amber"} />
+          <Metric label="Stale" value={summary?.summary.stale ?? 0} tone={(summary?.summary.stale ?? 0) ? "red" : "green"} />
+          <Metric label="Duplicate" value={summary?.summary.duplicate ?? 0} tone={(summary?.summary.duplicate ?? 0) ? "red" : "green"} />
+        </div>
+        <p className="mt-4 break-all font-mono text-xs text-slate-500">Target: {summary?.targetDir || "not configured"}</p>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="surface p-5">
+          <SectionTitle icon={PackageCheck} title="Managed Targets" />
+          <div className="mt-4 space-y-3">
+            {summary?.targets.length ? summary.targets.map((target) => (
+              <article key={target.projectSlug} className="finding-row">
+                <ModpackStatusBadge status={target.status} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="break-words text-sm font-semibold text-white">{target.projectName}</h3>
+                      <p className="mt-1 font-mono text-xs text-slate-500">{target.buildCommandId}</p>
+                    </div>
+                    <span className="path-chip">{target.manifest.summary.current}/{target.manifest.summary.expected} current</span>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                    <Metric label="Built" value={target.manifest.summary.built} />
+                    <Metric label="Missing" value={target.manifest.summary.missing} tone={target.manifest.summary.missing ? "amber" : "green"} />
+                    <Metric label="Stale" value={target.manifest.summary.stale} tone={target.manifest.summary.stale ? "red" : "green"} />
+                    <Metric label="Duplicate" value={target.manifest.summary.duplicate} tone={target.manifest.summary.duplicate ? "red" : "green"} />
+                  </div>
+                  {target.blockers.length ? <p className="mt-3 text-sm text-signal-amber">{target.blockers.join(" ")}</p> : null}
+                </div>
+              </article>
+            )) : <EmptyState icon={PackageCheck} title="No managed targets" detail="The modpack module expects the ECHO full stack and ARCANA project to be seeded." />}
+          </div>
+        </div>
+
+        <div className="surface p-5">
+          <SectionTitle icon={ListChecks} title="Quick Routing" />
+          <div className="mt-4 grid gap-3">
+            <ActionTile icon={Package} label="Open Jars" detail="Inspect per-project build outputs and target comparison." onClick={() => setActiveView("jars")} />
+            <ActionTile icon={Rocket} label="Open Release" detail="Run individual allowlisted build or verification actions." onClick={() => setActiveView("release")} />
+            <ActionTile icon={Settings} label="Open Settings" detail="Configure the Modpack Mods Folder before promotion." onClick={() => setActiveView("settings")} />
+            <ActionTile icon={Download} label="Open Exports" detail="Export latest modpack summary and pipeline evidence." onClick={() => setActiveView("exports")} />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="surface p-5">
+          <SectionTitle icon={Activity} title="Pipeline History" />
+          <div className="mt-4 space-y-2">
+            {runs.length ? runs.map((run) => (
+              <button key={run.id} className={`history-row ${selectedRun?.id === run.id ? "history-row-active" : ""}`} onClick={() => onSelectRun(run)}>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-white">Rebuild & Update All</span>
+                  <span className="mt-1 block truncate font-mono text-xs text-slate-500">{formatDate(run.finishedAt ?? run.startedAt)}</span>
+                </span>
+                <ModpackStatusBadge status={run.status} />
+              </button>
+            )) : <EmptyState title="No modpack pipeline runs yet" detail="The first run will appear after Rebuild & Update All is confirmed." />}
+          </div>
+        </div>
+
+        <div className="surface p-5">
+          <SectionTitle icon={TerminalSquare} title="Pipeline Output" />
+          {selectedRun ? (
+            <div className="mt-4 space-y-3">
+              <div className="grid gap-2 md:grid-cols-2">
+                {selectedRun.steps.map((step) => (
+                  <div key={step.id} className="pipeline-step">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-semibold text-white">{step.label}</p>
+                      <ModpackStatusBadge status={step.status} />
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{step.detail}</p>
+                    {step.command?.length ? <p className="mt-2 break-all font-mono text-xs text-slate-500">{step.command.join(" ")}</p> : null}
+                  </div>
+                ))}
+              </div>
+              <pre className="output-block">{selectedRun.output || "No output captured yet."}</pre>
+            </div>
+          ) : (
+            <EmptyState title="No pipeline selected" detail="Select a run to inspect steps and captured output." />
+          )}
+        </div>
+      </section>
+
+      {confirming ? (
+        <ConfirmModpackModal
+          summary={summary}
+          onCancel={() => setConfirming(false)}
+          onConfirm={async () => {
+            setConfirming(false);
+            await onRebuild(true);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ConfirmModpackModal({
+  summary,
   onCancel,
   onConfirm
 }: {
-  action: ReleaseAction;
-  settings: AppSettings;
+  summary: ModpackInventory | null;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
 }): JSX.Element {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
-      <section className="surface max-w-2xl p-5 shadow-glow">
+      <section className="surface max-w-3xl p-5 shadow-glow">
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-signal-amber" />
-          <h2 className="text-lg font-semibold text-white">Confirm {action.label}</h2>
+          <h2 className="text-lg font-semibold text-white">Confirm Rebuild & Update All</h2>
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-300">
-          This is a {action.risk}-risk allowlisted action. It may build, verify, copy, or modify local ECHO release artifacts.
+          This high-risk pipeline rebuilds the managed first-party projects, quarantines stale/conflicting managed jars, copies current jars into the configured mods folder, verifies checksums, and runs quick scans. No files are deleted.
         </p>
-        <code className="mt-4 block whitespace-pre-wrap rounded-lg border border-deck-line bg-deck-950 p-3 text-xs text-slate-300">{displayCommand(action, settings)}</code>
+        <div className="mt-4 rounded-lg border border-deck-line bg-deck-950 p-3">
+          <p className="break-all font-mono text-xs text-slate-300">Target: {summary?.targetDir || "not configured"}</p>
+          <p className="mt-1 font-mono text-xs text-slate-500">
+            Projects: {summary?.targets.map((target) => `${target.projectName} (${target.buildCommandId})`).join(", ") || "none"}
+          </p>
+          <p className="mt-1 font-mono text-xs text-slate-500">Expected jars: {summary?.summary.expected ?? 0}</p>
+        </div>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button className="secondary-button" onClick={onCancel}>Cancel</button>
           <button className="primary-button justify-center" onClick={onConfirm}>
-            <Play className="h-4 w-4" />
-            Confirm Run
+            <PackageCheck className="h-4 w-4" />
+            Confirm Pipeline
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+function modpackDisabledReason(summary: ModpackInventory | null, running: ModpackPipelineRun | null): string | null {
+  if (running) {
+    return "A modpack rebuild/update pipeline is already running.";
+  }
+  if (!summary) {
+    return "Modpack inventory is still loading.";
+  }
+  return summary.blockers[0] ?? null;
+}
+
+function JarsView({
+  detail,
+  settings,
+  manifest,
+  activeRun,
+  selectedRun,
+  onSelectRun,
+  runs,
+  onRefresh,
+  onBuild,
+  onPromote,
+  onStopRun
+}: {
+  detail: ProjectDetail;
+  settings: AppSettings;
+  manifest: JarManifest | null;
+  activeRun: CommandRun | null;
+  selectedRun: CommandRun | null;
+  onSelectRun: (run: CommandRun) => void;
+  runs: CommandRun[];
+  onRefresh: () => Promise<void>;
+  onBuild: (confirmed?: boolean) => Promise<void>;
+  onPromote: (confirmed?: boolean) => Promise<void>;
+  onStopRun: (runId: string) => Promise<void>;
+}): JSX.Element {
+  const [pending, setPending] = useState<JarActionKind | null>(null);
+  const running = activeRun?.status === "running" && activeRun.projectSlug === detail.project.slug ? activeRun : runs.find((run) => run.status === "running") ?? null;
+  const missingSources = manifest?.artifacts.filter((artifact) => !artifact.exists) ?? [];
+  const promoteReason = promoteDisabledReason(manifest, running);
+  const promoteBlocked = Boolean(promoteReason);
+  const jarRuns = runs.filter((run) => ["promote-jars", "build-full-stack", "build-module", "copy-jars", "check-jar-set"].includes(run.commandId));
+  const selectedJarRun = jarRuns.find((run) => run.id === selectedRun?.id) ?? jarRuns[0] ?? null;
+  const targetLabel = manifest
+    ? manifest.targetConfigured
+      ? manifest.targetExists
+        ? "ready"
+        : "missing"
+      : "not configured"
+    : "loading";
+  const targetByFile = new globalThis.Map((manifest?.targetEntries ?? []).map((entry) => [entry.fileName, entry]));
+
+  return (
+    <div className="space-y-4">
+      <section className="surface page-header p-5">
+        <div className="min-w-0">
+          <SectionTitle icon={Package} title="Jar Management" />
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+            {detail.project.slug === "echo"
+              ? "Full-stack promotion manages every expected ECHO module jar."
+              : "Scoped promotion manages only this module project's expected jar."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="path-chip">Mods folder: {settings.modpackModsDir || "not configured"}</span>
+            {manifest ? <span className="path-chip">Build root: {manifest.buildRoot}</span> : null}
+          </div>
+          {promoteReason ? <p className="mt-3 text-sm text-signal-amber">Promote disabled: {promoteReason}</p> : null}
+        </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button className="secondary-button justify-center" onClick={() => void onRefresh()}>
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+            <button className="primary-button justify-center" disabled={Boolean(running)} onClick={() => setPending("build")}>
+              <Package className="h-4 w-4" />
+              Build Jars
+            </button>
+            <button className="primary-button justify-center" disabled={promoteBlocked} onClick={() => setPending("promote")}>
+              <Copy className="h-4 w-4" />
+              Promote
+            </button>
+          </div>
+      </section>
+
+      {running ? (
+        <section className="surface flex flex-col gap-3 border-signal-cyan/50 p-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white">Running: {running.commandId}</p>
+            <p className="break-all font-mono text-xs text-slate-400">pid {running.pid ?? "pending"} / {running.command.join(" ")}</p>
+          </div>
+          <button className="danger-button" onClick={() => onStopRun(running.id)}>
+            <Square className="h-4 w-4" />
+            Stop
+          </button>
+        </section>
+      ) : null}
+
+      {promoteReason ? <InfoBanner tone="amber" title="Promote is blocked" detail={promoteReason} /> : null}
+
+      <section className="grid gap-3 md:grid-cols-5">
+        <Metric label="Target" value={targetLabel} tone={targetLabel === "ready" ? "green" : "amber"} />
+        <Metric label="Expected" value={manifest?.summary.expected ?? detail.project.modules.length} />
+        <Metric label="Built" value={manifest?.summary.built ?? 0} tone={missingSources.length ? "amber" : "green"} />
+        <Metric label="Current" value={manifest?.summary.current ?? 0} tone={manifest?.summary.current === manifest?.summary.expected ? "green" : "amber"} />
+        <Metric label="Stale" value={(manifest?.summary.stale ?? 0) + (manifest?.summary.duplicate ?? 0)} tone={manifest?.summary.stale || manifest?.summary.duplicate ? "red" : "green"} />
+      </section>
+
+      <section className="surface p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <SectionTitle icon={CheckCircle2} title="Expected Artifacts" />
+          <span className="font-mono text-xs text-slate-500">{manifest?.generatedAt ? `updated ${formatDate(manifest.generatedAt)}` : "loading"}</span>
+        </div>
+        <div className="mt-4 overflow-auto rounded-lg border border-deck-line">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-deck-950 text-xs uppercase tracking-[0.14em] text-slate-500">
+              <tr>
+                <th className="px-3 py-3">Module</th>
+                <th className="px-3 py-3">Expected Jar</th>
+                <th className="px-3 py-3">Source</th>
+                <th className="px-3 py-3">Target</th>
+                <th className="px-3 py-3">Checksum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(manifest?.artifacts ?? []).map((artifact) => {
+                const target = targetByFile.get(artifact.expectedFileName);
+                return (
+                  <tr key={artifact.moduleId} className="border-t border-deck-line">
+                    <td className="px-3 py-3">
+                      <p className="font-semibold text-white">{artifact.label}</p>
+                      <p className="font-mono text-xs text-slate-500">{artifact.moduleId}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <p className="font-mono text-xs text-slate-300">{artifact.expectedFileName}</p>
+                      <p className="mt-1 break-all font-mono text-xs text-slate-600">{artifact.sourcePath}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <JarStatusBadge status={artifact.exists ? "current" : "missing"} label={artifact.exists ? "built" : "missing"} />
+                      <p className="mt-2 font-mono text-xs text-slate-500">{artifact.size == null ? "" : formatBytes(artifact.size)}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <JarStatusBadge status={target?.status ?? "missing"} />
+                      <p className="mt-2 font-mono text-xs text-slate-500">{target?.modifiedAt ? formatDate(target.modifiedAt) : ""}</p>
+                    </td>
+                    <td className="max-w-[280px] px-3 py-3">
+                      <p className="truncate font-mono text-xs text-slate-400" title={artifact.checksum ?? ""}>{artifact.checksum ?? "not built"}</p>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!manifest?.artifacts.length ? (
+                <tr>
+                  <td className="px-3 py-5 text-sm text-slate-400" colSpan={5}>No jar manifest loaded.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+        <div className="surface p-5">
+          <SectionTitle icon={Archive} title="Target Comparison" />
+          <div className="mt-4 space-y-2">
+            {manifest?.targetEntries.length ? (
+              manifest.targetEntries.map((entry) => (
+                <div key={entry.path} className="module-row">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-white">{entry.fileName}</p>
+                    <p className="truncate font-mono text-xs text-slate-500">{entry.path}</p>
+                  </div>
+                  <JarStatusBadge status={entry.status} />
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-400">{manifest?.targetExists ? "No managed project jars found in the target folder." : "Target folder comparison is unavailable."}</p>
+            )}
+          </div>
+        </div>
+
+        <RunHistoryPanel title="Jar Run History" runs={jarRuns} selectedRun={selectedJarRun} empty="No jar pipeline runs yet." onSelectRun={onSelectRun} />
+      </section>
+
+      <OutputPanel title="Pipeline Output" run={selectedJarRun} empty="No jar pipeline output selected." />
+
+      {pending ? (
+        <ConfirmJarModal
+          kind={pending}
+          manifest={manifest}
+          onCancel={() => setPending(null)}
+          onConfirm={async () => {
+            const action = pending;
+            setPending(null);
+            if (action === "build") {
+              await onBuild(true);
+            } else {
+              await onPromote(true);
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -827,6 +1500,9 @@ function TerminalPlannerView({ groups }: { groups: TerminalPlannerGroup[] }): JS
   return (
     <section className="surface p-5">
       <SectionTitle icon={Layers} title="Terminal Planner" />
+      {groups.length === 0 ? (
+        <EmptyState icon={Layers} title="No terminal planner for this project" detail="Standalone or tooling projects can still use Dashboard, QA, Release, Jars, Settings, and Exports without terminal page coverage." />
+      ) : null}
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {groups.map((group) => (
           <article key={group.group} className="planner-column">
@@ -848,20 +1524,33 @@ function TerminalPlannerView({ groups }: { groups: TerminalPlannerGroup[] }): JS
 function ExportsView({ detail }: { detail: ProjectDetail }): JSX.Element {
   const base = `/api/projects/${detail.project.slug}/export`;
   return (
-    <section className="surface p-5">
-      <SectionTitle icon={Download} title="Exports" />
-      <p className="mt-2 max-w-3xl text-sm text-slate-400">
-        Export the current project snapshot, settings, latest QA report, scan history, release runs, roadmap, and prompt inventory.
-      </p>
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <a className="primary-button" href={`${base}?format=markdown`} target="_blank" rel="noreferrer">
-          <FileText className="h-4 w-4" />
-          Markdown
-        </a>
-        <a className="primary-button" href={`${base}?format=json`} target="_blank" rel="noreferrer">
-          <FileJson className="h-4 w-4" />
-          JSON
-        </a>
+    <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+      <div className="surface p-5">
+        <SectionTitle icon={Download} title="Exports" />
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+          Export the selected project with settings, readiness, latest QA report, feature/lore implementation catalog, modpack summary, scan history, release runs, jar manifest, roadmap, prompts, and release actions.
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <a className="primary-button" href={`${base}?format=markdown`} target="_blank" rel="noreferrer">
+            <FileText className="h-4 w-4" />
+            Markdown
+          </a>
+          <a className="primary-button" href={`${base}?format=json`} target="_blank" rel="noreferrer">
+            <FileJson className="h-4 w-4" />
+            JSON
+          </a>
+        </div>
+      </div>
+      <div className="surface p-5">
+        <SectionTitle icon={ListChecks} title="Included Evidence" />
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {["Project metadata", "Readiness report", "Jar manifest", "Feature/lore implementation catalog", "Modpack summary and pipeline history", "Recent scan reports", "Release run history", "Roadmap", "Prompt templates", "Release actions"].map((item) => (
+            <div key={item} className="module-row">
+              <span className="truncate">{item}</span>
+              <span className="status-pill border-signal-green/50 text-signal-green">included</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -886,12 +1575,13 @@ function SettingsView({ settings, onSave }: { settings: AppSettings; onSave: (se
     <section className="surface p-5">
       <SectionTitle icon={Settings} title="Settings" />
       <div className="mt-5 grid gap-4">
-        <Field label="ECHO Root" value={draft.echoRoot} onChange={(value) => setDraft({ ...draft, echoRoot: value })} />
-        <Field label="Modpack Mods Folder" value={draft.modpackModsDir} onChange={(value) => setDraft({ ...draft, modpackModsDir: value })} />
-        <Field label="Python Executable" value={draft.pythonExecutable} onChange={(value) => setDraft({ ...draft, pythonExecutable: value })} />
+        <Field label="ECHO Root" help="Used for seeded ECHO projects and full-stack scans." value={draft.echoRoot} onChange={(value) => setDraft({ ...draft, echoRoot: value })} />
+        <Field label="Modpack Mods Folder" help="Required before jar promotion can copy current jars into a local instance." value={draft.modpackModsDir} onChange={(value) => setDraft({ ...draft, modpackModsDir: value })} />
+        <Field label="Python Executable" help="Used by deep validators and project release tasks that call Python." value={draft.pythonExecutable} onChange={(value) => setDraft({ ...draft, pythonExecutable: value })} />
         <label className="grid gap-2">
           <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Runtime Log Max Age Minutes</span>
           <input className="control" type="number" min={1} value={draft.runtimeLogMaxAgeMinutes} onChange={(event) => setDraft({ ...draft, runtimeLogMaxAgeMinutes: Number(event.target.value) })} />
+          <span className="text-xs text-slate-500">Only recent logs inside project run folders are considered during quick scans.</span>
         </label>
         <label className="grid gap-2">
           <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Default Scan Mode</span>
@@ -899,6 +1589,7 @@ function SettingsView({ settings, onSave }: { settings: AppSettings; onSave: (se
             <option value="quick">quick</option>
             <option value="deep">deep</option>
           </select>
+          <span className="text-xs text-slate-500">This is the fallback used by scan controls that do not specify a mode.</span>
         </label>
       </div>
       <button className="primary-button mt-5" disabled={saving} onClick={handleSave}>
@@ -909,87 +1600,13 @@ function SettingsView({ settings, onSave }: { settings: AppSettings; onSave: (se
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }): JSX.Element {
+function Field({ label, value, onChange, help }: { label: string; value: string; onChange: (value: string) => void; help?: string }): JSX.Element {
   return (
     <label className="grid gap-2">
       <span className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</span>
       <input className="control" value={value} onChange={(event) => onChange(event.target.value)} />
+      {help ? <span className="text-xs text-slate-500">{help}</span> : null}
     </label>
   );
 }
 
-function ActionTile({ label, detail, onClick }: { label: string; detail: string; onClick: () => void }): JSX.Element {
-  return (
-    <button className="action-tile" onClick={onClick}>
-      <span className="truncate text-sm font-semibold text-white">{label}</span>
-      <span className="line-clamp-2 text-left text-sm text-slate-400">{detail}</span>
-    </button>
-  );
-}
-
-function Metric({ label, value, tone }: { label: string; value: string | number; tone?: "green" | "amber" | "red" }): JSX.Element {
-  const toneClass = tone === "green" ? "text-signal-green" : tone === "amber" ? "text-signal-amber" : tone === "red" ? "text-signal-red" : "text-white";
-  return (
-    <div className="surface min-h-24 p-4">
-      <p className="truncate text-xs uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className={`mt-3 break-words text-2xl font-semibold ${toneClass}`}>{value}</p>
-    </div>
-  );
-}
-
-function SectionTitle({ icon: Icon, title }: { icon: typeof Activity; title: string }): JSX.Element {
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <Icon className="h-5 w-5 shrink-0 text-signal-cyan" />
-      <h2 className="truncate text-lg font-semibold text-white">{title}</h2>
-    </div>
-  );
-}
-
-function Severity({ severity }: { severity: QaFinding["severity"] }): JSX.Element {
-  const className =
-    severity === "critical"
-      ? "border-signal-red/50 text-signal-red"
-      : severity === "high"
-        ? "border-signal-amber/50 text-signal-amber"
-        : severity === "medium"
-          ? "border-signal-violet/50 text-signal-violet"
-          : "border-signal-cyan/40 text-signal-cyan";
-  return <span className={`status-pill ${className}`}>{severity}</span>;
-}
-
-function Risk({ risk }: { risk: ReleaseAction["risk"] }): JSX.Element {
-  const className =
-    risk === "high" ? "border-signal-red/50 text-signal-red" : risk === "medium" ? "border-signal-amber/50 text-signal-amber" : "border-signal-green/50 text-signal-green";
-  return <span className={`status-pill ${className}`}>{risk}</span>;
-}
-
-function LoadingPanel(): JSX.Element {
-  return (
-    <section className="surface grid min-h-[360px] place-items-center p-8">
-      <div className="flex items-center gap-3 text-slate-400">
-        <RefreshCw className="h-5 w-5 animate-spin text-signal-cyan" />
-        Loading command center data
-      </div>
-    </section>
-  );
-}
-
-function Alert({ message }: { message: string }): JSX.Element {
-  return <div className="rounded-lg border border-signal-red/40 bg-signal-red/10 px-4 py-3 text-sm text-signal-red">{message}</div>;
-}
-
-function displayCommand(action: ReleaseAction, settings: AppSettings): string {
-  if (action.mode !== "shell") {
-    return action.mode;
-  }
-  const args = [...action.args];
-  if (settings.modpackModsDir && ["verify-release", "check-jar-set", "copy-jars"].includes(action.commandId)) {
-    args.push(`-PechoModpackModsDir=${settings.modpackModsDir}`);
-  }
-  return [action.executable, ...args].join(" ");
-}
-
-function mergeRun(runs: CommandRun[], run: CommandRun): CommandRun[] {
-  return [run, ...runs.filter((candidate) => candidate.id !== run.id)].slice(0, 25);
-}

@@ -30,6 +30,18 @@ public final class SignalOsApi {
         SignalOsContentRegistry.registerDiagnostics(provider);
     }
 
+    public static void registerApp(SignalOsApp app) {
+        SignalOsContentRegistry.registerApp(app);
+    }
+
+    public static void registerDataProvider(SignalOsDataProvider provider) {
+        SignalOsContentRegistry.registerDataProvider(provider);
+    }
+
+    public static void registerComputerPeripheral(SignalOsPeripheralProvider provider) {
+        SignalOsContentRegistry.registerPeripheralProvider(provider);
+    }
+
     public static Identifier id(String id) {
         return TerminalIds.parse(id, "SignalOS identifier");
     }

@@ -21,11 +21,11 @@
     "spawnRadius": 8.0,
     "warning": "%threat% converging on %route%. Keep moving."
   },
-  "checkpointFactionId": "echocore:survivors",
+  "checkpointFactionId": "echoashfallprotocol:radwarden_compact",
   "minReputation": 0,
   "checkpoint": {
     "label": "Survivor Road Check",
-    "warning": "%checkpoint% blocked: survivors reputation %reputation%/%required%.",
+    "warning": "%checkpoint% blocked: Radwarden reputation %reputation%/%required%.",
     "clearedMessage": "%checkpoint% clears %route%."
   },
   "destinationHint": "Northern ruined highway",

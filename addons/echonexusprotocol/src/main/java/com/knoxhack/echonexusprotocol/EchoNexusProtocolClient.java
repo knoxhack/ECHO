@@ -18,8 +18,18 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 @EventBusSubscriber(modid = EchoNexusProtocol.MODID, value = Dist.CLIENT)
 public class EchoNexusProtocolClient {
    public EchoNexusProtocolClient() {
-      if (ModList.get().isLoaded("echoterminal")) {
+      registerTerminalClientIntegration();
+   }
+
+   private static void registerTerminalClientIntegration() {
+      if (!ModList.get().isLoaded("echoterminal")) {
+         return;
+      }
+
+      try {
          NexusTerminalIntegration.register();
+      } catch (LinkageError error) {
+         EchoNexusProtocol.LOGGER.warn("ECHO-7 Nexus Terminal client integration skipped because echoterminal APIs were unavailable.", error);
       }
    }
 

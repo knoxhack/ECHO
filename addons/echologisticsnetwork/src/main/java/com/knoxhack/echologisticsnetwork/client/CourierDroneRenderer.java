@@ -1,38 +1,31 @@
 package com.knoxhack.echologisticsnetwork.client;
 
 import com.knoxhack.echologisticsnetwork.EchoLogisticsNetwork;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.knoxhack.echologisticsnetwork.entity.CourierDroneEntity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.VexRenderer;
-import net.minecraft.client.renderer.entity.state.VexRenderState;
+import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.monster.Vex;
 
-public class CourierDroneRenderer extends VexRenderer {
-   private static final Identifier TEXTURE = Identifier.withDefaultNamespace("textures/entity/illager/vex.png");
+public class CourierDroneRenderer extends MobRenderer<CourierDroneEntity, CourierDroneRenderState, CourierDroneModel> {
+   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(EchoLogisticsNetwork.MODID, "textures/entity/courier_drone.png");
 
    public CourierDroneRenderer(EntityRendererProvider.Context context) {
-      super(context);
+      super(context, new CourierDroneModel(context.bakeLayer(CourierDroneModel.LAYER_LOCATION)), 0.35F);
    }
 
    @Override
-   public Identifier getTextureLocation(VexRenderState state) {
+   public CourierDroneRenderState createRenderState() {
+      return new CourierDroneRenderState();
+   }
+
+   @Override
+   public void extractRenderState(CourierDroneEntity entity, CourierDroneRenderState state, float partialTick) {
+      super.extractRenderState(entity, state, partialTick);
+      state.hoverOffset = entity.isAlive() ? 0.0F : -0.2F;
+   }
+
+   @Override
+   public Identifier getTextureLocation(CourierDroneRenderState state) {
       return TEXTURE;
-   }
-
-   @Override
-   protected int getModelTint(VexRenderState state) {
-      return 0xFF66E8FF;
-   }
-
-   @Override
-   protected void scale(VexRenderState state, PoseStack poseStack) {
-      poseStack.scale(0.72F, 0.72F, 0.72F);
-   }
-
-   @Override
-   public void extractRenderState(Vex entity, VexRenderState state, float partialTicks) {
-      super.extractRenderState(entity, state, partialTicks);
-      this.shadowRadius = 0.25F;
    }
 }

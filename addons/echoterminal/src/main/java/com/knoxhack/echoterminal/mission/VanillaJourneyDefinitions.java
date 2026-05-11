@@ -117,7 +117,7 @@ final class VanillaJourneyDefinitions {
     }
 
     private static JsonObject readObject(String path) {
-        InputStream input = VanillaJourneyDefinitions.class.getClassLoader().getResourceAsStream(path);
+        InputStream input = openResource(path);
         if (input == null) {
             throw new IllegalStateException("Missing Baseline data resource: " + path);
         }
@@ -126,6 +126,24 @@ final class VanillaJourneyDefinitions {
         } catch (IOException | JsonParseException exception) {
             throw new IllegalStateException("Invalid Baseline data resource: " + path, exception);
         }
+    }
+
+    private static InputStream openResource(String path) {
+        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+        if (contextLoader != null) {
+            InputStream input = contextLoader.getResourceAsStream(path);
+            if (input != null) {
+                return input;
+            }
+        }
+        ClassLoader classLoader = VanillaJourneyDefinitions.class.getClassLoader();
+        if (classLoader != null && classLoader != contextLoader) {
+            InputStream input = classLoader.getResourceAsStream(path);
+            if (input != null) {
+                return input;
+            }
+        }
+        return VanillaJourneyDefinitions.class.getResourceAsStream("/" + path);
     }
 
     private static JsonObject requiredObject(JsonObject object, String field, String context) {

@@ -1,15 +1,25 @@
 import express from "express";
 import cors from "cors";
+import { pathToFileURL } from "node:url";
 import { CommandCenterStore } from "./db.js";
 import { runHybridScan } from "./scanner.js";
 import { exportJson, exportMarkdown } from "./exporter.js";
 import { startReleaseAction, stopReleaseAction } from "./runner.js";
+import { buildJarManifest, jarBuildCommandId, JarPipelineError, runJarPromotion } from "./jars.js";
+import { buildReadinessReport } from "./readiness.js";
+import { buildFeatureCatalog } from "./features.js";
+import { buildModpackSummary, listModpackRuns, ModpackPipelineError, startModpackRebuild, type ModpackServiceOptions } from "./modpack.js";
 import { DB_PATH, ECHO_ROOT, LOCAL_DATA_DIR } from "./paths.js";
-import type { AppSettings, ExportFormat, ScanMode } from "../shared/types.js";
+import type { AppSettings, ExportFormat, JarPipelineRequest, ModpackPipelineRequest, ScanMode } from "../shared/types.js";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.NOXHACK_COMMAND_CENTER_PORT ?? 4177);
-const store = new CommandCenterStore();
+
+export interface AppOptions {
+  modpack?: ModpackServiceOptions;
+}
+
+export function createApp(store: CommandCenterStore, options: AppOptions = {}): express.Express {
 const app = express();
 
 app.use(cors({ origin: [/^http:\/\/127\.0\.0\.1:\d+$/, /^http:\/\/localhost:\d+$/] }));
@@ -35,6 +45,32 @@ app.put("/api/settings", (req, res) => {
 
 app.get("/api/projects", (_req, res) => {
   res.json({ projects: store.listProjects() });
+});
+
+app.get("/api/modpack/summary", (_req, res) => {
+  res.json(buildModpackSummary(store, options.modpack));
+});
+
+app.get("/api/modpack/runs", (_req, res) => {
+  res.json({ runs: listModpackRuns(store, 25) });
+});
+
+app.post("/api/modpack/rebuild", async (req, res) => {
+  const body = req.body as ModpackPipelineRequest | undefined;
+  try {
+    const result = await startModpackRebuild(store, body?.confirmed === true, options.modpack);
+    res.status(result.run.status === "running" ? 202 : 200).json(result);
+  } catch (error) {
+    if (error instanceof ModpackPipelineError) {
+      res.status(error.statusCode).json({
+        error: error.message,
+        summary: error.summary,
+        run: error.run
+      });
+      return;
+    }
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+  }
 });
 
 app.get("/api/projects/:slug", (req, res) => {
@@ -94,6 +130,15 @@ app.get("/api/projects/:slug/roadmap", (req, res) => {
   res.json({ roadmap: store.getRoadmap(project.slug) });
 });
 
+app.get("/api/projects/:slug/features", (req, res) => {
+  const project = store.getProject(req.params.slug);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  res.json(buildFeatureCatalog(project.slug, store.getFeatures(project.slug)));
+});
+
 app.get("/api/projects/:slug/prompts", (req, res) => {
   const project = store.getProject(req.params.slug);
   if (!project) {
@@ -124,6 +169,95 @@ app.get("/api/projects/:slug/release", (req, res) => {
     modpackModsDir: store.getSettings().modpackModsDir,
     runs: store.listCommandRuns(project.slug, 25)
   });
+});
+
+app.get("/api/projects/:slug/jars", (req, res) => {
+  const project = store.getProject(req.params.slug);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  res.json(buildJarManifest(project, store.getSettings()));
+});
+
+app.get("/api/projects/:slug/readiness", (req, res) => {
+  const project = store.getProject(req.params.slug);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  const settings = store.getSettings();
+  const jarManifest = buildJarManifest(project, settings);
+  res.json(buildReadinessReport(project, settings, store.listScanReports(project.slug, 50), jarManifest));
+});
+
+app.post("/api/projects/:slug/jars/build", (req, res) => {
+  const project = store.getProject(req.params.slug);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  if (hasRunningRun(store, project.slug)) {
+    res.status(409).json({ error: "A command run is already active for this project." });
+    return;
+  }
+  const commandId = jarBuildCommandId(project);
+  const action = store.getReleaseAction(project.slug, commandId);
+  if (!action) {
+    res.status(404).json({ error: `Build action is not configured for ${project.slug}` });
+    return;
+  }
+  const body = req.body as JarPipelineRequest | undefined;
+  if (action.risk !== "low" && body?.confirmed !== true) {
+    res.status(409).json({
+      error: "Confirmation required",
+      commandId: action.commandId,
+      risk: action.risk
+    });
+    return;
+  }
+  const run = startReleaseAction(store, project.slug, commandId);
+  res.status(run.status === "rejected" ? 400 : 202).json({
+    run,
+    manifest: buildJarManifest(project, store.getSettings())
+  });
+});
+
+app.post("/api/projects/:slug/jars/promote", (req, res) => {
+  const project = store.getProject(req.params.slug);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  const body = req.body as JarPipelineRequest | undefined;
+  if (body?.confirmed !== true) {
+    res.status(409).json({
+      error: "Confirmation required",
+      commandId: "promote-jars",
+      risk: "high"
+    });
+    return;
+  }
+  if (hasRunningRun(store, project.slug)) {
+    res.status(409).json({ error: "A build or command run is already active for this project." });
+    return;
+  }
+  try {
+    const result = runJarPromotion(store, project, store.getSettings());
+    const scan = runHybridScan(project, store.getQaTracks(project.slug), store.getSettings(), "quick");
+    const scanReport = store.createScanReport(scan);
+    res.json({ ...result, scanReport });
+  } catch (error) {
+    if (error instanceof JarPipelineError) {
+      res.status(error.statusCode).json({
+        error: error.message,
+        manifest: error.manifest,
+        run: error.run
+      });
+      return;
+    }
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+  }
 });
 
 app.get("/api/projects/:slug/runs", (req, res) => {
@@ -173,11 +307,18 @@ app.get("/api/projects/:slug/export", (req, res) => {
     res.status(404).json({ error: "Project not found" });
     return;
   }
+  const settings = store.getSettings();
+  const jarManifest = buildJarManifest(detail.project, settings);
   const context = {
     detail,
-    settings: store.getSettings(),
+    settings,
     scans: store.listScanReports(req.params.slug, 10),
-    runs: store.listCommandRuns(req.params.slug, 25)
+    runs: store.listCommandRuns(req.params.slug, 25),
+    jarManifest,
+    readinessReport: buildReadinessReport(detail.project, settings, store.listScanReports(req.params.slug, 50), jarManifest),
+    featureCatalog: buildFeatureCatalog(detail.project.slug, store.getFeatures(detail.project.slug)),
+    modpackSummary: buildModpackSummary(store, options.modpack),
+    modpackRuns: listModpackRuns(store, 5)
   };
   const format = (req.query.format === "markdown" ? "markdown" : "json") satisfies ExportFormat;
   if (format === "markdown") {
@@ -191,20 +332,35 @@ app.use((req, res) => {
   res.status(404).json({ error: `No route for ${req.method} ${req.path}` });
 });
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Noxhack Modpack Command Center API listening on http://${HOST}:${PORT}`);
-});
+return app;
+}
 
-process.on("SIGINT", () => shutdown());
-process.on("SIGTERM", () => shutdown());
+if (isDirectRun()) {
+  const store = new CommandCenterStore();
+  const app = createApp(store);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Noxhack Modpack Command Center API listening on http://${HOST}:${PORT}`);
+  });
+
+  function shutdown(): void {
+    server.close(() => {
+      store.close();
+      process.exit(0);
+    });
+  }
+
+  process.on("SIGINT", () => shutdown());
+  process.on("SIGTERM", () => shutdown());
+}
 
 function scanMode(value: unknown, fallback: ScanMode): ScanMode {
   return value === "deep" || value === "quick" ? value : fallback;
 }
 
-function shutdown(): void {
-  server.close(() => {
-    store.close();
-    process.exit(0);
-  });
+function hasRunningRun(store: CommandCenterStore, projectSlug: string): boolean {
+  return store.listCommandRuns(projectSlug, 50).some((run) => run.status === "running");
+}
+
+function isDirectRun(): boolean {
+  return Boolean(process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url);
 }

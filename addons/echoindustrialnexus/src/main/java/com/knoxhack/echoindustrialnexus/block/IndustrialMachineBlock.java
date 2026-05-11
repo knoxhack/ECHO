@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -98,6 +99,16 @@ public class IndustrialMachineBlock extends Block implements EntityBlock {
       } else {
          return InteractionResult.CONSUME;
       }
+   }
+
+   @Override
+   public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity, ItemStack tool) {
+      if (!level.isClientSide() && blockEntity instanceof IndustrialMachineBlockEntity machine) {
+         Containers.dropContents(level, pos, machine);
+         machine.clearContent();
+      }
+
+      super.playerDestroy(level, player, pos, state, blockEntity, tool);
    }
 
    public static enum MachineKind implements StringRepresentable {

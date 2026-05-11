@@ -28,7 +28,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 - After any Nexus choice, the normal ECHO-7 launch-site scan path opens.
 - The main ECHO terminal shows Orbital Command, Survey, ECHO mission records, route records, What Now diagnostics, suit telemetry, station power, faction standings, and optional utility support caches.
 - Without the shared ECHO Terminal, Orbital Remnants keeps its standalone terminal item flow as the fallback command surface.
-- ECHO Core services publish Earth Recontact, Launch Chain, Route Worlds, and ECHO-0 Quarantine route records; launch-readiness and suit-critical diagnostics; orbital hazard telemetry; Orbital Remnant, Void Salvagers, and Nexus Choir faction standing; and terminal reward-cache state.
+- ECHO Core services publish Earth Recontact, Launch Chain, Route Worlds, and ECHO-0 Quarantine route records; launch-readiness and suit-critical diagnostics; orbital hazard telemetry; Radwarden, Crashbreak, and Sporebound faction standing mirrored from orbital lanes; and terminal reward-cache state.
 
 ## Core Systems
 
@@ -42,7 +42,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 - **Survey objectives:** terminal-tracked unique landmark scans for Orbit, Moon, Mars, Europa, Saturn, Titan, and post-ECHO Nexus stabilization.
 - **Mid-game route objectives:** three-site repair chains for the Station Network, Lunar Helium Extractors, Mars Pressure Consoles, Europa Thermal Arrays, Saturn Ring Relays, and Titan Methane Pumps.
 - **Deep sites:** three repeatable site families per route with fixed caches, objective blocks, traversal hooks, and local hazard pressure.
-- **Factions:** Orbital Remnant, Void Salvagers, and Nexus Choir alignment rewards, support/barter kiosks, relay hubs, and terminal-driven contracts.
+- **Factions:** Radwarden orbital containment, Crashbreak orbital salvage, and Sporebound anomaly interpretation alignment rewards, support/barter kiosks, relay hubs, and terminal-driven contracts.
 - **Threats:** ECHO drones, Vacuum Wraiths, Broken Astronaut Suits, Nexus Husks, major route encounters, and ECHO-0.
 
 ## Progression
@@ -68,6 +68,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 Requirements:
 
 - Java 25
+- `JAVA_HOME` set to the Java 25 install, or `java` available on `PATH`
 - NeoForge userdev through the bundled Gradle setup
 
 Build the addon from the ECHO workspace root:
@@ -96,9 +97,9 @@ The root workspace redirects Gradle's primary build output to `%LOCALAPPDATA%\Ec
 
 1. Run `.\gradlew.bat :echoorbitalremnants:build`.
 2. Run `.\gradlew.bat validateEchoResources -PechoAddonSet=beta -PechoPythonExecutable="<python.exe>"`.
-3. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` and confirm all 38 required Orbital tests pass.
+3. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` and confirm all 44 required Orbital tests pass.
 4. Launch a client and craft the ECHO-7 Terminal, Signal Analyzer, launch chain, and route vessels.
-5. Confirm first-play flow: Earth calibration, launch, Orbit, Moon, Mars, Europa, Saturn, Titan, Nexus, ECHO-0, SURVEY stabilization, three faction contracts, and the final network seal.
+5. Confirm first-play flow: craft ECHO-7 Terminal, calibrate Earth recovery, assemble and stage the Emergency Rocket, launch, use route scans and route vessels, save/use return vectors, claim once-only outputs safely, complete Orbit, Moon, Mars, Europa, Saturn, Titan, Nexus, ECHO-0, SURVEY stabilization, three faction contracts, and the final network seal.
 6. With ECHO: Terminal installed, confirm Orbital Command, Survey, and ECHO mission tabs render and that optional support caches claim once.
 7. Confirm faction pledges, support/barter hub wording, and three ECHO-tab faction contracts.
 8. Expected jar: `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.

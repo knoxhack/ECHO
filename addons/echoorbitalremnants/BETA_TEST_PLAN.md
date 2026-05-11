@@ -9,7 +9,7 @@ Use this checklist before publishing a release jar.
 3. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` from the ECHO workspace root.
 4. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
 5. Confirm the primary redirected output is `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\echoorbitalremnants-1.5.0.jar`.
-6. Confirm all 38 required Orbital GameTests pass, including `terminal_mission_cache_state`, `terminal_mission_integration`, `core_integration_contract`, and `beta_rc_polish`.
+6. Confirm all 44 required Orbital GameTests pass, including `terminal_mission_cache_state`, `terminal_mission_integration`, `core_integration_contract`, `machine_break_drops_inventory`, `rocket_assembly_virtual_output`, `route_arrival_seed_once`, `high_altitude_scan_gate`, `ambient_threat_cap`, `strict_playable_path`, and `progress_persistence_round_trip`.
 7. Confirm Core/Terminal/Ashfall stack versions are aligned: ECHO Core `1.1.0`, ECHO Terminal `1.1.0`, Ashfall Protocol `1.3.0`, and Orbital Remnants `1.5.0`.
 
 ## Clean Survival Smoke Test
@@ -20,8 +20,10 @@ Use this checklist before publishing a release jar.
 4. Loot the launch pad, crashed satellite, and comms array.
 5. Craft or recover the Launch Platform, Rocket Assembly Frame, Fuel Refinery, Oxygen Compressor, pressure suit, Oxygen Tank, and rocket parts.
 6. Open the Rocket Assembly Frame and confirm the Emergency Rocket appears only when the checklist is complete.
-7. Launch to Low Earth Orbit and confirm an Earth return vector is saved.
-8. Confirm the terminal names the next missing hook whenever progression is blocked.
+7. Break a normal processing machine with input/output loaded and confirm stored items drop; break a Rocket Assembly Frame with its rocket output visible and confirm no free rocket drops.
+8. Launch to Low Earth Orbit and confirm an Earth return vector is saved.
+9. Confirm the terminal names the next missing hook whenever progression is blocked.
+10. Confirm climbing to high overworld altitude causes suit exposure but does not mark Low Earth Orbit before a real launch.
 
 ## Shared Terminal Smoke Test
 
@@ -31,7 +33,7 @@ Use this checklist before publishing a release jar.
 4. Complete Earth calibration and confirm the Earth Calibration mission becomes claimable in Orbital ECHO.
 5. Claim the support cache once, verify utility items are delivered or stored through the Terminal reward service, and confirm a second claim does not duplicate rewards.
 6. Repeat before and after an Ashfall Nexus choice in the full stack to confirm the lock reason and unlock handoff stay clear.
-7. Confirm What Now shows Orbital blockers, Route Records lists Earth Recontact / Launch Chain / Route Worlds / ECHO-0 Quarantine, Vitals includes Orbital hazard telemetry while in route dimensions, Faction Atlas shows Orbital Remnant / Void Salvagers / Nexus Choir standings, and Reward Inbox agrees with standalone cache state.
+7. Confirm What Now shows Orbital blockers, Route Records lists Earth Recontact / Launch Chain / Route Worlds / ECHO-0 Quarantine, Vitals includes Orbital hazard telemetry while in route dimensions, Faction Atlas shows Radwarden / Crashbreak / Sporebound standings, and Reward Inbox agrees with standalone cache state.
 
 ## Creative Route Smoke Test
 
@@ -59,17 +61,18 @@ Use this checklist before publishing a release jar.
 2. Run Earth -> Low Earth Orbit -> Moon -> Mars -> Europa -> Saturn -> Titan -> Nexus in order.
 3. At every route handoff, confirm the route item gives action-bar feedback, sound/particles, clear lock text when blocked, and does not consume the reusable vessel/key.
 4. At every route site, confirm the objective block is visually discoverable, SCAN feedback is audible/visible, and one cache feels worth opening.
-5. At Saturn and Titan, confirm the route identities read differently: Saturn relay ribs/salvage lanes, Titan methane/tholin pressure cues.
-6. During encounters, confirm special attacks have a readable tell before pressure/oxygen/radiation effects land.
-7. Confirm terminal next-step text, return vectors, faction hub wording, ECHO-0 guidance, Nexus stabilization, and final seal all match the automated route state.
+5. Repeat one route burn after first arrival and confirm it reuses travel/return-vector behavior without reseeding the first-arrival cache or duplicating the arrival threat wave.
+6. At Saturn and Titan, confirm the route identities read differently: Saturn relay ribs/salvage lanes, Titan methane/tholin pressure cues.
+7. During encounters, confirm special attacks have a readable tell before pressure/oxygen/radiation effects land and ambient threats do not pile up beyond the local cap.
+8. Confirm terminal next-step text, return vectors, faction hub wording, ECHO-0 guidance, Nexus stabilization, and final seal all match the automated route state.
 
 ## Faction Contract Smoke Test
 
-1. Use each pledge item: Orbital Remnant Badge, Void Salvager Marker, and Nexus Choir Sigil.
+1. Use each pledge item: Radwarden Orbital Badge, Crashbreak Salvage Marker, and Sporebound Anomaly Sigil.
 2. Confirm the ECHO tab shows the current faction contract and beta faction hub scans distinguish no pledge, already-serviced hubs, active contract chains, and authorized cache rewards.
-3. Complete an Orbital Remnant contract by scanning a Low Orbit relay or spending Orbit Survey Data.
-4. Complete a Void Salvager contract by scanning salvage or turning in Orbital Alloy plus Vacuum Circuit.
-5. Complete a Nexus Choir contract after ECHO-0 by scanning Nexus growth/anchors or spending a Nexus Stabilizer Shard.
+3. Complete a Radwarden orbital containment contract by scanning a Low Orbit relay or spending Orbit Survey Data.
+4. Complete a Crashbreak orbital salvage contract by scanning salvage or turning in Orbital Alloy plus Vacuum Circuit.
+5. Complete a Sporebound anomaly contract after ECHO-0 by scanning Nexus growth/anchors or spending a Nexus Stabilizer Shard.
 6. Confirm each completion grants rewards once and the cooldown prevents immediate double-grants.
 
 ## Return Vector Checks

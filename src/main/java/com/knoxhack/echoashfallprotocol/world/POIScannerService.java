@@ -196,6 +196,12 @@ public final class POIScannerService {
         } else if (!siteId.startsWith("nexus_relay_")) {
             EchoCoreServices.discoverFeature(player, AshfallDiscoveryProvider.structureId(siteId));
         }
+        EchoCoreServices.structureDiscoveryService().recordStructureScan(
+                player,
+                Identifier.fromNamespaceAndPath("echoashfallprotocol", siteId),
+                hit.position(),
+                hit.displayName(),
+                hit.intelLine());
 
         if (!alreadyDiscovered && profile.faction() != null) {
             var territory = player.getData(ModAttachments.FACTION_TERRITORY.get());
