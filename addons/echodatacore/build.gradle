@@ -60,6 +60,7 @@ configurations {
 
 dependencies {
     implementation project(":echocore")
+    implementation project(":echonetcore")
     localRuntime project(":echoterminal")
 }
 

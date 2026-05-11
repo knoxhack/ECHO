@@ -12,6 +12,7 @@ import com.knoxhack.echocore.api.ITeamDataView;
 import com.knoxhack.echocore.api.IWorldDataView;
 import com.knoxhack.echodatacore.legacy.DataCoreLegacyAdapters;
 import com.knoxhack.echodatacore.network.DataCoreSyncPacket;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import com.mojang.serialization.Codec;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,7 +35,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class DataCoreDataService implements IDataService {
     public static final int CURRENT_VERSION = 1;
@@ -645,12 +645,7 @@ public final class DataCoreDataService implements IDataService {
         }
 
         private void send(ServerPlayer player, DataCoreSyncPacket packet) {
-            try {
-                PacketDistributor.sendToPlayer(player, packet);
-            } catch (UnsupportedOperationException | IllegalStateException exception) {
-                EchoDataCore.LOGGER.debug("Skipped DataCore sync for {}: {}",
-                        player.getScoreboardName(), exception.getMessage());
-            }
+            EchoNetSend.toPlayer(player, packet);
         }
     }
 

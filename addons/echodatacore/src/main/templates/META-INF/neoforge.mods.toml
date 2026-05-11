@@ -32,3 +32,10 @@ type="required"
 versionRange="[1.1.0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echonetcore"
+type="required"
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
