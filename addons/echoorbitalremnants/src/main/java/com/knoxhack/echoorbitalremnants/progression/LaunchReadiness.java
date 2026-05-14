@@ -21,6 +21,9 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
     }
 
     public static LaunchReadiness evaluateForLaunch(Player player) {
+        if (player == null) {
+            return new LaunchReadiness(false, List.of(Component.literal("Player telemetry offline")));
+        }
         if (!Config.REQUIRE_FULL_LAUNCH_READINESS.get() || bypassesReadiness(player)) {
             return new LaunchReadiness(true, List.of());
         }
@@ -37,6 +40,9 @@ public record LaunchReadiness(boolean ready, List<Component> missing) {
     }
 
     public static LaunchReadiness evaluateForAssembly(Player player) {
+        if (player == null) {
+            return new LaunchReadiness(false, List.of(Component.literal("Player telemetry offline")));
+        }
         if (!Config.REQUIRE_FULL_LAUNCH_READINESS.get() || bypassesReadiness(player)) {
             return new LaunchReadiness(true, List.of());
         }

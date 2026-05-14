@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/purified_soil"
+    "model": "echoagriculturereclamation:item/purified_soil"
   }
 }

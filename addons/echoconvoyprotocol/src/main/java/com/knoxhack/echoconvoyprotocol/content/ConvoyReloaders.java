@@ -9,6 +9,7 @@ public final class ConvoyReloaders {
    }
 
    public static void addServerReloadListeners(AddServerReloadListenersEvent event) {
-      event.addListener(Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "content"), new ConvoyJsonReloadListener());
+      event.addListener(Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "routes"), new ConvoyJsonReloadListener());
+      event.addListener(Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "incidents"), new ConvoyIncidentJsonReloadListener());
    }
 }

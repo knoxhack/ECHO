@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "igi",
+    "fcf",
+    "iri"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "g": { "item": "minecraft:glass" },
+    "f": { "item": "echoweathercore:faraday_coil" },
+    "c": { "item": "minecraft:copper_block" },
+    "r": { "item": "minecraft:redstone_block" }
+  },
+  "result": {
+    "id": "echoweathercore:atmospheric_shield_emitter"
+  }
+}

@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoorbitalremnants:block/broken_solar_panel"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoorbitalremnants:item/broken_solar_panel"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoashfallprotocol:block/spore_garden"
+    "model": "echoashfallprotocol:item/spore_garden"
   }
 }

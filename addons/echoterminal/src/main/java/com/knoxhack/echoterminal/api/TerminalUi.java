@@ -659,6 +659,52 @@ public final class TerminalUi {
         graphics.centeredText(font(context), trim(context, label, width - 8), x + width / 2, y + 4, text);
     }
 
+    public static int statusBadgeWidth(TerminalRenderContext context, String label) {
+        String value = label == null ? "" : label.strip().toUpperCase(Locale.ROOT);
+        return Math.max(46, font(context).width(value) + 18);
+    }
+
+    public static int statusBadgeRowsHeight(TerminalRenderContext context, Iterable<String> labels, int width) {
+        int rows = 0;
+        int cx = 0;
+        for (String label : labels) {
+            if (label == null || label.isBlank()) {
+                continue;
+            }
+            int badgeW = Math.min(Math.max(34, width), statusBadgeWidth(context, label));
+            if (cx > 0 && cx + badgeW > width) {
+                rows++;
+                cx = 0;
+            }
+            cx += badgeW + 4;
+        }
+        if (cx > 0) {
+            rows++;
+        }
+        return rows * 16;
+    }
+
+    public static int statusBadgeRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            Iterable<String> labels, int x, int y, int width, int color) {
+        int cx = x;
+        int cy = y;
+        boolean drewAny = false;
+        for (String label : labels) {
+            if (label == null || label.isBlank()) {
+                continue;
+            }
+            int badgeW = Math.min(Math.max(34, width), statusBadgeWidth(context, label));
+            if (cx > x && cx + badgeW > x + width) {
+                cx = x;
+                cy += 16;
+            }
+            miniStatusPill(context, graphics, label, cx, cy, badgeW, color, false);
+            cx += badgeW + 4;
+            drewAny = true;
+        }
+        return drewAny ? cy + 16 : y;
+    }
+
     public static void missionStatusPill(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             String label, int x, int y, int width) {
         drawSemanticStatusPill(context, graphics, label, x, y, width, 14);
@@ -986,15 +1032,75 @@ public final class TerminalUi {
 
     public static void compactButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int x, int y, int w, String label, int color, boolean enabled, boolean hovered) {
+        compactButton(context, graphics, x, y, w, 16, label, color, enabled, hovered);
+    }
+
+    public static void compactButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String label, int color, boolean enabled, boolean hovered) {
         TerminalThemeTokens tokens = tokens(context);
+        int buttonH = Math.max(16, h);
         int bg = enabled ? (hovered ? tokens.panels().hoverFill() : tokens.colors().row())
                 : tokens.panels().disabledFill();
         int accent = enabled ? color : tokens.colors().accentDim();
-        graphics.fill(x, y, x + w, y + 16, bg);
-        graphics.outline(x, y, w, 16, enabled ? tokens.borders().normal() : tokens.borders().disabled());
-        graphics.fill(x, y + 14, x + w, y + 16, accent);
-        graphics.centeredText(font(context), trim(context, label, w - 8), x + w / 2, y + 4,
+        graphics.fill(x, y, x + w, y + buttonH, bg);
+        graphics.outline(x, y, w, buttonH, enabled ? tokens.borders().normal() : tokens.borders().disabled());
+        graphics.fill(x, y + buttonH - 2, x + w, y + buttonH, accent);
+        graphics.centeredText(font(context), trim(context, label, w - 8), x + w / 2,
+                y + Math.max(4, (buttonH - 8) / 2),
                 enabled ? tokens.colors().text() : tokens.colors().muted());
+    }
+
+    public static int responsiveControlWidth(int rowWidth, boolean textEntry) {
+        int preferred = textEntry ? 168 : 152;
+        return Math.max(68, Math.min(preferred, Math.max(68, rowWidth - 16)));
+    }
+
+    public static boolean shouldStackControls(int rowWidth, boolean textEntry) {
+        int controls = responsiveControlWidth(rowWidth, textEntry);
+        int minimumCopy = textEntry ? 190 : 178;
+        return rowWidth < minimumCopy + controls + 30;
+    }
+
+    public static int responsiveControlRowHeight(int rowWidth, boolean textEntry, boolean hasBadges) {
+        int copyH = hasBadges ? 48 : 34;
+        int controlsH = textEntry ? 44 : 20;
+        if (shouldStackControls(rowWidth, textEntry)) {
+            return copyH + controlsH + 12;
+        }
+        return Math.max(textEntry ? 62 : 48, copyH + 12);
+    }
+
+    public static void dataSurfaceRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, int color, boolean hovered, boolean selected, boolean enabled) {
+        TerminalThemeTokens tokens = tokens(context);
+        int bg = !enabled
+                ? tokens.panels().disabledFill()
+                : selected ? tokens.colors().rowSelected()
+                : hovered ? tokens.panels().hoverFill()
+                : tokens.colors().row();
+        int border = !enabled
+                ? tokens.borders().disabled()
+                : hovered || selected ? tokens.borders().normal()
+                : tokens.borders().subtle();
+        graphics.fill(x, y, x + w, y + h, bg);
+        graphics.outline(x, y, w, h, border);
+        graphics.fill(x, y, x + 3, y + h, enabled ? opaque(color) : tokens.dividers().line());
+        if (hovered && enabled) {
+            graphics.fill(x + 6, y + 3, x + w - 6, y + 4, tokens.borders().glow());
+        }
+    }
+
+    public static void inlineValueField(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String value, int color, boolean active, boolean enabled) {
+        TerminalThemeTokens tokens = tokens(context);
+        int fieldH = Math.max(18, h);
+        int bg = active ? withAlpha(color, 0x32) : enabled ? tokens.panels().selectedFill() : tokens.panels().disabledFill();
+        graphics.fill(x, y, x + w, y + fieldH, bg);
+        graphics.outline(x, y, w, fieldH, active ? opaque(color) : enabled ? tokens.borders().normal()
+                : tokens.borders().disabled());
+        graphics.text(font(context), trim(context, value, w - 8), x + 4,
+                y + Math.max(5, (fieldH - 8) / 2),
+                enabled ? tokens.colors().text() : tokens.colors().muted(), false);
     }
 
     public static void primaryCommandButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -1233,7 +1339,6 @@ public final class TerminalUi {
             graphics.fill(0, 0, screenW, Math.max(80, screenH / 5), 0x55100528);
             graphics.fill(0, screenH - Math.max(70, screenH / 6), screenW, screenH, 0x6602070C);
         }
-        drawTerminalGrid(graphics, screenW, screenH, reducedMotion ? 34 : 28);
         graphics.fill(x, y, x + w, y + h, 0x9002070C);
         graphics.outline(x, y, w, h, 0x8A38DFF4);
         graphics.fill(x + 1, y + 1, x + w - 1, y + 18, 0x2A163843);
@@ -1267,6 +1372,9 @@ public final class TerminalUi {
         if (tokens.effects().grid()) {
             drawTerminalGrid(graphics, screenW, screenH, reducedMotion ? 34 : 28, tokens.dividers().gridLine());
         }
+        if (tokens.effects().scanlines()) {
+            drawTerminalScanlines(graphics, screenW, screenH, 0x09000000);
+        }
         graphics.fill(x, y, x + w, y + h, tokens.colors().shell());
         graphics.outline(x, y, w, h, tokens.borders().normal());
         graphics.fill(x + 1, y + 1, x + w - 1, y + 18, tokens.panels().headerFill());
@@ -1291,8 +1399,11 @@ public final class TerminalUi {
         for (int gy = 0; gy < height; gy += Math.max(12, step)) {
             graphics.fill(0, gy, width, gy + 1, grid);
         }
+    }
+
+    private static void drawTerminalScanlines(GuiGraphicsExtractor graphics, int width, int height, int color) {
         for (int gy = 2; gy < height; gy += 4) {
-            graphics.fill(0, gy, width, gy + 1, 0x09000000);
+            graphics.fill(0, gy, width, gy + 1, color);
         }
     }
 
@@ -1349,8 +1460,8 @@ public final class TerminalUi {
                 TerminalIcon.CORE, x + 18, iconY, iconSize, color, true);
         String online = meta == null || meta.isBlank() ? "LINK: STANDBY  |  USER: OPERATOR  |  ONLINE" : meta;
         boolean offline = online.toUpperCase().contains("OFFLINE");
-        String rightSource = w < 640 ? (offline ? "OFFLINE" : "ONLINE") : online;
-        int rightMax = Math.max(64, Math.min(w - 100, w < 640 ? 86 : w * 34 / 100));
+        String rightSource = w < 430 ? (offline ? "OFF" : "ON") : w < 640 ? (offline ? "OFFLINE" : "ONLINE") : online;
+        int rightMax = Math.max(44, Math.min(w - 96, w < 430 ? 48 : w < 640 ? 86 : w * 34 / 100));
         String right = trim(font, rightSource, rightMax);
         int rightColor = right.toUpperCase().contains("OFFLINE") ? tokens.colors().danger() : tokens.colors().muted();
         int rightX = x + w - 26 - font.width(right);
@@ -1360,7 +1471,9 @@ public final class TerminalUi {
         int subtitleY = Math.min(y + barH - 15, titleY + 15);
         int rightY = y + Math.max(16, (barH - 8) / 2);
         graphics.text(font, trim(font, title, leftMax), textX, titleY, opaque(color), false);
-        graphics.text(font, trim(font, subtitle, leftMax), textX, subtitleY, tokens.colors().muted(), false);
+        if (leftMax >= 92 && barH >= 44) {
+            graphics.text(font, trim(font, subtitle, leftMax), textX, subtitleY, tokens.colors().muted(), false);
+        }
         graphics.text(font, right, rightX, rightY, rightColor, false);
         int dotColor = right.toUpperCase().contains("OFFLINE") ? tokens.colors().danger() : tokens.colors().success();
         int dotY = rightY + 1;
@@ -1423,30 +1536,33 @@ public final class TerminalUi {
         int textY = keyY + 5;
         graphics.fill(x, y, x + w, y + barH, tokens.colors().shell());
         graphics.outline(x, y, w, barH, tokens.borders().subtle());
-        String r = trimBreadcrumb(font, right == null ? "" : right, Math.max(110, Math.min(420, w * 38 / 100)));
-        int rightX = x + w - 16 - font.width(r);
-        int leftLimit = Math.max(x + 80, rightX - 18);
+        int rightMax = Math.max(64, Math.min(w - 28, w < 520 ? w / 2 : w * 38 / 100));
+        String r = trimBreadcrumb(font, right == null ? "" : right, rightMax);
+        int rightX = Math.max(x + 14, x + w - 16 - font.width(r));
+        int leftLimit = rightX - 18;
         int cx = x + 14;
         String[] parts = left == null ? new String[0] : left.split("\\s{2,}");
-        for (String token : parts) {
-            if (token.isBlank()) {
-                continue;
-            }
-            int space = token.indexOf(' ');
-            String key = space <= 0 ? token : token.substring(0, space);
-            String label = space <= 0 ? "" : token.substring(space + 1);
-            int keyW = Math.max(22, font.width(key) + 8);
-            if (cx + keyW + font.width(label) + 18 > leftLimit) {
-                break;
-            }
-            graphics.fill(cx, keyY, cx + keyW, keyY + keyH, tokens.colors().row());
-            graphics.outline(cx, keyY, keyW, keyH, tokens.borders().normal());
-            graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, textY, opaque(color));
-            cx += keyW + 7;
-            if (!label.isBlank()) {
-                String shortLabel = trim(font, label, 82);
-                graphics.text(font, shortLabel, cx, textY, tokens.colors().muted(), false);
-                cx += font.width(shortLabel) + 18;
+        if (leftLimit >= x + 80) {
+            for (String token : parts) {
+                if (token.isBlank()) {
+                    continue;
+                }
+                int space = token.indexOf(' ');
+                String key = space <= 0 ? token : token.substring(0, space);
+                String label = space <= 0 ? "" : token.substring(space + 1);
+                int keyW = Math.max(22, font.width(key) + 8);
+                if (cx + keyW + font.width(label) + 18 > leftLimit) {
+                    break;
+                }
+                graphics.fill(cx, keyY, cx + keyW, keyY + keyH, tokens.colors().row());
+                graphics.outline(cx, keyY, keyW, keyH, tokens.borders().normal());
+                graphics.centeredText(font, trim(font, key, keyW - 4), cx + keyW / 2, textY, opaque(color));
+                cx += keyW + 7;
+                if (!label.isBlank()) {
+                    String shortLabel = trim(font, label, Math.max(48, Math.min(82, leftLimit - cx - 8)));
+                    graphics.text(font, shortLabel, cx, textY, tokens.colors().muted(), false);
+                    cx += font.width(shortLabel) + 18;
+                }
             }
         }
         graphics.text(font, r, rightX, textY, opaque(color), false);

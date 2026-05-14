@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoashfallprotocol:block/weapon_rack"
+    "model": "echoashfallprotocol:item/weapon_rack"
   }
 }

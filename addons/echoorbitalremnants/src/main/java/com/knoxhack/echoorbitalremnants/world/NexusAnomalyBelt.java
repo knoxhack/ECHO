@@ -16,6 +16,8 @@ public final class NexusAnomalyBelt {
         placeFloatingRocks(level, anchor);
         placeCoreSpire(level, anchor.offset(0, 2, -10));
         level.setBlock(anchor.offset(0, 1, -8), ModBlocks.NEXUS_ANCHOR.get().defaultBlockState(), 3);
+        level.setBlock(anchor.offset(-2, 1, -6), ModBlocks.FACTION_RELAY_HUB.get().defaultBlockState(), 3);
+        level.setBlock(anchor.offset(2, 1, -6), ModBlocks.FACTION_VENDOR_KIOSK.get().defaultBlockState(), 3);
         RouteCache.place(level, anchor.offset(2, 1, -8),
                 new ItemStack(ModItems.NEXUS_DUST.get(), 6),
                 new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()),

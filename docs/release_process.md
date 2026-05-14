@@ -7,7 +7,7 @@ This document defines the version contract and release automation checks for the
 All public releases must keep three surfaces aligned:
 
 1. **Git tag**: `v<major>.<minor>.<patch>[-<prerelease>.<n>]`
-   - Example prerelease: `v1.3.1-beta.1`
+   - Example prerelease: `v1.0.1-beta.1`
 2. **Module versions**: every release module (`echocore`, `echoashfallprotocol`, and included addons) resolves to the matching release version for that cut.
 3. **GitHub release naming**: the release title/name should match the exact Git tag value.
 

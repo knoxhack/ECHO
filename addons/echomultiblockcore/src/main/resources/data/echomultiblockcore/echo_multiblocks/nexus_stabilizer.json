@@ -1,0 +1,27 @@
+{
+  "id": "echomultiblockcore:nexus_stabilizer",
+  "display_name": "Nexus Stabilizer",
+  "translation_key": "multiblock.echomultiblockcore.nexus_stabilizer",
+  "role": "NEXUS",
+  "category": "stabilizer",
+  "size": [3, 2, 3],
+  "controller": "echomultiblockcore:multiblock_controller",
+  "allowed_rotations": true,
+  "mirrorable": true,
+  "layers": [["FIF","DCP","FOF"],[".S.",".R.",".A."]],
+  "palette": {
+    "F": { "tag": "echomultiblockcore:reinforced_frames" },
+    "I": { "block": "echomultiblockcore:input_crate", "component": true },
+    "O": { "block": "echomultiblockcore:output_crate", "component": true },
+    "S": { "block": "echomultiblockcore:signal_conduit", "component": true },
+    "D": { "block": "echomultiblockcore:data_bus", "component": true },
+    "P": { "block": "echomultiblockcore:power_bus", "component": true },
+    "R": { "block": "echomultiblockcore:robotic_arm", "robotics": true },
+    "A": { "block": "echomultiblockcore:auto_builder", "component": true, "optional": true },
+    "C": { "block": "echomultiblockcore:multiblock_controller", "controller": true },
+    ".": { "air": true }
+  },
+  "capabilities": ["echo:nexus_gate","echo:hazard_suppression","echo:terminal_tab","echo:map_marker"],
+  "workcells": [{"id":"echomultiblockcore:nexus_stabilizer/stabilize","type":"SCANNING","pos":[1,1,1],"size":[1,1,1]}],
+  "preview": {"color":"d48bff"}
+}

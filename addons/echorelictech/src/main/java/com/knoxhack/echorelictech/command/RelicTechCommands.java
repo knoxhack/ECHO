@@ -4,6 +4,7 @@ import com.knoxhack.echorelictech.api.RelicTechApi;
 import com.knoxhack.echorelictech.api.relic.RelicCondition;
 import com.knoxhack.echorelictech.api.relic.RelicInstanceData;
 import com.knoxhack.echorelictech.data.RelicDefinitionLoader;
+import com.knoxhack.echorelictech.data.RelicVaultLoader;
 import com.knoxhack.echorelictech.registry.ModDataComponents;
 import com.knoxhack.echorelictech.registry.ModItems;
 import com.knoxhack.echorelictech.server.RelicInstabilityManager;
@@ -135,7 +136,11 @@ public final class RelicTechCommands {
                 }))
             .then(Commands.literal("locate_vault")
                 .executes(ctx -> {
-                    ctx.getSource().sendSuccess(() -> Component.literal("Vault locator scaffold. Use worldgen structures in future pass."), false);
+                    var vaults = RelicVaultLoader.all();
+                    ctx.getSource().sendSuccess(() -> Component.literal("ECHO: RelicTech // Known Vaults (" + vaults.size() + "):"), false);
+                    for (var vault : vaults) {
+                        ctx.getSource().sendSuccess(() -> Component.literal("  " + vault.displayName() + " [" + vault.tier() + "] Security: " + vault.securityLevel()), false);
+                    }
                     return 1;
                 }))
             .then(Commands.literal("debug")

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/dead_soil"
+    "model": "echoagriculturereclamation:item/dead_soil"
   }
 }

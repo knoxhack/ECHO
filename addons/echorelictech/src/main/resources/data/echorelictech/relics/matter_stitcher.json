@@ -1,16 +1,16 @@
 {
   "id": "echorelictech:matter_stitcher",
-  "tier": "FORBIDDEN",
-  "category": "SURVIVAL",
+  "tier": "forbidden",
+  "category": "survival",
   "origin": "Pre-Gridfall Medical Prototype",
-  "defaultCondition": "DAMAGED",
+  "defaultCondition": "damaged",
   "cooldownTicks": 3600,
   "instabilityCost": 8,
   "nullChargeCost": 1,
   "riskTypes": [
-    "PLAYER_DEBUFF",
-    "MALFUNCTION",
-    "NEXUS_INSTABILITY"
+    "player_debuff",
+    "malfunction",
+    "nexus_instability"
   ],
   "failureTable": "echorelictech:matter_stitcher",
   "terminal": {

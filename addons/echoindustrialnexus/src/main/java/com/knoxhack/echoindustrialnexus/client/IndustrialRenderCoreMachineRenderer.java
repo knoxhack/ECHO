@@ -3,14 +3,13 @@ package com.knoxhack.echoindustrialnexus.client;
 import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialRenderCoreVisuals;
+import com.knoxhack.echorendercore.api.RenderCoreBlockVisualHost;
 import com.knoxhack.echorendercore.api.VisualContext;
 import com.knoxhack.echorendercore.api.VisualState;
 import com.knoxhack.echorendercore.api.VisualVariant;
 import com.knoxhack.echorendercore.client.AdvancedBlockEntityVisualRenderer;
 import com.knoxhack.echorendercore.client.DebugVisualOverrides;
-import com.knoxhack.echorendercore.client.RenderCoreParticleSpawner;
-import com.knoxhack.echorendercore.profile.ParticleProfile;
-import com.knoxhack.echorendercore.profile.RenderCoreProfiles;
+import com.knoxhack.echorendercore.client.RenderCoreBlockVisuals;
 import com.knoxhack.echorendercore.profile.VisualProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.core.BlockPos;
@@ -77,26 +76,59 @@ public final class IndustrialRenderCoreMachineRenderer
          state.damaged,
          state.lightCoords
       );
-      VisualProfile visualProfile = profile(context);
+      RenderCoreBlockVisuals.RenderData data = RenderCoreBlockVisuals.resolve(
+         state.level,
+         state.pos,
+         state.blockState,
+         host(state),
+         state.partialTick,
+         state.lightCoords
+      );
+      VisualProfile visualProfile = data == null ? profile(context) : data.visualProfile();
       if (visualProfile == null) {
          return;
       }
-      rememberDebugTarget(state.level, state.pos, visualProfile, context);
-      submitBlockModelLayers(state.blockState, poseStack, collector, context, visualProfile);
-      if (visualProfile.particleProfile() == null) {
-         return;
-      }
-      ParticleProfile particleProfile = RenderCoreProfiles.particle(visualProfile.particleProfile());
-      RenderCoreParticleSpawner.spawnForBlock(
-         state.level,
-         state.origin,
-         visualProfile,
-         particleProfile,
-         state.visualState,
-         state.moving,
-         state.damaged,
-         state.progress
-      );
+      submitBlockModelLayers(state.blockState, poseStack, collector, data == null ? context : data.context(), visualProfile);
+      RenderCoreBlockVisuals.spawnParticlesOncePerTick(data);
+   }
+
+   private static RenderCoreBlockVisualHost host(MachineVisualRenderState state) {
+      return new RenderCoreBlockVisualHost() {
+         @Override
+         public Identifier visualProfileId() {
+            return state.profileId;
+         }
+
+         @Override
+         public VisualState visualState() {
+            return state.visualState;
+         }
+
+         @Override
+         public VisualVariant visualVariant() {
+            return state.variant;
+         }
+
+         @Override
+         public float visualProgress() {
+            return state.progress;
+         }
+
+         @Override
+         public boolean visualMoving() {
+            return state.moving;
+         }
+
+         @Override
+         public boolean visualDamaged() {
+            return state.damaged;
+         }
+
+         @Override
+         public String visualFallbackStatus() {
+            return "rendercore_native";
+         }
+      };
    }
 
    public static final class MachineVisualRenderState extends BlockEntityRenderState {

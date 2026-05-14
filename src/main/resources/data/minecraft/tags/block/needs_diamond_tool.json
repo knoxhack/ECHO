@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "echoashfallprotocol:drop_pod_hull",
+    "echoashfallprotocol:crystalline_synthesizer",
+    "echoashfallprotocol:power_node",
+    "echoashfallprotocol:nexus_core",
+    "echoashfallprotocol:nexus_capacitor"
+  ]
+}

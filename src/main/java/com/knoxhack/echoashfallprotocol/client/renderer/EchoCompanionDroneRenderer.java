@@ -2,25 +2,16 @@ package com.knoxhack.echoashfallprotocol.client.renderer;
 
 import com.knoxhack.echoashfallprotocol.entity.EchoCompanionDrone;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.Identifier;
 
 /**
  * Renderer for the ECHO-7 Companion Drone. Extracts mood/speech state for particles.
  * The hologram text and nametag are handled via vanilla name tag rendering.
  */
-public class EchoCompanionDroneRenderer extends MobRenderer<EchoCompanionDrone, DroneRenderState, DroneModel> {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("echoashfallprotocol", "textures/entity/echo_companion_drone.png");
-
+public class EchoCompanionDroneRenderer extends AshfallBoardDroneRenderer<EchoCompanionDrone> {
     public EchoCompanionDroneRenderer(EntityRendererProvider.Context context) {
-        super(context, new DroneModel(context.bakeLayer(DroneModel.LAYER_LOCATION)), 0.4f);
-    }
-
-    @Override
-    public DroneRenderState createRenderState() {
-        return new DroneRenderState();
+        super(context, "echo_companion_drone", 0.4F);
     }
 
     @Override
@@ -57,11 +48,6 @@ public class EchoCompanionDroneRenderer extends MobRenderer<EchoCompanionDrone, 
                     entity.getX(), entity.getY() + 0.35, entity.getZ(),
                     0, 0.01, 0);
         }
-    }
-
-    @Override
-    public Identifier getTextureLocation(DroneRenderState state) {
-        return TEXTURE;
     }
 
     @Override

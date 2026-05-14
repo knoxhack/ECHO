@@ -1,10 +1,17 @@
 package com.knoxhack.echoindustrialnexus.registry;
 
+import com.knoxhack.echomultiblockcore.block.MultiblockCrateBlock;
+import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
 import com.knoxhack.echoindustrialnexus.block.IndustrialFluxDuctBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialFluidPipeBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialItemDuctBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialMachineBlock;
+import com.knoxhack.echoindustrialnexus.block.IndustrialMultiblockControllerBlock;
+import com.knoxhack.echoindustrialnexus.block.IndustrialMultiblockCrateBlock;
+import com.knoxhack.echoindustrialnexus.block.IndustrialRoboticArmMountBlock;
+import com.knoxhack.echoindustrialnexus.multiblock.IndustrialMultiblockTasks;
 import java.util.List;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -116,6 +123,61 @@ public final class ModBlocks {
    public static final DeferredBlock<Block> SMOKE_VENT = metal("smoke_vent", MapColor.COLOR_GRAY);
    public static final DeferredBlock<Block> PRESSURE_GAUGE_BLOCK = metal("pressure_gauge_block", MapColor.COLOR_CYAN);
    public static final DeferredBlock<Block> COOLING_FAN_BLOCK = metal("cooling_fan_block", MapColor.COLOR_GRAY);
+   public static final DeferredBlock<Block> INDUSTRIAL_CONTROLLER = industrialController(
+      "industrial_controller", "industrial_assembly_line", IndustrialMultiblockTasks.WELD_REINFORCED_MACHINE_FRAME
+   );
+   public static final DeferredBlock<Block> INDUSTRIAL_ASSEMBLY_LINE_CONTROLLER = industrialController(
+      "industrial_assembly_line_controller", "industrial_assembly_line", IndustrialMultiblockTasks.WELD_REINFORCED_MACHINE_FRAME
+   );
+   public static final DeferredBlock<Block> RECIPE_MATRIX_CORE = industrialController(
+      "recipe_matrix_core", "recipe_matrix_core", IndustrialMultiblockTasks.ENCODE_RECIPE_MATRIX_SHARD
+   );
+   public static final DeferredBlock<Block> SCRAP_PROCESSOR_CONTROLLER = industrialController(
+      "scrap_processor_controller", "scrap_processor", IndustrialMultiblockTasks.PROCESS_SCRAP_INTO_SCRAP_PLATE
+   );
+   public static final DeferredBlock<Block> PLATE_PRESS_CONTROLLER = industrialController(
+      "plate_press_controller", "plate_press", IndustrialMultiblockTasks.PRESS_SCRAP_PLATE_INTO_REFINED_PLATE
+   );
+   public static final DeferredBlock<Block> CIRCUIT_FABRICATOR_CONTROLLER = industrialController(
+      "circuit_fabricator_controller", "circuit_fabricator", IndustrialMultiblockTasks.ASSEMBLE_PRECISION_CIRCUIT
+   );
+   public static final DeferredBlock<Block> MACHINE_FRAME_ASSEMBLER_CONTROLLER = industrialController(
+      "machine_frame_assembler_controller", "industrial_assembly_line", IndustrialMultiblockTasks.WELD_REINFORCED_MACHINE_FRAME
+   );
+   public static final DeferredBlock<Block> COOLING_STATION_CONTROLLER = industrialController(
+      "cooling_station_controller", "recipe_matrix_core", IndustrialMultiblockTasks.ENCODE_RECIPE_MATRIX_SHARD
+   );
+   public static final DeferredBlock<Block> INSPECTION_SCANNER_CONTROLLER = industrialController(
+      "inspection_scanner_controller", "circuit_fabricator", IndustrialMultiblockTasks.ASSEMBLE_PRECISION_CIRCUIT
+   );
+   public static final DeferredBlock<Block> INDUSTRIAL_POWER_BUS = metal("industrial_power_bus", MapColor.COLOR_ORANGE);
+   public static final DeferredBlock<Block> INDUSTRIAL_ITEM_BUS = metal("industrial_item_bus", MapColor.COLOR_LIGHT_BLUE);
+   public static final DeferredBlock<Block> INDUSTRIAL_FLUID_BUS = metal("industrial_fluid_bus", MapColor.COLOR_CYAN);
+   public static final DeferredBlock<Block> INDUSTRIAL_DATA_BUS = metal("industrial_data_bus", MapColor.COLOR_CYAN);
+   public static final DeferredBlock<Block> REINFORCED_MACHINE_CASING = metal("reinforced_machine_casing", MapColor.METAL);
+   public static final DeferredBlock<Block> FACTORY_FLOOR_PANEL = metal("factory_floor_panel", MapColor.COLOR_BLACK);
+   public static final DeferredBlock<Block> INDUSTRIAL_WORKCELL_FRAME = metal("industrial_workcell_frame", MapColor.COLOR_GRAY);
+   public static final DeferredBlock<Block> ROBOTIC_ARM_MOUNT = BLOCKS.registerBlock(
+      "robotic_arm_mount",
+      IndustrialRoboticArmMountBlock::new,
+      p -> p.mapColor(MapColor.COLOR_GRAY).strength(3.5F, 8.0F).sound(SoundType.METAL).noOcclusion()
+   );
+   public static final DeferredBlock<Block> INPUT_DEPOT_CRATE = BLOCKS.registerBlock(
+      "input_depot_crate",
+      properties -> new IndustrialMultiblockCrateBlock(MultiblockCrateBlock.CrateKind.INPUT, properties),
+      p -> p.mapColor(MapColor.WOOD).strength(2.5F, 4.0F).sound(SoundType.WOOD)
+   );
+   public static final DeferredBlock<Block> OUTPUT_DEPOT_CRATE = BLOCKS.registerBlock(
+      "output_depot_crate",
+      properties -> new IndustrialMultiblockCrateBlock(MultiblockCrateBlock.CrateKind.OUTPUT, properties),
+      p -> p.mapColor(MapColor.WOOD).strength(2.5F, 4.0F).sound(SoundType.WOOD)
+   );
+   public static final DeferredBlock<Block> INDUSTRIAL_STORAGE_CRATE = metal("industrial_storage_crate", MapColor.WOOD);
+   public static final DeferredBlock<Block> COOLANT_TANK = glass("coolant_tank", MapColor.COLOR_CYAN);
+   public static final DeferredBlock<Block> MATERIAL_HOPPER = metal("material_hopper", MapColor.COLOR_GRAY);
+   public static final DeferredBlock<Block> ASSEMBLY_GANTRY_RAIL = metal("assembly_gantry_rail", MapColor.COLOR_GRAY);
+   public static final DeferredBlock<Block> WARNING_LIGHT = glass("warning_light", MapColor.TERRACOTTA_RED);
+   public static final DeferredBlock<Block> MACHINE_STATUS_PANEL = glass("machine_status_panel", MapColor.COLOR_CYAN);
    public static final List<DeferredBlock<Block>> ALL_BLOCKS = List.of(
       SCRAP_DYNAMO,
       THERMAL_ARRAY,
@@ -179,7 +241,32 @@ public final class ModBlocks {
       CONVEYOR_FLOOR,
       SMOKE_VENT,
       PRESSURE_GAUGE_BLOCK,
-      COOLING_FAN_BLOCK
+      COOLING_FAN_BLOCK,
+      INDUSTRIAL_CONTROLLER,
+      INDUSTRIAL_ASSEMBLY_LINE_CONTROLLER,
+      RECIPE_MATRIX_CORE,
+      SCRAP_PROCESSOR_CONTROLLER,
+      PLATE_PRESS_CONTROLLER,
+      CIRCUIT_FABRICATOR_CONTROLLER,
+      MACHINE_FRAME_ASSEMBLER_CONTROLLER,
+      COOLING_STATION_CONTROLLER,
+      INSPECTION_SCANNER_CONTROLLER,
+      INDUSTRIAL_POWER_BUS,
+      INDUSTRIAL_ITEM_BUS,
+      INDUSTRIAL_FLUID_BUS,
+      INDUSTRIAL_DATA_BUS,
+      REINFORCED_MACHINE_CASING,
+      FACTORY_FLOOR_PANEL,
+      INDUSTRIAL_WORKCELL_FRAME,
+      ROBOTIC_ARM_MOUNT,
+      INPUT_DEPOT_CRATE,
+      OUTPUT_DEPOT_CRATE,
+      INDUSTRIAL_STORAGE_CRATE,
+      COOLANT_TANK,
+      MATERIAL_HOPPER,
+      ASSEMBLY_GANTRY_RAIL,
+      WARNING_LIGHT,
+      MACHINE_STATUS_PANEL
    );
 
    private ModBlocks() {
@@ -217,6 +304,14 @@ public final class ModBlocks {
          name,
          properties -> new IndustrialFluidPipeBlock(tier, properties),
          p -> p.mapColor(color).strength(2.0F, 5.0F).sound(SoundType.COPPER).noOcclusion()
+      );
+   }
+
+   private static DeferredBlock<Block> industrialController(String name, String definitionPath, Identifier defaultTask) {
+      return BLOCKS.registerBlock(
+         name,
+         properties -> new IndustrialMultiblockControllerBlock(EchoIndustrialNexus.id(definitionPath), defaultTask, properties),
+         p -> p.mapColor(MapColor.COLOR_CYAN).strength(4.0F, 8.0F).sound(SoundType.METAL).noOcclusion()
       );
    }
 

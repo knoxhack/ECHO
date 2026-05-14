@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/greenhouse_glass"
+    "model": "echoagriculturereclamation:item/greenhouse_glass"
   }
 }

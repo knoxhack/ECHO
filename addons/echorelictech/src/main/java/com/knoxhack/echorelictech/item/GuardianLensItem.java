@@ -1,9 +1,11 @@
 package com.knoxhack.echorelictech.item;
 
 import com.knoxhack.echorelictech.api.RelicTechApi;
+import com.knoxhack.echorelictech.api.event.RelicTechEvents;
 import com.knoxhack.echorelictech.api.relic.RelicCondition;
 import com.knoxhack.echorelictech.api.relic.RelicInstanceData;
 import com.knoxhack.echorelictech.config.RelicTechConfig;
+import com.knoxhack.echorelictech.data.RelicDefinitionLoader;
 import com.knoxhack.echorelictech.registry.ModDataComponents;
 import com.knoxhack.echorelictech.server.RelicInstabilityManager;
 import net.minecraft.core.BlockPos;
@@ -40,7 +42,7 @@ public class GuardianLensItem extends Item {
         }
 
         if (!data.identified()) {
-            serverPlayer.sendSystemMessage(Component.literal("This relic is unidentified. Analyze it first."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.relic.unidentified"));
             return InteractionResult.FAIL;
         }
 
@@ -49,24 +51,27 @@ public class GuardianLensItem extends Item {
         boolean found = false;
         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius))) {
             if (level.getBlockEntity(pos) instanceof com.knoxhack.echorelictech.block.entity.RelicAnalyzerBlockEntity ||
-                level.getBlockEntity(pos) instanceof com.knoxhack.echorelictech.block.entity.ContainmentLockerBlockEntity) {
+                level.getBlockEntity(pos) instanceof com.knoxhack.echorelictech.block.entity.ContainmentLockerBlockEntity ||
+                level.getBlockEntity(pos) instanceof com.knoxhack.echorelictech.block.entity.NullBatteryDockBlockEntity ||
+                level.getBlockEntity(pos) instanceof com.knoxhack.echorelictech.block.entity.PrototypeWorkbenchBlockEntity) {
                 found = true;
                 break;
             }
         }
         if (found) {
-            serverPlayer.sendSystemMessage(Component.literal("Guardian Lens // Relic machine signature detected within " + radius + " blocks."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.guardian_lens.detected", radius));
         } else {
-            serverPlayer.sendSystemMessage(Component.literal("Guardian Lens // No relic traces detected."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.guardian_lens.none", radius));
         }
         RelicInstabilityManager.addInstability(serverPlayer, 5);
+        RelicTechEvents.fireUse(serverPlayer, Identifier.fromNamespaceAndPath("echorelictech", "guardian_lens"), stack);
         RelicTechApi.tryTriggerFailure(serverPlayer, stack, new com.knoxhack.echorelictech.api.relic.RelicUseContext(level, player, stack, player.blockPosition(), false));
         return InteractionResult.SUCCESS;
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.literal("Scan radius: " + RelicTechConfig.GUARDIAN_LENS_SCAN_RADIUS.get()));
-        tooltip.accept(Component.literal("Deep scan risk: Nexus attention possible."));
+        tooltip.accept(Component.translatable("item.echorelictech.guardian_lens.scan_radius", RelicTechConfig.GUARDIAN_LENS_SCAN_RADIUS.get()));
+        tooltip.accept(Component.translatable("item.echorelictech.guardian_lens.risk"));
     }
 }

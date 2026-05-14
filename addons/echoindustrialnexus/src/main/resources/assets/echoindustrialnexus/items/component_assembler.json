@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoindustrialnexus:block/component_assembler"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoindustrialnexus:item/component_assembler"
+  }
+}

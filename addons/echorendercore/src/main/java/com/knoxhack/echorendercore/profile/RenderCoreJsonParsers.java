@@ -28,6 +28,23 @@ public final class RenderCoreJsonParsers {
    private RenderCoreJsonParsers() {
    }
 
+   public static int visualSchemaVersion(JsonObject json) {
+      return integerEither(json, "schema_version", "schemaVersion", 1);
+   }
+
+   public static boolean visualProfileRequiresMigration(JsonObject json) {
+      return visualSchemaVersion(json) != VisualProfile.CURRENT_SCHEMA_VERSION;
+   }
+
+   public static VisualProfile parseRuntimeVisualProfile(Identifier id, JsonObject json) {
+      int schemaVersion = visualSchemaVersion(json);
+      if (schemaVersion != VisualProfile.CURRENT_SCHEMA_VERSION) {
+         throw new JsonParseException("migration_required: profile uses schema_version " + schemaVersion
+            + " and RenderCore runtime requires schema_version " + VisualProfile.CURRENT_SCHEMA_VERSION + ".");
+      }
+      return parseVisualProfile(id, json);
+   }
+
    public static VisualProfile parseVisualProfile(Identifier id, JsonObject json) {
       Identifier baseTexture = identifier(json, "base_texture", null);
       if (baseTexture == null) {
@@ -49,11 +66,13 @@ public final class RenderCoreJsonParsers {
          stateIdentifierMap(objectEither(json, "state_texture_variants", "stateTextureVariants")),
          variantTextures(objectEither(json, "variants", "variant_textures")),
          anchors(object(json, "anchors")),
-         integerEither(json, "schema_version", "schemaVersion", 1),
+         visualSchemaVersion(json),
          decimalEither(json, "transition_seconds", "transitionSeconds", 0.15F),
          visualLayers(json),
          materials(object(json, "materials")),
-         blockParts(objectEither(json, "block_parts", "blockParts"))
+         blockParts(objectEither(json, "block_parts", "blockParts")),
+         includes(array(json, "includes")),
+         effect(objectEither(json, "effect", "effects"), VisualEffectProfile.NONE)
       );
    }
 
@@ -225,7 +244,17 @@ public final class RenderCoreJsonParsers {
          stringList(arrayAny(json, "parts", "part_filter", "partFilter")),
          color(json, "color", 0xFFFFFFFF),
          decimal(json, "alpha", 1.0F),
-         bool(json, "emissive", false)
+         bool(json, "emissive", false),
+         VisualLightMode.byName(stringEither(json, "light_mode", "lightMode", "profile")),
+         VisualRenderPass.byName(stringEither(json, "render_pass", "renderPass", "auto")),
+         optionalBoolEither(json, "cull", "cull"),
+         optionalBoolEither(json, "depth_write", "depthWrite"),
+         integerEither(json, "sort_order", "sortOrder", 0),
+         optionalIntegerEither(json, "light_override", "lightOverride"),
+         optionalIntegerEither(json, "overlay_override", "overlayOverride"),
+         optionalColorEither(json, "outline_color", "outlineColor"),
+         integerEither(json, "render_priority", "renderPriority", 0),
+         effect(objectEither(json, "effect", "effects"), VisualEffectProfile.NONE)
       );
    }
 
@@ -250,10 +279,77 @@ public final class RenderCoreJsonParsers {
             color(material, "color", 0xFFFFFFFF),
             decimal(material, "alpha", 1.0F),
             bool(material, "emissive", false),
-            AnimationBlendMode.byName(stringEither(material, "blend_mode", "blendMode", "replace"))
+            AnimationBlendMode.byName(stringEither(material, "blend_mode", "blendMode", "replace")),
+            VisualLightMode.byName(stringEither(material, "light_mode", "lightMode", "profile")),
+            VisualRenderPass.byName(stringEither(material, "render_pass", "renderPass", "auto")),
+            optionalBoolEither(material, "cull", "cull"),
+            optionalBoolEither(material, "depth_write", "depthWrite"),
+            integerEither(material, "sort_order", "sortOrder", 0),
+            optionalIntegerEither(material, "light_override", "lightOverride"),
+            optionalIntegerEither(material, "overlay_override", "overlayOverride"),
+            optionalColorEither(material, "outline_color", "outlineColor"),
+            integerEither(material, "render_priority", "renderPriority", 0),
+            effect(objectEither(material, "effect", "effects"), VisualEffectProfile.NONE)
          ));
       }
       return materials;
+   }
+
+   private static VisualEffectProfile effect(JsonObject json, VisualEffectProfile fallback) {
+      if (json == null) {
+         return fallback == null ? VisualEffectProfile.NONE : fallback;
+      }
+      return new VisualEffectProfile(
+         VisualEffectKind.byName(stringEither(json, "preset", "kind", string(json, "type", "none"))),
+         decimalEither(json, "glow_intensity", "glowIntensity", 0.0F),
+         decimalEither(json, "bloom_intensity", "bloomIntensity", 0.0F),
+         decimalEither(json, "pulse_speed", "pulseSpeed", 0.0F),
+         decimalEither(json, "pulse_min_alpha", "pulseMinAlpha", 1.0F),
+         decimalEither(json, "pulse_max_alpha", "pulseMaxAlpha", 1.0F),
+         decimalEither(json, "flicker_intensity", "flickerIntensity", 0.0F),
+         decimalEither(json, "scanline_strength", "scanlineStrength", 0.0F),
+         decimalEither(json, "hue_shift_speed", "hueShiftSpeed", 0.0F),
+         decimalEither(json, "depth_bias", "depthBias", 0.0F),
+         boolEither(json, "advanced_enabled", "advancedEnabled", false),
+         decimalEither(json, "bloom_radius", "bloomRadius", 0.0F),
+         decimalEither(json, "bloom_threshold", "bloomThreshold", 1.0F),
+         integerEither(json, "bloom_passes", "bloomPasses", 0),
+         decimalEither(json, "screen_blend", "screenBlend", 0.0F),
+         VisualEffectTargetScope.byName(stringEither(json, "target_scope", "targetScope", "profile")),
+         VisualEffectBloomMaskMode.byName(stringEither(json, "bloom_mask_mode", "bloomMaskMode", "auto")),
+         optionalColorEither(json, "bloom_tint", "bloomTint"),
+         optionalDecimalEither(json, "bloom_mask_alpha", "bloomMaskAlpha"),
+         stringEither(json, "bloom_channel", "bloomChannel", "default"),
+         optionalIntegerEither(json, "bloom_downscale", "bloomDownscale"),
+         integerEither(json, "advanced_priority", "advancedPriority", 0)
+      );
+   }
+
+   private static List<VisualProfileReference> includes(JsonArray array) {
+      if (array == null) {
+         return List.of();
+      }
+      List<VisualProfileReference> references = new ArrayList<>();
+      for (int i = 0; i < array.size(); i++) {
+         JsonElement element = array.get(i);
+         if (element.isJsonPrimitive()) {
+            references.add(new VisualProfileReference(Identifier.parse(stringElement(element, "includes." + i)), Set.of(), Set.of()));
+         } else if (element.isJsonObject()) {
+            JsonObject json = element.getAsJsonObject();
+            Identifier profile = identifier(json, "profile", identifier(json, "id", null));
+            if (profile == null) {
+               throw new JsonParseException("Include " + i + " is missing profile.");
+            }
+            references.add(new VisualProfileReference(
+               profile,
+               states(array(json, "states"), string(json, "state", "")),
+               variants(array(json, "variants"), string(json, "variant", ""))
+            ));
+         } else {
+            throw new JsonParseException("Include " + i + " must be a string or object.");
+         }
+      }
+      return references;
    }
 
    private static Map<String, BlockPartSelectorProfile> blockParts(JsonObject json) {
@@ -563,6 +659,14 @@ public final class RenderCoreJsonParsers {
       return element == null || element.isJsonNull() ? fallback : element.getAsFloat();
    }
 
+   private static Float optionalDecimalEither(JsonObject json, String first, String second) {
+      JsonElement element = json.get(first);
+      if (element == null || element.isJsonNull()) {
+         element = json.get(second);
+      }
+      return element == null || element.isJsonNull() ? null : element.getAsFloat();
+   }
+
    private static int integerEither(JsonObject json, String first, String second, int fallback) {
       JsonElement element = json.get(first);
       if (element == null || element.isJsonNull()) {
@@ -595,6 +699,21 @@ public final class RenderCoreJsonParsers {
          element = json.get(second);
       }
       return element == null || element.isJsonNull() ? null : element.getAsBoolean();
+   }
+
+   private static Integer optionalIntegerEither(JsonObject json, String first, String second) {
+      JsonElement element = json.get(first);
+      if (element == null || element.isJsonNull()) {
+         element = json.get(second);
+      }
+      return element == null || element.isJsonNull() ? null : element.getAsInt();
+   }
+
+   private static Integer optionalColorEither(JsonObject json, String first, String second) {
+      if (json.has(first) && !json.get(first).isJsonNull()) {
+         return color(json, first, 0);
+      }
+      return json.has(second) && !json.get(second).isJsonNull() ? color(json, second, 0) : null;
    }
 
    private static JsonArray arrayOrSingle(JsonObject json, String key) {

@@ -1,8 +1,11 @@
 package com.knoxhack.echorelictech.item;
 
 import com.knoxhack.echorelictech.api.RelicTechApi;
+import com.knoxhack.echorelictech.api.event.RelicTechEvents;
 import com.knoxhack.echorelictech.api.relic.RelicCondition;
 import com.knoxhack.echorelictech.api.relic.RelicInstanceData;
+import com.knoxhack.echorelictech.config.RelicTechConfig;
+import com.knoxhack.echorelictech.data.RelicDefinitionLoader;
 import com.knoxhack.echorelictech.registry.ModDataComponents;
 import com.knoxhack.echorelictech.server.RelicInstabilityManager;
 import net.minecraft.core.BlockPos;
@@ -41,22 +44,53 @@ public class EchoMirrorItem extends Item {
         }
 
         if (!data.identified()) {
-            serverPlayer.sendSystemMessage(Component.literal("This relic is unidentified. Analyze it first."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.relic.unidentified"));
             return InteractionResult.FAIL;
         }
 
+        int cooldown = getCooldownTicks();
+        if (data.cooldownRemaining() > 0) {
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.echo_mirror.cooldown"));
+            return InteractionResult.FAIL;
+        }
+
+        int chargeCost = getNullChargeCost();
+        if (chargeCost > 0 && !RelicTechApi.consumeNullCharge(serverPlayer, chargeCost)) {
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.relic.no_null_charge"));
+            return InteractionResult.FAIL;
+        }
+
+        // Apply invisibility and resistance to the player
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 200, 0));
         player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 100, 0));
-        serverPlayer.sendSystemMessage(Component.literal("Echo projection active. Hostile attention diverted."));
+
+        // Spawn decoy projections
+        EchoMirrorDecoyTracker.spawnDecoys(serverPlayer);
+
+        serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.echo_mirror.activated"));
         RelicInstabilityManager.addInstability(serverPlayer, 12);
+        stack.set(ModDataComponents.RELIC_DATA.get(), data.withCooldown(cooldown));
+        RelicTechEvents.fireUse(serverPlayer, Identifier.fromNamespaceAndPath("echorelictech", "echo_mirror"), stack);
         RelicTechApi.tryTriggerFailure(serverPlayer, stack, new com.knoxhack.echorelictech.api.relic.RelicUseContext(level, player, stack, player.blockPosition(), false));
         return InteractionResult.SUCCESS;
     }
 
+    private int getCooldownTicks() {
+        var def = RelicDefinitionLoader.get(Identifier.fromNamespaceAndPath("echorelictech", "echo_mirror"));
+        if (def != null && def.cooldownTicks() > 0) return def.cooldownTicks();
+        return RelicTechConfig.ECHO_MIRROR_COOLDOWN_TICKS.get();
+    }
+
+    private int getNullChargeCost() {
+        var def = RelicDefinitionLoader.get(Identifier.fromNamespaceAndPath("echorelictech", "echo_mirror"));
+        if (def != null) return def.nullChargeCost();
+        return 1;
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.literal("Creates temporary Echo projection."));
-        tooltip.accept(Component.literal("Tier: Forbidden"));
-        tooltip.accept(Component.literal("Risk: Hostile echo event possible."));
+        tooltip.accept(Component.translatable("item.echorelictech.echo_mirror.description"));
+        tooltip.accept(Component.translatable("relictech.tier.label", Component.translatable("relictech.tier.forbidden")));
+        tooltip.accept(Component.translatable("item.echorelictech.echo_mirror.risk"));
     }
 }

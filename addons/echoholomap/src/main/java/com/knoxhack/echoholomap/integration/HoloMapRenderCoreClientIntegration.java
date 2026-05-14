@@ -1,0 +1,22 @@
+package com.knoxhack.echoholomap.integration;
+
+import com.knoxhack.echorendercore.client.RenderCoreScreenFrameOptions;
+import com.knoxhack.echorendercore.client.RenderCoreScreenVisuals;
+import com.knoxhack.echoholomap.EchoHoloMap;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
+
+public final class HoloMapRenderCoreClientIntegration {
+   private static final Identifier MINIMAP_PROFILE = Identifier.fromNamespaceAndPath(EchoHoloMap.MODID, "screen/minimap");
+   private static final RenderCoreScreenFrameOptions MINIMAP_FRAME_OPTIONS =
+      new RenderCoreScreenFrameOptions("HOLOMAP", true, false, false, true, false);
+
+   private HoloMapRenderCoreClientIntegration() {
+   }
+
+   public static void drawMinimapFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+      RenderCoreScreenVisuals.drawFrame(graphics, Minecraft.getInstance().font, () -> MINIMAP_PROFILE,
+         x, y, width, height, MINIMAP_FRAME_OPTIONS);
+   }
+}

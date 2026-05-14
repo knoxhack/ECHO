@@ -2,22 +2,22 @@
   "id": "echorelictech:guardian_lens",
   "entries": [
     {
-      "severity": "MINOR",
+      "severity": "minor",
       "weight": 60,
       "message": "Lens feedback loop created false positive.",
-      "effects": ["FIZZLE"]
+      "effects": ["fizzle"]
     },
     {
-      "severity": "MEDIUM",
+      "severity": "medium",
       "weight": 30,
       "message": "Scanner attracted a hostile signal.",
-      "effects": ["HOSTILE_SIGNAL", "ADD_INSTABILITY"]
+      "effects": ["hostile_signal", "add_instability"]
     },
     {
-      "severity": "MAJOR",
+      "severity": "major",
       "weight": 10,
       "message": "Lens overload caused temporary blindness.",
-      "effects": ["ADD_DEBUFF", "DAMAGE_ITEM"]
+      "effects": ["add_debuff", "damage_item"]
     }
   ]
 }

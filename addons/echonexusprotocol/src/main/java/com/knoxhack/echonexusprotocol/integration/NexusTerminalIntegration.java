@@ -319,6 +319,7 @@ public final class NexusTerminalIntegration {
       public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics,
             int mouseX, int mouseY, float partialTick) {
          NexusPlayerData data = NexusPlayerData.get(context.player());
+         NexusFieldMapPlanner.Analysis analysis = NexusFieldMapPlanner.analyze(data);
          int x = context.contentX() + 10;
          int y = context.contentY() - context.scrollY() + 8;
          int width = Math.max(250, context.contentWidth() - 20);
@@ -329,17 +330,18 @@ public final class NexusTerminalIntegration {
             x + 14, cy, width - 28, TerminalUi.MUTED);
 
          int gridY = y + 102;
-         int cell = Math.max(34, Math.min(52, (width - 18) / NexusPlayerData.FIELD_MAP_DIAMETER));
+         int cell = Math.max(46, Math.min(52, (width - 18) / NexusPlayerData.FIELD_MAP_DIAMETER));
          int gridW = cell * NexusPlayerData.FIELD_MAP_DIAMETER;
          int gridX = x + Math.max(0, (width - gridW) / 2);
          var font = Minecraft.getInstance().font;
          int index = 0;
          for (int row = 0; row < NexusPlayerData.FIELD_MAP_DIAMETER; row++) {
             for (int col = 0; col < NexusPlayerData.FIELD_MAP_DIAMETER; col++) {
-               int field = data.telemetryMapField(index);
-               NexusWorldData.FieldState state = NexusWorldData.FieldState.fromValue(field);
+               NexusFieldMapPlanner.CellRisk cellRisk = analysis.cell(index);
+               int field = cellRisk.field();
+               NexusWorldData.FieldState state = cellRisk.state();
                int fill = cellFill(state);
-               int border = row == NexusPlayerData.FIELD_MAP_RADIUS && col == NexusPlayerData.FIELD_MAP_RADIUS ? 0xFFFFFFFF : stateColor(state);
+               int border = cellBorder(analysis, cellRisk, state);
                int cx = gridX + col * cell;
                int cz = gridY + row * cell;
                graphics.fill(cx, cz, cx + cell - 2, cz + cell - 2, fill);
@@ -347,27 +349,34 @@ public final class NexusTerminalIntegration {
                graphics.fill(cx, cz + cell - 3, cx + cell - 2, cz + cell - 2, border);
                graphics.fill(cx, cz, cx + 1, cz + cell - 2, border);
                graphics.fill(cx + cell - 3, cz, cx + cell - 2, cz + cell - 2, border);
-               String label = abbreviation(state);
-               graphics.text(font, label, cx + 5, cz + 5, 0xFFFFFFFF, false);
-               graphics.text(font, Integer.toString(field), cx + 5, cz + 16, 0xFFBFEFFF, false);
-               String flags = flags(data, index);
-               if (!flags.isBlank()) {
-                  graphics.text(font, flags, cx + 5, cz + 27, 0xFFFFA7D8, false);
+               if (cellRisk.corruption() > 0) {
+                  int barWidth = Math.max(2, (cell - 7) * cellRisk.corruption() / 100);
+                  graphics.fill(cx + 3, cz + cell - 7, cx + 3 + barWidth, cz + cell - 5,
+                     cellRisk.corruption() >= 45 ? TerminalUi.RED : TerminalUi.AMBER);
                }
+               String label = abbreviation(state) + (cellRisk.isCenter() ? "*" : "");
+               graphics.text(font, label, cx + 5, cz + 5, 0xFFFFFFFF, false);
+               graphics.text(font, field + "%", cx + 5, cz + 17, 0xFFBFEFFF, false);
+               String flags = flags(cellRisk);
+               graphics.text(font, flags.isBlank() ? "R" + cellRisk.risk() : flags, cx + 5, cz + 29,
+                  flags.isBlank() ? 0xFFBFEFFF : 0xFFFFA7D8, false);
                index++;
             }
          }
 
          int legendY = gridY + gridW + 16;
          legendY = TerminalUi.sectionHeader(context, graphics, "RECOVERY READOUT", "map guidance", x, legendY, width, ACCENT);
+         legendY = TerminalUi.objectiveRow(context, graphics, x, legendY, width,
+            "Safest adjacent", safestGuidance(analysis), false, TerminalUi.GREEN);
+         legendY = TerminalUi.objectiveRow(context, graphics, x, legendY, width,
+            "Priority recovery", priorityGuidance(analysis), false, recoveryColor(analysis));
          TerminalUi.objectiveRow(context, graphics, x, legendY, width,
-            "Collapsed cells", "Approach from adjacent safer chunks. Use Stabilized Purity Charges, Field Anchors, and Stabilizer overdrive before restarting dirty machines.",
-            false, TerminalUi.RED);
+            "Hazard summary", hazardSummary(analysis), !analysis.hasHazards(), analysis.hasHazards() ? TerminalUi.RED : TerminalUi.GREEN);
       }
 
       @Override
       public int contentHeight(TerminalRenderContext context) {
-         return 430;
+         return 500;
       }
 
       private static int cellFill(NexusWorldData.FieldState state) {
@@ -399,19 +408,74 @@ public final class NexusTerminalIntegration {
          };
       }
 
-      private static String flags(NexusPlayerData data, int index) {
-         StringBuilder builder = new StringBuilder();
-         if (data.telemetryMapStorm(index)) {
-            builder.append("!");
+      private static int cellBorder(NexusFieldMapPlanner.Analysis analysis, NexusFieldMapPlanner.CellRisk cell, NexusWorldData.FieldState state) {
+         if (cell.isCenter()) {
+            return 0xFFFFFFFF;
          }
-         if (data.telemetryMapTears(index) > 0) {
+         if (analysis.highestRisk() != null && cell.index() == analysis.highestRisk().index()) {
+            return TerminalUi.RED;
+         }
+         if (analysis.safestAdjacent() != null && cell.index() == analysis.safestAdjacent().index()) {
+            return TerminalUi.GREEN;
+         }
+         return stateColor(state);
+      }
+
+      private static String flags(NexusFieldMapPlanner.CellRisk cell) {
+         StringBuilder builder = new StringBuilder();
+         if (cell.storm()) {
+            builder.append("STM");
+         }
+         if (cell.tears() > 0) {
             if (!builder.isEmpty()) {
                builder.append(' ');
             }
-            builder.append('T').append(data.telemetryMapTears(index));
+            builder.append('T').append(cell.tears());
          }
-         if (builder.isEmpty() && data.telemetryMapCorruption(index) > 0) {
-            builder.append(data.telemetryMapCorruption(index)).append('%');
+         return builder.toString();
+      }
+
+      private static String safestGuidance(NexusFieldMapPlanner.Analysis analysis) {
+         NexusFieldMapPlanner.CellRisk cell = analysis.safestAdjacent();
+         if (cell == null) {
+            return "No adjacent field telemetry is available.";
+         }
+         return "Move " + cell.directionLabel() + " for the safest work chunk: field " + cell.field()
+            + "%, corruption " + cell.corruption() + "%, risk " + cell.risk() + ".";
+      }
+
+      private static String priorityGuidance(NexusFieldMapPlanner.Analysis analysis) {
+         NexusFieldMapPlanner.CellRisk cell = analysis.highestRisk();
+         if (cell == null) {
+            return "No recovery target is available.";
+         }
+         return "Stabilize " + offsetLabel(cell) + " first: " + cell.state().name().toLowerCase(java.util.Locale.ROOT)
+            + ", field " + cell.field() + "%, risk " + cell.risk() + ".";
+      }
+
+      private static String hazardSummary(NexusFieldMapPlanner.Analysis analysis) {
+         return analysis.collapsedCells() + " collapsed, " + analysis.stormCells() + " storming, "
+            + analysis.tearCells() + " tear-marked cells in local map.";
+      }
+
+      private static int recoveryColor(NexusFieldMapPlanner.Analysis analysis) {
+         NexusFieldMapPlanner.CellRisk cell = analysis.highestRisk();
+         return cell != null && cell.risk() >= 100 ? TerminalUi.RED : TerminalUi.AMBER;
+      }
+
+      private static String offsetLabel(NexusFieldMapPlanner.CellRisk cell) {
+         if (cell.isCenter()) {
+            return "current chunk";
+         }
+         StringBuilder builder = new StringBuilder();
+         if (cell.dx() != 0) {
+            builder.append(Math.abs(cell.dx())).append(cell.dx() > 0 ? " east" : " west");
+         }
+         if (cell.dz() != 0) {
+            if (!builder.isEmpty()) {
+               builder.append(", ");
+            }
+            builder.append(Math.abs(cell.dz())).append(cell.dz() > 0 ? " south" : " north");
          }
          return builder.toString();
       }

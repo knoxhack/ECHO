@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echoashfallprotocol:block/emergency_bunk",
+    "north": "echoashfallprotocol:block/emergency_bunk",
+    "south": "echoashfallprotocol:block/emergency_bunk",
+    "east": "echoashfallprotocol:block/emergency_bunk",
+    "west": "echoashfallprotocol:block/emergency_bunk",
+    "up": "echoashfallprotocol:block/emergency_bunk",
+    "down": "echoashfallprotocol:block/emergency_bunk"
+  }
+}

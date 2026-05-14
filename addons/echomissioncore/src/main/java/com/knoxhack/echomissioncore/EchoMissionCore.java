@@ -3,6 +3,7 @@ package com.knoxhack.echomissioncore;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echomissioncore.command.MissionCoreCommands;
 import com.knoxhack.echomissioncore.content.MissionCoreReloaders;
+import com.knoxhack.echomissioncore.integration.MissionCoreIndexProvider;
 import com.knoxhack.echomissioncore.integration.MissionCoreTerminalIntegration;
 import com.knoxhack.echomissioncore.integration.MissionCoreWorldCoreConsumer;
 import com.knoxhack.echomissioncore.registry.ModAttachments;
@@ -34,6 +35,7 @@ public final class EchoMissionCore {
         event.enqueueWork(() -> {
             EchoCoreServices.registerMissionService(MissionCoreService.INSTANCE);
             MissionCoreService.INSTANCE.registerBuiltInContent();
+            EchoCoreServices.registerIndexRecipeProvider(MissionCoreIndexProvider.INSTANCE);
             MissionCoreWorldCoreConsumer.register();
             if (ModList.get().isLoaded("echoterminal")) {
                 MissionCoreTerminalIntegration.register();

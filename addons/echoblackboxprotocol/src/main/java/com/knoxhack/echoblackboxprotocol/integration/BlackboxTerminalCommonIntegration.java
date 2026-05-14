@@ -6,6 +6,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.neoforged.fml.ModList;
 
 public final class BlackboxTerminalCommonIntegration {
    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
@@ -15,7 +16,12 @@ public final class BlackboxTerminalCommonIntegration {
 
    public static void register() {
       if (REGISTERED.compareAndSet(false, true)) {
-         TerminalMissionRegistry.register(BlackboxMissionProvider.INSTANCE);
+         boolean missionCoreLoaded = ModList.get().isLoaded("echomissioncore");
+         if (missionCoreLoaded) {
+            BlackboxMissionCoreIntegration.register();
+         } else {
+            TerminalMissionRegistry.register(BlackboxMissionProvider.INSTANCE);
+         }
          TerminalMissionActions.registerForTab(BlackboxTerminalIds.ACCESS_TAB);
          TerminalMissionActions.registerForTab(BlackboxTerminalIds.ARCHIVE_TAB);
          TerminalMissionActions.registerForTab(BlackboxTerminalIds.TRUTH_TAB);

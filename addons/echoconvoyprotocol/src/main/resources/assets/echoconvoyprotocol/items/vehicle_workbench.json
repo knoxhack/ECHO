@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoconvoyprotocol:block/vehicle_workbench"
+    "model": "echoconvoyprotocol:item/vehicle_workbench"
   }
 }

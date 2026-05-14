@@ -24,25 +24,27 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Items;
 
 public final class ConvoyJsonReloadListener extends SimplePreparableReloadListener<Map<Identifier, ConvoyRouteDefinition>> {
-   private static final String ROUTE_DIR = "echoconvoyprotocol/convoy_routes";
+   private static final List<String> ROUTE_DIRS = List.of("convoy_routes", "echoconvoyprotocol/convoy_routes");
 
    @Override
    protected Map<Identifier, ConvoyRouteDefinition> prepare(ResourceManager manager, ProfilerFiller profiler) {
       Map<Identifier, ConvoyRouteDefinition> routes = new LinkedHashMap<>();
-      for (Map.Entry<Identifier, Resource> entry : manager.listResources(ROUTE_DIR, id -> id.getPath().endsWith(".json")).entrySet()) {
-         Identifier resourceId = entry.getKey();
-         Identifier id = contentId(resourceId);
-         try (Reader reader = entry.getValue().openAsReader()) {
-            JsonElement root = JsonParser.parseReader(reader);
-            if (!root.isJsonObject()) {
-               throw new JsonParseException("Root must be a JSON object.");
+      for (String routeDir : ROUTE_DIRS) {
+         for (Map.Entry<Identifier, Resource> entry : manager.listResources(routeDir, id -> id.getPath().endsWith(".json")).entrySet()) {
+            Identifier resourceId = entry.getKey();
+            Identifier id = contentId(resourceId);
+            try (Reader reader = entry.getValue().openAsReader()) {
+               JsonElement root = JsonParser.parseReader(reader);
+               if (!root.isJsonObject()) {
+                  throw new JsonParseException("Root must be a JSON object.");
+               }
+               ConvoyRouteDefinition route = parseRoute(id, root.getAsJsonObject());
+               if (routes.putIfAbsent(id, route) != null) {
+                  EchoConvoyProtocol.LOGGER.warn("Duplicate Convoy route id {} from {} ignored.", id, resourceId);
+               }
+            } catch (IOException | RuntimeException exception) {
+               EchoConvoyProtocol.LOGGER.warn("Could not parse Convoy route file {}.", resourceId, exception);
             }
-            ConvoyRouteDefinition route = parseRoute(id, root.getAsJsonObject());
-            if (routes.putIfAbsent(id, route) != null) {
-               EchoConvoyProtocol.LOGGER.warn("Duplicate Convoy route id {} from {} ignored.", id, resourceId);
-            }
-         } catch (IOException | RuntimeException exception) {
-            EchoConvoyProtocol.LOGGER.warn("Could not parse Convoy route file {}.", resourceId, exception);
          }
       }
       return routes;
@@ -87,7 +89,22 @@ public final class ConvoyJsonReloadListener extends SimplePreparableReloadListen
          string(json, "destinationHint", "Overworld roadside corridor"),
          positiveInteger(id, json, "requiredSignalMarkers", legs.isEmpty() ? 1 : legs.size()),
          nonNegativeInteger(id, json, "minDistanceFromStart", maxLegDistance(legs, 24)),
-         legs
+         legs,
+         string(json, "missionType", "delivery"),
+         nonNegativeInteger(id, json, "distance", maxLegDistance(legs, 24)),
+         string(json, "biomeTheme", string(json, "theme", "ruined_highway")),
+         nonNegativeInteger(id, json, "fuelCost", minFuel),
+         nonNegativeInteger(id, json, "cargoCapacityRecommendation", 1),
+         boundedInteger(id, json, "requiredReadiness", 50, 0, 100),
+         stringArray(json, "possibleHazards"),
+         holomapIcon(json),
+         holomapColor(json),
+         string(json, "unlockRequirement", ""),
+         string(json, "logisticsNetworkId", "global"),
+         optionalIdentifier(json, "logisticsLoadoutId"),
+         bool(json, "autoRequestCargo", false),
+         holomapLayer(json),
+         fieldOps(id, json, legs, string(json, "biomeTheme", string(json, "theme", "ruined_highway")))
       );
    }
 
@@ -190,9 +207,12 @@ public final class ConvoyJsonReloadListener extends SimplePreparableReloadListen
 
    private static Identifier contentId(Identifier resourceId) {
       String path = resourceId.getPath();
-      String prefix = ROUTE_DIR + "/";
-      if (path.startsWith(prefix)) {
-         path = path.substring(prefix.length());
+      for (String routeDir : ROUTE_DIRS) {
+         String prefix = routeDir + "/";
+         if (path.startsWith(prefix)) {
+            path = path.substring(prefix.length());
+            break;
+         }
       }
       if (path.endsWith(".json")) {
          path = path.substring(0, path.length() - ".json".length());
@@ -205,6 +225,61 @@ public final class ConvoyJsonReloadListener extends SimplePreparableReloadListen
       return element != null && element.isJsonArray() ? element.getAsJsonArray() : null;
    }
 
+   private static List<String> stringArray(JsonObject json, String key) {
+      JsonArray array = array(json, key);
+      if (array == null) {
+         return List.of();
+      }
+      List<String> values = new ArrayList<>();
+      for (JsonElement element : array) {
+         if (!element.isJsonNull()) {
+            String value = element.getAsString();
+            if (!value.isBlank()) {
+               values.add(value.strip());
+            }
+         }
+      }
+      return List.copyOf(values);
+   }
+
+   private static String holomapIcon(JsonObject json) {
+      JsonObject marker = object(json, "holomapMarker");
+      return string(marker, "icon", string(json, "holomapIcon", "convoy_route"));
+   }
+
+   private static int holomapColor(JsonObject json) {
+      JsonObject marker = object(json, "holomapMarker");
+      String raw = string(marker, "color", string(json, "holomapColor", "00d8ff"));
+      String clean = raw.replace("#", "").strip();
+      try {
+         return 0xFF000000 | Integer.parseUnsignedInt(clean, 16);
+      } catch (RuntimeException exception) {
+         return 0xFF00D8FF;
+      }
+   }
+
+   private static Identifier holomapLayer(JsonObject json) {
+      JsonObject marker = object(json, "holomapMarker");
+      return identifier(marker, "layer", Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "convoy_routes"));
+   }
+
+   private static ConvoyRouteDefinition.FieldOpsSpec fieldOps(Identifier routeId, JsonObject json, List<ConvoyRouteDefinition.RouteLeg> legs, String biomeTheme) {
+      JsonObject ops = object(json, "fieldOps");
+      if (ops == null) {
+         return null;
+      }
+      int fallbackDuration = Math.max(300, nonNegativeInteger(routeId, json, "distance", maxLegDistance(legs, 24)) * 4);
+      int fallbackStages = Math.max(1, legs.isEmpty() ? positiveInteger(routeId, json, "requiredSignalMarkers", 1) : legs.size());
+      return new ConvoyRouteDefinition.FieldOpsSpec(
+         positiveInteger(routeId, ops, "durationTicks", fallbackDuration),
+         positiveInteger(routeId, ops, "stageCount", fallbackStages),
+         identifier(ops, "incidentProfile", Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID,
+            biomeTheme == null || biomeTheme.isBlank() ? "standard" : biomeTheme.strip().toLowerCase(java.util.Locale.ROOT))),
+         string(ops, "vehicleJoinPolicy", "optional"),
+         string(ops, "completionMode", "depot_return")
+      );
+   }
+
    private static boolean has(JsonObject json, String key) {
       return json != null && json.has(key) && !json.get(key).isJsonNull();
    }
@@ -212,6 +287,11 @@ public final class ConvoyJsonReloadListener extends SimplePreparableReloadListen
    private static Identifier identifier(JsonObject json, String key, Identifier fallback) {
       String value = string(json, key, "");
       return value.isBlank() ? fallback : Identifier.parse(value);
+   }
+
+   private static Identifier optionalIdentifier(JsonObject json, String key) {
+      String value = string(json, key, "");
+      return value.isBlank() ? null : Identifier.parse(value);
    }
 
    private static Identifier requiredIdentifier(Identifier routeId, JsonObject json, String key, String context) {

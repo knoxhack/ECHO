@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/soil_purifier"
+    "model": "echoagriculturereclamation:item/soil_purifier"
   }
 }

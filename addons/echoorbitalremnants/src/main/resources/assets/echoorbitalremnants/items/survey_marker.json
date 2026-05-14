@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoorbitalremnants:block/survey_marker"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoorbitalremnants:item/survey_marker"
+  }
+}

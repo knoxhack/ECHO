@@ -37,6 +37,7 @@
   "block.echorelictech.relic_containment_case": "Relic Containment Case",
   "block.echorelictech.null_shielded_vault": "Null-Shielded Vault",
 
+  "relictech.condition.label": "Condition: %s",
   "relictech.condition.unknown": "Unknown",
   "relictech.condition.damaged": "Damaged",
   "relictech.condition.stabilized": "Stabilized",
@@ -44,6 +45,7 @@
   "relictech.condition.contained": "Contained",
   "relictech.condition.corrupted": "Corrupted",
 
+  "relictech.tier.label": "Tier: %s",
   "relictech.tier.field": "Field",
   "relictech.tier.prototype": "Prototype",
   "relictech.tier.forbidden": "Forbidden",
@@ -81,5 +83,76 @@
   "command.echorelictech.trigger.success": "Forced failure triggered.",
   "command.echorelictech.locate_vault": "Vault locator scaffold.",
   "command.echorelictech.debug": "RelicTech debug info.",
-  "command.echorelictech.reload": "Data reload handled automatically."
+  "command.echorelictech.reload": "Data reload handled automatically.",
+
+  "container.echorelictech.relic_analyzer": "Relic Analyzer",
+  "container.echorelictech.prototype_workbench": "Prototype Workbench",
+  "container.echorelictech.containment_locker": "Containment Locker",
+  "container.echorelictech.null_battery_dock": "Null Battery Dock",
+
+  "block.echorelictech.relic_analyzer.insert_relic": "Relic Analyzer // Insert an Unidentified Relic to analyze.",
+  "block.echorelictech.relic_analyzer.take_output": "Relic Analyzer // Output retrieved.",
+  "block.echorelictech.relic_analyzer.take_input": "Relic Analyzer // Input returned.",
+  "block.echorelictech.relic_analyzer.has_output": "Relic Analyzer // Output is ready. Take it first.",
+  "block.echorelictech.relic_analyzer.analysis_complete": "Relic Analyzer // Identification complete. Result available.",
+  "block.echorelictech.relic_analyzer.analysis_failed": "Relic Analyzer // Analysis failed. Check input.",
+  "block.echorelictech.relic_analyzer.busy": "Relic Analyzer // Busy processing.",
+
+  "block.echorelictech.prototype_workbench.insert_relic": "Prototype Workbench // Insert a damaged relic with appropriate materials.",
+  "block.echorelictech.prototype_workbench.no_action": "Prototype Workbench // No valid action for current relic condition.",
+  "block.echorelictech.prototype_workbench.missing_materials": "Prototype Workbench // Missing required materials.",
+  "block.echorelictech.prototype_workbench.success.stabilize": "Prototype Workbench // Relic stabilized.",
+  "block.echorelictech.prototype_workbench.success.overclock": "Prototype Workbench // Relic overclocked.",
+  "block.echorelictech.prototype_workbench.success.contain": "Prototype Workbench // Relic contained.",
+  "block.echorelictech.prototype_workbench.success.purge": "Prototype Workbench // Corruption partially purged.",
+
+  "block.echorelictech.containment_locker.stored": "Containment Locker // Relic stored safely.",
+  "block.echorelictech.containment_locker.full": "Containment Locker // All slots full.",
+  "block.echorelictech.containment_locker.empty": "Containment Locker // Empty.",
+  "block.echorelictech.containment_locker.retrieved": "Containment Locker // Relic retrieved.",
+
+  "block.echorelictech.null_battery_dock.inserted": "Null Battery Dock // Battery inserted.",
+  "block.echorelictech.null_battery_dock.full": "Null Battery Dock // Already holds a battery.",
+  "block.echorelictech.null_battery_dock.cell_inserted": "Null Battery Dock // Null Cell inserted.",
+  "block.echorelictech.null_battery_dock.cell_full": "Null Battery Dock // Already holds a cell.",
+  "block.echorelictech.null_battery_dock.removed": "Null Battery Dock // Battery removed.",
+  "block.echorelictech.null_battery_dock.cell_removed": "Null Battery Dock // Cell removed.",
+  "block.echorelictech.null_battery_dock.hint": "Null Battery Dock // Insert Null Battery or Null Cell.",
+  "block.echorelictech.null_battery_dock.status": "Null Battery Dock // Charge %s/%s",
+  "block.echorelictech.null_battery_dock.empty": "Null Battery Dock // Empty.",
+
+  "item.echorelictech.relic.unidentified": "This relic is unidentified. Analyze it first.",
+  "item.echorelictech.relic.unidentified_hint": "Unidentified pre-Gridfall device",
+  "item.echorelictech.relic.cooldown_ticks": "Cooldown: %s ticks",
+  "item.echorelictech.relic.no_null_charge": "No Null Charge available.",
+
+  "item.echorelictech.phase_anchor.unbound": "Status: Unbound",
+  "item.echorelictech.phase_anchor.bound": "Bound to %s",
+  "item.echorelictech.phase_anchor.instability_cost": "Instability Cost: +%s",
+  "item.echorelictech.phase_anchor.warning": "Warning: Destination drift possible.",
+  "item.echorelictech.phase_anchor.cooldown": "Phase Anchor is on cooldown.",
+  "item.echorelictech.phase_anchor.cross_dim_disabled": "Cross-dimension recall is disabled.",
+  "item.echorelictech.phase_anchor.unloaded": "Recall destination is unloaded.",
+  "item.echorelictech.phase_anchor.drift": "ECHO WARNING // Destination drift detected. Arrived at offset.",
+  "item.echorelictech.phase_anchor.unsafe": "Recall destination is unsafe. No valid anchor found.",
+
+  "item.echorelictech.echo_mirror.description": "Creates temporary Echo projection.",
+  "item.echorelictech.echo_mirror.risk": "Risk: Hostile echo event possible.",
+  "item.echorelictech.echo_mirror.activated": "Echo projection active. Hostile attention diverted.",
+  "item.echorelictech.echo_mirror.cooldown": "Echo Mirror is on cooldown.",
+
+  "item.echorelictech.guardian_lens.scan_radius": "Scan radius: %s",
+  "item.echorelictech.guardian_lens.risk": "Deep scan risk: Nexus attention possible.",
+  "item.echorelictech.guardian_lens.detected": "Guardian Lens // Relic machine signature detected within %s blocks.",
+  "item.echorelictech.guardian_lens.none": "Guardian Lens // No relic traces detected within %s blocks.",
+
+  "item.echorelictech.matter_stitcher.description": "Sneak-use: repair armor. Normal use: heal.",
+  "item.echorelictech.matter_stitcher.cost": "Consumes Null Charge.",
+  "item.echorelictech.matter_stitcher.risk": "Risk: Side effects at high instability.",
+  "item.echorelictech.matter_stitcher.armor": "Matter Stitcher // Armor integrity partially restored.",
+  "item.echorelictech.matter_stitcher.heal": "Matter Stitcher // Biological matter stabilized.",
+  "item.echorelictech.matter_stitcher.cooldown": "Matter Stitcher is on cooldown.",
+
+  "item.echorelictech.null_battery.charge": "Null Charge: %s/%s",
+  "item.echorelictech.null_battery.warning": "Accepted by relic devices. Unsafe discharge warning."
 }

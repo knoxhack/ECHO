@@ -61,6 +61,8 @@ public record HoloMapTileBatchPacket(
             buffer.writeVarInt(tile.chunkX());
             buffer.writeVarInt(tile.chunkZ());
             buffer.writeVarLong(tile.sampledTime());
+            buffer.writeVarInt(tile.version());
+            buffer.writeUtf(tile.detailMode().serializedName(), 32);
             int[] pixels = tile.pixels();
             for (int pixel : pixels) {
                 buffer.writeInt(pixel);
@@ -78,11 +80,13 @@ public record HoloMapTileBatchPacket(
             int chunkX = buffer.readVarInt();
             int chunkZ = buffer.readVarInt();
             long sampledTime = buffer.readVarLong();
+            int version = buffer.readVarInt();
+            HoloMapTerrainTile.DetailMode detailMode = HoloMapTerrainTile.DetailMode.byName(buffer.readUtf(32));
             int[] pixels = new int[HoloMapTerrainTile.PIXELS];
             for (int pixel = 0; pixel < pixels.length; pixel++) {
                 pixels[pixel] = buffer.readInt();
             }
-            tiles.add(new HoloMapTerrainTile(dimension, chunkX, chunkZ, sampledTime, pixels));
+            tiles.add(new HoloMapTerrainTile(dimension, chunkX, chunkZ, sampledTime, version, detailMode, pixels));
         }
         return new HoloMapTileBatchPacket(dimension, discovered, gameTime, tiles);
     }

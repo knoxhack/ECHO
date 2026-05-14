@@ -1,3 +1,66 @@
+<!-- CURSEFORGE_README_START -->
+# ECHO: Terminal
+
+![ECHO: Terminal banner](docs/curseforge/echoterminal-banner.png)
+
+**The shared in-world command surface for missions, records, recipes, diagnostics, rewards, and addon chapters.**
+
+![ECHO: Terminal feature overview](docs/curseforge/echoterminal-features.png)
+
+## CurseForge Summary
+
+Shared ECHO terminal block, UI shell, mission browser, archive surface, recipe index, action routing, and addon integration hub.
+
+## Overview
+
+ECHO: Terminal is the player-facing command surface for the modular ECHO stack. It adds the ECHO Terminal block and screen, then gives installed chapters a common place to publish missions, records, diagnostics, route status, recipe references, rewards, actions, vitals, faction reports, and chapter pages.
+
+The terminal is organized around Command, Progress, Intel, and System sections. It can show a Command Deck, What Now guidance, Survival Route, Mission Graph, Mission Browser, Recipe Index, Field Archive, Route Records, Faction Atlas, Vitals, Reward Inbox, settings, and addon hubs.
+
+For players, Terminal answers the practical question: what should I stabilize, craft, scan, repair, or explore next? For addon authors, it is the shared presentation and action contract that keeps the ECHO stack from becoming separate disconnected screens.
+
+## Main Features
+
+- ECHO Terminal block, menu, client screen, and configurable key binding.
+- Command, Progress, Intel, and System shell with navigation profiles.
+- Mission browser with filters, search, detail panes, keyboard navigation, reward claims, and server-authoritative actions.
+- Recipe Index with ECHO item search, recipes/uses modes, provider categories, item details, machine/input/catalyst/output slots, process time, and locked hints.
+- Field Archive, Route Records, Faction Atlas, Vitals, Reward Inbox, diagnostics, addon chapters, and transient mission HUD notices.
+- Theme engine with Echo Console and Nexus Modpack presentation styles.
+
+## How It Plays
+
+- Craft or place the ECHO Terminal, open it from the block or keybind, then use Command Deck and What Now for immediate direction. Progress and Intel pages handle route detail, records, recipes, factions, and chapter context.
+- As more ECHO addons are installed, the terminal expands with their pages and providers without replacing the shared shell.
+
+## Requirements
+
+- Minecraft 26.1.2
+- NeoForge 26.1.2.29-beta or newer
+- Java 25+
+- ECHO: Core 1.0.0 or newer
+- ECHO: NetCore 1.0.0 or newer
+
+## Recommended Pairings
+
+- All gameplay ECHO chapters
+- ECHO: Index and JEI for recipe-heavy packs
+
+## Compatibility Notes
+
+- If an addon is missing, Terminal only shows registered providers that exist.
+- Mission and recipe authority stays with owning addons.
+
+## CurseForge Asset Files
+
+- Banner: `docs/curseforge/echoterminal-banner.png`
+- Feature image: `docs/curseforge/echoterminal-features.png`
+
+<!-- CURSEFORGE_README_END -->
+---
+
+## Existing Developer Notes
+
 # ECHO: Terminal
 
 ECHO: Terminal is the shared command surface for the Echo stack. It provides the terminal block, menu, client screen, mission provider API, action routing, navigation sections, archive records, rewards inbox, diagnostics, route records, faction atlas, vitals telemetry, and addon chapter hub.

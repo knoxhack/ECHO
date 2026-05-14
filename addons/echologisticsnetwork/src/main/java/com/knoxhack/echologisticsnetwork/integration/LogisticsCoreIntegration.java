@@ -70,6 +70,7 @@ public final class LogisticsCoreIntegration {
       }
       EchoCoreServices.registerRouteRecordService(ROUTE_SERVICE);
       EchoCoreServices.registerDiagnosticService(DIAGNOSTIC_SERVICE);
+      EchoCoreServices.registerIndexRecipeProvider(LogisticsIndexProvider.INSTANCE);
    }
 
    private static List<EchoRouteRecord> routeRecords(Player player) {

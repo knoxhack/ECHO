@@ -1,0 +1,12 @@
+{
+  "id": "echotutorialcore:toxic_without_filter",
+  "type": "DANGER",
+  "category": "HAZARDS",
+  "title": "Toxic Air Detected",
+  "message": "Toxic air detected. Filter cartridge not found.",
+  "details": "Gas masks and filter cartridges reduce exposure. Atmospheric Scrubbers can create safe pockets.",
+  "cooldownTicks": 6000,
+  "guideModes": ["MINIMAL", "NORMAL", "ASSISTED"],
+  "priority": 90,
+  "dismissible": true
+}

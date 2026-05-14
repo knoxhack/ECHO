@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoindustrialnexus:block/cooling_fan_block"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoindustrialnexus:item/cooling_fan_block"
+  }
+}

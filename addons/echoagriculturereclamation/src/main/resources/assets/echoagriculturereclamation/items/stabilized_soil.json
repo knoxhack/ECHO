@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/stabilized_soil"
+    "model": "echoagriculturereclamation:item/stabilized_soil"
   }
 }

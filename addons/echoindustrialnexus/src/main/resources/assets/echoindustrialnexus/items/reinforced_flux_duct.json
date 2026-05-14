@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoindustrialnexus:block/reinforced_flux_duct"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoindustrialnexus:item/reinforced_flux_duct"
+  }
+}

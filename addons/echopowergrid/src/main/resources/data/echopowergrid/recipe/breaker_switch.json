@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I "," L "," I "],"key":{"I":{"item":"minecraft:iron_nugget"},"L":{"item":"minecraft:lever"}},"result":{"id":"echopowergrid:breaker_switch"}}

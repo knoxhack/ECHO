@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoindustrialnexus:block/copper_flux_duct"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoindustrialnexus:item/copper_flux_duct"
+  }
+}

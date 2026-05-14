@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echorelictech:block/null_battery_dock",
+    "down": "echorelictech:block/null_battery_dock",
+    "up": "echorelictech:block/null_battery_dock",
+    "north": "echorelictech:block/null_battery_dock",
+    "south": "echorelictech:block/null_battery_dock",
+    "west": "echorelictech:block/null_battery_dock",
+    "east": "echorelictech:block/null_battery_dock"
+  }
+}

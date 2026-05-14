@@ -1,9 +1,12 @@
 package com.knoxhack.signalos.block;
 
 import com.knoxhack.signalos.block.entity.SignalOsServerRackBlockEntity;
+import com.knoxhack.signalos.integration.SignalOsMissionHooks;
+import com.knoxhack.signalos.network.SignalOsTerminalSync;
 import com.knoxhack.signalos.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -39,6 +42,16 @@ public class SignalOsServerRackBlock extends Block implements EntityBlock {
                 if (!extracted.isEmpty() && !player.getInventory().add(extracted)) {
                     player.drop(extracted, false);
                 }
+                player.sendSystemMessage(Component.literal(rack.statusLine()));
+                return InteractionResult.SUCCESS_SERVER;
+            }
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.openMenu(rack, pos);
+                SignalOsTerminalSync.send(serverPlayer);
+                if (rack.driveCount() > 0) {
+                    SignalOsMissionHooks.recordRackNetworkOnline(serverPlayer, "open_rack");
+                }
+                return InteractionResult.SUCCESS_SERVER;
             }
             player.sendSystemMessage(Component.literal(rack.statusLine()));
         }
@@ -62,6 +75,7 @@ public class SignalOsServerRackBlock extends Block implements EntityBlock {
                 stack.shrink(1);
             }
             player.sendSystemMessage(Component.literal(rack.statusLine()));
+            SignalOsMissionHooks.recordRackNetworkOnline(player, "insert_drive");
             return InteractionResult.SUCCESS_SERVER;
         }
         player.sendSystemMessage(Component.literal("[SignalOS] Server rack drive bays are full."));

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/blackbox_plate"
+    "model": "echonexusprotocol:item/blackbox_plate"
   }
 }

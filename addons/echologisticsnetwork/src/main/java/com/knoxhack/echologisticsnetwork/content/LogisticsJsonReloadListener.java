@@ -122,8 +122,20 @@ public final class LogisticsJsonReloadListener extends SimplePreparableReloadLis
          identifier(json, "icon", Identifier.withDefaultNamespace("chest")),
          requirements,
          targetBlocks,
-         integer(json, "deliveryTicks", 160)
+         integer(json, "deliveryTicks", 160),
+         parseRestockPolicy(json)
       );
+   }
+
+   private static FactoryRestockPolicy parseRestockPolicy(JsonObject json) {
+      Identifier taskId = json.has("factoryTaskId") && !json.get("factoryTaskId").getAsString().isBlank()
+         ? Identifier.parse(json.get("factoryTaskId").getAsString())
+         : null;
+      int targetRuns = integer(json, "restockTargetRuns", taskId == null ? 0 : 3);
+      int minRuns = integer(json, "restockMinRuns", targetRuns > 0 ? 1 : 0);
+      int maxInFlight = integer(json, "restockMaxInFlight", 1);
+      int cooldownTicks = integer(json, "restockCooldownTicks", 200);
+      return new FactoryRestockPolicy(taskId, targetRuns, minRuns, maxInFlight, cooldownTicks);
    }
 
    private static LoadoutRequirement parseRequirement(JsonObject json) {

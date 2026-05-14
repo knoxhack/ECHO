@@ -40,12 +40,15 @@ public class ModCreativeTabs {
 
                         // Survival
                         output.accept(ModItems.DIRTY_WATER_BOTTLE.get());
+                        output.accept(ModItems.FILTERED_WATER_BOTTLE.get());
+                        output.accept(ModItems.BOILED_WATER_BOTTLE.get());
                         output.accept(ModItems.CLEAN_WATER_BOTTLE.get());
                         output.accept(ModItems.MUTAGEN_VIAL.get());
                         output.accept(ModItems.RAD_AWAY.get());
                         output.accept(ModItems.FILTER_CARTRIDGE_BASIC.get());
                         output.accept(ModItems.FILTER_CARTRIDGE_ADVANCED.get());
                         output.accept(ModItems.FILTER_CARTRIDGE_ELITE.get());
+                        output.accept(ModItems.CRUDE_FILTER.get());
 
                         // Tools & Weapons
                         output.accept(ModItems.PORTABLE_SIGNAL_SCANNER.get());
@@ -139,6 +142,10 @@ public class ModCreativeTabs {
                         output.accept(ModBlocks.RADIATION_BLOCK_ITEM.get());
                         output.accept(ModBlocks.DROP_POD_HULL_ITEM.get());
                         output.accept(ModBlocks.DROP_POD_GLASS_ITEM.get());
+                        output.accept(ModBlocks.EMERGENCY_BUNK_ITEM.get());
+                        output.accept(ModBlocks.ECHO_CACHE_ITEM.get());
+                        output.accept(ModBlocks.ECHO_CRATE_ITEM.get());
+                        output.accept(ModBlocks.STRUCTURE_CACHE_ITEM.get());
 
                         // Machines
                         output.accept(ModBlocks.HAND_RECYCLER_ITEM.get());

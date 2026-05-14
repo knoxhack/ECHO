@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I ","ICI"," F "],"key":{"I":{"item":"minecraft:iron_ingot"},"C":{"item":"echopowergrid:copper_coil"},"F":{"item":"minecraft:furnace"}},"result":{"id":"echopowergrid:hand_crank_generator"}}

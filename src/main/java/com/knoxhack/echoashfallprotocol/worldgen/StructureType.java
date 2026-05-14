@@ -1,10 +1,11 @@
 package com.knoxhack.echoashfallprotocol.worldgen;
 
+import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Defines different types of procedural structures with their characteristics.
@@ -12,78 +13,78 @@ import java.util.List;
 public enum StructureType {
     
     BIO_LAB("bio_lab", 3, 8, 16, 32, 
-            new BlockPalette(Blocks.SMOOTH_STONE, Blocks.STONE_BRICKS, Blocks.GLASS, 
-                    Blocks.MOSSY_STONE_BRICKS, Blocks.IRON_BARS)),
+            new BlockPalette(ModBlocks.CONTAMINATED_SOIL::get, ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.SHATTERED_GLASS::get,
+                    ModBlocks.TOXIC_MOSS::get, ModBlocks.CORRODED_PIPE::get)),
     
     DATA_CENTER("data_center", 4, 10, 20, 40,
-            new BlockPalette(Blocks.STONE_BRICKS, Blocks.CRACKED_STONE_BRICKS, Blocks.IRON_BARS,
-                    Blocks.BOOKSHELF, Blocks.REDSTONE_BLOCK)),
+            new BlockPalette(ModBlocks.ASH_STONE::get, ModBlocks.REBAR_BLOCK::get, ModBlocks.POWER_CABLE::get,
+                    ModBlocks.RESEARCH_LAB::get, ModBlocks.SIGNAL_SCANNER::get)),
     
     MILITARY_VAULT("military_vault", 5, 12, 24, 48,
-            new BlockPalette(Blocks.SMOOTH_STONE, Blocks.IRON_BLOCK, Blocks.OBSIDIAN,
-                    Blocks.BARREL, Blocks.IRON_DOOR)),
+            new BlockPalette(ModBlocks.DROP_POD_HULL::get, ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.REBAR_BLOCK::get,
+                    ModBlocks.STRUCTURE_CACHE::get, ModBlocks.WEAPON_RACK::get)),
     
     REACTOR_RUIN("reactor_ruin", 4, 10, 20, 36,
-            new BlockPalette(Blocks.STONE_BRICKS, Blocks.GLOWSTONE, Blocks.IRON_BARS,
-                    Blocks.CRACKED_STONE_BRICKS, Blocks.LAVA)),
+            new BlockPalette(ModBlocks.IRRADIATED_SHALE::get, ModBlocks.RADIATION_BLOCK::get, ModBlocks.CORRODED_PIPE::get,
+                    ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.ENERGIZED_FISSURE::get)),
     
     DROP_POD("drop_pod", 1, 3, 7, 14,
-            new BlockPalette(Blocks.IRON_BLOCK, Blocks.GLASS, Blocks.IRON_TRAPDOOR,
-                    Blocks.CRAFTING_TABLE, Blocks.CHEST)),
+            new BlockPalette(ModBlocks.DROP_POD_HULL::get, ModBlocks.DROP_POD_GLASS::get, ModBlocks.RUSTED_METAL_SHEET::get,
+                    ModBlocks.WORKSHOP_BLOCK::get, ModBlocks.STRUCTURE_CACHE::get)),
     
     SUBWAY_STATION("subway_station", 3, 6, 18, 30,
-            new BlockPalette(Blocks.STONE_BRICKS, Blocks.SMOOTH_STONE, Blocks.IRON_BARS,
-                    Blocks.CRACKED_STONE_BRICKS, Blocks.RAIL)),
+            new BlockPalette(ModBlocks.CRACKED_ASPHALT::get, ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.REBAR_BLOCK::get,
+                    ModBlocks.RUSTED_METAL_DEBRIS::get, ModBlocks.CORRODED_PIPE::get)),
     
     SATELLITE_ARRAY("satellite_array", 2, 4, 12, 24,
-            new BlockPalette(Blocks.IRON_BLOCK, Blocks.LIGHT_GRAY_CONCRETE, Blocks.GLASS,
-                    Blocks.OXIDIZED_COPPER, Blocks.REDSTONE_BLOCK)),
+            new BlockPalette(ModBlocks.DROP_POD_HULL::get, ModBlocks.SHATTERED_GLASS::get, ModBlocks.DROP_POD_GLASS::get,
+                    ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.POWER_NODE::get)),
     
     RADIO_TOWER("radio_tower", 2, 3, 10, 20,
-            new BlockPalette(Blocks.IRON_BARS, Blocks.IRON_BLOCK, Blocks.LIGHTNING_ROD,
-                    Blocks.OXIDIZED_COPPER, Blocks.REDSTONE_LAMP)),
+            new BlockPalette(ModBlocks.REBAR_BLOCK::get, ModBlocks.DROP_POD_HULL::get, ModBlocks.RELAY_STATION::get,
+                    ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.POWER_NODE::get)),
     
     SEWER_JUNCTION("sewer_junction", 3, 5, 15, 25,
-            new BlockPalette(Blocks.MOSSY_STONE_BRICKS, Blocks.STONE_BRICKS, Blocks.WATER,
-                    Blocks.SLIME_BLOCK, Blocks.IRON_BARS)),
+            new BlockPalette(ModBlocks.TOXIC_SLAGSTONE::get, ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.ACIDIC_SLUDGE::get,
+                    ModBlocks.TOXIC_PUDDLE::get, ModBlocks.CORRODED_PIPE::get)),
     
     TRAIN_YARD("train_yard", 4, 8, 20, 40,
-            new BlockPalette(Blocks.SMOOTH_STONE, Blocks.IRON_BLOCK, Blocks.RAIL,
-                    Blocks.OAK_PLANKS, Blocks.CHEST)),
+            new BlockPalette(ModBlocks.CRACKED_ASPHALT::get, ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.REBAR_BLOCK::get,
+                    ModBlocks.DEAD_WOOD_LOG::get, ModBlocks.STRUCTURE_CACHE::get)),
     
     // === EXPLORATION 1.1: FACTION HUBS ===
     RADWARDEN_OUTPOST("radwarden_outpost", 4, 8, 20, 36,
-            new BlockPalette(Blocks.STONE_BRICKS, Blocks.IRON_BLOCK, Blocks.REDSTONE_BLOCK,
-                    Blocks.CRACKED_STONE_BRICKS, Blocks.DISPENSER)),
+            new BlockPalette(ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.POWER_NODE::get,
+                    ModBlocks.REBAR_BLOCK::get, ModBlocks.WEAPON_RACK::get)),
     
     CRASHBREAK_SALVAGE_YARD("crashbreak_salvage_yard", 3, 6, 15, 28,
-            new BlockPalette(Blocks.OAK_PLANKS, Blocks.COBBLESTONE, Blocks.CHEST,
-                    Blocks.MOSSY_COBBLESTONE, Blocks.EMERALD_BLOCK)),
+            new BlockPalette(ModBlocks.DEAD_WOOD_LOG::get, ModBlocks.RUBBLE::get, ModBlocks.STRUCTURE_CACHE::get,
+                    ModBlocks.CONCRETE_CHUNK::get, ModBlocks.TRADE_COUNTER::get)),
     
     SPOREBOUND_SANCTUM("sporebound_sanctum", 4, 10, 18, 32,
-            new BlockPalette(Blocks.MOSSY_STONE_BRICKS, Blocks.GLOWSTONE, Blocks.SLIME_BLOCK,
-                    Blocks.DIRT, Blocks.BEACON)),
+            new BlockPalette(ModBlocks.TOXIC_MOSS::get, ModBlocks.OOZE_CRYSTAL::get, ModBlocks.ACIDIC_SLUDGE::get,
+                    ModBlocks.CONTAMINATED_SOIL::get, ModBlocks.BIO_PROCESSING_STATION::get)),
     
     // === EXPLORATION 1.1: WORLD POIs ===
     CRYOGENIC_RUINS("cryogenic_ruins", 3, 7, 15, 30,
-            new BlockPalette(Blocks.PACKED_ICE, Blocks.IRON_BLOCK, Blocks.GLASS,
-                    Blocks.BLUE_ICE, Blocks.CHEST)),
+            new BlockPalette(ModBlocks.PERMAFROST::get, ModBlocks.DROP_POD_HULL::get, ModBlocks.SHATTERED_GLASS::get,
+                    ModBlocks.BLUE_ICE_CRYSTAL::get, ModBlocks.STRUCTURE_CACHE::get)),
     
     RELAY_STATION("relay_station", 2, 4, 10, 20,
-            new BlockPalette(Blocks.IRON_BLOCK, Blocks.LIGHT_GRAY_CONCRETE, Blocks.REDSTONE_LAMP,
-                    Blocks.OXIDIZED_COPPER, Blocks.BEACON)),
+            new BlockPalette(ModBlocks.DROP_POD_HULL::get, ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.POWER_NODE::get,
+                    ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.RELAY_STATION::get)),
     
     DERELICT_WORKSHOP("derelict_workshop", 3, 5, 14, 24,
-            new BlockPalette(Blocks.SMOOTH_STONE, Blocks.IRON_BARS, Blocks.CRAFTING_TABLE,
-                    Blocks.COBBLESTONE, Blocks.ANVIL)),
+            new BlockPalette(ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.REBAR_BLOCK::get, ModBlocks.WORKSHOP_BLOCK::get,
+                    ModBlocks.RUBBLE::get, ModBlocks.HAND_RECYCLER::get)),
     
     ABANDONED_MINE("abandoned_mine", 5, 12, 20, 40,
-            new BlockPalette(Blocks.STONE, Blocks.COAL_ORE, Blocks.RAIL,
-                    Blocks.GRAVEL, Blocks.CHEST)),
+            new BlockPalette(ModBlocks.WASTELAND_STONE::get, ModBlocks.SCRAP_ORE::get, ModBlocks.REBAR_BLOCK::get,
+                    ModBlocks.RUBBLE::get, ModBlocks.STRUCTURE_CACHE::get)),
     
     OBSERVATION_POST("observation_post", 2, 3, 8, 16,
-            new BlockPalette(Blocks.IRON_BLOCK, Blocks.GLASS, Blocks.DAYLIGHT_DETECTOR,
-                    Blocks.OXIDIZED_COPPER, Blocks.COMPARATOR));
+            new BlockPalette(ModBlocks.DROP_POD_HULL::get, ModBlocks.DROP_POD_GLASS::get, ModBlocks.SIGNAL_SCANNER::get,
+                    ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.ENERGY_METER::get));
     
     private final String name;
     private final int minRooms;
@@ -130,16 +131,44 @@ public enum StructureType {
     /**
      * Block palette for a structure type
      */
-    public record BlockPalette(Block primary, Block secondary, Block accent,
-                               Block decayed, Block special) {
+    public static final class BlockPalette {
+        private final Supplier<? extends Block> primary;
+        private final Supplier<? extends Block> secondary;
+        private final Supplier<? extends Block> accent;
+        private final Supplier<? extends Block> decayed;
+        private final Supplier<? extends Block> special;
+
+        public BlockPalette(Block primary, Block secondary, Block accent, Block decayed, Block special) {
+            this(() -> primary, () -> secondary, () -> accent, () -> decayed, () -> special);
+        }
+
+        public BlockPalette(
+                Supplier<? extends Block> primary,
+                Supplier<? extends Block> secondary,
+                Supplier<? extends Block> accent,
+                Supplier<? extends Block> decayed,
+                Supplier<? extends Block> special
+        ) {
+            this.primary = primary;
+            this.secondary = secondary;
+            this.accent = accent;
+            this.decayed = decayed;
+            this.special = special;
+        }
+
+        public Block primary() { return primary.get(); }
+        public Block secondary() { return secondary.get(); }
+        public Block accent() { return accent.get(); }
+        public Block decayed() { return decayed.get(); }
+        public Block special() { return special.get(); }
 
         public Block getRandomBlock(RandomSource random, float decayChance) {
             float roll = random.nextFloat();
-            if (roll < decayChance * 0.3f) return decayed;
-            if (roll < 0.5f) return primary;
-            if (roll < 0.8f) return secondary;
-            if (roll < 0.95f) return accent;
-            return special;
+            if (roll < decayChance * 0.3f) return decayed();
+            if (roll < 0.5f) return primary();
+            if (roll < 0.8f) return secondary();
+            if (roll < 0.95f) return accent();
+            return special();
         }
     }
 
@@ -155,20 +184,20 @@ public enum StructureType {
      */
     public enum ArchStyle {
         BRUTALIST(new BlockPalette(
-                Blocks.GRAY_CONCRETE, Blocks.LIGHT_GRAY_CONCRETE, Blocks.IRON_BARS,
-                Blocks.CRACKED_STONE_BRICKS, Blocks.SMOOTH_STONE)),
+                ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.ASH_STONE::get, ModBlocks.REBAR_BLOCK::get,
+                ModBlocks.RUBBLE::get, ModBlocks.OIL_STAINED_CONCRETE::get)),
         MODULAR(new BlockPalette(
-                Blocks.WHITE_CONCRETE, Blocks.LIGHT_BLUE_CONCRETE, Blocks.GLASS_PANE,
-                Blocks.WHITE_CONCRETE_POWDER, Blocks.IRON_BLOCK)),
+                ModBlocks.DROP_POD_HULL::get, ModBlocks.DROP_POD_GLASS::get, ModBlocks.SHATTERED_GLASS::get,
+                ModBlocks.CONCRETE_CHUNK::get, ModBlocks.POWER_NODE::get)),
         INDUSTRIAL_DECAY(new BlockPalette(
-                Blocks.STONE_BRICKS, Blocks.MOSSY_STONE_BRICKS, Blocks.OXIDIZED_COPPER,
-                Blocks.CRACKED_STONE_BRICKS, Blocks.IRON_BLOCK)),
+                ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.RUSTED_METAL_DEBRIS::get, ModBlocks.CORRODED_PIPE::get,
+                ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.INDUSTRIAL_AGGREGATE::get)),
         RETROFIT_TIMBER(new BlockPalette(
-                Blocks.STRIPPED_OAK_LOG, Blocks.OAK_PLANKS, Blocks.MUD_BRICKS,
-                Blocks.MOSSY_COBBLESTONE, Blocks.OAK_FENCE)),
+                ModBlocks.DEAD_WOOD_LOG::get, ModBlocks.CHARRED_WOOD_LOG::get, ModBlocks.ACID_MUD::get,
+                ModBlocks.RUBBLE::get, ModBlocks.RAIN_COLLECTOR::get)),
         BUNKER(new BlockPalette(
-                Blocks.SMOOTH_STONE, Blocks.IRON_BLOCK, Blocks.OBSIDIAN,
-                Blocks.CRACKED_STONE_BRICKS, Blocks.LIGHT_GRAY_CONCRETE));
+                ModBlocks.DROP_POD_HULL::get, ModBlocks.RUSTED_METAL_SHEET::get, ModBlocks.REBAR_BLOCK::get,
+                ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.POWER_CABLE::get));
 
         private final BlockPalette palette;
 
@@ -232,3 +261,4 @@ public enum StructureType {
         return styles.get(idx);
     }
 }
+

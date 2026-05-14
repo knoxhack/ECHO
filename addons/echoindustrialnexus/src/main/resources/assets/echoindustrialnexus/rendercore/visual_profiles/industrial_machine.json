@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 11,
   "base_texture": "echoindustrialnexus:textures/block/machine_casing.png",
   "animation_profile": "echoindustrialnexus:industrial_machine",
   "particle_profile": "echoindustrialnexus:industrial_machine",
@@ -10,19 +10,42 @@
       "color": "#FF66E8FF",
       "alpha": 0.9,
       "emissive": true,
-      "blend_mode": "additive"
+      "blend_mode": "additive",
+      "effect": {
+        "preset": "neon",
+        "glow_intensity": 1.1,
+        "bloom_intensity": 0.45,
+        "advanced_enabled": true,
+        "bloom_mask_mode": "emissive",
+        "bloom_channel": "industrial_machine",
+        "target_scope": "block"
+      }
     },
     "warning_emissive": {
       "color": "#FFFF7A28",
       "alpha": 0.85,
       "emissive": true,
-      "blend_mode": "additive"
+      "blend_mode": "additive",
+      "effect": {
+        "preset": "energy_field",
+        "glow_intensity": 1.0,
+        "pulse_speed": 1.4,
+        "bloom_intensity": 0.35,
+        "target_scope": "block"
+      }
     },
     "corrupt_emissive": {
       "color": "#FFB64DFF",
       "alpha": 0.9,
       "emissive": true,
-      "blend_mode": "additive"
+      "blend_mode": "additive",
+      "effect": {
+        "preset": "hologram",
+        "glow_intensity": 1.2,
+        "flicker_intensity": 0.18,
+        "scanline_strength": 0.2,
+        "target_scope": "block"
+      }
     }
   },
   "layers": [

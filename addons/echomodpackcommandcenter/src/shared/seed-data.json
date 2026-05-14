@@ -19,19 +19,19 @@
       "lastScanLabel": "Not scanned",
       "nextRecommendedAction": "Run full-stack quick scan",
       "accent": "#58d7ff",
-      "description": "Full ECHO workspace release stack across shared core services, Ashfall, Terminal, SignalOS, beta/dev modules, public release modules, HoloMap, Index, Armory, and Lens.",
+      "description": "Full ECHO workspace release stack across shared core services, Ashfall, Terminal, SignalOS, beta/dev modules, public release modules, MultiblockCore, RuntimeGuard, Blockworks, HoloMap, Index, Armory, and Lens.",
       "workspacePath": "C:/Github/Echo",
       "modules": [
         {
           "modId": "echocore",
           "label": "ECHO Core",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "core/echocore"
         },
         {
           "modId": "echonetcore",
           "label": "NetCore",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "addons/echonetcore"
         },
         {
@@ -43,37 +43,49 @@
         {
           "modId": "echomissioncore",
           "label": "MissionCore",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echomissioncore"
+        },
+        {
+          "modId": "echomultiblockcore",
+          "label": "MultiblockCore",
+          "version": "1.0.0",
+          "path": "addons/echomultiblockcore"
+        },
+        {
+          "modId": "echoruntimeguard",
+          "label": "RuntimeGuard",
+          "version": "1.0.0",
+          "path": "addons/echoruntimeguard"
         },
         {
           "modId": "echoterminal",
           "label": "ECHO Terminal",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "addons/echoterminal"
         },
         {
           "modId": "echoashfallprotocol",
           "label": "Ashfall Protocol",
-          "version": "1.3.0",
+          "version": "1.0.0",
           "path": "."
         },
         {
           "modId": "signalos",
           "label": "SignalOS",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echosignalos"
         },
         {
           "modId": "signalosexample",
           "label": "SignalOS Example Addon",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/signalosexample"
         },
         {
           "modId": "echoorbitalremnants",
           "label": "Orbital Remnants",
-          "version": "1.5.0",
+          "version": "1.0.0",
           "path": "addons/echoorbitalremnants"
         },
         {
@@ -85,19 +97,19 @@
         {
           "modId": "echoagriculturereclamation",
           "label": "Agriculture Reclamation",
-          "version": "0.1.1",
+          "version": "1.0.0",
           "path": "addons/echoagriculturereclamation"
         },
         {
           "modId": "echoworldcore",
           "label": "WorldCore",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoworldcore"
         },
         {
           "modId": "echostationfall",
           "label": "Stationfall",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "addons/echostationfall"
         },
         {
@@ -109,50 +121,56 @@
         {
           "modId": "echoindustrialnexus",
           "label": "Industrial Nexus",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoindustrialnexus"
         },
         {
           "modId": "echologisticsnetwork",
           "label": "Logistics Network",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echologisticsnetwork"
         },
         {
           "modId": "echorendercore",
           "label": "RenderCore",
-          "version": "0.5.0",
+          "version": "1.0.0",
           "path": "addons/echorendercore"
         },
         {
           "modId": "echoconvoyprotocol",
           "label": "Convoy Protocol",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoconvoyprotocol"
         },
         {
           "modId": "echoholomap",
           "label": "HoloMap",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoholomap"
         },
         {
           "modId": "echoindex",
           "label": "Index",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoindex"
         },
         {
           "modId": "echoarmory",
           "label": "Armory",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoarmory"
         },
         {
           "modId": "echolens",
           "label": "Lens",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echolens"
+        },
+        {
+          "modId": "echoblockworks",
+          "label": "Blockworks",
+          "version": "1.0.0",
+          "path": "addons/echoblockworks"
         }
       ]
     },
@@ -174,7 +192,7 @@
         {
           "modId": "echocore",
           "label": "ECHO Core",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "core/echocore"
         }
       ]
@@ -197,7 +215,7 @@
         {
           "modId": "echonetcore",
           "label": "NetCore",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "addons/echonetcore"
         }
       ]
@@ -243,8 +261,54 @@
         {
           "modId": "echomissioncore",
           "label": "MissionCore",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echomissioncore"
+        }
+      ]
+    },
+    {
+      "slug": "echomultiblockcore",
+      "name": "ECHO: MultiblockCore",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Facility Services",
+      "buildHealth": 76,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: MultiblockCore",
+      "accent": "#7ee787",
+      "description": "Shared data-driven multiblock service layer for facility structures, controller orchestration, diagnostics, runtime snapshots, robotic task queues, workcells, integrity, blueprints, and optional Terminal/Lens/HoloMap/DataCore integrations.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echomultiblockcore",
+          "label": "MultiblockCore",
+          "version": "1.0.0",
+          "path": "addons/echomultiblockcore"
+        }
+      ]
+    },
+    {
+      "slug": "echoruntimeguard",
+      "name": "ECHO: RuntimeGuard",
+      "kind": "Core Module",
+      "status": "Active",
+      "currentMilestone": "Performance Services",
+      "buildHealth": 76,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: RuntimeGuard",
+      "accent": "#7ee787",
+      "description": "Shared performance manager for TPS/MSPT, client FPS, runtime modes, smart tick budgeting, particle budgets, multiblock validation queues, network budgets, profiling reports, and optional ECHO addon throttling.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoruntimeguard",
+          "label": "RuntimeGuard",
+          "version": "1.0.0",
+          "path": "addons/echoruntimeguard"
         }
       ]
     },
@@ -266,7 +330,7 @@
         {
           "modId": "echoashfallprotocol",
           "label": "Ashfall Protocol",
-          "version": "1.3.0",
+          "version": "1.0.0",
           "path": "."
         }
       ]
@@ -289,7 +353,7 @@
         {
           "modId": "echoterminal",
           "label": "ECHO Terminal",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "addons/echoterminal"
         }
       ]
@@ -312,7 +376,7 @@
         {
           "modId": "signalos",
           "label": "SignalOS",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echosignalos"
         }
       ]
@@ -335,7 +399,7 @@
         {
           "modId": "signalosexample",
           "label": "SignalOS Example Addon",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/signalosexample"
         }
       ]
@@ -358,7 +422,7 @@
         {
           "modId": "echoorbitalremnants",
           "label": "Orbital Remnants",
-          "version": "1.5.0",
+          "version": "1.0.0",
           "path": "addons/echoorbitalremnants"
         }
       ]
@@ -404,7 +468,7 @@
         {
           "modId": "echoagriculturereclamation",
           "label": "Agriculture Reclamation",
-          "version": "0.1.1",
+          "version": "1.0.0",
           "path": "addons/echoagriculturereclamation"
         }
       ]
@@ -427,7 +491,7 @@
         {
           "modId": "echoworldcore",
           "label": "WorldCore",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoworldcore"
         }
       ]
@@ -450,7 +514,7 @@
         {
           "modId": "echostationfall",
           "label": "Stationfall",
-          "version": "1.1.0",
+          "version": "1.0.0",
           "path": "addons/echostationfall"
         }
       ]
@@ -496,7 +560,7 @@
         {
           "modId": "echoindustrialnexus",
           "label": "Industrial Nexus",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoindustrialnexus"
         }
       ]
@@ -519,7 +583,7 @@
         {
           "modId": "echologisticsnetwork",
           "label": "Logistics Network",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echologisticsnetwork"
         }
       ]
@@ -542,7 +606,7 @@
         {
           "modId": "echorendercore",
           "label": "RenderCore",
-          "version": "0.5.0",
+          "version": "1.0.0",
           "path": "addons/echorendercore"
         }
       ]
@@ -565,7 +629,7 @@
         {
           "modId": "echoconvoyprotocol",
           "label": "Convoy Protocol",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoconvoyprotocol"
         }
       ]
@@ -588,7 +652,7 @@
         {
           "modId": "echoholomap",
           "label": "HoloMap",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoholomap"
         }
       ]
@@ -611,7 +675,7 @@
         {
           "modId": "echoindex",
           "label": "Index",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoindex"
         }
       ]
@@ -634,7 +698,7 @@
         {
           "modId": "echoarmory",
           "label": "Armory",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echoarmory"
         }
       ]
@@ -657,8 +721,31 @@
         {
           "modId": "echolens",
           "label": "Lens",
-          "version": "0.1.0",
+          "version": "1.0.0",
           "path": "addons/echolens"
+        }
+      ]
+    },
+    {
+      "slug": "echoblockworks",
+      "name": "ECHO: Blockworks",
+      "kind": "Release Module",
+      "status": "Active",
+      "currentMilestone": "Structural Palette QA",
+      "buildHealth": 74,
+      "criticalIssues": 0,
+      "polishTasks": 0,
+      "lastScanLabel": "Not scanned",
+      "nextRecommendedAction": "Run scoped scan for ECHO: Blockworks",
+      "accent": "#f6c177",
+      "description": "First-party decorative and structural block library for ECHO bases, ruined cities, crash zones, convoy depots, orbital interiors, Terminal rooms, Blackbox vaults, Nexus structures, reclamation domes, and MultiblockCore casings.",
+      "workspacePath": "C:/Github/Echo",
+      "modules": [
+        {
+          "modId": "echoblockworks",
+          "label": "Blockworks",
+          "version": "1.0.0",
+          "path": "addons/echoblockworks"
         }
       ]
     },
@@ -680,7 +767,7 @@
         {
           "modId": "arcanaveil",
           "label": "ARCANA: Veilbound Studies",
-          "version": "0.1.0",
+          "version": "0.2.0",
           "path": "."
         }
       ]
@@ -1048,6 +1135,46 @@
     },
     {
       "projectSlug": "echoashfallprotocol",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
       "key": "release-ops",
       "title": "Release Operations",
       "severity": "high",
@@ -1779,6 +1906,86 @@
         "GameTest action",
         "Jar set if configured"
       ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "key": "resources",
+      "title": "Resource Completeness",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans JSON validity, models, textures, item models, blockstates, and lang coverage for this project.",
+      "checks": [
+        "Malformed JSON",
+        "Missing model references",
+        "Missing textures",
+        "Missing lang keys"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "key": "runtime-logs",
+      "title": "Runtime Logs",
+      "severity": "high",
+      "status": "active",
+      "summary": "Scans recent run logs and crash reports for startup and runtime crash signatures.",
+      "checks": [
+        "Fresh crash reports",
+        "Runtime crash signatures"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "key": "release-ops",
+      "title": "Release Operations",
+      "severity": "high",
+      "status": "active",
+      "summary": "Checks build, GameTest, jar, and local release-readiness signals.",
+      "checks": [
+        "Build action",
+        "Compile Java action",
+        "GameTest action",
+        "Jar set if configured"
+      ]
     }
   ],
   "promptTemplates": [
@@ -1956,8 +2163,10 @@
         ":echonetcore:runGameTestServer",
         ":echodatacore:runGameTestServer",
         ":echomissioncore:runGameTestServer",
+        ":echomultiblockcore:runGameTestServer",
         ":echoterminal:runGameTestServer",
         "runGameTestServer",
+        ":echoruntimeguard:runGameTestServer",
         ":echosignalos:runGameTestServer",
         ":signalosexample:runGameTestServer",
         ":echoorbitalremnants:runGameTestServer",
@@ -1974,6 +2183,7 @@
         ":echoindex:runGameTestServer",
         ":echoarmory:runGameTestServer",
         ":echolens:runGameTestServer",
+        ":echoblockworks:runGameTestServer",
         "-PechoAddonSet=all",
         "--warning-mode",
         "all"
@@ -2312,6 +2522,63 @@
       "commandId": "validate-resources",
       "label": "Validate Ashfall Protocol Resources",
       "description": "Run the ECHO resource validator before reviewing ECHO: Ashfall Protocol.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "commandId": "build-module",
+      "label": "Build RuntimeGuard",
+      "description": "Build ECHO: RuntimeGuard from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoruntimeguard:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "commandId": "compile-java",
+      "label": "Compile RuntimeGuard",
+      "description": "Run Java compilation for ECHO: RuntimeGuard.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoruntimeguard:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "commandId": "run-gametests",
+      "label": "GameTest RuntimeGuard",
+      "description": "Run the module GameTest server for ECHO: RuntimeGuard.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoruntimeguard:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for RuntimeGuard",
+      "description": "Run the ECHO resource validator before reviewing ECHO: RuntimeGuard.",
       "mode": "shell",
       "risk": "low",
       "executable": ".\\gradlew.bat",
@@ -3369,6 +3636,120 @@
       "executable": ".\\gradlew.bat",
       "args": [
         "verifyArcanaRelease",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "commandId": "build-module",
+      "label": "Build MultiblockCore",
+      "description": "Build ECHO: MultiblockCore from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echomultiblockcore:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "commandId": "compile-java",
+      "label": "Compile MultiblockCore",
+      "description": "Run Java compilation for ECHO: MultiblockCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echomultiblockcore:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "commandId": "run-gametests",
+      "label": "GameTest MultiblockCore",
+      "description": "Run the module GameTest server for ECHO: MultiblockCore.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echomultiblockcore:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for MultiblockCore",
+      "description": "Run the ECHO resource validator before reviewing ECHO: MultiblockCore.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "commandId": "build-module",
+      "label": "Build Blockworks",
+      "description": "Build ECHO: Blockworks from the workspace root.",
+      "mode": "shell",
+      "risk": "medium",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoblockworks:build",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "commandId": "compile-java",
+      "label": "Compile Blockworks",
+      "description": "Run Java compilation for ECHO: Blockworks.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoblockworks:compileJava",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "commandId": "run-gametests",
+      "label": "GameTest Blockworks",
+      "description": "Run the module GameTest server for ECHO: Blockworks.",
+      "mode": "shell",
+      "risk": "high",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        ":echoblockworks:runGameTestServer",
+        "--warning-mode",
+        "all"
+      ]
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "commandId": "validate-resources",
+      "label": "Validate Resources for Blockworks",
+      "description": "Run the ECHO resource validator before reviewing ECHO: Blockworks.",
+      "mode": "shell",
+      "risk": "low",
+      "executable": ".\\gradlew.bat",
+      "args": [
+        "validateEchoResources",
+        "-PechoAddonSet=all",
         "--warning-mode",
         "all"
       ]

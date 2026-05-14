@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "g",
+    "s",
+    "i"
+  ],
+  "key": {
+    "g": { "item": "minecraft:glowstone_dust" },
+    "s": { "item": "minecraft:stick" },
+    "i": { "item": "minecraft:iron_nugget" }
+  },
+  "result": {
+    "id": "echoweathercore:route_flare",
+    "count": 4
+  }
+}

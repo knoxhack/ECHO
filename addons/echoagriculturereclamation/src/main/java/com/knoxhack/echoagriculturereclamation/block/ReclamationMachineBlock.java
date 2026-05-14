@@ -4,10 +4,10 @@ import com.knoxhack.echoagriculturereclamation.content.CropSpec;
 import com.knoxhack.echoagriculturereclamation.content.ReclamationContent;
 import com.knoxhack.echoagriculturereclamation.content.ReclamationMetrics;
 import com.knoxhack.echoagriculturereclamation.content.SeedProfile;
+import com.knoxhack.echoagriculturereclamation.entity.PollinatorDroneEntity;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCrossAddonIntegration;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationProgress;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationRestoration;
-import com.knoxhack.echoagriculturereclamation.progress.ReclamationWorldData;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -187,59 +186,64 @@ public class ReclamationMachineBlock extends Block {
 
    private void scanGreenhouse(Level level, BlockPos pos, Player player) {
       ReclamationProgress.GreenhouseScan scan = ReclamationProgress.scanGreenhouse(level, pos);
-      int score = scan.score();
+      ReclamationProgress.GreenhouseContext context = scan.asContext();
+      if (level instanceof ServerLevel serverLevel) {
+         ReclamationProgress.recordGreenhouseZone(serverLevel, pos, scan);
+         context = ReclamationProgress.greenhouseContext(serverLevel, pos);
+      }
+      int score = context.score();
       ReclamationProgress.max(player, "greenhouse_safety", score);
       if (score >= ReclamationContent.progression().greenhouseSafeThreshold()) {
          ReclamationProgress.mark(player, "greenhouse_online");
       }
-      if (level instanceof ServerLevel serverLevel) {
-         ReclamationWorldData.get(serverLevel).setGreenhouseSafety(chunkPos(pos), score);
-      }
       player.sendSystemMessage(Component.literal("ECHO FIELD // Greenhouse safety " + score + "/100 ("
-         + scan.enclosureLabel() + " enclosure, " + scan.glass() + " glass, " + scan.filters() + " filter, "
-         + scan.activeDocks() + " active dock, " + scan.idleDocks() + " idle dock). " + greenhouseAdvice(scan)));
+         + context.summaryLabel() + ", " + scan.enclosureLabel() + " enclosure, " + scan.glass() + " glass, "
+         + countLabel(scan.filters(), "filter") + ", " + countLabel(scan.activeDocks(), "active dock") + ", "
+         + countLabel(scan.idleDocks(), "idle dock") + ", " + countLabel(scan.deployedDrones(), "drone") + ", "
+         + countLabel(scan.serviceTargets(), "service target") + "). " + greenhouseAdvice(context)));
    }
 
    private void scanPollinatorDock(Level level, BlockPos pos, Player player) {
-      ReclamationProgress.GreenhouseScan scan = ReclamationProgress.scanGreenhouse(level, pos);
+      if (!(level instanceof ServerLevel serverLevel)) {
+         return;
+      }
+      if (player.isShiftKeyDown()) {
+         int recalled = PollinatorDroneEntity.recallDrones(serverLevel, pos);
+         player.sendSystemMessage(Component.literal("ECHO FIELD // Pollinator dock recall: " + recalled
+            + " drone" + (recalled == 1 ? "" : "s") + " recalled."));
+         return;
+      }
+      PollinatorDroneEntity drone = PollinatorDroneEntity.deployOrFind(serverLevel, pos);
+      ReclamationProgress.GreenhouseContext context = ReclamationProgress.greenhouseContext(level, pos);
       int targets = ReclamationProgress.pollinationTargets(level, pos);
+      int serviceTargets = ReclamationProgress.pollinationServiceTargets(level, pos);
       String activity = targets > 0 ? "active" : "idle";
       player.sendSystemMessage(Component.literal("ECHO FIELD // Pollinator dock " + activity + ": " + targets
-         + " crop/tray target" + (targets == 1 ? "" : "s") + " in service radius. Greenhouse "
-         + scan.enclosureLabel() + ", safety " + scan.score() + "/100. Drone entity remains disabled for save safety."));
+         + " crop/tray target" + (targets == 1 ? "" : "s") + ", " + countLabel(serviceTargets, "service target")
+         + ". Drone " + drone.statusLine()
+         + ". Greenhouse " + context.summaryLabel() + ", safety " + context.score() + "/100. " + context.nextAction()));
    }
 
    private void scanEcology(Level level, BlockPos pos, Player player) {
-      int greenhouse = ReclamationProgress.scanGreenhouseSafety(level, pos);
+      ReclamationProgress.GreenhouseContext greenhouse = ReclamationProgress.greenhouseContext(level, pos);
       ReclamationProgress.mark(player, "soil_analyzed");
       if (level instanceof ServerLevel serverLevel) {
          ReclamationRestoration.scanPulse(serverLevel, pos, player, greenhouse);
       }
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
       player.sendSystemMessage(Component.literal("ECHO FIELD // Soil " + metrics.soilLabel() + ", greenhouse " + metrics.greenhouseSafety()
-         + "%, seed stability " + metrics.cropStability() + "%, food security " + metrics.foodSecurity() + "%, restoration " + metrics.restorationScore()
-         + "%. " + restorationAdvice(metrics.restorationScore())));
+         + "% (" + greenhouse.summaryLabel() + ", " + countLabel(greenhouse.scan().deployedDrones(), "drone") + ", "
+         + countLabel(greenhouse.scan().serviceTargets(), "service target")
+         + "), seed stability " + metrics.cropStability() + "%, food security "
+         + metrics.foodSecurity() + "%, restoration " + metrics.restorationScore() + "%. " + restorationAdvice(metrics.restorationScore())));
    }
 
-   private static String greenhouseAdvice(ReclamationProgress.GreenhouseScan scan) {
-      int safe = ReclamationContent.progression().greenhouseSafeThreshold();
-      int score = scan.score();
-      if (score >= safe) {
-         return "Safe growth envelope; stabilized crops gain reliable yield.";
-      }
-      if (!scan.enclosed()) {
-         return "Seal the glass shell around an interior air pocket before safety can reach full rating.";
-      }
-      if (!scan.greenhouseRoof()) {
-         return "Bounded walls detected; add Greenhouse Glass overhead to finish the growth envelope.";
-      }
-      if (scan.activeDocks() == 0 && scan.idleDocks() > 0) {
-         return "Dock is idle; place crops or Hydroponic Trays within service radius.";
-      }
-      if (score >= Math.max(0, safe - 20)) {
-         return "Near-safe; add Greenhouse Glass, a Spore Filter, or a Pollinator Dock.";
-      }
-      return "Unsafe; add Greenhouse Glass, Spore Filters, Pollinator Dock support, and trays.";
+   private static String greenhouseAdvice(ReclamationProgress.GreenhouseContext context) {
+      return context.nextAction();
+   }
+
+   private static String countLabel(int count, String noun) {
+      return count + " " + noun + (count == 1 ? "" : "s");
    }
 
    private static String restorationAdvice(int score) {
@@ -383,10 +387,6 @@ public class ReclamationMachineBlock extends Block {
          }
       }
       return -1;
-   }
-
-   private static ChunkPos chunkPos(BlockPos pos) {
-      return new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
    }
 
    private static void give(Player player, ItemStack stack) {

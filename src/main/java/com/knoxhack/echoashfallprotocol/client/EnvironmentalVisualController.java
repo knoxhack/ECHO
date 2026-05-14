@@ -98,7 +98,7 @@ public final class EnvironmentalVisualController {
 
     private static void spawnWeatherParticles(Minecraft minecraft, Player player, EnvironmentalEventProfile profile) {
         float density = Math.max(0.0F, Config.WEATHER_PARTICLE_DENSITY.get().floatValue());
-        if (density <= 0.0F || minecraft.level == null) {
+        if (density <= 0.0F || minecraft.level == null || (localTicks & 1L) != 0L) {
             return;
         }
         int count = Math.min(particleCap(profile.type()), Math.round(profile.particleBudget() * easedIntensity * density));
@@ -117,10 +117,10 @@ public final class EnvironmentalVisualController {
 
     private static void spawnOrbitalParticles(Minecraft minecraft, Player player) {
         float density = Math.max(0.0F, Config.WEATHER_PARTICLE_DENSITY.get().floatValue());
-        if (density <= 0.0F || minecraft.level == null) {
+        if (density <= 0.0F || minecraft.level == null || (localTicks & 1L) != 0L) {
             return;
         }
-        int count = Math.min(32, Math.round(10 * easedIntensity * density));
+        int count = Math.min(16, Math.round(10 * easedIntensity * density));
         ParticleOptions particle = (orbitalParticleColor & 0x00FF00FF) != 0 ? ParticleTypes.GLOW : ParticleTypes.ELECTRIC_SPARK;
         var random = minecraft.level.getRandom();
         for (int i = 0; i < count; i++) {
@@ -174,12 +174,12 @@ public final class EnvironmentalVisualController {
 
     private static int particleCap(EnvironmentalEventType type) {
         return switch (type) {
-            case ASH_STORM -> 72;
-            case RADIATION_STORM, TOXIC_STORM -> 56;
-            case CRYO_FRONT -> 48;
-            case NEXUS_SURGE -> 40;
-            case BLACKOUT -> 28;
-            default -> 32;
+            case ASH_STORM -> 32;
+            case RADIATION_STORM, TOXIC_STORM -> 24;
+            case CRYO_FRONT -> 20;
+            case NEXUS_SURGE -> 18;
+            case BLACKOUT -> 12;
+            default -> 16;
         };
     }
 

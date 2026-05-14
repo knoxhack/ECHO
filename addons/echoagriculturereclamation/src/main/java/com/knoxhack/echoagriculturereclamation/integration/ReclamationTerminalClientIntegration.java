@@ -61,12 +61,13 @@ public final class ReclamationTerminalClientIntegration {
             );
          }
          ReclamationMetrics metrics = ReclamationProgress.metrics(player);
+         ReclamationProgress.GreenhouseContext greenhouse = ReclamationProgress.greenhouseContext(player.level(), player.blockPosition());
          return new TerminalAddonInfo(
             "Field reclamation, seed recovery, greenhouse safety, and restoration telemetry.",
             List.of(
                new TerminalAddonMetric("Known Seeds", String.valueOf(metrics.knownSeeds()), "recovered crop profiles", ACCENT),
                new TerminalAddonMetric("Soil", metrics.soilLabel(), "strongest nearby soil state", metrics.soilState().safe() ? TerminalUi.GREEN : TerminalUi.AMBER),
-               new TerminalAddonMetric("Greenhouse", metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold(), "safe growth envelope", metrics.greenhouseSafety() >= ReclamationContent.progression().greenhouseSafeThreshold() ? TerminalUi.GREEN : TerminalUi.AMBER),
+               new TerminalAddonMetric("Greenhouse", metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold(), greenhouse.summaryLabel(), metrics.greenhouseSafety() >= ReclamationContent.progression().greenhouseSafeThreshold() ? TerminalUi.GREEN : TerminalUi.AMBER),
                new TerminalAddonMetric("Food", metrics.foodSecurity() + "%", "food security", metrics.foodSecurity() >= 60 ? TerminalUi.GREEN : TerminalUi.AMBER),
                new TerminalAddonMetric("Stability", metrics.cropStability() + "%", "seed and crop stability", metrics.cropStability() >= 80 ? TerminalUi.GREEN : TerminalUi.AMBER),
                new TerminalAddonMetric("Restoration", metrics.restorationScore() + "/" + ReclamationContent.progression().restoreThreshold(), "local chunk score", metrics.restorationScore() >= ReclamationContent.progression().restoreThreshold() ? TerminalUi.GREEN : TerminalUi.CYAN)
@@ -79,7 +80,7 @@ public final class ReclamationTerminalClientIntegration {
 
       private static TerminalAddonGuide guide() {
          return TerminalAddonGuide.optional(240, "Field route",
-            "Agriculture Reclamation is optional recovery progression: start with seed capsules, then stabilize soil, crops, greenhouse safety, and local ecology.",
+            "Agriculture Reclamation is optional recovery progression: start with seed capsules, then stabilize soil, crops, greenhouse zones, and local ecology.",
             List.of(
                "Craft a seed capsule from wheat seeds, bone meal, glass bottle, and copper, then open it directly or identify it in a Seed Vault Terminal.",
                "Plant the profiled seed on dirt, grass, farmland, or a reusable Hydroponic Tray, then harvest the first crop.",

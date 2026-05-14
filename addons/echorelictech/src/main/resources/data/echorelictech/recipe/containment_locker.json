@@ -6,9 +6,9 @@
     "ILI"
   ],
   "key": {
-    "I": { "item": "minecraft:iron_ingot" },
-    "L": { "item": "minecraft:iron_nugget" },
-    "G": { "item": "echorelictech:containment_glass" }
+    "I": "minecraft:iron_ingot",
+    "L": "minecraft:iron_nugget",
+    "G": "echorelictech:containment_glass"
   },
   "result": {
     "id": "echorelictech:containment_locker"

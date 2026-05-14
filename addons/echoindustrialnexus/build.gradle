@@ -31,9 +31,15 @@ neoForge {
 configurations { runtimeClasspath.extendsFrom localRuntime }
 dependencies {
     implementation project(":echocore")
+    implementation project(":echonetcore")
+    implementation project(":echomultiblockcore")
     compileOnly project(":echoterminal")
+    compileOnly project(":echolens")
+    compileOnly project(":echoholomap")
     compileOnly project(":echorendercore")
     localRuntime project(":echoterminal")
+    localRuntime project(":echolens")
+    localRuntime project(":echoholomap")
     localRuntime project(":echorendercore")
 }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }

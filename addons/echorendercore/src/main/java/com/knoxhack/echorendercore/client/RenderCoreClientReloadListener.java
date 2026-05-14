@@ -8,12 +8,17 @@ import com.knoxhack.echorendercore.EchoRenderCore;
 import com.knoxhack.echorendercore.profile.AnimationProfile;
 import com.knoxhack.echorendercore.profile.ParticleProfile;
 import com.knoxhack.echorendercore.profile.ProfileDiagnosticsReport;
+import com.knoxhack.echorendercore.profile.ProfileHotSwapResult;
+import com.knoxhack.echorendercore.profile.ProfileValidationReport;
 import com.knoxhack.echorendercore.profile.RenderCoreJsonParsers;
+import com.knoxhack.echorendercore.profile.RenderCoreProfileComposer;
+import com.knoxhack.echorendercore.profile.RenderCoreProfileMigration;
 import com.knoxhack.echorendercore.profile.RenderCoreProfileValidator;
 import com.knoxhack.echorendercore.profile.RenderCoreProfiles;
 import com.knoxhack.echorendercore.profile.VisualProfile;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.resources.Identifier;
@@ -33,10 +38,12 @@ public final class RenderCoreClientReloadListener extends SimplePreparableReload
       Map<Identifier, VisualProfile> visuals = loadVisualProfiles(manager, counter);
       Map<Identifier, AnimationProfile> animations = loadAnimationProfiles(manager, counter);
       Map<Identifier, ParticleProfile> particles = loadParticleProfiles(manager, counter);
-      ProfileDiagnosticsReport diagnostics = RenderCoreProfileValidator.diagnostics(visuals, animations, particles,
-         counter.discovered, counter.loaded, counter.failed);
+      RenderCoreProfileComposer.CompositionResult composition = RenderCoreProfileComposer.composeAll(visuals);
+      ProfileDiagnosticsReport diagnostics = RenderCoreProfileValidator.diagnostics(composition.profiles(), animations, particles,
+         counter.discovered, counter.loaded, counter.failed,
+         composition.report().merge(new ProfileValidationReport(counter.validationIssues)));
       return new RenderCoreProfiles.LoadedContent(
-         visuals,
+         composition.profiles(),
          animations,
          particles,
          diagnostics.validationReport(),
@@ -51,18 +58,25 @@ public final class RenderCoreClientReloadListener extends SimplePreparableReload
 
    @Override
    protected void apply(RenderCoreProfiles.LoadedContent loaded, ResourceManager manager, ProfilerFiller profiler) {
-      RenderCoreProfiles.replace(loaded);
+      ProfileHotSwapResult result = RenderCoreProfiles.hotSwap(loaded);
+      RenderCoreProfiles.LoadedContent active = result.current();
       RenderCoreWarnings.clear();
+      BakedBlockPartResolver.clearCaches();
+      if (!result.accepted()) {
+         EchoRenderCore.LOGGER.warn("{} Previous profile cache remains active: {}.",
+            result.message(), active.diagnosticsReport().cacheMetrics().summaryLine());
+         return;
+      }
       EchoRenderCore.LOGGER.info(
          "Loaded {} RenderCore profiles across {} discovered JSON files ({} failed, {} validation warnings, {} validation errors, {} performance warnings).",
-         loaded.loaded(),
-         loaded.discovered(),
-         loaded.failed(),
-         loaded.validationReport().warnings(),
-         loaded.validationReport().errors(),
-         loaded.performanceReport().warningCount()
+         active.loaded(),
+         active.discovered(),
+         active.failed(),
+         active.validationReport().warnings(),
+         active.validationReport().errors(),
+         active.performanceReport().warningCount()
       );
-      for (var issue : loaded.validationReport().issues()) {
+      for (var issue : active.validationReport().issues()) {
          EchoRenderCore.LOGGER.warn("RenderCore validation {} {} {} [{}]: {}{}",
             issue.severity(), issue.code(), issue.profileId(), issue.path(), issue.message(),
             issue.suggestion().isBlank() ? "" : " Suggestion: " + issue.suggestion());
@@ -76,7 +90,16 @@ public final class RenderCoreClientReloadListener extends SimplePreparableReload
          Identifier id = contentId(resourceId, VISUAL_DIR);
          counter.discovered++;
          try {
-            VisualProfile profile = RenderCoreJsonParsers.parseVisualProfile(id, readObject(entry.getValue()));
+            JsonObject json = readObject(entry.getValue());
+            int schemaVersion = RenderCoreJsonParsers.visualSchemaVersion(json);
+            if (schemaVersion != VisualProfile.CURRENT_SCHEMA_VERSION) {
+               counter.failed++;
+               counter.validationIssues.add(RenderCoreProfileMigration.migrationRequiredIssue(id, schemaVersion));
+               EchoRenderCore.LOGGER.warn("RenderCore visual profile {} requires migration from schema_version {} to V11 before activation.",
+                  resourceId, schemaVersion);
+               continue;
+            }
+            VisualProfile profile = RenderCoreJsonParsers.parseRuntimeVisualProfile(id, json);
             if (profiles.putIfAbsent(id, profile) == null) {
                counter.loaded++;
             } else {
@@ -162,5 +185,6 @@ public final class RenderCoreClientReloadListener extends SimplePreparableReload
       private int discovered;
       private int loaded;
       private int failed;
+      private final ArrayList<com.knoxhack.echorendercore.profile.ProfileValidationIssue> validationIssues = new ArrayList<>();
    }
 }

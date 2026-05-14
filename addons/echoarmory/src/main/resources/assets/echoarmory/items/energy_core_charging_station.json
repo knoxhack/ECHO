@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoarmory:block/energy_core_charging_station"
+    "model": "echoarmory:item/energy_core_charging_station"
   }
 }

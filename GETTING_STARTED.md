@@ -11,12 +11,12 @@ This guide walks a new player from drop-pod wakeup to the Nexus choice. For a sy
 - Back up important worlds before reaching the Nexus Core; the final choice is meant to matter.
 - Install JEI if you want recipe-viewer support for ECHO machines, locked schematics, and custom process categories; the ECHO Terminal Recipe Index also exposes provider-backed ECHO process notes without requiring JEI.
 
-## 1.3.0 Player Checklist
+## 1.0.0 Player Checklist
 
 Use this checklist for a clean first report:
 
-1. Spawn fresh inside the compact `20x10x20` drop pod and confirm the spawn bay is clear at template `(9, 3, 12)`.
-2. Check the bed at `(5, 3, 10)` / `(5, 3, 11)`, the door/ramp, side windows, roof beacons, landing struts, and labeled pod lockers.
+1. Spawn fresh inside the compact `16x9x16` drop pod and confirm the spawn bay is clear at template `(8, 3, 10)`.
+2. Check the emergency bunk at `(4, 3, 7)` / `(4, 3, 8)`, the open hatch/ramp, side windows, roof beacons, landing struts, and Echo crates/cache.
 3. Open the ECHO terminal and confirm the current mission plus What Now diagnostics tell you what to stabilize next.
 4. Build the first powered loop: Hand Recycler, Micro Generator, Filter Workbench, Water Purifier, and Battery Bank.
 5. Use JEI and the ECHO Terminal Recipe Index to inspect ECHO custom machine categories, item recipes/uses, category filters, process notes, and locked schematic requirements.
@@ -37,7 +37,7 @@ Known notes:
 ## First Ten Minutes
 
 1. Stay near the compact drop pod and use it as the first shelter, not just as wreckage.
-2. Open visible lockers for the scanner, water, filters, rations, meds, bottles, torches, basic weapon support, campfire/chest support, and salvage.
+2. Open visible Echo crates/cache for the scanner, water, filters, rations, meds, bottles, torches, basic weapon support, campfire support, and salvage.
 3. Use the south-facing door/ramp to scout the immediate landing scar, then return before night.
 4. Break debris and ruined material for scrap metal, scrap wire, scrap circuits, and scrap plastic.
 5. Scavenge ash bushes, dry grass, wasteland grass, reeds, and mutated leaves for sticks and plant fiber.
@@ -101,10 +101,10 @@ Mutations can help, but side effects stack. The Field Med Bay becomes important 
 
 Goal: survive the crash site.
 
-- Loot the labeled pod lockers before wandering.
+- Loot the Echo crates/cache before wandering.
 - Scavenge immediate landing debris.
 - Craft a first weapon.
-- Use the pod bed, ramp, lighting, and hull as your first shelter before night.
+- Use the pod emergency bunk, ramp, lighting, and hull as your first shelter before night.
 - Let ECHO-7 establish the mission chain.
 
 ### Phase 1: Wilderness

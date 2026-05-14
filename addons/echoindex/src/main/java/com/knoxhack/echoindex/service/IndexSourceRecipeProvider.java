@@ -69,6 +69,7 @@ public enum IndexSourceRecipeProvider implements IIndexRecipeProvider {
         sources = newSources == null ? List.of() : newSources.stream()
                 .filter(source -> source != null && source.itemId() != null)
                 .sorted(Comparator.comparing((SourceFact source) -> source.itemId().toString())
+                        .thenComparing(source -> source.kind().name())
                         .thenComparing(source -> source.sourceId().toString())
                         .thenComparing(SourceFact::title))
                 .toList();
@@ -85,6 +86,7 @@ public enum IndexSourceRecipeProvider implements IIndexRecipeProvider {
     private static Identifier viewId(SourceFact source) {
         return EchoIndex.id("source/" + sanitize(source.itemId().getNamespace()) + "/"
                 + sanitize(source.itemId().getPath()) + "/"
+                + sanitize(source.kind().name().toLowerCase(Locale.ROOT)) + "/"
                 + sanitize(source.sourceId().getNamespace()) + "/"
                 + sanitize(source.sourceId().getPath()) + "/"
                 + sanitize(source.title().toLowerCase(Locale.ROOT)));
@@ -107,11 +109,13 @@ public enum IndexSourceRecipeProvider implements IIndexRecipeProvider {
     public record SourceFact(
             Identifier itemId,
             Identifier sourceId,
+            IndexRecipeSourceKind kind,
             String title,
             List<String> notes,
             ItemStack icon,
             String sourceModId) {
         public SourceFact {
+            kind = kind == null ? IndexRecipeSourceKind.SOURCE_CARD : kind;
             title = title == null || title.isBlank() ? "Source" : title.strip();
             notes = notes == null ? List.of() : notes.stream()
                     .filter(note -> note != null && !note.isBlank())
@@ -123,7 +127,12 @@ public enum IndexSourceRecipeProvider implements IIndexRecipeProvider {
 
         public static SourceFact of(Identifier itemId, Identifier sourceId, String title, List<String> notes,
                 Item icon, String sourceModId) {
-            return new SourceFact(itemId, sourceId, title, notes, new ItemStack(icon), sourceModId);
+            return of(itemId, sourceId, IndexRecipeSourceKind.SOURCE_CARD, title, notes, icon, sourceModId);
+        }
+
+        public static SourceFact of(Identifier itemId, Identifier sourceId, IndexRecipeSourceKind kind, String title,
+                List<String> notes, Item icon, String sourceModId) {
+            return new SourceFact(itemId, sourceId, kind, title, notes, new ItemStack(icon), sourceModId);
         }
     }
 }

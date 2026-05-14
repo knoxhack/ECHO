@@ -15,10 +15,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.fml.ModList;
 import org.jspecify.annotations.Nullable;
 
 final class LogisticsTerminalSupport {
-   private static final int RADIUS = 24;
+   private static final int BASE_RADIUS = 24;
+   private static final int INDUSTRIAL_RADIUS = 36;
    private static final int Y_RADIUS = 8;
    private static final List<LogisticsKind> REQUEST_TARGETS = List.of(
       LogisticsKind.LOADOUT_LOCKER,
@@ -47,36 +49,29 @@ final class LogisticsTerminalSupport {
       LogisticsBlockEntity endpoint = chooseEndpoint(level, networkOrigin, networkId, "");
       LogisticsNetworkService.LogisticsSnapshot snapshot = LogisticsNetworkService.snapshot(level, networkOrigin, networkId, player);
 
-      String selectedLoadoutId = endpoint == null ? firstReadyLoadout(snapshot) : endpoint.loadoutId();
-      Optional<LogisticsNetworkService.LoadoutReadiness> selectedReadiness = readiness(snapshot, selectedLoadoutId);
-      String selectedTitle = LogisticsContent.loadout(selectedLoadoutId)
-         .map(LoadoutPreset::title)
-         .orElse(selectedLoadoutId == null || selectedLoadoutId.isBlank() ? "None" : selectedLoadoutId);
-      boolean dockOnline = blocks.stream().anyMatch(block -> block.kind() == LogisticsKind.DRONE_DELIVERY_DOCK);
       Optional<LogisticsBlockEntity> relay = blocks.stream()
          .filter(block -> block.kind() == LogisticsKind.REMOTE_REWARD_RELAY)
          .min(Comparator.comparingDouble(block -> block.getBlockPos().distSqr(networkOrigin)));
       Optional<LogisticsBlockEntity> depot = blocks.stream()
          .filter(block -> block.kind() == LogisticsKind.FACTION_TRADE_DEPOT)
          .min(Comparator.comparingDouble(block -> block.getBlockPos().distSqr(networkOrigin)));
-      int endpointCount = (int)blocks.stream().filter(LogisticsTerminalSupport::isRequestTarget).count();
       return new TerminalView(
          networkId,
          networkOrigin,
          snapshot,
-         blocks.size(),
+         snapshot.blockCount(),
          endpoint,
-         endpointCount,
-         dockOnline,
+         snapshot.endpointCount(),
+         snapshot.dockOnline(),
          relay.orElse(null),
-         relay.isPresent(),
-         depot.isPresent(),
-         depot.map(LogisticsBlockEntity::cooldownTicks).orElse(0),
-         selectedLoadoutId,
-         selectedTitle,
-         selectedReadiness.map(LogisticsNetworkService.LoadoutReadiness::ready).orElse(false),
-         selectedReadiness.map(LogisticsNetworkService.LoadoutReadiness::missingCount).orElse(0),
-         networkId + "|" + (selectedLoadoutId == null ? "" : selectedLoadoutId)
+         snapshot.relayOnline(),
+         snapshot.depotOnline(),
+         snapshot.depotCooldown(),
+         snapshot.selectedLoadoutId(),
+         snapshot.selectedLoadoutTitle(),
+         snapshot.selectedReady(),
+         snapshot.selectedMissing(),
+         snapshot.requestPayload()
       );
    }
 
@@ -144,7 +139,8 @@ final class LogisticsTerminalSupport {
       if (level == null || origin == null) {
          return List.of();
       }
-      return StreamSupport.stream(BlockPos.betweenClosed(origin.offset(-RADIUS, -Y_RADIUS, -RADIUS), origin.offset(RADIUS, Y_RADIUS, RADIUS)).spliterator(), false)
+      int radius = radius();
+      return StreamSupport.stream(BlockPos.betweenClosed(origin.offset(-radius, -Y_RADIUS, -radius), origin.offset(radius, Y_RADIUS, radius)).spliterator(), false)
          .map(BlockPos::immutable)
          .map(level::getBlockEntity)
          .filter(LogisticsBlockEntity.class::isInstance)
@@ -152,6 +148,10 @@ final class LogisticsTerminalSupport {
          .filter(block -> networkMatches(networkId, block.networkId()))
          .sorted(Comparator.comparing(block -> block.getBlockPos().toShortString()))
          .toList();
+   }
+
+   private static int radius() {
+      return ModList.get().isLoaded("echoindustrialnexus") ? INDUSTRIAL_RADIUS : BASE_RADIUS;
    }
 
    private static boolean isRequestTarget(LogisticsBlockEntity block) {

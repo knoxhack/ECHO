@@ -11,8 +11,10 @@ import com.knoxhack.echocore.api.WorldMarkerType;
 import com.knoxhack.echocore.api.WorldRegionInstance;
 import com.knoxhack.echocore.api.WorldRegionType;
 import com.knoxhack.echocore.api.mission.IMissionProgressView;
+import com.knoxhack.echocore.api.mission.MissionActionView;
 import com.knoxhack.echocore.api.mission.MissionChapterDefinition;
 import com.knoxhack.echocore.api.mission.MissionDefinition;
+import com.knoxhack.echocore.api.mission.MissionHookTargets;
 import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echocore.api.mission.MissionRewardClaimMode;
 import com.knoxhack.echocore.api.mission.MissionRuntimeBus;
@@ -69,8 +71,12 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("player_data_round_trip", () -> ModGameTests::playerDataRoundTrip);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_PROVIDER =
             TEST_FUNCTIONS.register("terminal_provider_snapshot", () -> ModGameTests::terminalProviderSnapshot);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CUSTOM_ACTIONS =
+            TEST_FUNCTIONS.register("custom_action_bridge", () -> ModGameTests::customActionBridge);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORLDCORE_CONSUMER =
             TEST_FUNCTIONS.register("worldcore_consumer", () -> ModGameTests::worldCoreConsumer);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> HOOK_COVERAGE =
+            TEST_FUNCTIONS.register("hook_coverage", () -> ModGameTests::hookCoverage);
 
     private ModGameTests() {
     }
@@ -86,7 +92,9 @@ public final class ModGameTests {
         register(event, environment, "objective_reward_flow", OBJECTIVE_REWARD_FLOW.getId());
         register(event, environment, "player_data_round_trip", PLAYER_DATA_ROUND_TRIP.getId());
         register(event, environment, "terminal_provider_snapshot", TERMINAL_PROVIDER.getId());
+        register(event, environment, "custom_action_bridge", CUSTOM_ACTIONS.getId());
         register(event, environment, "worldcore_consumer", WORLDCORE_CONSUMER.getId());
+        register(event, environment, "hook_coverage", HOOK_COVERAGE.getId());
     }
 
     private static void noOpFallback(GameTestHelper helper) {
@@ -221,6 +229,38 @@ public final class ModGameTests {
         }
     }
 
+    private static void customActionBridge(GameTestHelper helper) {
+        MissionCoreService service = MissionCoreService.INSTANCE;
+        service.clearForTests();
+        Identifier chapterId = id("custom_action_chapter");
+        Identifier missionId = id("custom_action_mission");
+        AtomicBoolean handled = new AtomicBoolean(false);
+        service.registerChapter("gametest", new MissionChapterDefinition(chapterId, "Actions", "Custom action bridge tests", 0, 0x55FFDD));
+        service.registerMission("gametest", MissionDefinition.builder(missionId, chapterId)
+                .text("Custom Action", "Expose a Java-only action.", "GameTest")
+                .objective(ObjectiveDefinition.simple(id("custom_action_mission/objective"),
+                        MissionObjectiveType.CUSTOM, "Bridge", "Custom action is visible.", ItemStack.EMPTY, 1))
+                .actionProvider((player, mission, status, completeNow) ->
+                        List.of(MissionActionView.enabled("custom_ping", "Ping Relay")))
+                .actionHandler((player, mission, actionId) -> {
+                    if ("custom_ping".equals(actionId)) {
+                        handled.set(true);
+                        return true;
+                    }
+                    return false;
+                })
+                .build());
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        IMissionProgressView view = service.mission(player, missionId).orElseThrow();
+        helper.assertTrue(view.actions().stream().anyMatch(action -> "custom_ping".equals(action.id())),
+                "MissionCore view should merge Java custom actions into the action list.");
+        helper.assertTrue(service.handleAction(player, missionId, "custom_ping"),
+                "MissionCore should delegate unknown action ids to the Java action handler.");
+        helper.assertTrue(handled.get(), "Custom action handler should receive delegated action id.");
+        helper.succeed();
+    }
+
     private static void worldCoreConsumer(GameTestHelper helper) {
         MissionCoreService service = MissionCoreService.INSTANCE;
         service.clearForTests();
@@ -262,6 +302,80 @@ public final class ModGameTests {
         helper.assertTrue(view.status() == MissionStatus.COMPLETED,
                 "WorldCore bridge mission should complete after matching events.");
         EchoWorldRuntimeBus.clearForTests();
+        helper.succeed();
+    }
+
+    private static void hookCoverage(GameTestHelper helper) {
+        MissionCoreService service = MissionCoreService.INSTANCE;
+        service.clearForTests();
+
+        String directSource = "echoblackboxprotocol";
+        Identifier directChapter = Identifier.fromNamespaceAndPath(directSource, "hook_chapter");
+        Identifier directMission = Identifier.fromNamespaceAndPath(directSource, "decode_cache");
+        Identifier directTarget = MissionHookTargets.objectiveTarget(directSource, directMission, 0);
+        service.registerChapter(directSource, new MissionChapterDefinition(
+                directChapter, "Hooks", "Direct hook coverage.", 0, 0x55FFDD));
+        service.registerMission(directSource, MissionDefinition.builder(directMission, directChapter)
+                .text("Decode Cache", "Decode the cache.", "Hook proof")
+                .objective(new ObjectiveDefinition(Identifier.fromNamespaceAndPath(directSource, "decode_cache/objective"),
+                        MissionObjectiveType.CUSTOM, "Decode", "Decode the cache.", ItemStack.EMPTY,
+                        1, false, Map.of("target", directTarget.toString())))
+                .build());
+        EchoCoreServices.registerMissionHookCoverage(directSource, directMission, directTarget);
+        EchoCoreServices.registerMissionHookCoverage(directSource, directMission, directTarget);
+
+        String mixedSource = "echoconvoyprotocol";
+        Identifier mixedChapter = Identifier.fromNamespaceAndPath(mixedSource, "hook_chapter");
+        Identifier mixedMission = Identifier.fromNamespaceAndPath(mixedSource, "route_alpha");
+        Identifier mixedTarget0 = MissionHookTargets.objectiveTarget(mixedSource, mixedMission, 0);
+        Identifier mixedTarget1 = MissionHookTargets.objectiveTarget(mixedSource, mixedMission, 1);
+        service.registerChapter(mixedSource, new MissionChapterDefinition(
+                mixedChapter, "Convoy Hooks", "Mixed hook coverage.", 0, 0x55FFDD));
+        service.registerMission(mixedSource, MissionDefinition.builder(mixedMission, mixedChapter)
+                .text("Route Alpha", "Complete two route milestones.", "Hook proof")
+                .objective(new ObjectiveDefinition(Identifier.fromNamespaceAndPath(mixedSource, "route_alpha/one"),
+                        MissionObjectiveType.ESTABLISH_ROUTE, "Activate", "Activate the route.", ItemStack.EMPTY,
+                        1, false, Map.of("target", mixedTarget0.toString())))
+                .objective(new ObjectiveDefinition(Identifier.fromNamespaceAndPath(mixedSource, "route_alpha/two"),
+                        MissionObjectiveType.ESTABLISH_ROUTE, "Complete", "Complete the route.", ItemStack.EMPTY,
+                        1, false, Map.of("target", mixedTarget1.toString())))
+                .build());
+        EchoCoreServices.registerMissionHookCoverage(mixedSource, mixedMission, mixedTarget0);
+
+        String adapterSource = "echoorbitalremnants";
+        Identifier adapterChapter = Identifier.fromNamespaceAndPath(adapterSource, "hook_chapter");
+        Identifier adapterMission = Identifier.fromNamespaceAndPath(adapterSource, "orbital_scan");
+        Identifier adapterTarget = MissionHookTargets.objectiveTarget(adapterSource, adapterMission, 0);
+        service.registerChapter(adapterSource, new MissionChapterDefinition(
+                adapterChapter, "Orbital Hooks", "Adapter fallback coverage.", 0, 0x55FFDD));
+        service.registerMission(adapterSource, MissionDefinition.builder(adapterMission, adapterChapter)
+                .text("Orbital Scan", "Legacy scan state still imports.", "Hook proof")
+                .objective(new ObjectiveDefinition(Identifier.fromNamespaceAndPath(adapterSource, "orbital_scan/objective"),
+                        MissionObjectiveType.COMPLETE_ORBITAL_SCAN, "Scan", "Complete scan.", ItemStack.EMPTY,
+                        1, false, Map.of("target", adapterTarget.toString())))
+                .completionRule((player, mission) -> true)
+                .build());
+
+        Map<String, String> coverage = EchoCoreServices.missionHookCoverageSummary();
+        helper.assertTrue("direct-hooks".equals(coverage.get(directSource)), "Full target coverage should report direct-hooks.");
+        helper.assertTrue("mixed".equals(coverage.get(mixedSource)), "Partial target coverage should report mixed.");
+        helper.assertTrue("adapter-state".equals(coverage.get(adapterSource)), "Missing hook coverage should report adapter-state.");
+        helper.assertTrue(service.validateContent().stream().anyMatch(warning -> warning.contains("adapter-state")),
+                "Validation should warn about adapter-state migrated sources.");
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        helper.assertTrue(service.startMission(player, mixedMission), "Mixed coverage mission should start.");
+        helper.assertTrue(EchoCoreServices.recordMissionObjective(player, MissionObjectiveType.ESTABLISH_ROUTE, mixedTarget0, 1,
+                        MissionHookTargets.context(mixedSource, mixedMission, "route", "alpha")),
+                "Direct route activation hook should progress.");
+        helper.assertTrue(EchoCoreServices.recordMissionObjective(player, MissionObjectiveType.ESTABLISH_ROUTE, mixedTarget1, 1,
+                        MissionHookTargets.context(mixedSource, mixedMission, "route", "alpha")),
+                "Direct route completion hook should progress.");
+        helper.assertTrue(service.mission(player, mixedMission).orElseThrow().status() == MissionStatus.COMPLETED,
+                "Direct hooks should complete the mission without Terminal state.");
+        helper.assertFalse(EchoCoreServices.recordMissionObjective(player, MissionObjectiveType.ESTABLISH_ROUTE, mixedTarget0, 1,
+                        MissionHookTargets.context(mixedSource, mixedMission, "route", "alpha")),
+                "Once-only completed missions should ignore duplicate hook progress.");
         helper.succeed();
     }
 

@@ -13,7 +13,7 @@ import type {
 } from "../shared/types.js";
 import { CommandCenterStore } from "./db.js";
 import { ECHO_ROOT, QUARANTINE_DIR, toDisplayPath } from "./paths.js";
-import { projectWorkspaceRoot } from "./workspace.js";
+import { projectWithLiveModuleVersions, projectWorkspaceRoot } from "./workspace.js";
 
 export interface JarServiceOptions {
   buildRoot?: string;
@@ -50,9 +50,10 @@ export function jarBuildCommandId(project: Project): string {
 }
 
 export function buildJarManifest(project: Project, settings: AppSettings, options: JarServiceOptions = {}): JarManifest {
+  const liveProject = projectWithLiveModuleVersions(project, settings);
   const generatedAt = (options.now?.() ?? new Date()).toISOString();
-  const workspaceRoot = projectWorkspaceRoot(project, settings);
-  const buildRoot = options.buildRoot ?? resolveGradleBuildRoot(project, settings);
+  const workspaceRoot = projectWorkspaceRoot(liveProject, settings);
+  const buildRoot = options.buildRoot ?? resolveGradleBuildRoot(liveProject, settings);
   const targetDir = settings.modpackModsDir.trim();
   const targetConfigured = targetDir.length > 0;
   const targetExists = targetConfigured && isDirectory(targetDir);
@@ -65,10 +66,10 @@ export function buildJarManifest(project: Project, settings: AppSettings, option
   }
 
   const artifacts = [
-    ...project.modules.map((module) => buildArtifact(project, module, workspaceRoot, buildRoot, targetConfigured ? targetDir : "")),
-    ...discoverAdditionalEchoArtifacts(project, buildRoot, targetConfigured ? targetDir : "")
+    ...liveProject.modules.map((module) => buildArtifact(liveProject, module, workspaceRoot, buildRoot, targetConfigured ? targetDir : "")),
+    ...discoverAdditionalEchoArtifacts(liveProject, buildRoot, targetConfigured ? targetDir : "")
   ];
-  const targetEntries = targetExists ? scanTargetEntries(project, artifacts, targetDir) : [];
+  const targetEntries = targetExists ? scanTargetEntries(liveProject, artifacts, targetDir) : [];
   const entriesByName = new Map(targetEntries.map((entry) => [entry.fileName.toLowerCase(), entry]));
   for (const artifact of artifacts) {
     const targetEntry = entriesByName.get(artifact.expectedFileName.toLowerCase());
@@ -77,7 +78,7 @@ export function buildJarManifest(project: Project, settings: AppSettings, option
   }
 
   return {
-    projectSlug: project.slug,
+    projectSlug: liveProject.slug,
     generatedAt,
     buildRoot: toDisplayPath(buildRoot),
     targetDir: toDisplayPath(targetDir),

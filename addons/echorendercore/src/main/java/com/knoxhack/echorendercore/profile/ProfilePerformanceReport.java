@@ -40,6 +40,8 @@ public record ProfilePerformanceReport(
             case "profile_perf_high_layer_count" -> "Combine compatible layers or gate expensive layers by state/variant.";
             case "profile_perf_high_emitter_rate" -> "Lower emitter rate or burst values for steady-state effects.";
             case "profile_perf_high_animation_track_count" -> "Split rarely used clips or reduce animated part/channel count.";
+            case "profile_perf_high_effect_cost" -> "Reduce bloom, scanline, hue-shift, or pulse-heavy layers on profiles rendered many times.";
+            case "profile_perf_high_bloom_cost" -> "Reduce bloom_radius, bloom_passes, screen_blend, or the number of bloom-capable layers.";
             default -> "Review the profile for unnecessary runtime work.";
         };
     }

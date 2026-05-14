@@ -21,6 +21,7 @@ import type {
   TerminalPlannerGroup
 } from "../shared/types.js";
 import { DB_PATH, DEFAULT_PYTHON_EXECUTABLE, ECHO_ROOT, LOCAL_DATA_DIR } from "./paths.js";
+import { projectWithLiveModuleVersions } from "./workspace.js";
 
 type DatabaseLike = {
   exec(sql: string): void;
@@ -66,6 +67,10 @@ function nowIso(): string {
 
 function valueAsString(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function liveSeedProjects(): Project[] {
+  return (seedData.projects as Project[]).map((project) => projectWithLiveModuleVersions(project, DEFAULT_SETTINGS));
 }
 
 export class CommandCenterStore {
@@ -565,7 +570,8 @@ export class CommandCenterStore {
   }
 
   private syncProjects(): void {
-    const slugs = seedData.projects.map((project) => project.slug);
+    const projects = liveSeedProjects();
+    const slugs = projects.map((project) => project.slug);
     if (slugs.length > 0) {
       this.db.prepare(`DELETE FROM projects WHERE slug NOT IN (${slugs.map(() => "?").join(", ")})`).run(...slugs);
     }
@@ -587,7 +593,7 @@ export class CommandCenterStore {
         modules_json = ?
       WHERE slug = ?
     `);
-    for (const project of seedData.projects) {
+    for (const project of projects) {
       const existing = this.db.prepare("SELECT slug FROM projects WHERE slug = ?").get(project.slug);
       if (existing) {
         updateProject.run(

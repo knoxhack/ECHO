@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoindustrialnexus:block/water_purifier"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoindustrialnexus:item/water_purifier"
+  }
+}

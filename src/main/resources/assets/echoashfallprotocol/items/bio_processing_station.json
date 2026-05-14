@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoashfallprotocol:block/bio_processing_station"
+    "model": "echoashfallprotocol:item/bio_processing_station"
   }
 }

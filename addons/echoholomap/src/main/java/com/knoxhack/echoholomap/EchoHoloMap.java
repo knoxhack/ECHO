@@ -4,6 +4,7 @@ import com.knoxhack.echocore.api.EchoAddonChapter;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoholomap.command.HoloMapCommands;
+import com.knoxhack.echoholomap.integration.HoloMapMissionCoreIntegration;
 import com.knoxhack.echoholomap.map.HoloMapService;
 import com.knoxhack.echoholomap.map.HoloMapTerrainScanner;
 import com.knoxhack.echoholomap.network.ModNetwork;
@@ -42,6 +43,7 @@ public final class EchoHoloMap {
             HoloMapService.INSTANCE.registerBuiltins();
             EchoCoreServices.registerMapMarkerService(HoloMapService.INSTANCE);
             registerAddonChapter();
+            HoloMapMissionCoreIntegration.register();
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();
             }

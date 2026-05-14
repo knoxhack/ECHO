@@ -80,22 +80,25 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
    public Map<String, ModelPart> namedPartsForRenderCore() {
       Map<String, ModelPart> parts = new LinkedHashMap<>();
       putAlias(parts, "body", root);
-      putAlias(parts, "wheel_front_left", childOrNull(root, "left_front_wheel"));
-      putAlias(parts, "wheel_front_right", childOrNull(root, "right_front_wheel"));
-      putAlias(parts, "wheel_back_left", childOrNull(root, "left_rear_wheel"));
-      putAlias(parts, "wheel_back_right", childOrNull(root, "right_rear_wheel"));
-      putAlias(parts, "suspension_left", childOrNull(root, "front_left_wheel_well"));
-      putAlias(parts, "suspension_right", childOrNull(root, "front_right_wheel_well"));
-      putAlias(parts, "scanner", childOrNull(root, "scanner_pod"));
-      putAlias(parts, "antenna", childOrNull(root, "scanner_whip"));
-      putAlias(parts, "core", firstChild(root, "cyan_dashboard_panel", "status_light"));
-      putAlias(parts, "terminal_panel", firstChild(root, "cyan_dashboard_panel", "windshield"));
-      putAlias(parts, "screen", firstChild(root, "cyan_dashboard_panel", "windshield"));
-      putAlias(parts, "headlight_left", childOrNull(root, "left_headlight"));
-      putAlias(parts, "headlight_right", childOrNull(root, "right_headlight"));
-      putAlias(parts, "scanner_lens", childOrNull(childOrNull(root, "scanner_pod"), "scanner_lens"));
-      putAlias(parts, "exhaust_left", childOrNull(root, "left_toolbox"));
-      putAlias(parts, "exhaust_right", childOrNull(root, "right_toolbox"));
+      putAlias(parts, "wheel_front_left", firstChild(root, "left_front_wheel", "front_tire", "left_road_wheel_0", "left_wheel_0"));
+      putAlias(parts, "wheel_front_right", firstChild(root, "right_front_wheel", "front_tire", "right_road_wheel_0", "right_wheel_0"));
+      putAlias(parts, "wheel_back_left", firstChild(root, "left_rear_wheel", "rear_tire", "left_road_wheel_4", "left_wheel_2"));
+      putAlias(parts, "wheel_back_right", firstChild(root, "right_rear_wheel", "rear_tire", "right_road_wheel_4", "right_wheel_2"));
+      putAlias(parts, "suspension_left", firstChild(root, "front_left_wheel_well", "left_track_outer_belt", "left_suspension_block_0"));
+      putAlias(parts, "suspension_right", firstChild(root, "front_right_wheel_well", "right_track_outer_belt", "right_suspension_block_0"));
+      putAlias(parts, "scanner", firstChild(root, "scanner_pod", "relay_scanner_bar", "relay_dish_back", "front_sensor_nose", "headlamp"));
+      putAlias(parts, "antenna", firstChild(root, "scanner_whip", "roof_antenna_primary", "crawler_rear_antenna", "relay_comms_mast", "antenna_left"));
+      putAlias(parts, "core", firstChild(root, "cyan_dashboard_panel", "status_light", "crawler_status_light", "relay_core_light", "headlamp_glow", "route_light"));
+      putAlias(parts, "terminal_panel", firstChild(root, "cyan_dashboard_panel", "relay_dashboard_panel", "windshield", "windshield_slit", "front_windows"));
+      putAlias(parts, "screen", firstChild(root, "cyan_dashboard_panel", "relay_dashboard_panel", "windshield", "windshield_slit", "front_windows"));
+      putAlias(parts, "headlight_left", firstChild(root, "left_headlight", "headlamp", "front_light_bar", "scrap_front_vent_left"));
+      putAlias(parts, "headlight_right", firstChild(root, "right_headlight", "headlamp", "front_light_bar", "scrap_front_vent_right"));
+      putAlias(parts, "scanner_lens", firstChild(root, "scanner_pod", "relay_dish_back", "front_sensor_nose", "headlamp"));
+      putAlias(parts, "exhaust_left", firstChild(root, "exhaust_pipe", "muffler", "left_toolbox", "left_fuel_tank", "scrap_rear_vent_left"));
+      putAlias(parts, "exhaust_right", firstChild(root, "muffler", "right_toolbox", "right_fuel_tank", "scrap_rear_vent_right"));
+      putAlias(parts, "cabin", firstChild(root, "cab_lower", "heavy_cab_lower", "armored_cab_lower", "fuel_tank", "seat"));
+      putAlias(parts, "engine", firstChild(root, "engine_block", "crawler_chassis", "heavy_chassis", "teal_power_core"));
+      putAlias(parts, "cargo", firstChild(root, "rear_cargo_roll", "left_saddlebag", "cargo_bed_floor", "crate_large", "tech_hull_lower"));
       return parts;
    }
 

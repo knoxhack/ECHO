@@ -2,6 +2,8 @@ package com.knoxhack.echolens;
 
 import com.knoxhack.echolens.config.LensConfig;
 import com.knoxhack.echolens.integration.LensCoreIntegration;
+import com.knoxhack.echolens.integration.LensMissionCoreIntegration;
+import com.knoxhack.echolens.network.ModNetwork;
 import com.knoxhack.echolens.provider.LensBuiltins;
 import com.knoxhack.echolens.test.ModGameTests;
 import com.mojang.logging.LogUtils;
@@ -24,6 +26,7 @@ public class EchoLens {
         modContainer.registerConfig(ModConfig.Type.CLIENT, LensConfig.CLIENT_SPEC);
         LensConfig.registerEchoConfig();
         ModGameTests.register(modEventBus);
+        modEventBus.addListener(ModNetwork::registerPayloads);
         modEventBus.addListener(ModGameTests::registerTests);
         modEventBus.addListener(this::commonSetup);
     }
@@ -32,11 +35,14 @@ public class EchoLens {
         event.enqueueWork(() -> {
             LensBuiltins.register();
             LensCoreIntegration.register();
+            LensMissionCoreIntegration.register();
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();
             }
             LOGGER.info("ECHO: Lens scanner HUD online with {} providers.",
                     com.knoxhack.echolens.registry.LensProviderRegistry.count());
+            LOGGER.info("ECHO: Lens server-assisted Deep Scan online with {} server providers.",
+                    com.knoxhack.echolens.registry.LensProviderRegistry.serverProviders().size());
         });
     }
 

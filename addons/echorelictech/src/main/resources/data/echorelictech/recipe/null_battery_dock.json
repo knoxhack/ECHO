@@ -6,9 +6,9 @@
     "III"
   ],
   "key": {
-    "I": { "item": "minecraft:iron_ingot" },
-    "R": { "item": "minecraft:redstone" },
-    "C": { "item": "minecraft:copper_block" }
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "C": "minecraft:copper_block"
   },
   "result": {
     "id": "echorelictech:null_battery_dock"

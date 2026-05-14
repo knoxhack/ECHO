@@ -9,6 +9,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.fml.ModList;
 
 public final class NexusTerminalCommonIntegration {
    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
@@ -18,7 +19,12 @@ public final class NexusTerminalCommonIntegration {
 
    public static void register() {
       if (REGISTERED.compareAndSet(false, true)) {
-         TerminalMissionRegistry.register(NexusTerminalMissionProvider.INSTANCE);
+         boolean missionCoreLoaded = ModList.get().isLoaded("echomissioncore");
+         if (missionCoreLoaded) {
+            NexusMissionCoreIntegration.register();
+         } else {
+            TerminalMissionRegistry.register(NexusTerminalMissionProvider.INSTANCE);
+         }
          TerminalMissionActions.registerForTab(NexusTerminalIds.RESEARCH_TAB);
          TerminalActionRegistry.register(NexusTerminalIds.RESEARCH_TAB, NexusTerminalIds.SCAN_ACTION, (player, payload) -> {
             NexusPlayerData data = NexusPlayerData.get(player);

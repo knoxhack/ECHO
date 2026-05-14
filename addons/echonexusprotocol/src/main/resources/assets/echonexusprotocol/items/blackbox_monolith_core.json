@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/blackbox_monolith_core"
+    "model": "echonexusprotocol:item/blackbox_monolith_core"
   }
 }

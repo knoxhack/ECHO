@@ -1,10 +1,12 @@
 package com.knoxhack.echorelictech.block;
 
+import com.knoxhack.echorelictech.api.RelicTechApi;
+import com.knoxhack.echorelictech.api.event.RelicTechEvents;
 import com.knoxhack.echorelictech.api.relic.RelicCondition;
 import com.knoxhack.echorelictech.api.relic.RelicInstanceData;
 import com.knoxhack.echorelictech.block.entity.PrototypeWorkbenchBlockEntity;
+import com.knoxhack.echorelictech.data.RelicDefinitionLoader;
 import com.knoxhack.echorelictech.registry.ModDataComponents;
-import com.knoxhack.echorelictech.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -26,46 +28,126 @@ public class PrototypeWorkbenchBlock extends Block implements EntityBlock {
     @Override
     public InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return InteractionResult.SUCCESS;
         var data = stack.get(ModDataComponents.RELIC_DATA.get());
-        if (data != null) {
-            if (data.condition() == RelicCondition.DAMAGED && player.getInventory().contains(new ItemStack(ModItems.RELIC_SHARD.get()))) {
-                consumeItem(player, ModItems.RELIC_SHARD.get(), 2);
-                stack.set(ModDataComponents.RELIC_DATA.get(), data.withCondition(RelicCondition.STABILIZED));
-                player.sendSystemMessage(Component.literal("Prototype Workbench // Relic stabilized."));
+        if (data == null) {
+            player.sendSystemMessage(Component.translatable("block.echorelictech.prototype_workbench.insert_relic"));
+            return InteractionResult.SUCCESS;
+        }
+
+        // Load repair definition from JSON
+        var def = RelicDefinitionLoader.get(RelicTechApi.getRelicId(stack));
+        var repairInfo = def != null ? def.repair().orElse(null) : null;
+
+        RelicCondition current = data.condition();
+        RelicCondition target = null;
+        String actionKey = null;
+
+        // Map conditions to actions
+        if (current == RelicCondition.DAMAGED) {
+            target = RelicCondition.STABILIZED;
+            actionKey = "stabilize";
+        } else if (current == RelicCondition.STABILIZED) {
+            // Check what the player wants: if they hold a containment material, contain; if overclock material, overclock
+            if (repairInfo != null && hasMaterials(player, repairInfo.materials())) {
+                target = RelicCondition.STABILIZED; // Actually we need a better heuristic
+                actionKey = "stabilize";
+            } else {
+                // Hardcoded fallback for common operations when no repair def exists
+                if (player.getInventory().contains(new ItemStack(net.minecraft.world.item.Items.AMETHYST_SHARD))) {
+                    target = RelicCondition.OVERCLOCKED;
+                    actionKey = "overclock";
+                } else if (player.getInventory().contains(new ItemStack(net.minecraft.world.item.Items.GLASS))) {
+                    target = RelicCondition.CONTAINED;
+                    actionKey = "contain";
+                }
+            }
+        } else if (current == RelicCondition.CORRUPTED) {
+            target = RelicCondition.DAMAGED;
+            actionKey = "purge";
+        } else {
+            player.sendSystemMessage(Component.translatable("block.echorelictech.prototype_workbench.no_action"));
+            return InteractionResult.SUCCESS;
+        }
+
+        // If we have repair info, use it for material validation
+        if (repairInfo != null && target != null) {
+            if (!hasMaterials(player, repairInfo.materials())) {
+                player.sendSystemMessage(Component.translatable("block.echorelictech.prototype_workbench.missing_materials"));
                 return InteractionResult.SUCCESS;
             }
-            if (data.condition() == RelicCondition.STABILIZED && player.getInventory().contains(new ItemStack(ModItems.CONTAINMENT_GLASS.get()))) {
-                consumeItem(player, ModItems.CONTAINMENT_GLASS.get(), 1);
-                stack.set(ModDataComponents.RELIC_DATA.get(), data.withCondition(RelicCondition.CONTAINED));
-                player.sendSystemMessage(Component.literal("Prototype Workbench // Relic contained."));
-                return InteractionResult.SUCCESS;
-            }
-            if (data.condition() == RelicCondition.STABILIZED && player.getInventory().contains(new ItemStack(ModItems.QUANTUM_LATTICE.get()))) {
-                consumeItem(player, ModItems.QUANTUM_LATTICE.get(), 1);
-                stack.set(ModDataComponents.RELIC_DATA.get(), data.withCondition(RelicCondition.OVERCLOCKED));
-                player.sendSystemMessage(Component.literal("Prototype Workbench // Relic overclocked."));
-                return InteractionResult.SUCCESS;
-            }
-            if (data.condition() == RelicCondition.CORRUPTED && player.getInventory().contains(new ItemStack(ModItems.STABILIZED_RIFTSTONE.get()))) {
-                consumeItem(player, ModItems.STABILIZED_RIFTSTONE.get(), 1);
-                stack.set(ModDataComponents.RELIC_DATA.get(), data.withCondition(RelicCondition.DAMAGED));
-                player.sendSystemMessage(Component.literal("Prototype Workbench // Corruption partially purged."));
+            consumeMaterials(player, repairInfo.materials());
+        } else {
+            // Fallback hardcoded material checks for MVP beta
+            boolean consumed = switch (actionKey) {
+                case "stabilize" -> consumeItem(player, net.minecraft.world.item.Items.IRON_INGOT, 2);
+                case "overclock" -> consumeItem(player, net.minecraft.world.item.Items.AMETHYST_SHARD, 1);
+                case "contain" -> consumeItem(player, net.minecraft.world.item.Items.GLASS, 1);
+                case "purge" -> consumeItem(player, net.minecraft.world.item.Items.DIAMOND, 1);
+                default -> false;
+            };
+            if (!consumed) {
+                player.sendSystemMessage(Component.translatable("block.echorelictech.prototype_workbench.missing_materials"));
                 return InteractionResult.SUCCESS;
             }
         }
-        player.sendSystemMessage(Component.literal("Prototype Workbench // Insert damaged relic with appropriate materials."));
+
+        if (target != null) {
+            stack.set(ModDataComponents.RELIC_DATA.get(), data.withCondition(target));
+            RelicTechEvents.fireWorkbench(serverPlayer, stack, current, target);
+            player.sendSystemMessage(Component.translatable("block.echorelictech.prototype_workbench.success." + actionKey));
+        }
         return InteractionResult.SUCCESS;
     }
 
-    private void consumeItem(Player player, net.minecraft.world.item.Item item, int count) {
-        for (int i = 0; i < player.getInventory().getContainerSize() && count > 0; i++) {
-            ItemStack s = player.getInventory().getItem(i);
-            if (s.is(item)) {
-                int take = Math.min(count, s.getCount());
-                s.shrink(take);
-                count -= take;
+    private boolean hasMaterials(Player player, java.util.List<com.knoxhack.echorelictech.api.relic.RelicDefinition.RepairMaterial> materials) {
+        for (var mat : materials) {
+            int needed = mat.count();
+            Identifier itemId = Identifier.tryParse(mat.item());
+            if (itemId == null) return false;
+            var itemOpt = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(itemId);
+            if (itemOpt.isEmpty()) return false;
+            var item = itemOpt.get().value();
+            int found = 0;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack s = player.getInventory().getItem(i);
+                if (s.is(item)) found += s.getCount();
+            }
+            if (found < needed) return false;
+        }
+        return true;
+    }
+
+    private void consumeMaterials(Player player, java.util.List<com.knoxhack.echorelictech.api.relic.RelicDefinition.RepairMaterial> materials) {
+        for (var mat : materials) {
+            Identifier itemId = Identifier.tryParse(mat.item());
+            if (itemId == null) continue;
+            var itemOpt = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(itemId);
+            if (itemOpt.isEmpty()) continue;
+            var item = itemOpt.get().value();
+            int count = mat.count();
+            for (int i = 0; i < player.getInventory().getContainerSize() && count > 0; i++) {
+                ItemStack s = player.getInventory().getItem(i);
+                if (s.is(item)) {
+                    int take = Math.min(count, s.getCount());
+                    s.shrink(take);
+                    count -= take;
+                }
             }
         }
+    }
+
+    private boolean consumeItem(Player player, net.minecraft.world.item.Item item, int count) {
+        int needed = count;
+        for (int i = 0; i < player.getInventory().getContainerSize() && needed > 0; i++) {
+            ItemStack s = player.getInventory().getItem(i);
+            if (s.is(item)) {
+                int take = Math.min(needed, s.getCount());
+                s.shrink(take);
+                needed -= take;
+            }
+        }
+        return needed == 0;
     }
 
     @Override

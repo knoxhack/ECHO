@@ -20,4 +20,7 @@ public interface IIndexRecipeService {
     Optional<IndexRecipeView> recipe(Player player, Identifier id);
 
     int providerCount();
+
+    default void invalidateRecipes(String reason) {
+    }
 }

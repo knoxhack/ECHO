@@ -16,6 +16,8 @@ public final class EchoRenderCoreClient {
       NeoForge.EVENT_BUS.addListener(RenderCoreClientCommands::register);
       NeoForge.EVENT_BUS.addListener(RenderCoreDebugHud::render);
       NeoForge.EVENT_BUS.addListener(RenderCoreAnchorDebugRenderer::render);
+      NeoForge.EVENT_BUS.addListener(RenderCoreAdvancedFxPipeline::onFrameGraphSetup);
+      NeoForge.EVENT_BUS.addListener(RenderCoreStaticSurfaceRegistry::onClientTick);
    }
 
    @SubscribeEvent

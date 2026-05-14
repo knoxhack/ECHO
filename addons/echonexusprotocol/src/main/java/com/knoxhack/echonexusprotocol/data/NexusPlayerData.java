@@ -66,7 +66,7 @@ public class NexusPlayerData implements ValueIOSerializable {
    private final int[] telemetryMapTears = new int[FIELD_MAP_SIZE];
    private final boolean[] telemetryMapStorms = new boolean[FIELD_MAP_SIZE];
 
-   public static NexusPlayerData get(Player player) { return (NexusPlayerData)player.getData(ModAttachments.NEXUS_PLAYER_DATA.get()); }
+   public static NexusPlayerData get(Player player) { return player == null ? new NexusPlayerData() : (NexusPlayerData)player.getData(ModAttachments.NEXUS_PLAYER_DATA.get()); }
    public static void saveAndSync(ServerPlayer player, NexusPlayerData data) { player.setData(ModAttachments.NEXUS_PLAYER_DATA.get(), data); player.syncData(ModAttachments.NEXUS_PLAYER_DATA.get()); }
    public boolean unlockResearch(String id) { return this.researchUnlocks.add(clean(id)); }
    public boolean hasResearch(String id) { return this.researchUnlocks.contains(clean(id)); }

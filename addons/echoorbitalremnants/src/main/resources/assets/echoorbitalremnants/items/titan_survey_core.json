@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoorbitalremnants:item/titan_survey_core"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoorbitalremnants:item/titan_survey_core"
+  }
+}

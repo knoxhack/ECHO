@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "igi",
+    "ici",
+    "iri"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "g": { "item": "minecraft:glass_pane" },
+    "c": { "item": "minecraft:compass" },
+    "r": { "item": "minecraft:redstone" }
+  },
+  "result": {
+    "id": "echoweathercore:storm_scanner"
+  }
+}

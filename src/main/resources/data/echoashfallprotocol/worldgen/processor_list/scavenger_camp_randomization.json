@@ -9,11 +9,11 @@
           },
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
-            "block": "minecraft:chest",
+            "block": "echoashfallprotocol:structure_cache",
             "probability": 0.7
           },
           "output_state": {
-            "Name": "minecraft:chest"
+            "Name": "echoashfallprotocol:structure_cache"
           },
           "block_entity_modifier": {
             "type": "minecraft:append_loot",

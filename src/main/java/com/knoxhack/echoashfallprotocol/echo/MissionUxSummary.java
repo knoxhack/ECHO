@@ -60,7 +60,7 @@ public record MissionUxSummary(
         QuestData.MissionStatus status = quest.getMissionStatus(mission.id());
         boolean current = isCurrentMission(quest, mission);
         boolean preview = mission.isPathPreview(player);
-        boolean pendingRewards = quest.hasPendingRewards(mission.id());
+        boolean pendingRewards = AshfallMissionActions.hasClaimableRewards(player, quest, mission);
         boolean completeNow = evaluateCompletion && safeComplete(mission, player);
         DisplayState display = displayState(status, preview, pendingRewards);
         String nextStep = nextStep(player, quest, mission, status, current, completeNow, pendingRewards, preview);
@@ -100,19 +100,7 @@ public record MissionUxSummary(
 
     public static String turnInReason(Player player, QuestData quest, Mission mission,
             QuestData.MissionStatus status, boolean current, boolean completeNow, boolean preview) {
-        if (status == QuestData.MissionStatus.LOCKED || preview) {
-            return unlockReason(player, quest, mission);
-        }
-        if (!current) {
-            return "Only the current active protocol can accept a turn-in.";
-        }
-        if (!mission.isTurnInMission()) {
-            return "This protocol completes automatically when ECHO confirms the field state.";
-        }
-        if (!completeNow) {
-            return "Finish the visible requirements before returning this protocol.";
-        }
-        return "ECHO validation required.";
+        return AshfallMissionActions.turnInReason(player, quest, mission, status, current, completeNow, preview);
     }
 
     private static String nextStep(Player player, QuestData quest, Mission mission,
@@ -187,6 +175,16 @@ public record MissionUxSummary(
             }
         }
         return "";
+    }
+
+    public static String turnInMissingRequirement(Player player, QuestData quest, Mission mission) {
+        for (Mission.ItemProgress progress : mission.getItemProgress(player)) {
+            if (!progress.satisfied()) {
+                return "Carry " + Math.max(1, progress.need() - progress.have()) + " "
+                        + progress.item().getHoverName().getString() + ".";
+            }
+        }
+        return firstOpenRequirement(player, quest, mission);
     }
 
     private static DisplayState displayState(QuestData.MissionStatus status, boolean preview, boolean pendingRewards) {

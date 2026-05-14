@@ -1,0 +1,21 @@
+{
+  "schema_version": 11,
+  "base_texture": "echorendercore:textures/block/v13_fallback_safe.png",
+  "default_state": "ONLINE",
+  "preview": { "title": "V13 Fallback-Safe Overlay", "tags": ["v13", "fallback", "stable"] },
+  "effect": { "preset": "none" },
+  "layers": [
+    {
+      "id": "stable_status",
+      "kind": "overlay",
+      "texture": "echorendercore:textures/block/v13_stable_status.png",
+      "states": ["ONLINE", "ACTIVE", "WORKING"],
+      "parts": ["status"],
+      "alpha": 0.65,
+      "emissive": true,
+      "effect": { "preset": "neon", "advanced_enabled": false, "pulse_speed": 0.5 }
+    }
+  ],
+  "anchors": { "status": [0.0, 0.6, -0.5] },
+  "block_parts": { "status": { "directions": ["north"] } }
+}

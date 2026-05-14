@@ -13,6 +13,9 @@ import net.minecraft.world.entity.player.Player;
 
 public final class SignalOsPlayerData {
     private static final String ROOT = "signalos";
+    public static final int MAX_NOTES = 64;
+    public static final int MAX_NOTE_TITLE = 80;
+    public static final int MAX_NOTE_BODY = 2000;
 
     private SignalOsPlayerData() {
     }
@@ -44,7 +47,7 @@ public final class SignalOsPlayerData {
             return List.of();
         }
         CompoundTag root = player.getPersistentData().getCompoundOrEmpty(ROOT);
-        int count = Math.min(64, root.getIntOr("note_count", 0));
+        int count = Math.min(MAX_NOTES, root.getIntOr("note_count", 0));
         List<SignalOsDataRecord> notes = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             String idValue = root.getStringOr("note_" + i + "_id", "");
@@ -65,27 +68,58 @@ public final class SignalOsPlayerData {
     }
 
     public static SignalOsDataRecord addNote(ServerPlayer player, String title, String body) {
+        return saveNote(player, null, title, body);
+    }
+
+    public static SignalOsDataRecord saveNote(ServerPlayer player, Identifier noteId, String title, String body) {
         if (player == null) {
             return null;
         }
         List<SignalOsDataRecord> notes = new ArrayList<>(notes(player));
-        int next = Math.min(63, notes.size());
-        long tick = player.level() == null ? 0L : player.level().getGameTime();
-        Identifier id = Identifier.fromNamespaceAndPath(SignalOS.MODID,
-                "note/" + player.getUUID().toString().substring(0, 8).toLowerCase(java.util.Locale.ROOT) + "/" + tick);
+        String safeTitle = clamp(title == null || title.isBlank() ? "Operator Note" : title.strip(), MAX_NOTE_TITLE);
+        String safeBody = clamp(body == null ? "" : body.strip(), MAX_NOTE_BODY);
+        for (int i = 0; i < notes.size(); i++) {
+            SignalOsDataRecord existing = notes.get(i);
+            if (noteId != null && existing.id().equals(noteId)) {
+                SignalOsDataRecord updated = new SignalOsDataRecord(existing.id(),
+                        safeTitle,
+                        "note",
+                        existing.source(),
+                        safeBody,
+                        existing.order(),
+                        existing.archived());
+                notes.set(i, updated);
+                writeNotes(player, notes);
+                return updated;
+            }
+        }
+        int next = Math.min(MAX_NOTES - 1, notes.size());
+        Identifier id = nextNoteId(player);
         SignalOsDataRecord note = new SignalOsDataRecord(id,
-                title == null || title.isBlank() ? "Operator Note" : title,
+                safeTitle,
                 "note",
                 "Operator Notes",
-                body == null ? "" : body,
+                safeBody,
                 1000 + next,
                 false);
-        if (notes.size() >= 64) {
+        if (notes.size() >= MAX_NOTES) {
             notes.removeFirst();
         }
         notes.add(note);
         writeNotes(player, notes);
         return note;
+    }
+
+    public static boolean deleteNote(Player player, Identifier noteId) {
+        if (player == null || noteId == null) {
+            return false;
+        }
+        List<SignalOsDataRecord> notes = new ArrayList<>(notes(player));
+        boolean removed = notes.removeIf(note -> note.id().equals(noteId));
+        if (removed) {
+            writeNotes(player, notes);
+        }
+        return removed;
     }
 
     public static void clearNotes(Player player) {
@@ -117,13 +151,13 @@ public final class SignalOsPlayerData {
         int previousCount = root.getIntOr("note_count", 0);
         int index = 0;
         for (SignalOsDataRecord note : notes == null ? List.<SignalOsDataRecord>of() : notes) {
-            if (note == null || index >= 64) {
+            if (note == null || index >= MAX_NOTES) {
                 continue;
             }
             String prefix = "note_" + index + "_";
             root.putString(prefix + "id", note.id().toString());
-            root.putString(prefix + "title", note.title());
-            root.putString(prefix + "body", note.body());
+            root.putString(prefix + "title", clamp(note.title(), MAX_NOTE_TITLE));
+            root.putString(prefix + "body", clamp(note.body(), MAX_NOTE_BODY));
             root.putBoolean(prefix + "archived", note.archived());
             index++;
         }
@@ -179,5 +213,19 @@ public final class SignalOsPlayerData {
             next.add(value);
         }
         return next;
+    }
+
+    private static Identifier nextNoteId(ServerPlayer player) {
+        long tick = player.level() == null ? 0L : player.level().getGameTime();
+        return Identifier.fromNamespaceAndPath(SignalOS.MODID,
+                "note/" + player.getUUID().toString().substring(0, 8).toLowerCase(java.util.Locale.ROOT) + "/" + tick);
+    }
+
+    private static String clamp(String value, int maxLength) {
+        String safe = value == null ? "" : value;
+        if (safe.length() <= maxLength) {
+            return safe;
+        }
+        return safe.substring(0, maxLength);
     }
 }

@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echologisticsnetwork"
-version="0.1.0"
+version="1.1.0"
 displayName="ECHO: Logistics Network"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"
@@ -13,7 +13,8 @@ Your base becomes a real supply operation.
 
 ECHO: Logistics Network adds labelled storage networks, expedition loadouts,
 physical courier drone delivery, auto-restocking, remote reward relays, and
-faction depots surfaced through ECHO Core and ECHO Terminal.
+faction depots surfaced through ECHO Core and ECHO Terminal. Its 0.4 API also
+keeps Industrial factory input depots stocked through data-driven loadouts.
 '''
 
 [[dependencies.echologisticsnetwork]]
@@ -42,14 +43,6 @@ side="BOTH"
 modId="echoterminal"
 type="optional"
 reason="Adds the SYSTEM > Logistics command surface and terminal action routing."
-versionRange="[1.1.0,)"
-ordering="AFTER"
-side="BOTH"
-
-[[dependencies.echologisticsnetwork]]
-modId="echoindustrialnexus"
-type="optional"
-reason="Extends supply scans through Industrial Nexus duct infrastructure."
-versionRange="[0.1.0,)"
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

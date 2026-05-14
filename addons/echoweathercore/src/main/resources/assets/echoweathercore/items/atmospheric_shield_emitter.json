@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoweathercore:item/atmospheric_shield_emitter"
+  }
+}

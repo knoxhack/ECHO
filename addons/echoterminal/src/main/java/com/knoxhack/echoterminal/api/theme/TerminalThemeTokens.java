@@ -117,7 +117,7 @@ public record TerminalThemeTokens(
 
     public record Effects(boolean scanlines, boolean grid, boolean pulse, int overlayColor, int glowColor) {
         public static Effects defaults() {
-            return new Effects(true, true, true, 0xC902070C, 0x6638DFF4);
+            return new Effects(false, false, true, 0xC902070C, 0x6638DFF4);
         }
     }
 

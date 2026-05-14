@@ -14,17 +14,13 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
-import net.minecraft.core.BlockPos;
 
 /**
  * ToxicSlime - living chemical blob found in Toxic Swamp.
- * Leaves acid trail that damages players.
+ * Poisons players on contact and hit.
  * Splits into smaller versions when hit.
  */
 public class ToxicSlime extends Monster {
-
-    private int acidTrailCooldown = 0;
 
     public ToxicSlime(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -48,25 +44,6 @@ public class ToxicSlime extends Monster {
                 .add(Attributes.ATTACK_DAMAGE, 4.0D)
                 .add(Attributes.FOLLOW_RANGE, 16.0D)
                 .add(Attributes.ARMOR, 1.0D);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        // Leave acid trail every few ticks
-        if (!this.level().isClientSide() && this.isAlive()) {
-            acidTrailCooldown--;
-            if (acidTrailCooldown <= 0 && this.onGround()) {
-                BlockPos pos = this.blockPosition();
-                // Chance to place toxic_puddle where slime moves
-                if (this.level().getRandom().nextFloat() < 0.3f && this.level().getBlockState(pos).isAir()) {
-                    this.level().setBlockAndUpdate(pos,
-                            ModBlocks.TOXIC_PUDDLE.get().defaultBlockState());
-                }
-                acidTrailCooldown = 20; // Check every second
-            }
-        }
     }
 
     @Override

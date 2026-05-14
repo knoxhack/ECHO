@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoarmory:block/armory_bench"
+    "model": "echoarmory:item/armory_bench"
   }
 }

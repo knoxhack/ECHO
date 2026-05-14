@@ -1,6 +1,7 @@
 package com.knoxhack.echoagriculturereclamation.content;
 
 import com.knoxhack.echoagriculturereclamation.EchoAgricultureReclamation;
+import com.knoxhack.echocore.api.EchoCoreServices;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -67,6 +68,7 @@ public final class ReclamationContent {
       machineRules = loaded.machineRules().normalized();
       progressionRules = loaded.progressionRules().normalized();
       EchoAgricultureReclamation.LOGGER.info("Loaded Agriculture Reclamation data rules: {} crops, {} soils.", cropRules.size(), soilRules.size());
+      EchoCoreServices.invalidateIndexRecipes("agriculture reclamation content changed");
    }
 
    private static Map<String, ReclamationCropRule> defaultCrops() {

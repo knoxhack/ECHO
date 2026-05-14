@@ -1,5 +1,6 @@
 package com.knoxhack.echolens.client;
 
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echolens.EchoLens;
 import java.lang.reflect.Constructor;
 import net.minecraft.client.Minecraft;
@@ -10,7 +11,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 public final class LensClientActions {
     private LensClientActions() {
@@ -40,8 +40,11 @@ public final class LensClientActions {
             Constructor<?> constructor = packetClass.getConstructor(actionClass, Identifier.class);
             Object payload = constructor.newInstance(action, itemId);
             if (payload instanceof CustomPacketPayload packet) {
-                ClientPacketDistributor.sendToServer(packet);
-                tell("Tracking " + itemId + " in ECHO: Index.");
+                if (EchoNetClientActions.trySendServerboundAction(packet)) {
+                    tell("Tracking " + itemId + " in ECHO: Index.");
+                } else {
+                    tell("ECHO: Index tracking is unavailable.");
+                }
             }
         } catch (ReflectiveOperationException exception) {
             EchoLens.LOGGER.warn("Could not send ECHO: Index track request from Lens.", exception);

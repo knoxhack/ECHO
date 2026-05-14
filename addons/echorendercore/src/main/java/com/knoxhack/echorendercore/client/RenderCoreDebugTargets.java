@@ -29,6 +29,16 @@ public final class RenderCoreDebugTargets {
    }
 
    public static void rememberEntity(Entity entity, VisualProfile profile, VisualContext context) {
+      rememberEntity(entity, profile, context, null, 0, 0, "entity", "fallback_renderer");
+   }
+
+   public static void rememberEntity(Entity entity, VisualProfile profile, VisualContext context,
+         Identifier particleProfileId, int activeEmitters, int skippedEmitters, String fallbackStatus) {
+      rememberEntity(entity, profile, context, particleProfileId, activeEmitters, skippedEmitters, "entity", fallbackStatus);
+   }
+
+   public static void rememberEntity(Entity entity, VisualProfile profile, VisualContext context,
+         Identifier particleProfileId, int activeEmitters, int skippedEmitters, String surfaceType, String fallbackStatus) {
       if (entity == null || profile == null || context == null) {
          return;
       }
@@ -43,6 +53,11 @@ public final class RenderCoreDebugTargets {
          context.variant(),
          profile.layersFor(context.state(), context.variant()).size(),
          profile.anchors().size(),
+         particleProfileId,
+         activeEmitters,
+         skippedEmitters,
+         surfaceType,
+         fallbackStatus,
          RenderCoreProfiles.loaded().validationReport().forNamespace(context.profileId().getNamespace()).warnings(),
          anchors,
          entity.getBoundingBox(),
@@ -51,6 +66,11 @@ public final class RenderCoreDebugTargets {
    }
 
    public static void rememberBlock(Level level, BlockPos pos, VisualProfile profile, VisualContext context) {
+      rememberBlock(level, pos, profile, context, null, 0, 0, "block_entity", "block_visual");
+   }
+
+   public static void rememberBlock(Level level, BlockPos pos, VisualProfile profile, VisualContext context,
+         Identifier particleProfileId, int activeEmitters, int skippedEmitters, String surfaceType, String fallbackStatus) {
       if (level == null || pos == null || profile == null || context == null) {
          return;
       }
@@ -66,6 +86,11 @@ public final class RenderCoreDebugTargets {
          context.variant(),
          profile.layersFor(context.state(), context.variant()).size(),
          profile.anchors().size(),
+         particleProfileId,
+         activeEmitters,
+         skippedEmitters,
+         surfaceType,
+         fallbackStatus,
          RenderCoreProfiles.loaded().validationReport().forNamespace(context.profileId().getNamespace()).warnings(),
          anchors,
          new AABB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0D, pos.getY() + 1.0D, pos.getZ() + 1.0D),
@@ -124,6 +149,11 @@ public final class RenderCoreDebugTargets {
       VisualVariant variant,
       int activeLayers,
       int anchors,
+      Identifier particleProfileId,
+      int activeEmitters,
+      int skippedEmitters,
+      String surfaceType,
+      String fallbackStatus,
       long validationWarnings,
       Map<String, Vec3> anchorPositions,
       AABB bounds,
@@ -131,6 +161,10 @@ public final class RenderCoreDebugTargets {
    ) {
       public DebugTarget {
          variant = variant == null ? VisualVariant.DEFAULT : variant;
+         activeEmitters = Math.max(0, activeEmitters);
+         skippedEmitters = Math.max(0, skippedEmitters);
+         surfaceType = surfaceType == null || surfaceType.isBlank() ? "unknown" : surfaceType;
+         fallbackStatus = fallbackStatus == null || fallbackStatus.isBlank() ? "unknown" : fallbackStatus;
          anchorPositions = anchorPositions == null ? Map.of() : Map.copyOf(anchorPositions);
       }
    }

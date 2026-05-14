@@ -37,7 +37,7 @@ public final class ReclamationRestoration {
    }
 
    public static void cropMatured(ServerLevel level, BlockPos cropPos, Player player, CropSpec spec, SeedProfile profile) {
-      int greenhouse = ReclamationProgress.scanGreenhouseSafety(level, cropPos);
+      ReclamationProgress.GreenhouseContext greenhouse = ReclamationProgress.greenhouseContext(level, cropPos);
       int gain = ReclamationCrossAddonIntegration.restorationGain(
          player,
          ReclamationCropLogic.restorationGain(spec, profile, greenhouse)
@@ -62,15 +62,15 @@ public final class ReclamationRestoration {
       }
    }
 
-   public static int scanPulse(ServerLevel level, BlockPos center, Player player, int greenhouseSafety) {
+   public static int scanPulse(ServerLevel level, BlockPos center, Player player, ReclamationProgress.GreenhouseContext greenhouse) {
       ReclamationWorldData world = ReclamationWorldData.get(level);
       ChunkPos chunk = new ChunkPos(center.getX() >> 4, center.getZ() >> 4);
       var rules = ReclamationContent.progression();
-      int baseGain = greenhouseSafety >= rules.greenhouseSafeThreshold()
+      int baseGain = greenhouse.score() >= rules.greenhouseSafeThreshold()
          ? rules.scannerSafeRestorationGain()
          : rules.scannerUnsafeRestorationGain();
-      int score = world.addRestoration(chunk, ReclamationCrossAddonIntegration.restorationGain(player, baseGain));
-      world.setGreenhouseSafety(chunk, greenhouseSafety);
+      int score = world.addRestoration(chunk, ReclamationCrossAddonIntegration.restorationGain(player, greenhouse.restorationGain(baseGain)));
+      world.setGreenhouseSafety(chunk, greenhouse.score());
       int changed = 0;
       if (score >= rules.purifyThreshold()) {
          changed += purifyArea(level, center, 2, score >= rules.restoreThreshold() * 3 / 4 ? rules.scannerPurifyMaxHigh() : rules.scannerPurifyMaxLow());

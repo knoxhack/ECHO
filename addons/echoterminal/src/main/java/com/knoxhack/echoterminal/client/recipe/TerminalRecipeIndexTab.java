@@ -49,6 +49,12 @@ public final class TerminalRecipeIndexTab implements TerminalTab {
     private int itemScroll;
     private int recipeScroll;
     private int detailScroll;
+    private int controlScroll;
+    private int lastControlX;
+    private int lastControlY;
+    private int lastControlW;
+    private int lastControlH;
+    private int lastControlContentH;
     private int lastItemX;
     private int lastItemY;
     private int lastItemW;
@@ -136,6 +142,10 @@ public final class TerminalRecipeIndexTab implements TerminalTab {
     @Override
     public boolean mouseScrolled(TerminalRenderContext context, double mouseX, double mouseY, double delta) {
         int amount = (int) Math.round(delta * 18.0D);
+        if (TerminalUi.inside(mouseX, mouseY, lastControlX, lastControlY, lastControlW, lastControlH)) {
+            controlScroll = TerminalUi.clampScroll(controlScroll - amount, lastControlContentH, lastControlH);
+            return true;
+        }
         if (TerminalUi.inside(mouseX, mouseY, lastItemX, lastItemY, lastItemW, lastItemH)) {
             itemScroll = TerminalUi.clampScroll(itemScroll - amount, lastItemContentH, lastItemH);
             return true;
@@ -263,33 +273,46 @@ public final class TerminalRecipeIndexTab implements TerminalTab {
             int chipX = x + (candidate == Mode.RECIPES ? 0 : modeW + 4);
             boolean active = mode == candidate;
             boolean hover = TerminalUi.inside(mouseX, mouseY, chipX, chipY, modeW, 16);
-            TerminalUi.categoryChip(graphics, font(context), chipX, chipY, modeW, 16,
-                    candidate.label(), active, hover, active ? ACCENT : TerminalUi.muted(context));
+            TerminalUi.filterChip(context, graphics, chipX, chipY, modeW,
+                    candidate.label(), active, true, active ? ACCENT : TerminalUi.muted(context), hover);
             hitboxes.add(new Hitbox(chipX, chipY, modeW, 16, button -> {
                 setMode(candidate);
                 focus = Focus.RECIPES;
             }));
         }
 
-        int searchX = x + modeW * 2 + 16;
-        int searchW = Math.max(90, Math.min(220, w - (searchX - x)));
-        TerminalUi.sortDropdownLikeChip(graphics, font(context), searchX, chipY, searchW,
+        boolean stackedControls = w < 280;
+        int searchX = stackedControls ? x : x + modeW * 2 + 16;
+        int searchY = stackedControls ? chipY + 21 : chipY;
+        int searchW = stackedControls ? w : Math.max(90, Math.min(220, w - (searchX - x)));
+        TerminalUi.sortDropdownLikeChip(graphics, font(context), searchX, searchY, searchW,
                 searchText.isBlank() ? "type to search" : "find: " + searchText, ACCENT);
 
+        int categoryAreaY = searchY + 22;
+        int categoryAreaH = Math.min(96, Math.max(38, context.contentHeight() / 4));
+        lastControlX = x;
+        lastControlY = categoryAreaY;
+        lastControlW = w;
+        lastControlH = categoryAreaH;
+        controlScroll = TerminalUi.clampScroll(controlScroll, lastControlContentH, categoryAreaH);
+        graphics.enableScissor(x, categoryAreaY, x + w, categoryAreaY + categoryAreaH);
+
         int cx = x;
-        int cy = chipY + 22;
+        int cy = categoryAreaY - controlScroll;
         int rowH = 18;
         int allW = 46;
         boolean allActive = categoryFilter == null;
         boolean allHover = TerminalUi.inside(mouseX, mouseY, cx, cy, allW, 16);
-        TerminalUi.categoryChip(graphics, font(context), cx, cy, allW, 16,
-                "All", allActive, allHover, allActive ? ACCENT : TerminalUi.muted(context));
-        hitboxes.add(new Hitbox(cx, cy, allW, 16, button -> {
-            categoryFilter = null;
-            selectedRecipeId = null;
-            recipeScroll = 0;
-            detailScroll = 0;
-        }));
+        if (chipVisible(cy, categoryAreaY, categoryAreaH)) {
+            TerminalUi.filterChip(context, graphics, cx, cy, allW, "All", allActive, true,
+                    allActive ? ACCENT : TerminalUi.muted(context), allHover);
+            hitboxes.add(new Hitbox(cx, cy, allW, 16, button -> {
+                categoryFilter = null;
+                selectedRecipeId = null;
+                recipeScroll = 0;
+                detailScroll = 0;
+            }));
+        }
         cx += allW + 4;
         for (TerminalRecipeCategory category : state.categories()) {
             String label = category.title() + " " + state.snapshot().recipeCount(category.id());
@@ -300,17 +323,29 @@ public final class TerminalRecipeIndexTab implements TerminalTab {
             }
             boolean active = category.id().equals(categoryFilter);
             boolean hover = TerminalUi.inside(mouseX, mouseY, cx, cy, chipW, 16);
-            TerminalUi.categoryChip(graphics, font(context), cx, cy, chipW, 16,
-                    label, active, hover, active ? category.accentColor() : TerminalUi.muted(context));
-            hitboxes.add(new Hitbox(cx, cy, chipW, 16, button -> {
-                categoryFilter = category.id();
-                selectedRecipeId = null;
-                recipeScroll = 0;
-                detailScroll = 0;
-            }));
+            if (chipVisible(cy, categoryAreaY, categoryAreaH)) {
+                TerminalUi.filterChip(context, graphics, cx, cy, chipW, label, active, true,
+                        active ? category.accentColor() : TerminalUi.muted(context), hover);
+                hitboxes.add(new Hitbox(cx, cy, chipW, 16, button -> {
+                    categoryFilter = category.id();
+                    selectedRecipeId = null;
+                    recipeScroll = 0;
+                    detailScroll = 0;
+                }));
+            }
             cx += chipW + 4;
         }
-        return cy + 18;
+        graphics.disableScissor();
+        lastControlContentH = Math.max(categoryAreaH, cy + 18 + controlScroll - categoryAreaY);
+        controlScroll = TerminalUi.clampScroll(controlScroll, lastControlContentH, categoryAreaH);
+        TerminalUi.scrollbar(context, graphics, x + w - 9, categoryAreaY, categoryAreaH, controlScroll,
+                Math.max(0, lastControlContentH - categoryAreaH), ACCENT,
+                TerminalUi.inside(mouseX, mouseY, x, categoryAreaY, w, categoryAreaH));
+        return categoryAreaY + categoryAreaH + 2;
+    }
+
+    private static boolean chipVisible(int y, int areaY, int areaH) {
+        return y + 16 >= areaY && y <= areaY + areaH;
     }
 
     private void drawItemPane(TerminalRenderContext context, GuiGraphicsExtractor graphics, State state,

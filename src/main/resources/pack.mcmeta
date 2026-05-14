@@ -1,6 +1,13 @@
 {
   "pack": {
     "description": "ECHO: ASHFALL PROTOCOL resources",
-    "pack_format": 46
+    "min_format": [
+      101,
+      1
+    ],
+    "max_format": [
+      101,
+      1
+    ]
   }
 }

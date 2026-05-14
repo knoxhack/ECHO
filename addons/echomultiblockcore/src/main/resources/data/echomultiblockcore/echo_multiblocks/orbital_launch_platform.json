@@ -1,0 +1,27 @@
+{
+  "id": "echomultiblockcore:orbital_launch_platform",
+  "display_name": "Orbital Launch Platform",
+  "translation_key": "multiblock.echomultiblockcore.orbital_launch_platform",
+  "role": "ORBITAL",
+  "category": "launch",
+  "size": [3, 2, 3],
+  "controller": "echomultiblockcore:multiblock_controller",
+  "allowed_rotations": true,
+  "mirrorable": true,
+  "layers": [["FIF","DCP","FOF"],[".S.",".R.",".A."]],
+  "palette": {
+    "F": { "tag": "echomultiblockcore:reinforced_frames" },
+    "I": { "block": "echomultiblockcore:input_crate", "component": true },
+    "O": { "block": "echomultiblockcore:output_crate", "component": true },
+    "S": { "block": "echomultiblockcore:signal_conduit", "component": true },
+    "D": { "block": "echomultiblockcore:data_bus", "component": true },
+    "P": { "block": "echomultiblockcore:power_bus", "component": true },
+    "R": { "block": "echomultiblockcore:robotic_arm", "robotics": true },
+    "A": { "block": "echomultiblockcore:auto_builder", "component": true, "optional": true },
+    "C": { "block": "echomultiblockcore:multiblock_controller", "controller": true },
+    ".": { "air": true }
+  },
+  "capabilities": ["echo:orbital_launch","echo:map_marker","echo:terminal_tab","echo:hazard_suppression"],
+  "workcells": [{"id":"echomultiblockcore:orbital_launch_platform/launch","type":"LAUNCH","pos":[1,1,0],"size":[1,1,1]}],
+  "preview": {"color":"d8e2ff"}
+}

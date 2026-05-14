@@ -1,0 +1,32 @@
+{
+  "theme_module_path": "../../addons/echothemecore",
+  "namespace": "echothemecore",
+  "themes": [
+    {
+      "id": "cyberglass",
+      "theme_json": "../../addons/echothemecore/src/main/resources/data/echothemecore/themes/cyberglass.json",
+      "style": "clean cyberpunk futuristic glass modern ECHO UI",
+      "primary": "#00E5FF",
+      "secondary": "#B44CFF",
+      "accent": "#FF2BD6"
+    },
+    {
+      "id": "nexus",
+      "theme_json": "../../addons/echothemecore/src/main/resources/data/echothemecore/themes/nexus.json",
+      "style": "blue violet anomaly Nexus glass hologram",
+      "primary": "#4ACBFF",
+      "secondary": "#8E4DFF",
+      "accent": "#B7F7FF"
+    }
+  ],
+  "asset_sets": [
+    "terminal_ui",
+    "holomap_ui",
+    "lens_ui",
+    "icons",
+    "rendercore_references",
+    "blockworks_palette",
+    "publishing_art",
+    "vanilla_ui"
+  ]
+}

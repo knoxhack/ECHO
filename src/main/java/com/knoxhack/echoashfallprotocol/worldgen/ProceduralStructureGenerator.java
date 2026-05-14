@@ -31,7 +31,6 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -56,9 +55,9 @@ public class ProceduralStructureGenerator {
     private static final int MIN_ROOM_SIZE = 5;
     private static final int MAX_SPLIT_DEPTH = 4;
     private static final int WALL_THICKNESS = 1;
-    private static final int STARTING_POD_SPAWN_X = 9;
+    private static final int STARTING_POD_SPAWN_X = 8;
     private static final int STARTING_POD_SPAWN_Y = 3;
-    private static final int STARTING_POD_SPAWN_Z = 12;
+    private static final int STARTING_POD_SPAWN_Z = 10;
     private static final int STARTING_POD_CLEAR_MARGIN_XZ = 2;
     private static final int STARTING_POD_CLEAR_MARGIN_Y = 2;
     private static final int GUARDIAN_MIN_BOSS_ROOM_SIZE = 17;
@@ -101,43 +100,43 @@ public class ProceduralStructureGenerator {
     private static final Map<String, GuardianSiteTheme> GUARDIAN_THEMES = Map.ofEntries(
             Map.entry("plains_warlord", new GuardianSiteTheme(
                     GuardianEntranceForm.BUNKER_DOOR, GuardianDescentForm.STAIR_TUNNEL, 6, 0.30f,
-                    block(Blocks.STONE_BRICKS), block(Blocks.IRON_BLOCK),
-                    block(Blocks.CRACKED_STONE_BRICKS), block(Blocks.DISPENSER), block(Blocks.REDSTONE_LAMP),
+                    ModBlocks.CONCRETE_RUBBLE::get, ModBlocks.RUSTED_METAL_SHEET::get,
+                    ModBlocks.ASH_STONE::get, ModBlocks.SIGNAL_SCANNER::get, ModBlocks.POWER_NODE::get,
                     ModBlocks.WEAPON_RACK::get, ModBlocks.SUPPLY_CRATE::get)),
             Map.entry("city_ruin_stalker", new GuardianSiteTheme(
                     GuardianEntranceForm.SUBWAY_STAIR, GuardianDescentForm.STAIR_TUNNEL, 6, 0.34f,
-                    block(Blocks.DEEPSLATE_TILES), block(Blocks.STONE_BRICKS),
-                    block(Blocks.SCULK), block(Blocks.COBWEB), block(Blocks.LANTERN),
-                    block(Blocks.SCULK_SHRIEKER), block(Blocks.RAIL))),
+                    ModBlocks.CRACKED_ASPHALT::get, ModBlocks.CONCRETE_RUBBLE::get,
+                    ModBlocks.RIFTSTONE::get, ModBlocks.CABLE_BUNDLE::get, ModBlocks.POWER_NODE::get,
+                    ModBlocks.SIGNAL_SCANNER::get, ModBlocks.REBAR_BLOCK::get)),
             Map.entry("industrial_juggernaut", new GuardianSiteTheme(
                     GuardianEntranceForm.FREIGHT_LIFT, GuardianDescentForm.LIFT_SHAFT, 6, 0.38f,
                     ModBlocks.OIL_STAINED_CONCRETE::get, ModBlocks.RUSTED_METAL_SHEET::get,
-                    ModBlocks.INDUSTRIAL_AGGREGATE::get, block(Blocks.CUT_COPPER), block(Blocks.REDSTONE_LAMP),
-                    ModBlocks.FACTORY_CONTROLLER::get, block(Blocks.RAIL))),
+                    ModBlocks.INDUSTRIAL_AGGREGATE::get, ModBlocks.CORRODED_PIPE::get, ModBlocks.POWER_NODE::get,
+                    ModBlocks.FACTORY_CONTROLLER::get, ModBlocks.REBAR_BLOCK::get)),
             Map.entry("toxic_hive_matriarch", new GuardianSiteTheme(
                     GuardianEntranceForm.TOXIC_SINKHOLE, GuardianDescentForm.SINKHOLE, 7, 0.48f,
-                    ModBlocks.TOXIC_SLAGSTONE::get, block(Blocks.MOSSY_STONE_BRICKS),
-                    ModBlocks.TOXIC_MOSS::get, ModBlocks.ACIDIC_SLUDGE::get, block(Blocks.SHROOMLIGHT),
+                    ModBlocks.TOXIC_SLAGSTONE::get, ModBlocks.TOXIC_MOSS::get,
+                    ModBlocks.TOXIC_MOSS::get, ModBlocks.ACIDIC_SLUDGE::get, ModBlocks.OOZE_CRYSTAL::get,
                     ModBlocks.CONTAMINANT_CONDENSER::get, ModBlocks.TOXIC_WASTE_BARREL::get)),
             Map.entry("crash_zone_colossus", new GuardianSiteTheme(
                     GuardianEntranceForm.IMPACT_BREACH, GuardianDescentForm.BREACH_SHAFT, 7, 0.46f,
                     ModBlocks.CRASH_SLAG::get, ModBlocks.RUSTED_METAL_SHEET::get,
-                    ModBlocks.DROP_POD_HULL::get, ModBlocks.RUSTED_METAL_DEBRIS::get, block(Blocks.GLOWSTONE),
+                    ModBlocks.DROP_POD_HULL::get, ModBlocks.RUSTED_METAL_DEBRIS::get, ModBlocks.POWER_NODE::get,
                     ModBlocks.POWER_NODE::get, ModBlocks.DROP_POD_GLASS::get)),
             Map.entry("radiation_behemoth", new GuardianSiteTheme(
                     GuardianEntranceForm.REACTOR_HATCH, GuardianDescentForm.LADDER_SHAFT, 6, 0.36f,
-                    ModBlocks.IRRADIATED_SHALE::get, block(Blocks.DEEPSLATE_TILES),
-                    ModBlocks.IRRADIATED_CRUST::get, ModBlocks.RADIATION_BLOCK::get, block(Blocks.GLOWSTONE),
-                    ModBlocks.ISOTOPE_REFINER::get, block(Blocks.IRON_BARS))),
+                    ModBlocks.IRRADIATED_SHALE::get, ModBlocks.RIFTSTONE::get,
+                    ModBlocks.IRRADIATED_CRUST::get, ModBlocks.RADIATION_BLOCK::get, ModBlocks.POWER_NODE::get,
+                    ModBlocks.ISOTOPE_REFINER::get, ModBlocks.REBAR_BLOCK::get)),
             Map.entry("cryogenic_overseer", new GuardianSiteTheme(
                     GuardianEntranceForm.FROZEN_SHAFT, GuardianDescentForm.LIFT_SHAFT, 6, 0.40f,
-                    ModBlocks.CRYOGENIC_FRACTURED_STONE::get, block(Blocks.BLUE_ICE),
-                    block(Blocks.PACKED_ICE), block(Blocks.ICE), block(Blocks.SEA_LANTERN),
-                    ModBlocks.ATMOSPHERIC_SCRUBBER::get, block(Blocks.BLUE_ICE))),
+                    ModBlocks.CRYOGENIC_FRACTURED_STONE::get, ModBlocks.BLUE_ICE_CRYSTAL::get,
+                    ModBlocks.FROZEN_CONDUIT::get, ModBlocks.PERMAFROST::get, ModBlocks.POWER_NODE::get,
+                    ModBlocks.ATMOSPHERIC_SCRUBBER::get, ModBlocks.BLUE_ICE_CRYSTAL::get)),
             Map.entry("nexus_scar_avatar", new GuardianSiteTheme(
                     GuardianEntranceForm.NEXUS_BREACH, GuardianDescentForm.BREACH_SHAFT, 7, 0.44f,
-                    ModBlocks.NEXUS_CRACKED_SOIL::get, block(Blocks.OBSIDIAN),
-                    block(Blocks.CRYING_OBSIDIAN), block(Blocks.AMETHYST_BLOCK), block(Blocks.END_ROD),
+                    ModBlocks.NEXUS_CRACKED_SOIL::get, ModBlocks.RIFTSTONE::get,
+                    ModBlocks.ENERGIZED_FISSURE::get, ModBlocks.ECHO_CRYSTAL::get, ModBlocks.POWER_NODE::get,
                     ModBlocks.NEXUS_CORE::get, ModBlocks.CRYSTALLINE_SYNTHESIZER::get))
     );
     
@@ -349,7 +348,7 @@ public class ProceduralStructureGenerator {
     }
 
     /**
-     * Pass 1 — clone ~60% of ground-floor rooms upward to form additional
+     * Pass 1 - clone ~60% of ground-floor rooms upward to form additional
      * floors. Each upper-floor clone copies the ground room's footprint with
      * Y offset = 6 * floorIndex. Skipped rooms become "open atriums" (the
      * absence of a clone above means the ceiling stays in place).
@@ -489,11 +488,11 @@ public class ProceduralStructureGenerator {
             return null;
         }
 
-        clearStartingPodProtectedPathDebris(level, placePos);
+        clearStartingPodProtectedPathDebris(level, placePos, template.getSize());
         BlockPos spawn = findStartingPodSpawn(level, placePos);
         if (spawn != null) {
             polishStartingDropPod(level, spawn);
-            clearStartingPodProtectedPathDebris(level, placePos);
+            clearStartingPodProtectedPathDebris(level, placePos, template.getSize());
         }
         return spawn;
     }
@@ -633,9 +632,9 @@ public class ProceduralStructureGenerator {
         return localZ <= centerZ - 4.0 && Math.abs(localX - centerX) <= trailHalfWidth;
     }
 
-    private static void clearStartingPodProtectedPathDebris(ServerLevel level, BlockPos placePos) {
-        for (int x = 0; x < 20; x++) {
-            for (int z = 0; z < 20; z++) {
+    private static void clearStartingPodProtectedPathDebris(ServerLevel level, BlockPos placePos, Vec3i size) {
+        for (int x = 0; x < size.getX(); x++) {
+            for (int z = 0; z < size.getZ(); z++) {
                 if (!isStartingPodProtectedPathCell(x, z)) {
                     continue;
                 }
@@ -649,25 +648,26 @@ public class ProceduralStructureGenerator {
     }
 
     private static boolean isStartingPodProtectedPathCell(int localX, int localZ) {
-        if (Math.abs(localX - STARTING_POD_SPAWN_X) <= 1 && localZ >= 7 && localZ <= STARTING_POD_SPAWN_Z) {
+        if (Math.abs(localX - STARTING_POD_SPAWN_X) <= 1 && localZ >= 8 && localZ <= STARTING_POD_SPAWN_Z) {
             return true;
         }
-        if ((localX == 6 || localX == 7 || localX == 12 || localX == 13) && localZ >= 6 && localZ <= 7) {
+        if ((localX == 5 || localX == 6 || localX == 10 || localX == 11) && localZ >= 4 && localZ <= 5) {
             return true;
         }
-        if (localX >= 6 && localX <= STARTING_POD_SPAWN_X && localZ >= 10 && localZ <= STARTING_POD_SPAWN_Z) {
+        if (localX >= 4 && localX <= STARTING_POD_SPAWN_X && localZ >= 7 && localZ <= STARTING_POD_SPAWN_Z) {
             return true;
         }
-        return Math.abs(localX - STARTING_POD_SPAWN_X) <= 2 && localZ >= 15 && localZ <= 19;
+        return Math.abs(localX - STARTING_POD_SPAWN_X) <= 2 && localZ >= 12 && localZ <= 15;
     }
 
     private static boolean isStartingPodPathClutter(BlockState state) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         return state.is(ModBlocks.RUSTED_METAL_DEBRIS.get())
                 || state.is(ModBlocks.CABLE_BUNDLE.get())
                 || state.is(ModBlocks.TWISTED_METAL.get())
-                || Identifier.fromNamespaceAndPath("minecraft", "chain")
-                        .equals(BuiltInRegistries.BLOCK.getKey(state.getBlock()))
-                || state.is(Blocks.STONE_BUTTON);
+                || Identifier.fromNamespaceAndPath("echoblockworks", "rubble_pile").equals(id)
+                || Identifier.fromNamespaceAndPath("echoblockworks", "scattered_debris").equals(id)
+                || Identifier.fromNamespaceAndPath("echoblockworks", "steam_vent").equals(id);
     }
 
     private static boolean prepareStartingPodSpawn(ServerLevel level, BlockPos pos, boolean repairFloor) {
@@ -685,22 +685,7 @@ public class ProceduralStructureGenerator {
     private static void polishStartingDropPod(ServerLevel level, BlockPos spawn) {
         clearBlockForStartingSpawn(level, spawn);
         clearBlockForStartingSpawn(level, spawn.above());
-        placeStarterTorch(level, spawn);
         placeStarterCache(level, spawn);
-    }
-
-    private static void placeStarterTorch(ServerLevel level, BlockPos spawn) {
-        int[][] offsets = {
-                {1, 0}, {-1, 0}, {0, 1}, {0, -1},
-                {2, 0}, {-2, 0}, {0, 2}, {0, -2}
-        };
-        for (int[] offset : offsets) {
-            BlockPos pos = spawn.offset(offset[0], 0, offset[1]);
-            if (level.getBlockState(pos).isAir() && AshfallInteractionRules.supportsPlacement(level, pos.below())) {
-                level.setBlock(pos, Blocks.TORCH.defaultBlockState(), 2);
-                return;
-            }
-        }
     }
 
     private static void placeStarterCache(ServerLevel level, BlockPos spawn) {
@@ -714,24 +699,20 @@ public class ProceduralStructureGenerator {
                 continue;
             }
 
-            BlockState chestState = Blocks.CHEST.defaultBlockState();
-            level.setBlock(pos, chestState, 2);
+            BlockState cacheState = ModBlocks.ECHO_CACHE.get().defaultBlockState();
+            setStructureBlock(level, pos, cacheState, 2);
             BlockEntity be = level.getBlockEntity(pos);
-            if (be == null) {
-                be = new ChestBlockEntity(pos, chestState);
-                level.setBlockEntity(be);
-            }
-            if (be instanceof ChestBlockEntity chest) {
-                chest.setItem(0, new ItemStack(Items.STICK, 8));
-                chest.setItem(1, new ItemStack(ModItems.PLANT_FIBER.get(), 8));
-                chest.setItem(2, new ItemStack(ModItems.ASH.get(), 6));
-                chest.setItem(3, new ItemStack(Items.GLASS_BOTTLE, 3));
-                chest.setItem(4, new ItemStack(ModItems.SCRAP_METAL.get(), 6));
-                chest.setItem(5, new ItemStack(ModItems.SCRAP_WIRE.get(), 4));
-                chest.setItem(6, new ItemStack(Items.TORCH, 8));
-                chest.setItem(7, com.knoxhack.echoashfallprotocol.item.BatteryItem.withEnergy(
+            if (be instanceof net.minecraft.world.Container cache) {
+                cache.setItem(0, new ItemStack(Items.STICK, 8));
+                cache.setItem(1, new ItemStack(ModItems.PLANT_FIBER.get(), 8));
+                cache.setItem(2, new ItemStack(ModItems.ASH.get(), 6));
+                cache.setItem(3, new ItemStack(Items.GLASS_BOTTLE, 3));
+                cache.setItem(4, new ItemStack(ModItems.SCRAP_METAL.get(), 6));
+                cache.setItem(5, new ItemStack(ModItems.SCRAP_WIRE.get(), 4));
+                cache.setItem(6, new ItemStack(Items.TORCH, 8));
+                cache.setItem(7, com.knoxhack.echoashfallprotocol.item.BatteryItem.withEnergy(
                         ModItems.BASIC_BATTERY.get(), 1_000));
-                chest.setChanged();
+                be.setChanged();
             }
             return;
         }
@@ -750,7 +731,7 @@ public class ProceduralStructureGenerator {
         if (level.getBlockEntity(pos) != null) {
             level.removeBlockEntity(pos);
         }
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+        setStructureBlock(level, pos, Blocks.AIR.defaultBlockState(), 2);
     }
 
     public static int removeInvalidBlockEntities(ServerLevel level, BlockPos placePos, Vec3i size) {
@@ -795,7 +776,7 @@ public class ProceduralStructureGenerator {
                     BlockState state = getDropPodBlock(x, y, z, sizeX, sizeY, sizeZ, cx, cz, random);
                     if (state != null) {
                         BlockPos placePos = origin.offset(x - cx, y - 1, z - cz);
-                        level.setBlock(placePos, state, 2);
+                        setStructureBlock(level, placePos, state, 2);
                         if (state.is(Blocks.CHEST)) {
                             assignLootTable(level, placePos, STRUCTURE_LOOT_TABLES.get(StructureType.DROP_POD), random);
                         }
@@ -833,11 +814,11 @@ public class ProceduralStructureGenerator {
                 case 2 -> Blocks.GRAVEL;
                 default -> Blocks.IRON_BARS;
             };
-            level.setBlock(craterPos, debris.defaultBlockState(), 2);
+            setStructureBlock(level, craterPos, debris.defaultBlockState(), 2);
 
             // Some debris at y-2 for depth
             if (random.nextFloat() < 0.3f) {
-                level.setBlock(craterPos.below(), debris.defaultBlockState(), 2);
+                setStructureBlock(level, craterPos.below(), debris.defaultBlockState(), 2);
             }
         }
 
@@ -849,7 +830,7 @@ public class ProceduralStructureGenerator {
 
                 BlockPos groundPos = origin.offset(x, -1, z);
                 if (random.nextFloat() < 0.2f) {
-                    level.setBlock(groundPos, Blocks.COARSE_DIRT.defaultBlockState(), 2);
+                    setStructureBlock(level, groundPos, Blocks.COARSE_DIRT.defaultBlockState(), 2);
                 }
             }
         }
@@ -863,7 +844,7 @@ public class ProceduralStructureGenerator {
             // Place outside pod
             if (Math.abs(fx) >= sizeX / 2 || Math.abs(fz) >= sizeZ / 2) {
                 BlockPos firePos = origin.offset(fx, 0, fz);
-                level.setBlock(firePos, Blocks.FIRE.defaultBlockState(), 2);
+                setStructureBlock(level, firePos, Blocks.FIRE.defaultBlockState(), 2);
             }
         }
     }
@@ -1426,7 +1407,7 @@ public class ProceduralStructureGenerator {
             buildRoomWalls(level, origin, room, palette, random);
         }
         
-        // Build ceilings — but skip any room with a stacked room directly above
+        // Build ceilings - but skip any room with a stacked room directly above
         // (Pass 1 multi-floor). The upper room's floor-build pass writes the
         // shared slab at Y-1, so there's no need for a ceiling here.
         java.util.Set<Room> ceilingSkip = computeStackedBelow(rooms);
@@ -1446,7 +1427,7 @@ public class ProceduralStructureGenerator {
             buildDoorway(level, origin, corridor, rooms, palette, random);
         }
 
-        // Façade pass: punch windows on exterior walls, hang a structure sign (Pass 2)
+        // Facade pass: punch windows on exterior walls, hang a structure sign (Pass 2)
         if (!guardianSite) {
             applyFacadePass(level, origin, rooms, type, palette, random);
         }
@@ -1456,7 +1437,7 @@ public class ProceduralStructureGenerator {
             populateRoom(level, origin, room, type, random);
         }
 
-        // Furniture density pass (Pass 3) — adds reusable furniture pieces on top
+        // Furniture density pass (Pass 3) - adds reusable furniture pieces on top
         // of the type-specific populate* output above. Runs before lighting so
         // the lighting pass can place fixtures above newly-placed furniture.
         for (Room room : rooms) {
@@ -2338,7 +2319,87 @@ public class ProceduralStructureGenerator {
         if (level.getBlockEntity(pos) != null) {
             level.removeBlockEntity(pos);
         }
-        return level.setBlock(pos, state, flags);
+        return level.setBlock(pos, echoStructureState(state), flags);
+    }
+
+    private static BlockState echoStructureState(BlockState state) {
+        Block block = state.getBlock();
+        if (block == Blocks.AIR || block == Blocks.BEDROCK) {
+            return state;
+        }
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        if (id == null || !"minecraft".equals(id.getNamespace())) {
+            return state;
+        }
+        if (block == Blocks.CHEST || block == Blocks.TRAPPED_CHEST || block == Blocks.BARREL) {
+            return ModBlocks.STRUCTURE_CACHE.get().defaultBlockState();
+        }
+        if (block == Blocks.GLASS || block == Blocks.GLASS_PANE || block == Blocks.TINTED_GLASS) {
+            return ModBlocks.SHATTERED_GLASS.get().defaultBlockState();
+        }
+        if (block == Blocks.WATER || block == Blocks.SLIME_BLOCK || block == Blocks.LILY_PAD) {
+            return ModBlocks.ACIDIC_SLUDGE.get().defaultBlockState();
+        }
+        if (block == Blocks.LAVA || block == Blocks.MAGMA_BLOCK || block == Blocks.FIRE || block == Blocks.NETHERRACK) {
+            return ModBlocks.ENERGIZED_FISSURE.get().defaultBlockState();
+        }
+        if (block == Blocks.ICE || block == Blocks.PACKED_ICE || block == Blocks.BLUE_ICE || block == Blocks.SNOW || block == Blocks.SNOW_BLOCK || block == Blocks.POWDER_SNOW) {
+            return ModBlocks.PERMAFROST.get().defaultBlockState();
+        }
+        if (block == Blocks.TORCH || block == Blocks.WALL_TORCH || block == Blocks.SOUL_TORCH || block == Blocks.SOUL_WALL_TORCH
+                || block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN || block == Blocks.REDSTONE_TORCH
+                || block == Blocks.REDSTONE_LAMP || block == Blocks.GLOWSTONE || block == Blocks.SEA_LANTERN
+                || block == Blocks.SHROOMLIGHT || block == Blocks.END_ROD) {
+            return ModBlocks.POWER_NODE.get().defaultBlockState();
+        }
+        if (block == Blocks.RAIL || block == Blocks.LADDER || block == Blocks.IRON_BARS || "chain".equals(id.getPath())
+                || block == Blocks.IRON_TRAPDOOR || block == Blocks.IRON_DOOR) {
+            return ModBlocks.REBAR_BLOCK.get().defaultBlockState();
+        }
+        if (block == Blocks.CRAFTING_TABLE) {
+            return ModBlocks.WORKSHOP_BLOCK.get().defaultBlockState();
+        }
+        if (block == Blocks.FURNACE) {
+            return ModBlocks.THERMAL_BURNER.get().defaultBlockState();
+        }
+        if (block == Blocks.CAULDRON || block == Blocks.BREWING_STAND) {
+            return ModBlocks.CONTAMINANT_CONDENSER.get().defaultBlockState();
+        }
+        if (block == Blocks.OBSERVER || block == Blocks.COMPARATOR || block == Blocks.DAYLIGHT_DETECTOR || block == Blocks.BOOKSHELF) {
+            return ModBlocks.SIGNAL_SCANNER.get().defaultBlockState();
+        }
+        if (block == Blocks.ANVIL || block == Blocks.HOPPER || block == Blocks.DISPENSER) {
+            return ModBlocks.HAND_RECYCLER.get().defaultBlockState();
+        }
+        if (block == Blocks.LECTERN) {
+            return ModBlocks.MAP_TABLE.get().defaultBlockState();
+        }
+        if (block == Blocks.WHITE_BED || block == Blocks.RED_BED || block == Blocks.BLUE_BED || block == Blocks.GREEN_BED
+                || block == Blocks.OAK_STAIRS || block == Blocks.OAK_TRAPDOOR) {
+            return ModBlocks.EMERGENCY_BUNK.get().defaultBlockState();
+        }
+        if (block == Blocks.COAL_ORE || block == Blocks.IRON_ORE) {
+            return ModBlocks.SCRAP_ORE.get().defaultBlockState();
+        }
+        if (block == Blocks.SHORT_GRASS || block == Blocks.TALL_GRASS || block == Blocks.FERN || block == Blocks.DEAD_BUSH) {
+            return ModBlocks.DRY_GRASS.get().defaultBlockState();
+        }
+        if (block == Blocks.DIRT || block == Blocks.COARSE_DIRT || block == Blocks.GRASS_BLOCK) {
+            return ModBlocks.WASTELAND_DIRT.get().defaultBlockState();
+        }
+        if (block == Blocks.GRAVEL || block == Blocks.COBBLESTONE || block == Blocks.MOSSY_COBBLESTONE
+                || block == Blocks.STONE || block == Blocks.STONE_BRICKS || block == Blocks.CRACKED_STONE_BRICKS
+                || block == Blocks.MOSSY_STONE_BRICKS || block == Blocks.SMOOTH_STONE) {
+            return ModBlocks.CONCRETE_RUBBLE.get().defaultBlockState();
+        }
+        if (block == Blocks.IRON_BLOCK || block == Blocks.COPPER_BLOCK || block == Blocks.EXPOSED_COPPER
+                || block == Blocks.CUT_COPPER || block == Blocks.OXIDIZED_COPPER) {
+            return ModBlocks.RUSTED_METAL_SHEET.get().defaultBlockState();
+        }
+        if (block == Blocks.OBSIDIAN || block == Blocks.CRYING_OBSIDIAN || block == Blocks.AMETHYST_BLOCK) {
+            return ModBlocks.RIFTSTONE.get().defaultBlockState();
+        }
+        return ModBlocks.ASH_STONE.get().defaultBlockState();
     }
 
     private static Block entranceBlock(BiomeGuardianProfile profile) {
@@ -2539,7 +2600,7 @@ public class ProceduralStructureGenerator {
             for (int y = room.getY() - 1; y < room.getY() + room.getHeight() + 2; y++) {
                 for (int z = room.getZ() - 1; z < room.getZ() + room.getDepth() + 1; z++) {
                     BlockPos pos = origin.offset(x, y, z);
-                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                    setStructureBlock(level, pos, Blocks.AIR.defaultBlockState(), 2);
                 }
             }
         }
@@ -2553,7 +2614,7 @@ public class ProceduralStructureGenerator {
                 for (int y = room.getY(); y < room.getY() + room.getHeight(); y++) {
                     for (int z = room.getZ() - 1; z < room.getZ() + room.getDepth() + 1; z++) {
                         BlockPos pos = origin.offset(x, y, z);
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                        setStructureBlock(level, pos, Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
             }
@@ -2564,7 +2625,7 @@ public class ProceduralStructureGenerator {
             for (BlockPos pathPos : corridor.getExpandedPath()) {
                 for (int y = 0; y < corridor.getHeight(); y++) {
                     BlockPos pos = origin.offset(pathPos.getX(), pathPos.getY() + y, pathPos.getZ());
-                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                    setStructureBlock(level, pos, Blocks.AIR.defaultBlockState(), 2);
                 }
             }
         }
@@ -2628,7 +2689,7 @@ public class ProceduralStructureGenerator {
                     // Only replace air/non-solid blocks
                     if (level.getBlockState(foundationPos).isAir() ||
                         !AshfallInteractionRules.supportsPlacement(level, foundationPos)) {
-                        level.setBlock(foundationPos, foundationBlock.defaultBlockState(), 2);
+                        setStructureBlock(level, foundationPos, foundationBlock.defaultBlockState(), 2);
                     }
                 }
             }
@@ -2648,7 +2709,7 @@ public class ProceduralStructureGenerator {
                     for (int y = structureY - 2; y >= groundY; y--) {
                         BlockPos downPos = origin.offset(x, y, z);
                         if (level.getBlockState(downPos).isAir()) {
-                            level.setBlock(downPos, Blocks.COBBLESTONE.defaultBlockState(), 2);
+                            setStructureBlock(level, downPos, Blocks.COBBLESTONE.defaultBlockState(), 2);
                         }
                     }
                 }
@@ -2668,7 +2729,7 @@ public class ProceduralStructureGenerator {
                     // Clear vegetation, snow, etc.
                     if (state.is(Blocks.SHORT_GRASS) || state.is(Blocks.TALL_GRASS) || 
                         state.is(Blocks.SNOW) || state.is(Blocks.FERN)) {
-                        level.setBlock(clearPos, Blocks.AIR.defaultBlockState(), 2);
+                        setStructureBlock(level, clearPos, Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
             }
@@ -2710,7 +2771,7 @@ public class ProceduralStructureGenerator {
                 Block block;
                 if (hasConduit && (x == room.getCenterX() || z == room.getCenterZ())) {
                     // Power conduit under floor grating
-                    level.setBlock(pos.below(), Blocks.GLOWSTONE.defaultBlockState(), 2);
+                    setStructureBlock(level, pos.below(), Blocks.GLOWSTONE.defaultBlockState(), 2);
                     block = Blocks.IRON_BARS;
                 } else if (isIndustrial && (x + z) % 4 == 0) {
                     // Hazard stripe pattern
@@ -2722,7 +2783,7 @@ public class ProceduralStructureGenerator {
                     block = palette.getRandomBlock(random, decay);
                 }
                 
-                level.setBlock(pos, block.defaultBlockState(), 2);
+                setStructureBlock(level, pos, block.defaultBlockState(), 2);
             }
         }
     }
@@ -2732,7 +2793,7 @@ public class ProceduralStructureGenerator {
                                             RandomSource random) {
         for (BlockPos pathPos : corridor.getExpandedPath()) {
             BlockPos pos = origin.offset(pathPos.getX(), pathPos.getY() - 1, pathPos.getZ());
-            level.setBlock(pos, palette.primary().defaultBlockState(), 2);
+            setStructureBlock(level, pos, palette.primary().defaultBlockState(), 2);
         }
     }
     
@@ -2749,7 +2810,7 @@ public class ProceduralStructureGenerator {
             
             if (level.getBlockState(pos.above()).isAir()) {
                 Block debris = random.nextBoolean() ? Blocks.COBBLESTONE : Blocks.GRAVEL;
-                level.setBlock(pos.above(), debris.defaultBlockState(), 2);
+                setStructureBlock(level, pos.above(), debris.defaultBlockState(), 2);
             }
         }
         
@@ -2760,7 +2821,7 @@ public class ProceduralStructureGenerator {
                 int rz = random.nextInt(20) - 10;
                 BlockPos pos = origin.offset(root.getCenterX() + rx, root.getY() - 1, root.getZ() + rz);
                 if (level.getBlockState(pos.above()).isAir()) {
-                    level.setBlock(pos.above(), Blocks.SHORT_GRASS.defaultBlockState(), 2);
+                    setStructureBlock(level, pos.above(), Blocks.SHORT_GRASS.defaultBlockState(), 2);
                 }
             }
         }
@@ -2785,23 +2846,23 @@ public class ProceduralStructureGenerator {
                     
                     if (isWall) {
                         if (!isHole || dz != -3) {
-                            level.setBlock(p, palette.secondary().defaultBlockState(), 2);
+                            setStructureBlock(level, p, palette.secondary().defaultBlockState(), 2);
                         }
                     } else if (dy < 3) {
-                        level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
+                        setStructureBlock(level, p, Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
             }
         }
         
         // Add lighting to entrance
-        level.setBlock(entrancePos.offset(-1, 2, -3), Blocks.SEA_LANTERN.defaultBlockState(), 2);
-        level.setBlock(entrancePos.offset(1, 2, -3), Blocks.SEA_LANTERN.defaultBlockState(), 2);
+        setStructureBlock(level, entrancePos.offset(-1, 2, -3), Blocks.SEA_LANTERN.defaultBlockState(), 2);
+        setStructureBlock(level, entrancePos.offset(1, 2, -3), Blocks.SEA_LANTERN.defaultBlockState(), 2);
         
         // Clear passage into room
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = 0; dy < 3; dy++) {
-                level.setBlock(entrancePos.offset(dx, dy, 0), Blocks.AIR.defaultBlockState(), 2);
+                setStructureBlock(level, entrancePos.offset(dx, dy, 0), Blocks.AIR.defaultBlockState(), 2);
             }
         }
     }
@@ -2817,13 +2878,13 @@ public class ProceduralStructureGenerator {
             if (random.nextFloat() < 0.4f) {
                 // Ventilation Tower
                 for (int y = 0; y < 2; y++) {
-                    level.setBlock(roofPos.above(y), Blocks.IRON_BLOCK.defaultBlockState(), 2);
+                    setStructureBlock(level, roofPos.above(y), Blocks.IRON_BLOCK.defaultBlockState(), 2);
                 }
-                level.setBlock(roofPos.above(2), Blocks.IRON_TRAPDOOR.defaultBlockState(), 2);
+                setStructureBlock(level, roofPos.above(2), Blocks.IRON_TRAPDOOR.defaultBlockState(), 2);
             } else if (random.nextFloat() < 0.3f) {
                 // Antenna
                 for (int y = 0; y < 4; y++) {
-                    level.setBlock(roofPos.above(y), Blocks.IRON_BARS.defaultBlockState(), 2);
+                    setStructureBlock(level, roofPos.above(y), Blocks.IRON_BARS.defaultBlockState(), 2);
                 }
             }
         }
@@ -2867,7 +2928,7 @@ public class ProceduralStructureGenerator {
                             block = palette.primary();
                         }
                         
-                        level.setBlock(pos, block.defaultBlockState(), 2);
+                        setStructureBlock(level, pos, block.defaultBlockState(), 2);
                     }
                 }
             }
@@ -2920,7 +2981,7 @@ public class ProceduralStructureGenerator {
         for (int x = room.getX() - 1; x < room.getX() + room.getWidth() + 1; x++) {
             for (int z = room.getZ() - 1; z < room.getZ() + room.getDepth() + 1; z++) {
                 BlockPos pos = origin.offset(x, baseY, z);
-                level.setBlock(pos, palette.primary().defaultBlockState(), 2);
+                setStructureBlock(level, pos, palette.primary().defaultBlockState(), 2);
                 
                 // Add rafters protruding downwards
                 if (hasRafters && x >= room.getX() && x < room.getX() + room.getWidth() &&
@@ -2928,13 +2989,13 @@ public class ProceduralStructureGenerator {
                     
                     boolean isRafter = (x - room.getX()) % 4 == 0 || (z - room.getZ()) % 4 == 0;
                     if (isRafter) {
-                        level.setBlock(pos.below(), palette.secondary().defaultBlockState(), 2);
+                        setStructureBlock(level, pos.below(), palette.secondary().defaultBlockState(), 2);
                     }
                     
                     // Add central light fixture
                     if (x == room.getCenterX() && z == room.getCenterZ()) {
-                        level.setBlock(pos.below(), Blocks.GLOWSTONE.defaultBlockState(), 2);
-                        level.setBlock(pos.below(2), Blocks.IRON_BARS.defaultBlockState(), 2);
+                        setStructureBlock(level, pos.below(), Blocks.GLOWSTONE.defaultBlockState(), 2);
+                        setStructureBlock(level, pos.below(2), Blocks.IRON_BARS.defaultBlockState(), 2);
                     }
                 }
             }
@@ -2965,7 +3026,7 @@ public class ProceduralStructureGenerator {
                                     (!alongX && (x == room.getX() - 1 + inset || x == room.getX() + room.getWidth() - inset));
                     Block roofBlock = isEdge ? palette.secondary() : palette.primary();
                     
-                    level.setBlock(pos, roofBlock.defaultBlockState(), 2);
+                    setStructureBlock(level, pos, roofBlock.defaultBlockState(), 2);
                 }
             }
         }
@@ -2981,9 +3042,9 @@ public class ProceduralStructureGenerator {
                 for (int y = 0; y < roofHeightAtPos; y++) {
                     BlockPos fillPos = origin.offset(x, baseY + y, z);
                     if (y == roofHeightAtPos - 1) {
-                        level.setBlock(fillPos, palette.primary().defaultBlockState(), 2);
+                        setStructureBlock(level, fillPos, palette.primary().defaultBlockState(), 2);
                     } else if (y > 0) {
-                        level.setBlock(fillPos, Blocks.AIR.defaultBlockState(), 2);
+                        setStructureBlock(level, fillPos, Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
             }
@@ -3005,7 +3066,7 @@ public class ProceduralStructureGenerator {
                 int roofY = baseY + Math.round(slopeFactor * slopeHeight);
                 
                 BlockPos pos = origin.offset(x, roofY, z);
-                level.setBlock(pos, palette.primary().defaultBlockState(), 2);
+                setStructureBlock(level, pos, palette.primary().defaultBlockState(), 2);
             }
         }
     }
@@ -3022,10 +3083,10 @@ public class ProceduralStructureGenerator {
                 
                 if (isEdge) {
                     // Parapet wall (1-2 blocks high)
-                    level.setBlock(pos, palette.secondary().defaultBlockState(), 2);
-                    level.setBlock(pos.above(), palette.secondary().defaultBlockState(), 2);
+                    setStructureBlock(level, pos, palette.secondary().defaultBlockState(), 2);
+                    setStructureBlock(level, pos.above(), palette.secondary().defaultBlockState(), 2);
                 } else {
-                    level.setBlock(pos, palette.primary().defaultBlockState(), 2);
+                    setStructureBlock(level, pos, palette.primary().defaultBlockState(), 2);
                 }
             }
         }
@@ -3035,7 +3096,7 @@ public class ProceduralStructureGenerator {
             int ventX = room.getX() + random.nextInt(room.getWidth());
             int ventZ = room.getZ() - 1;
             BlockPos ventPos = origin.offset(ventX, baseY + 1, ventZ);
-            level.setBlock(ventPos, Blocks.IRON_BARS.defaultBlockState(), 2);
+            setStructureBlock(level, ventPos, Blocks.IRON_BARS.defaultBlockState(), 2);
         }
     }
     
@@ -3058,7 +3119,7 @@ public class ProceduralStructureGenerator {
                     if (distSq <= layerRadius * layerRadius) {
                         BlockPos pos = origin.offset(x, roofY, z);
                         Block block = (y == domeHeight) ? palette.accent() : palette.primary();
-                        level.setBlock(pos, block.defaultBlockState(), 2);
+                        setStructureBlock(level, pos, block.defaultBlockState(), 2);
                     }
                 }
             }
@@ -3097,7 +3158,7 @@ public class ProceduralStructureGenerator {
                                     }
 
                                     if (inCorridor && y < 3) {
-                                        level.setBlock(target, Blocks.AIR.defaultBlockState(), 2);
+                                        setStructureBlock(level, target, Blocks.AIR.defaultBlockState(), 2);
                                     }
                                 }
                             }
@@ -3107,7 +3168,7 @@ public class ProceduralStructureGenerator {
                         // Simple arch: cap the top
                         for (int dx = -1; dx <= 1; dx++) {
                             for (int dz = -1; dz <= 1; dz++) {
-                                level.setBlock(doorwayPos.offset(dx, 3, dz), palette.secondary().defaultBlockState(), 2);
+                                setStructureBlock(level, doorwayPos.offset(dx, 3, dz), palette.secondary().defaultBlockState(), 2);
                             }
                         }
                     }
@@ -3118,7 +3179,7 @@ public class ProceduralStructureGenerator {
     
     private static boolean placeProp(ServerLevel level, BlockPos pos, Block block) {
         if (level.getBlockState(pos).isAir()) {
-            level.setBlock(pos, block.defaultBlockState(), 2);
+            setStructureBlock(level, pos, block.defaultBlockState(), 2);
             return true;
         }
         return false;
@@ -3129,8 +3190,8 @@ public class ProceduralStructureGenerator {
         if (!level.getBlockState(pos).isAir()) {
             return false;
         }
-        BlockState state = block.defaultBlockState();
-        level.setBlock(pos, state, 2);
+        BlockState state = ModBlocks.STRUCTURE_CACHE.get().defaultBlockState();
+        setStructureBlock(level, pos, state, 2);
         return assignLootTable(level, pos, lootTable, random);
     }
 
@@ -3166,26 +3227,26 @@ public class ProceduralStructureGenerator {
                 // 1x2x1 Glass tank with slime/water
                 placeProp(level, worldPos, Blocks.GLASS);
                 placeProp(level, worldPos.above(), Blocks.GLASS);
-                placeProp(level, worldPos.offset(0, 0, 0), Blocks.SLIME_BLOCK); // İçerisi gibi
-                level.setBlock(worldPos, Blocks.SLIME_BLOCK.defaultBlockState(), 2);
-                level.setBlock(worldPos.above(), Blocks.TINTED_GLASS.defaultBlockState(), 2);
+                placeProp(level, worldPos.offset(0, 0, 0), Blocks.SLIME_BLOCK); // Inside-like
+                setStructureBlock(level, worldPos, Blocks.SLIME_BLOCK.defaultBlockState(), 2);
+                setStructureBlock(level, worldPos.above(), Blocks.TINTED_GLASS.defaultBlockState(), 2);
             }
             case "server_cluster" -> {
                 // 3x2x1 Server rack row
                 for (int dx = -1; dx <= 1; dx++) {
-                    level.setBlock(worldPos.offset(dx, 0, 0), Blocks.BOOKSHELF.defaultBlockState(), 2);
-                    level.setBlock(worldPos.offset(dx, 1, 0), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
+                    setStructureBlock(level, worldPos.offset(dx, 0, 0), Blocks.BOOKSHELF.defaultBlockState(), 2);
+                    setStructureBlock(level, worldPos.offset(dx, 1, 0), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
                     // Add cabling to ceiling
                     for (int dy = 2; dy < room.getHeight() - 1; dy++) {
-                        level.setBlock(worldPos.offset(dx, dy, 0), Blocks.IRON_BARS.defaultBlockState(), 2);
+                        setStructureBlock(level, worldPos.offset(dx, dy, 0), Blocks.IRON_BARS.defaultBlockState(), 2);
                     }
                 }
             }
             case "terminal_desk" -> {
                 // Simple desk with screen
-                level.setBlock(worldPos, Blocks.POLISHED_ANDESITE_SLAB.defaultBlockState(), 2);
-                level.setBlock(worldPos.above(), Blocks.GLOWSTONE.defaultBlockState(), 2);
-                level.setBlock(worldPos.above().north(), Blocks.IRON_BARS.defaultBlockState(), 2); // "Screen frame"
+                setStructureBlock(level, worldPos, Blocks.POLISHED_ANDESITE_SLAB.defaultBlockState(), 2);
+                setStructureBlock(level, worldPos.above(), Blocks.GLOWSTONE.defaultBlockState(), 2);
+                setStructureBlock(level, worldPos.above().north(), Blocks.IRON_BARS.defaultBlockState(), 2); // "Screen frame"
             }
         }
     }
@@ -3407,7 +3468,7 @@ public class ProceduralStructureGenerator {
         if (spawnerPos == null) return;
         
         // Place spawner block
-        level.setBlock(spawnerPos, Blocks.SPAWNER.defaultBlockState(), 2);
+        setStructureBlock(level, spawnerPos, Blocks.SPAWNER.defaultBlockState(), 2);
         
         // Configure spawner
         if (level.getBlockEntity(spawnerPos) instanceof SpawnerBlockEntity spawner) {
@@ -3730,12 +3791,12 @@ public class ProceduralStructureGenerator {
             if (AshfallInteractionRules.supportsPlacement(state) && !state.is(Blocks.AIR)) {
                 // 50% chance to remove completely, 50% to replace with damaged variant
                 if (random.nextBoolean()) {
-                    level.setBlock(damagePos, Blocks.AIR.defaultBlockState(), 2);
+                    setStructureBlock(level, damagePos, Blocks.AIR.defaultBlockState(), 2);
                 } else {
                     // Replace with cracked/decayed version if possible
                     Block damagedBlock = getDamagedVariant(state.getBlock());
                     if (damagedBlock != state.getBlock()) {
-                        level.setBlock(damagePos, damagedBlock.defaultBlockState(), 2);
+                        setStructureBlock(level, damagePos, damagedBlock.defaultBlockState(), 2);
                     }
                 }
             }
@@ -3751,10 +3812,10 @@ public class ProceduralStructureGenerator {
             BlockState state = level.getBlockState(floorPos);
             if (AshfallInteractionRules.supportsPlacement(state) && random.nextFloat() < 0.5f) {
                 // Create pothole
-                level.setBlock(floorPos, Blocks.COBBLESTONE.defaultBlockState(), 2);
+                setStructureBlock(level, floorPos, Blocks.COBBLESTONE.defaultBlockState(), 2);
                 // Sometimes extend down
                 if (random.nextFloat() < 0.3f) {
-                    level.setBlock(floorPos.below(), Blocks.COBBLESTONE.defaultBlockState(), 2);
+                    setStructureBlock(level, floorPos.below(), Blocks.COBBLESTONE.defaultBlockState(), 2);
                 }
             }
         }
@@ -3770,12 +3831,12 @@ public class ProceduralStructureGenerator {
                 for (int y = room.getY() + room.getHeight() - 1; y >= room.getY(); y--) {
                     BlockPos roofPos = origin.offset(x, y, z);
                     if (!level.getBlockState(roofPos).isAir()) {
-                        level.setBlock(roofPos, Blocks.AIR.defaultBlockState(), 2);
+                        setStructureBlock(level, roofPos, Blocks.AIR.defaultBlockState(), 2);
                         // Sometimes place debris below
                         if (random.nextFloat() < 0.4f && y > room.getY()) {
                             BlockPos debrisPos = origin.offset(x, room.getY(), z);
                             if (level.getBlockState(debrisPos).isAir()) {
-                                level.setBlock(debrisPos, Blocks.GRAVEL.defaultBlockState(), 2);
+                                setStructureBlock(level, debrisPos, Blocks.GRAVEL.defaultBlockState(), 2);
                             }
                         }
                         break;
@@ -3841,14 +3902,14 @@ public class ProceduralStructureGenerator {
                 BlockPos rubblePos = origin.offset(x, baseY - 1 + h, z);
                 if (level.getBlockState(rubblePos).isAir()) {
                     Block rubbleBlock = random.nextFloat() < 0.6f ? Blocks.COBBLESTONE : Blocks.GRAVEL;
-                    level.setBlock(rubblePos, rubbleBlock.defaultBlockState(), 2);
+                    setStructureBlock(level, rubblePos, rubbleBlock.defaultBlockState(), 2);
                 }
             }
         }
     }
     
     // ====================================================================
-    // Pass 1 — Multi-floor helpers
+    // Pass 1 - Multi-floor helpers
     // ====================================================================
 
     /**
@@ -3909,15 +3970,15 @@ public class ProceduralStructureGenerator {
         int yEnd = upper.getY() + 1;
         for (int y = yStart; y <= yEnd; y++) {
             BlockPos p = origin.offset(ladderX, y, ladderZ);
-            level.setBlock(p, Blocks.LADDER.defaultBlockState(), 2);
+            setStructureBlock(level, p, Blocks.LADDER.defaultBlockState(), 2);
         }
         // Make sure the tile is open at top.
-        level.setBlock(origin.offset(ladderX, yEnd + 1, ladderZ),
+        setStructureBlock(level, origin.offset(ladderX, yEnd + 1, ladderZ),
                 Blocks.AIR.defaultBlockState(), 2);
     }
 
     // ====================================================================
-    // Pass 3 — Furniture density system
+    // Pass 3 - Furniture density system
     // ====================================================================
 
     /**
@@ -3939,54 +4000,54 @@ public class ProceduralStructureGenerator {
     static {
         FURNITURE.put("desk_with_terminal", new FurniturePiece("desk_with_terminal", 1, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.POLISHED_ANDESITE_SLAB.defaultBlockState(), 2);
-                    level.setBlock(p.above(), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
+                    setStructureBlock(level, p, Blocks.POLISHED_ANDESITE_SLAB.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), Blocks.REDSTONE_LAMP.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("lab_table", new FurniturePiece("lab_table", 2, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.SMOOTH_QUARTZ_SLAB.defaultBlockState(), 2);
-                    level.setBlock(p.east(), Blocks.SMOOTH_QUARTZ_SLAB.defaultBlockState(), 2);
+                    setStructureBlock(level, p, Blocks.SMOOTH_QUARTZ_SLAB.defaultBlockState(), 2);
+                    setStructureBlock(level, p.east(), Blocks.SMOOTH_QUARTZ_SLAB.defaultBlockState(), 2);
                     if (rnd.nextFloat() < 0.5f) {
-                        level.setBlock(p.above(), Blocks.BREWING_STAND.defaultBlockState(), 2);
+                        setStructureBlock(level, p.above(), Blocks.BREWING_STAND.defaultBlockState(), 2);
                     } else {
-                        level.setBlock(p.east().above(), Blocks.CAULDRON.defaultBlockState(), 2);
+                        setStructureBlock(level, p.east().above(), Blocks.CAULDRON.defaultBlockState(), 2);
                     }
                 }));
 
         FURNITURE.put("server_rack", new FurniturePiece("server_rack", 1, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.BOOKSHELF.defaultBlockState(), 2);
-                    level.setBlock(p.above(), Blocks.BOOKSHELF.defaultBlockState(), 2);
-                    level.setBlock(p.above(2), rnd.nextFloat() < 0.6f
+                    setStructureBlock(level, p, Blocks.BOOKSHELF.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), Blocks.BOOKSHELF.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(2), rnd.nextFloat() < 0.6f
                             ? Blocks.REDSTONE_LAMP.defaultBlockState()
                             : Blocks.COBWEB.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("bunk_bed", new FurniturePiece("bunk_bed", 1, 2,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.RED_BED.defaultBlockState(), 2);
-                    level.setBlock(p.south(), Blocks.RED_BED.defaultBlockState(), 2);
-                    level.setBlock(p.above(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
-                    level.setBlock(p.south().above(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
+                    setStructureBlock(level, p, Blocks.RED_BED.defaultBlockState(), 2);
+                    setStructureBlock(level, p.south(), Blocks.RED_BED.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
+                    setStructureBlock(level, p.south().above(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("weapon_rack", new FurniturePiece("weapon_rack", 1, 1,
                 (level, p, rnd) -> {
                     placeLootContainer(level, p, Blocks.BARREL, STRUCTURE_LOOT_TABLES.get(StructureType.MILITARY_VAULT), rnd);
-                    level.setBlock(p.above(), Blocks.ANVIL.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), Blocks.ANVIL.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("chemical_drum", new FurniturePiece("chemical_drum", 1, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.CAULDRON.defaultBlockState(), 2);
-                    level.setBlock(p.above(), Blocks.TINTED_GLASS.defaultBlockState(), 2);
+                    setStructureBlock(level, p, Blocks.CAULDRON.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), Blocks.TINTED_GLASS.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("medkit_cabinet", new FurniturePiece("medkit_cabinet", 1, 1,
                 (level, p, rnd) -> {
                     placeLootContainer(level, p, Blocks.BARREL, STRUCTURE_LOOT_TABLES.get(StructureType.BIO_LAB), rnd);
-                    level.setBlock(p.above(), Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("crate_stack", new FurniturePiece("crate_stack", 2, 1,
@@ -4000,7 +4061,7 @@ public class ProceduralStructureGenerator {
 
         FURNITURE.put("workbench", new FurniturePiece("workbench", 1, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.CRAFTING_TABLE.defaultBlockState(), 2);
+                    setStructureBlock(level, p, Blocks.CRAFTING_TABLE.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("broken_furniture", new FurniturePiece("broken_furniture", 1, 1,
@@ -4011,19 +4072,19 @@ public class ProceduralStructureGenerator {
                         case 2 -> Blocks.GRAVEL;
                         default -> Blocks.OAK_PLANKS;
                     };
-                    level.setBlock(p, b.defaultBlockState(), 2);
+                    setStructureBlock(level, p, b.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("control_panel", new FurniturePiece("control_panel", 2, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.DAYLIGHT_DETECTOR.defaultBlockState(), 2);
-                    level.setBlock(p.east(), Blocks.OBSERVER.defaultBlockState(), 2);
+                    setStructureBlock(level, p, Blocks.DAYLIGHT_DETECTOR.defaultBlockState(), 2);
+                    setStructureBlock(level, p.east(), Blocks.OBSERVER.defaultBlockState(), 2);
                 }));
 
         FURNITURE.put("planter", new FurniturePiece("planter", 1, 1,
                 (level, p, rnd) -> {
-                    level.setBlock(p, Blocks.PODZOL.defaultBlockState(), 2);
-                    level.setBlock(p.above(), rnd.nextFloat() < 0.5f
+                    setStructureBlock(level, p, Blocks.PODZOL.defaultBlockState(), 2);
+                    setStructureBlock(level, p.above(), rnd.nextFloat() < 0.5f
                             ? Blocks.FERN.defaultBlockState()
                             : Blocks.WARPED_ROOTS.defaultBlockState(), 2);
                 }));
@@ -4062,9 +4123,9 @@ public class ProceduralStructureGenerator {
     }
 
     /**
-     * Furniture density pass — places reusable furniture pieces on the room
-     * floor using a 2-D occupancy grid. Density target is roughly 0.25–0.4 of
-     * floor area (i.e. 5–10 pieces in a 5×5 room).
+     * Furniture density pass - places reusable furniture pieces on the room
+     * floor using a 2-D occupancy grid. Density target is roughly 0.25-0.4 of
+     * floor area (i.e. 5-10 pieces in a 5x5 room).
      *
      * Placement is biased 60% to wall-adjacent cells and 40% to interior cells
      * so rooms feel "lined" with equipment rather than randomly littered.
@@ -4122,7 +4183,7 @@ public class ProceduralStructureGenerator {
             if (lz + piece.footprintZ() > gd) continue;
             if (!isFootprintFree(taken, lx, lz, piece.footprintX(), piece.footprintZ())) continue;
 
-            // Place — anchor at (room.x + lx, room.y, room.z + lz).
+            // Place - anchor at (room.x + lx, room.y, room.z + lz).
             BlockPos anchor = origin.offset(room.getX() + lx, room.getY(), room.getZ() + lz);
 
             // Sanity: don't overwrite anything non-air at the anchor (existing
@@ -4161,9 +4222,9 @@ public class ProceduralStructureGenerator {
      * Three sub-passes around the entrance room:
      *   1. A 2-wide path of palette `decayed` blocks extending ~6 blocks out
      *      from the entrance face along -Z. Reads as a road/walkway.
-     *   2. 30% chance of a small ruined outbuilding (4×3×4 shell, no roof,
+     *   2. 30% chance of a small ruined outbuilding (4x3x4 shell, no roof,
      *      one chest with structure loot) placed off to the side.
-     *   3. A rubble halo: 8–14 scattered palette `decayed` / iron-bar / cobweb
+     *   3. A rubble halo: 8-14 scattered palette `decayed` / iron-bar / cobweb
      *      placements within a 7-block ring around the entrance, skipping any
      *      position inside a room footprint so we don't stomp the build.
      */
@@ -4182,12 +4243,12 @@ public class ProceduralStructureGenerator {
             for (int dx = -1; dx <= 1; dx++) {
                 BlockPos p = origin.offset(cx + dx, entrance.getY() - 1, pathStartZ - dz);
                 if (isInsideAnyRoom(rooms, cx + dx, entrance.getY() - 1, pathStartZ - dz)) continue;
-                level.setBlock(p, path.defaultBlockState(), 2);
+                setStructureBlock(level, p, path.defaultBlockState(), 2);
                 // Clear above the path so it's walkable.
                 BlockPos above = p.above();
                 if (!level.getBlockState(above).isAir()
                         && level.getBlockState(above).getBlock() != Blocks.GLOWSTONE) {
-                    level.setBlock(above, Blocks.AIR.defaultBlockState(), 2);
+                    setStructureBlock(level, above, Blocks.AIR.defaultBlockState(), 2);
                 }
             }
         }
@@ -4214,7 +4275,7 @@ public class ProceduralStructureGenerator {
             else if (roll < 0.80f) rubble = Blocks.IRON_BARS;
             else if (roll < 0.93f) rubble = Blocks.COBWEB;
             else rubble = Blocks.GRAVEL;
-            level.setBlock(above, rubble.defaultBlockState(), 2);
+            setStructureBlock(level, above, rubble.defaultBlockState(), 2);
         }
     }
 
@@ -4230,7 +4291,7 @@ public class ProceduralStructureGenerator {
     }
 
     /**
-     * 4×3×4 roofless ruined shell with a single loot chest. Uses the palette's
+     * 4x3x4 roofless ruined shell with a single loot chest. Uses the palette's
      * decayed block for walls so it reads as ruined sibling architecture.
      */
     private static void buildRuinedOutbuilding(ServerLevel level, BlockPos origin,
@@ -4249,7 +4310,7 @@ public class ProceduralStructureGenerator {
                     if (random.nextFloat() < 0.30f) continue; // ruin gap
                     BlockPos p = origin.offset(x0 + dx, y0 + dy, z0 + dz);
                     Block b = random.nextFloat() < 0.5f ? palette.decayed() : palette.secondary();
-                    level.setBlock(p, b.defaultBlockState(), 2);
+                    setStructureBlock(level, p, b.defaultBlockState(), 2);
                 }
             }
         }
@@ -4257,7 +4318,7 @@ public class ProceduralStructureGenerator {
         for (int dx = 1; dx < w - 1; dx++) {
             for (int dz = 1; dz < d - 1; dz++) {
                 BlockPos p = origin.offset(x0 + dx, y0 - 1, z0 + dz);
-                level.setBlock(p, palette.primary().defaultBlockState(), 2);
+                setStructureBlock(level, p, palette.primary().defaultBlockState(), 2);
             }
         }
         // Single loot chest in the corner.
@@ -4281,7 +4342,7 @@ public class ProceduralStructureGenerator {
     }
 
     /**
-     * Façade pass — punches windows on exterior wall segments and hangs a
+     * Facade pass - punches windows on exterior wall segments and hangs a
      * structure-name sign over the entrance. Runs after walls + ceilings have
      * been laid so the wall fabric exists to be carved into.
      *
@@ -4329,7 +4390,7 @@ public class ProceduralStructureGenerator {
                 entrance.getZ() - 3);
         BlockPos signWorld = origin.offset(signLocal.getX(), signLocal.getY(), signLocal.getZ());
         if (level.getBlockState(signWorld).isAir()) {
-            level.setBlock(signWorld, Blocks.OAK_HANGING_SIGN.defaultBlockState(), 2);
+            setStructureBlock(level, signWorld, Blocks.OAK_HANGING_SIGN.defaultBlockState(), 2);
         }
     }
 
@@ -4371,14 +4432,14 @@ public class ProceduralStructureGenerator {
     }
 
     /**
-     * Punch 2-3 windows along an exterior wall face. Each window is 1×2 (Y+1,Y+2)
+     * Punch 2-3 windows along an exterior wall face. Each window is 1x2 (Y+1,Y+2)
      * with an accent lintel at Y+3 (clamped to ceiling height). Skips the
      * entrance face if the room is the entrance to avoid stomping the airlock.
      */
     private static void punchWindowRow(ServerLevel level, BlockPos origin, Room room,
                                         Direction2D face, Block windowBlock, Block lintelBlock,
                                         RandomSource random) {
-        // Skip the entrance face on the entrance room — buildEntrance owns that wall.
+        // Skip the entrance face on the entrance room - buildEntrance owns that wall.
         if (room.isEntrance() && face == Direction2D.NORTH) return;
 
         int wallY1 = room.getY() + 1;
@@ -4409,10 +4470,10 @@ public class ProceduralStructureGenerator {
             // (don't break through pillars or pre-existing openings).
             if (level.getBlockState(lower).isAir() || level.getBlockState(upper).isAir()) continue;
 
-            level.setBlock(lower, windowBlock.defaultBlockState(), 2);
-            level.setBlock(upper, windowBlock.defaultBlockState(), 2);
+            setStructureBlock(level, lower, windowBlock.defaultBlockState(), 2);
+            setStructureBlock(level, upper, windowBlock.defaultBlockState(), 2);
             if (lintelY > wallY2 && !level.getBlockState(lintel).isAir()) {
-                level.setBlock(lintel, lintelBlock.defaultBlockState(), 2);
+                setStructureBlock(level, lintel, lintelBlock.defaultBlockState(), 2);
             }
             placed++;
         }
@@ -4480,7 +4541,7 @@ public class ProceduralStructureGenerator {
 
             boolean broken = random.nextFloat() < 0.30f;
             Block toPlace = broken ? brokenBlock : lightBlock;
-            level.setBlock(worldPos, toPlace.defaultBlockState(), 2);
+            setStructureBlock(level, worldPos, toPlace.defaultBlockState(), 2);
             placed++;
         }
     }
@@ -4524,7 +4585,7 @@ public class ProceduralStructureGenerator {
                     case 3 -> Blocks.STONE;
                     default -> Blocks.DIRT;
                 };
-                level.setBlock(debrisPos, debrisBlock.defaultBlockState(), 2);
+                setStructureBlock(level, debrisPos, debrisBlock.defaultBlockState(), 2);
             }
         }
     }
@@ -4632,3 +4693,4 @@ public class ProceduralStructureGenerator {
             Supplier<EntityType<? extends BiomeBossEntity>> bossType
     ) {}
 }
+

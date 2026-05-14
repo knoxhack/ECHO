@@ -7,7 +7,10 @@ import com.knoxhack.echoagriculturereclamation.content.ReclamationMetrics;
 import com.knoxhack.echoagriculturereclamation.content.SeedProfile;
 import com.knoxhack.echoagriculturereclamation.content.SoilState;
 import com.knoxhack.echoagriculturereclamation.block.ReclamationCropBlock;
+import com.knoxhack.echoagriculturereclamation.block.entity.HydroponicTrayBlockEntity;
+import com.knoxhack.echoagriculturereclamation.entity.PollinatorDroneEntity;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCrossAddonIntegration;
+import com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionHooks;
 import com.knoxhack.echoagriculturereclamation.registry.ModBlocks;
 import com.knoxhack.echoagriculturereclamation.registry.ModDataComponents;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
@@ -39,6 +42,11 @@ public final class ReclamationProgress {
    public static final String ROOT = "echoagriculturereclamation_progress";
    private static final int GROWTH_GREENHOUSE_CACHE_TICKS = 20;
    private static final int GROWTH_GREENHOUSE_CACHE_PRUNE_TICKS = 200;
+   private static final int GREENHOUSE_STRAINED_MARGIN = 20;
+   private static final int GREENHOUSE_STRAINED_GROWTH_PENALTY = 5;
+   private static final int GREENHOUSE_UNSAFE_GROWTH_PENALTY = 12;
+   private static final int GREENHOUSE_STRAINED_SEED_PENALTY = 10;
+   private static final int GREENHOUSE_UNSAFE_SEED_PENALTY = 25;
    private static final Map<GrowthGreenhouseCacheKey, GrowthGreenhouseCacheEntry> GROWTH_GREENHOUSE_CACHE = new HashMap<>();
    private static long lastGrowthGreenhouseCachePruneTick = Long.MIN_VALUE;
 
@@ -46,6 +54,9 @@ public final class ReclamationProgress {
    }
 
    public static CompoundTag data(Player player) {
+      if (player == null) {
+         return new CompoundTag();
+      }
       CompoundTag root = player.getPersistentData().getCompoundOrEmpty(ROOT);
       player.getPersistentData().put(ROOT, root);
       return root;
@@ -89,6 +100,7 @@ public final class ReclamationProgress {
       data(player).putBoolean(flag, true);
       if (first) {
          recordCoreMilestone(player, flag);
+         ReclamationMissionHooks.recordFlag(player, flag);
       }
    }
 
@@ -106,6 +118,7 @@ public final class ReclamationProgress {
       }
       CompoundTag data = data(player);
       data.putInt(key, Math.min(2_000_000_000, data.getIntOr(key, 0) + amount));
+      ReclamationMissionHooks.recordCounter(player, key, amount);
    }
 
    public static void max(Player player, String key, int value) {
@@ -161,7 +174,7 @@ public final class ReclamationProgress {
       Level level = player.level();
       BlockPos pos = player.blockPosition();
       SoilState soil = detectSoil(level, pos);
-      int greenhouse = scanGreenhouseSafety(level, pos);
+      GreenhouseContext greenhouse = greenhouseContext(level, pos);
       int stability = cropStability(player);
       int food = foodSecurity(player);
       int restoration = 0;
@@ -169,14 +182,14 @@ public final class ReclamationProgress {
          ReclamationWorldData world = ReclamationWorldData.get(serverLevel);
          ChunkPos chunk = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
          restoration = world.restorationScore(chunk);
-         world.setGreenhouseSafety(chunk, greenhouse);
+         world.setGreenhouseSafety(chunk, greenhouse.score());
          world.setLastSoilState(chunk, soil.displayName());
       }
-      max(player, "greenhouse_safety", greenhouse);
+      max(player, "greenhouse_safety", greenhouse.score());
       max(player, "crop_stability", stability);
       max(player, "food_security", food);
       max(player, "restoration_score", restoration);
-      return new ReclamationMetrics(knownSeeds(player).size(), soil, greenhouse, stability, food, restoration);
+      return new ReclamationMetrics(knownSeeds(player).size(), soil, greenhouse.score(), stability, food, restoration);
    }
 
    public static SoilState detectSoil(Level level, BlockPos center) {
@@ -194,21 +207,40 @@ public final class ReclamationProgress {
       return scanGreenhouse(level, center).score();
    }
 
-   public static int growthGreenhouseSafety(Level level, BlockPos center) {
+   public static GreenhouseContext greenhouseContext(Level level, BlockPos center) {
+      GreenhouseScan live = scanGreenhouse(level, center);
       if (!(level instanceof ServerLevel serverLevel)) {
-         return scanGreenhouseSafety(level, center);
+         return GreenhouseContext.unregistered(live);
+      }
+      ReclamationWorldData.GreenhouseZoneProfile zone = savedGreenhouseZone(serverLevel, center);
+      if (zone == null) {
+         return GreenhouseContext.unregistered(live);
+      }
+      boolean controllerPresent = serverLevel.getBlockState(zone.controllerPos()).is(ModBlocks.GREENHOUSE_CONTROLLER.get());
+      GreenhouseScan zoneScan = controllerPresent ? scanGreenhouse(serverLevel, zone.controllerPos()) : GreenhouseScan.empty();
+      int effectiveScore = controllerPresent ? Math.min(zone.score(), zoneScan.score()) : 0;
+      return GreenhouseContext.established(zoneScan, zone, effectiveScore, zoneScan.score());
+   }
+
+   public static int growthGreenhouseSafety(Level level, BlockPos center) {
+      return growthGreenhouseContext(level, center).score();
+   }
+
+   public static GreenhouseContext growthGreenhouseContext(Level level, BlockPos center) {
+      if (!(level instanceof ServerLevel serverLevel)) {
+         return greenhouseContext(level, center);
       }
       long gameTime = serverLevel.getGameTime();
       GrowthGreenhouseCacheKey key = GrowthGreenhouseCacheKey.of(serverLevel, center);
       GrowthGreenhouseCacheEntry cached = GROWTH_GREENHOUSE_CACHE.get(key);
       if (cached != null && gameTime >= cached.gameTime() && gameTime - cached.gameTime() <= GROWTH_GREENHOUSE_CACHE_TICKS) {
-         return cached.score();
+         return cached.context();
       }
 
-      int score = scanGreenhouseSafety(serverLevel, center);
-      GROWTH_GREENHOUSE_CACHE.put(key, new GrowthGreenhouseCacheEntry(score, gameTime));
+      GreenhouseContext context = greenhouseContext(serverLevel, center);
+      GROWTH_GREENHOUSE_CACHE.put(key, new GrowthGreenhouseCacheEntry(context, gameTime));
       pruneGrowthGreenhouseCache(gameTime);
-      return score;
+      return context;
    }
 
    public static void clearGrowthGreenhouseSafetyCacheForTests() {
@@ -220,6 +252,31 @@ public final class ReclamationProgress {
       return GROWTH_GREENHOUSE_CACHE.size();
    }
 
+   public static ReclamationWorldData.GreenhouseZoneProfile recordGreenhouseZone(ServerLevel level, BlockPos controller, GreenhouseScan scan) {
+      ReclamationWorldData.GreenhouseZoneProfile profile = new ReclamationWorldData.GreenhouseZoneProfile(
+         scan.score(),
+         scan.supportScore(),
+         scan.enclosureScore(),
+         scan.glass(),
+         scan.filters(),
+         scan.activeDocks(),
+         scan.idleDocks(),
+         scan.cropTargets(),
+         scan.deployedDrones(),
+         scan.serviceTargets(),
+         scan.enclosed(),
+         scan.greenhouseRoof(),
+         scan.floor(),
+         controller.getX(),
+         controller.getY(),
+         controller.getZ(),
+         level.getGameTime()
+      );
+      ReclamationWorldData.get(level).setGreenhouseZone(chunkPos(controller), profile);
+      clearGrowthGreenhouseSafetyCacheForTests();
+      return profile;
+   }
+
    public static GreenhouseScan scanGreenhouse(Level level, BlockPos center) {
       int glass = 0;
       int filters = 0;
@@ -228,6 +285,8 @@ public final class ReclamationProgress {
       int controllers = 0;
       int trays = 0;
       int cropTargets = 0;
+      int deployedDrones = 0;
+      int serviceTargets = 0;
       var rules = ReclamationContent.machines();
       BlockPos min = center.offset(-rules.greenhouseHorizontalRange(), -rules.greenhouseDownRange(), -rules.greenhouseHorizontalRange());
       BlockPos max = center.offset(rules.greenhouseHorizontalRange(), rules.greenhouseUpRange(), rules.greenhouseHorizontalRange());
@@ -243,6 +302,8 @@ public final class ReclamationProgress {
             } else {
                idleDocks++;
             }
+            serviceTargets += pollinationServiceTargets(level, pos);
+            deployedDrones += PollinatorDroneEntity.boundDroneCount(level, pos);
          } else if (block == ModBlocks.GREENHOUSE_CONTROLLER.get()) {
             controllers++;
          } else if (block == ModBlocks.HYDROPONIC_TRAY.get()) {
@@ -293,6 +354,8 @@ public final class ReclamationProgress {
          controllers,
          trays,
          cropTargets,
+         deployedDrones,
+         serviceTargets,
          enclosure.enclosed(),
          enclosure.hasGreenhouseRoof(),
          enclosure.hasFloor(),
@@ -300,14 +363,79 @@ public final class ReclamationProgress {
       );
    }
 
+   private static ReclamationWorldData.GreenhouseZoneProfile savedGreenhouseZone(ServerLevel level, BlockPos center) {
+      ReclamationWorldData world = ReclamationWorldData.get(level);
+      ChunkPos chunk = chunkPos(center);
+      ReclamationWorldData.GreenhouseZoneProfile best = null;
+      long bestDistance = Long.MAX_VALUE;
+      for (int dx = -1; dx <= 1; dx++) {
+         for (int dz = -1; dz <= 1; dz++) {
+            ReclamationWorldData.GreenhouseZoneProfile candidate = world.greenhouseZone(new ChunkPos(chunk.x() + dx, chunk.z() + dz));
+            if (candidate != null && insideSavedZone(candidate, center)) {
+               long distance = distanceSquared(candidate.controllerPos(), center);
+               if (distance < bestDistance) {
+                  best = candidate;
+                  bestDistance = distance;
+               }
+            }
+         }
+      }
+      return best;
+   }
+
+   private static boolean insideSavedZone(ReclamationWorldData.GreenhouseZoneProfile zone, BlockPos pos) {
+      var rules = ReclamationContent.machines();
+      return Math.abs(pos.getX() - zone.controllerX()) <= rules.greenhouseHorizontalRange()
+         && Math.abs(pos.getZ() - zone.controllerZ()) <= rules.greenhouseHorizontalRange()
+         && pos.getY() >= zone.controllerY() - rules.greenhouseDownRange()
+         && pos.getY() <= zone.controllerY() + rules.greenhouseUpRange();
+   }
+
    public static int pollinationTargets(Level level, BlockPos dockPos) {
+      return pollinationTargetPositions(level, dockPos).size();
+   }
+
+   public static int pollinationServiceTargets(Level level, BlockPos dockPos) {
       int targets = 0;
-      for (BlockPos pos : BlockPos.betweenClosed(dockPos.offset(-4, -2, -4), dockPos.offset(4, 2, 4))) {
-         if (isPollinationTarget(level.getBlockState(pos).getBlock())) {
+      for (BlockPos pos : pollinationTargetPositions(level, dockPos)) {
+         if (canReceivePollinationService(level, pos)) {
             targets++;
          }
       }
       return targets;
+   }
+
+   public static List<BlockPos> pollinationTargetPositions(Level level, BlockPos dockPos) {
+      List<BlockPos> targets = new ArrayList<>();
+      int radius = ReclamationContent.machines().pollinatorDroneServiceRadius();
+      for (BlockPos pos : BlockPos.betweenClosed(dockPos.offset(-radius, -2, -radius), dockPos.offset(radius, 2, radius))) {
+         if (isPollinationTarget(level.getBlockState(pos).getBlock())) {
+            targets.add(pos.immutable());
+         }
+      }
+      return targets;
+   }
+
+   public static boolean canReceivePollinationService(Level level, BlockPos pos) {
+      BlockState state = level.getBlockState(pos);
+      if (state.getBlock() instanceof ReclamationCropBlock) {
+         return state.getValue(ReclamationCropBlock.AGE) < 7;
+      }
+      if (level.getBlockEntity(pos) instanceof HydroponicTrayBlockEntity tray) {
+         return tray.profile() != null && tray.age() < 7;
+      }
+      return false;
+   }
+
+   public static boolean servicePollinationTarget(ServerLevel level, BlockPos pos, int growthBonus) {
+      BlockState state = level.getBlockState(pos);
+      if (state.getBlock() instanceof ReclamationCropBlock crop) {
+         return crop.serviceFromPollinator(level, pos, growthBonus);
+      }
+      if (level.getBlockEntity(pos) instanceof HydroponicTrayBlockEntity tray) {
+         return tray.serviceFromPollinator(level, growthBonus);
+      }
+      return false;
    }
 
    private static EnclosureScan scanEnclosure(Level level, BlockPos center, BlockPos min, BlockPos max) {
@@ -420,6 +548,10 @@ public final class ReclamationProgress {
          || pos.getZ() == min.getZ() || pos.getZ() == max.getZ();
    }
 
+   private static ChunkPos chunkPos(BlockPos pos) {
+      return new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
+   }
+
    private static long distanceSquared(BlockPos pos, BlockPos center) {
       long x = pos.getX() - center.getX();
       long y = pos.getY() - center.getY();
@@ -438,11 +570,21 @@ public final class ReclamationProgress {
       int controllers,
       int trays,
       int cropTargets,
+      int deployedDrones,
+      int serviceTargets,
       boolean enclosed,
       boolean greenhouseRoof,
       boolean floor,
       int interiorVolume
    ) {
+      public static GreenhouseScan empty() {
+         return new GreenhouseScan(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, false, 0);
+      }
+
+      public GreenhouseContext asContext() {
+         return GreenhouseContext.unregistered(this);
+      }
+
       public String enclosureLabel() {
          if (enclosed && greenhouseRoof && floor) {
             return "sealed";
@@ -460,8 +602,141 @@ public final class ReclamationProgress {
       }
    }
 
+   public enum GreenhouseZoneQuality {
+      UNREGISTERED("unregistered"),
+      UNSAFE("unsafe"),
+      STRAINED("strained"),
+      SAFE("safe");
+
+      private final String label;
+
+      GreenhouseZoneQuality(String label) {
+         this.label = label;
+      }
+
+      public String label() {
+         return label;
+      }
+   }
+
+   public record GreenhouseContext(
+      GreenhouseScan scan,
+      ReclamationWorldData.GreenhouseZoneProfile zone,
+      int score,
+      int savedScore,
+      int liveScore,
+      GreenhouseZoneQuality quality
+   ) {
+      private static GreenhouseContext unregistered(GreenhouseScan scan) {
+         return new GreenhouseContext(scan, null, scan.score(), scan.score(), scan.score(), GreenhouseZoneQuality.UNREGISTERED);
+      }
+
+      private static GreenhouseContext established(GreenhouseScan scan, ReclamationWorldData.GreenhouseZoneProfile zone, int score, int liveScore) {
+         return new GreenhouseContext(scan, zone, Math.max(0, Math.min(100, score)), zone.score(), liveScore, qualityFor(score));
+      }
+
+      public boolean established() {
+         return zone != null;
+      }
+
+      public int growthPenalty() {
+         if (!established() || quality == GreenhouseZoneQuality.SAFE) {
+            return 0;
+         }
+         return quality == GreenhouseZoneQuality.STRAINED ? GREENHOUSE_STRAINED_GROWTH_PENALTY : GREENHOUSE_UNSAFE_GROWTH_PENALTY;
+      }
+
+      public int seedSafety() {
+         if (!established() || quality == GreenhouseZoneQuality.SAFE) {
+            return score;
+         }
+         int penalty = quality == GreenhouseZoneQuality.STRAINED ? GREENHOUSE_STRAINED_SEED_PENALTY : GREENHOUSE_UNSAFE_SEED_PENALTY;
+         return Math.max(0, score - penalty);
+      }
+
+      public int restorationGain(int baseGain) {
+         if (!established() || quality == GreenhouseZoneQuality.SAFE) {
+            return baseGain;
+         }
+         return Math.max(1, baseGain - (quality == GreenhouseZoneQuality.STRAINED ? 1 : 2));
+      }
+
+      public int pollinationBonus(int baseBonus) {
+         if (!established() || baseBonus <= 0) {
+            return 0;
+         }
+         if (quality == GreenhouseZoneQuality.SAFE) {
+            return baseBonus;
+         }
+         if (quality == GreenhouseZoneQuality.STRAINED) {
+            return Math.max(1, baseBonus / 2);
+         }
+         return Math.max(1, baseBonus / 3);
+      }
+
+      public String qualityLabel() {
+         return quality.label();
+      }
+
+      public String summaryLabel() {
+         if (!established()) {
+            return "unregistered greenhouse";
+         }
+         return quality.label() + " zone";
+      }
+
+      public String nextAction() {
+         if (!established()) {
+            return "Scan a Greenhouse Controller to establish a saved greenhouse zone.";
+         }
+         if (quality == GreenhouseZoneQuality.SAFE) {
+            if (scan.serviceTargets() > 0 && scan.deployedDrones() == 0) {
+               return "Zone stable; deploy a Pollinator Drone from the dock for active crop service.";
+            }
+            return "Zone stable; crops can use the safe growth envelope.";
+         }
+         if (liveScore <= 0 && savedScore > 0) {
+            return "Controller or greenhouse structure is missing; replace the controller/support blocks, then rescan the zone.";
+         }
+         if (liveScore < savedScore) {
+            return "Rescan or repair the controller zone; current structure is below the saved profile.";
+         }
+         if (!scan.enclosed()) {
+            return "Seal the Greenhouse Glass shell around the interior air pocket.";
+         }
+         if (!scan.greenhouseRoof()) {
+            return "Add Greenhouse Glass overhead to finish the growth envelope.";
+         }
+         if (scan.activeDocks() == 0 && scan.idleDocks() > 0) {
+            return "Place crops or Hydroponic Trays within Pollinator Dock service radius.";
+         }
+         return "Add Greenhouse Glass, a Spore Filter, Pollinator Dock support, or trays.";
+      }
+
+      private static GreenhouseZoneQuality qualityFor(int score) {
+         int safe = ReclamationContent.progression().greenhouseSafeThreshold();
+         if (score >= safe) {
+            return GreenhouseZoneQuality.SAFE;
+         }
+         if (score >= Math.max(0, safe - GREENHOUSE_STRAINED_MARGIN)) {
+            return GreenhouseZoneQuality.STRAINED;
+         }
+         return GreenhouseZoneQuality.UNSAFE;
+      }
+   }
+
    private record GrowthGreenhouseCacheKey(String dimension, int sectionX, int sectionY, int sectionZ) {
       private static GrowthGreenhouseCacheKey of(ServerLevel level, BlockPos pos) {
+         ReclamationWorldData.GreenhouseZoneProfile zone = savedGreenhouseZone(level, pos);
+         if (zone != null) {
+            BlockPos controller = zone.controllerPos();
+            return new GrowthGreenhouseCacheKey(
+               level.dimension().identifier().toString(),
+               controller.getX(),
+               controller.getY(),
+               controller.getZ()
+            );
+         }
          return new GrowthGreenhouseCacheKey(
             level.dimension().identifier().toString(),
             pos.getX() >> 4,
@@ -471,7 +746,7 @@ public final class ReclamationProgress {
       }
    }
 
-   private record GrowthGreenhouseCacheEntry(int score, long gameTime) {
+   private record GrowthGreenhouseCacheEntry(GreenhouseContext context, long gameTime) {
    }
 
    public static int cropStability(Player player) {

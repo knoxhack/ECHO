@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoorbitalremnants:item/thermal_stabilizer"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoorbitalremnants:item/thermal_stabilizer"
+  }
+}

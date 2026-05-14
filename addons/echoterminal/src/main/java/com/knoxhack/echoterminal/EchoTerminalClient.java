@@ -16,10 +16,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -48,6 +50,9 @@ public class EchoTerminalClient {
         NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(EchoTerminalClient::onRenderGui);
         NeoForge.EVENT_BUS.register(new TerminalEventHandler());
+        if (ModList.get().isLoaded("echorendercore")) {
+            registerRenderCoreScreenIntegration();
+        }
     }
 
     private static void onKeyInput(InputEvent.Key event) {
@@ -80,6 +85,29 @@ public class EchoTerminalClient {
                 event.getPartialTick().getGameTimeDeltaPartialTick(true));
     }
 
+    private static void registerRenderCoreScreenIntegration() {
+        try {
+            Class.forName("com.knoxhack.echoterminal.integration.TerminalRenderCoreClientIntegration")
+                    .getMethod("registerScreenVisuals")
+                    .invoke(null);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            EchoTerminal.LOGGER.warn("ECHO Terminal RenderCore screen integration could not be registered.", exception);
+        }
+    }
+
+    private static void registerRenderCoreBlockRenderer(EntityRenderersEvent.RegisterRenderers event) {
+        if (!ModList.get().isLoaded("echorendercore")) {
+            return;
+        }
+        try {
+            Class.forName("com.knoxhack.echoterminal.integration.TerminalRenderCoreClientIntegration")
+                    .getMethod("registerBlockRenderer", EntityRenderersEvent.RegisterRenderers.class)
+                    .invoke(null, event);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            EchoTerminal.LOGGER.warn("ECHO Terminal RenderCore block integration could not be registered.", exception);
+        }
+    }
+
     @EventBusSubscriber(modid = EchoTerminal.MODID, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
@@ -92,6 +120,11 @@ public class EchoTerminalClient {
         static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
             TerminalTabRegistry.ensureSorted();
             event.register(ModMenus.ECHO_TERMINAL.get(), EchoTerminalScreens::create);
+        }
+
+        @SubscribeEvent
+        static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+            registerRenderCoreBlockRenderer(event);
         }
     }
 }

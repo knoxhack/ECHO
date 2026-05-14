@@ -14,6 +14,7 @@
   "block.echoagriculturereclamation.bio_reactor": "Bio-Reactor",
   "block.echoagriculturereclamation.greenhouse_controller": "Greenhouse Controller",
   "block.echoagriculturereclamation.pollinator_drone_dock": "Pollinator Drone Dock",
+  "entity.echoagriculturereclamation.pollinator_drone": "Pollinator Drone",
   "block.echoagriculturereclamation.spore_filter": "Spore Filter",
   "block.echoagriculturereclamation.compost_recycler": "Compost Recycler",
   "block.echoagriculturereclamation.ecology_scanner": "Ecology Scanner",

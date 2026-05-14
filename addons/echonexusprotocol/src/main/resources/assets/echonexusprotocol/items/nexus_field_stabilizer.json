@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/nexus_field_stabilizer"
+    "model": "echonexusprotocol:item/nexus_field_stabilizer"
   }
 }

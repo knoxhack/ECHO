@@ -9,6 +9,12 @@ import com.knoxhack.echoashfallprotocol.client.renderer.BiomeBossRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.AshWraithRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.CityStalkerRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.CrashSurvivorRenderer;
+import com.knoxhack.echoashfallprotocol.client.renderer.BoardCrawlerModel;
+import com.knoxhack.echoashfallprotocol.client.renderer.BoardHeavyBossModel;
+import com.knoxhack.echoashfallprotocol.client.renderer.BoardHumanoidModel;
+import com.knoxhack.echoashfallprotocol.client.renderer.BoardQuadrupedModel;
+import com.knoxhack.echoashfallprotocol.client.renderer.BoardSlimeModel;
+import com.knoxhack.echoashfallprotocol.client.renderer.BoardWraithModel;
 import com.knoxhack.echoashfallprotocol.client.renderer.DroneModel;
 import com.knoxhack.echoashfallprotocol.client.renderer.EchoCompanionDroneRenderer;
 import com.knoxhack.echoashfallprotocol.client.renderer.EchoDroneRenderer;
@@ -186,6 +192,12 @@ public class EchoAshfallProtocolClient {
             event.registerLayerDefinition(WardenBossModel.LAYER_LOCATION, WardenBossModel::createBodyLayer);
             event.registerLayerDefinition(GuardianBossModel.LAYER_LOCATION, GuardianBossModel::createBodyLayer);
             event.registerLayerDefinition(DroneModel.LAYER_LOCATION, DroneModel::createBodyLayer);
+            event.registerLayerDefinition(BoardHumanoidModel.LAYER_LOCATION, BoardHumanoidModel::createBodyLayer);
+            event.registerLayerDefinition(BoardQuadrupedModel.LAYER_LOCATION, BoardQuadrupedModel::createBodyLayer);
+            event.registerLayerDefinition(BoardCrawlerModel.LAYER_LOCATION, BoardCrawlerModel::createBodyLayer);
+            event.registerLayerDefinition(BoardWraithModel.LAYER_LOCATION, BoardWraithModel::createBodyLayer);
+            event.registerLayerDefinition(BoardSlimeModel.LAYER_LOCATION, BoardSlimeModel::createBodyLayer);
+            event.registerLayerDefinition(BoardHeavyBossModel.LAYER_LOCATION, BoardHeavyBossModel::createBodyLayer);
         }
 
         @SubscribeEvent
@@ -198,10 +210,10 @@ public class EchoAshfallProtocolClient {
             event.registerEntityRenderer(ModEntities.GLOWING_GHOUL.get(), GlowingGhoulRenderer::new);
             event.registerEntityRenderer(ModEntities.ASH_WRAITH.get(), AshWraithRenderer::new);
             event.registerEntityRenderer(ModEntities.TOXIC_SLIME.get(), ToxicSlimeRenderer::new);
-            event.registerEntityRenderer(ModEntities.GRIDBOUND_HUSK.get(), NexusPressureMobRenderer::new);
-            event.registerEntityRenderer(ModEntities.RELAY_WARDEN.get(), NexusPressureMobRenderer::new);
-            event.registerEntityRenderer(ModEntities.SIGNAL_LEECH.get(), NexusPressureMobRenderer::new);
-            event.registerEntityRenderer(ModEntities.NEXUS_NULLIFIER.get(), NexusPressureMobRenderer::new);
+            event.registerEntityRenderer(ModEntities.GRIDBOUND_HUSK.get(), NexusPressureMobRenderer.humanoid("gridbound_husk"));
+            event.registerEntityRenderer(ModEntities.RELAY_WARDEN.get(), NexusPressureMobRenderer.heavy("relay_warden"));
+            event.registerEntityRenderer(ModEntities.SIGNAL_LEECH.get(), NexusPressureMobRenderer.crawler("signal_leech"));
+            event.registerEntityRenderer(ModEntities.NEXUS_NULLIFIER.get(), NexusPressureMobRenderer.humanoid("nexus_nullifier"));
             event.registerEntityRenderer(ModEntities.CITY_STALKER.get(), CityStalkerRenderer::new);
             event.registerEntityRenderer(ModEntities.RUST_WALKER.get(), RustWalkerRenderer::new);
             event.registerEntityRenderer(ModEntities.STEAM_WRAITH.get(), SteamWraithRenderer::new);

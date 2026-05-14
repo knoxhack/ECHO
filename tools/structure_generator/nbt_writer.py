@@ -16,8 +16,16 @@ from nbtlib.tag import (
     String,
 )
 
+from echo_blockwork import (
+    ECHO_LOOT_CONTAINER_BLOCKS,
+    loot_container_block_entity_id,
+    sanitize_blocks,
+    vanilla_structure_blocks,
+)
+
 
 DATA_VERSION = 4189  # the target structure-template format
+DEFAULT_STRUCTURE_CACHE_LOOT_TABLE = "echoashfallprotocol:chests/survivor_cache"
 
 # Block tuple may be 5-element (no block-entity data) or 6-element (with BE NBT dict).
 BlockEntry = Union[
@@ -59,9 +67,34 @@ def _to_nbt_tag(value: Any):
     return value
 
 
+def _with_default_cache_loot(
+    blocks: List[Tuple[int, int, int, str, Optional[Dict[str, str]], Optional[Dict[str, Any]]]],
+    default_loot_table: Optional[str],
+) -> List[Tuple[int, int, int, str, Optional[Dict[str, str]], Optional[Dict[str, Any]]]]:
+    loot_table = default_loot_table or DEFAULT_STRUCTURE_CACHE_LOOT_TABLE
+    normalized = []
+    for x, y, z, block_id, props, be_nbt in blocks:
+        if block_id not in ECHO_LOOT_CONTAINER_BLOCKS:
+            normalized.append((x, y, z, block_id, props, be_nbt))
+            continue
+
+        block_entity_id = loot_container_block_entity_id(block_id)
+        if not block_entity_id:
+            normalized.append((x, y, z, block_id, props, be_nbt))
+            continue
+
+        next_nbt = dict(be_nbt or {})
+        next_nbt["id"] = block_entity_id
+        if not str(next_nbt.get("LootTable", "")):
+            next_nbt["LootTable"] = loot_table
+        normalized.append((x, y, z, block_id, props, next_nbt))
+    return normalized
+
+
 def write_structure_nbt(
     blocks: List[BlockEntry],
     output_path: Path,
+    default_loot_table: Optional[str] = None,
 ) -> None:
     """
     Write a structure NBT file.
@@ -74,6 +107,8 @@ def write_structure_nbt(
                 ``nbt`` compound (used for chests/barrels with a LootTable,
                 signs, lecterns carrying a written book, etc.).
         output_path: Destination .nbt file path.
+        default_loot_table: Loot table added to any Echo cache/crate block
+                missing explicit loot NBT.
     """
     # Deduplicate palette by (block_id, frozenset(properties)).
     palette_entries: List[Tuple[str, Optional[Dict[str, str]]]] = []
@@ -92,7 +127,12 @@ def write_structure_nbt(
         x, y, z, block_id, props = entry  # type: ignore[misc]
         return x, y, z, block_id, props, None
 
+    blocks = sanitize_blocks(blocks)
     normalized = [unpack(entry) for entry in blocks]
+    normalized = _with_default_cache_loot(normalized, default_loot_table)
+    vanilla_blocks = vanilla_structure_blocks(block_id for _, _, _, block_id, _, _ in normalized)
+    if vanilla_blocks:
+        raise ValueError(f"{output_path} still contains non-air vanilla blocks: {', '.join(vanilla_blocks)}")
 
     # Compute bounds
     xs = [b[0] for b in normalized]

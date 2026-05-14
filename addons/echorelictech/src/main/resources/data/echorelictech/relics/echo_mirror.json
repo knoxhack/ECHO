@@ -1,16 +1,16 @@
 {
   "id": "echorelictech:echo_mirror",
-  "tier": "FORBIDDEN",
-  "category": "COMBAT",
+  "tier": "forbidden",
+  "category": "combat",
   "origin": "Forbidden Echo Warfare Project",
-  "defaultCondition": "DAMAGED",
+  "defaultCondition": "damaged",
   "cooldownTicks": 2400,
   "instabilityCost": 12,
   "nullChargeCost": 1,
   "riskTypes": [
-    "NEXUS_INSTABILITY",
-    "AI_WHISPER",
-    "HOSTILE_SIGNAL_ATTRACTION"
+    "nexus_instability",
+    "ai_whisper",
+    "hostile_signal_attraction"
   ],
   "failureTable": "echorelictech:echo_mirror",
   "terminal": {

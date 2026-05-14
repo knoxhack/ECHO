@@ -2,6 +2,7 @@ package com.knoxhack.echonexusprotocol.entity;
 
 import com.knoxhack.echonexusprotocol.Config;
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
+import com.knoxhack.echonexusprotocol.integration.NexusMissionHooks;
 import com.knoxhack.echonexusprotocol.registry.ModItems;
 import com.knoxhack.echonexusprotocol.registry.ModSounds;
 import com.knoxhack.echonexusprotocol.world.NexusWorldData;
@@ -53,6 +54,7 @@ public class NexusMobEntity extends Zombie {
             data.markWardenDefeated();
             data.refreshFieldTelemetry(player);
             NexusPlayerData.saveAndSync(player, data);
+            NexusMissionHooks.recordWarden(player);
             if (firstWorldDefeat) {
                this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.REACTOR_CORE.get()));
                this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.BLACKBOX_FRAGMENT.get()));
@@ -71,6 +73,7 @@ public class NexusMobEntity extends Zombie {
             data.markGuardianDefeated();
             data.refreshFieldTelemetry(player);
             NexusPlayerData.saveAndSync(player, data);
+            NexusMissionHooks.recordCoreEntered(player);
             if (firstWorldDefeat) {
                this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.CORE_KEY_ASSEMBLY.get()));
             }

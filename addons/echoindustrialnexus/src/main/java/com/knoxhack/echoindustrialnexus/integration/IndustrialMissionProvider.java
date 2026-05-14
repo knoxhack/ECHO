@@ -35,7 +35,13 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
       mission("reactor_waste", "Reactor Waste", "Process Rad Slag or install radiation shielding for hot reactor work.", "Stage 4", 6, "rad_slag", 1, rewards("radiation_shielding_upgrade", 1, "waste_canister", 4)),
       mission("hybrid_warning", "Hybrid Warning", "Scan hybrid cores and stabilize first Nexus-thermal processing.", "Stage 5", 7, "hybrid_thermal_core", 1, rewards("nexus_stabilizer_upgrade", 1, "field_relay", 2)),
       mission("factory_controller", "Factory Controller Online", "Connect five machines or ducts into a controller-visible factory.", "Stage 5", 8, "factory_controller", 5, rewards("factory_link_chip", 2, "smart_duct", 8)),
-      mission("production_survived", "Production Survived", "Locate a Thermal Plant, defeat the Furnace Warden, and recover its core.", "Stage 6", 9, "warden_thermal_core", 1, rewards("warden_thermal_core", 1, "overclock_core", 1))
+      mission("assembly_line", "Assembly Line", "Validate an Industrial Assembly Line and complete its first reinforced frame job.", "Stage 6", 9, "industrial_assembly_line_controller", 1, rewards("assembly_line_blueprint", 1, "conveyor_gear", 6)),
+      mission("scrap_processor", "Scrap Processor", "Route scrap through a MultiblockCore processor and recover Scrap Plates.", "Stage 6", 10, "scrap_processor_controller", 4, rewards("scrap_processor_blueprint", 1, "scrap_plate", 8)),
+      mission("plate_press", "Plate Press", "Press Scrap Plates into Refined Plates for durable factory frames.", "Stage 6", 11, "plate_press_controller", 4, rewards("plate_press_blueprint", 1, "refined_plate", 8)),
+      mission("circuit_fabricator", "Circuit Fabricator", "Assemble Precision Circuits through robotic factory automation.", "Stage 7", 12, "circuit_fabricator_controller", 1, rewards("circuit_fabricator_blueprint", 1, "precision_circuit", 2)),
+      mission("recipe_matrix_encoding", "Recipe Matrix Encoding", "Encode a Recipe Matrix Shard for advanced factory routing.", "Stage 7", 13, "recipe_matrix_core", 1, rewards("recipe_matrix_blueprint", 1, "recipe_matrix_shard", 1)),
+      mission("logistics_auto_restock", "Logistics Auto-Restock", "Connect Logistics to an Industrial controller and dispatch an auto-restock.", "Stage 7", 14, "factory_link_chip", 1, rewards("factory_link_chip", 2, "smart_duct", 8)),
+      mission("production_survived", "Production Survived", "Locate a Thermal Plant, defeat the Furnace Warden, and recover its core.", "Stage 8", 15, "warden_thermal_core", 1, rewards("warden_thermal_core", 1, "overclock_core", 1))
    );
 
    private IndustrialMissionProvider() {
@@ -153,6 +159,12 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
             case "clean_camp" -> IndustrialProgress.flag(player, "safe_zone") ? "Safe-zone fallback established." : "No active scrubber zone recorded yet.";
             case "hybrid_warning" -> IndustrialProgress.flag(player, "nexus_thermal_warning") ? "Nexus thermal warning recorded." : "No Nexus thermal event recorded.";
             case "production_survived" -> IndustrialProgress.flag(player, "furnace_warden_defeated") ? "Furnace Warden defeated." : "Thermal Plant boss not cleared.";
+            case "assembly_line" -> IndustrialProgress.flag(player, "formed_industrial_assembly_line") ? "Assembly Line structure validated." : "No Assembly Line validation recorded.";
+            case "scrap_processor" -> "Scrap processing completions: " + IndustrialProgress.value(player, "task_process_scrap_into_scrap_plate") + "/" + need + ".";
+            case "plate_press" -> "Plate press completions: " + IndustrialProgress.value(player, "task_press_scrap_plate_into_refined_plate") + "/" + need + ".";
+            case "circuit_fabricator" -> "Circuit fabrication completions: " + IndustrialProgress.value(player, "task_assemble_precision_circuit") + "/" + need + ".";
+            case "recipe_matrix_encoding" -> IndustrialProgress.flag(player, "task_encode_recipe_matrix_shard_complete") ? "Recipe Matrix Shard encoded." : "Awaiting matrix encoding completion.";
+            case "logistics_auto_restock" -> IndustrialProgress.flag(player, "logistics_auto_restock_requested") ? "Logistics auto-restock dispatched." : "No auto-restock dispatch recorded.";
             default -> title + " telemetry: " + pct + "%.";
          };
       }
@@ -163,6 +175,8 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
             case "reactor_waste" -> "Reactor Cooling Stations favor radiation zones and shielded pipe fragments.";
             case "hybrid_warning" -> "Nexus Heat Exchanger Ruins carry purple-blue conduits and static fluid leaks.";
             case "factory_controller" -> "Rusted Factory Complexes contain controller schematics and duct caches.";
+            case "assembly_line" -> "Industrial Assembly Line blueprints teach the first MultiblockCore factory loop.";
+            case "logistics_auto_restock" -> "Enable auto-restock from a formed Industrial controller once Logistics routes are online.";
             default -> "Search newly generated wasteland chunks for factory lights, vents, and warning stripe pads.";
          };
       }

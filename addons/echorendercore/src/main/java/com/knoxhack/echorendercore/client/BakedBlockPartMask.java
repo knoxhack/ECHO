@@ -3,12 +3,15 @@ package com.knoxhack.echorendercore.client;
 import com.knoxhack.echorendercore.api.VisualContext;
 import com.knoxhack.echorendercore.profile.VisualLayerKind;
 import com.knoxhack.echorendercore.profile.VisualLayerProfile;
+import com.knoxhack.echorendercore.profile.VisualEffectProfile;
+import com.knoxhack.echorendercore.profile.VisualEffectTargetScope;
 import com.knoxhack.echorendercore.profile.VisualProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -31,7 +34,26 @@ public final class BakedBlockPartMask {
       if (parts.isEmpty()) {
          return false;
       }
-      collector.order(order).submitBlockModel(
+      VisualEffectProfile effect = profile.effectFor(layer);
+      RenderCoreAdvancedFxPipeline.MaskSubmission mask = RenderCoreAdvancedFxPipeline.submit(
+         effect,
+         VisualEffectTargetScope.BLOCK,
+         TextureAtlas.LOCATION_BLOCKS,
+         layer.colorWithAlpha(),
+         layer.alpha()
+      );
+      if (mask != null) {
+         collector.order(RenderCoreEffectPipeline.order(order, effect)).submitBlockModel(
+            poseStack,
+            mask.renderType(),
+            parts,
+            NO_TINTS,
+            context.packedLight(),
+            OverlayTexture.NO_OVERLAY,
+            0
+         );
+      }
+      collector.order(RenderCoreEffectPipeline.order(order, effect)).submitBlockModel(
          poseStack,
          renderType(layer),
          parts,

@@ -2,6 +2,7 @@ package com.knoxhack.echoconvoyprotocol.registry;
 
 import com.knoxhack.echoconvoyprotocol.EchoConvoyProtocol;
 import com.knoxhack.echoconvoyprotocol.menu.ConvoyStationMenu;
+import com.knoxhack.echoconvoyprotocol.menu.ConvoyUpgradeMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -14,6 +15,9 @@ public final class ModMenus {
 
    public static final DeferredHolder<MenuType<?>, MenuType<ConvoyStationMenu>> CONVOY_STATION =
       MENUS.register("convoy_station", () -> IMenuTypeExtension.create(ConvoyStationMenu::fromNetwork));
+
+   public static final DeferredHolder<MenuType<?>, MenuType<ConvoyUpgradeMenu>> VEHICLE_UPGRADES =
+      MENUS.register("vehicle_upgrades", () -> IMenuTypeExtension.create(ConvoyUpgradeMenu::fromNetwork));
 
    private ModMenus() {
    }

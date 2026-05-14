@@ -5,10 +5,10 @@
       "id": "echoorbitalremnants:orbital_remnant_badge"
     },
     "title": {
-      "text": "Faction Contract Complete"
+      "text": "Outpost Charter Complete"
     },
     "description": {
-      "text": "Complete a terminal-issued faction contract."
+      "text": "Complete a Tier I faction outpost charter."
     },
     "frame": "goal"
   },

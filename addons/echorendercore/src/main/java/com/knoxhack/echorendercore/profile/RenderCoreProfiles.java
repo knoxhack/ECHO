@@ -5,6 +5,8 @@ import net.minecraft.resources.Identifier;
 
 public final class RenderCoreProfiles {
    private static volatile LoadedContent loaded = LoadedContent.EMPTY;
+   private static volatile ProfileHotSwapResult lastHotSwap =
+      new ProfileHotSwapResult(true, LoadedContent.EMPTY, LoadedContent.EMPTY, "Initial empty profile cache.");
 
    private RenderCoreProfiles() {
    }
@@ -15,6 +17,36 @@ public final class RenderCoreProfiles {
 
    public static void replace(LoadedContent content) {
       loaded = content == null ? LoadedContent.EMPTY : content;
+   }
+
+   public static ProfileHotSwapResult hotSwap(LoadedContent content) {
+      LoadedContent previous = loaded;
+      LoadedContent candidate = content == null ? LoadedContent.EMPTY : content;
+      if (shouldReject(candidate, previous)) {
+         ProfileHotSwapResult result = new ProfileHotSwapResult(
+            false,
+            previous,
+            previous,
+            "Rejected RenderCore profile hot-swap: " + candidate.failed() + " JSON file(s) failed and a previous cache is available."
+         );
+         lastHotSwap = result;
+         return result;
+      }
+      loaded = candidate;
+      ProfileHotSwapResult result = new ProfileHotSwapResult(true, previous, candidate,
+         "Accepted RenderCore profile hot-swap.");
+      lastHotSwap = result;
+      return result;
+   }
+
+   public static ProfileHotSwapResult lastHotSwap() {
+      return lastHotSwap;
+   }
+
+   private static boolean shouldReject(LoadedContent candidate, LoadedContent previous) {
+      boolean previousUsable = previous != LoadedContent.EMPTY
+         && (!previous.visualProfiles().isEmpty() || !previous.animationProfiles().isEmpty() || !previous.particleProfiles().isEmpty());
+      return previousUsable && (candidate.failed() > 0 || candidate.validationReport().hasErrors());
    }
 
    public static VisualProfile visual(Identifier id) {

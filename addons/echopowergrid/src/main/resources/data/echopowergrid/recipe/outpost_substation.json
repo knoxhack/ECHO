@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["ICI","IBI","ICI"],"key":{"I":{"item":"minecraft:iron_ingot"},"C":{"item":"echopowergrid:copper_coil"},"B":{"item":"echopowergrid:breaker_switch"}},"result":{"id":"echopowergrid:outpost_substation"}}

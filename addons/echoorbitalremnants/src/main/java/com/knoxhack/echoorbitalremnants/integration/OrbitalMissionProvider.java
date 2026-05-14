@@ -235,9 +235,9 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                     progress.allSurveysComplete() ? "Every route survey is mapped and stable." : progress.surveyStatus(),
                     ModItems.ORBIT_SURVEY_DATA.get(), progress.totalSurveyCount(), 21));
             case FACTION_CONTRACT -> List.of(requirement(
-                    "Faction contract",
-                    progress.completedFactionContractCount() >= 3 ? "Three faction relays sealed into the route network." : progress.factionContractRequirement(),
-                    ModItems.ORBITAL_REMNANT_BADGE.get(), progress.completedFactionContractCount(), 3));
+                    "Faction outpost charters",
+                    progress.allOutpostChartersComplete() ? "Crashbreak, Radwarden, and Sporebound Tier I outpost support secured." : progress.factionContractRequirement(),
+                    ModItems.ORBITAL_REMNANT_BADGE.get(), progress.completedOutpostCharterCount(), 3));
             case FINAL_SEAL -> List.of(requirement(
                     "Final network seal",
                     progress.finalNetworkSealed() ? "Orbital Remnants arc complete. Earth no longer answers to quarantine." : progress.scanRequirement(),
@@ -301,7 +301,7 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
             case DEEP_SPACE_PROTOCOL -> progress.deepSpaceProtocolUnlocked();
             case ECHO_ZERO -> progress.echoZeroEncountered();
             case SURVEY_NETWORK -> progress.allSurveysComplete();
-            case FACTION_CONTRACT -> progress.completedFactionContractCount() >= 3;
+            case FACTION_CONTRACT -> progress.allOutpostChartersComplete();
             case FINAL_SEAL -> progress.finalNetworkSealed();
             default -> false;
         };
@@ -316,7 +316,8 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         }
         return switch (mission) {
             case EARTH_CALIBRATION, LOW_ORBIT, LUNAR_SIGNAL, MARS_ROUTE, EUROPA_ROUTE, SATURN_ROUTE, TITAN_ROUTE, DEEP_SPACE_PROTOCOL,
-                    ECHO_ZERO, FACTION_CONTRACT, FINAL_SEAL -> 0.0F;
+                    ECHO_ZERO, FINAL_SEAL -> 0.0F;
+            case FACTION_CONTRACT -> progress.completedOutpostCharterCount() / 3.0F;
             case LAUNCH_CHAIN -> {
                 LaunchReadiness launch = LaunchReadiness.evaluateForLaunch(player);
                 LaunchReadiness assembly = LaunchReadiness.evaluateForAssembly(player);
@@ -564,9 +565,9 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
                 "Use the Survey tab to finish each route's three unique logs. Evidence is the countermeasure now.",
                 "Survey", "Endgame"),
         FACTION_CONTRACT("faction_contract", "ROUTE SURVEY", 8, 1,
-                "Faction Contract",
-                "Seal Radwarden, Crashbreak, and Sporebound relay support after the survey network is stable enough for people to argue over it.",
-                "Pledge to a faction, visit faction hubs for vendor support, and complete three ECHO-tab proof contracts.",
+                "Faction Outposts",
+                "Secure Tier I charters from Crashbreak, Radwarden, and Sporebound outposts after the survey network is stable enough for people to argue over it.",
+                "Visit the Saturn, Titan, and Nexus NPC outposts, then complete each faction's Tier I charter proof.",
                 "Faction", "Endgame"),
         FINAL_SEAL("final_seal", "FINAL SEAL", 9, 0,
                 "Final Network Seal",

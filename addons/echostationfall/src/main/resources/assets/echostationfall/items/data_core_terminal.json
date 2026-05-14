@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echostationfall:block/data_core_terminal"
+    "model": "echostationfall:item/data_core_terminal"
   }
 }

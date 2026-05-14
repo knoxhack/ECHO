@@ -2,6 +2,9 @@ package com.knoxhack.echolens.registry;
 
 import com.knoxhack.echolens.EchoLens;
 import com.knoxhack.echolens.api.LensInfoProvider;
+import com.knoxhack.echolens.api.LensProviderDiagnostic;
+import com.knoxhack.echolens.api.ServerLensProvider;
+import com.knoxhack.echolens.config.LensConfig;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,8 +39,36 @@ public final class LensProviderRegistry {
         }
     }
 
+    public static void registerAll(Iterable<? extends LensInfoProvider> providers) {
+        if (providers == null) {
+            throw new IllegalArgumentException("Lens providers are required.");
+        }
+        for (LensInfoProvider provider : providers) {
+            register(provider);
+        }
+    }
+
     public static List<LensInfoProvider> providers() {
         return List.copyOf(PROVIDERS);
+    }
+
+    public static List<ServerLensProvider> serverProviders() {
+        return PROVIDERS.stream()
+                .filter(ServerLensProvider.class::isInstance)
+                .map(ServerLensProvider.class::cast)
+                .toList();
+    }
+
+    public static List<LensProviderDiagnostic> diagnostics() {
+        return PROVIDERS.stream()
+                .map(provider -> new LensProviderDiagnostic(
+                        provider.id(),
+                        provider.getClass().getName(),
+                        provider.priority(),
+                        provider.category(),
+                        true,
+                        categoryEnabled(provider.category())))
+                .toList();
     }
 
     public static int count() {
@@ -74,5 +105,19 @@ public final class LensProviderRegistry {
                 .thenComparing(provider -> provider.id().toString()));
         PROVIDERS.clear();
         PROVIDERS.addAll(sorted);
+    }
+
+    private static boolean categoryEnabled(com.knoxhack.echolens.api.LensDataCategory category) {
+        return switch (category == null ? com.knoxhack.echolens.api.LensDataCategory.IDENTITY : category) {
+            case IDENTITY -> LensConfig.bool(LensConfig.SHOW_IDENTITY, true);
+            case BLOCK -> LensConfig.bool(LensConfig.SHOW_BLOCK, true);
+            case ENTITY -> LensConfig.bool(LensConfig.SHOW_ENTITY, true);
+            case FLUID -> LensConfig.bool(LensConfig.SHOW_FLUID, true);
+            case MACHINE -> LensConfig.bool(LensConfig.SHOW_MACHINE, true);
+            case INVENTORY -> LensConfig.bool(LensConfig.SHOW_INVENTORY, true);
+            case INTEGRATION -> LensConfig.bool(LensConfig.SHOW_INTEGRATION, true);
+            case HINTS -> LensConfig.bool(LensConfig.BEGINNER_HINTS, true);
+            case ACTIONS -> LensConfig.bool(LensConfig.SHOW_ACTIONS, true);
+        };
     }
 }

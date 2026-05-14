@@ -61,6 +61,9 @@ configurations {
 
 dependencies {
     implementation project(':echocore')
+    implementation project(':echonetcore')
+    compileOnly project(':echorendercore')
+    localRuntime project(':echorendercore')
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

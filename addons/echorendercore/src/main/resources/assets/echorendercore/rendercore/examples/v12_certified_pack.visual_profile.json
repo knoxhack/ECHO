@@ -1,0 +1,43 @@
+{
+  "schema_version": 11,
+  "base_texture": "examplemod:textures/block/v12_certified_core.png",
+  "default_state": "ACTIVE",
+  "effect": {
+    "preset": "neon",
+    "glow_intensity": 1.1,
+    "bloom_intensity": 0.35,
+    "advanced_enabled": false,
+    "bloom_channel": "certified_default"
+  },
+  "preview": {
+    "title": "V12 Certified Pack Core",
+    "notes": "V12 pack certification output using the stable V11 runtime profile schema."
+  },
+  "materials": {
+    "certified_cyan": {
+      "color": "#FF36E8FF",
+      "alpha": 0.9,
+      "emissive": true,
+      "blend_mode": "additive",
+      "light_mode": "fullbright",
+      "render_pass": "emissive",
+      "effect": {
+        "preset": "hologram",
+        "glow_intensity": 0.9,
+        "scanline_strength": 0.18
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "certified_status_band",
+      "kind": "glow",
+      "texture": "examplemod:textures/block/v12_certified_status.png",
+      "material": "certified_cyan",
+      "states": ["ACTIVE", "ONLINE"]
+    }
+  ],
+  "anchors": {
+    "core": { "offset": [0.5, 0.5, 0.5] }
+  }
+}

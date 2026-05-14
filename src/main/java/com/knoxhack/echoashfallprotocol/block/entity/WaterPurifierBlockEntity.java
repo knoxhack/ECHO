@@ -49,6 +49,7 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
     private int maxProgress = PROCESS_TIME;
     private boolean hasPower = false;
     private int wearPercent = 0;
+    private int batchSize = 1;
 
     public final ContainerData data = new ContainerData() {
         @Override
@@ -104,7 +105,7 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
     }
 
     private boolean tryExtractPower(Level level, BlockPos pos) {
-        int energyCost = MachineGameplayHelper.getAdjustedPowerCost(level, pos, ENERGY_PER_PURIFY);
+        int energyCost = MachineGameplayHelper.getAdjustedPowerCost(level, pos, ENERGY_PER_PURIFY * batchSize);
         return EnergyAccess.tryConsumeLocalOrNetworkPower(this, level, pos, energyCost)
                 || tryConsumeOneHopRelayPower(level, pos, energyCost);
     }
@@ -140,7 +141,7 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
         boolean wasActive = state.getValue(WaterPurifierBlock.ACTIVE);
         boolean isProcessing = false;
         EnergyAccess.dischargeBatteryToStorage(entity.inventory.getStackInSlot(BATTERY_SLOT), entity);
-        entity.maxProgress = MachineGameplayHelper.getAdjustedProcessTime(level, pos, PROCESS_TIME);
+        entity.maxProgress = MachineGameplayHelper.getAdjustedProcessTime(level, pos, PROCESS_TIME * entity.batchSize);
 
         // Check machine wear and jam status
         MachineWearData wearData = new MachineWearData(level);
@@ -197,12 +198,19 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
                 filter.is(ModItems.FILTER_CARTRIDGE_ADVANCED.get()) ||
                 filter.is(ModItems.FILTER_CARTRIDGE_ELITE.get()));
 
-        // Standard dirty water purification
+        // Standard dirty water purification - batch processing up to 3 bottles
         if (!waterInput.isEmpty() && waterInput.is(ModItems.DIRTY_WATER_BOTTLE.get()) && hasFilter) {
-            boolean canOutput = output.isEmpty() ||
-                    (output.is(ModItems.CLEAN_WATER_BOTTLE.get()) && output.getCount() < output.getMaxStackSize());
-            if (canOutput) return true;
+            int availableBottles = waterInput.getCount();
+            int maxBatch = Math.min(3, availableBottles);
+            int availableOutputSpace = output.isEmpty() ? output.getMaxStackSize() :
+                    output.getMaxStackSize() - output.getCount();
+
+            batchSize = Math.min(maxBatch, availableOutputSpace);
+            return batchSize > 0;
         }
+
+        // Reset batch size for other recipes
+        batchSize = 1;
 
         // Contaminated resource purification (uses filter cartridge)
         if (!waterInput.isEmpty() && hasFilter) {
@@ -231,20 +239,23 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
             outputItem = ModItems.CLEAN_WATER_BOTTLE.get();
         }
 
-        input.shrink(1);
+        // Process the batch
+        input.shrink(batchSize);
 
-        // 15% chance to consume filter
-        if (level != null && level.getRandom().nextFloat() < 0.15f) {
-            filter.shrink(1);
-            if (filter.getDamageValue() >= filter.getMaxDamage()) {
+        // Chance to consume filter scales with batch size
+        for (int i = 0; i < batchSize; i++) {
+            if (level != null && level.getRandom().nextFloat() < 0.15f) {
                 filter.shrink(1);
+                if (filter.getDamageValue() >= filter.getMaxDamage()) {
+                    filter.shrink(1);
+                }
             }
         }
 
         if (output.isEmpty()) {
-            inventory.setStackInSlot(OUTPUT_SLOT, new ItemStack(outputItem, 1));
+            inventory.setStackInSlot(OUTPUT_SLOT, new ItemStack(outputItem, batchSize));
         } else {
-            output.grow(1);
+            output.grow(batchSize);
         }
     }
 

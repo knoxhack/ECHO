@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "igi",
+    "asa",
+    "iri"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "g": { "item": "minecraft:glass_pane" },
+    "a": { "item": "echoweathercore:signal_anchor" },
+    "s": { "item": "minecraft:copper_block" },
+    "r": { "item": "minecraft:redstone_block" }
+  },
+  "result": {
+    "id": "echoweathercore:signal_stabilizer"
+  }
+}

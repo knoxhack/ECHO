@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echostationfall:block/hull_breach"
+    "model": "echostationfall:item/hull_breach"
   }
 }

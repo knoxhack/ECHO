@@ -16,6 +16,7 @@ public final class Config {
     public static final ModConfigSpec.EnumValue<OverlayLayout> OVERLAY_LAYOUT;
     public static final ModConfigSpec.IntValue OVERLAY_WIDTH;
     public static final ModConfigSpec.IntValue OVERLAY_MAX_COLUMNS;
+    public static final ModConfigSpec.EnumValue<GridDensity> OVERLAY_GRID_DENSITY;
     public static final ModConfigSpec.BooleanValue OVERLAY_SHOW_BOOKMARKS;
     public static final ModConfigSpec.BooleanValue SEARCH_TOOLTIP_SEARCH;
     public static final ModConfigSpec.BooleanValue SEARCH_TAG_SEARCH;
@@ -37,9 +38,10 @@ public final class Config {
         builder.push("overlay");
         OVERLAY_ENABLED = builder.define("enabled", true);
         OVERLAY_SIDE = builder.defineEnum("side", OverlaySide.RIGHT);
-        OVERLAY_LAYOUT = builder.defineEnum("layout", OverlayLayout.COMPACT);
-        OVERLAY_WIDTH = builder.defineInRange("width", 238, 160, 420);
+        OVERLAY_LAYOUT = builder.defineEnum("layout", OverlayLayout.JEI);
+        OVERLAY_WIDTH = builder.defineInRange("width", 300, 160, 520);
         OVERLAY_MAX_COLUMNS = builder.defineInRange("max_columns", 9, 3, 14);
+        OVERLAY_GRID_DENSITY = builder.defineEnum("grid_density", GridDensity.NORMAL);
         OVERLAY_SHOW_BOOKMARKS = builder.define("show_bookmarks", true);
         builder.pop();
         builder.push("search");
@@ -47,11 +49,11 @@ public final class Config {
         SEARCH_TAG_SEARCH = builder.define("tag_search", true);
         SEARCH_REGISTRY_SEARCH = builder.define("registry_search", true);
         SEARCH_CACHE_ENABLED = builder.define("cache_enabled", true);
-        SEARCH_MAX_RESULTS = builder.defineInRange("max_results", 512, 32, 4096);
+        SEARCH_MAX_RESULTS = builder.defineInRange("max_results", 256, 32, 4096);
         builder.pop();
         builder.push("ui");
         UI_CINEMATIC_STYLE = builder.define("cinematic_style", true);
-        UI_MAX_RENDERED_ITEMS = builder.defineInRange("max_rendered_items", 240, 36, 800);
+        UI_MAX_RENDERED_ITEMS = builder.defineInRange("max_rendered_items", 160, 36, 800);
         builder.pop();
         builder.push("discovery");
         DISCOVERY_ENABLED = builder.define("enabled", false);
@@ -87,10 +89,13 @@ public final class Config {
                                         EchoConfigSide.COMMON, OVERLAY_LAYOUT, OverlayLayout.class,
                                         true, false, false),
                                 EchoConfigEntry.intSpec("overlay_width", "Overlay Width", "",
-                                        EchoConfigSide.COMMON, OVERLAY_WIDTH, 160, 420,
+                                        EchoConfigSide.COMMON, OVERLAY_WIDTH, 160, 520,
                                         true, false, false),
                                 EchoConfigEntry.intSpec("overlay_columns", "Overlay Columns", "",
                                         EchoConfigSide.COMMON, OVERLAY_MAX_COLUMNS, 3, 14,
+                                        true, false, false),
+                                EchoConfigEntry.enumSpec("overlay_grid_density", "Grid Density", "",
+                                        EchoConfigSide.COMMON, OVERLAY_GRID_DENSITY, GridDensity.class,
                                         true, false, false),
                                 EchoConfigEntry.booleanSpec("show_bookmarks", "Show Bookmarks", "",
                                         EchoConfigSide.COMMON, OVERLAY_SHOW_BOOKMARKS, true, false, false))),
@@ -132,7 +137,14 @@ public final class Config {
     }
 
     public enum OverlayLayout {
+        JEI,
         COMPACT,
         TALL
+    }
+
+    public enum GridDensity {
+        COMPACT,
+        NORMAL,
+        LARGE
     }
 }

@@ -4,6 +4,7 @@ import com.knoxhack.echonexusprotocol.Config;
 import com.knoxhack.echonexusprotocol.block.NexusMachineBlock;
 import com.knoxhack.echonexusprotocol.data.NexusEnergyStorage;
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
+import com.knoxhack.echonexusprotocol.integration.NexusMissionHooks;
 import com.knoxhack.echonexusprotocol.menu.NexusMachineMenu;
 import com.knoxhack.echonexusprotocol.recipe.NexusProcessingRecipe;
 import com.knoxhack.echonexusprotocol.registry.ModBlockEntities;
@@ -434,8 +435,10 @@ public class NexusMachineBlockEntity extends BaseContainerBlockEntity {
       for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, new AABB(this.worldPosition).inflate(12.0))) {
          NexusPlayerData data = NexusPlayerData.get(player);
          data.markMachineUsed(kind);
+         NexusMissionHooks.recordMachine(player, kind);
          if (kind == NexusMachineBlock.MachineKind.MEMORY_DECODER && input != null && input.is(ModItems.BLACKBOX_FRAGMENT.get())) {
             data.addBlackboxFragment();
+            NexusMissionHooks.recordBlackboxFragment(player);
          }
          NexusPlayerData.saveAndSync(player, data);
       }

@@ -42,6 +42,31 @@ EchoCoreServices.registerMissionContent("exampleaddon", registry -> {
 });
 ```
 
+## Java Custom Actions
+
+MissionCore keeps Java-only hooks for addon-specific Terminal actions. Use
+`MissionDefinition.Builder.actionProvider` to expose action buttons and
+`actionHandler` to process action ids that are not MissionCore built-ins:
+
+```java
+registry.registerMission("exampleaddon", MissionDefinition.builder(
+                Identifier.fromNamespaceAndPath("exampleaddon", "route_choice"), chapter)
+        .text("Route Choice", "Choose a route path.", "Route acknowledged.")
+        .actionProvider((player, mission, status, completeNow) -> List.of(
+                MissionActionView.enabled("route_north", "North"),
+                MissionActionView.enabled("route_south", "South")))
+        .actionHandler((player, mission, actionId) -> switch (actionId) {
+            case "route_north" -> LegacyRoutes.chooseNorth(player);
+            case "route_south" -> LegacyRoutes.chooseSouth(player);
+            default -> false;
+        })
+        .build());
+```
+
+Built-in actions still behave the same: `start` tracks a mission, `complete` turns
+in complete objectives, and `claim` claims pending rewards. JSON missions cannot
+declare arbitrary handlers; use a Java registrar when an action needs code.
+
 Objective progress should be reported from the server-side gameplay action that proves it happened:
 
 ```java
@@ -52,6 +77,36 @@ EchoCoreServices.recordMissionObjective(
         1,
         Map.of("source", "relay_scanner"));
 ```
+
+## Direct Runtime Hooks
+
+MissionCore 0.3.0 adds hook coverage validation for migrated addons. Adapters remain
+the import/mirror layer, but server-side gameplay code should record objective
+progress directly when a route, scan, machine output, decode, research unlock, boss
+kill, or other milestone is actually completed.
+
+Mission ids remain the existing `TerminalMissionDefinition.id()` values. Objective
+targets should use stable addon namespace IDs:
+
+```java
+Identifier mission = Identifier.fromNamespaceAndPath("exampleaddon", "scan_relay");
+Identifier target = MissionHookTargets.objectiveTarget("exampleaddon", mission, "scan");
+
+EchoCoreServices.registerMissionHookCoverage("exampleaddon", mission, target);
+
+EchoCoreServices.recordMissionObjective(
+        serverPlayer,
+        MissionObjectiveType.SCAN_BLOCK,
+        target,
+        1,
+        MissionHookTargets.context("exampleaddon", mission, "action", "scanner"));
+```
+
+The target format is `<addon>:mission/<legacy_mission>/<objective_key>`. Context
+maps should include `source`, `legacy_mission`, and one gameplay-specific field such
+as `route`, `machine`, `region`, or `action`. `/echomission validate` reports each
+known migrated source as `direct-hooks`, `adapter-state`, or `mixed` and warns when a
+migrated mission still relies only on adapter-state fallback.
 
 ## JSON Rules
 
@@ -107,3 +162,17 @@ Repeatable missions must be started again after completion. Starting a repeatabl
 ## Terminal Migration
 
 If an addon has an old `TerminalMissionProvider`, keep its actions, archives, and dashboards, but do not register the legacy mission provider while `echomissioncore` is loaded and the same missions are registered with MissionCore. This prevents duplicate mission display while preserving legacy UI affordances.
+
+Migration checklist:
+
+- Preserve every `TerminalMissionDefinition.id()` exactly as the MissionCore mission id.
+- Register the existing chapter and mission order through `EchoCoreServices.registerMissionContent`.
+- Use legacy `snapshot`, completion flags, and claimed flags as status/completion rules.
+- Mirror MissionCore completion and claim callbacks back into legacy stores.
+- Route custom action ids through `actionHandler` and delegate to the existing provider.
+- Skip only the legacy mission provider when MissionCore coverage is complete; keep dashboards, archives, reports, and client screens registered.
+- Run `/echomission validate` and confirm source counts include the addon once and no duplicate legacy provider warning appears.
+
+Known 0.3.0 adapter and direct-hook targets are Reclamation, Industrial, Convoy,
+Orbital, Nexus, Blackbox, and Stationfall. SignalOS is intentionally separate
+because its app model is not a direct `TerminalMissionProvider` migration target.

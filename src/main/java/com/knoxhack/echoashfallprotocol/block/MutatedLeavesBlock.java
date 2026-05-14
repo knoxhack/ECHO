@@ -15,8 +15,7 @@ public class MutatedLeavesBlock extends LeavesBlock {
     public static final MapCodec<MutatedLeavesBlock> CODEC = simpleCodec(MutatedLeavesBlock::new);
 
     public MutatedLeavesBlock(Properties properties) {
-        // Assume default particle chance of 0.05f
-        super(0.05f, properties);
+        super(0.01f, properties);
     }
 
     @Override
@@ -26,7 +25,7 @@ public class MutatedLeavesBlock extends LeavesBlock {
 
     @Override
     public void spawnFallingLeavesParticle(Level level, BlockPos pos, RandomSource random) {
-        if (random.nextFloat() > 0.25F) {
+        if (random.nextFloat() > 0.12F) {
             return;
         }
         double x = pos.getX() + random.nextDouble();

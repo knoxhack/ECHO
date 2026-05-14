@@ -2,6 +2,7 @@ package com.knoxhack.echoindustrialnexus.registry;
 
 import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
 import com.knoxhack.echoindustrialnexus.menu.IndustrialMachineMenu;
+import com.knoxhack.echoindustrialnexus.menu.IndustrialMultiblockControllerMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -14,6 +15,9 @@ public final class ModMenus {
 
    public static final DeferredHolder<MenuType<?>, MenuType<IndustrialMachineMenu>> INDUSTRIAL_MACHINE =
       MENUS.register("industrial_machine", () -> IMenuTypeExtension.create(IndustrialMachineMenu::fromNetwork));
+
+   public static final DeferredHolder<MenuType<?>, MenuType<IndustrialMultiblockControllerMenu>> INDUSTRIAL_MULTIBLOCK_CONTROLLER =
+      MENUS.register("industrial_multiblock_controller", () -> IMenuTypeExtension.create(IndustrialMultiblockControllerMenu::fromNetwork));
 
    private ModMenus() {
    }

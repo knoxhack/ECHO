@@ -4,6 +4,7 @@ import com.knoxhack.echocore.api.EchoMapMarker;
 import com.knoxhack.echocore.api.IMapMarker;
 import com.knoxhack.echoholomap.EchoHoloMap;
 import com.knoxhack.echoholomap.HoloMapIds;
+import com.knoxhack.echoholomap.integration.HoloMapMissionHooks;
 import com.knoxhack.echoholomap.map.HoloMapLayers;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -91,6 +92,7 @@ public final class HoloMapSavedData extends SavedData {
                 true);
         debugMarkers.put(marker.id().toString(), marker);
         setDirty();
+        HoloMapMissionHooks.recordMarkerRevealed(player, safeLayer.toString());
         return marker;
     }
 

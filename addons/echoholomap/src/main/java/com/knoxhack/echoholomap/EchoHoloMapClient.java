@@ -28,6 +28,21 @@ public final class EchoHoloMapClient {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_J,
             KEY_CATEGORY);
+    public static final KeyMapping MINIMAP_ZOOM_IN_KEY = new KeyMapping(
+            "key.echoholomap.minimap_zoom_in",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_RIGHT_BRACKET,
+            KEY_CATEGORY);
+    public static final KeyMapping MINIMAP_ZOOM_OUT_KEY = new KeyMapping(
+            "key.echoholomap.minimap_zoom_out",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_BRACKET,
+            KEY_CATEGORY);
+    public static final KeyMapping MINIMAP_CYCLE_CORNER_KEY = new KeyMapping(
+            "key.echoholomap.minimap_cycle_corner",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_BACKSLASH,
+            KEY_CATEGORY);
 
     public EchoHoloMapClient() {
         NeoForge.EVENT_BUS.addListener(EchoHoloMapClient::onKeyInput);
@@ -46,6 +61,12 @@ public final class EchoHoloMapClient {
         }
         if (TOGGLE_MINIMAP_KEY.matches(event.getKeyEvent())) {
             HoloMapMiniMapOverlay.toggle();
+        } else if (MINIMAP_ZOOM_IN_KEY.matches(event.getKeyEvent())) {
+            HoloMapMiniMapOverlay.zoomIn();
+        } else if (MINIMAP_ZOOM_OUT_KEY.matches(event.getKeyEvent())) {
+            HoloMapMiniMapOverlay.zoomOut();
+        } else if (MINIMAP_CYCLE_CORNER_KEY.matches(event.getKeyEvent())) {
+            HoloMapMiniMapOverlay.cycleCorner();
         }
     }
 
@@ -68,6 +89,9 @@ public final class EchoHoloMapClient {
         static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
             event.registerCategory(KEY_CATEGORY);
             event.register(TOGGLE_MINIMAP_KEY);
+            event.register(MINIMAP_ZOOM_IN_KEY);
+            event.register(MINIMAP_ZOOM_OUT_KEY);
+            event.register(MINIMAP_CYCLE_CORNER_KEY);
         }
 
         @SubscribeEvent

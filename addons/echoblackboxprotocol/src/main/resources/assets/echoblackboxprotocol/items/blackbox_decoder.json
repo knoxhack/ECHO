@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoblackboxprotocol:block/blackbox_decoder"
+    "model": "echoblackboxprotocol:item/blackbox_decoder"
   }
 }

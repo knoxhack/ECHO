@@ -17,10 +17,14 @@ public record ReclamationMachineRules(
    int greenhouseFilterWeight,
    int greenhouseDockWeight,
    int greenhouseControllerWeight,
-   int greenhouseTrayWeight
+   int greenhouseTrayWeight,
+   int pollinatorDroneServiceRadius,
+   int pollinatorDroneHomeRadius,
+   int pollinatorDroneServiceTicks,
+   int pollinatorDroneGrowthBonus
 ) {
    public static ReclamationMachineRules defaults() {
-      return new ReclamationMachineRules(3, 12, 5, 180, 8, 3, 1, 2, 1, 6, 4, 6, 2, 18, 14, 10, 4);
+      return new ReclamationMachineRules(3, 12, 5, 180, 8, 3, 1, 2, 1, 6, 4, 6, 2, 18, 14, 10, 4, 4, 8, 120, 12);
    }
 
    public ReclamationMachineRules normalized() {
@@ -41,7 +45,11 @@ public record ReclamationMachineRules(
          Math.max(0, greenhouseFilterWeight),
          Math.max(0, greenhouseDockWeight),
          Math.max(0, greenhouseControllerWeight),
-         Math.max(0, greenhouseTrayWeight)
+         Math.max(0, greenhouseTrayWeight),
+         Math.max(1, pollinatorDroneServiceRadius),
+         Math.max(1, pollinatorDroneHomeRadius),
+         Math.max(20, pollinatorDroneServiceTicks),
+         Math.max(0, pollinatorDroneGrowthBonus)
       );
    }
 }

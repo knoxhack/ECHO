@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["WWW","III","WWW"],"key":{"W":{"item":"echopowergrid:insulated_wire"},"I":{"item":"minecraft:iron_nugget"}},"result":{"id":"echopowergrid:low_voltage_cable","count":8}}

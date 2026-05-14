@@ -1,0 +1,77 @@
+license="${mod_license}"
+issueTrackerURL="https://github.com/knoxhack/Echo/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="https://github.com/knoxhack/Echo"
+authors="KnoxHack"
+credits="Shared multiblock, blueprint, robotic automation, and facility runtime framework for the ECHO ecosystem."
+description='''
+ECHO: MultiblockCore provides data-driven multiblock definitions, validation,
+formed-state runtime caching, controller diagnostics, blueprints, robotic arms,
+workcells, task queues, integrity state, and optional ECHO integration hooks.
+'''
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echocore"
+type="required"
+reason="Provides shared ECHO addon, map, mission, discovery, and service APIs."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echonetcore"
+type="required"
+reason="Provides shared ECHO packet registration and sync helpers."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echoterminal"
+type="optional"
+reason="Future dashboard tabs can consume MultiblockCore status snapshots."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echoholomap"
+type="optional"
+reason="HoloMap can display multiblock facility markers through ECHO Core map providers."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echolens"
+type="optional"
+reason="Lens can inspect multiblock controllers and robotic components through optional providers."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echorendercore"
+type="optional"
+reason="Enables RenderCore V16 multiblock controller and robotic arm visual anchors."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"

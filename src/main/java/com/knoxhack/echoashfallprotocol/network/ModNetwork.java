@@ -129,18 +129,12 @@ public class ModNetwork {
             com.knoxhack.echoashfallprotocol.echo.QuestData.saveAndSync(player, quest);
         }
 
-        com.knoxhack.echoashfallprotocol.echo.Mission requestedMission = com.knoxhack.echoashfallprotocol.echo.MissionRegistry.getMissionById(packet.missionId());
-        com.knoxhack.echoashfallprotocol.echo.Mission currentMission = com.knoxhack.echoashfallprotocol.echo.MissionRegistry.getMission(
-            quest.getCurrentPhase(), quest.getCurrentMissionIndex());
-
-        if (requestedMission == null || currentMission == null
-                || !requestedMission.id().equals(currentMission.id())
-                || quest.isMissionCompleted(requestedMission.id())
-                || !quest.isMissionUnlocked(requestedMission.id())
-                || !requestedMission.isTurnInMission()) {
-            player.sendSystemMessage(
-                net.minecraft.network.chat.Component.literal("[ECHO-7] This protocol is not ready for turn-in."),
-                true);
+        com.knoxhack.echoashfallprotocol.echo.Mission requestedMission =
+                com.knoxhack.echoashfallprotocol.echo.AshfallMissionActions.resolveTarget(quest, packet.missionId());
+        String rejection = com.knoxhack.echoashfallprotocol.echo.AshfallMissionActions
+                .turnInRejection(player, quest, requestedMission);
+        if (!rejection.isBlank()) {
+            com.knoxhack.echoashfallprotocol.echo.AshfallMissionActions.sendTurnInRejection(player, rejection);
             com.knoxhack.echoashfallprotocol.echo.QuestData.syncToClient(player);
             return;
         }

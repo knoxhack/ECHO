@@ -106,6 +106,7 @@ public class ConvoyBlock extends Block implements EntityBlock {
       FUEL_STILL("fuel_still", "Fuel Still"),
       BATTERY_CHARGING_PAD("battery_charging_pad", "Battery Charging Pad"),
       VEHICLE_DOCK("vehicle_dock", "Vehicle Dock"),
+      VEHICLE_UPGRADE_BAY("vehicle_upgrade_bay", "Vehicle Upgrade Bay"),
       CONVOY_BEACON("convoy_beacon", "Convoy Beacon"),
       ROADSIDE_SIGNAL_MARKER("roadside_signal_marker", "Roadside Signal Marker"),
       CARGO_ANCHOR("cargo_anchor", "Cargo Anchor"),

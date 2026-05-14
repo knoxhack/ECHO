@@ -58,15 +58,18 @@ public final class HazardZoneManager {
                 || hasNearby(level, pos, NEXUS_ANOMALY_SOURCES, SOURCE_SCAN_RADIUS, SOURCE_SCAN_VERTICAL_RADIUS);
 
         boolean toxicBiome = biomeHazards && isBiome(level, pos, TOXIC_AIR_BIOMES);
-        boolean toxicSource = Config.GLOBAL_TOXIC_AIR.get()
-                || hasNearby(level, pos, TOXIC_AIR_SOURCES, SOURCE_SCAN_RADIUS, SOURCE_SCAN_VERTICAL_RADIUS);
-        boolean toxicAir = (toxicBiome || toxicSource || nexus) && !safeZone;
+        boolean globalToxicAir = Config.GLOBAL_TOXIC_AIR.get();
+        boolean toxicSource = shouldScanToxicSources(toxicBiome)
+                && (globalToxicAir
+                || hasNearby(level, pos, TOXIC_AIR_SOURCES, SOURCE_SCAN_RADIUS, SOURCE_SCAN_VERTICAL_RADIUS));
+        boolean toxicAir = isToxicAirActive(toxicBiome, toxicSource, nexus, safeZone);
 
         boolean radiationBiome = biomeHazards && isBiome(level, pos, RADIATION_BIOMES);
         boolean radiationSource = hasNearby(level, pos, RADIATION_SOURCES, SOURCE_SCAN_RADIUS + 1, SOURCE_SCAN_VERTICAL_RADIUS);
         boolean radiationStorm = isRadiationStorm(level);
         boolean stormSheltered = radiationStorm && isSheltered(level, pos);
-        boolean radiationZone = (radiationBiome || radiationSource || nexus || radiationStorm) && !safeZone;
+        boolean stormRadiationExposure = radiationStorm && !stormSheltered;
+        boolean radiationZone = (radiationBiome || radiationSource || nexus || stormRadiationExposure) && !safeZone;
 
         boolean cryoBiome = biomeHazards && isBiome(level, pos, CRYO_BIOMES);
         boolean cryoSource = hasNearby(level, pos, CRYO_SOURCES, SOURCE_SCAN_RADIUS, SOURCE_SCAN_VERTICAL_RADIUS);
@@ -74,7 +77,7 @@ public final class HazardZoneManager {
 
         float toxicIntensity = 0.0f;
         if (toxicAir) {
-            toxicIntensity = Config.GLOBAL_TOXIC_AIR.get() ? 0.75f : 0.0f;
+            toxicIntensity = globalToxicAir ? 0.75f : 0.0f;
             if (toxicBiome) toxicIntensity = Math.max(toxicIntensity, 1.0f);
             if (toxicSource) toxicIntensity = Math.max(toxicIntensity, 1.15f);
             if (nexus) toxicIntensity = Math.max(toxicIntensity, nexusMultiplier);
@@ -85,7 +88,7 @@ public final class HazardZoneManager {
         if (radiationZone) {
             if (radiationBiome) radiationIntensity += 1.0f;
             if (radiationSource) radiationIntensity += 1.15f;
-            if (radiationStorm) radiationIntensity += stormSheltered ? 0.45f : 1.35f;
+            if (stormRadiationExposure) radiationIntensity += 1.35f;
             if (nexus) radiationIntensity += 0.85f * nexusMultiplier;
             radiationIntensity *= Math.max(0.0f, Config.RADIATION_HAZARD_MULTIPLIER.get().floatValue());
         }
@@ -212,6 +215,14 @@ public final class HazardZoneManager {
 
     private static boolean isBiome(Level level, BlockPos pos, TagKey<Biome> tag) {
         return level.getBiome(pos).is(tag);
+    }
+
+    private static boolean shouldScanToxicSources(boolean toxicBiome) {
+        return !toxicBiome;
+    }
+
+    private static boolean isToxicAirActive(boolean toxicBiome, boolean toxicSource, boolean nexus, boolean safeZone) {
+        return (toxicBiome || toxicSource || nexus) && !safeZone;
     }
 
     private static boolean isContacting(Level level, BlockPos center, TagKey<Block> tag) {

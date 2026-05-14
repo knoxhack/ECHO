@@ -3,6 +3,7 @@ package com.knoxhack.echoterminal.client.screen;
 import com.knoxhack.echoterminal.EchoTerminalClient;
 import com.knoxhack.echoterminal.api.TerminalRenderCache;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
+import com.knoxhack.echoterminal.api.TerminalThemedSounds;
 import com.knoxhack.echoterminal.api.TerminalIcon;
 import com.knoxhack.echoterminal.api.TerminalLayoutProfile;
 import com.knoxhack.echoterminal.api.TerminalTab;
@@ -23,7 +24,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import org.lwjgl.glfw.GLFW;
 
@@ -71,6 +71,32 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     private int collapseToggleW;
     private int collapseToggleH;
 
+    public record LayoutMetrics(
+            int panelX,
+            int panelY,
+            int panelW,
+            int panelH,
+            int contentX,
+            int contentY,
+            int contentW,
+            int contentH,
+            int renderContentX,
+            int renderContentY,
+            int renderContentW,
+            int renderContentH,
+            int groupRailX,
+            int groupRailY,
+            int groupRailW,
+            int groupRailH,
+            int collapseToggleX,
+            int collapseToggleY,
+            int collapseToggleW,
+            int collapseToggleH,
+            int shellHeaderH,
+            int shellFooterH,
+            TerminalLayoutProfile layoutProfile) {
+    }
+
     public EchoTerminalScreen(EchoTerminalMenu menu, Inventory playerInventory, Component title) {
         this(menu, playerInventory, title, TerminalScreenTheme.modular());
     }
@@ -78,6 +104,18 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     public EchoTerminalScreen(EchoTerminalMenu menu, Inventory playerInventory, Component title, TerminalScreenTheme theme) {
         super(menu, playerInventory, title);
         this.theme = theme == null ? TerminalScreenTheme.modular() : theme;
+    }
+
+    public static LayoutMetrics layoutMetricsForTests(
+            int screenWidth,
+            int screenHeight,
+            TerminalScreenTheme theme,
+            TerminalClientOptions.InterfaceDensity density,
+            TerminalClientOptions.TerminalZoom zoom,
+            boolean commandStackCollapsed) {
+        TerminalScreenTheme resolvedTheme = theme == null ? TerminalScreenTheme.modular() : theme;
+        return computeLayoutMetrics(screenWidth, screenHeight, resolvedTheme.panelMaxWidth(),
+                resolvedTheme.panelMaxHeight(), density, zoom, commandStackCollapsed);
     }
 
     @Override
@@ -166,6 +204,36 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
             return true;
         }
         return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        TerminalRenderCache.beginFrame();
+        layout();
+        List<TerminalTab> tabs = tabs();
+        normalizeActiveTab(tabs);
+        clampCommandStackScroll();
+        TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
+        if (tab != null && tab.mouseDragged(contextFor(tab, scrollFor(tab)),
+                event.x(), event.y(), event.button(), dragX, dragY)) {
+            return true;
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        TerminalRenderCache.beginFrame();
+        layout();
+        List<TerminalTab> tabs = tabs();
+        normalizeActiveTab(tabs);
+        clampCommandStackScroll();
+        TerminalTab tab = activeTab < tabs.size() ? tabs.get(activeTab) : null;
+        if (tab != null && tab.mouseReleased(contextFor(tab, scrollFor(tab)),
+                event.x(), event.y(), event.button())) {
+            return true;
+        }
+        return super.mouseReleased(event);
     }
 
     @Override
@@ -728,6 +796,15 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         return Math.max(minimum, value * terminalZoomScale());
     }
 
+    private static int contentZoomed(int value, int minimum, TerminalClientOptions.TerminalZoom zoom) {
+        double scale = zoom == null ? 1.0D : zoom.scale();
+        return Math.max(minimum, (int) Math.round(value * scale));
+    }
+
+    private static int shellSized(int value, int minimum) {
+        return Math.max(minimum, value);
+    }
+
     private int railInset(int value) {
         return zoomed(value, Math.max(5, (int) Math.floor(value * 0.72D)));
     }
@@ -737,11 +814,19 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     }
 
     private int shellHeaderHeight() {
-        return zoomed(Math.max(42, 52 - densityStep() * 4), 36);
+        return shellHeaderHeight(densityStep());
     }
 
     private int shellFooterHeight() {
-        return zoomed(Math.max(24, 30 - densityStep() * 2), 22);
+        return shellFooterHeight(densityStep());
+    }
+
+    private static int shellHeaderHeight(int density) {
+        return shellSized(Math.max(42, 52 - density * 4), 36);
+    }
+
+    private static int shellFooterHeight(int density) {
+        return shellSized(Math.max(24, 30 - density * 2), 22);
     }
 
     private int commandGroupHeight(boolean compact) {
@@ -837,7 +922,7 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
     }
 
     private void playUiSound(float pitch) {
-        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), pitch, 0.35F));
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(TerminalThemedSounds.click(), pitch, 0.35F));
     }
 
     private boolean selectGroupOffset(List<TerminalTab> tabs, int offset) {
@@ -900,46 +985,25 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
 
     private int maxScroll(TerminalTab tab) {
         int contentHeight = Math.max(0, tab.contentHeight(contextFor(tab, 0)));
-        return Math.max(0, contentHeight - (contentH - zoomed(16, 12)));
+        int contentTrimH = zoomed(20, 16);
+        int viewportH = Math.max(80, contentH - contentTrimH);
+        return Math.max(0, contentHeight - viewportH);
     }
 
     private void layout() {
-        int density = densityStep();
-        int minDimension = Math.min(width, height);
-        int baseMargin = Math.max(8, Math.min(16, minDimension / 68));
-        int margin = Math.min(Math.max(baseMargin + density * 8, baseMargin),
-                Math.max(10, minDimension / 7));
-        int minPanelW = zoomed(340, 300);
-        int minPanelH = zoomed(280, 240);
-        int usableW = Math.max(minPanelW, width - margin * 2);
-        int usableH = Math.max(minPanelH, height - margin * 2);
-        int maxPanelW = Math.max(minPanelW, zoomed(Math.max(360, theme.panelMaxWidth() - density * 36), minPanelW));
-        int maxPanelH = Math.max(minPanelH, zoomed(Math.max(270, theme.panelMaxHeight() - density * 24), minPanelH));
-        panelW = Math.min(maxPanelW, Math.min(usableW, zoomed(usableW, minPanelW)));
-        panelH = Math.min(maxPanelH, Math.min(usableH, zoomed(usableH, minPanelH)));
-        layoutProfile = panelW < 660
-                ? TerminalLayoutProfile.COMPACT_STACK
-                : panelW < 980 ? TerminalLayoutProfile.MEDIUM_CAROUSEL : TerminalLayoutProfile.APP_HUB;
-        panelX = (width - panelW) / 2;
-        panelY = (height - panelH) / 2;
+        LayoutMetrics metrics = computeLayoutMetrics(width, height, theme.panelMaxWidth(), theme.panelMaxHeight(),
+                interfaceDensity(), terminalZoom(), commandStackCollapsed);
+        panelX = metrics.panelX();
+        panelY = metrics.panelY();
+        panelW = metrics.panelW();
+        panelH = metrics.panelH();
+        layoutProfile = metrics.layoutProfile();
         commandStackNavigation = true;
         sidebarNavigation = true;
-        int footerTop = panelY + panelH - shellFooterHeight() - zoomed(4, 3);
-        int horizontalPad = zoomed(panelW < 560 ? 12 : 18 + density, 8);
-        groupRailX = panelX + horizontalPad;
-        groupRailY = panelY + shellHeaderHeight() + zoomed(6, 4);
-        if (commandStackCollapsed) {
-            groupRailW = panelW >= 760 ? zoomed(58, 46) : zoomed(50, 42);
-        } else if (panelW >= 980) {
-            groupRailW = Math.max(zoomed(224, 188),
-                    Math.min(zoomed(276, 224), panelW / 5 - zoomed(density * 4)));
-        } else if (panelW >= 760) {
-            groupRailW = Math.max(zoomed(198, 168),
-                    Math.min(zoomed(230, 190), panelW / 4 - zoomed(density * 3)));
-        } else {
-            groupRailW = Math.max(zoomed(108, 92), Math.min(zoomed(152, 124), panelW / 4));
-        }
-        groupRailH = Math.max(zoomed(210, 168), footerTop - groupRailY - zoomed(8, 6));
+        groupRailX = metrics.groupRailX();
+        groupRailY = metrics.groupRailY();
+        groupRailW = metrics.groupRailW();
+        groupRailH = metrics.groupRailH();
         pageRailX = groupRailX;
         pageRailY = groupRailY;
         pageRailW = groupRailW;
@@ -948,22 +1012,113 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         navY = pageRailY;
         navW = pageRailW;
         navH = pageRailH;
-        collapseToggleH = zoomed(18, 14);
-        collapseToggleW = commandStackCollapsed ? Math.max(zoomed(30, 24), groupRailW - zoomed(18, 14)) : zoomed(26, 22);
-        collapseToggleX = commandStackCollapsed
-                ? groupRailX + zoomed(9, 7)
-                : groupRailX + groupRailW - collapseToggleW - zoomed(8, 6);
-        collapseToggleY = groupRailY + zoomed(8, 6);
-        int gap = commandStackCollapsed
-                ? zoomed(Math.max(8, 10 - density), 6)
-                : panelW >= 760 ? zoomed(Math.max(10, 14 - density * 2), 8) : zoomed(8, 6);
-        contentX = groupRailX + groupRailW + gap;
-        contentY = groupRailY;
-        contentW = Math.max(zoomed(panelW < 520 ? 180 : 260, panelW < 520 ? 150 : 210),
-                panelX + panelW - contentX - horizontalPad);
-        contentH = Math.max(zoomed(168, 136), footerTop - contentY - 8);
+        collapseToggleX = metrics.collapseToggleX();
+        collapseToggleY = metrics.collapseToggleY();
+        collapseToggleW = metrics.collapseToggleW();
+        collapseToggleH = metrics.collapseToggleH();
+        contentX = metrics.contentX();
+        contentY = metrics.contentY();
+        contentW = metrics.contentW();
+        contentH = metrics.contentH();
         clampActiveContentScroll();
         clampCommandStackScroll();
+    }
+
+    private static LayoutMetrics computeLayoutMetrics(
+            int screenWidth,
+            int screenHeight,
+            int panelMaxWidth,
+            int panelMaxHeight,
+            TerminalClientOptions.InterfaceDensity densityOption,
+            TerminalClientOptions.TerminalZoom zoom,
+            boolean commandStackCollapsed) {
+        TerminalClientOptions.InterfaceDensity resolvedDensity = densityOption == null
+                ? TerminalClientOptions.InterfaceDensity.BALANCED
+                : densityOption;
+        TerminalClientOptions.TerminalZoom resolvedZoom = zoom == null
+                ? TerminalClientOptions.TerminalZoom.ZOOM_100
+                : zoom;
+        int density = resolvedDensity.compactness();
+        int minDimension = Math.min(screenWidth, screenHeight);
+        int baseMargin = Math.max(8, Math.min(16, minDimension / 68));
+        int margin = Math.min(Math.max(baseMargin + density * 8, baseMargin),
+                Math.max(10, minDimension / 7));
+        int minPanelW = shellSized(340, 300);
+        int minPanelH = shellSized(280, 240);
+        int usableW = Math.max(minPanelW, screenWidth - margin * 2);
+        int usableH = Math.max(minPanelH, screenHeight - margin * 2);
+        int maxPanelW = Math.max(minPanelW, shellSized(Math.max(360, panelMaxWidth - density * 36), minPanelW));
+        int maxPanelH = Math.max(minPanelH, shellSized(Math.max(270, panelMaxHeight - density * 24), minPanelH));
+        int panelW = Math.min(maxPanelW, usableW);
+        int panelH = Math.min(maxPanelH, usableH);
+        TerminalLayoutProfile layoutProfile = panelW < 660
+                ? TerminalLayoutProfile.COMPACT_STACK
+                : panelW < 980 ? TerminalLayoutProfile.MEDIUM_CAROUSEL : TerminalLayoutProfile.APP_HUB;
+        int panelX = (screenWidth - panelW) / 2;
+        int panelY = (screenHeight - panelH) / 2;
+        int shellHeaderH = shellHeaderHeight(density);
+        int shellFooterH = shellFooterHeight(density);
+        int footerTop = panelY + panelH - shellFooterH - shellSized(4, 3);
+        int horizontalPad = shellSized(panelW < 560 ? 12 : 18 + density, 8);
+        int groupRailX = panelX + horizontalPad;
+        int groupRailY = panelY + shellHeaderH + shellSized(6, 4);
+        int groupRailW;
+        if (commandStackCollapsed) {
+            groupRailW = panelW >= 760 ? shellSized(58, 46) : shellSized(50, 42);
+        } else if (panelW >= 980) {
+            groupRailW = Math.max(shellSized(224, 188),
+                    Math.min(shellSized(276, 224), panelW / 5 - density * 4));
+        } else if (panelW >= 760) {
+            groupRailW = Math.max(shellSized(198, 168),
+                    Math.min(shellSized(230, 190), panelW / 4 - density * 3));
+        } else {
+            groupRailW = Math.max(shellSized(108, 92), Math.min(shellSized(152, 124), panelW / 4));
+        }
+        int groupRailH = Math.max(shellSized(210, 168), footerTop - groupRailY - shellSized(8, 6));
+        int collapseToggleH = contentZoomed(18, 14, resolvedZoom);
+        int collapseToggleW = commandStackCollapsed
+                ? Math.max(contentZoomed(30, 24, resolvedZoom), groupRailW - contentZoomed(18, 14, resolvedZoom))
+                : contentZoomed(26, 22, resolvedZoom);
+        int collapseToggleX = commandStackCollapsed
+                ? groupRailX + contentZoomed(9, 7, resolvedZoom)
+                : groupRailX + groupRailW - collapseToggleW - contentZoomed(8, 6, resolvedZoom);
+        int collapseToggleY = groupRailY + contentZoomed(8, 6, resolvedZoom);
+        int gap = commandStackCollapsed
+                ? shellSized(Math.max(8, 10 - density), 6)
+                : panelW >= 760 ? shellSized(Math.max(10, 14 - density * 2), 8) : shellSized(8, 6);
+        int contentX = groupRailX + groupRailW + gap;
+        int contentY = groupRailY;
+        int contentW = Math.max(shellSized(panelW < 520 ? 180 : 260, panelW < 520 ? 150 : 210),
+                panelX + panelW - contentX - horizontalPad);
+        int contentH = Math.max(shellSized(168, 136), footerTop - contentY - 8);
+        int contentPadX = contentZoomed(10, 8, resolvedZoom);
+        int contentPadY = contentZoomed(10, 8, resolvedZoom);
+        int contentTrimW = contentZoomed(22, 16, resolvedZoom);
+        int contentTrimH = contentZoomed(20, 16, resolvedZoom);
+        return new LayoutMetrics(
+                panelX,
+                panelY,
+                panelW,
+                panelH,
+                contentX,
+                contentY,
+                contentW,
+                contentH,
+                contentX + contentPadX,
+                contentY + contentPadY,
+                Math.max(80, contentW - contentTrimW),
+                Math.max(80, contentH - contentTrimH),
+                groupRailX,
+                groupRailY,
+                groupRailW,
+                groupRailH,
+                collapseToggleX,
+                collapseToggleY,
+                collapseToggleW,
+                collapseToggleH,
+                shellHeaderH,
+                shellFooterH,
+                layoutProfile);
     }
 
     private void clampActiveContentScroll() {

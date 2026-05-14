@@ -52,6 +52,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("worldcore_saved_data", () -> ModGameTests::worldcoreSavedData);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORLDCORE_RUNTIME_BUS =
             TEST_FUNCTIONS.register("worldcore_runtime_bus", () -> ModGameTests::worldcoreRuntimeBus);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WORLDCORE_RELEASE_GUARDS =
+            TEST_FUNCTIONS.register("worldcore_release_guards", () -> ModGameTests::worldcoreReleaseGuards);
 
     private ModGameTests() {
     }
@@ -70,6 +72,7 @@ public final class ModGameTests {
         register(event, environment, "worldcore_json_definitions", WORLDCORE_JSON.getId());
         register(event, environment, "worldcore_saved_data", WORLDCORE_SAVED_DATA.getId());
         register(event, environment, "worldcore_runtime_bus", WORLDCORE_RUNTIME_BUS.getId());
+        register(event, environment, "worldcore_release_guards", WORLDCORE_RELEASE_GUARDS.getId());
     }
 
     private static void worldcoreRegistry(GameTestHelper helper) {
@@ -114,8 +117,20 @@ public final class ModGameTests {
                     JsonParser.parseString("{\"defaultSeverity\":101}").getAsJsonObject());
             helper.fail("Invalid hazard severity should fail parsing");
         } catch (JsonParseException expected) {
-            helper.succeed();
         }
+        try {
+            WorldCoreJsonReloadListener.parseRegionForTests(id("bad_radius"),
+                    JsonParser.parseString("{\"type\":\"crash_zone\",\"radius\":8}").getAsJsonObject());
+            helper.fail("Invalid region radius should fail parsing");
+        } catch (JsonParseException expected) {
+        }
+        try {
+            WorldCoreJsonReloadListener.parseRegionForTests(id("bad_type"),
+                    JsonParser.parseString("{\"type\":\"unknown_world_type\",\"radius\":64}").getAsJsonObject());
+            helper.fail("Invalid region type should fail parsing");
+        } catch (JsonParseException expected) {
+        }
+        helper.succeed();
     }
 
     private static void worldcoreSavedData(GameTestHelper helper) {
@@ -175,6 +190,23 @@ public final class ModGameTests {
             helper.assertTrue(EchoCoreServices.hazardService().hazardSnapshot(null).safeZone(),
                     "No-op hazard service should report nominal state");
         });
+        helper.succeed();
+    }
+
+    private static void worldcoreReleaseGuards(GameTestHelper helper) {
+        WorldRegionService service = new WorldRegionService();
+        WorldCoreBuiltins.register(service);
+        helper.assertTrue(service.regionDefinitions().size() == 10,
+                "WorldCore v0.2 should keep the ten built-in framework region definitions");
+        helper.assertTrue(service.hazardDefinitions().size() == 8,
+                "WorldCore v0.2 should keep the eight built-in framework hazard definitions");
+        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.CRASH_ZONE).isPresent(),
+                "WorldCore v0.2 should keep echoashfallprotocol:crash_zone_wasteland");
+        helper.assertTrue(service.regionDefinitions().stream()
+                        .allMatch(definition -> definition.renderProfileId() != null && definition.audioProfileId() != null),
+                "Built-in regions should expose RenderCore and AudioCore profile identifiers");
+        helper.assertTrue(service.validateMarkers(null).isEmpty(),
+                "WorldCore v0.2 release guard should not ship invalid built-in references");
         helper.succeed();
     }
 

@@ -1,9 +1,11 @@
 package com.knoxhack.echorelictech.item;
 
 import com.knoxhack.echorelictech.api.RelicTechApi;
+import com.knoxhack.echorelictech.api.event.RelicTechEvents;
 import com.knoxhack.echorelictech.api.relic.RelicCondition;
 import com.knoxhack.echorelictech.api.relic.RelicInstanceData;
 import com.knoxhack.echorelictech.config.RelicTechConfig;
+import com.knoxhack.echorelictech.data.RelicDefinitionLoader;
 import com.knoxhack.echorelictech.registry.ModDataComponents;
 import com.knoxhack.echorelictech.server.RelicInstabilityManager;
 import net.minecraft.core.BlockPos;
@@ -43,12 +45,19 @@ public class MatterStitcherItem extends Item {
         }
 
         if (!data.identified()) {
-            serverPlayer.sendSystemMessage(Component.literal("This relic is unidentified. Analyze it first."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.relic.unidentified"));
             return InteractionResult.FAIL;
         }
 
-        if (!RelicTechApi.consumeNullCharge(serverPlayer, 1)) {
-            serverPlayer.sendSystemMessage(Component.literal("No Null Charge available."));
+        int cooldown = getCooldownTicks();
+        if (data.cooldownRemaining() > 0) {
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.matter_stitcher.cooldown"));
+            return InteractionResult.FAIL;
+        }
+
+        int chargeCost = getNullChargeCost();
+        if (chargeCost > 0 && !RelicTechApi.consumeNullCharge(serverPlayer, chargeCost)) {
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.relic.no_null_charge"));
             return InteractionResult.FAIL;
         }
 
@@ -59,24 +68,38 @@ public class MatterStitcherItem extends Item {
                     armor.setDamageValue(Math.max(0, armor.getDamageValue() - 20));
                 }
             }
-            serverPlayer.sendSystemMessage(Component.literal("Matter Stitcher // Armor integrity partially restored."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.matter_stitcher.armor"));
         } else {
             player.heal(4.0f);
-            serverPlayer.sendSystemMessage(Component.literal("Matter Stitcher // Biological matter stabilized."));
+            serverPlayer.sendSystemMessage(Component.translatable("item.echorelictech.matter_stitcher.heal"));
         }
 
         RelicInstabilityManager.addInstability(serverPlayer, 8);
         if (RelicInstabilityManager.getInstabilityLevel(serverPlayer) >= 3) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 300, 0));
         }
+        stack.set(ModDataComponents.RELIC_DATA.get(), data.withCooldown(cooldown));
+        RelicTechEvents.fireUse(serverPlayer, Identifier.fromNamespaceAndPath("echorelictech", "matter_stitcher"), stack);
         RelicTechApi.tryTriggerFailure(serverPlayer, stack, new com.knoxhack.echorelictech.api.relic.RelicUseContext(level, player, stack, player.blockPosition(), player.isShiftKeyDown()));
         return InteractionResult.SUCCESS;
     }
 
+    private int getCooldownTicks() {
+        var def = RelicDefinitionLoader.get(Identifier.fromNamespaceAndPath("echorelictech", "matter_stitcher"));
+        if (def != null && def.cooldownTicks() > 0) return def.cooldownTicks();
+        return RelicTechConfig.MATTER_STITCHER_COOLDOWN_TICKS.get();
+    }
+
+    private int getNullChargeCost() {
+        var def = RelicDefinitionLoader.get(Identifier.fromNamespaceAndPath("echorelictech", "matter_stitcher"));
+        if (def != null) return def.nullChargeCost();
+        return 1;
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.literal("Sneak-use: repair armor. Normal use: heal."));
-        tooltip.accept(Component.literal("Consumes Null Charge."));
-        tooltip.accept(Component.literal("Risk: Side effects at high instability."));
+        tooltip.accept(Component.translatable("item.echorelictech.matter_stitcher.description"));
+        tooltip.accept(Component.translatable("item.echorelictech.matter_stitcher.cost"));
+        tooltip.accept(Component.translatable("item.echorelictech.matter_stitcher.risk"));
     }
 }

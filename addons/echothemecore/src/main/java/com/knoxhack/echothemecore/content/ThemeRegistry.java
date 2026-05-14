@@ -7,6 +7,7 @@ import com.knoxhack.echothemecore.api.EchoThemeBlockPalette;
 import com.knoxhack.echothemecore.api.EchoThemeColors;
 import com.knoxhack.echothemecore.api.EchoThemeRenderProfile;
 import com.knoxhack.echothemecore.api.EchoThemeSoundProfile;
+import com.knoxhack.echothemecore.api.EchoThemeTextureKey;
 import com.knoxhack.echothemecore.api.EchoThemeUiAssets;
 import com.knoxhack.echothemecore.api.EchoThemeVanillaUiProfile;
 import com.knoxhack.echothemecore.api.HologramStyle;
@@ -21,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
@@ -33,6 +36,8 @@ public final class ThemeRegistry {
     private static final Map<UUID, Identifier> PLAYER_THEMES = new ConcurrentHashMap<>();
     private static Identifier globalThemeId = CYBERGLASS_ID;
     private static float debugVisualIntensity = 1.0F;
+    private static Consumer<Identifier> globalThemeChangeListener;
+    private static BiConsumer<UUID, Identifier> playerThemeChangeListener;
 
     static {
         THEMES.put(BUILTIN_CYBERGLASS.id(), BUILTIN_CYBERGLASS);
@@ -99,6 +104,9 @@ public final class ThemeRegistry {
             return false;
         }
         globalThemeId = id;
+        if (globalThemeChangeListener != null) {
+            globalThemeChangeListener.accept(globalThemeId);
+        }
         return true;
     }
 
@@ -111,6 +119,9 @@ public final class ThemeRegistry {
             return;
         }
         PLAYER_THEMES.put(playerId, id);
+        if (playerThemeChangeListener != null) {
+            playerThemeChangeListener.accept(playerId, id);
+        }
     }
 
     public static void clearPlayerTheme(UUID playerId) {
@@ -122,6 +133,9 @@ public final class ThemeRegistry {
     public static synchronized void reset() {
         globalThemeId = CYBERGLASS_ID;
         PLAYER_THEMES.clear();
+        if (globalThemeChangeListener != null) {
+            globalThemeChangeListener.accept(globalThemeId);
+        }
     }
 
     public static float debugVisualIntensity() {
@@ -130,6 +144,14 @@ public final class ThemeRegistry {
 
     public static void setDebugVisualIntensity(float value) {
         debugVisualIntensity = Math.max(0.0F, Math.min(2.0F, value));
+    }
+
+    public static void setGlobalThemeChangeListener(Consumer<Identifier> listener) {
+        globalThemeChangeListener = listener;
+    }
+
+    public static void setPlayerThemeChangeListener(BiConsumer<UUID, Identifier> listener) {
+        playerThemeChangeListener = listener;
     }
 
     public static int transitionTicks() {
@@ -155,6 +177,14 @@ public final class ThemeRegistry {
 
     private static Identifier texture(String theme, String name) {
         return Identifier.fromNamespaceAndPath(EchoThemeCore.MODID, "textures/gui/themes/" + theme + "/" + name + ".png");
+    }
+
+    private static Identifier minecraft(String path) {
+        return Identifier.fromNamespaceAndPath("minecraft", path);
+    }
+
+    private static Identifier soundcore(String path) {
+        return Identifier.fromNamespaceAndPath("echosoundcore", path);
     }
 
     private static EchoTheme createBuiltinCyberGlass() {
@@ -227,8 +257,82 @@ public final class ThemeRegistry {
             "GLASS_GEOMETRIC",
             TransitionStyle.GLASS_FADE
         );
-        EchoThemeSoundProfile sound = new EchoThemeSoundProfile(null, null, null, null, null, null, null);
-        EchoThemeBlockPalette blocks = new EchoThemeBlockPalette(List.of(), List.of(), List.of(), List.of(), List.of());
+        EchoThemeSoundProfile sound = new EchoThemeSoundProfile(
+            soundcore("ui.terminal.select"),
+            soundcore("ui.terminal.error"),
+            soundcore("ui.terminal.open"),
+            soundcore("ui.terminal.close"),
+            soundcore("music.terminal.command_bed"),
+            soundcore("stinger.objective.complete"),
+            soundcore("ui.terminal.warning")
+        );
+        EchoThemeBlockPalette blocks = new EchoThemeBlockPalette(
+            List.of(minecraft("tinted_glass"), minecraft("cyan_stained_glass"), minecraft("magenta_stained_glass")),
+            List.of(minecraft("blackstone"), minecraft("deepslate_tiles")),
+            List.of(minecraft("tinted_glass"), minecraft("cyan_stained_glass")),
+            List.of(minecraft("sea_lantern"), minecraft("end_rod")),
+            List.of(minecraft("amethyst_block"), minecraft("magenta_glazed_terracotta"))
+        );
+        EchoThemeVanillaUiProfile vanilla = new EchoThemeVanillaUiProfile(
+            texture("cyberglass", "background"),
+            texture("cyberglass", "glass_panel"),
+            texture("cyberglass", "glass_button"),
+            texture("cyberglass", "status_chip"),
+            texture("cyberglass", "vanilla_tooltip_panel"),
+            texture("cyberglass", "vanilla_toast_accent"),
+            texture("cyberglass", "vanilla_boss_bar_accent"),
+            0x88030711,
+            0xCC08111F,
+            0xDD10243A,
+            colors.border(),
+            colors.selection(),
+            colors.glow(),
+            0.34F,
+            0.58F,
+            0.72F,
+            true
+        );
+        Map<EchoThemeTextureKey, Identifier> moduleTextures = new LinkedHashMap<>();
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_PANEL, texture("cyberglass", "glass_panel"));
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_TAB, texture("cyberglass", "tab"));
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_TAB_ACTIVE, texture("cyberglass", "tab_active"));
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_MISSION_CARD, texture("cyberglass", "mission_card"));
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_STATUS_CHIP, texture("cyberglass", "status_chip"));
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_BUTTON, texture("cyberglass", "glass_button"));
+        moduleTextures.put(EchoThemeTextureKey.TERMINAL_ICON, texture("cyberglass", "icons/icon_terminal"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_GRID, texture("cyberglass", "holomap_grid"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_PANEL, texture("cyberglass", "holomap_panel"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_ROUTE, texture("cyberglass", "route_line"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_MARKER_SIGNAL, texture("cyberglass", "marker_signal"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_MARKER_HAZARD, texture("cyberglass", "marker_hazard"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_MARKER_MISSION, texture("cyberglass", "marker_mission"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_MARKER_NEXUS, texture("cyberglass", "marker_nexus"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_MARKER_RECLAIMED, texture("cyberglass", "marker_reclamation"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_SELECTED_RING, texture("cyberglass", "selected_marker_ring"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_DANGER, texture("cyberglass", "marker_hazard"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_ANOMALY, texture("cyberglass", "marker_nexus"));
+        moduleTextures.put(EchoThemeTextureKey.HOLOMAP_RECLAIMED, texture("cyberglass", "marker_reclamation"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_SCAN_RING, texture("cyberglass", "lens_scan_ring"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_TARGET_BOX, texture("cyberglass", "lens_target_box"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_WEAK_POINT, texture("cyberglass", "lens_weakpoint_marker"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_WARNING, texture("cyberglass", "lens_warning_overlay"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_ANOMALY_REVEAL, texture("cyberglass", "lens_anomaly_overlay"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_COMPLETION_PULSE, texture("cyberglass", "lens_progress_arc"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_PROGRESS_ARC, texture("cyberglass", "lens_progress_arc"));
+        moduleTextures.put(EchoThemeTextureKey.LENS_NOISE_OVERLAY, texture("cyberglass", "lens_noise_overlay"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_CONTAINER_FRAME, texture("cyberglass", "vanilla_container_frame"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_INVENTORY_FRAME, texture("cyberglass", "vanilla_inventory_frame"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_TITLE_BACKPLATE, texture("cyberglass", "vanilla_title_backplate"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_PAUSE_PANEL, texture("cyberglass", "vanilla_pause_panel"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_SELECTED_SLOT, texture("cyberglass", "vanilla_hotbar_accent"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_TOOLTIP_PANEL, texture("cyberglass", "vanilla_tooltip_panel"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_TOAST_ACCENT, texture("cyberglass", "vanilla_toast_accent"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_BOSS_BAR_ACCENT, texture("cyberglass", "vanilla_boss_bar_accent"));
+        moduleTextures.put(EchoThemeTextureKey.VANILLA_WIDGET_OUTLINE, texture("cyberglass", "vanilla_widget_outline"));
+        moduleTextures.put(EchoThemeTextureKey.RENDERCORE_GLOW_OVERLAY, texture("cyberglass", "rendercore/glow_overlay_reference"));
+        moduleTextures.put(EchoThemeTextureKey.RENDERCORE_DISTORTION_OVERLAY, texture("cyberglass", "rendercore/distortion_overlay"));
+        moduleTextures.put(EchoThemeTextureKey.RENDERCORE_ENTITY_HIGHLIGHT, texture("cyberglass", "rendercore/entity_highlight_reference"));
+        moduleTextures.put(EchoThemeTextureKey.RENDERCORE_MULTIBLOCK_ENERGY, texture("cyberglass", "rendercore/multiblock_energy_lines"));
         return new EchoTheme(
             CYBERGLASS_ID,
             "CyberGlass",
@@ -238,8 +342,10 @@ public final class ThemeRegistry {
             render,
             sound,
             blocks,
-            EchoThemeVanillaUiProfile.fromParts(colors, ui, render),
-            Map.of("tier", "default", "family", "cyberglass")
+            vanilla,
+            moduleTextures,
+            Map.of("module_tags", "terminal,signalos,holomap,lens,rendercore,soundcore,blockworks,vanilla_ui",
+                "default", "true", "tier", "default", "family", "cyberglass", "version", "0.2.0")
         );
     }
 }

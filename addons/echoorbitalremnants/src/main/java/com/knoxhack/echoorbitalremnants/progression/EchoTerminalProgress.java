@@ -1,9 +1,11 @@
 package com.knoxhack.echoorbitalremnants.progression;
 
 import com.knoxhack.echoorbitalremnants.Config;
+import com.knoxhack.echoorbitalremnants.faction.OrbitalOutpostProfiles;
 import com.knoxhack.echoorbitalremnants.item.FactionPledgeItem;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalFactions;
+import com.knoxhack.echoorbitalremnants.integration.OrbitalMissionHooks;
 import com.knoxhack.echoorbitalremnants.lore.OrbitalLore;
 import com.knoxhack.echoorbitalremnants.registry.ModBlocks;
 import com.knoxhack.echoorbitalremnants.registry.ModItems;
@@ -101,11 +103,23 @@ public class EchoTerminalProgress {
     private String activeFactionContract = "";
     private String completedFactionContracts = "";
     private int factionContractCooldown;
+    private int orbitalRemnantOutpostTier;
+    private int voidSalvagerOutpostTier;
+    private int nexusChoirOutpostTier;
+    private String activeOutpostCharter = "";
+    private String completedOutpostCharters = "";
+    private long orbitalRemnantServiceReadyAt;
+    private long voidSalvagerServiceReadyAt;
+    private long nexusChoirServiceReadyAt;
+    private String seededOutpostNpcs = "";
     private String groundRecoverySites = "";
     private String claimedTerminalMissionCaches = "";
     private String seededRouteArrivals = "";
 
     public static EchoTerminalProgress get(Player player) {
+        if (player == null) {
+            return new EchoTerminalProgress();
+        }
         return read(player.getPersistentData().getCompoundOrEmpty(ROOT));
     }
 
@@ -127,6 +141,7 @@ public class EchoTerminalProgress {
         orbitalContact = true;
         launchSiteTracked = true;
         save(player);
+        OrbitalMissionHooks.record(player, "earth_calibration", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "action", "orbital_contact");
         AshfallCompat.mirrorMilestone(player, "orbital_contact", "Orbital contact calibrated",
                 "A surviving uplink answered from above ruined Earth. " + OrbitalLore.TAGLINE);
     }
@@ -165,6 +180,8 @@ public class EchoTerminalProgress {
         launchSiteTracked = true;
         launchPrepared = true;
         save(player);
+        OrbitalMissionHooks.record(player, "launch_chain", 0, com.knoxhack.echocore.api.mission.MissionObjectiveType.BUILD_MULTIBLOCK, 1, "action", "launch_systems");
+        OrbitalMissionHooks.record(player, "launch_chain", 1, com.knoxhack.echocore.api.mission.MissionObjectiveType.DRIVE_VEHICLE, 1, "action", "rocket_assembly");
         AshfallCompat.mirrorMilestone(player, "launch_prepared", "Launch chain prepared",
                 "The staged Emergency Rocket cleared readiness, countdown, and ascent. Orbit may object.");
     }
@@ -177,6 +194,7 @@ public class EchoTerminalProgress {
         stationCoordinatesRecovered = true;
         orbitalRemnantStanding = FactionStanding.CONTACTED;
         save(player);
+        OrbitalMissionHooks.record(player, "low_orbit", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "low_orbit");
         AshfallCompat.mirrorMilestone(player, "low_orbit_reached", "Low Earth Orbit reached",
                 "Station debris confirms the pod's fall path. " + OrbitalLore.POD_TRUTH);
     }
@@ -188,6 +206,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 1);
         orbitalRemnantStanding = FactionStanding.CONTACTED;
         save(player);
+        OrbitalMissionHooks.record(player, "low_orbit", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "action", "scan_orbit");
         AshfallCompat.mirrorMilestone(player, "station_coordinates", "Station coordinates recovered",
                 "Orbital debris telemetry resolved a Station ECHO approach hidden behind years of Gridfall noise.");
     }
@@ -198,6 +217,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 2);
         orbitalRemnantStanding = FactionStanding.TRUSTED;
         save(player);
+        OrbitalMissionHooks.record(player, "station_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 3, "machine", "life_support");
         AshfallCompat.mirrorMilestone(player, "station_life_support", "Station life support restored",
                 "Station pressure loops reinitialized. " + OrbitalLore.ECHO7_TRUTH);
     }
@@ -209,6 +229,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 3);
         nexusChoirStanding = FactionStanding.CONTACTED;
         save(player);
+        OrbitalMissionHooks.record(player, "deep_space_protocol", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "route", "deep_space_protocol");
         AshfallCompat.mirrorMilestone(player, "deep_space_protocol", "Deep Space Protocol unlocked",
                 "The anomaly belt is reachable. " + OrbitalLore.GRIDFALL_ORIGIN);
     }
@@ -246,6 +267,7 @@ public class EchoTerminalProgress {
         lunarSignalInvestigated = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 3);
         save(player);
+        OrbitalMissionHooks.record(player, "lunar_signal", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "lunar_signal");
         AshfallCompat.mirrorMilestone(player, "lunar_signal", "Lunar Signal investigated",
                 "Helium-3 telemetry from the Lunar Scar Zone proves Nexus contamination crossed the route before Earth fell silent.");
     }
@@ -257,6 +279,7 @@ public class EchoTerminalProgress {
         voidSalvagerStanding = FactionStanding.CONTACTED;
         echoMemoryFragments = Math.max(echoMemoryFragments, 3);
         save(player);
+        OrbitalMissionHooks.record(player, "mars_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "mars");
         AshfallCompat.mirrorMilestone(player, "mars_route", "Mars transfer route unlocked",
                 "Lunar Helium-3 resolved a transfer window to the Mars Ash Basin, where pressure records did not end cleanly.");
     }
@@ -267,6 +290,7 @@ public class EchoTerminalProgress {
         voidSalvagerStanding = FactionStanding.TRUSTED;
         echoMemoryFragments = Math.max(echoMemoryFragments, 4);
         save(player);
+        OrbitalMissionHooks.record(player, "mars_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ENTER_REGION, 1, "region", "mars_ash_basin");
         AshfallCompat.mirrorMilestone(player, "mars_ash_basin", "Mars Ash Basin reached",
                 "The buried habitat confirms the route failed outward, not inward. Someone tried to leave.");
     }
@@ -277,6 +301,7 @@ public class EchoTerminalProgress {
         europaRouteUnlocked = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 4);
         save(player);
+        OrbitalMissionHooks.record(player, "europa_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "europa");
         AshfallCompat.mirrorMilestone(player, "europa_route", "Europa route unlocked",
                 "Martian silica traces triangulate a frozen lab under the Europa Cryo Ocean.");
     }
@@ -286,6 +311,7 @@ public class EchoTerminalProgress {
         europaCryoOceanVisited = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 5);
         save(player);
+        OrbitalMissionHooks.record(player, "europa_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ENTER_REGION, 1, "region", "europa_cryo_ocean");
         AshfallCompat.mirrorMilestone(player, "europa_cryo_ocean", "Europa Cryo Ocean reached",
                 "The sub-ice lab preserved a deep-space ping under frozen signal glass.");
     }
@@ -296,6 +322,7 @@ public class EchoTerminalProgress {
         saturnRouteUnlocked = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 6);
         save(player);
+        OrbitalMissionHooks.record(player, "saturn_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "saturn");
         AshfallCompat.mirrorMilestone(player, "saturn_route", "Saturn route unlocked",
                 "Europa thermal telemetry resolved a relay path into the Saturn Ring Graveyard.");
     }
@@ -305,6 +332,7 @@ public class EchoTerminalProgress {
         saturnRingGraveyardVisited = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 6);
         save(player);
+        OrbitalMissionHooks.record(player, "saturn_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ENTER_REGION, 1, "region", "saturn_ring_graveyard");
         AshfallCompat.mirrorMilestone(player, "saturn_ring_graveyard", "Saturn Ring Graveyard reached",
                 "Broken relay ribs in the rings still carry Titan descent instructions.");
     }
@@ -315,6 +343,7 @@ public class EchoTerminalProgress {
         titanRouteUnlocked = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 7);
         save(player);
+        OrbitalMissionHooks.record(player, "titan_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "titan");
         AshfallCompat.mirrorMilestone(player, "titan_route", "Titan route unlocked",
                 "Saturn relay lenses resolved a methane-shelf descent vector.");
     }
@@ -324,6 +353,7 @@ public class EchoTerminalProgress {
         titanMethaneShelfVisited = true;
         echoMemoryFragments = Math.max(echoMemoryFragments, 7);
         save(player);
+        OrbitalMissionHooks.record(player, "titan_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.ENTER_REGION, 1, "region", "titan_methane_shelf");
         AshfallCompat.mirrorMilestone(player, "titan_methane_shelf", "Titan Methane Shelf reached",
                 "The last outer-system shelf points straight at the Nexus quarantine belt.");
     }
@@ -334,6 +364,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 6);
         nexusChoirStanding = FactionStanding.CONTACTED;
         save(player);
+        OrbitalMissionHooks.record(player, "deep_space_protocol", com.knoxhack.echocore.api.mission.MissionObjectiveType.ENTER_REGION, 1, "region", "nexus_anomaly_belt");
         AshfallCompat.mirrorMilestone(player, "nexus_anomaly_belt", "Nexus Anomaly Belt entered",
                 "Folded station fragments expose ECHO-0 beyond the old Earth network. The quarantine finally has a voice.");
     }
@@ -345,6 +376,7 @@ public class EchoTerminalProgress {
         echoMemoryFragments = Math.max(echoMemoryFragments, 7);
         nexusChoirStanding = FactionStanding.TRUSTED;
         save(player);
+        OrbitalMissionHooks.record(player, "echo_zero", com.knoxhack.echocore.api.mission.MissionObjectiveType.UNLOCK_RESEARCH, 1, "action", "echo_zero_resolved");
         AshfallCompat.mirrorMilestone(player, "echo_zero_resolved", "ECHO-0 resolved",
                 "The quarantine is broken. Nexus anchor stabilization can begin before the old silence reorganizes.");
     }
@@ -378,6 +410,7 @@ public class EchoTerminalProgress {
             grantSurveyAdvancement(player, ModAdvancements.ORBIT_SURVEY_COMPLETE);
         }
         save(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Orbit survey", orbitSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -404,6 +437,7 @@ public class EchoTerminalProgress {
             grantSurveyAdvancement(player, ModAdvancements.MOON_SURVEY_COMPLETE);
         }
         save(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Lunar survey", moonSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -431,6 +465,7 @@ public class EchoTerminalProgress {
             grantSurveyAdvancement(player, ModAdvancements.MARS_SURVEY_COMPLETE);
         }
         save(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Mars survey", marsSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -457,6 +492,7 @@ public class EchoTerminalProgress {
             grantSurveyAdvancement(player, ModAdvancements.EUROPA_SURVEY_COMPLETE);
         }
         save(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Europa survey", europaSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -483,6 +519,7 @@ public class EchoTerminalProgress {
             grantSurveyAdvancement(player, ModAdvancements.SATURN_SURVEY_COMPLETE);
         }
         save(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Saturn survey", saturnSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -510,6 +547,7 @@ public class EchoTerminalProgress {
             grantSurveyAdvancement(player, ModAdvancements.TITAN_SURVEY_COMPLETE);
         }
         save(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Titan survey", titanSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -539,6 +577,7 @@ public class EchoTerminalProgress {
         }
         save(player);
         sealFinalNetwork(player);
+        OrbitalMissionHooks.record(player, "survey_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.COMPLETE_ORBITAL_SCAN, 1, "region", siteId);
         return new SurveyResult("Nexus stabilization", nexusSurveyScans, 3, newlyComplete, false, false, true);
     }
 
@@ -562,6 +601,7 @@ public class EchoTerminalProgress {
         }
         grantMidGameMastery(player);
         save(player);
+        OrbitalMissionHooks.record(player, "station_network", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 1, "machine", siteId);
         return new RouteObjectiveResult("Station Network", stationRelayRepairs, 3, newlyComplete, false, true);
     }
 
@@ -584,6 +624,7 @@ public class EchoTerminalProgress {
         }
         grantMidGameMastery(player);
         save(player);
+        OrbitalMissionHooks.record(player, "mars_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 1, "machine", siteId);
         return new RouteObjectiveResult("Helium Extractor Network", lunarExtractorRepairs, 3, newlyComplete, false, true);
     }
 
@@ -607,6 +648,7 @@ public class EchoTerminalProgress {
         }
         grantMidGameMastery(player);
         save(player);
+        OrbitalMissionHooks.record(player, "europa_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 1, "machine", siteId);
         return new RouteObjectiveResult("Mars Habitat Pressure", marsPressureRepairs, 3, newlyComplete, false, true);
     }
 
@@ -630,6 +672,7 @@ public class EchoTerminalProgress {
         }
         grantMidGameMastery(player);
         save(player);
+        OrbitalMissionHooks.record(player, "saturn_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 1, "machine", siteId);
         return new RouteObjectiveResult("Europa Thermal Array", europaArrayRepairs, 3, newlyComplete, false, true);
     }
 
@@ -652,6 +695,7 @@ public class EchoTerminalProgress {
         }
         grantMidGameMastery(player);
         save(player);
+        OrbitalMissionHooks.record(player, "titan_route", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 1, "machine", siteId);
         return new RouteObjectiveResult("Saturn Ring Relays", saturnRelayRepairs, 3, newlyComplete, false, true);
     }
 
@@ -675,6 +719,7 @@ public class EchoTerminalProgress {
         }
         grantMidGameMastery(player);
         save(player);
+        OrbitalMissionHooks.record(player, "deep_space_protocol", com.knoxhack.echocore.api.mission.MissionObjectiveType.REPAIR_MACHINE, 1, "machine", siteId);
         return new RouteObjectiveResult("Titan Methane Pumps", titanPumpRepairs, 3, newlyComplete, false, true);
     }
 
@@ -693,10 +738,6 @@ public class EchoTerminalProgress {
                 nexusChoirStanding = FactionStanding.ALIGNED;
                 orbitalRemnantStanding = orbitalRemnantStanding == FactionStanding.ALIGNED ? FactionStanding.HOSTILE : orbitalRemnantStanding;
             }
-        }
-        if (activeFactionContract.isBlank()) {
-            activeFactionContract = contractId(faction);
-            factionContractCooldown = 0;
         }
         save(player);
     }
@@ -741,6 +782,7 @@ public class EchoTerminalProgress {
         }
         save(player);
         sealFinalNetwork(player);
+        OrbitalMissionHooks.record(player, "faction_contract", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "faction", completedId);
         return new ContractResult(true, contractDisplay(completedId), completedFactionContractCount(), false, false);
     }
 
@@ -758,13 +800,14 @@ public class EchoTerminalProgress {
             ModAdvancements.grantManual(serverPlayer, ModAdvancements.ORBITAL_REMNANTS_COMPLETE, "complete");
         }
         save(player);
+        OrbitalMissionHooks.record(player, "final_seal", com.knoxhack.echocore.api.mission.MissionObjectiveType.UNLOCK_RESEARCH, 1, "action", "final_network_seal");
         AshfallCompat.mirrorMilestone(player, "orbital_remnants_complete", "Orbital Remnants arc complete",
                 "ECHO-0 is resolved, the post-ECHO-0 survey network is stabilized, and orbit no longer commands Earth from quarantine.");
         return true;
     }
 
     public boolean canSealFinalNetwork() {
-        return echoZeroEncountered && allSurveysComplete() && completedFactionContractCount() >= 3;
+        return echoZeroEncountered && allSurveysComplete() && allOutpostChartersComplete();
     }
 
     public FactionPledgeItem.Faction activeContractFaction() {
@@ -776,6 +819,198 @@ public class EchoTerminalProgress {
     }
 
     public String factionContractStatus() {
+        return outpostCharterStatus();
+    }
+
+    public String factionContractRequirement() {
+        return outpostCharterRequirement();
+    }
+
+    public int completedOutpostCharterCount() {
+        int count = 0;
+        if (outpostTier(FactionPledgeItem.Faction.VOID_SALVAGERS) >= 1) {
+            count++;
+        }
+        if (outpostTier(FactionPledgeItem.Faction.ORBITAL_REMNANT) >= 1) {
+            count++;
+        }
+        if (outpostTier(FactionPledgeItem.Faction.NEXUS_CHOIR) >= 1) {
+            count++;
+        }
+        return count;
+    }
+
+    public boolean allOutpostChartersComplete() {
+        return outpostTier(FactionPledgeItem.Faction.VOID_SALVAGERS) >= 1
+                && outpostTier(FactionPledgeItem.Faction.ORBITAL_REMNANT) >= 1
+                && outpostTier(FactionPledgeItem.Faction.NEXUS_CHOIR) >= 1;
+    }
+
+    public int outpostTier(FactionPledgeItem.Faction faction) {
+        return switch (faction) {
+            case ORBITAL_REMNANT -> orbitalRemnantOutpostTier;
+            case VOID_SALVAGERS -> voidSalvagerOutpostTier;
+            case NEXUS_CHOIR -> nexusChoirOutpostTier;
+        };
+    }
+
+    public boolean outpostTierOneComplete(FactionPledgeItem.Faction faction) {
+        return outpostTier(faction) >= 1;
+    }
+
+    public FactionStanding outpostStanding(FactionPledgeItem.Faction faction) {
+        return switch (faction) {
+            case ORBITAL_REMNANT -> orbitalRemnantStanding;
+            case VOID_SALVAGERS -> voidSalvagerStanding;
+            case NEXUS_CHOIR -> nexusChoirStanding;
+        };
+    }
+
+    public String activeOutpostCharterId() {
+        return activeOutpostCharter;
+    }
+
+    public boolean isOutpostCharterActive(FactionPledgeItem.Faction faction) {
+        return OrbitalOutpostProfiles.contractId(faction).equals(activeOutpostCharter);
+    }
+
+    public FactionPledgeItem.Faction activeOutpostCharterFaction() {
+        return OrbitalOutpostProfiles.factionFromId(activeOutpostCharter);
+    }
+
+    public boolean outpostCharterUnlockReady(FactionPledgeItem.Faction faction) {
+        return faction != FactionPledgeItem.Faction.NEXUS_CHOIR || echoZeroEncountered;
+    }
+
+    public boolean canAcceptOutpostCharter(FactionPledgeItem.Faction faction) {
+        return faction != null
+                && !outpostTierOneComplete(faction)
+                && outpostCharterUnlockReady(faction)
+                && (activeOutpostCharter.isBlank() || isOutpostCharterActive(faction));
+    }
+
+    public OutpostCharterResult acceptOutpostCharter(Player player, FactionPledgeItem.Faction faction) {
+        if (faction == null) {
+            return new OutpostCharterResult(false, false, "Unknown outpost charter.");
+        }
+        if (outpostTierOneComplete(faction)) {
+            return new OutpostCharterResult(false, false, OrbitalOutpostProfiles.contractTitle(faction) + " already complete.");
+        }
+        if (!outpostCharterUnlockReady(faction)) {
+            return new OutpostCharterResult(false, false, "Resolve ECHO-0 before Sporebound Nexus charters unlock.");
+        }
+        if (!activeOutpostCharter.isBlank() && !isOutpostCharterActive(faction)) {
+            return new OutpostCharterResult(false, false, "Another outpost charter is active: " + activeOutpostCharter + ".");
+        }
+        activeOutpostCharter = OrbitalOutpostProfiles.contractId(faction);
+        setStanding(faction, maxStanding(outpostStanding(faction), FactionStanding.CONTACTED));
+        lastTerminalReport = OrbitalOutpostProfiles.contractTitle(faction) + " accepted. " + OrbitalOutpostProfiles.objective(faction);
+        save(player);
+        return new OutpostCharterResult(true, false, lastTerminalReport);
+    }
+
+    public OutpostCharterResult completeOutpostCharter(Player player, FactionPledgeItem.Faction faction) {
+        if (faction == null) {
+            return new OutpostCharterResult(false, false, "Unknown outpost charter.");
+        }
+        if (outpostTierOneComplete(faction)) {
+            return new OutpostCharterResult(false, false, OrbitalOutpostProfiles.contractTitle(faction) + " already complete.");
+        }
+        if (!isOutpostCharterActive(faction)) {
+            return new OutpostCharterResult(false, false, "Accept " + OrbitalOutpostProfiles.contractTitle(faction) + " first.");
+        }
+        setOutpostTier(faction, Math.max(1, outpostTier(faction)));
+        completedOutpostCharters = addToken(completedOutpostCharters, OrbitalOutpostProfiles.contractId(faction));
+        activeOutpostCharter = "";
+        setStanding(faction, maxStanding(outpostStanding(faction), FactionStanding.TRUSTED));
+        if (player instanceof ServerPlayer serverPlayer) {
+            ModAdvancements.grantManual(serverPlayer, ModAdvancements.FIRST_FACTION_CONTRACT, "complete");
+        }
+        boolean finalReadyBeforeSave = canSealFinalNetwork();
+        lastTerminalReport = OrbitalOutpostProfiles.contractTitle(faction) + " complete. Tier I outpost support "
+                + completedOutpostCharterCount() + "/3.";
+        save(player);
+        boolean sealed = finalReadyBeforeSave && sealFinalNetwork(player);
+        OrbitalMissionHooks.record(player, "faction_contract", com.knoxhack.echocore.api.mission.MissionObjectiveType.ESTABLISH_ROUTE, 1, "faction", faction.contractId());
+        return new OutpostCharterResult(true, sealed, sealed ? lastTerminalReport
+                : OrbitalOutpostProfiles.contractTitle(faction) + " complete. Tier I outpost support "
+                + completedOutpostCharterCount() + "/3.");
+    }
+
+    public void recordOutpostContact(Player player, FactionPledgeItem.Faction faction, long gameTime) {
+        if (faction == null) {
+            return;
+        }
+        setStanding(faction, maxStanding(outpostStanding(faction), FactionStanding.CONTACTED));
+        save(player);
+    }
+
+    public boolean outpostServiceReady(FactionPledgeItem.Faction faction, long gameTime) {
+        return gameTime >= outpostServiceReadyAt(faction);
+    }
+
+    public long outpostServiceReadyAt(FactionPledgeItem.Faction faction) {
+        return switch (faction) {
+            case ORBITAL_REMNANT -> orbitalRemnantServiceReadyAt;
+            case VOID_SALVAGERS -> voidSalvagerServiceReadyAt;
+            case NEXUS_CHOIR -> nexusChoirServiceReadyAt;
+        };
+    }
+
+    public void markOutpostServiceUsed(Player player, FactionPledgeItem.Faction faction, long readyAt) {
+        switch (faction) {
+            case ORBITAL_REMNANT -> orbitalRemnantServiceReadyAt = Math.max(0L, readyAt);
+            case VOID_SALVAGERS -> voidSalvagerServiceReadyAt = Math.max(0L, readyAt);
+            case NEXUS_CHOIR -> nexusChoirServiceReadyAt = Math.max(0L, readyAt);
+        }
+        save(player);
+    }
+
+    public boolean hasOutpostNpcSeeded(String siteKey) {
+        return hasToken(seededOutpostNpcs, siteKey);
+    }
+
+    public boolean markOutpostNpcSeeded(Player player, String siteKey) {
+        if (hasOutpostNpcSeeded(siteKey)) {
+            return false;
+        }
+        seededOutpostNpcs = addToken(seededOutpostNpcs, siteKey);
+        save(player);
+        return true;
+    }
+
+    public String outpostCharterStatus() {
+        String crashbreak = outpostTierOneComplete(FactionPledgeItem.Faction.VOID_SALVAGERS) ? "OK" : "OPEN";
+        String radwarden = outpostTierOneComplete(FactionPledgeItem.Faction.ORBITAL_REMNANT) ? "OK" : "OPEN";
+        String sporebound = outpostTierOneComplete(FactionPledgeItem.Faction.NEXUS_CHOIR) ? "OK" : "OPEN";
+        if (allOutpostChartersComplete()) {
+            return "Outpost Charters: Crashbreak OK, Radwarden OK, Sporebound OK. Final seal support secured.";
+        }
+        return "Outpost Charters " + completedOutpostCharterCount() + "/3 | Crashbreak " + crashbreak
+                + " | Radwarden " + radwarden + " | Sporebound " + sporebound + ". "
+                + outpostCharterRequirement();
+    }
+
+    public String outpostCharterRequirement() {
+        if (!outpostTierOneComplete(FactionPledgeItem.Faction.VOID_SALVAGERS)) {
+            return "Visit a Crashbreak NPC outpost in Saturn and complete the Tier I Saturn Salvage Charter.";
+        }
+        if (!outpostTierOneComplete(FactionPledgeItem.Faction.ORBITAL_REMNANT)) {
+            return "Visit a Radwarden NPC outpost on Titan and complete the Tier I Titan Containment Charter.";
+        }
+        if (!outpostTierOneComplete(FactionPledgeItem.Faction.NEXUS_CHOIR)) {
+            return echoZeroEncountered
+                    ? "Visit a Sporebound NPC outpost in Nexus and complete the Tier I Anchor Charter."
+                    : "Resolve ECHO-0, then complete the Sporebound Nexus Anchor Charter.";
+        }
+        return "All Tier I outpost charters complete.";
+    }
+
+    /*
+     * Legacy terminal contracts remain scan-compatible for old saves and support caches,
+     * but the final seal now reads the outpost charter state above.
+     */
+    public String legacyFactionContractStatus() {
         if (!activeFactionContract.isBlank()) {
             return contractDisplay(activeFactionContract) + " | " + contractRequirement(activeFactionContract);
         }
@@ -789,7 +1024,7 @@ public class EchoTerminalProgress {
         return "Faction Contract: pledge to Radwarden Compact, Crashbreak Salvage, or Sporebound Sanctum to unlock route contracts.";
     }
 
-    public String factionContractRequirement() {
+    public String legacyFactionContractRequirement() {
         if (!activeFactionContract.isBlank()) {
             return contractRequirement(activeFactionContract);
         }
@@ -824,11 +1059,11 @@ public class EchoTerminalProgress {
             return "ECHO NOTE: Nexus stabilization is " + nexusStabilizationText()
                     + ". Scan distinct Nexus Anchor/Growth sites, or spend Nexus Stabilizer Shards from Signal Analyzer support.";
         }
-        if (allSurveysComplete() && completedFactionContractCount() < 3) {
+        if (allSurveysComplete() && !allOutpostChartersComplete()) {
             return "ECHO NOTE: Survey network complete. " + factionContractRequirement()
-                    + " Complete three ECHO-tab faction contracts before the final seal.";
+                    + " Complete the three Tier I faction outpost charters before the final seal.";
         }
-        if (allSurveysComplete() && completedFactionContractCount() >= 3) {
+        if (allSurveysComplete() && allOutpostChartersComplete()) {
             return "ECHO NOTE: Final prerequisites are complete. Press SCAN once to seal the survey network.";
         }
         return "ECHO NOTE: SCAN advances route hooks. SURVEY logs each unique route site once.";
@@ -952,8 +1187,8 @@ public class EchoTerminalProgress {
         if (!allSurveysComplete()) {
             return "Next Step: Finish any remaining route surveys from the SURVEY tab; each route needs three unique logs.";
         }
-        if (completedFactionContractCount() < 3) {
-            return "Next Step: Complete three faction contracts from the ECHO tab (" + completedFactionContractCount() + "/3). " + factionContractRequirement();
+        if (!allOutpostChartersComplete()) {
+            return "Next Step: Complete Tier I outpost charters (" + completedOutpostCharterCount() + "/3). " + factionContractRequirement();
         }
         if (!finalNetworkSealed) {
             return "Next Step: Press SCAN to seal the final survey network and close the quarantine aftermath.";
@@ -1030,7 +1265,7 @@ public class EchoTerminalProgress {
             return "Nexus stabilization " + nexusStabilizationText()
                     + ": scan a new Nexus Anchor/Growth site or carry a Nexus Stabilizer Shard after ECHO-0.";
         }
-        if (completedFactionContractCount() < 3) {
+        if (!allOutpostChartersComplete()) {
             return factionContractRequirement();
         }
         if (!finalNetworkSealed) {
@@ -1365,9 +1600,15 @@ public class EchoTerminalProgress {
         recordNexusStabilization(player, "qa:nexus:1");
         recordNexusStabilization(player, "qa:nexus:2");
         recordNexusStabilization(player, "qa:nexus:3");
-        while (completedFactionContractCount() < 3) {
-            completedFactionContracts = addSite(completedFactionContracts, "qa_final_contract:" + (completedFactionContractCount() + 1));
-        }
+        setOutpostTier(FactionPledgeItem.Faction.VOID_SALVAGERS, 1);
+        setOutpostTier(FactionPledgeItem.Faction.ORBITAL_REMNANT, 1);
+        setOutpostTier(FactionPledgeItem.Faction.NEXUS_CHOIR, 1);
+        completedOutpostCharters = addTokenIfMissing(completedOutpostCharters,
+                OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.VOID_SALVAGERS));
+        completedOutpostCharters = addTokenIfMissing(completedOutpostCharters,
+                OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.ORBITAL_REMNANT));
+        completedOutpostCharters = addTokenIfMissing(completedOutpostCharters,
+                OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.NEXUS_CHOIR));
         sealFinalNetwork(player);
     }
 
@@ -1662,6 +1903,15 @@ public class EchoTerminalProgress {
         tag.putString("activeFactionContract", activeFactionContract);
         tag.putString("completedFactionContracts", completedFactionContracts);
         tag.putInt("factionContractCooldown", factionContractCooldown);
+        tag.putInt("orbital_remnant_outpost_tier", orbitalRemnantOutpostTier);
+        tag.putInt("void_salvager_outpost_tier", voidSalvagerOutpostTier);
+        tag.putInt("nexus_choir_outpost_tier", nexusChoirOutpostTier);
+        tag.putString("active_outpost_charter", activeOutpostCharter);
+        tag.putString("completed_outpost_charters", completedOutpostCharters);
+        tag.putLong("orbital_remnant_service_ready_at", orbitalRemnantServiceReadyAt);
+        tag.putLong("void_salvager_service_ready_at", voidSalvagerServiceReadyAt);
+        tag.putLong("nexus_choir_service_ready_at", nexusChoirServiceReadyAt);
+        tag.putString("seeded_outpost_npcs", seededOutpostNpcs);
         tag.putString("ground_recovery_sites", groundRecoverySites);
         tag.putString("claimed_terminal_mission_caches", claimedTerminalMissionCaches);
         tag.putString("seeded_route_arrivals", seededRouteArrivals);
@@ -1768,10 +2018,52 @@ public class EchoTerminalProgress {
         progress.activeFactionContract = tag.getStringOr("activeFactionContract", "");
         progress.completedFactionContracts = tag.getStringOr("completedFactionContracts", "");
         progress.factionContractCooldown = tag.getIntOr("factionContractCooldown", 0);
+        progress.orbitalRemnantOutpostTier = tag.getIntOr("orbital_remnant_outpost_tier", 0);
+        progress.voidSalvagerOutpostTier = tag.getIntOr("void_salvager_outpost_tier", 0);
+        progress.nexusChoirOutpostTier = tag.getIntOr("nexus_choir_outpost_tier", 0);
+        progress.activeOutpostCharter = tag.getStringOr("active_outpost_charter", "");
+        progress.completedOutpostCharters = tag.getStringOr("completed_outpost_charters", "");
+        progress.orbitalRemnantServiceReadyAt = tag.getLongOr("orbital_remnant_service_ready_at", 0L);
+        progress.voidSalvagerServiceReadyAt = tag.getLongOr("void_salvager_service_ready_at", 0L);
+        progress.nexusChoirServiceReadyAt = tag.getLongOr("nexus_choir_service_ready_at", 0L);
+        progress.seededOutpostNpcs = tag.getStringOr("seeded_outpost_npcs", "");
+        progress.migrateLegacyFactionContractsToOutposts();
         progress.groundRecoverySites = tag.getStringOr("ground_recovery_sites", "");
         progress.claimedTerminalMissionCaches = tag.getStringOr("claimed_terminal_mission_caches", "");
         progress.seededRouteArrivals = tag.getStringOr("seeded_route_arrivals", "");
         return progress;
+    }
+
+    private void migrateLegacyFactionContractsToOutposts() {
+        if (!finalNetworkSealed && completedFactionContractCount() < 3) {
+            return;
+        }
+        setOutpostTier(FactionPledgeItem.Faction.VOID_SALVAGERS, Math.max(1, voidSalvagerOutpostTier));
+        setOutpostTier(FactionPledgeItem.Faction.ORBITAL_REMNANT, Math.max(1, orbitalRemnantOutpostTier));
+        setOutpostTier(FactionPledgeItem.Faction.NEXUS_CHOIR, Math.max(1, nexusChoirOutpostTier));
+        completedOutpostCharters = addTokenIfMissing(completedOutpostCharters,
+                OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.VOID_SALVAGERS));
+        completedOutpostCharters = addTokenIfMissing(completedOutpostCharters,
+                OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.ORBITAL_REMNANT));
+        completedOutpostCharters = addTokenIfMissing(completedOutpostCharters,
+                OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.NEXUS_CHOIR));
+    }
+
+    private void setOutpostTier(FactionPledgeItem.Faction faction, int tier) {
+        int safeTier = Math.max(0, tier);
+        switch (faction) {
+            case ORBITAL_REMNANT -> orbitalRemnantOutpostTier = safeTier;
+            case VOID_SALVAGERS -> voidSalvagerOutpostTier = safeTier;
+            case NEXUS_CHOIR -> nexusChoirOutpostTier = safeTier;
+        }
+    }
+
+    private void setStanding(FactionPledgeItem.Faction faction, FactionStanding standing) {
+        switch (faction) {
+            case ORBITAL_REMNANT -> orbitalRemnantStanding = standing;
+            case VOID_SALVAGERS -> voidSalvagerStanding = standing;
+            case NEXUS_CHOIR -> nexusChoirStanding = standing;
+        }
     }
 
     private FactionPledgeItem.Faction preferredAlignedFaction() {
@@ -1894,6 +2186,10 @@ public class EchoTerminalProgress {
         return tokens + ";" + token;
     }
 
+    private static String addTokenIfMissing(String tokens, String token) {
+        return hasToken(tokens, token) ? tokens : addToken(tokens, token);
+    }
+
     private static void grantSurveyAdvancement(Player player, net.minecraft.resources.Identifier advancement) {
         if (player instanceof ServerPlayer serverPlayer) {
             ModAdvancements.grantManual(serverPlayer, advancement, "complete");
@@ -1973,6 +2269,9 @@ public class EchoTerminalProgress {
         public static ContractResult noPledgeResult() {
             return new ContractResult(false, "Faction Contract", 0, true, false);
         }
+    }
+
+    public record OutpostCharterResult(boolean completed, boolean finalSealed, String message) {
     }
 
     private static FactionStanding readStanding(String name) {

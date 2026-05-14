@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echologisticsnetwork:block/auto_restock_station"
+    "model": "echologisticsnetwork:item/auto_restock_station"
   }
 }

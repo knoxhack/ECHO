@@ -71,10 +71,10 @@ When a relic malfunctions, it consults a data-driven **Failure Table**. Failures
 
 ## Machines
 
-- **Relic Analyzer** — Identifies unknown relics.
-- **Prototype Workbench** — Repairs, stabilizes, overclocks, contains, or purges relics.
-- **Containment Locker** — Stores dangerous relics safely.
-- **Null Battery Dock** — Charges Null Batteries.
+- **Relic Analyzer** — Identifies unknown relics. Data-driven output from hidden relic data or random selection.
+- **Prototype Workbench** — Repairs, stabilizes, overclocks, contains, or purges relics using JSON repair definitions.
+- **Containment Locker** — Stores dangerous relics safely with persistent 5-slot inventory.
+- **Null Battery Dock** — Charges Null Batteries via Null Cells or PowerGrid when available.
 
 ## Containment
 
@@ -88,13 +88,18 @@ Relic definitions and failure tables are loaded from JSON and support addon name
 
 ## Integrations
 
-Optional no-op safe integrations are provided for:
-- ECHO Terminal
-- ECHO Lens
-- ECHO HoloMap
-- ECHO PowerGrid
-- ECHO WorldCore
-- ECHO SoundCore
+Real integrations are provided for:
+- ECHO Terminal (addon info, recipes)
+- ECHO Lens (machine status providers)
+- ECHO HoloMap (vault marker layer)
+- ECHO MissionCore (Relic Operations missions)
+- ECHO PowerGrid (dock charging, backfire support)
+- ECHO WorldCore (vault discovery telemetry)
+- ECHO SoundCore (stinger hooks)
+- ECHO NexusProtocol (research milestones)
+- ECHO DataCore (player relic profile persistence)
+
+All optional integrations degrade cleanly if a module is absent.
 
 ## Commands
 
@@ -130,18 +135,26 @@ See `RelicTechConfig.java` for server-side balance options including:
 - Managing player instability
 - Consuming Null Charge
 - Triggering failures
-- Reporting relic use for faction integration
+- Recording player relic summary, vault discoveries, and machine status snapshots
+
+## Beta Tester Instructions
+
+1. Start a fresh world or dedicated server.
+2. Locate a `pre_gridfall_research_vault` underground (y ~ -24) or use `/locate structure echorelictech:pre_gridfall_research_vault`.
+3. Loot the vault for an `Unidentified Relic`, materials, and diagnostic reports.
+4. Craft or place a `Relic Analyzer` and insert the Unidentified Relic.
+5. Take the identified relic to a `Prototype Workbench` with the required materials to stabilize.
+6. Craft a `Null Battery` and charge it at a `Null Battery Dock` using `Null Cells`.
+7. Use each MVP relic and observe cooldowns, instability, and occasional failures.
+8. If a relic becomes too unstable, store it in a `Containment Locker`.
+9. With the full Echo stack, verify Terminal info, Lens scans, HoloMap layers, and MissionCore objectives.
 
 ## Known Limitations / Future Passes
 
-- Full Terminal UI pages are scaffolded, not yet rendered.
-- Lens deep-scan rows are data-ready but UI integration is scaffold.
-- HoloMap vault markers are scaffolded.
-- Worldgen structures are placeholders.
-- Faction reputation reactions are event-scaffolded.
-- Research integration is data-ready but not gated.
-- Nexus ending-path multipliers are scaffolded.
-- Custom entity decoys (Echo Mirror) use effect-based MVP.
+- Terminal custom tab rendering is out of scope for beta; addon info and recipes are registered.
+- Custom entity decoys (Echo Mirror) use effect-based MVP; full entity decoy is post-beta.
+- Faction reputation reactions are data-ready but not fully gated in this beta.
+- Additional relics, vault variants, and lore entries can be added post-beta via datapack.
 
 ## License
 

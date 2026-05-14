@@ -11,10 +11,13 @@ import com.knoxhack.echocore.api.index.IndexCategory;
 import com.knoxhack.echocore.api.index.IndexEntry;
 import com.knoxhack.echocore.api.index.IndexEntryState;
 import com.knoxhack.echocore.api.index.IndexRecipeCategory;
+import com.knoxhack.echocore.api.index.IndexRecipeSlot;
 import com.knoxhack.echocore.api.index.IndexRecipeView;
 import com.knoxhack.echocore.api.index.IndexSearchResult;
+import com.knoxhack.echocore.api.index.IndexSlotRole;
 import com.knoxhack.echoindex.Config;
 import com.knoxhack.echoindex.EchoIndex;
+import com.knoxhack.echoindex.IndexIds;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -25,7 +28,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
@@ -44,7 +49,14 @@ public final class IndexService implements IIndexService, IIndexRegistry, IIndex
     private final Map<Identifier, IndexCategory> dataCategories = new LinkedHashMap<>();
     private final Map<Identifier, IndexEntry> dataEntries = new LinkedHashMap<>();
     private final List<IIndexRecipeProvider> recipeProviders = new CopyOnWriteArrayList<>();
+    private final Object recipeSnapshotLock = new Object();
+    private final AtomicLong recipeSnapshotGeneration = new AtomicLong();
     private volatile List<ItemStack> cachedItems = List.of();
+    private volatile boolean cachedItemsClient;
+    private volatile IndexRecipeSnapshot clientRecipeSnapshot;
+    private volatile IndexRecipeSnapshot serverRecipeSnapshot;
+    private volatile String clientSnapshotReason = "initial client build";
+    private volatile String serverSnapshotReason = "initial server build";
 
     private IndexService() {
     }
@@ -160,67 +172,33 @@ public final class IndexService implements IIndexService, IIndexRegistry, IIndex
             }
         }
         recipeProviders.add(provider);
+        invalidateRecipes("recipe provider registered: " + provider.id());
         return true;
     }
 
     @Override
     public List<IndexRecipeCategory> recipeCategories(Player player) {
-        Map<Identifier, IndexRecipeCategory> merged = new LinkedHashMap<>();
-        for (IIndexRecipeProvider provider : recipeProviders) {
-            try {
-                for (IndexRecipeCategory category : provider.recipeCategories(player)) {
-                    if (category != null) {
-                        merged.putIfAbsent(category.id(), category);
-                    }
-                }
-            } catch (RuntimeException exception) {
-                EchoIndex.LOGGER.warn("Index recipe provider {} failed while listing categories.", provider.id(), exception);
-            }
-        }
-        return merged.values().stream()
-                .sorted(Comparator.comparingInt(IndexRecipeCategory::order)
-                        .thenComparing(category -> category.id().toString()))
-                .toList();
+        return recipeSnapshot(player).categories();
     }
 
     @Override
     public List<IndexRecipeView> recipes(Player player) {
-        List<IndexRecipeView> all = new ArrayList<>();
-        Set<Identifier> seen = new LinkedHashSet<>();
-        for (IIndexRecipeProvider provider : recipeProviders) {
-            try {
-                for (IndexRecipeView recipe : provider.recipes(player)) {
-                    if (recipe != null && seen.add(recipe.id())) {
-                        all.add(recipe);
-                    }
-                }
-            } catch (RuntimeException exception) {
-                EchoIndex.LOGGER.warn("Index recipe provider {} failed while listing recipes.", provider.id(), exception);
-            }
-        }
-        all.sort(Comparator.comparing(recipe -> recipe.id().toString()));
-        return all;
+        return recipeSnapshot(player).recipes();
     }
 
     @Override
     public List<IndexRecipeView> recipesFor(Player player, Item item) {
-        if (item == null) {
-            return List.of();
-        }
-        return recipes(player).stream().filter(recipe -> recipe.outputs(item)).toList();
+        return recipeSnapshot(player).recipesFor(item);
     }
 
     @Override
     public List<IndexRecipeView> usesFor(Player player, Item item) {
-        if (item == null) {
-            return List.of();
-        }
-        return recipes(player).stream().filter(recipe -> recipe.uses(item)).toList();
+        return recipeSnapshot(player).usesFor(item);
     }
 
     @Override
     public Optional<IndexRecipeView> recipe(Player player, Identifier id) {
-        return recipes(player).stream().filter(recipe -> recipe.id().equals(id)).findFirst();
+        return recipeSnapshot(player).recipe(id);
     }
 
     @Override
@@ -228,19 +206,487 @@ public final class IndexService implements IIndexService, IIndexRegistry, IIndex
         return recipeProviders.size();
     }
 
+    public IndexRecipeSnapshot recipeSnapshot(Player player) {
+        boolean client = recipeClientContext(player);
+        IndexRecipeSnapshot snapshot = client ? clientRecipeSnapshot : serverRecipeSnapshot;
+        if (snapshot != null && !staleClientSnapshot(player, snapshot)) {
+            return snapshot;
+        }
+        synchronized (recipeSnapshotLock) {
+            snapshot = client ? clientRecipeSnapshot : serverRecipeSnapshot;
+            if (snapshot == null || staleClientSnapshot(player, snapshot)) {
+                snapshot = buildRecipeSnapshot(player);
+                if (client) {
+                    clientRecipeSnapshot = snapshot;
+                } else {
+                    serverRecipeSnapshot = snapshot;
+                }
+            }
+            return snapshot;
+        }
+    }
+
+    public List<IndexRecipeProviderStats> providerStats(Player player) {
+        return recipeSnapshot(player).providerStats();
+    }
+
+    public List<String> recipeWarnings(Player player) {
+        return recipeSnapshot(player).warnings();
+    }
+
+    public void invalidateRecipes() {
+        invalidateRecipes("manual invalidation");
+    }
+
+    public void invalidateRecipes(String reason) {
+        String safeReason = reason == null || reason.isBlank() ? "manual invalidation" : reason.strip();
+        clientSnapshotReason = safeReason;
+        serverSnapshotReason = safeReason;
+        clientRecipeSnapshot = null;
+        serverRecipeSnapshot = null;
+    }
+
+    public IndexRecipeSnapshot rebuildRecipes(Player player, String reason) {
+        boolean client = recipeClientContext(player);
+        setSnapshotReason(client, reason);
+        synchronized (recipeSnapshotLock) {
+            IndexRecipeSnapshot snapshot = buildRecipeSnapshot(player);
+            if (client) {
+                clientRecipeSnapshot = snapshot;
+            } else {
+                serverRecipeSnapshot = snapshot;
+            }
+            return snapshot;
+        }
+    }
+
+    public IndexRecipeSnapshot recipeSnapshotForTests(Player player, List<IIndexRecipeProvider> providers) {
+        synchronized (recipeSnapshotLock) {
+            List<IIndexRecipeProvider> previousProviders = List.copyOf(recipeProviders);
+            IndexRecipeSnapshot previousClientSnapshot = clientRecipeSnapshot;
+            IndexRecipeSnapshot previousServerSnapshot = serverRecipeSnapshot;
+            String previousClientReason = clientSnapshotReason;
+            String previousServerReason = serverSnapshotReason;
+            try {
+                recipeProviders.clear();
+                Set<Identifier> seenProviderIds = new LinkedHashSet<>();
+                if (providers != null) {
+                    for (IIndexRecipeProvider provider : providers) {
+                        if (provider == null || provider.id() == null || !seenProviderIds.add(provider.id())) {
+                            continue;
+                        }
+                        recipeProviders.add(provider);
+                    }
+                }
+                setSnapshotReason(recipeClientContext(player), "test recipe snapshot");
+                return buildRecipeSnapshot(player);
+            } finally {
+                recipeProviders.clear();
+                recipeProviders.addAll(previousProviders);
+                clientRecipeSnapshot = previousClientSnapshot;
+                serverRecipeSnapshot = previousServerSnapshot;
+                clientSnapshotReason = previousClientReason;
+                serverSnapshotReason = previousServerReason;
+            }
+        }
+    }
+
+    public void applySyncedRecipeSnapshot(CompoundTag tag) {
+        IndexRecipeSnapshot snapshot = IndexRecipeSnapshotCodec.decode(tag);
+        if (snapshot == null || snapshot.recipes().isEmpty()) {
+            return;
+        }
+        clientSnapshotReason = snapshot.buildReason();
+        clientRecipeSnapshot = snapshot;
+    }
+
+    private void setSnapshotReason(boolean client, String reason) {
+        String safeReason = reason == null || reason.isBlank() ? "manual rebuild" : reason.strip();
+        if (client) {
+            clientSnapshotReason = safeReason;
+        } else {
+            serverSnapshotReason = safeReason;
+        }
+    }
+
+    private boolean recipeClientContext(Player player) {
+        return player != null && player.level() != null && player.level().getServer() == null;
+    }
+
+    private boolean staleClientSnapshot(Player player, IndexRecipeSnapshot snapshot) {
+        if (!recipeClientContext(player) || snapshot == null) {
+            return false;
+        }
+        Optional<IndexRecipeProviderStats> vanilla = snapshot.providerStats().stream()
+                .filter(stats -> IndexIds.PROVIDER_VANILLA_RECIPES.equals(stats.providerId()))
+                .findFirst();
+        if (vanilla.isEmpty()) {
+            return false;
+        }
+        return vanilla.get().rawRecipeCount() == 0 && VanillaIndexRecipeProvider.rawRecipeCount(player) > 0;
+    }
+
+    private IndexRecipeSnapshot buildRecipeSnapshot(Player player) {
+        Map<Identifier, IndexRecipeCategory> mergedCategories = new LinkedHashMap<>();
+        List<IndexRecipeView> mergedRecipes = new ArrayList<>();
+        List<IndexRecipeProviderStats> stats = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        Set<Identifier> seenRecipes = new LinkedHashSet<>();
+        Map<String, IndexRecipeView> seenSemanticRecipes = new LinkedHashMap<>();
+        Map<String, Identifier> seenSemanticProviders = new LinkedHashMap<>();
+        Map<Identifier, List<IndexRecipeView>> byProviderMutable = new LinkedHashMap<>();
+
+        for (IIndexRecipeProvider provider : recipeProviders) {
+            if (provider == null || provider.id() == null) {
+                continue;
+            }
+            Identifier providerId = provider.id();
+            List<IndexRecipeCategory> providerCategories = List.of();
+            List<IndexRecipeView> providerRecipes = List.of();
+            String error = "";
+            try {
+                List<IndexRecipeCategory> categories = provider.recipeCategories(player);
+                if (categories != null) {
+                    providerCategories = categories.stream()
+                            .filter(category -> category != null && category.id() != null)
+                            .toList();
+                }
+            } catch (RuntimeException exception) {
+                error = compactError(exception);
+                warnings.add("Provider " + provider.id() + " failed to list categories: " + error);
+                EchoIndex.LOGGER.warn("Index recipe provider {} failed to list categories", provider.id(), exception);
+            }
+            try {
+                List<IndexRecipeView> recipes = provider.recipes(player);
+                if (recipes != null) {
+                    providerRecipes = recipes.stream()
+                            .filter(recipe -> recipe != null && recipe.id() != null && recipe.categoryId() != null)
+                            .toList();
+                }
+            } catch (RuntimeException exception) {
+                String recipeError = compactError(exception);
+                error = error.isBlank() ? recipeError : error + "; " + recipeError;
+                warnings.add("Provider " + provider.id() + " failed to list recipes: " + recipeError);
+                EchoIndex.LOGGER.warn("Index recipe provider {} failed to list recipes", provider.id(), exception);
+            }
+
+            for (IndexRecipeCategory category : providerCategories) {
+                mergedCategories.putIfAbsent(category.id(), category);
+            }
+            for (IndexRecipeView recipe : providerRecipes) {
+                String semanticKey = semanticRecipeKey(recipe);
+                Identifier existingProvider = semanticKey.isBlank() ? null : seenSemanticProviders.get(semanticKey);
+                if (existingProvider != null) {
+                    boolean existingImport = terminalImportProvider(existingProvider);
+                    boolean incomingImport = terminalImportProvider(providerId);
+                    if (existingImport && !incomingImport) {
+                        IndexRecipeView existingRecipe = seenSemanticRecipes.get(semanticKey);
+                        removeMergedRecipe(mergedRecipes, byProviderMutable, existingProvider, existingRecipe);
+                        if (existingRecipe != null) {
+                            seenRecipes.remove(existingRecipe.id());
+                        }
+                        warnings.add("Terminal-import duplicate replaced by direct recipe view: " + recipe.id());
+                    } else {
+                        warnings.add("Semantic duplicate recipe view skipped: " + recipe.id());
+                        continue;
+                    }
+                }
+                if (!seenRecipes.add(recipe.id())) {
+                    warnings.add("Duplicate recipe view skipped: " + recipe.id());
+                    continue;
+                }
+                mergedRecipes.add(recipe);
+                byProviderMutable.computeIfAbsent(providerId, ignored -> new ArrayList<>()).add(recipe);
+                if (!semanticKey.isBlank()) {
+                    seenSemanticRecipes.put(semanticKey, recipe);
+                    seenSemanticProviders.put(semanticKey, providerId);
+                }
+            }
+            IndexRecipeProviderStats providerStats = statsForProvider(player, provider, providerCategories, providerRecipes, error);
+            stats.add(providerStats);
+            if (provider == VanillaIndexRecipeProvider.INSTANCE
+                    && providerStats.rawRecipeCount() > 0
+                    && providerStats.adaptedRecipeCount() == 0) {
+                warnings.add("Vanilla recipes were received (" + providerStats.rawRecipeCount()
+                        + " raw) but no recipe views were adapted.");
+            }
+        }
+
+        List<IndexRecipeCategory> sortedCategories = mergedCategories.values().stream()
+                .sorted(Comparator.comparingInt(IndexRecipeCategory::order)
+                        .thenComparing(category -> category.id().toString()))
+                .toList();
+        Map<Identifier, Integer> categoryOrder = new LinkedHashMap<>();
+        for (int i = 0; i < sortedCategories.size(); i++) {
+            categoryOrder.put(sortedCategories.get(i).id(), i);
+        }
+
+        List<IndexRecipeView> sortedRecipes = mergedRecipes.stream()
+                .sorted(recipeComparator(categoryOrder))
+                .toList();
+        Map<Item, List<IndexRecipeView>> byOutputMutable = new LinkedHashMap<>();
+        Map<Item, List<IndexRecipeView>> byUsageMutable = new LinkedHashMap<>();
+        Map<Identifier, List<IndexRecipeView>> byCategoryMutable = new LinkedHashMap<>();
+        Map<Identifier, IndexRecipeView> byId = new LinkedHashMap<>();
+        Map<Identifier, IndexRecipeDisplayMetadata> displayMetadata = new LinkedHashMap<>();
+        Map<Identifier, Integer> categoryCounts = new LinkedHashMap<>();
+
+        for (IndexRecipeView recipe : sortedRecipes) {
+            byId.put(recipe.id(), recipe);
+            VanillaIndexRecipeProvider.INSTANCE.metadataFor(recipe.id())
+                    .ifPresent(metadata -> displayMetadata.put(recipe.id(), metadata));
+            categoryCounts.merge(recipe.categoryId(), 1, Integer::sum);
+            byCategoryMutable.computeIfAbsent(recipe.categoryId(), ignored -> new ArrayList<>()).add(recipe);
+            addItems(byOutputMutable, recipe.itemsForRole(IndexSlotRole.OUTPUT), recipe);
+            if (!sourceCard(recipe)) {
+                addItems(byUsageMutable, recipe.itemsForRole(IndexSlotRole.INPUT), recipe);
+                addItems(byUsageMutable, recipe.itemsForRole(IndexSlotRole.CATALYST), recipe);
+                addItems(byUsageMutable, recipe.itemsForRole(IndexSlotRole.MACHINE), recipe);
+            }
+            if (!IndexRecipeSnapshot.hasRole(recipe, IndexSlotRole.OUTPUT)) {
+                warnings.add("Recipe " + recipe.id() + " has no output slot.");
+            }
+            if (!sourceCard(recipe)
+                    && !IndexRecipeSnapshot.hasRole(recipe, IndexSlotRole.INPUT)
+                    && !IndexRecipeSnapshot.hasRole(recipe, IndexSlotRole.CATALYST)
+                    && !IndexRecipeSnapshot.hasRole(recipe, IndexSlotRole.MACHINE)) {
+                warnings.add("Recipe " + recipe.id() + " has no input, catalyst, or machine slot.");
+            }
+        }
+
+        for (IndexRecipeCategory category : sortedCategories) {
+            if (categoryCounts.getOrDefault(category.id(), 0) == 0) {
+                warnings.add("Recipe category " + category.id() + " has zero recipe views.");
+            }
+        }
+
+        boolean client = recipeClientContext(player);
+        String buildReason = client ? clientSnapshotReason : serverSnapshotReason;
+        return new IndexRecipeSnapshot(
+                sortedCategories,
+                sortedRecipes,
+                freezeIdentifierIndex(byProviderMutable),
+                freezeIdentifierIndex(byCategoryMutable),
+                freezeIndex(byOutputMutable),
+                freezeIndex(byUsageMutable),
+                byId,
+                displayMetadata,
+                stats,
+                warnings,
+                System.currentTimeMillis(),
+                recipeSnapshotGeneration.incrementAndGet(),
+                buildReason);
+    }
+
+    private static IndexRecipeProviderStats statsForProvider(Player player, IIndexRecipeProvider provider,
+            List<IndexRecipeCategory> categories, List<IndexRecipeView> recipes, String error) {
+        int raw = recipes.size();
+        int adapted = recipes.size();
+        int sourceCards = 0;
+        int skipped = 0;
+        int sourceFacts = 0;
+        if (provider == VanillaIndexRecipeProvider.INSTANCE) {
+            raw = VanillaIndexRecipeProvider.rawRecipeCount(player);
+            skipped = VanillaIndexRecipeProvider.INSTANCE.skippedRecipeCount();
+        } else if (provider == IndexSourceRecipeProvider.INSTANCE) {
+            sourceFacts = IndexSourceRecipeProvider.INSTANCE.sourceFactCount();
+            sourceCards = recipes.size();
+            raw = sourceFacts;
+            adapted = sourceCards;
+        } else {
+            sourceCards = (int) recipes.stream().filter(IndexService::sourceCard).count();
+        }
+        return new IndexRecipeProviderStats(provider.id(), categories.size(), raw, adapted, sourceFacts,
+                sourceCards, skipped, error);
+    }
+
+    private static Comparator<IndexRecipeView> recipeComparator(Map<Identifier, Integer> categoryOrder) {
+        return Comparator.comparing(IndexService::sourceCard)
+                .thenComparingInt(recipe -> categoryOrder.getOrDefault(recipe.categoryId(), Integer.MAX_VALUE))
+                .thenComparing(recipe -> recipe.title().toLowerCase(Locale.ROOT))
+                .thenComparing(recipe -> recipe.id().toString());
+    }
+
+    private static void removeMergedRecipe(List<IndexRecipeView> recipes,
+            Map<Identifier, List<IndexRecipeView>> byProvider, Identifier providerId, IndexRecipeView recipe) {
+        if (recipe == null) {
+            return;
+        }
+        recipes.remove(recipe);
+        List<IndexRecipeView> providerRecipes = byProvider.get(providerId);
+        if (providerRecipes != null) {
+            providerRecipes.remove(recipe);
+            if (providerRecipes.isEmpty()) {
+                byProvider.remove(providerId);
+            }
+        }
+    }
+
+    private static boolean terminalImportProvider(Identifier providerId) {
+        return IndexIds.PROVIDER_TERMINAL_IMPORT.equals(providerId);
+    }
+
+    private static String semanticRecipeKey(IndexRecipeView recipe) {
+        if (recipe == null || sourceCard(recipe)) {
+            return "";
+        }
+        List<String> outputs = semanticRoleParts(recipe, IndexSlotRole.OUTPUT);
+        if (outputs.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(recipe.sourceModId().toLowerCase(Locale.ROOT)).append('|');
+        appendStackPart(builder, "machine", recipe.machine());
+        appendRoleParts(builder, "input", semanticRoleParts(recipe, IndexSlotRole.INPUT));
+        appendRoleParts(builder, "catalyst", semanticRoleParts(recipe, IndexSlotRole.CATALYST));
+        appendRoleParts(builder, "machine", semanticRoleParts(recipe, IndexSlotRole.MACHINE));
+        appendRoleParts(builder, "output", outputs);
+        return builder.toString();
+    }
+
+    private static List<String> semanticRoleParts(IndexRecipeView recipe, IndexSlotRole role) {
+        Set<String> uniqueParts = new LinkedHashSet<>();
+        if (role == IndexSlotRole.MACHINE && !recipe.machine().isEmpty()) {
+            uniqueParts.add(stackPart(recipe.machine()));
+        }
+        for (IndexRecipeSlot slot : recipe.slots()) {
+            if (slot.role() != role) {
+                continue;
+            }
+            if (slot.stacks().isEmpty()) {
+                if (!slot.label().isBlank()) {
+                    uniqueParts.add("label=" + normalize(slot.label()));
+                }
+                continue;
+            }
+            for (ItemStack stack : slot.stacks()) {
+                if (!stack.isEmpty()) {
+                    uniqueParts.add(stackPart(stack));
+                }
+            }
+        }
+        List<String> parts = new ArrayList<>(uniqueParts);
+        parts.sort(String::compareTo);
+        return parts;
+    }
+
+    private static void appendRoleParts(StringBuilder builder, String role, List<String> parts) {
+        builder.append(role).append('=');
+        for (String part : parts) {
+            builder.append(part).append(',');
+        }
+        builder.append('|');
+    }
+
+    private static void appendStackPart(StringBuilder builder, String role, ItemStack stack) {
+        builder.append(role).append('=');
+        if (stack != null && !stack.isEmpty()) {
+            builder.append(stackPart(stack));
+        }
+        builder.append('|');
+    }
+
+    private static String stackPart(ItemStack stack) {
+        return itemId(stack.getItem()) + "@" + Math.max(1, stack.getCount());
+    }
+
+    private static Map<Item, List<IndexRecipeView>> freezeIndex(Map<Item, List<IndexRecipeView>> mutable) {
+        Map<Item, List<IndexRecipeView>> frozen = new LinkedHashMap<>();
+        mutable.forEach((item, recipes) -> frozen.put(item, List.copyOf(recipes)));
+        return frozen;
+    }
+
+    private static Map<Identifier, List<IndexRecipeView>> freezeIdentifierIndex(
+            Map<Identifier, List<IndexRecipeView>> mutable) {
+        Map<Identifier, List<IndexRecipeView>> frozen = new LinkedHashMap<>();
+        mutable.forEach((id, recipes) -> frozen.put(id, List.copyOf(recipes)));
+        return frozen;
+    }
+
+    private static void addItems(Map<Item, List<IndexRecipeView>> index, Set<Item> items, IndexRecipeView recipe) {
+        for (Item item : items) {
+            if (item == null || item == Items.AIR) {
+                continue;
+            }
+            index.computeIfAbsent(item, ignored -> new ArrayList<>()).add(recipe);
+        }
+    }
+
+    private static boolean sourceCard(IndexRecipeView recipe) {
+        return IndexRecipeSourceKind.isSourceCard(recipe);
+    }
+
+    private static String compactError(RuntimeException exception) {
+        String message = exception.getMessage();
+        String type = exception.getClass().getSimpleName();
+        if (message == null || message.isBlank()) {
+            return type;
+        }
+        return type + ": " + message.strip();
+    }
+
+    private static List<ItemStack> clientCatalogStacks(Player player) {
+        if (!recipeClientContextStatic(player)) {
+            return List.of();
+        }
+        try {
+            Object result = Class.forName("com.knoxhack.echoindex.client.ClientRecipeDisplayAccess")
+                    .getMethod("creativeCatalogStacks", Player.class)
+                    .invoke(null, player);
+            if (result instanceof List<?> list) {
+                List<ItemStack> stacks = new ArrayList<>();
+                for (Object candidate : list) {
+                    if (candidate instanceof ItemStack stack && !stack.isEmpty()) {
+                        stacks.add(stack.copy());
+                    }
+                }
+                return stacks;
+            }
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
+            EchoIndex.LOGGER.debug("Index could not merge creative-tab display stacks.", exception);
+        }
+        return List.of();
+    }
+
+    private static boolean recipeClientContextStatic(Player player) {
+        return player != null && player.level() != null && player.level().getServer() == null;
+    }
+
+    private static String stackKey(ItemStack stack) {
+        return itemId(stack.getItem()) + "#" + ItemStack.hashItemAndComponents(stack);
+    }
+
     public List<ItemStack> itemCatalog(Player player) {
+        boolean client = recipeClientContext(player);
         List<ItemStack> cached = cachedItems;
-        if (Config.SEARCH_CACHE_ENABLED.get() && !cached.isEmpty()) {
+        if (Config.SEARCH_CACHE_ENABLED.get() && !cached.isEmpty() && cachedItemsClient == client) {
             return cached;
         }
-        List<ItemStack> built = BuiltInRegistries.ITEM.stream()
+        Map<String, ItemStack> stacks = new LinkedHashMap<>();
+        BuiltInRegistries.ITEM.stream()
                 .filter(item -> item != Items.AIR)
                 .map(item -> new ItemStack(item))
-                .sorted(Comparator.<ItemStack, String>comparing(stack -> stack.getHoverName().getString().toLowerCase(Locale.ROOT))
-                        .thenComparing(stack -> itemId(stack.getItem()).toString()))
+                .forEach(stack -> stacks.putIfAbsent(stackKey(stack), stack));
+        for (ItemStack stack : clientCatalogStacks(player)) {
+            if (!stack.isEmpty()) {
+                stacks.putIfAbsent(stackKey(stack), stack.copy());
+            }
+        }
+        List<ItemStack> built = stacks.values().stream()
+                .sorted(itemCatalogComparator())
                 .toList();
         cachedItems = built;
+        cachedItemsClient = client;
         return built;
+    }
+
+    private static Comparator<ItemStack> itemCatalogComparator() {
+        return Comparator
+                .comparingInt((ItemStack stack) -> "minecraft".equals(itemId(stack.getItem()).getNamespace()) ? 0 : 1)
+                .thenComparing(stack -> itemId(stack.getItem()).getNamespace().toLowerCase(Locale.ROOT))
+                .thenComparing(stack -> stack.getHoverName().getString().toLowerCase(Locale.ROOT))
+                .thenComparing(stack -> itemId(stack.getItem()).getPath())
+                .thenComparing(IndexService::stackKey);
     }
 
     public List<ItemStack> filteredItems(Player player, String query, int maxResults) {
@@ -250,6 +696,17 @@ public final class IndexService implements IIndexService, IIndexRegistry, IIndex
                 .filter(stack -> itemMatches(player, stack, normalized))
                 .limit(limit)
                 .toList();
+    }
+
+    public List<ItemStack> filteredItemsUnbounded(Player player, String query) {
+        String normalized = normalize(query);
+        return itemCatalog(player).stream()
+                .filter(stack -> itemMatches(player, stack, normalized))
+                .toList();
+    }
+
+    public int catalogCount(Player player) {
+        return itemCatalog(player).size();
     }
 
     @Override
@@ -282,6 +739,12 @@ public final class IndexService implements IIndexService, IIndexRegistry, IIndex
     @Override
     public void invalidate() {
         cachedItems = List.of();
+        cachedItemsClient = false;
+        invalidateRecipes("index cache invalidated");
+    }
+
+    public void refresh() {
+        invalidate();
     }
 
     @Override
@@ -315,6 +778,21 @@ public final class IndexService implements IIndexService, IIndexRegistry, IIndex
     @Override
     public Set<Identifier> bookmarks(Player player) {
         return player == null ? ClientIndexState.bookmarks() : IndexDiscoveryStore.INSTANCE.bookmarks(player);
+    }
+
+    public boolean setRecipePinned(ServerPlayer player, Identifier recipeId, boolean pinned) {
+        return IndexDiscoveryStore.INSTANCE.setRecipePinned(player, recipeId, pinned);
+    }
+
+    public boolean isRecipePinned(Player player, Identifier recipeId) {
+        if (player == null) {
+            return ClientIndexState.isRecipePinned(recipeId);
+        }
+        return IndexDiscoveryStore.INSTANCE.isRecipePinned(player, recipeId);
+    }
+
+    public Set<Identifier> pinnedRecipes(Player player) {
+        return player == null ? ClientIndexState.pinnedRecipes() : IndexDiscoveryStore.INSTANCE.pinnedRecipes(player);
     }
 
     @Override

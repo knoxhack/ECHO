@@ -34,6 +34,35 @@ public class EchoNexusProtocolClient {
    }
 
    @SubscribeEvent static void registerMenuScreens(RegisterMenuScreensEvent event) { event.register(ModMenus.NEXUS_MACHINE.get(), NexusMachineScreen::new); }
-   @SubscribeEvent static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) { event.registerEntityRenderer(ModEntities.NEXUS_HUSK.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("nexus_husk"), 0xFFD9A4FF, 1.0F, 0.55F)); event.registerEntityRenderer(ModEntities.DATA_WRAITH.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("data_wraith"), 0xFF9FE8FF, 0.9F, 0.25F)); event.registerEntityRenderer(ModEntities.STATIC_CRAWLER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("static_crawler"), 0xFFB85CFF, 0.72F, 0.25F)); event.registerEntityRenderer(ModEntities.CORE_SOLDIER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("core_soldier"), 0xFF7C8EAA, 1.08F, 0.62F)); event.registerEntityRenderer(ModEntities.ARCHIVE_SEEKER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("archive_seeker"), 0xFFE8F8FF, 1.18F, 0.45F)); event.registerEntityRenderer(ModEntities.CORRUPTION_WARDEN.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("corruption_warden"), 0xFFFF62D6, 1.35F, 0.95F)); event.registerEntityRenderer(ModEntities.NEXUS_GUARDIAN.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("nexus_guardian"), 0xFF66E8FF, 1.65F, 1.1F)); }
+
+   @SubscribeEvent static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      if (ModList.get().isLoaded("echorendercore") && registerRenderCoreEntityRenderers(event)) {
+         return;
+      }
+      registerTintedEntityRenderers(event);
+   }
+
+   public static void registerTintedEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      event.registerEntityRenderer(ModEntities.NEXUS_HUSK.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("nexus_husk"), 0xFFD9A4FF, 1.0F, 0.55F));
+      event.registerEntityRenderer(ModEntities.DATA_WRAITH.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("data_wraith"), 0xFF9FE8FF, 0.9F, 0.25F));
+      event.registerEntityRenderer(ModEntities.STATIC_CRAWLER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("static_crawler"), 0xFFB85CFF, 0.72F, 0.25F));
+      event.registerEntityRenderer(ModEntities.CORE_SOLDIER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("core_soldier"), 0xFF7C8EAA, 1.08F, 0.62F));
+      event.registerEntityRenderer(ModEntities.ARCHIVE_SEEKER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("archive_seeker"), 0xFFE8F8FF, 1.18F, 0.45F));
+      event.registerEntityRenderer(ModEntities.CORRUPTION_WARDEN.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("corruption_warden"), 0xFFFF62D6, 1.35F, 0.95F));
+      event.registerEntityRenderer(ModEntities.NEXUS_GUARDIAN.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("nexus_guardian"), 0xFF66E8FF, 1.65F, 1.1F));
+   }
+
+   private static boolean registerRenderCoreEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      try {
+         Class.forName("com.knoxhack.echonexusprotocol.integration.NexusRenderCoreClientIntegration")
+            .getMethod("registerEntityRenderers", EntityRenderersEvent.RegisterRenderers.class)
+            .invoke(null, event);
+         return true;
+      } catch (ReflectiveOperationException | LinkageError exception) {
+         EchoNexusProtocol.LOGGER.warn("ECHO Nexus Protocol RenderCore entity renderer integration unavailable; using tinted fallback renderers.", exception);
+         return false;
+      }
+   }
+
    private static Identifier entityTexture(String name) { return Identifier.fromNamespaceAndPath(EchoNexusProtocol.MODID, "textures/entity/" + name + ".png"); }
 }

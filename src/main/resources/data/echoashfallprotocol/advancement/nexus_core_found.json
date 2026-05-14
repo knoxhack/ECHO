@@ -10,12 +10,9 @@
   },
   "parent": "echoashfallprotocol:first_power_node",
   "criteria": {
-    "interact_nexus": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": []
-      }
+    "found_nexus_core": {
+      "trigger": "minecraft:impossible"
     }
   },
-  "requirements": [["interact_nexus"]]
+  "requirements": [["found_nexus_core"]]
 }

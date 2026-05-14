@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "family": "slime",
+  "intended_runtime": "NeoForge EntityModel with RenderCorePartProvider",
+  "texture_size": [
+    64,
+    64
+  ],
+  "anchors": {
+    "core": [
+      0.0,
+      0.45,
+      0.0
+    ],
+    "eyes": [
+      0.0,
+      0.9,
+      -0.35
+    ],
+    "trail": [
+      0.0,
+      0.18,
+      0.55
+    ],
+    "ground": [
+      0.0,
+      0.04,
+      0.0
+    ],
+    "exhaust": [
+      0.0,
+      0.6,
+      0.65
+    ],
+    "scanner": [
+      0.0,
+      0.7,
+      -0.45
+    ]
+  },
+  "parts": [
+    {
+      "name": "body",
+      "role": "structural model part",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.293,
+        0.0
+      ]
+    },
+    {
+      "name": "inner_core",
+      "role": "RenderCore glow and charge anchor",
+      "cube": [
+        7.2,
+        7.2,
+        4.4
+      ],
+      "pivot": [
+        0.0,
+        0.45,
+        0.0
+      ]
+    },
+    {
+      "name": "puddle",
+      "role": "structural model part",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.293,
+        0.0
+      ]
+    },
+    {
+      "name": "bubbles",
+      "role": "structural model part",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.293,
+        0.0
+      ]
+    },
+    {
+      "name": "eyes",
+      "role": "emissive focal point",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.9,
+        -0.25
+      ]
+    }
+  ],
+  "animation_contract": {
+    "idle": [
+      "body"
+    ],
+    "active": [
+      "body",
+      "core"
+    ],
+    "scan": [
+      "eyes",
+      "scanner"
+    ],
+    "charge": [
+      "core"
+    ],
+    "damaged": [
+      "body",
+      "exhaust"
+    ],
+    "corrupt": [
+      "body",
+      "core"
+    ]
+  }
+}

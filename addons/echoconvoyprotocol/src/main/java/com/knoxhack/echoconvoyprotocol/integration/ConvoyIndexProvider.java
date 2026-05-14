@@ -2,8 +2,11 @@ package com.knoxhack.echoconvoyprotocol.integration;
 
 import com.knoxhack.echoconvoyprotocol.EchoConvoyProtocol;
 import com.knoxhack.echoconvoyprotocol.block.ConvoyBlock.ConvoyBlockKind;
+import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
+import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
 import com.knoxhack.echoconvoyprotocol.recipe.ConvoyStationRecipe;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlocks;
+import com.knoxhack.echoconvoyprotocol.registry.ModItems;
 import com.knoxhack.echoconvoyprotocol.registry.ModRecipes;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.index.IIndexEntryProvider;
@@ -15,6 +18,7 @@ import com.knoxhack.echocore.api.index.IndexEntryState;
 import com.knoxhack.echocore.api.index.IndexRecipeCategory;
 import com.knoxhack.echocore.api.index.IndexRecipeSlot;
 import com.knoxhack.echocore.api.index.IndexRecipeView;
+import com.knoxhack.echocore.api.index.IndexSlotRole;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +37,7 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
    INSTANCE;
 
    private static final Identifier CATEGORY_MACHINES = id("machines");
+   private static final Identifier CATEGORY_ROUTES = id("recipe/convoy_routes");
 
    public static void register() {
       EchoCoreServices.registerIndexProvider(INSTANCE);
@@ -81,6 +86,8 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
                machineStack(kind), 0xFFFFD166, 360 + kind.ordinal()));
          }
       }
+      categories.add(new IndexRecipeCategory(CATEGORY_ROUTES, "Convoy Routes",
+         new ItemStack(ModItems.ROUTE_BEACON.get()), 0xFF00D8FF, 390));
       return categories;
    }
 
@@ -96,7 +103,7 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
          }
          ItemStack machine = machineStack(recipe.station());
          List<IndexRecipeSlot> slots = new ArrayList<>();
-         for (ConvoyStationRecipe.StationIngredient ingredient : recipe.ingredients()) {
+         for (var ingredient : recipe.ingredients()) {
             slots.add(IndexRecipeSlot.inputs(stacks(ingredient.ingredient(), ingredient.count())));
          }
          slots.add(IndexRecipeSlot.machine(machine));
@@ -114,17 +121,82 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
             false,
             EchoConvoyProtocol.MODID));
       }
+      for (ConvoyRouteDefinition route : ConvoyContent.routes()) {
+         views.add(routeView(route));
+      }
       return views;
    }
 
-   private static List<RecipeHolder<?>> recipeHolders(Player player) {
-      MinecraftServer server = player.level().getServer();
-      if (server == null) {
-         return List.of();
+   private static IndexRecipeView routeView(ConvoyRouteDefinition route) {
+      ItemStack machine = new ItemStack(ModBlocks.ROUTE_DISPATCH_TOWER_CONTROLLER.asItem());
+      List<IndexRecipeSlot> slots = new ArrayList<>();
+      for (ConvoyRouteDefinition.StackSpec cargo : route.requiredCargo()) {
+         ItemStack stack = cargo.stack();
+         if (stack.isEmpty()) {
+            slots.add(new IndexRecipeSlot(IndexSlotRole.INPUT, List.of(), cargo.count() + "x " + cargo.itemId()));
+         } else {
+            slots.add(IndexRecipeSlot.input(stack));
+         }
       }
+      if (route.minFuel() > 0 || route.fuelCost() > 0) {
+         int fuel = Math.max(route.minFuel(), route.fuelCost());
+         slots.add(new IndexRecipeSlot(IndexSlotRole.INPUT, List.of(), "Fuel readiness: " + fuel));
+      }
+      ItemStack vehicle = vehicleKit(route.requiredVehicle());
+      if (vehicle.isEmpty()) {
+         slots.add(new IndexRecipeSlot(IndexSlotRole.CATALYST, List.of(), "Vehicle: " + route.requiredVehicle()));
+      } else {
+         slots.add(IndexRecipeSlot.catalyst(vehicle, "Vehicle"));
+      }
+      slots.add(IndexRecipeSlot.machine(machine));
+      slots.add(IndexRecipeSlot.of(IndexSlotRole.MACHINE, new ItemStack(ModBlocks.ROADSIDE_SIGNAL_MARKER.asItem()), "Signal marker"));
+      for (ConvoyRouteDefinition.StackSpec reward : route.rewards()) {
+         ItemStack stack = reward.stack();
+         if (stack.isEmpty()) {
+            slots.add(new IndexRecipeSlot(IndexSlotRole.OUTPUT, List.of(), reward.count() + "x " + reward.itemId()));
+         } else {
+            slots.add(IndexRecipeSlot.output(stack));
+         }
+      }
+      if (route.rewards().isEmpty()) {
+         slots.add(new IndexRecipeSlot(IndexSlotRole.OUTPUT, List.of(), "Route completion: " + route.title()));
+      }
+
+      List<String> notes = new ArrayList<>();
+      if (!route.summary().isBlank()) {
+         notes.add(route.summary());
+      }
+      notes.add("Destination: " + route.destinationHint());
+      notes.add("Threat: " + route.threat().label() + " (level " + route.threatLevel() + ")");
+      notes.add("Distance: " + route.distance() + " blocks");
+      notes.add("Checkpoint: " + route.checkpoint().label() + ", faction " + route.checkpointFactionId()
+         + ", reputation " + route.minReputation());
+      notes.add("Markers: " + route.requiredSignalMarkers() + ", readiness " + route.requiredReadiness() + "%");
+      if (route.logisticsLoadoutId() != null) {
+         notes.add("Logistics loadout: " + route.logisticsLoadoutId());
+      }
+      if (!route.possibleHazards().isEmpty()) {
+         notes.add("Possible hazards: " + String.join(", ", route.possibleHazards()));
+      }
+      notes.add("Field ops: " + route.fieldOps().stageCount(route) + " stage(s), "
+         + route.fieldOps().durationTicks(route) + " ticks, profile " + route.fieldOps().incidentProfile());
+
+      return new IndexRecipeView(
+         id("recipe/route/" + route.id().getNamespace() + "/" + route.id().getPath()),
+         CATEGORY_ROUTES,
+         route.title(),
+         machine,
+         slots,
+         notes,
+         route.fieldOps().durationTicks(route),
+         false,
+         EchoConvoyProtocol.MODID);
+   }
+
+   private static List<RecipeHolder<?>> recipeHolders(Player player) {
       try {
          List<RecipeHolder<?>> holders = new ArrayList<>();
-         for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+         for (RecipeHolder<?> holder : allRecipeHolders(player)) {
             if (holder.value().getType() == ModRecipes.CONVOY_STATION_PROCESSING_TYPE.get()) {
                holders.add(holder);
             }
@@ -132,6 +204,29 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
          return holders;
       } catch (RuntimeException ignored) {
          EchoConvoyProtocol.LOGGER.debug("ECHO: Index could not enumerate Convoy station recipes.");
+      }
+      return List.of();
+   }
+
+   private static List<RecipeHolder<?>> allRecipeHolders(Player player) {
+      MinecraftServer server = player.level().getServer();
+      if (server != null) {
+         return List.copyOf(server.getRecipeManager().getRecipes());
+      }
+      try {
+         Object recipes = player.level().recipeAccess().getClass().getMethod("getRecipes")
+            .invoke(player.level().recipeAccess());
+         if (recipes instanceof Iterable<?> iterable) {
+            List<RecipeHolder<?>> holders = new ArrayList<>();
+            for (Object candidate : iterable) {
+               if (candidate instanceof RecipeHolder<?> holder) {
+                  holders.add(holder);
+               }
+            }
+            return holders;
+         }
+      } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+         EchoConvoyProtocol.LOGGER.debug("ECHO: Index could not enumerate client Convoy station recipes.");
       }
       return List.of();
    }
@@ -148,6 +243,16 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
          .toList();
    }
 
+   private static ItemStack vehicleKit(String requiredVehicle) {
+      return switch ((requiredVehicle == null ? "" : requiredVehicle).toLowerCase(Locale.ROOT)) {
+         case "scrap_bike" -> new ItemStack(ModItems.SCRAP_BIKE_KIT.get());
+         case "wasteland_rover" -> new ItemStack(ModItems.WASTELAND_ROVER_KIT.get());
+         case "cargo_crawler" -> new ItemStack(ModItems.CARGO_CRAWLER_KIT.get());
+         case "armored_relay_truck" -> new ItemStack(ModItems.ARMORED_RELAY_TRUCK_KIT.get());
+         default -> ItemStack.EMPTY;
+      };
+   }
+
    private static Identifier categoryId(ConvoyBlockKind kind) {
       return id("recipe/" + kind.getSerializedName());
    }
@@ -162,6 +267,7 @@ public enum ConvoyIndexProvider implements IIndexEntryProvider, IIndexRecipeProv
          case FUEL_STILL -> ModBlocks.FUEL_STILL;
          case BATTERY_CHARGING_PAD -> ModBlocks.BATTERY_CHARGING_PAD;
          case VEHICLE_DOCK -> ModBlocks.VEHICLE_DOCK;
+         case VEHICLE_UPGRADE_BAY -> ModBlocks.VEHICLE_UPGRADE_BAY;
          case CONVOY_BEACON -> ModBlocks.CONVOY_BEACON;
          case ROADSIDE_SIGNAL_MARKER -> ModBlocks.ROADSIDE_SIGNAL_MARKER;
          case CARGO_ANCHOR -> ModBlocks.CARGO_ANCHOR;

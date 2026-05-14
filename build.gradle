@@ -150,7 +150,7 @@ def echoAddonSet = (project.findProperty('echoAddonSet') ?: 'all').toString().to
 if (!['beta', 'all'].contains(echoAddonSet)) {
     throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
 }
-def echoBetaAddonPaths = [':echonetcore', ':echoterminal', ':echomissioncore', ':echodatacore', ':echosignalos', ':signalosexample', ':echoorbitalremnants', ':echonexusprotocol', ':echoagriculturereclamation', ':echoworldcore'] as Set
+def echoBetaAddonPaths = [':echonetcore', ':echoterminal', ':echomissioncore', ':echodatacore', ':echomultiblockcore', ':echoruntimeguard', ':echosignalos', ':signalosexample', ':echorendercore', ':echoorbitalremnants', ':echonexusprotocol', ':echoagriculturereclamation', ':echoworldcore', ':echoblockworks', ':echothemecore', ':echoplayercore', ':echopowergrid', ':echosoundcore', ':echotutorialcore', ':echorelictech', ':echoweathercore'] as Set
 
 def echoIncludedAddonProjects = {
     rootProject.subprojects
@@ -173,6 +173,7 @@ dependencies {
     implementation project(':echocore')
     implementation project(':echonetcore')
     implementation project(':echoterminal')
+    compileOnly project(':echorendercore')
     echoIncludedAddonProjects().each { addonProject ->
         localRuntime addonProject
     }
@@ -310,6 +311,13 @@ tasks.register('validateEchoResources', Exec) {
     commandLine echoPythonExecutable, 'tools/validate_resources.py', '--addon-set', echoAddonSet
 }
 
+tasks.register('validateEchoMobRenderCoreAssets', Exec) {
+    group = 'verification'
+    description = 'Validates generated ECHO mob RenderCore manifest, profiles, particles, animations, and textures.'
+    workingDir = projectDir
+    commandLine echoPythonExecutable, 'tools/validate_echo_mob_rendercore_assets.py'
+}
+
 tasks.register('validateEchoGameplayData', Exec) {
     group = 'verification'
     description = 'Runs ECHO gameplay data validation.'
@@ -353,6 +361,7 @@ tasks.register('verifyEchoRelease') {
     group = 'verification'
     description = "Runs release-hardening validators, workspace build, and ${echoAddonSet} GameTest servers."
     dependsOn tasks.named('validateEchoResources')
+    dependsOn tasks.named('validateEchoMobRenderCoreAssets')
     dependsOn tasks.named('validateEchoGameplayData')
     dependsOn tasks.named('checkEchoPoiStructures')
     dependsOn 'checkEchoModJarSet'

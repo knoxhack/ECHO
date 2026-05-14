@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoconvoyprotocol:item/cargo_input_crate"
+  }
+}

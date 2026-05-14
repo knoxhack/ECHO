@@ -11,6 +11,8 @@ import com.knoxhack.echoterminal.api.TerminalAddonLink;
 import com.knoxhack.echoterminal.api.TerminalAddonMetric;
 import com.knoxhack.echoterminal.api.TerminalAddonSection;
 import com.knoxhack.echoterminal.api.TerminalIcon;
+import com.knoxhack.echoterminal.api.TerminalLayoutProfile;
+import com.knoxhack.echoterminal.api.TerminalPageLayout;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalNavigationSection;
@@ -53,7 +55,10 @@ import com.knoxhack.echoterminal.client.mission.TerminalMissionHudController;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionNotice;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionNoticeType;
 import com.knoxhack.echoterminal.client.recipe.TerminalRecipeIndexTab;
+import com.knoxhack.echoterminal.client.screen.EchoTerminalScreen;
 import com.knoxhack.echoterminal.client.screen.TerminalClientOptions;
+import com.knoxhack.echoterminal.client.screen.TerminalScreenTheme;
+import com.knoxhack.echoterminal.integration.TerminalRenderCoreClientIntegration;
 import com.knoxhack.echoterminal.discovery.TerminalDiscoveryProvider;
 import com.knoxhack.echoterminal.menu.EchoTerminalMenu;
 import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
@@ -77,6 +82,7 @@ import com.knoxhack.echocore.api.config.EchoConfigModuleSnapshot;
 import com.knoxhack.echocore.api.config.EchoConfigProvider;
 import com.knoxhack.echocore.api.config.EchoConfigRegistry;
 import com.knoxhack.echocore.api.config.EchoConfigSide;
+import com.knoxhack.echocore.api.config.EchoConfigValueKind;
 import com.knoxhack.echocore.discovery.EchoDiscoveryData;
 import com.knoxhack.echoterminal.network.TerminalConfigActionPacket;
 import com.knoxhack.echoterminal.network.TerminalConfigClientState;
@@ -118,6 +124,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.lwjgl.glfw.GLFW;
 
 public final class ModGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> TEST_FUNCTIONS =
@@ -153,6 +160,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("terminal_theme_selection", () -> ModGameTests::terminalThemeSelection);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_ZOOM_OPTIONS =
             TEST_FUNCTIONS.register("terminal_zoom_options", () -> ModGameTests::terminalZoomOptions);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_VISUAL_POLISH_LAYOUT =
+            TEST_FUNCTIONS.register("terminal_visual_polish_layout", () -> ModGameTests::terminalVisualPolishLayout);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_RESOURCE_NAME_CONTRACTS =
             TEST_FUNCTIONS.register("terminal_resource_name_contracts", () -> ModGameTests::terminalResourceNameContracts);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_COMMAND_DECK_PRIORITY =
@@ -225,6 +234,7 @@ public final class ModGameTests {
         register(event, environment, "terminal_theme_resources", TERMINAL_THEME_RESOURCES.getId());
         register(event, environment, "terminal_theme_selection", TERMINAL_THEME_SELECTION.getId());
         register(event, environment, "terminal_zoom_options", TERMINAL_ZOOM_OPTIONS.getId());
+        register(event, environment, "terminal_visual_polish_layout", TERMINAL_VISUAL_POLISH_LAYOUT.getId());
         register(event, environment, "terminal_resource_name_contracts", TERMINAL_RESOURCE_NAME_CONTRACTS.getId());
         register(event, environment, "terminal_command_deck_priority", TERMINAL_COMMAND_DECK_PRIORITY.getId());
         register(event, environment, "terminal_mission_action_routing", TERMINAL_MISSION_ACTION_ROUTING.getId());
@@ -948,6 +958,117 @@ public final class ModGameTests {
                 "50% terminal zoom should scale to 0.5");
         helper.assertTrue(TerminalClientOptions.TerminalZoom.ZOOM_150.scale() == 1.5D,
                 "150% terminal zoom should scale to 1.5");
+        TerminalScreenTheme theme = TerminalScreenTheme.modular();
+        EchoTerminalScreen.LayoutMetrics zoom50 = EchoTerminalScreen.layoutMetricsForTests(
+                2048, 1152, theme,
+                TerminalClientOptions.InterfaceDensity.BALANCED,
+                TerminalClientOptions.TerminalZoom.ZOOM_50,
+                false);
+        EchoTerminalScreen.LayoutMetrics zoom100 = EchoTerminalScreen.layoutMetricsForTests(
+                2048, 1152, theme,
+                TerminalClientOptions.InterfaceDensity.BALANCED,
+                TerminalClientOptions.TerminalZoom.ZOOM_100,
+                false);
+        EchoTerminalScreen.LayoutMetrics zoom150 = EchoTerminalScreen.layoutMetricsForTests(
+                2048, 1152, theme,
+                TerminalClientOptions.InterfaceDensity.BALANCED,
+                TerminalClientOptions.TerminalZoom.ZOOM_150,
+                false);
+        helper.assertTrue(zoom50.panelX() == zoom100.panelX() && zoom100.panelX() == zoom150.panelX()
+                        && zoom50.panelY() == zoom100.panelY() && zoom100.panelY() == zoom150.panelY()
+                        && zoom50.panelW() == zoom100.panelW() && zoom100.panelW() == zoom150.panelW()
+                        && zoom50.panelH() == zoom100.panelH() && zoom100.panelH() == zoom150.panelH(),
+                "Terminal zoom should not resize or move the outer shell");
+        helper.assertTrue(zoom50.contentX() == zoom100.contentX() && zoom100.contentX() == zoom150.contentX()
+                        && zoom50.contentY() == zoom100.contentY() && zoom100.contentY() == zoom150.contentY()
+                        && zoom50.contentW() == zoom100.contentW() && zoom100.contentW() == zoom150.contentW()
+                        && zoom50.contentH() == zoom100.contentH() && zoom100.contentH() == zoom150.contentH(),
+                "Terminal zoom should keep the outer content frame fixed");
+        helper.assertTrue(zoom50.renderContentX() < zoom100.renderContentX()
+                        && zoom100.renderContentX() < zoom150.renderContentX()
+                        && zoom50.renderContentW() > zoom100.renderContentW()
+                        && zoom100.renderContentW() > zoom150.renderContentW(),
+                "Terminal zoom should affect the padded tab-rendered content viewport");
+        for (EchoTerminalScreen.LayoutMetrics metrics : List.of(zoom50, zoom100, zoom150)) {
+            helper.assertTrue(metrics.panelW() > 0 && metrics.panelH() > 0,
+                    "Terminal shell dimensions should stay positive");
+            helper.assertTrue(metrics.contentW() > 0 && metrics.contentH() > 0,
+                    "Terminal content frame dimensions should stay positive");
+            helper.assertTrue(metrics.renderContentW() > 0 && metrics.renderContentH() > 0,
+                    "Terminal rendered content dimensions should stay positive");
+        }
+        helper.succeed();
+    }
+
+    private static void terminalVisualPolishLayout(GameTestHelper helper) {
+        helper.assertTrue(Arrays.asList(TerminalLayoutProfile.values()).equals(List.of(
+                        TerminalLayoutProfile.COMPACT_STACK,
+                        TerminalLayoutProfile.MEDIUM_CAROUSEL,
+                        TerminalLayoutProfile.APP_HUB)),
+                "Terminal layout profiles should preserve compact, medium, and app hub breakpoints");
+        helper.assertTrue(Arrays.asList(TerminalPageLayout.values()).containsAll(List.of(
+                        TerminalPageLayout.DASHBOARD_GRID,
+                        TerminalPageLayout.LIST_DETAIL,
+                        TerminalPageLayout.HERO_DASHBOARD,
+                        TerminalPageLayout.COMMAND_PANEL,
+                        TerminalPageLayout.COMPACT_STACK)),
+                "Terminal page layouts should expose all visual polish templates");
+        helper.assertTrue(BuiltinTerminalTabs.addonConfigControlsStackForTests(260, EchoConfigValueKind.INTEGER),
+                "Narrow config rows should stack numeric controls below copy");
+        helper.assertFalse(BuiltinTerminalTabs.addonConfigControlsStackForTests(560, EchoConfigValueKind.ENUM),
+                "Wide enum config rows should keep controls right-aligned");
+        int narrowText = BuiltinTerminalTabs.addonConfigRowHeightForTests(260, EchoConfigValueKind.STRING, true);
+        int wideToggle = BuiltinTerminalTabs.addonConfigRowHeightForTests(560, EchoConfigValueKind.BOOLEAN, false);
+        helper.assertTrue(narrowText > wideToggle,
+                "Stacked text config rows with badges should reserve more height than simple wide toggles");
+        for (int width : List.of(160, 260, 420, 720)) {
+            helper.assertTrue(TerminalUi.responsiveControlWidth(width, true) > 0,
+                    "Responsive text controls should always reserve positive width");
+            helper.assertTrue(TerminalUi.responsiveControlRowHeight(width, true, true) > 0,
+                    "Responsive text rows should always reserve positive height");
+            helper.assertTrue(TerminalUi.responsiveControlRowHeight(width, false, false) > 0,
+                    "Responsive toggle rows should always reserve positive height");
+        }
+
+        EchoConfigRegistry.withClearedForTests(() -> {
+            AtomicInteger serverCount = new AtomicInteger(2);
+            AtomicInteger clientCount = new AtomicInteger(3);
+            EchoConfigRegistry.register(EchoConfigProvider.of(EchoTerminal.MODID, () -> new EchoConfigModule(
+                    EchoTerminal.MODID,
+                    "ECHO Terminal",
+                    List.of(
+                            new EchoConfigCategory("server", "Server", List.of(
+                                    EchoConfigEntry.intEntry("server_count", "Server Count", "",
+                                            EchoConfigSide.COMMON, 2, 0, 10, serverCount::get, serverCount::set,
+                                            null, false, true, false))),
+                            new EchoConfigCategory("client", "Client", List.of(
+                                    EchoConfigEntry.intEntry("client_count", "Client Count", "",
+                                            EchoConfigSide.CLIENT, 3, 0, 10, clientCount::get, clientCount::set,
+                                            null, true, false, false)))))));
+            TerminalConfigClientState.apply(new TerminalConfigSyncPacket(
+                    EchoConfigRegistry.snapshots(EchoConfigSide.COMMON), "Layout snapshot ready."));
+        helper.assertTrue(BuiltinTerminalTabs.addonConfigSideTitlesForTests(EchoTerminal.MODID)
+                            .equals(List.of("Server/Common", "Client Local")),
+                    "Addon config polish should keep server/common before client-local sections");
+        });
+        TerminalConfigClientState.apply(null);
+        TerminalClientOptions.VisualLevel previousVisualLevel = TerminalClientOptions.visualLevel;
+        boolean previousReducedMotion = TerminalClientOptions.reducedMotion;
+        try {
+            helper.assertTrue(TerminalRenderCoreClientIntegration.screenProfileForTests()
+                            .equals(id("screen/terminal_hud")),
+                    "RenderCore terminal screen compat should keep the terminal HUD profile id");
+            TerminalClientOptions.visualLevel = TerminalClientOptions.VisualLevel.MINIMAL;
+            TerminalClientOptions.reducedMotion = false;
+            helper.assertFalse(TerminalRenderCoreClientIntegration.shouldRenderScreenAccentForTests(),
+                    "Minimal terminal visuals should skip the RenderCore screen accent");
+            TerminalClientOptions.visualLevel = TerminalClientOptions.VisualLevel.BALANCED;
+            helper.assertTrue(TerminalRenderCoreClientIntegration.shouldRenderScreenAccentForTests(),
+                    "Balanced terminal visuals should allow the subtle RenderCore screen accent");
+        } finally {
+            TerminalClientOptions.visualLevel = previousVisualLevel;
+            TerminalClientOptions.reducedMotion = previousReducedMotion;
+        }
         helper.succeed();
     }
 
@@ -1080,6 +1201,8 @@ public final class ModGameTests {
         TerminalMissionRegistry.withClearedForTests(() -> {
             MainSurvivalQuestProvider.INSTANCE.clearCacheForTests();
             TerminalMissionRegistry.register(MainSurvivalQuestProvider.INSTANCE);
+            Identifier reclaimPowerId = Identifier.fromNamespaceAndPath("echoindustrialnexus", "mission/reclaim_power");
+            Identifier lockedFutureId = Identifier.fromNamespaceAndPath("echoindustrialnexus", "mission/locked_future");
             TerminalMissionRegistry.register(new ConfigurableMissionProvider(
                     VanillaJourneyProvider.CHAPTER_ID,
                     "Baseline",
@@ -1098,14 +1221,24 @@ public final class ModGameTests {
                     "Industrial Nexus",
                     2,
                     List.of(new ConfiguredMission(
-                            Identifier.fromNamespaceAndPath("echoindustrialnexus", "mission/reclaim_power"),
+                            reclaimPowerId,
                             "Reclaim Power",
                             "Stage 1",
                             "Factory",
                             "Production",
                             TerminalMissionRole.MAIN,
                             TerminalMissionStatus.UNLOCKED,
-                            List.of(TerminalMissionAction.enabled("scan_factory", "SCAN FACTORY"))))));
+                            List.of(TerminalMissionAction.enabled("scan_factory", "SCAN FACTORY"))),
+                            new ConfiguredMission(
+                                    lockedFutureId,
+                                    "Locked Future",
+                                    "Stage 2",
+                                    "Factory",
+                                    "Production",
+                                    TerminalMissionRole.MAIN,
+                                    TerminalMissionStatus.LOCKED,
+                                    List.of(TerminalMissionAction.disabled("scan_factory", "SCAN FACTORY",
+                                            "Factory uplink offline."))))));
             TerminalMissionRegistry.register(new ConfigurableMissionProvider(
                     id("reference_chapter"),
                     "Reference Chapter",
@@ -1149,10 +1282,17 @@ public final class ModGameTests {
             long distinctMissionIds = missions.stream().map(TerminalMissionDefinition::id).distinct().count();
             helper.assertTrue(distinctMissionIds == missions.size(),
                     "Survival route should not duplicate authored records in Phase 09");
-            helper.assertTrue(missions.stream()
-                            .map(definition -> MainSurvivalQuestProvider.INSTANCE.snapshot(null, definition.id()))
-                            .allMatch(snapshot -> snapshot.actions().isEmpty()),
-                    "Survival route should expose passive source guidance instead of fake commands");
+            TerminalMissionSnapshot reclaimSnapshot = MainSurvivalQuestProvider.INSTANCE.snapshot(null, reclaimPowerId);
+            helper.assertTrue(reclaimSnapshot.actions().stream()
+                            .anyMatch(action -> action.enabled() && "scan_factory".equals(action.id())),
+                    "Survival route should preserve enabled child mission actions");
+            helper.assertTrue(MainSurvivalQuestProvider.INSTANCE.handleAction(null, reclaimPowerId, "scan_factory"),
+                    "Survival route should delegate child actions back to the source provider");
+            TerminalMissionSnapshot lockedFutureSnapshot = MainSurvivalQuestProvider.INSTANCE.snapshot(null, lockedFutureId);
+            helper.assertTrue(lockedFutureSnapshot.actions().stream().noneMatch(TerminalMissionAction::enabled),
+                    "Locked Survival Route records should not expose enabled actions");
+            helper.assertFalse(MainSurvivalQuestProvider.INSTANCE.handleAction(null, lockedFutureId, "scan_factory"),
+                    "Survival route should not delegate disabled future actions");
 
             Player player = helper.makeMockPlayer(GameType.SURVIVAL);
             List<TerminalMissionDefinition> vanilla = VanillaJourneyProvider.INSTANCE.missions(player);
@@ -1501,6 +1641,23 @@ public final class ModGameTests {
 
         browser.onSelected(context);
         List<String> phases = browser.phaseDebugRowsForTests(context);
+        helper.assertTrue(browser.visibleMissionCountForTests(context) == browser.allMissionCountForTests(context),
+                "Mission browser should keep every record visible now that roadmap filters are removed");
+        int compactTreeHeight = browser.treePaneHeightForTests(context, 180);
+        int wideTreeHeight = browser.treePaneHeightForTests(context, 640);
+        helper.assertTrue(compactTreeHeight == wideTreeHeight,
+                "Mission browser tree height should not reserve responsive filter or expand-control rows");
+        Identifier initialSelection = browser.selectedMissionIdForTests(context);
+        helper.assertFalse(browser.keyCodeForTests(context, GLFW.GLFW_KEY_LEFT),
+                "Left arrow should no longer cycle hidden mission filters");
+        helper.assertFalse(browser.keyCodeForTests(context, GLFW.GLFW_KEY_RIGHT),
+                "Right arrow should no longer cycle hidden mission filters");
+        helper.assertTrue(initialSelection.equals(browser.selectedMissionIdForTests(context)),
+                "Removing hidden mission filters should leave arrow keys from changing the selected record");
+        helper.assertFalse(browser.charTyped(context, null),
+                "Typing should no longer feed a hidden mission search box");
+        helper.assertTrue(browser.visibleMissionCountForTests(context) == 5,
+                "Typing with hidden search removed should not hide mixed-status mission records");
         helper.assertTrue(phases.size() == 3, "Browser should expose every numeric phase, including locked previews");
         helper.assertTrue(phases.get(0).startsWith("Phase 00|COMPLETE|Provider Awakening"),
                 "Claimable MAIN objectives should complete Phase 00");
@@ -2120,6 +2277,14 @@ public final class ModGameTests {
                     .map(ConfiguredMission::role)
                     .findFirst()
                     .orElse(TerminalMissionRole.MAIN);
+        }
+
+        @Override
+        public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
+            return configuredMissions.stream()
+                    .filter(candidate -> candidate.id().equals(missionId))
+                    .flatMap(candidate -> candidate.actions().stream())
+                    .anyMatch(action -> action.enabled() && action.id().equals(actionId));
         }
     }
 

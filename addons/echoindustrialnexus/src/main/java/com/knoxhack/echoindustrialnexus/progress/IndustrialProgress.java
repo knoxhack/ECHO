@@ -5,11 +5,14 @@ import com.knoxhack.echoindustrialnexus.block.IndustrialFluxDuctBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialItemDuctBlock;
 import com.knoxhack.echoindustrialnexus.block.IndustrialMachineBlock;
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
+import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
 import com.knoxhack.echoindustrialnexus.flux.ThermalFluxStorage;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialMissionHooks;
 import com.knoxhack.echoindustrialnexus.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +28,9 @@ public final class IndustrialProgress {
    }
 
    public static CompoundTag data(Player player) {
+      if (player == null) {
+         return new CompoundTag();
+      }
       CompoundTag root = player.getPersistentData().getCompoundOrEmpty(ROOT);
       player.getPersistentData().put(ROOT, root);
       return root;
@@ -65,6 +71,9 @@ public final class IndustrialProgress {
          }
       }
       CompoundTag data = data(player);
+      int previousMachines = data.getIntOr("machines", 0);
+      int previousScrubbers = data.getIntOr("scrubbers", 0);
+      int previousHot = data.getIntOr("hot_machines", 0);
       data.putInt("machines", Math.max(data.getIntOr("machines", 0), machines));
       data.putInt("item_ducts", Math.max(data.getIntOr("item_ducts", 0), itemDucts));
       data.putInt("flux_ducts", Math.max(data.getIntOr("flux_ducts", 0), fluxDucts));
@@ -87,6 +96,12 @@ public final class IndustrialProgress {
          progress.setPlayerFlag(player.getUUID(), "factory_scanned", true);
          EchoCoreServices.discoverVisibleRouteRecords((ServerPlayer)player);
       }
+      IndustrialMissionHooks.recordFactoryScan(
+         player,
+         Math.max(0, machines - previousMachines),
+         Math.max(0, scrubbers - previousScrubbers),
+         Math.max(0, hot - previousHot)
+      );
       return new FactoryScan(machines, itemDucts, fluxDucts, controllers, scrubbers, hot, stored, capacity);
    }
 
@@ -100,6 +115,7 @@ public final class IndustrialProgress {
          int previousFlux = data.getIntOr("thermal_flux_generated", 0);
          data.putInt("thermal_flux_generated", Math.min(2000000000, previousFlux + amount * 20));
          IndustrialWorldProgress.get(serverLevel).addPlayerStat(player.getUUID(), "thermal_flux_generated", amount * 20L);
+         IndustrialMissionHooks.recordFluxGenerated(player, amount * 20);
          if (previousFlux <= 0) {
             EchoCoreServices.discoverVisibleRouteRecords(player);
          }
@@ -126,6 +142,7 @@ public final class IndustrialProgress {
          worldProgress.maxPlayerStat(player.getUUID(), "scrubber_modes_seen", data.getIntOr("scrubber_modes_seen", 0));
          worldProgress.maxPlayerStat(player.getUUID(), "scrubber_flux_seen", storedFlux);
          if (!wasSafe) {
+            IndustrialMissionHooks.recordSafeZone(player, mode);
             EchoCoreServices.discoverVisibleRouteRecords(player);
          }
       }
@@ -149,6 +166,7 @@ public final class IndustrialProgress {
          progress.addPlayerStat(player.getUUID(), "overheating_events", 1L);
          progress.addPlayerStat(player.getUUID(), prevented ? "shutdowns_survived" : "meltdowns_survived", 1L);
          if (previousEvents <= 0) {
+            IndustrialMissionHooks.recordHeatControl(player, prevented);
             EchoCoreServices.discoverVisibleRouteRecords(player);
          }
       }
@@ -168,6 +186,7 @@ public final class IndustrialProgress {
          progress.setPlayerFlag(player.getUUID(), "nexus_thermal_warning", true);
          progress.addPlayerStat(player.getUUID(), "nexus_scans", 1L);
          if (!alreadyWarned) {
+            IndustrialMissionHooks.recordNexusWarning(player);
             EchoCoreServices.discoverVisibleRouteRecords(player);
          }
       }
@@ -195,7 +214,53 @@ public final class IndustrialProgress {
          progress.setPlayerFlag(player.getUUID(), "furnace_warden_defeated", true);
          progress.setPlayerFlag(player.getUUID(), "thermal_plant_cleared", true);
          progress.addWorldStat("furnace_warden_defeats", 1L);
+         IndustrialMissionHooks.recordWardenDefeated(player);
          EchoCoreServices.discoverVisibleRouteRecords((ServerPlayer)player);
+      }
+   }
+
+   public static void markMultiblockFormed(Player player, Identifier definitionId) {
+      if (player == null || definitionId == null || !EchoIndustrialNexus.MODID.equals(definitionId.getNamespace())) {
+         return;
+      }
+      CompoundTag data = data(player);
+      data.putBoolean("formed_" + definitionId.getPath(), true);
+      if (player instanceof ServerPlayer serverPlayer && player.level() instanceof ServerLevel serverLevel) {
+         IndustrialWorldProgress.get(serverLevel).setPlayerFlag(player.getUUID(), "formed_" + definitionId.getPath(), true);
+         IndustrialMissionHooks.recordMultiblockFormed(player, definitionId);
+         EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
+      }
+   }
+
+   public static void recordAutomationTaskCompleted(ServerLevel level, BlockPos pos, Identifier taskId) {
+      if (level == null || pos == null || taskId == null || !EchoIndustrialNexus.MODID.equals(taskId.getNamespace())) {
+         return;
+      }
+      String taskKey = "task_" + taskId.getPath();
+      String completeKey = taskKey + "_complete";
+      AABB area = new AABB(pos).inflate(24.0D);
+      IndustrialWorldProgress worldProgress = IndustrialWorldProgress.get(level);
+      for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, area)) {
+         CompoundTag data = data(player);
+         data.putInt(taskKey, data.getIntOr(taskKey, 0) + 1);
+         data.putBoolean(completeKey, true);
+         worldProgress.addPlayerStat(player.getUUID(), taskKey, 1L);
+         worldProgress.setPlayerFlag(player.getUUID(), completeKey, true);
+         IndustrialMissionHooks.recordAutomationTask(player, taskId);
+         EchoCoreServices.discoverVisibleRouteRecords(player);
+      }
+   }
+
+   public static void markLogisticsAutoRestock(Player player, String loadoutId) {
+      if (player == null) {
+         return;
+      }
+      CompoundTag data = data(player);
+      data.putBoolean("logistics_auto_restock_requested", true);
+      if (player instanceof ServerPlayer serverPlayer && player.level() instanceof ServerLevel serverLevel) {
+         IndustrialWorldProgress.get(serverLevel).setPlayerFlag(player.getUUID(), "logistics_auto_restock_requested", true);
+         IndustrialMissionHooks.recordLogisticsAutoRestock(player, loadoutId);
+         EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
       }
    }
 
@@ -261,6 +326,17 @@ public final class IndustrialProgress {
          case "reactor_waste" -> count(player, (Item)ModItems.RAD_SLAG.get()) > 0 || count(player, (Item)ModItems.RADIATION_SHIELDING_UPGRADE.get()) > 0 ? 1.0F : 0.0F;
          case "hybrid_warning" -> data.getBoolean("nexus_thermal_warning").orElse(false) || count(player, (Item)ModItems.HYBRID_THERMAL_CORE.get()) > 0 || count(player, (Item)ModItems.NEXUS_STABILIZER_UPGRADE.get()) > 0 ? 1.0F : 0.0F;
          case "factory_controller" -> Math.min(1.0F, data.getIntOr("machines", 0) / 5.0F);
+         case "assembly_line" -> data.getBoolean("formed_industrial_assembly_line").orElse(false)
+            || data.getIntOr("task_weld_reinforced_machine_frame", 0) > 0 ? 1.0F : 0.0F;
+         case "scrap_processor" -> Math.min(1.0F,
+            Math.max(data.getIntOr("task_process_scrap_into_scrap_plate", 0), count(player, (Item)ModItems.SCRAP_PLATE.get())) / 4.0F);
+         case "plate_press" -> Math.min(1.0F,
+            Math.max(data.getIntOr("task_press_scrap_plate_into_refined_plate", 0), count(player, (Item)ModItems.REFINED_PLATE.get())) / 4.0F);
+         case "circuit_fabricator" -> data.getIntOr("task_assemble_precision_circuit", 0) > 0
+            || count(player, (Item)ModItems.PRECISION_CIRCUIT.get()) > 0 ? 1.0F : 0.0F;
+         case "recipe_matrix_encoding" -> data.getBoolean("task_encode_recipe_matrix_shard_complete").orElse(false)
+            || count(player, (Item)ModItems.RECIPE_MATRIX_SHARD.get()) > 0 ? 1.0F : 0.0F;
+         case "logistics_auto_restock" -> data.getBoolean("logistics_auto_restock_requested").orElse(false) ? 1.0F : 0.0F;
          case "production_survived" -> data.getBoolean("furnace_warden_defeated").orElse(false) ? 1.0F : 0.0F;
          default -> 0.0F;
       };
@@ -275,8 +351,15 @@ public final class IndustrialProgress {
       data.putInt("machines", Math.max(data.getIntOr("machines", 0), (int)world.playerStat(player.getUUID(), "machines")));
       data.putInt("scrubbers", Math.max(data.getIntOr("scrubbers", 0), (int)world.playerStat(player.getUUID(), "scrubbers")));
       data.putInt("hot_machines", Math.max(data.getIntOr("hot_machines", 0), (int)world.playerStat(player.getUUID(), "hot_machines")));
+      data.putInt("task_process_scrap_into_scrap_plate", Math.max(data.getIntOr("task_process_scrap_into_scrap_plate", 0), (int)world.playerStat(player.getUUID(), "task_process_scrap_into_scrap_plate")));
+      data.putInt("task_press_scrap_plate_into_refined_plate", Math.max(data.getIntOr("task_press_scrap_plate_into_refined_plate", 0), (int)world.playerStat(player.getUUID(), "task_press_scrap_plate_into_refined_plate")));
+      data.putInt("task_assemble_precision_circuit", Math.max(data.getIntOr("task_assemble_precision_circuit", 0), (int)world.playerStat(player.getUUID(), "task_assemble_precision_circuit")));
+      data.putInt("task_weld_reinforced_machine_frame", Math.max(data.getIntOr("task_weld_reinforced_machine_frame", 0), (int)world.playerStat(player.getUUID(), "task_weld_reinforced_machine_frame")));
       data.putBoolean("safe_zone", data.getBoolean("safe_zone").orElse(false) || world.playerFlag(player.getUUID(), "safe_zone"));
       data.putBoolean("nexus_thermal_warning", data.getBoolean("nexus_thermal_warning").orElse(false) || world.playerFlag(player.getUUID(), "nexus_thermal_warning"));
+      data.putBoolean("formed_industrial_assembly_line", data.getBoolean("formed_industrial_assembly_line").orElse(false) || world.playerFlag(player.getUUID(), "formed_industrial_assembly_line"));
+      data.putBoolean("task_encode_recipe_matrix_shard_complete", data.getBoolean("task_encode_recipe_matrix_shard_complete").orElse(false) || world.playerFlag(player.getUUID(), "task_encode_recipe_matrix_shard_complete"));
+      data.putBoolean("logistics_auto_restock_requested", data.getBoolean("logistics_auto_restock_requested").orElse(false) || world.playerFlag(player.getUUID(), "logistics_auto_restock_requested"));
       data.putBoolean("furnace_warden_defeated", data.getBoolean("furnace_warden_defeated").orElse(false) || world.playerFlag(player.getUUID(), "furnace_warden_defeated"));
    }
 

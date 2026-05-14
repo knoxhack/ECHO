@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoconvoyprotocol:block/cargo_anchor"
+    "model": "echoconvoyprotocol:item/cargo_anchor"
   }
 }

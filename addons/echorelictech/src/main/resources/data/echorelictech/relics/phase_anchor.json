@@ -1,16 +1,16 @@
 {
   "id": "echorelictech:phase_anchor",
-  "tier": "PROTOTYPE",
-  "category": "MOBILITY",
+  "tier": "prototype",
+  "category": "mobility",
   "origin": "Pre-Gridfall Rescue Prototype",
-  "defaultCondition": "DAMAGED",
+  "defaultCondition": "damaged",
   "cooldownTicks": 7200,
   "instabilityCost": 18,
   "nullChargeCost": 1,
   "riskTypes": [
-    "NEXUS_INSTABILITY",
-    "MALFUNCTION",
-    "HOSTILE_SIGNAL_ATTRACTION"
+    "nexus_instability",
+    "malfunction",
+    "hostile_signal_attraction"
   ],
   "failureTable": "echorelictech:phase_anchor",
   "terminal": {

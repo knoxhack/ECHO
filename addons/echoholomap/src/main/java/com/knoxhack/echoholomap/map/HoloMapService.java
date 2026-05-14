@@ -5,6 +5,7 @@ import com.knoxhack.echocore.api.IMapLayer;
 import com.knoxhack.echocore.api.IMapMarker;
 import com.knoxhack.echocore.api.IMapMarkerService;
 import com.knoxhack.echoholomap.EchoHoloMap;
+import com.knoxhack.echoholomap.integration.runtimeguard.HoloMapRuntimeGuardHooks;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -90,6 +91,9 @@ public final class HoloMapService implements IMapMarkerService {
 
     @Override
     public boolean refresh(ServerPlayer player, String reason) {
+        if (!HoloMapRuntimeGuardHooks.shouldRefreshMarkers(player, reason)) {
+            return false;
+        }
         boolean refreshed = false;
         for (IMapDataProvider provider : providers) {
             try {

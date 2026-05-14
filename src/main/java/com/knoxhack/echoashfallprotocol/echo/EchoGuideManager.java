@@ -417,7 +417,7 @@ public class EchoGuideManager {
                 double px = center.getX() + (player.level().getRandom().nextDouble() - 0.5) * 4;
                 double py = center.getY() + 1;
                 double pz = center.getZ() + (player.level().getRandom().nextDouble() - 0.5) * 4;
-                player.level().setBlockAndUpdate(BlockPos.containing(px, py, pz), Blocks.FIRE.defaultBlockState());
+                player.level().setBlockAndUpdate(BlockPos.containing(px, py, pz), ModBlocks.CRASH_SLAG.get().defaultBlockState());
             }
         }
     }
@@ -686,19 +686,17 @@ public class EchoGuideManager {
     }
     
     private static void placeEmergencyCache(ServerPlayer player, BlockPos center, int burialDepth) {
-        // Place chest at the front of the larger pod (storage alcove area)
+        // Place an Echo cache at the front of the larger pod (storage alcove area)
         BlockPos chestPos = center.offset(0, 1, 3);
-        
-        // Use vanilla chest
-        player.level().setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
-        
-        // Get chest block entity and populate
-        if (player.level().getBlockEntity(chestPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
-            populateEmergencyCache(chest, player.level().getRandom());
+
+        player.level().setBlockAndUpdate(chestPos, ModBlocks.STRUCTURE_CACHE.get().defaultBlockState());
+
+        if (player.level().getBlockEntity(chestPos) instanceof net.minecraft.world.Container cache) {
+            populateEmergencyCache(cache, player.level().getRandom());
         }
     }
-    
-    private static void populateEmergencyCache(net.minecraft.world.level.block.entity.ChestBlockEntity chest, net.minecraft.util.RandomSource random) {
+
+    private static void populateEmergencyCache(net.minecraft.world.Container chest, net.minecraft.util.RandomSource random) {
         // General emergency supplies
         chest.setItem(0, new ItemStack(ModItems.SCRAP_METAL.get(), 24));
         chest.setItem(1, new ItemStack(ModItems.SCRAP_WIRE.get(), 12));
@@ -725,16 +723,16 @@ public class EchoGuideManager {
         
         // Emergency lighting - positioned for larger pod interior
         if (crashLevel == 1) {
-            // Intact - soul lanterns on walls at multiple positions
-            player.level().setBlockAndUpdate(center.offset(-2, 3, 0), Blocks.SOUL_LANTERN.defaultBlockState());
-            player.level().setBlockAndUpdate(center.offset(2, 3, 0), Blocks.SOUL_LANTERN.defaultBlockState());
-            player.level().setBlockAndUpdate(center.offset(0, 3, 2), Blocks.SOUL_LANTERN.defaultBlockState());
+            // Intact - integrated drop pod glass lighting on walls at multiple positions
+            player.level().setBlockAndUpdate(center.offset(-2, 3, 0), ModBlocks.DROP_POD_GLASS.get().defaultBlockState());
+            player.level().setBlockAndUpdate(center.offset(2, 3, 0), ModBlocks.DROP_POD_GLASS.get().defaultBlockState());
+            player.level().setBlockAndUpdate(center.offset(0, 3, 2), ModBlocks.DROP_POD_GLASS.get().defaultBlockState());
         } else if (crashLevel == 2) {
-            // Damaged - flickering redstone torches, some broken
+            // Damaged - exposed power conduits, some broken
             player.level().setBlockAndUpdate(center.offset(-2, 3, 0), 
-                random.nextBoolean() ? Blocks.REDSTONE_TORCH.defaultBlockState() : Blocks.AIR.defaultBlockState());
+                random.nextBoolean() ? ModBlocks.POWER_CABLE.get().defaultBlockState() : Blocks.AIR.defaultBlockState());
             if (random.nextBoolean()) {
-                player.level().setBlockAndUpdate(center.offset(2, 3, 0), Blocks.SOUL_TORCH.defaultBlockState());
+                player.level().setBlockAndUpdate(center.offset(2, 3, 0), ModBlocks.DROP_POD_GLASS.get().defaultBlockState());
             }
         }
         // Level 3 (destroyed) has no working lights
@@ -745,10 +743,10 @@ public class EchoGuideManager {
             BlockPos seat1Pos = center.offset(-1, 0, 2);
             BlockPos seat2Pos = center.offset(1, 0, 2);
             if (player.level().getBlockState(seat1Pos).isAir()) {
-                player.level().setBlockAndUpdate(seat1Pos, Blocks.OAK_STAIRS.defaultBlockState());
+                player.level().setBlockAndUpdate(seat1Pos, ModBlocks.EMERGENCY_BUNK.get().defaultBlockState());
             }
             if (player.level().getBlockState(seat2Pos).isAir()) {
-                player.level().setBlockAndUpdate(seat2Pos, Blocks.OAK_STAIRS.defaultBlockState());
+                player.level().setBlockAndUpdate(seat2Pos, ModBlocks.EMERGENCY_BUNK.get().defaultBlockState());
             }
         }
         
@@ -968,8 +966,13 @@ public class EchoGuideManager {
                         com.knoxhack.echoashfallprotocol.EchoAshfallProtocol.MODID,
                         mission.id()));
 
-        // Mark mission as completed in quest data
-        quest.completeMission(player, mission.id(), missionCoreHandled ? java.util.Collections.emptyList() : mission.rewards());
+        List<ItemStack> rewardStacks = missionCoreHandled
+                ? java.util.Collections.emptyList()
+                : buildRewardStacks(player, mission);
+
+        // Mark mission as completed in quest data. MissionCore owns its own
+        // claimable rewards; legacy Ashfall rewards stay mission-scoped here.
+        quest.completeMission(player, mission.id(), rewardStacks);
         quest.clearTurnInReminder(mission.id());
 
         // Green celebratory burst on the drone, if present
@@ -979,9 +982,8 @@ public class EchoGuideManager {
         // Send completion message
         sendMessage(player, quest, mission.completionMessage(), false, true);
         
-        // Store rewards through the optional terminal service when ECHO Terminal is installed.
-        if (!missionCoreHandled) {
-            storeRewardsInTerminal(player, mission);
+        if (!missionCoreHandled && !rewardStacks.isEmpty()) {
+            player.sendSystemMessage(Component.literal("\u00A76[ECHO-7]\u00A7r Support cache ready in the mission channel. Claim it before building the next route step."));
         }
         
         // Advance to next mission
@@ -1060,20 +1062,6 @@ public class EchoGuideManager {
         }
     }
     
-    /**
-     * Store mission rewards in the player's terminal for later claiming.
-     */
-    private static void storeRewardsInTerminal(ServerPlayer player, Mission mission) {
-        if (mission.rewards().isEmpty()) return;
-
-        List<ItemStack> rewards = buildRewardStacks(player, mission);
-        if (EchoCoreServices.storeTerminalRewards(player, mission.id(), rewards)) {
-            player.sendSystemMessage(Component.literal("\u00A76[ECHO-7]\u00A7r Support cache sealed in terminal. Claim it before building the next route step."));
-        } else {
-            awardRewards(player, rewards);
-        }
-    }
-
     private static List<ItemStack> buildRewardStacks(ServerPlayer player, Mission mission) {
         List<ItemStack> rewards = new java.util.ArrayList<>();
         for (ItemStack stack : mission.rewards()) {
@@ -1101,9 +1089,67 @@ public class EchoGuideManager {
      * Called when player clicks "Claim" button or uses claim command.
      */
     public static void claimRewards(ServerPlayer player) {
+        QuestData quest = QuestData.get(player);
+        Mission current = AshfallMissionActions.currentMission(quest);
+        if (current != null && claimRewardsExact(player, quest, current.id(), false)) {
+            return;
+        }
+        for (String missionId : quest.getCompletedMissionIds()) {
+            if (claimRewardsExact(player, quest, missionId, false)) {
+                return;
+            }
+        }
         if (!EchoCoreServices.claimTerminalRewards(player)) {
             player.sendSystemMessage(Component.literal("\u00A77[ECHO-7]\u00A7r No sealed terminal caches are waiting."));
         }
+    }
+
+    public static void claimRewards(ServerPlayer player, String missionId) {
+        String cleanMissionId = AshfallMissionActions.cleanMissionPayload(missionId);
+        if (cleanMissionId.isBlank()) {
+            claimRewards(player);
+            return;
+        }
+        QuestData quest = QuestData.get(player);
+        if (!claimRewardsExact(player, quest, cleanMissionId, true)) {
+            player.sendSystemMessage(Component.literal("\u00A77[ECHO-7]\u00A7r No sealed support cache is waiting for this protocol."));
+            QuestData.syncToClient(player);
+        }
+    }
+
+    private static boolean claimRewardsExact(ServerPlayer player, QuestData quest, String missionId, boolean reportRepeat) {
+        String cleanMissionId = AshfallMissionActions.cleanMissionPayload(missionId);
+        if (cleanMissionId.isBlank()) {
+            return false;
+        }
+        if (claimMissionCoreReward(player, cleanMissionId)) {
+            if (quest.hasPendingRewards(cleanMissionId)) {
+                quest.claimRewards(cleanMissionId);
+                QuestData.saveAndSync(player, quest);
+            } else {
+                QuestData.syncToClient(player);
+            }
+            return true;
+        }
+        List<ItemStack> rewards = quest.claimRewards(cleanMissionId);
+        if (!rewards.isEmpty()) {
+            awardRewards(player, rewards);
+            QuestData.saveAndSync(player, quest);
+            return true;
+        }
+        if (reportRepeat) {
+            Mission mission = MissionRegistry.getMissionById(cleanMissionId);
+            if (mission != null && quest.isMissionCompleted(cleanMissionId) && mission.rewards().isEmpty()) {
+                player.sendSystemMessage(Component.literal("\u00A77[ECHO-7]\u00A7r This protocol is already complete."));
+                QuestData.syncToClient(player);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean claimMissionCoreReward(ServerPlayer player, String missionId) {
+        return com.knoxhack.echoashfallprotocol.integration.AshfallMissionCoreIntegration.claimReward(player, missionId);
     }
 
     private static void awardRewards(ServerPlayer player, List<ItemStack> rewards) {

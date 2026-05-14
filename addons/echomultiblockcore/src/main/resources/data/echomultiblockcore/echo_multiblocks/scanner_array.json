@@ -1,0 +1,27 @@
+{
+  "id": "echomultiblockcore:scanner_array",
+  "display_name": "Scanner Array",
+  "translation_key": "multiblock.echomultiblockcore.scanner_array",
+  "role": "RESEARCH",
+  "category": "scanner",
+  "size": [3, 2, 3],
+  "controller": "echomultiblockcore:multiblock_controller",
+  "allowed_rotations": true,
+  "mirrorable": true,
+  "layers": [["SIS","DCR","SOF"],[".P.",".R.",".A."]],
+  "palette": {
+    "F": { "tag": "echomultiblockcore:reinforced_frames" },
+    "S": { "block": "echomultiblockcore:signal_conduit", "component": true },
+    "I": { "block": "echomultiblockcore:input_crate", "component": true },
+    "O": { "block": "echomultiblockcore:output_crate", "component": true },
+    "D": { "block": "echomultiblockcore:data_bus", "component": true },
+    "P": { "block": "echomultiblockcore:power_bus", "component": true },
+    "R": { "block": "echomultiblockcore:robotic_arm", "robotics": true },
+    "A": { "block": "echomultiblockcore:auto_builder", "component": true, "optional": true },
+    "C": { "block": "echomultiblockcore:multiblock_controller", "controller": true },
+    ".": { "air": true }
+  },
+  "capabilities": ["echo:scanner_target","echo:map_marker","echo:terminal_tab","echo:data"],
+  "workcells": [{"id":"echomultiblockcore:scanner_array/scan","type":"SCANNING","pos":[1,1,1],"size":[1,1,1],"required_tools":["SCANNER"]}],
+  "preview": {"color":"66e8ff"}
+}

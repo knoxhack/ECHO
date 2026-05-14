@@ -15,10 +15,10 @@
             },
             "input_predicate": {
               "predicate_type": "minecraft:block_match",
-              "block": "minecraft:chest"
+              "block": "echoashfallprotocol:structure_cache"
             },
             "output_state": {
-              "Name": "minecraft:chest"
+              "Name": "echoashfallprotocol:structure_cache"
             },
             "block_entity_modifier": {
               "type": "minecraft:append_loot",
@@ -31,10 +31,10 @@
             },
             "input_predicate": {
               "predicate_type": "minecraft:block_match",
-              "block": "minecraft:barrel"
+              "block": "echoashfallprotocol:structure_cache"
             },
             "output_state": {
-              "Name": "minecraft:barrel"
+              "Name": "echoashfallprotocol:structure_cache"
             },
             "block_entity_modifier": {
               "type": "minecraft:append_loot",

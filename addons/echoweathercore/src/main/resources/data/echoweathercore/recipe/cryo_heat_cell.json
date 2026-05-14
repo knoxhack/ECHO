@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ibi",
+    "brb",
+    "ibi"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "b": { "item": "minecraft:blaze_powder" },
+    "r": { "item": "minecraft:redstone" }
+  },
+  "result": {
+    "id": "echoweathercore:cryo_heat_cell"
+  }
+}

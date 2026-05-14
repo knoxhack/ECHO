@@ -1,0 +1,33 @@
+{
+  "schema_version": 11,
+  "base_texture": "echorendercore:textures/block/v13_advanced_bloom.png",
+  "default_state": "ACTIVE",
+  "preview": { "title": "V13 Advanced Bloom", "tags": ["v13", "advanced_fx", "bloom"] },
+  "effect": {
+    "preset": "neon",
+    "glow_intensity": 1.0,
+    "bloom_intensity": 1.0,
+    "advanced_enabled": true,
+    "bloom_radius": 3.5,
+    "bloom_threshold": 0.42,
+    "bloom_passes": 4,
+    "target_scope": "global",
+    "bloom_mask_mode": "emissive",
+    "bloom_mask_alpha": 0.9,
+    "bloom_channel": "advanced_bloom",
+    "bloom_downscale": 2,
+    "advanced_priority": 100
+  },
+  "layers": [
+    {
+      "id": "bloom_mask",
+      "kind": "glow",
+      "texture": "echorendercore:textures/block/v13_bloom_mask.png",
+      "states": ["ACTIVE"],
+      "parts": ["core"],
+      "emissive": true
+    }
+  ],
+  "anchors": { "core": [0.0, 0.5, 0.0] },
+  "block_parts": { "core": { "indices": [0] } }
+}

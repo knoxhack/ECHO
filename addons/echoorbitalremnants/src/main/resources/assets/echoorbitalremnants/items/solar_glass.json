@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"echoorbitalremnants:block/solar_glass"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echoorbitalremnants:item/solar_glass"
+  }
+}

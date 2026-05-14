@@ -10,7 +10,6 @@ import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.Identifier;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 
 public record TerminalRenderContext(
@@ -90,13 +89,13 @@ public record TerminalRenderContext(
         if (minecraft == null) {
             return;
         }
-        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.25F, 0.45F));
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(TerminalThemedSounds.click(), 1.25F, 0.45F));
     }
 
     public void playRejectedSound() {
         if (minecraft == null) {
             return;
         }
-        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BASS.value(), 0.7F, 0.45F));
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(TerminalThemedSounds.error(), 0.7F, 0.45F));
     }
 }

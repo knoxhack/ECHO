@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "igi",
+    "scs",
+    "isi"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "g": { "item": "minecraft:glass_pane" },
+    "c": { "item": "minecraft:compass" },
+    "s": { "item": "minecraft:stone" }
+  },
+  "result": {
+    "id": "echoweathercore:weather_station"
+  }
+}

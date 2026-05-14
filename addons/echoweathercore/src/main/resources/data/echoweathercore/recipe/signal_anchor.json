@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "igi",
+    "grg",
+    "igi"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "g": { "item": "minecraft:gold_nugget" },
+    "r": { "item": "minecraft:redstone" }
+  },
+  "result": {
+    "id": "echoweathercore:signal_anchor"
+  }
+}

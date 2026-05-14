@@ -4,6 +4,9 @@ import com.knoxhack.echoindustrialnexus.block.entity.IndustrialFluxDuctBlockEnti
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialFluidPipeBlockEntity;
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialItemDuctBlockEntity;
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMultiblockControllerBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMultiblockCrateBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialRoboticArmMountBlockEntity;
 import java.util.Set;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
@@ -26,6 +29,15 @@ public final class ModBlockEntities {
    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndustrialFluidPipeBlockEntity>> FLUID_PIPE = BLOCK_ENTITIES.register(
       "fluid_pipe", () -> new BlockEntityType(IndustrialFluidPipeBlockEntity::new, fluidPipeBlocks())
    );
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndustrialMultiblockControllerBlockEntity>> INDUSTRIAL_MULTIBLOCK_CONTROLLER =
+      BLOCK_ENTITIES.register("industrial_multiblock_controller", () -> new BlockEntityType<>(
+         IndustrialMultiblockControllerBlockEntity::new, industrialMultiblockControllerBlocks()));
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndustrialMultiblockCrateBlockEntity>> INDUSTRIAL_MULTIBLOCK_CRATE =
+      BLOCK_ENTITIES.register("industrial_multiblock_crate", () -> new BlockEntityType<>(
+         IndustrialMultiblockCrateBlockEntity::new, industrialMultiblockCrateBlocks()));
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndustrialRoboticArmMountBlockEntity>> INDUSTRIAL_ROBOTIC_ARM =
+      BLOCK_ENTITIES.register("industrial_robotic_arm", () -> new BlockEntityType<>(
+         IndustrialRoboticArmMountBlockEntity::new, Set.of((Block)ModBlocks.ROBOTIC_ARM_MOUNT.get())));
 
    private ModBlockEntities() {
    }
@@ -65,7 +77,6 @@ public final class ModBlockEntities {
       );
    }
 
-
    private static Set<Block> itemDuctBlocks() {
       return Set.of(
          (Block)ModBlocks.SCRAP_DUCT.get(),
@@ -93,6 +104,27 @@ public final class ModBlockEntities {
          (Block)ModBlocks.PRESSURIZED_PIPE.get(),
          (Block)ModBlocks.SHIELDED_PIPE.get(),
          (Block)ModBlocks.STATIC_PIPE.get()
+      );
+   }
+
+   private static Set<Block> industrialMultiblockControllerBlocks() {
+      return Set.of(
+         (Block)ModBlocks.INDUSTRIAL_CONTROLLER.get(),
+         (Block)ModBlocks.INDUSTRIAL_ASSEMBLY_LINE_CONTROLLER.get(),
+         (Block)ModBlocks.RECIPE_MATRIX_CORE.get(),
+         (Block)ModBlocks.SCRAP_PROCESSOR_CONTROLLER.get(),
+         (Block)ModBlocks.PLATE_PRESS_CONTROLLER.get(),
+         (Block)ModBlocks.CIRCUIT_FABRICATOR_CONTROLLER.get(),
+         (Block)ModBlocks.MACHINE_FRAME_ASSEMBLER_CONTROLLER.get(),
+         (Block)ModBlocks.COOLING_STATION_CONTROLLER.get(),
+         (Block)ModBlocks.INSPECTION_SCANNER_CONTROLLER.get()
+      );
+   }
+
+   private static Set<Block> industrialMultiblockCrateBlocks() {
+      return Set.of(
+         (Block)ModBlocks.INPUT_DEPOT_CRATE.get(),
+         (Block)ModBlocks.OUTPUT_DEPOT_CRATE.get()
       );
    }
 }

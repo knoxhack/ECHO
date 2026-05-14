@@ -33,6 +33,7 @@ dependencies {
     implementation project(":echonetcore")
     compileOnly project(":echoterminal")
     compileOnly project(":echorendercore")
+    compileOnly project(":echoruntimeguard")
     localRuntime project(":echoterminal")
     localRuntime project(":echorendercore")
 }

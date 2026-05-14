@@ -6,6 +6,7 @@ import com.knoxhack.echoagriculturereclamation.registry.ModBlockEntities;
 import com.knoxhack.echoagriculturereclamation.registry.ModBlocks;
 import com.knoxhack.echoagriculturereclamation.registry.ModCreativeTabs;
 import com.knoxhack.echoagriculturereclamation.registry.ModDataComponents;
+import com.knoxhack.echoagriculturereclamation.registry.ModEntities;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -24,10 +25,12 @@ public class EchoAgricultureReclamation {
    public EchoAgricultureReclamation(IEventBus modEventBus) {
       ModBlocks.register(modEventBus);
       ModBlockEntities.register(modEventBus);
+      ModEntities.register(modEventBus);
       ModDataComponents.register(modEventBus);
       ModItems.register(modEventBus);
       ModCreativeTabs.register(modEventBus);
       registerGameTests(modEventBus);
+      modEventBus.addListener(ModEntities::registerAttributes);
       modEventBus.addListener(this::commonSetup);
       NeoForge.EVENT_BUS.addListener(ReclamationReloaders::addServerReloadListeners);
    }

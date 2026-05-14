@@ -1,0 +1,138 @@
+{
+  "emitters": {
+    "ambient_core_dust": {
+      "anchor": "core",
+      "particle": "minecraft:dust",
+      "states": [
+        "IDLE",
+        "ONLINE",
+        "ACTIVE",
+        "SCANNING"
+      ],
+      "rate": 0.055,
+      "burst_count": 1,
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.015,
+        0.0
+      ],
+      "spread": [
+        0.12,
+        0.18,
+        0.12
+      ],
+      "options": {
+        "type": "minecraft:dust",
+        "color": [
+          0.722,
+          1.0,
+          0.22
+        ],
+        "scale": 0.62
+      }
+    },
+    "active_trail": {
+      "anchor": "trail",
+      "particle": "minecraft:dust",
+      "states": [
+        "ACTIVE",
+        "WORKING",
+        "SCANNING"
+      ],
+      "requires_moving": true,
+      "rate": 0.07,
+      "burst_count": 1,
+      "offset": [
+        0.0,
+        0.08,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.01,
+        0.0
+      ],
+      "spread": [
+        0.22,
+        0.08,
+        0.22
+      ],
+      "options": {
+        "type": "minecraft:dust",
+        "color": [
+          0.329,
+          1.0,
+          0.133
+        ],
+        "scale": 0.45
+      }
+    },
+    "damaged_smoke": {
+      "anchor": "core",
+      "particle": "minecraft:smoke",
+      "states": [
+        "DAMAGED",
+        "OVERHEATED",
+        "FAILED"
+      ],
+      "requires_damaged": true,
+      "rate": 0.05,
+      "burst_count": 1,
+      "offset": [
+        0.0,
+        0.08,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.03,
+        0.0
+      ],
+      "spread": [
+        0.14,
+        0.06,
+        0.14
+      ]
+    },
+    "toxic_drip": {
+      "anchor": "ground",
+      "particle": "minecraft:dust",
+      "states": [
+        "ACTIVE",
+        "DAMAGED",
+        "CORRUPTED"
+      ],
+      "rate": 0.065,
+      "burst_count": 1,
+      "offset": [
+        0.0,
+        0.02,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "spread": [
+        0.2,
+        0.02,
+        0.2
+      ],
+      "options": {
+        "type": "minecraft:dust",
+        "color": [
+          0.722,
+          1.0,
+          0.22
+        ],
+        "scale": 0.7
+      }
+    }
+  }
+}

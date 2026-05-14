@@ -30,7 +30,7 @@ public final class RenderCoreDebugHud {
       Font font = minecraft.font;
       int x = 8;
       int y = 8;
-      graphics.fill(x - 4, y - 4, x + 290, y + 78, 0xAA061018);
+      graphics.fill(x - 4, y - 4, x + 330, y + 118, 0xAA061018);
       line(graphics, font, "RenderCore HUD", x, y, 0xFF66E8FF);
       y += 10;
       var loaded = RenderCoreProfiles.loaded();
@@ -49,6 +49,24 @@ public final class RenderCoreDebugHud {
       y += 10;
       line(graphics, font, "anchors " + (DebugVisualOverrides.anchorsEnabled() ? "on" : "off")
          + " / missing parts " + (DebugVisualOverrides.missingPartWarnings() ? "on" : "off"), x, y, 0xFF8DB3C7);
+      y += 10;
+      line(graphics, font, RenderCoreEffectPipeline.statusLine() + " / active " + RenderCoreAdvancedFxPipeline.lastEffectCount()
+         + " / passes " + RenderCoreAdvancedFxPipeline.lastPassCount(), x, y, 0xFFB76DFF);
+      y += 10;
+      line(graphics, font, "fx " + RenderCoreAdvancedFxPipeline.modeLine()
+         + " / masks " + RenderCoreAdvancedFxPipeline.lastMaskSubmissionCount()
+         + " skipped " + RenderCoreAdvancedFxPipeline.lastSkippedSubmissions()
+         + " channels " + RenderCoreAdvancedFxPipeline.lastChannelCount()
+         + " x" + RenderCoreAdvancedFxPipeline.lastDownscale()
+         + " cost " + RenderCoreAdvancedFxPipeline.lastBloomCost(), x, y, 0xFFB76DFF);
+      y += 10;
+      if (!RenderCoreAdvancedFxPipeline.fallbackReason().isBlank()) {
+         line(graphics, font, RenderCoreAdvancedFxPipeline.fallbackReason(), x, y, 0xFFFF86C8);
+         y += 10;
+      }
+      if (RenderCoreEffectPipeline.advancedFxEnabled() && !RenderCoreEffectPipeline.advancedFxAvailable()) {
+         line(graphics, font, RenderCoreAdvancedFxPipeline.unavailableReason(), x, y, 0xFFFF86C8);
+      }
    }
 
    private static TargetInfo target(Minecraft minecraft) {
@@ -58,7 +76,10 @@ public final class RenderCoreDebugHud {
          return new TargetInfo(
             "target " + target.profileId() + " state " + target.state().name(),
             "variant " + target.variant().id() + " layers " + target.activeLayers() + " anchors " + target.anchors()
-               + " warnings " + target.validationWarnings(),
+               + " surface " + target.surfaceType()
+               + " particles " + (target.particleProfileId() == null ? "none" : target.particleProfileId())
+               + " emitters " + target.activeEmitters() + "/" + target.skippedEmitters()
+               + " " + target.fallbackStatus() + " warnings " + target.validationWarnings(),
             0xFFE6F8FF
          );
       }
@@ -86,7 +107,7 @@ public final class RenderCoreDebugHud {
    }
 
    private static void line(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
-      graphics.text(font, font.plainSubstrByWidth(text, 282), x, y, color, false);
+      graphics.text(font, font.plainSubstrByWidth(text, 322), x, y, color, false);
    }
 
    private record TargetInfo(String line, String detail, int color) {

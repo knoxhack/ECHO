@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/nexus_charge_tank"
+    "model": "echonexusprotocol:item/nexus_charge_tank"
   }
 }

@@ -1,7 +1,9 @@
 package com.knoxhack.echostationfall.integration;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echoorbitalremnants.suit.SuitState;
 import com.knoxhack.echostationfall.EchoStationfall;
+import com.knoxhack.echostationfall.progression.SignalPanicState;
 import com.knoxhack.echostationfall.progression.StationLore;
 import com.knoxhack.echostationfall.progression.StationPowerState;
 import com.knoxhack.echostationfall.progression.StationSection;
@@ -36,6 +38,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
+import net.neoforged.fml.ModList;
 
 public final class StationfallTerminalCommonIntegration {
     public static final Identifier CHAPTER_ID = id("stationfall");
@@ -63,7 +66,12 @@ public final class StationfallTerminalCommonIntegration {
         if (!REGISTERED.compareAndSet(false, true)) {
             return;
         }
-        TerminalMissionRegistry.register(Provider.INSTANCE);
+        boolean missionCoreLoaded = ModList.get().isLoaded("echomissioncore");
+        if (missionCoreLoaded) {
+            StationfallMissionCoreIntegration.register();
+        } else {
+            TerminalMissionRegistry.register(Provider.INSTANCE);
+        }
         TerminalMissionActions.registerForTab(CHAPTER_ID);
         archives();
     }
@@ -346,9 +354,7 @@ public final class StationfallTerminalCommonIntegration {
                     ModItems.STATION_BATTERY.get(), progress.poweredSectionCount(), 9));
             case LOGS -> List.of(req("Crew logs", progress.decodedLogCount() + "/9 decoded.",
                     ModItems.CREW_LOG_TABLET.get(), progress.decodedLogCount(), 9));
-            case STABILIZE -> List.of(req("Section objectives",
-                    progress.objectiveCount() + "/" + StationfallObjective.values().length + " stabilized.",
-                    ModItems.PRESSURE_SEAL_KIT.get(), progress.objectiveCount(), StationfallObjective.values().length));
+            case STABILIZE -> stabilizeRequirements(player, progress);
             case OVERRIDE -> List.of(req("AI Override", progress.aiOverrideObtained()
                     ? "Override chip synchronized."
                     : "Use Data Core Terminal.", ModItems.AI_OVERRIDE_CHIP.get(), progress.aiOverrideObtained() ? 1 : 0, 1));
@@ -359,6 +365,36 @@ public final class StationfallTerminalCommonIntegration {
                     ? "Blackbox recovered."
                     : "Defeat Station Mother.", ModItems.STATIONFALL_BLACKBOX.get(), progress.blackboxRetrieved() ? 1 : 0, 1));
         };
+    }
+
+    private static List<TerminalMissionRequirement> stabilizeRequirements(Player player, StationfallProgress progress) {
+        List<TerminalMissionRequirement> requirements = new ArrayList<>();
+        requirements.add(req("Section objectives",
+                progress.objectiveCount() + "/" + StationfallObjective.values().length + " stabilized.",
+                ModItems.PRESSURE_SEAL_KIT.get(), progress.objectiveCount(), StationfallObjective.values().length));
+        SuitState suit = player == null ? null : SuitState.get(player);
+        SignalPanicState panic = player == null ? null : SignalPanicState.get(player);
+        int pressure = suit == null ? 0 : suit.pressure();
+        int oxygen = suit == null ? 0 : suit.oxygen();
+        int panicSafety = panic == null ? 0 : Math.max(0, 100 - panic.value());
+        requirements.add(req("Pressure seal", pressure + "% suit pressure restored.",
+                ModItems.PRESSURE_SEAL_KIT.get(), pressure, 70));
+        requirements.add(req("Oxygen reserve", oxygen + "% suit oxygen restored.",
+                ModItems.EMERGENCY_OXYGEN_PACK.get(), oxygen, 70));
+        requirements.add(req("Signal Panic dampened", (panic == null ? 0 : panic.value()) + "% panic exposure.",
+                ModItems.SIGNAL_PANIC_DAMPENER.get(), panicSafety, 70));
+        for (StationfallObjective objective : StationfallObjective.values()) {
+            requirements.add(req(objective.title(),
+                    objective.section().displayName() + ": " + objectiveStepLine(progress, objective),
+                    ModItems.CREW_LOG_TABLET.get(),
+                    progress.objectiveStepCount(objective),
+                    objective.targetSteps()));
+        }
+        return List.copyOf(requirements);
+    }
+
+    private static String objectiveStepLine(StationfallProgress progress, StationfallObjective objective) {
+        return progress.objectiveStepCount(objective) + "/" + objective.targetSteps() + " - " + objective.hint();
     }
 
     private static TerminalMissionRequirement req(String label, String description, ItemLike icon, int have, int need) {

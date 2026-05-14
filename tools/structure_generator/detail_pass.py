@@ -399,6 +399,8 @@ def is_support_sensitive_block(block_id: str) -> bool:
     """Return true for loose/grounded blocks that should never float."""
     if block_id == "minecraft:air":
         return False
+    if block_id == "echoashfallprotocol:frozen_conduit":
+        return False
     if block_id in SUPPORT_SENSITIVE_EXACT_BLOCKS:
         return True
     if any(token in block_id for token in SUPPORT_SENSITIVE_TOKENS):

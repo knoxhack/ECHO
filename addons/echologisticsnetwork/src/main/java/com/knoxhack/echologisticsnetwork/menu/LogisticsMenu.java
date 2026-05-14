@@ -24,6 +24,8 @@ public class LogisticsMenu extends AbstractContainerMenu {
    public static final int BUTTON_CLAIM_RELAY = 2;
    public static final int BUTTON_DEPOT_EXCHANGE = 3;
    public static final int BUTTON_CYCLE_LOADOUT = 4;
+   public static final int BUTTON_CANCEL_DELIVERIES = 5;
+   public static final int BUTTON_REFRESH_OFFERS = 6;
    private static final int PLAYER_INV_START = LogisticsBlockEntity.SLOT_COUNT;
    private static final int PLAYER_INV_END = PLAYER_INV_START + 27;
    private static final int HOTBAR_END = PLAYER_INV_END + 9;
@@ -127,5 +129,65 @@ public class LogisticsMenu extends AbstractContainerMenu {
 
    public int rewardCount() {
       return data.get(LogisticsBlockEntity.DATA_REWARD_COUNT);
+   }
+
+   public int blockCount() {
+      return data.get(LogisticsBlockEntity.DATA_BLOCK_COUNT);
+   }
+
+   public int endpointCount() {
+      return data.get(LogisticsBlockEntity.DATA_ENDPOINT_COUNT);
+   }
+
+   public boolean dockOnline() {
+      return data.get(LogisticsBlockEntity.DATA_DOCK_ONLINE) > 0;
+   }
+
+   public boolean relayOnline() {
+      return data.get(LogisticsBlockEntity.DATA_RELAY_ONLINE) > 0;
+   }
+
+   public boolean depotOnline() {
+      return data.get(LogisticsBlockEntity.DATA_DEPOT_ONLINE) > 0;
+   }
+
+   public int depotCooldown() {
+      return data.get(LogisticsBlockEntity.DATA_DEPOT_COOLDOWN);
+   }
+
+   public boolean selectedReady() {
+      return data.get(LogisticsBlockEntity.DATA_SELECTED_READY) > 0;
+   }
+
+   public int selectedMissing() {
+      return data.get(LogisticsBlockEntity.DATA_SELECTED_MISSING);
+   }
+
+   public boolean canRequest() {
+      return data.get(LogisticsBlockEntity.DATA_CAN_REQUEST) > 0;
+   }
+
+   public boolean canDispatch() {
+      return data.get(LogisticsBlockEntity.DATA_CAN_DISPATCH) > 0;
+   }
+
+   public LogisticsKind selectedEndpointKind() {
+      LogisticsKind[] values = LogisticsKind.values();
+      int id = data.get(LogisticsBlockEntity.DATA_SELECTED_ENDPOINT_KIND);
+      return id >= 0 && id < values.length ? values[id] : null;
+   }
+
+   public int firstDeliveryEta() {
+      return data.get(LogisticsBlockEntity.DATA_FIRST_DELIVERY_ETA);
+   }
+
+   public String firstDeliveryStatus() {
+      return switch (data.get(LogisticsBlockEntity.DATA_FIRST_DELIVERY_STATUS)) {
+         case 1 -> "IN TRANSIT";
+         case 2 -> "DELIVERED";
+         case 3 -> "RECOVERING";
+         case 4 -> "COMPLETE";
+         default -> "IDLE";
+      };
    }
 }

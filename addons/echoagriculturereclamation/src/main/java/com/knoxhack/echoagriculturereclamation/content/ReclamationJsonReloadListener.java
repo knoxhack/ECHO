@@ -142,7 +142,11 @@ public final class ReclamationJsonReloadListener extends SimplePreparableReloadL
          integer(json, "greenhouseFilterWeight", fallback.greenhouseFilterWeight()),
          integer(json, "greenhouseDockWeight", fallback.greenhouseDockWeight()),
          integer(json, "greenhouseControllerWeight", fallback.greenhouseControllerWeight()),
-         integer(json, "greenhouseTrayWeight", fallback.greenhouseTrayWeight())
+         integer(json, "greenhouseTrayWeight", fallback.greenhouseTrayWeight()),
+         integer(json, "pollinatorDroneServiceRadius", fallback.pollinatorDroneServiceRadius()),
+         integer(json, "pollinatorDroneHomeRadius", fallback.pollinatorDroneHomeRadius()),
+         integer(json, "pollinatorDroneServiceTicks", fallback.pollinatorDroneServiceTicks()),
+         integer(json, "pollinatorDroneGrowthBonus", fallback.pollinatorDroneGrowthBonus())
       );
    }
 

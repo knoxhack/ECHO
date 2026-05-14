@@ -24,6 +24,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.fml.ModList;
 import org.jspecify.annotations.Nullable;
 
 public final class ConvoyTerminalCommonIntegration {
@@ -97,7 +98,12 @@ public final class ConvoyTerminalCommonIntegration {
             ConvoyTerminalSync.send(serverPlayer);
          }
       });
-        TerminalMissionRegistry.register(ConvoyMissionProvider.INSTANCE);
+      boolean missionCoreLoaded = ModList.get().isLoaded("echomissioncore");
+      if (missionCoreLoaded) {
+         ConvoyMissionCoreIntegration.register();
+      } else {
+         TerminalMissionRegistry.register(ConvoyMissionProvider.INSTANCE);
+      }
       TerminalMissionActions.registerForTab(ConvoyTerminalIds.CONVOY_TAB);
       registerArchive();
       EchoConvoyProtocol.LOGGER.info("ECHO Convoy Protocol terminal actions registered.");

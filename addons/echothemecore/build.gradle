@@ -62,6 +62,10 @@ dependencies {
     implementation project(":echocore")
     compileOnly project(":echorendercore")
     compileOnly project(":echoruntimeguard")
+    compileOnly project(":echoterminal")
+    compileOnly project(":echosignalos")
+    compileOnly project(":echoholomap")
+    compileOnly project(":echolens")
     localRuntime project(":echorendercore")
 }
 

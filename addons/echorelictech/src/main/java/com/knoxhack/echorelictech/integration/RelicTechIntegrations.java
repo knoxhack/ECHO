@@ -25,6 +25,12 @@ public final class RelicTechIntegrations {
         if (ModList.get().isLoaded("echosoundcore")) {
             tryInvoke("com.knoxhack.echorelictech.integration.soundcore.RelicTechSoundCoreIntegration");
         }
+        if (ModList.get().isLoaded("echonexusprotocol")) {
+            tryInvoke("com.knoxhack.echorelictech.integration.nexus.RelicTechNexusIntegration");
+        }
+        if (ModList.get().isLoaded("echomissioncore")) {
+            tryInvoke("com.knoxhack.echorelictech.integration.missioncore.RelicTechMissionCoreIntegration");
+        }
     }
 
     private static void tryInvoke(String className) {

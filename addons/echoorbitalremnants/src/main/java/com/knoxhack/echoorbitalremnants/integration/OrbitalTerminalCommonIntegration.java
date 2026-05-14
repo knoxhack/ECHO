@@ -7,6 +7,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.neoforged.fml.ModList;
 
 /**
  * Common-side optional ECHO Terminal bridge. Rendering stays client-only, but
@@ -22,7 +23,12 @@ public final class OrbitalTerminalCommonIntegration {
         if (!REGISTERED.compareAndSet(false, true)) {
             return;
         }
-        TerminalMissionRegistry.register(OrbitalMissionProvider.INSTANCE);
+        boolean missionCoreLoaded = ModList.get().isLoaded("echomissioncore");
+        if (missionCoreLoaded) {
+            OrbitalMissionCoreIntegration.register();
+        } else {
+            TerminalMissionRegistry.register(OrbitalMissionProvider.INSTANCE);
+        }
         TerminalMissionActions.registerForTab(OrbitalTerminalIds.ECHO_TAB);
         TerminalActionRegistry.register(OrbitalTerminalIds.COMMAND_TAB, OrbitalTerminalIds.SCAN_ACTION,
                 (player, payload) -> OrbitalTerminalActions.scan(player));

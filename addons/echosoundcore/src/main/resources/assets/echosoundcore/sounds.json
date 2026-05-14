@@ -1,0 +1,518 @@
+{
+  "music.menu.ashfall": {
+    "sounds": [{ "name": "echosoundcore:music/menu/menu_ashfall_theme", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.menu"
+  },
+  "music.menu.nexus": {
+    "sounds": [{ "name": "echosoundcore:music/menu/menu_nexus_theme", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.menu"
+  },
+  "music.menu.orbital": {
+    "sounds": [{ "name": "echosoundcore:music/menu/menu_orbital_theme", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.menu"
+  },
+  "music.menu.blackbox": {
+    "sounds": [{ "name": "echosoundcore:music/menu/menu_blackbox_theme", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.menu"
+  },
+  "music.gameplay.safe_base": {
+    "sounds": [{ "name": "echosoundcore:music/gameplay/gameplay_safe_base_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.gameplay"
+  },
+  "music.gameplay.exploration": {
+    "sounds": [{ "name": "echosoundcore:music/gameplay/gameplay_exploration_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.gameplay"
+  },
+  "music.gameplay.night": {
+    "sounds": [{ "name": "echosoundcore:music/gameplay/gameplay_night_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.gameplay"
+  },
+  "music.gameplay.underground": {
+    "sounds": [{ "name": "echosoundcore:music/gameplay/gameplay_underground_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.gameplay"
+  },
+  "music.biome.wasteland": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_wasteland_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.crash_zone": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_crash_zone_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.toxic_swamp": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_toxic_swamp_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.radiation_zone": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_radiation_zone_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.cryogenic_ruins": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_cryogenic_ruins_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.ruined_city": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_ruined_city_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.industrial_ruins": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_industrial_ruins_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.biome.nexus_scar": {
+    "sounds": [{ "name": "echosoundcore:music/biome/biome_nexus_scar_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.biome"
+  },
+  "music.faction.radwarden.ambient": {
+    "sounds": [{ "name": "echosoundcore:music/faction/faction_radwarden_ambient_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.faction"
+  },
+  "music.faction.crashbreak.ambient": {
+    "sounds": [{ "name": "echosoundcore:music/faction/faction_crashbreak_ambient_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.faction"
+  },
+  "music.faction.sporebound.ambient": {
+    "sounds": [{ "name": "echosoundcore:music/faction/faction_sporebound_ambient_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.faction"
+  },
+  "music.faction.radwarden.combat": {
+    "sounds": [{ "name": "echosoundcore:music/faction/faction_radwarden_combat_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.faction"
+  },
+  "music.faction.crashbreak.combat": {
+    "sounds": [{ "name": "echosoundcore:music/faction/faction_crashbreak_combat_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.faction"
+  },
+  "music.faction.sporebound.combat": {
+    "sounds": [{ "name": "echosoundcore:music/faction/faction_sporebound_combat_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.faction"
+  },
+  "music.combat.light": {
+    "sounds": [{ "name": "echosoundcore:music/combat/combat_light_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.combat"
+  },
+  "music.combat.heavy": {
+    "sounds": [{ "name": "echosoundcore:music/combat/combat_heavy_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.combat"
+  },
+  "music.combat.nexus": {
+    "sounds": [{ "name": "echosoundcore:music/combat/combat_nexus_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.combat"
+  },
+  "music.combat.faction_raid": {
+    "sounds": [{ "name": "echosoundcore:music/combat/combat_faction_raid_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.combat"
+  },
+  "music.combat.siege": {
+    "sounds": [{ "name": "echosoundcore:music/combat/combat_siege_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.combat"
+  },
+  "music.boss.warden": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_warden_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.wasteland": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_wasteland_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.toxic": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_toxic_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.radiation": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_radiation_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.cryo": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_cryo_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.industrial": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_industrial_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.city": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_city_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.guardian.nexus": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_guardian_nexus_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.corruption_bloom": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_corruption_bloom_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.severance_engine": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_severance_engine_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.mirror_command": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_mirror_command_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.boss.station_mother": {
+    "sounds": [{ "name": "echosoundcore:music/boss/boss_station_mother_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.boss"
+  },
+  "music.chapter.ashfall_protocol": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_ashfall_protocol_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.orbital_remnants": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_orbital_remnants_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.agriculture_reclamation": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_agriculture_reclamation_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.stationfall": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_stationfall_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.nexus_protocol": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_nexus_protocol_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.industrial_nexus": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_industrial_nexus_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.logistics_network": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_logistics_network_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.convoy_protocol": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_convoy_protocol_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.armory": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_armory_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.chapter.blackbox_protocol": {
+    "sounds": [{ "name": "echosoundcore:music/chapter/chapter_blackbox_protocol_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.chapter"
+  },
+  "music.terminal.command_bed": {
+    "sounds": [{ "name": "echosoundcore:music/terminal/terminal_command_bed_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.terminal"
+  },
+  "music.terminal.nexus_corrupted": {
+    "sounds": [{ "name": "echosoundcore:music/terminal/terminal_nexus_corrupted_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.terminal"
+  },
+  "music.nexus.core_ambience": {
+    "sounds": [{ "name": "echosoundcore:music/nexus/nexus_core_ambience_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.nexus"
+  },
+  "music.nexus.choice_room": {
+    "sounds": [{ "name": "echosoundcore:music/nexus/nexus_choice_room_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.nexus"
+  },
+  "music.nexus.siege": {
+    "sounds": [{ "name": "echosoundcore:music/nexus/nexus_siege_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.nexus"
+  },
+  "music.blackbox.memory_fragment": {
+    "sounds": [{ "name": "echosoundcore:music/blackbox/blackbox_memory_fragment_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.blackbox"
+  },
+  "music.blackbox.false_signal": {
+    "sounds": [{ "name": "echosoundcore:music/blackbox/blackbox_false_signal_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.blackbox"
+  },
+  "music.blackbox.truth_engine": {
+    "sounds": [{ "name": "echosoundcore:music/blackbox/blackbox_truth_engine_01", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.music.blackbox"
+  },
+  "stinger.mission.accept": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_mission_accept" }],
+    "subtitle": "subtitles.echosoundcore.stinger.mission_accept"
+  },
+  "stinger.mission.update": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_mission_update" }],
+    "subtitle": "subtitles.echosoundcore.stinger.mission_update"
+  },
+  "stinger.objective.complete": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_objective_complete" }],
+    "subtitle": "subtitles.echosoundcore.stinger.objective_complete"
+  },
+  "stinger.mission.complete": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_mission_complete" }],
+    "subtitle": "subtitles.echosoundcore.stinger.mission_complete"
+  },
+  "stinger.signal.detected": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_signal_detected" }],
+    "subtitle": "subtitles.echosoundcore.stinger.signal_detected"
+  },
+  "stinger.guardian.located": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_guardian_located" }],
+    "subtitle": "subtitles.echosoundcore.stinger.guardian_located"
+  },
+  "stinger.nexus.state_changed": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_nexus_state_changed" }],
+    "subtitle": "subtitles.echosoundcore.stinger.nexus_state_changed"
+  },
+  "stinger.chapter.unlocked": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_chapter_unlocked" }],
+    "subtitle": "subtitles.echosoundcore.stinger.chapter_unlocked"
+  },
+  "stinger.reward.available": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_reward_available" }],
+    "subtitle": "subtitles.echosoundcore.stinger.reward_available"
+  },
+  "stinger.faction.radwarden.rep_up": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_faction_radwarden_rep_up" }],
+    "subtitle": "subtitles.echosoundcore.stinger.faction_radwarden_rep_up"
+  },
+  "stinger.faction.crashbreak.rep_up": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_faction_crashbreak_rep_up" }],
+    "subtitle": "subtitles.echosoundcore.stinger.faction_crashbreak_rep_up"
+  },
+  "stinger.faction.sporebound.rep_up": {
+    "sounds": [{ "name": "echosoundcore:stinger/stinger_faction_sporebound_rep_up" }],
+    "subtitle": "subtitles.echosoundcore.stinger.faction_sporebound_rep_up"
+  },
+  "ui.terminal.open": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_open" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.open"
+  },
+  "ui.terminal.close": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_close" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.close"
+  },
+  "ui.terminal.tab": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_tab" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.tab"
+  },
+  "ui.terminal.select": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_select" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.select"
+  },
+  "ui.terminal.error": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_error" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.error"
+  },
+  "ui.terminal.reward_claim": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_reward_claim" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.reward_claim"
+  },
+  "ui.terminal.new_intel": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_new_intel" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.new_intel"
+  },
+  "ui.terminal.warning": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_warning" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.warning"
+  },
+  "ui.terminal.corrupt_tick": {
+    "sounds": [{ "name": "echosoundcore:ui/terminal/ui_terminal_corrupt_tick" }],
+    "subtitle": "subtitles.echosoundcore.ui.terminal.corrupt_tick"
+  },
+  "ui.lens.scan.compact": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_scan_compact" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.scan_compact"
+  },
+  "ui.lens.scan.expanded": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_scan_expanded" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.scan_expanded"
+  },
+  "ui.lens.deep_scan.start": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_deep_scan_start" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.deep_scan_start"
+  },
+  "ui.lens.deep_scan.loop": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_deep_scan_loop" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.deep_scan_loop"
+  },
+  "ui.lens.deep_scan.complete": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_deep_scan_complete" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.deep_scan_complete"
+  },
+  "ui.lens.scan.invalid": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_scan_invalid" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.scan_invalid"
+  },
+  "ui.lens.hazard.detected": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_hazard_detected" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.hazard_detected"
+  },
+  "ui.lens.machine.diagnostics": {
+    "sounds": [{ "name": "echosoundcore:ui/lens/ui_lens_machine_diagnostics" }],
+    "subtitle": "subtitles.echosoundcore.ui.lens.machine_diagnostics"
+  },
+  "ui.holomap.open": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_open" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.open"
+  },
+  "ui.holomap.close": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_close" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.close"
+  },
+  "ui.holomap.waypoint.place": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_waypoint_place" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.waypoint_place"
+  },
+  "ui.holomap.waypoint.remove": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_waypoint_remove" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.waypoint_remove"
+  },
+  "ui.holomap.overlay.hazard": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_overlay_hazard" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.overlay_hazard"
+  },
+  "ui.holomap.route.calculated": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_route_calculated" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.route_calculated"
+  },
+  "ui.holomap.unknown": {
+    "sounds": [{ "name": "echosoundcore:ui/holomap/ui_holomap_unknown" }],
+    "subtitle": "subtitles.echosoundcore.ui.holomap.unknown"
+  },
+  "ui.signaloos.boot": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_boot" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.boot"
+  },
+  "ui.signaloos.login": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_login" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.login"
+  },
+  "ui.signaloos.file.open": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_file_open" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.file_open"
+  },
+  "ui.signaloos.file.save": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_file_save" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.file_save"
+  },
+  "ui.signaloos.network.ping": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_network_ping" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.network_ping"
+  },
+  "ui.signaloos.drive.insert": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_drive_insert" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.drive_insert"
+  },
+  "ui.signaloos.drive.remove": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_drive_remove" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.drive_remove"
+  },
+  "ui.signaloos.vault.unlock": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_vault_unlock" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.vault_unlock"
+  },
+  "ui.signaloos.app.open": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_app_open" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.app_open"
+  },
+  "ui.signaloos.app.close": {
+    "sounds": [{ "name": "echosoundcore:ui/signaloos/ui_signaloos_app_close" }],
+    "subtitle": "subtitles.echosoundcore.ui.signaloos.app_close"
+  },
+  "powergrid.generator.hand_crank": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_generator_hand_crank" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.generator_hand_crank"
+  },
+  "powergrid.generator.scrap_burner": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_generator_scrap_burner" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.generator_scrap_burner"
+  },
+  "powergrid.battery.hum": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_battery_hum" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.battery_hum"
+  },
+  "powergrid.cable.low_voltage": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_cable_low_voltage" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.cable_low_voltage"
+  },
+  "powergrid.substation.loop": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_substation_loop" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.substation_loop"
+  },
+  "powergrid.breaker.trip": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_breaker_trip" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.breaker_trip"
+  },
+  "powergrid.brownout": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_brownout" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.brownout"
+  },
+  "powergrid.overload.warning": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_overload_warning" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.overload_warning"
+  },
+  "powergrid.overload.failure": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_overload_failure" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.overload_failure"
+  },
+  "powergrid.power_restored": {
+    "sounds": [{ "name": "echosoundcore:powergrid/powergrid_power_restored" }],
+    "subtitle": "subtitles.echosoundcore.powergrid.power_restored"
+  },
+  "drone.boot": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_boot" }],
+    "subtitle": "subtitles.echosoundcore.drone.boot"
+  },
+  "drone.follow": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_follow" }],
+    "subtitle": "subtitles.echosoundcore.drone.follow"
+  },
+  "drone.scout_ping": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_scout_ping" }],
+    "subtitle": "subtitles.echosoundcore.drone.scout_ping"
+  },
+  "drone.target_mark": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_target_mark" }],
+    "subtitle": "subtitles.echosoundcore.drone.target_mark"
+  },
+  "drone.low_power": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_low_power" }],
+    "subtitle": "subtitles.echosoundcore.drone.low_power"
+  },
+  "drone.damaged": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_damaged" }],
+    "subtitle": "subtitles.echosoundcore.drone.damaged"
+  },
+  "drone.repaired": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_repaired" }],
+    "subtitle": "subtitles.echosoundcore.drone.repaired"
+  },
+  "drone.mode_switch": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_mode_switch" }],
+    "subtitle": "subtitles.echosoundcore.drone.mode_switch"
+  },
+  "drone.combat_suppression": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_combat_suppression" }],
+    "subtitle": "subtitles.echosoundcore.drone.combat_suppression"
+  },
+  "drone.return": {
+    "sounds": [{ "name": "echosoundcore:drone/drone_return" }],
+    "subtitle": "subtitles.echosoundcore.drone.return"
+  },
+  "nexus.ambience.low_hum": {
+    "sounds": [{ "name": "echosoundcore:nexus/nexus_ambience_low_hum", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.nexus.ambience_low_hum"
+  },
+  "nexus.ambience.glitch_pulse": {
+    "sounds": [{ "name": "echosoundcore:nexus/nexus_ambience_glitch_pulse", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.nexus.ambience_glitch_pulse"
+  },
+  "nexus.ambience.memory_whisper": {
+    "sounds": [{ "name": "echosoundcore:nexus/nexus_ambience_memory_whisper", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.nexus.ambience_memory_whisper"
+  },
+  "nexus.ambience.reality_tear": {
+    "sounds": [{ "name": "echosoundcore:nexus/nexus_ambience_reality_tear", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.nexus.ambience_reality_tear"
+  },
+  "nexus.core.heartbeat": {
+    "sounds": [{ "name": "echosoundcore:nexus/nexus_core_heartbeat", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.nexus.core_heartbeat"
+  },
+  "nexus.choice_room": {
+    "sounds": [{ "name": "echosoundcore:nexus/nexus_choice_room", "stream": true }],
+    "subtitle": "subtitles.echosoundcore.nexus.choice_room"
+  }
+}

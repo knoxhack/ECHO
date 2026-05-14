@@ -22,6 +22,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder;
@@ -117,9 +118,9 @@ public class FurnaceWardenEntity extends Zombie {
       if (this.level() instanceof ServerLevel serverLevel) {
          if (!this.rewardsDropped) {
             this.rewardsDropped = true;
-            this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.WARDEN_THERMAL_CORE.get()));
-            this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.OVERCLOCK_CORE.get()));
-            this.spawnAtLocation(serverLevel, new ItemStack((ItemLike)ModItems.FURNACE_WARDEN_TROPHY.get()));
+            this.dropCodeReward(serverLevel, new ItemStack((ItemLike)ModItems.WARDEN_THERMAL_CORE.get()));
+            this.dropCodeReward(serverLevel, new ItemStack((ItemLike)ModItems.OVERCLOCK_CORE.get()));
+            this.dropCodeReward(serverLevel, new ItemStack((ItemLike)ModItems.FURNACE_WARDEN_TROPHY.get()));
             this.rewardParticipants(serverLevel);
          }
       }
@@ -130,6 +131,15 @@ public class FurnaceWardenEntity extends Zombie {
 
       this.bossEvent.removeAllPlayers();
       super.die(damageSource);
+   }
+
+   private void dropCodeReward(ServerLevel level, ItemStack stack) {
+      if (stack.isEmpty()) {
+         return;
+      }
+      ItemEntity item = new ItemEntity(level, this.getX(), this.getY(), this.getZ(), stack);
+      item.setDefaultPickUpDelay();
+      level.addFreshEntity(item);
    }
 
    @Override

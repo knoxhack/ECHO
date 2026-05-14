@@ -5,7 +5,7 @@
 - Mod: `1.5.0`
 - Minecraft: `26.1.2`
 - NeoForge: `26.1.2.29-beta`
-- Stack: ECHO Core `1.1.0`, ECHO Terminal `1.1.0`, Ashfall Protocol `1.3.0`, and the current full-stack release addons when testing the complete workspace.
+- Stack: ECHO Core `1.0.0`, ECHO Terminal `1.0.0`, Ashfall Protocol `1.0.0`, and the current full-stack release addons when testing the complete workspace.
 
 ## Automated Result
 

@@ -17,6 +17,7 @@ public final class ModTooltipEvents {
       Map.entry("fuel_still", "tooltip.echoconvoyprotocol.fuel_still"),
       Map.entry("battery_charging_pad", "tooltip.echoconvoyprotocol.battery_charging_pad"),
       Map.entry("vehicle_dock", "tooltip.echoconvoyprotocol.vehicle_dock"),
+      Map.entry("vehicle_upgrade_bay", "tooltip.echoconvoyprotocol.vehicle_upgrade_bay"),
       Map.entry("convoy_beacon", "tooltip.echoconvoyprotocol.convoy_beacon"),
       Map.entry("roadside_signal_marker", "tooltip.echoconvoyprotocol.roadside_signal_marker"),
       Map.entry("cargo_anchor", "tooltip.echoconvoyprotocol.cargo_anchor"),
@@ -34,7 +35,19 @@ public final class ModTooltipEvents {
       Map.entry("scrap_bike_kit", "tooltip.echoconvoyprotocol.scrap_bike_kit"),
       Map.entry("wasteland_rover_kit", "tooltip.echoconvoyprotocol.wasteland_rover_kit"),
       Map.entry("cargo_crawler_kit", "tooltip.echoconvoyprotocol.cargo_crawler_kit"),
-      Map.entry("armored_relay_truck_kit", "tooltip.echoconvoyprotocol.armored_relay_truck_kit")
+      Map.entry("armored_relay_truck_kit", "tooltip.echoconvoyprotocol.armored_relay_truck_kit"),
+      Map.entry("scrap_bike_tuned_chain_kit", "tooltip.echoconvoyprotocol.scrap_bike_tuned_chain_kit"),
+      Map.entry("scrap_bike_saddlebag_frame_kit", "tooltip.echoconvoyprotocol.scrap_bike_saddlebag_frame_kit"),
+      Map.entry("scrap_bike_crash_cage_kit", "tooltip.echoconvoyprotocol.scrap_bike_crash_cage_kit"),
+      Map.entry("wasteland_rover_suspension_kit", "tooltip.echoconvoyprotocol.wasteland_rover_suspension_kit"),
+      Map.entry("wasteland_rover_scanner_array_kit", "tooltip.echoconvoyprotocol.wasteland_rover_scanner_array_kit"),
+      Map.entry("wasteland_rover_reinforced_panel_kit", "tooltip.echoconvoyprotocol.wasteland_rover_reinforced_panel_kit"),
+      Map.entry("cargo_crawler_low_gear_drive_kit", "tooltip.echoconvoyprotocol.cargo_crawler_low_gear_drive_kit"),
+      Map.entry("cargo_crawler_expanded_bay_kit", "tooltip.echoconvoyprotocol.cargo_crawler_expanded_bay_kit"),
+      Map.entry("cargo_crawler_track_skirt_kit", "tooltip.echoconvoyprotocol.cargo_crawler_track_skirt_kit"),
+      Map.entry("armored_relay_truck_torque_axle_kit", "tooltip.echoconvoyprotocol.armored_relay_truck_torque_axle_kit"),
+      Map.entry("armored_relay_truck_relay_array_kit", "tooltip.echoconvoyprotocol.armored_relay_truck_relay_array_kit"),
+      Map.entry("armored_relay_truck_reactive_armor_kit", "tooltip.echoconvoyprotocol.armored_relay_truck_reactive_armor_kit")
    );
 
    private ModTooltipEvents() {

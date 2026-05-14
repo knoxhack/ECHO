@@ -4,6 +4,7 @@ import com.knoxhack.echorelictech.EchoRelicTech;
 
 public class RelicTechTerminalIntegration {
     public static void register() {
-        EchoRelicTech.LOGGER.info("ECHO Terminal integration scaffold loaded for RelicTech.");
+        EchoRelicTech.LOGGER.info("ECHO Terminal integration loaded for RelicTech.");
+        RelicTechTerminalCommonIntegration.register();
     }
 }

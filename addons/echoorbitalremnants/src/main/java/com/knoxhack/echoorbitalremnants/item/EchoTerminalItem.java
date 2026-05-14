@@ -51,8 +51,6 @@ public class EchoTerminalItem extends Item {
 
     public static void performScan(Player player) {
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
-        progress.tickFactionContractCooldown(player);
-        progress.prepareFactionContract(player);
         if (progress.echoZeroEncountered() && player instanceof ServerPlayer serverPlayer) {
             ModAdvancements.grantEchoZeroResolved(serverPlayer);
         }
@@ -411,7 +409,7 @@ public class EchoTerminalItem extends Item {
     private static String tryFactionContractScan(Player player, EchoTerminalProgress progress, boolean reportBlocked) {
         FactionPledgeItem.Faction faction = progress.activeContractFaction();
         if (faction == null) {
-            return reportBlocked ? progress.factionContractRequirement() : null;
+            return reportBlocked ? progress.legacyFactionContractRequirement() : null;
         }
         boolean completed = switch (faction) {
             case ORBITAL_REMNANT -> completeOrbitalRemnantContract(player);
@@ -438,7 +436,7 @@ public class EchoTerminalItem extends Item {
         if (progress.activeContractFaction() != null) {
             return "Faction support hub reserved for active " + progress.activeContractFaction().displayName()
                     + " contract service. Vendor cache is paused until this requirement clears: "
-                    + progress.factionContractRequirement();
+                    + progress.legacyFactionContractRequirement();
         }
         if (faction == null) {
             return "Faction support hub online. No pledge detected; use a Radwarden Badge, Crashbreak Marker, or Sporebound Sigil to authorize barter caches.";
@@ -448,7 +446,7 @@ public class EchoTerminalItem extends Item {
                 + ":" + (player.blockPosition().getX() >> 4)
                 + ":" + (player.blockPosition().getZ() >> 4);
         if (!progress.markTerminalMissionCacheClaimed(player, vendorId)) {
-            return "Faction support cache already serviced at this hub. Find another relay hub, or finish the active ECHO-tab contract chain for the next authorized reward.";
+            return "Faction support cache already serviced at this hub. Find another relay hub, or use the NPC outpost contact for services and charters.";
         }
         grantFactionVendorReward(player, faction);
         playObjectiveFeedback(player, ParticleTypes.HAPPY_VILLAGER, 1.25F);
@@ -582,9 +580,9 @@ public class EchoTerminalItem extends Item {
             return "Faction relay is cooling down. Wait for the sync counter to clear, then press SCAN again.";
         }
         if (progress.allSurveysComplete()) {
-            return progress.completedFactionContractCount() < 3
+            return !progress.allOutpostChartersComplete()
                     ? "Survey network complete. " + progress.factionContractRequirement()
-                    + " Complete three ECHO-tab contracts before the final seal (" + progress.completedFactionContractCount() + "/3)."
+                    + " Complete Tier I outpost charters before the final seal (" + progress.completedOutpostCharterCount() + "/3)."
                     : "Survey network complete. Press SCAN to seal the final network.";
         }
         if (!progress.stationLifeSupportRestored()) {
@@ -647,8 +645,8 @@ public class EchoTerminalItem extends Item {
             }
             return "Nexus stabilization needs a new Nexus Anchor/Growth site or one Nexus Stabilizer Shard. Signal Analyzer can process Nexus Dust into shards.";
         }
-        if (progress.completedFactionContractCount() < 3) {
-            return "Faction contract unavailable. Use a faction pledge item first, then check the ECHO tab.";
+        if (!progress.allOutpostChartersComplete()) {
+            return "Outpost charter incomplete. Visit the Saturn, Titan, and Nexus faction NPC outposts.";
         }
         return "Scan found no route hook. Use ROUTES or SURVEY for the next required location and item.";
     }

@@ -136,13 +136,13 @@ public final class ConvoyCoreIntegration {
                "Move near the paired vehicle or use a Route Beacon on an owned vehicle to repair the link."
             ));
          } else {
-            if (vehicle.damage() >= vehicle.kind().maxDamage() * 0.65D) {
+            if (vehicle.damage() >= vehicle.maxDamage() * 0.65D) {
                diagnostics.add(new EchoDiagnosticBlocker(
                   ConvoyTerminalIds.id("diagnostic/vehicle_damage"),
                   CHAPTER_ID,
                   EchoDiagnosticBlocker.Severity.WARNING,
                   "Convoy vehicle heavily damaged",
-                  vehicle.callsign() + " damage " + vehicle.damage() + "/" + vehicle.kind().maxDamage()
+                  vehicle.callsign() + " damage " + vehicle.damage() + "/" + vehicle.maxDamage()
                      + " while assigned to " + route.title() + ".",
                   "Use a Convoy Repair Kit, Vehicle Dock, or Field Repair Station before pushing deeper."
                ));
@@ -153,7 +153,7 @@ public final class ConvoyCoreIntegration {
                   CHAPTER_ID,
                   EchoDiagnosticBlocker.Severity.WARNING,
                   "Convoy fuel low",
-                  vehicle.callsign() + " fuel " + vehicle.fuel() + "/" + vehicle.kind().maxFuel()
+                  vehicle.callsign() + " fuel " + vehicle.fuel() + "/" + vehicle.maxFuel()
                      + " on " + route.title() + ".",
                   "Refuel at a Vehicle Dock or apply a Fuel Canister before continuing."
                ));
@@ -229,9 +229,9 @@ public final class ConvoyCoreIntegration {
          }
          if (vehicle != null) {
             summary.append(" Vehicle ").append(vehicle.callsign())
-               .append(" fuel ").append(vehicle.fuel()).append("/").append(vehicle.kind().maxFuel())
-               .append(", damage ").append(vehicle.damage()).append("/").append(vehicle.kind().maxDamage())
-               .append(", cargo ").append(vehicle.filledCargoSlots()).append("/").append(vehicle.kind().cargoSlots()).append(".");
+               .append(" fuel ").append(vehicle.fuel()).append("/").append(vehicle.maxFuel())
+               .append(", damage ").append(vehicle.damage()).append("/").append(vehicle.maxDamage())
+               .append(", cargo ").append(vehicle.filledCargoSlots()).append("/").append(vehicle.cargoSlots()).append(".");
          }
       }
       return summary.toString();

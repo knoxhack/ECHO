@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echologisticsnetwork:block/supply_crate"
+    "model": "echologisticsnetwork:item/supply_crate"
   }
 }

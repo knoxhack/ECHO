@@ -178,15 +178,48 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
          "Dungeon",
          "Dangerous"
       ),
+      BUNKER(
+         "blackbox_bunker",
+         "DUNGEONS",
+         1,
+         1,
+         "Command Bunker",
+         "Break the Command Bunker proof after Vault and Command memory evidence align.",
+         "Open the Bunker Monolith, defeat the Command Remnant, and recover command proof.",
+         "Dungeon",
+         "Dangerous"
+      ),
       BOSSES(
          "memory_bosses",
          "DUNGEONS",
          1,
-         1,
+         2,
          "False ECHO and Command Remnant",
          "Defeat the memory copy and the command AI guarding final key proof.",
          "Clear Labyrinth and Temple pressure until both boss flags are recorded.",
          "Boss",
+         "Endgame"
+      ),
+      LABYRINTH(
+         "blackbox_labyrinth",
+         "DUNGEONS",
+         1,
+         3,
+         "Memory Labyrinth",
+         "Stabilize the Memory Labyrinth after False ECHO proof and ECHO logs.",
+         "Use the Labyrinth Monolith and recover the right key segment from the decoder path.",
+         "Dungeon",
+         "Dangerous"
+      ),
+      TEMPLE(
+         "blackbox_temple",
+         "DUNGEONS",
+         1,
+         4,
+         "Core Access Temple",
+         "Seal the Core Access Temple proof from Command and Core records.",
+         "Use the Temple Monolith and finish the access-key assembly proof chain.",
+         "Dungeon",
          "Endgame"
       ),
       KEY(
@@ -200,11 +233,22 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
          "Crafting",
          "Endgame"
       ),
+      CORE_CHAMBER(
+         "core_chamber",
+         "CORE",
+         2,
+         1,
+         "Core Chamber Access",
+         "Open the Core Chamber route with the Nexus Core Access Key.",
+         "Assemble the key, then use the Core Chamber Monolith to reach the Guardian arena.",
+         "Dungeon",
+         "Final"
+      ),
       GUARDIAN(
          "nexus_guardian",
          "CORE",
          2,
-         1,
+         2,
          "Nexus Guardian",
          "Enter the Nexus Core Chamber and defeat the final protector of the Core.",
          "Use the Core Chamber Monolith with a Nexus Core Access Key, then survive the Guardian phases.",
@@ -269,8 +313,12 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
          return switch (this) {
             case DECODE -> progress.decodedMemoryTotal() >= 6;
             case VAULT -> progress.completed(BlackboxDungeon.VAULT);
+            case BUNKER -> progress.completed(BlackboxDungeon.BUNKER);
             case BOSSES -> progress.bossDefeated("false_echo") && progress.bossDefeated("command_remnant");
+            case LABYRINTH -> progress.completed(BlackboxDungeon.LABYRINTH);
+            case TEMPLE -> progress.completed(BlackboxDungeon.TEMPLE);
             case KEY -> progress.hasNexusCoreAccessKey();
+            case CORE_CHAMBER -> progress.canEnter(BlackboxDungeon.CORE_CHAMBER);
             case GUARDIAN -> progress.bossDefeated("nexus_guardian");
             case ENDING -> progress.ending() != BlackboxEnding.NONE;
          };
@@ -283,8 +331,12 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
             return switch (this) {
                case DECODE -> Math.min(1.0F, progress.decodedMemoryTotal() / 6.0F);
                case VAULT -> progress.canEnter(BlackboxDungeon.VAULT) ? 0.5F : 0.0F;
+               case BUNKER -> progress.canEnter(BlackboxDungeon.BUNKER) ? 0.5F : 0.0F;
                case BOSSES -> ((progress.bossDefeated("false_echo") ? 1.0F : 0.0F) + (progress.bossDefeated("command_remnant") ? 1.0F : 0.0F)) / 2.0F;
+               case LABYRINTH -> progress.canEnter(BlackboxDungeon.LABYRINTH) ? 0.5F : 0.0F;
+               case TEMPLE -> progress.canEnter(BlackboxDungeon.TEMPLE) ? 0.5F : 0.0F;
                case KEY -> progress.hasMemory(MemoryType.CORE, 2) ? 0.5F : 0.0F;
+               case CORE_CHAMBER -> progress.hasNexusCoreAccessKey() ? 0.75F : 0.0F;
                case GUARDIAN -> progress.canEnter(BlackboxDungeon.CORE_CHAMBER) ? 0.5F : 0.0F;
                case ENDING -> 0.0F;
             };
@@ -325,6 +377,36 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
                   new ItemStack((ItemLike)ModItems.SECURITY_MEMORY_RECORD.get()),
                   progress.memoryCount(MemoryType.SECURITY),
                   2
+               ),
+               requirement(
+                  "Vault Proof",
+                  "Blackbox Vault dungeon proof sealed.",
+                  new ItemStack((ItemLike)ModBlocks.VAULT_MONOLITH.get()),
+                  progress.completed(BlackboxDungeon.VAULT) ? 1 : 0,
+                  1
+               )
+            );
+            case BUNKER -> List.of(
+               requirement(
+                  "Vault Route",
+                  "Vault proof recovered.",
+                  new ItemStack((ItemLike)ModBlocks.VAULT_MONOLITH.get()),
+                  progress.completed(BlackboxDungeon.VAULT) ? 1 : 0,
+                  1
+               ),
+               requirement(
+                  "Command Logs",
+                  "Command memory route proof.",
+                  new ItemStack((ItemLike)ModItems.COMMAND_MEMORY_RECORD.get()),
+                  progress.memoryCount(MemoryType.COMMAND),
+                  2
+               ),
+               requirement(
+                  "Bunker Proof",
+                  "Command Bunker dungeon proof sealed.",
+                  new ItemStack((ItemLike)ModBlocks.BUNKER_MONOLITH.get()),
+                  progress.completed(BlackboxDungeon.BUNKER) ? 1 : 0,
+                  1
                )
             );
             case BOSSES -> List.of(
@@ -343,12 +425,67 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
                   1
                )
             );
+            case LABYRINTH -> List.of(
+               requirement(
+                  "False ECHO Proof",
+                  "ECHO Identity Fragment recovered.",
+                  new ItemStack((ItemLike)ModItems.ECHO_IDENTITY_FRAGMENT.get()),
+                  progress.bossDefeated("false_echo") ? 1 : 0,
+                  1
+               ),
+               requirement(
+                  "ECHO Logs",
+                  "ECHO memory route proof.",
+                  new ItemStack((ItemLike)ModItems.ECHO_MEMORY_RECORD.get()),
+                  progress.memoryCount(MemoryType.ECHO),
+                  2
+               ),
+               requirement(
+                  "Labyrinth Proof",
+                  "Memory Labyrinth route stabilized.",
+                  new ItemStack((ItemLike)ModBlocks.LABYRINTH_MONOLITH.get()),
+                  progress.completed(BlackboxDungeon.LABYRINTH) ? 1 : 0,
+                  1
+               )
+            );
+            case TEMPLE -> List.of(
+               requirement(
+                  "Command Remnant Proof",
+                  "Command Key recovered.",
+                  new ItemStack((ItemLike)ModItems.COMMAND_KEY.get()),
+                  progress.bossDefeated("command_remnant") ? 1 : 0,
+                  1
+               ),
+               requirement(
+                  "Core Logs",
+                  "Core memory route proof.",
+                  new ItemStack((ItemLike)ModItems.CORE_MEMORY_RECORD.get()),
+                  progress.memoryCount(MemoryType.CORE),
+                  2
+               ),
+               requirement(
+                  "Temple Proof",
+                  "Core Access Temple proof sealed.",
+                  new ItemStack((ItemLike)ModBlocks.TEMPLE_MONOLITH.get()),
+                  progress.completed(BlackboxDungeon.TEMPLE) ? 1 : 0,
+                  1
+               )
+            );
             case KEY -> List.of(
                requirement(
                   "Nexus Core Access Key",
                   "Assembled at the Core Key Assembler.",
                   new ItemStack((ItemLike)ModItems.NEXUS_CORE_ACCESS_KEY.get()),
                   progress.hasNexusCoreAccessKey() ? 1 : 0,
+                  1
+               )
+            );
+            case CORE_CHAMBER -> List.of(
+               requirement(
+                  "Core Chamber Route",
+                  "Nexus Core Access Key accepted.",
+                  new ItemStack((ItemLike)ModBlocks.CORE_CHAMBER_MONOLITH.get()),
+                  progress.canEnter(BlackboxDungeon.CORE_CHAMBER) ? 1 : 0,
                   1
                )
             );
@@ -364,7 +501,7 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
             case ENDING -> List.of(
                requirement(
                   "Truth Engine",
-                  "Final choice committed.",
+                  "Restore, Control, Destroy, or Merge directive committed.",
                   new ItemStack((ItemLike)ModBlocks.TRUTH_ENGINE.get()),
                   progress.ending() == BlackboxEnding.NONE ? 0 : 1,
                   1
@@ -374,11 +511,15 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
       }
 
       List<ItemStack> rewards() {
-         return switch (this) {
+        return switch (this) {
             case DECODE -> List.of(new ItemStack((ItemLike)ModItems.STATIC_FLUID.get(), 2));
             case VAULT -> List.of(new ItemStack((ItemLike)ModItems.CORRUPTED_FERRITE.get(), 4));
+            case BUNKER -> List.of(new ItemStack((ItemLike)ModItems.CORE_ACCESS_KEY_MATRIX.get()));
             case BOSSES -> List.of(new ItemStack((ItemLike)ModItems.CORE_ACCESS_KEY_MATRIX.get()));
+            case LABYRINTH -> List.of(new ItemStack((ItemLike)ModItems.CORE_ACCESS_KEY_RIGHT.get()));
+            case TEMPLE -> List.of(new ItemStack((ItemLike)ModItems.STATIC_FLUID.get(), 3));
             case KEY -> List.of(new ItemStack((ItemLike)ModItems.STATIC_FLUID.get(), 4));
+            case CORE_CHAMBER -> List.of(new ItemStack((ItemLike)ModItems.STATIC_FLUID.get(), 4));
             case GUARDIAN -> List.of(new ItemStack((ItemLike)ModItems.RESTORE_DIRECTIVE.get()), new ItemStack((ItemLike)ModItems.DESTROY_DIRECTIVE.get()));
             case ENDING -> List.of(new ItemStack((ItemLike)ModItems.DELETED_BLACKBOX_FRAGMENT.get()));
          };
@@ -388,8 +529,12 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
          return switch (this) {
             case DECODE -> new ItemStack((ItemLike)ModBlocks.BLACKBOX_DECODER.get());
             case VAULT -> new ItemStack((ItemLike)ModBlocks.VAULT_MONOLITH.get());
+            case BUNKER -> new ItemStack((ItemLike)ModBlocks.BUNKER_MONOLITH.get());
             case BOSSES -> new ItemStack((ItemLike)ModItems.ECHO_IDENTITY_FRAGMENT.get());
+            case LABYRINTH -> new ItemStack((ItemLike)ModBlocks.LABYRINTH_MONOLITH.get());
+            case TEMPLE -> new ItemStack((ItemLike)ModBlocks.TEMPLE_MONOLITH.get());
             case KEY -> new ItemStack((ItemLike)ModItems.NEXUS_CORE_ACCESS_KEY.get());
+            case CORE_CHAMBER -> new ItemStack((ItemLike)ModBlocks.CORE_CHAMBER_MONOLITH.get());
             case GUARDIAN -> new ItemStack((ItemLike)ModItems.GUARDIAN_CORE.get());
             case ENDING -> new ItemStack((ItemLike)ModBlocks.TRUTH_ENGINE.get());
          };

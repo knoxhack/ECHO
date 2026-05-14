@@ -6,11 +6,14 @@ import com.knoxhack.echocore.api.EchoDiscoveryEntry;
 import com.knoxhack.echocore.api.EchoFactionContract;
 import com.knoxhack.echocore.api.EchoFactionDefinition;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.block.NexusCoreBlock;
 import com.knoxhack.echoashfallprotocol.block.PowerNodeBlock;
 import com.knoxhack.echoashfallprotocol.block.WorkshopBlock;
 import com.knoxhack.echoashfallprotocol.block.entity.BatteryBankBlockEntity;
+import com.knoxhack.echoashfallprotocol.block.entity.EchoContainerBlockEntity;
 import com.knoxhack.echoashfallprotocol.block.entity.NexusCoreBlockEntity;
 import com.knoxhack.echoashfallprotocol.block.entity.OreGrinderBlockEntity;
 import com.knoxhack.echoashfallprotocol.block.entity.PowerCableBlockEntity;
@@ -19,6 +22,8 @@ import com.knoxhack.echoashfallprotocol.block.entity.WaterPurifierBlockEntity;
 import com.knoxhack.echoashfallprotocol.boss.BossHudProfile;
 import com.knoxhack.echoashfallprotocol.boss.BossHudProfiles;
 import com.knoxhack.echoashfallprotocol.boss.BossHudTargetResolver;
+import com.knoxhack.echoashfallprotocol.echo.AshfallMissionActions;
+import com.knoxhack.echoashfallprotocol.echo.EchoGuideManager;
 import com.knoxhack.echoashfallprotocol.echo.EchoIntel;
 import com.knoxhack.echoashfallprotocol.echo.EndgameMissionProgress;
 import com.knoxhack.echoashfallprotocol.echo.Mission;
@@ -44,6 +49,7 @@ import com.knoxhack.echoashfallprotocol.endgame.NexusRelaySiteService;
 import com.knoxhack.echoashfallprotocol.endgame.NexusRelayType;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.endgame.PrefallArchivesArenaService;
+import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventHandler;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventProfiles;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventStatus;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
@@ -59,6 +65,7 @@ import com.knoxhack.echoashfallprotocol.faction.FactionDiplomacy;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfile;
 import com.knoxhack.echoashfallprotocol.guardian.BiomeGuardianProfiles;
 import com.knoxhack.echoashfallprotocol.integration.AshfallDiscoveryProvider;
+import com.knoxhack.echoashfallprotocol.integration.AshfallMissionCoreIntegration;
 import com.knoxhack.echoashfallprotocol.integration.AshfallTerminalCommonIntegration;
 import com.knoxhack.echoashfallprotocol.item.RareTechSchematicItem;
 import com.knoxhack.echoashfallprotocol.item.SchematicFragmentItem;
@@ -73,6 +80,7 @@ import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import com.knoxhack.echoashfallprotocol.research.Perk;
 import com.knoxhack.echoashfallprotocol.research.PerkRegistry;
 import com.knoxhack.echoashfallprotocol.research.ResearchData;
+import com.knoxhack.echoashfallprotocol.survival.HazardZoneManager;
 import com.knoxhack.echoashfallprotocol.world.BiomeGuardianSiteData;
 import com.knoxhack.echoashfallprotocol.world.ExplorationSiteRegistry;
 import com.knoxhack.echoashfallprotocol.world.NexusCampaignData;
@@ -89,13 +97,21 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.serialization.JsonOps;
 import io.netty.buffer.Unpooled;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -182,8 +198,22 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("archive_read_state", () -> ModGameTests::archiveReadState);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SUBSTRATE_GRINDER_RECIPES =
             TEST_FUNCTIONS.register("substrate_grinder_recipes", () -> ModGameTests::substrateGrinderRecipes);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ECHO_CONTAINER_BLOCK_ENTITIES =
+            TEST_FUNCTIONS.register("echo_container_block_entities", () -> ModGameTests::echoContainerBlockEntities);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSIONCORE_REWARD_CLAIMABLE_UX =
+            TEST_FUNCTIONS.register("missioncore_reward_claimable_ux", () -> ModGameTests::missionCoreRewardClaimableUx);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SCRAP_KNIFE_TURN_IN =
+            TEST_FUNCTIONS.register("scrap_knife_turn_in", () -> ModGameTests::scrapKnifeTurnIn);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ADVANCEMENT_CRITERIA_GUARD =
+            TEST_FUNCTIONS.register("advancement_criteria_guard", () -> ModGameTests::advancementCriteriaGuard);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ENVIRONMENTAL_EVENT_PROFILES =
             TEST_FUNCTIONS.register("environmental_event_profiles", () -> ModGameTests::environmentalEventProfiles);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SHELTERED_RADIATION_STORM_NO_EXPOSURE =
+            TEST_FUNCTIONS.register("sheltered_radiation_storm_no_exposure", () -> ModGameTests::shelteredRadiationStormNoExposure);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TOXIC_SLIME_NO_PASSIVE_PUDDLES =
+            TEST_FUNCTIONS.register("toxic_slime_no_passive_puddles", () -> ModGameTests::toxicSlimeNoPassivePuddles);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TOXIC_BIOME_HAZARD_CLASSIFICATION =
+            TEST_FUNCTIONS.register("toxic_biome_hazard_classification", () -> ModGameTests::toxicBiomeHazardClassification);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_UX_SUMMARY =
             TEST_FUNCTIONS.register("mission_ux_summary", () -> ModGameTests::missionUxSummary);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ENDGAME_ROUTE_PROGRESS =
@@ -252,7 +282,14 @@ public final class ModGameTests {
         register(event, environment, "starting_drop_pod_data_lenient_load", STARTING_DROP_POD_DATA_LENIENT_LOAD.getId());
         register(event, environment, "archive_read_state", ARCHIVE_READ_STATE.getId());
         register(event, environment, "substrate_grinder_recipes", SUBSTRATE_GRINDER_RECIPES.getId());
+        register(event, environment, "echo_container_block_entities", ECHO_CONTAINER_BLOCK_ENTITIES.getId());
+        register(event, environment, "missioncore_reward_claimable_ux", MISSIONCORE_REWARD_CLAIMABLE_UX.getId());
+        register(event, environment, "scrap_knife_turn_in", SCRAP_KNIFE_TURN_IN.getId());
+        register(event, environment, "advancement_criteria_guard", ADVANCEMENT_CRITERIA_GUARD.getId());
         register(event, environment, "environmental_event_profiles", ENVIRONMENTAL_EVENT_PROFILES.getId());
+        register(event, environment, "sheltered_radiation_storm_no_exposure", SHELTERED_RADIATION_STORM_NO_EXPOSURE.getId());
+        register(event, environment, "toxic_slime_no_passive_puddles", TOXIC_SLIME_NO_PASSIVE_PUDDLES.getId());
+        register(event, environment, "toxic_biome_hazard_classification", TOXIC_BIOME_HAZARD_CLASSIFICATION.getId());
         register(event, environment, "mission_ux_summary", MISSION_UX_SUMMARY.getId());
         register(event, environment, "endgame_route_progress", ENDGAME_ROUTE_PROGRESS.getId());
         register(event, environment, "terminal_lore_taxonomy", TERMINAL_LORE_TAXONOMY.getId());
@@ -338,6 +375,7 @@ public final class ModGameTests {
                 "Light command should toggle companion light");
 
         drone.setPos(player.getX() + 24.0D, player.getY(), player.getZ() + 24.0D);
+        drone.setDeltaMovement(Vec3.ZERO);
         helper.runAfterDelay(1L, () -> {
             ModNetwork.handleDroneCommand(new DroneCommandPacket("RECALL"), player);
             helper.assertTrue(drone.distanceToSqr(player) < 64.0D,
@@ -458,6 +496,66 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void toxicSlimeNoPassivePuddles(GameTestHelper helper) {
+        var level = helper.getLevel();
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 1; z <= 5; z++) {
+                level.setBlock(helper.absolutePos(new BlockPos(x, 1, z)), Blocks.STONE.defaultBlockState(), 3);
+                level.setBlock(helper.absolutePos(new BlockPos(x, 2, z)), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(helper.absolutePos(new BlockPos(x, 3, z)), Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+
+        BlockPos spawnPos = helper.absolutePos(new BlockPos(3, 2, 3));
+        var slime = ModEntities.TOXIC_SLIME.get().create(level, EntitySpawnReason.EVENT);
+        helper.assertTrue(slime != null, "Toxic slime should be spawnable");
+        if (slime == null) {
+            return;
+        }
+        slime.setNoAi(true);
+        slime.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
+        level.addFreshEntity(slime);
+
+        for (int i = 0; i < 120; i++) {
+            slime.tick();
+        }
+
+        int puddles = 0;
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 1; z <= 5; z++) {
+                if (level.getBlockState(helper.absolutePos(new BlockPos(x, 2, z))).is(ModBlocks.TOXIC_PUDDLE.get())) {
+                    puddles++;
+                }
+            }
+        }
+
+        slime.discard();
+        helper.assertTrue(puddles == 0, "Passive toxic slime ticking should not create persistent puddle blocks");
+        helper.succeed();
+    }
+
+    private static void toxicBiomeHazardClassification(GameTestHelper helper) {
+        try {
+            Method shouldScan = HazardZoneManager.class.getDeclaredMethod("shouldScanToxicSources", boolean.class);
+            Method isActive = HazardZoneManager.class.getDeclaredMethod(
+                    "isToxicAirActive", boolean.class, boolean.class, boolean.class, boolean.class);
+            shouldScan.setAccessible(true);
+            isActive.setAccessible(true);
+
+            helper.assertFalse((Boolean) shouldScan.invoke(null, true),
+                    "Toxic biome exposure should not run the nearby toxic-source scan");
+            helper.assertTrue((Boolean) shouldScan.invoke(null, false),
+                    "Non-toxic biomes should still scan nearby toxic-source blocks");
+            helper.assertTrue((Boolean) isActive.invoke(null, true, false, false, false),
+                    "Toxic biome exposure should mark toxic air active without nearby source blocks");
+            helper.assertFalse((Boolean) isActive.invoke(null, true, false, false, true),
+                    "Scrubber safe zones should suppress toxic biome air");
+            helper.succeed();
+        } catch (ReflectiveOperationException error) {
+            helper.assertTrue(false, "Toxic biome hazard classification reflection failed: " + error.getMessage());
+        }
+    }
+
     private static int environmentalHudIconIndex(EnvironmentalEventType type) {
         return switch (type) {
             case RADIATION_STORM -> 0;
@@ -468,6 +566,30 @@ public final class ModGameTests {
             case NEXUS_SURGE -> 5;
             default -> -1;
         };
+    }
+
+    private static void shelteredRadiationStormNoExposure(GameTestHelper helper) {
+        var level = helper.getLevel();
+        Player mockPlayer = helper.makeMockPlayer(GameType.SURVIVAL);
+        if (!(mockPlayer instanceof ServerPlayer player)) {
+            helper.succeed();
+            return;
+        }
+        BlockPos playerPos = helper.absolutePos(new BlockPos(3, 2, 3));
+        player.setPos(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D);
+
+        EnvironmentalEventHandler.forceStartEvent(level, EnvironmentalEventType.RADIATION_STORM);
+        try {
+            HazardZoneManager.HazardSnapshot snapshot = HazardZoneManager.scan(player);
+            helper.assertTrue(snapshot.radiationStorm(), "Radiation storm should be active for the scan");
+            helper.assertTrue(snapshot.stormSheltered(), "Low underground positions should count as storm shelter");
+            helper.assertFalse(snapshot.radiationZone(), "Sheltered radiation storms should not create radiation exposure by themselves");
+            helper.assertTrue(snapshot.radiationIntensity() == 0.0F,
+                    "Sheltered radiation storms should contribute no radiation intensity");
+            helper.succeed();
+        } finally {
+            EnvironmentalEventHandler.clearActiveEvent(level);
+        }
     }
 
     private static void guardianBossSmoke(GameTestHelper helper) {
@@ -993,8 +1115,8 @@ public final class ModGameTests {
         var template = helper.getLevel().getStructureManager().get(id("drop_pod"));
         helper.assertTrue(template.isPresent(), "Starting drop pod NBT template should load");
         var size = template.orElseThrow().getSize();
-        helper.assertTrue(size.getX() == 20 && size.getY() == 10 && size.getZ() == 20,
-                "Starting drop pod should keep the curated 20x10x20 footprint");
+        helper.assertTrue(size.getX() == 16 && size.getY() == 9 && size.getZ() == 16,
+                "Starting drop pod should keep the curated 16x9x16 footprint");
 
         BlockPos origin = helper.absolutePos(new BlockPos(32, 4, 32));
         BlockPos spawn = ProceduralStructureGenerator.placeStartingDropPod(
@@ -1013,17 +1135,23 @@ public final class ModGameTests {
                 "Drop pod spawn should stand on the pod floor");
 
         BlockPos placePos = origin.offset(-size.getX() / 2, -2, -size.getZ() / 2);
-        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(5, 3, 10)).is(Blocks.WHITE_BED),
-                "Curated drop pod should include the guaranteed bed foot");
-        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(5, 3, 11)).is(Blocks.WHITE_BED),
-                "Curated drop pod should include the guaranteed bed head");
-        helper.assertTrue(countBlocks(helper, placePos, size, "echoashfallprotocol:drop_pod_hull") >= 80,
-                "Curated drop pod should retain a readable hull shell");
-        helper.assertTrue(countBlocks(helper, placePos, size, "minecraft:barrel") >= 4,
-                "Curated drop pod should expose visible starter lockers");
-        helper.assertTrue(countBlocks(helper, placePos, size, "minecraft:chest") >= 1,
-                "Curated drop pod should retain starter cache storage");
-        helper.assertTrue(countStarterPodProtectedPathClutter(helper, placePos) == 0,
+        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(4, 3, 7)).is(ModBlocks.EMERGENCY_BUNK.get()),
+                "Curated drop pod should include the guaranteed emergency bunk foot position");
+        helper.assertTrue(helper.getLevel().getBlockState(placePos.offset(4, 3, 8)).is(ModBlocks.EMERGENCY_BUNK.get()),
+                "Curated drop pod should include the guaranteed emergency bunk head position");
+        helper.assertTrue(countBlocks(helper, placePos, size, "echoblockworks:orbital_hull_hull_panel") >= 60,
+                "Curated drop pod should use a readable Blockworks orbital hull shell");
+        helper.assertTrue(countBlocks(helper, placePos, size, "echoashfallprotocol:echo_crate") >= 4,
+                "Curated drop pod should expose four Echo starter crates");
+        helper.assertTrue(countBlocks(helper, placePos, size, "echoashfallprotocol:echo_cache") >= 1,
+                "Curated drop pod should expose the guaranteed Echo starter cache");
+        helper.assertTrue(countNonAirVanillaBlocks(helper, placePos, size) == 0,
+                "Curated drop pod should not place visible vanilla blocks");
+        helper.assertTrue(countEchoContainerBlockEntities(helper, placePos, size) >= 5,
+                "Curated drop pod cache/crate blocks should keep valid Echo container block entities");
+        helper.assertTrue(countLootedEchoContainers(helper, placePos, size) >= 5,
+                "Curated drop pod cache/crate block entities should preserve starter loot tables");
+        helper.assertTrue(countStarterPodProtectedPathClutter(helper, placePos, size) == 0,
                 "Curated drop pod should keep spawn, lockers, bed route, terminal access, and ramp clear of debris clutter");
         helper.assertTrue(countStarterPodOffPathClutter(helper, placePos, size) > 0,
                 "Curated drop pod should retain off-path decorative crash debris");
@@ -1099,6 +1227,7 @@ public final class ModGameTests {
                 Items.COBBLED_DEEPSLATE,
                 ModBlocks.WASTELAND_STONE.get().asItem(),
                 ModBlocks.WASTELAND_TRACE_RUBBLE.get().asItem(),
+                ModBlocks.SCRAP_ORE.get().asItem(),
                 ModBlocks.RUBBLE.get().asItem(),
                 ModBlocks.CONCRETE_RUBBLE.get().asItem(),
                 ModBlocks.CONCRETE_CHUNK.get().asItem(),
@@ -1142,6 +1271,9 @@ public final class ModGameTests {
             helper.assertTrue(grinder.canInsertItem(OreGrinderBlockEntity.INPUT_SLOT_1,
                             new ItemStack(ModBlocks.WASTELAND_STONE.get())),
                     "Hopper insertion should accept biome substrate inputs");
+            helper.assertTrue(grinder.canInsertItem(OreGrinderBlockEntity.INPUT_SLOT_1,
+                            new ItemStack(ModBlocks.SCRAP_ORE.get())),
+                    "Hopper insertion should accept mined Scrap Ore");
             helper.assertFalse(grinder.canInsertItem(OreGrinderBlockEntity.OUTPUT_SLOT,
                             new ItemStack(ModBlocks.WASTELAND_STONE.get(), 3)),
                     "Hopper insertion should reject direct output-slot input");
@@ -1181,6 +1313,242 @@ public final class ModGameTests {
                     "Grinder recipe cost must be positive for " + BuiltInRegistries.ITEM.getKey(recipe.input()));
         }
         helper.succeed();
+    }
+
+    private static void echoContainerBlockEntities(GameTestHelper helper) {
+        List<net.minecraft.world.level.block.Block> blocks = List.of(
+                ModBlocks.ECHO_CACHE.get(),
+                ModBlocks.ECHO_CRATE.get(),
+                ModBlocks.SUPPLY_CRATE.get()
+        );
+        for (int i = 0; i < blocks.size(); i++) {
+            BlockPos pos = helper.absolutePos(new BlockPos(1 + i, 1, 1));
+            helper.getLevel().setBlock(pos, blocks.get(i).defaultBlockState(), 3);
+            helper.assertTrue(helper.getLevel().getBlockEntity(pos) instanceof EchoContainerBlockEntity,
+                    "Crate/cache block should create an Echo container block entity: "
+                            + BuiltInRegistries.BLOCK.getKey(blocks.get(i)));
+        }
+        helper.succeed();
+    }
+
+    private static void missionCoreRewardClaimableUx(GameTestHelper helper) {
+        if (!ModList.get().isLoaded("echomissioncore") || !EchoCoreServices.missionCoreAvailable()) {
+            helper.succeed();
+            return;
+        }
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            helper.succeed();
+            return;
+        }
+
+        helper.assertTrue(AshfallMissionCoreIntegration.registerWhenReady(),
+                "Ashfall MissionCore content should register for claimable reward coverage");
+        Mission mission = requireMission(helper, "craft_scrap_knife");
+        QuestData quest = QuestData.get(serverPlayer);
+        setCurrentMission(quest, mission.id());
+        serverPlayer.getInventory().add(new ItemStack(ModItems.SCRAP_KNIFE.get()));
+        QuestData.saveAndSync(serverPlayer, quest);
+
+        helper.assertTrue(EchoCoreServices.completeMission(serverPlayer, AshfallMissionCoreIntegration.missionId(mission.id())),
+                "MissionCore should complete Scrap Knife mission");
+        MissionUxSummary summary = MissionUxSummary.of(serverPlayer, QuestData.get(serverPlayer), mission);
+        helper.assertTrue("READY".equals(summary.statusLabel()),
+                "MissionCore-backed completed rewards should display READY before claim");
+        int beforeScrap = countInventory(serverPlayer, ModItems.SCRAP_METAL.get());
+        helper.assertTrue(AshfallMissionCoreIntegration.claimReward(serverPlayer, mission.id()),
+                "MissionCore reward claim should succeed once");
+        helper.assertFalse(AshfallMissionCoreIntegration.claimReward(serverPlayer, mission.id()),
+                "MissionCore reward claim should be idempotent");
+        helper.assertTrue(countInventory(serverPlayer, ModItems.SCRAP_METAL.get()) >= beforeScrap + 12,
+                "Scrap Knife claim should grant the Scrap Metal reward");
+        helper.succeed();
+    }
+
+    private static void scrapKnifeTurnIn(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            helper.succeed();
+            return;
+        }
+
+        Mission outpost = requireMission(helper, "secure_crash_outpost");
+        Mission knife = requireMission(helper, "craft_scrap_knife");
+        QuestData quest = QuestData.get(serverPlayer);
+        quest.repairMissionState(serverPlayer);
+        QuestData.saveAndSync(serverPlayer, quest);
+
+        helper.assertTrue(!quest.isMissionUnlocked(knife.id()),
+                "Scrap Knife should stay locked before Anchor Pod Outpost is complete");
+        String lockedReason = MissionUxSummary.turnInReason(serverPlayer, quest, knife,
+                quest.getMissionStatus(knife.id()), false, false, false);
+        helper.assertTrue(lockedReason.contains("Anchor Pod Outpost"),
+                "Locked Scrap Knife turn-in should name the unmet Anchor Pod Outpost prerequisite");
+
+        quest.completeMission(serverPlayer, outpost.id(), List.of());
+        quest.repairMissionState(serverPlayer);
+        QuestData.saveAndSync(serverPlayer, quest);
+
+        helper.assertTrue(quest.isMissionUnlocked(knife.id()),
+                "Scrap Knife should unlock after Anchor Pod Outpost is complete");
+        helper.assertTrue(MissionUxSummary.isCurrentMission(quest, knife),
+                "Scrap Knife should become the active route mission after Anchor Pod Outpost");
+        helper.assertTrue(AshfallMissionActions.resolveTarget(quest,
+                        EchoAshfallProtocol.MODID + ":" + knife.id()) == knife,
+                "Mission action routing should resolve namespaced Ashfall mission payloads");
+        Mission drinkWater = requireMission(helper, "drink_clean_water");
+        quest.unlockMission(drinkWater.id());
+        String nonCurrentReason = AshfallMissionActions.turnInRejection(serverPlayer, quest, drinkWater);
+        helper.assertTrue(nonCurrentReason.contains("Finish/turn in " + knife.objectiveText() + " first."),
+                "Non-current packet/terminal turn-in rejection should name the active Scrap Knife objective");
+        String missingKnifeReason = MissionUxSummary.turnInReason(serverPlayer, quest, knife,
+                quest.getMissionStatus(knife.id()), true, false, false);
+        helper.assertTrue(missingKnifeReason.contains("Carry 1") && missingKnifeReason.contains("Scrap Knife"),
+                "Scrap Knife turn-in should explain the missing held item");
+
+        serverPlayer.getInventory().add(new ItemStack(ModItems.SCRAP_KNIFE.get()));
+        helper.assertTrue(knife.isComplete(serverPlayer),
+                "Holding one Scrap Knife should satisfy the Scrap Knife mission");
+        String readyReason = MissionUxSummary.turnInReason(serverPlayer, quest, knife,
+                quest.getMissionStatus(knife.id()), true, true, false);
+        helper.assertTrue("ECHO validation required.".equals(readyReason),
+                "Satisfied Scrap Knife mission should expose an enabled turn-in state");
+
+        helper.assertTrue(EchoGuideManager.turnInMission(serverPlayer, quest, knife),
+                "Scrap Knife turn-in should complete through the legacy Ashfall quest state");
+        QuestData.saveAndSync(serverPlayer, quest);
+        helper.assertTrue(quest.isMissionCompleted(knife.id()),
+                "Scrap Knife mission should be completed after turn-in");
+        helper.assertTrue(quest.hasPendingRewards(knife.id())
+                        || AshfallMissionCoreIntegration.hasClaimableReward(serverPlayer, knife),
+                "Scrap Knife completion should leave rewards claimable");
+        int scrapBeforeClaim = countInventory(serverPlayer, ModItems.SCRAP_METAL.get());
+        EchoGuideManager.claimRewards(serverPlayer, knife.id());
+        QuestData afterClaim = QuestData.get(serverPlayer);
+        helper.assertFalse(afterClaim.hasPendingRewards(knife.id()),
+                "Mission-scoped Scrap Knife reward claim should clear legacy pending rewards");
+        helper.assertFalse(AshfallMissionCoreIntegration.hasClaimableReward(serverPlayer, knife),
+                "Mission-scoped Scrap Knife reward claim should clear MissionCore claimable rewards");
+        helper.assertTrue(countInventory(serverPlayer, ModItems.SCRAP_METAL.get()) >= scrapBeforeClaim + 12,
+                "Scrap Knife claim should award its Scrap Metal cache exactly once");
+        int scrapAfterClaim = countInventory(serverPlayer, ModItems.SCRAP_METAL.get());
+        EchoGuideManager.claimRewards(serverPlayer, knife.id());
+        helper.assertTrue(countInventory(serverPlayer, ModItems.SCRAP_METAL.get()) == scrapAfterClaim,
+                "Repeating the Scrap Knife claim should not duplicate the reward cache");
+        helper.succeed();
+    }
+
+    private static void advancementCriteriaGuard(GameTestHelper helper) {
+        Path advancementRoot = Path.of("src", "main", "resources", "data", EchoAshfallProtocol.MODID, "advancement");
+        if (Files.isDirectory(advancementRoot)) {
+            try (Stream<Path> files = Files.walk(advancementRoot)) {
+                files.filter(path -> path.toString().endsWith(".json"))
+                        .forEach(path -> assertAdvancementCriteriaGuard(helper,
+                                advancementRoot.relativize(path).toString().replace('\\', '/'),
+                                readJsonFile(path)));
+            } catch (IOException exception) {
+                throw new IllegalStateException("Unable to scan Ashfall advancement criteria", exception);
+            }
+        } else {
+            for (String advancement : List.of(
+                    "build_research_lab",
+                    "first_power_node",
+                    "nexus_core_found",
+                    "relay_station",
+                    "workshop_master",
+                    "first_light/first_campfire")) {
+                assertAdvancementCriteriaGuard(helper, advancement + ".json", readAdvancementResource(advancement));
+            }
+        }
+
+        JsonObject firstPowerNode = readAdvancementResource("first_power_node");
+        JsonObject placedPowerNode = firstPowerNode.getAsJsonObject("criteria").getAsJsonObject("placed_power_node");
+        helper.assertTrue(blockScopedLocation(placedPowerNode.getAsJsonObject("conditions"), "echoashfallprotocol:power_node"),
+                "Grid Anchor must only trigger from placing echoashfallprotocol:power_node");
+
+        JsonObject nexusCoreFound = readAdvancementResource("nexus_core_found");
+        JsonObject foundNexusCore = nexusCoreFound.getAsJsonObject("criteria").getAsJsonObject("found_nexus_core");
+        helper.assertTrue("minecraft:impossible".equals(jsonString(foundNexusCore, "trigger")),
+                "The Heart of the Grid must be awarded by mission code, not by generic inventory changes");
+        helper.assertFalse(foundNexusCore.has("conditions"),
+                "Mission-awarded impossible advancement should not retain inventory conditions");
+        helper.succeed();
+    }
+
+    private static void assertAdvancementCriteriaGuard(GameTestHelper helper, String label, JsonObject advancement) {
+        JsonObject criteria = advancement.getAsJsonObject("criteria");
+        if (criteria == null) {
+            return;
+        }
+        for (Map.Entry<String, JsonElement> entry : criteria.entrySet()) {
+            JsonObject criterion = entry.getValue().getAsJsonObject();
+            String trigger = jsonString(criterion, "trigger");
+            JsonObject conditions = criterion.getAsJsonObject("conditions");
+            if ("minecraft:inventory_changed".equals(trigger) && conditions != null && conditions.has("items")) {
+                helper.assertFalse(conditions.get("items").isJsonArray()
+                                && conditions.getAsJsonArray("items").isEmpty(),
+                        label + " criterion " + entry.getKey() + " must not use inventory_changed with an empty item list");
+            }
+            if ("minecraft:placed_block".equals(trigger)) {
+                helper.assertTrue(hasAnyBlockScopedLocation(conditions),
+                        label + " criterion " + entry.getKey() + " must scope placed_block to a block_state_property location");
+            }
+        }
+    }
+
+    private static boolean hasAnyBlockScopedLocation(JsonObject conditions) {
+        if (conditions == null || !conditions.has("location") || !conditions.get("location").isJsonArray()) {
+            return false;
+        }
+        for (JsonElement element : conditions.getAsJsonArray("location")) {
+            if (element.isJsonObject()
+                    && "minecraft:block_state_property".equals(jsonString(element.getAsJsonObject(), "condition"))
+                    && element.getAsJsonObject().has("block")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean blockScopedLocation(JsonObject conditions, String blockId) {
+        if (conditions == null || !conditions.has("location") || !conditions.get("location").isJsonArray()) {
+            return false;
+        }
+        for (JsonElement element : conditions.getAsJsonArray("location")) {
+            if (element.isJsonObject()
+                    && "minecraft:block_state_property".equals(jsonString(element.getAsJsonObject(), "condition"))
+                    && blockId.equals(jsonString(element.getAsJsonObject(), "block"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static JsonObject readAdvancementResource(String advancement) {
+        String resource = "data/" + EchoAshfallProtocol.MODID + "/advancement/" + advancement + ".json";
+        try (InputStream input = ModGameTests.class.getClassLoader().getResourceAsStream(resource)) {
+            if (input == null) {
+                throw new IllegalStateException("Missing advancement resource: " + resource);
+            }
+            try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+                return JsonParser.parseReader(reader).getAsJsonObject();
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to read advancement resource: " + resource, exception);
+        }
+    }
+
+    private static JsonObject readJsonFile(Path path) {
+        try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to read advancement file: " + path, exception);
+        }
+    }
+
+    private static String jsonString(JsonObject object, String key) {
+        JsonElement value = object == null ? null : object.get(key);
+        return value == null || !value.isJsonPrimitive() ? "" : value.getAsString();
     }
 
     private static EchoCompanionDrone spawnCompanionDrone(GameTestHelper helper, Player owner, BlockPos relativePos) {
@@ -1237,10 +1605,10 @@ public final class ModGameTests {
         return count;
     }
 
-    private static int countStarterPodProtectedPathClutter(GameTestHelper helper, BlockPos origin) {
+    private static int countStarterPodProtectedPathClutter(GameTestHelper helper, BlockPos origin, Vec3i size) {
         int count = 0;
-        for (int x = 0; x < 20; x++) {
-            for (int z = 0; z < 20; z++) {
+        for (int x = 0; x < size.getX(); x++) {
+            for (int z = 0; z < size.getZ(); z++) {
                 if (!isStarterPodProtectedPathCell(x, z)) {
                     continue;
                 }
@@ -1266,26 +1634,81 @@ public final class ModGameTests {
     }
 
     private static boolean isStarterPodProtectedPathCell(int localX, int localZ) {
-        if (Math.abs(localX - 9) <= 1 && localZ >= 7 && localZ <= 12) {
+        if (Math.abs(localX - 8) <= 1 && localZ >= 8 && localZ <= 10) {
             return true;
         }
-        if ((localX == 6 || localX == 7 || localX == 12 || localX == 13) && localZ >= 6 && localZ <= 7) {
+        if ((localX == 5 || localX == 6 || localX == 10 || localX == 11) && localZ >= 4 && localZ <= 5) {
             return true;
         }
-        if (localX >= 6 && localX <= 9 && localZ >= 10 && localZ <= 12) {
+        if (localX >= 4 && localX <= 8 && localZ >= 7 && localZ <= 10) {
             return true;
         }
-        return Math.abs(localX - 9) <= 2 && localZ >= 15 && localZ <= 19;
+        return Math.abs(localX - 8) <= 2 && localZ >= 12 && localZ <= 15;
     }
 
     private static boolean isStarterPodPathClutter(GameTestHelper helper, BlockPos pos) {
         var state = helper.getLevel().getBlockState(pos);
+        Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         return state.is(ModBlocks.RUSTED_METAL_DEBRIS.get())
                 || state.is(ModBlocks.CABLE_BUNDLE.get())
                 || state.is(ModBlocks.TWISTED_METAL.get())
-                || Identifier.fromNamespaceAndPath("minecraft", "chain")
-                        .equals(BuiltInRegistries.BLOCK.getKey(state.getBlock()))
-                || state.is(Blocks.STONE_BUTTON);
+                || Identifier.fromNamespaceAndPath("echoblockworks", "rubble_pile").equals(id)
+                || Identifier.fromNamespaceAndPath("echoblockworks", "scattered_debris").equals(id)
+                || Identifier.fromNamespaceAndPath("echoblockworks", "steam_vent").equals(id);
+    }
+
+    private static int countNonAirVanillaBlocks(GameTestHelper helper, BlockPos origin, Vec3i size) {
+        int count = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    var state = helper.getLevel().getBlockState(origin.offset(x, y, z));
+                    Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+                    if (id != null && "minecraft".equals(id.getNamespace()) && !state.isAir()) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    private static int countEchoContainerBlockEntities(GameTestHelper helper, BlockPos origin, Vec3i size) {
+        int count = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    BlockPos pos = origin.offset(x, y, z);
+                    var state = helper.getLevel().getBlockState(pos);
+                    if ((state.is(ModBlocks.ECHO_CACHE.get()) || state.is(ModBlocks.ECHO_CRATE.get()))
+                            && helper.getLevel().getBlockEntity(pos) instanceof com.knoxhack.echoashfallprotocol.block.entity.EchoContainerBlockEntity) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    private static int countLootedEchoContainers(GameTestHelper helper, BlockPos origin, Vec3i size) {
+        int count = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    BlockPos pos = origin.offset(x, y, z);
+                    var state = helper.getLevel().getBlockState(pos);
+                    boolean isEchoContainerBlock = state.is(ModBlocks.ECHO_CACHE.get())
+                            || state.is(ModBlocks.ECHO_CRATE.get())
+                            || state.is(ModBlocks.STRUCTURE_CACHE.get());
+                    if (isEchoContainerBlock
+                            && helper.getLevel().getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity container
+                            && container.getLootTable() != null) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
     }
 
     private static int countInvalidBlockEntities(GameTestHelper helper, BlockPos origin, Vec3i size) {
@@ -2161,6 +2584,17 @@ public final class ModGameTests {
                 .sum();
         helper.assertTrue(total == count,
                 mission.id() + " should require exactly " + count + "x " + BuiltInRegistries.ITEM.getKey(item));
+    }
+
+    private static int countInventory(Player player, Item item) {
+        int total = 0;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.is(item)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
     }
 
     private static void setCurrentMission(QuestData quest, String missionId) {

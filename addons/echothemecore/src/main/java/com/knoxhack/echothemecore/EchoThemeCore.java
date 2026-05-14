@@ -8,7 +8,9 @@ import com.knoxhack.echothemecore.config.ThemeCoreConfig;
 import com.knoxhack.echothemecore.content.ThemeRegistry;
 import com.knoxhack.echothemecore.content.ThemeReloaders;
 import com.knoxhack.echothemecore.integration.ThemeCoreRenderCoreBridge;
+import com.knoxhack.echothemecore.integration.ThemeCoreTerminalBridge;
 import com.knoxhack.echothemecore.network.ModNetwork;
+import com.knoxhack.echothemecore.network.ThemeCoreServerSync;
 import com.knoxhack.echothemecore.test.ModGameTests;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.Identifier;
@@ -37,6 +39,9 @@ public final class EchoThemeCore {
         ThemeCoreConfig.registerEchoConfig();
         NeoForge.EVENT_BUS.addListener(ThemeReloaders::addServerReloadListeners);
         NeoForge.EVENT_BUS.addListener(ThemeCoreCommands::register);
+        NeoForge.EVENT_BUS.addListener(ThemeCoreServerSync::onPlayerLogin);
+        NeoForge.EVENT_BUS.addListener(ThemeCoreServerSync::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(ThemeCoreServerSync::onServerStopping);
     }
 
     public static Identifier id(String path) {
@@ -46,9 +51,12 @@ public final class EchoThemeCore {
     private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             registerAddonChapter();
+            ThemeRegistry.setGlobalThemeChangeListener(ThemeCoreServerSync::broadcastGlobalTheme);
+            ThemeRegistry.setPlayerThemeChangeListener(ThemeCoreServerSync::sendPlayerTheme);
             if (ThemeCoreRenderCoreBridge.registerIfAvailable()) {
                 LOGGER.info("ECHO ThemeCore found RenderCore; theme provider bridge is available.");
             }
+            ThemeCoreTerminalBridge.registerIfAvailable();
             LOGGER.info("ECHO ThemeCore 0.2.0 online. {} loaded theme(s). {}",
                 ThemeRegistry.listThemes().size(),
                 EchoCoreServices.platformProviderSummary());

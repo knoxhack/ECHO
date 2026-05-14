@@ -24,6 +24,15 @@ public interface TerminalTab {
         return false;
     }
 
+    default boolean mouseDragged(TerminalRenderContext context, double mouseX, double mouseY, int button,
+            double dragX, double dragY) {
+        return false;
+    }
+
+    default boolean mouseReleased(TerminalRenderContext context, double mouseX, double mouseY, int button) {
+        return false;
+    }
+
     default boolean mouseScrolled(TerminalRenderContext context, double mouseX, double mouseY, double delta) {
         return false;
     }

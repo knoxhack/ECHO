@@ -23,9 +23,8 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 
 public final class ConvoyRenderCoreVehicleRenderer extends EntityRenderer<ConvoyVehicleEntity, ConvoyVehicleRenderState> {
-   private static final Identifier ROVER_PROFILE =
-      Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, "wasteland_rover");
    private static final Identifier[] TEXTURES = createTextures();
+   private static final Identifier[] PROFILES = createProfiles();
    private final ConvoyRenderCoreVehicleModel[] models;
 
    public ConvoyRenderCoreVehicleRenderer(EntityRendererProvider.Context context) {
@@ -44,16 +43,16 @@ public final class ConvoyRenderCoreVehicleRenderer extends EntityRenderer<Convoy
       super.extractRenderState(entity, state, partialTick);
       state.yRot = entity.getYRot(partialTick);
       state.kind = entity.kind().ordinal();
-      state.damageRatio = ratio(entity.damage(), entity.kind().maxDamage());
-      state.fuelRatio = ratio(entity.fuel(), entity.kind().maxFuel());
-      state.batteryRatio = ratio(entity.battery(), entity.kind().maxBattery());
-      state.cargoRatio = ratio(entity.filledCargoSlots(), entity.kind().cargoSlots());
+      state.damageRatio = ratio(entity.damage(), entity.maxDamage());
+      state.fuelRatio = ratio(entity.fuel(), entity.maxFuel());
+      state.batteryRatio = ratio(entity.battery(), entity.maxBattery());
+      state.cargoRatio = ratio(entity.filledCargoSlots(), entity.cargoSlots());
       state.shieldingRatio = ratio(entity.shieldingPlates(), entity.kind().maxShieldingPlates());
       state.docked = entity.docked();
       state.speed = (float)entity.getDeltaMovement().horizontalDistance();
       state.driven = entity.getControllingPassenger() != null && state.speed > 0.004F;
       state.hasTravelPower = entity.fuel() > 0 || entity.battery() > 0;
-      state.renderCoreProfileId = ROVER_PROFILE;
+      state.renderCoreProfileId = profileFor(entity.kind());
       state.renderCorePartialTick = partialTick;
       state.renderCoreMoving = state.speed > 0.004F;
       state.renderCoreDamaged = state.damageRatio >= 0.65F;
@@ -139,6 +138,10 @@ public final class ConvoyRenderCoreVehicleRenderer extends EntityRenderer<Convoy
       return TEXTURES[ConvoyVehicleKind.byId(kind).ordinal()];
    }
 
+   private static Identifier profileFor(ConvoyVehicleKind kind) {
+      return PROFILES[kind.ordinal()];
+   }
+
    private static ConvoyRenderCoreVehicleModel[] createModels(EntityRendererProvider.Context context) {
       ConvoyVehicleKind[] kinds = ConvoyVehicleKind.values();
       ConvoyRenderCoreVehicleModel[] models = new ConvoyRenderCoreVehicleModel[kinds.length];
@@ -154,10 +157,22 @@ public final class ConvoyRenderCoreVehicleRenderer extends EntityRenderer<Convoy
       for (int i = 0; i < kinds.length; i++) {
          textures[i] = Identifier.fromNamespaceAndPath(
             EchoConvoyProtocol.MODID,
-            "textures/entity/" + kinds[i].getSerializedName() + ".png"
+            "textures/entity/rendercore_echo_mobs/" + kinds[i].getSerializedName() + ".png"
          );
       }
       return textures;
+   }
+
+   private static Identifier[] createProfiles() {
+      ConvoyVehicleKind[] kinds = ConvoyVehicleKind.values();
+      Identifier[] profiles = new Identifier[kinds.length];
+      for (int i = 0; i < kinds.length; i++) {
+         profiles[i] = Identifier.fromNamespaceAndPath(
+            EchoConvoyProtocol.MODID,
+            "echo_mobs/" + kinds[i].getSerializedName()
+         );
+      }
+      return profiles;
    }
 
    private static float ratio(int value, int max) {

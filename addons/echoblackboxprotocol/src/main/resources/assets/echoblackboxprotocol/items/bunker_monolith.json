@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoblackboxprotocol:block/bunker_monolith"
+    "model": "echoblackboxprotocol:item/bunker_monolith"
   }
 }

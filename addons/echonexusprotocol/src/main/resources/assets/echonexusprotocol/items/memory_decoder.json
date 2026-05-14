@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/memory_decoder"
+    "model": "echonexusprotocol:item/memory_decoder"
   }
 }

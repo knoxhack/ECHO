@@ -7,8 +7,14 @@ import com.knoxhack.echoindex.Config;
 import com.knoxhack.echoindex.EchoIndexClient;
 import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoindex.network.IndexActionPacket;
+import com.knoxhack.echoindex.service.ClientIndexState;
+import com.knoxhack.echoindex.service.IndexRecipePlan;
+import com.knoxhack.echoindex.service.IndexRecipePlanner;
 import com.knoxhack.echoindex.service.IndexService;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -16,6 +22,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -29,6 +36,7 @@ public final class IndexRecipeScreen extends Screen {
     private static final int TEXT = 0xFFE9FBFF;
     private static final int MUTED = 0xFF8CA7B5;
     private static final int WARN = 0xFFFFD166;
+    private static final int HEADER_HEIGHT = 34;
 
     private final ItemStack focusStack;
     private Mode mode;
@@ -38,6 +46,8 @@ public final class IndexRecipeScreen extends Screen {
     private int panelH;
     private int selected;
     private int firstVisible;
+    private Identifier categoryFilter;
+    private final List<IndexRecipeUi.SlotHit> slotHits = new ArrayList<>();
 
     public IndexRecipeScreen(ItemStack focusStack, Mode mode) {
         super(Component.translatable("screen.echoindex.recipes"));
@@ -53,11 +63,10 @@ public final class IndexRecipeScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        slotHits.clear();
         layout();
         graphics.fill(0, 0, width, height, 0xDD02070A);
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, BG);
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + 3, CYAN);
-        graphics.fill(panelX + 14, panelY + 30, panelX + panelW - 14, panelY + 31, 0x6632BFD7);
+        drawScreenChrome(graphics);
 
         Font font = Minecraft.getInstance().font;
         List<IndexRecipeView> recipes = recipes(focusStack.getItem());
@@ -74,12 +83,15 @@ public final class IndexRecipeScreen extends Screen {
 
         drawModeButton(graphics, font, panelX + 14, panelY + 42, Mode.RECIPES, mouseX, mouseY);
         drawModeButton(graphics, font, panelX + 98, panelY + 42, Mode.USES, mouseX, mouseY);
+        drawModeButton(graphics, font, panelX + 182, panelY + 42, Mode.SOURCES, mouseX, mouseY);
+        drawCategoryChips(graphics, font, mouseX, mouseY);
         drawCloseHint(graphics, font);
 
         if (recipes.isEmpty()) {
             drawEmpty(graphics, font);
             return;
         }
+        IndexRecipeUi.recordCardSelection(mode.viewMode(), selected, recipes.size());
         drawRecipeList(graphics, font, recipes, mouseX, mouseY);
         drawRecipeDetails(graphics, font, recipes.get(selected), mouseX, mouseY);
     }
@@ -90,16 +102,75 @@ public final class IndexRecipeScreen extends Screen {
         if (inside(event.x(), event.y(), panelX + 14, panelY + 42, 76, 18)) {
             mode = Mode.RECIPES;
             selected = 0;
+            firstVisible = 0;
+            categoryFilter = null;
             return true;
         }
         if (inside(event.x(), event.y(), panelX + 98, panelY + 42, 76, 18)) {
             mode = Mode.USES;
             selected = 0;
+            firstVisible = 0;
+            categoryFilter = null;
             return true;
         }
+        if (inside(event.x(), event.y(), panelX + 182, panelY + 42, 76, 18)) {
+            mode = Mode.SOURCES;
+            selected = 0;
+            firstVisible = 0;
+            categoryFilter = null;
+            return true;
+        }
+        if (handleCategoryClick(event)) {
+            return true;
+        }
+        IndexRecipeView actionRecipe = selectedRecipe();
+        if (actionRecipe != null) {
+        Rect detail = detailRect();
+        int detailX = detail.x();
+        int detailY = detail.y();
+        int detailW = detail.w();
+        int traceHForClick = traceApplies(IndexRecipeTraceState.current()) ? 28 : 0;
+        int cardHForClick = Math.max(70, detail.h() - traceHForClick - 25);
+        int actionY = detailY + traceHForClick + cardHForClick + 4;
+            IndexRecipeTraceState.Trace trace = IndexRecipeTraceState.current();
+            if (traceApplies(trace)
+                    && inside(event.x(), event.y(), detailX + detailW - 74, detailY + 4, 68, 16)) {
+                Minecraft.getInstance().setScreen(new IndexRecipeScreen(trace.rootStack(), Mode.RECIPES));
+                return true;
+            }
+            IndexRecipePlan plan = IndexRecipePlanner.plan(Minecraft.getInstance().player, actionRecipe);
+            int pinW = plan.pinned() ? 48 : 34;
+            if (inside(event.x(), event.y(), detailX + 6, actionY, pinW, 16)) {
+                sendRecipeAction(plan.pinned() ? IndexActionPacket.Action.UNPIN_RECIPE : IndexActionPacket.Action.PIN_RECIPE,
+                        actionRecipe.id());
+                return true;
+            }
+            if (plan.canTransfer() && inside(event.x(), event.y(), detailX + pinW + 11, actionY, 54, 16)) {
+                sendRecipeAction(IndexActionPacket.Action.TRANSFER_RECIPE, actionRecipe.id());
+                return true;
+            }
+            int traceX = detailX + pinW + 11 + (plan.canTransfer() ? 59 : 0);
+            if (plan.missingCount() > 0 && inside(event.x(), event.y(), traceX, actionY, 44, 16)) {
+                IndexRecipeTraceState.open(focusStack, actionRecipe, plan);
+                return true;
+            }
+        }
+        for (IndexRecipeUi.SlotHit hit : List.copyOf(slotHits)) {
+            if (inside(event.x(), event.y(), hit.x(), hit.y(), hit.w(), hit.h())) {
+                if (event.button() == 2) {
+                    toggleBookmark(IndexService.itemId(hit.stack().getItem()));
+                } else if (event.button() == 1 && hit.choiceCyclable()) {
+                    IndexRecipeUi.cycleChoice(hit, 1);
+                } else {
+                    Minecraft.getInstance().setScreen(new IndexRecipeScreen(hit.stack(), modeForSlot(hit, event.button())));
+                }
+                return true;
+            }
+        }
         List<IndexRecipeView> recipes = recipes(focusStack.getItem());
-        int listX = panelX + 14;
-        int listY = panelY + 72;
+        Rect list = listRect();
+        int listX = list.x();
+        int listY = list.y();
         int rowH = 24;
         int visible = Math.min(recipes.size() - firstVisible, visibleRows());
         for (int i = 0; i < visible; i++) {
@@ -116,6 +187,12 @@ public final class IndexRecipeScreen extends Screen {
         layout();
         if (!inside(mouseX, mouseY, panelX, panelY, panelW, panelH)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        }
+        for (IndexRecipeUi.SlotHit hit : List.copyOf(slotHits)) {
+            if (hit.choiceCyclable() && inside(mouseX, mouseY, hit.x(), hit.y(), hit.w(), hit.h())) {
+                IndexRecipeUi.cycleChoice(hit, scrollY > 0 ? 1 : -1);
+                return true;
+            }
         }
         List<IndexRecipeView> recipes = recipes(focusStack.getItem());
         int maxFirst = Math.max(0, recipes.size() - visibleRows());
@@ -139,12 +216,14 @@ public final class IndexRecipeScreen extends Screen {
             mode = Mode.RECIPES;
             selected = 0;
             firstVisible = 0;
+            categoryFilter = null;
             return true;
         }
         if (EchoIndexClient.SHOW_USAGE_KEY.matches(event)) {
             mode = Mode.USES;
             selected = 0;
             firstVisible = 0;
+            categoryFilter = null;
             return true;
         }
         if (event.key() == GLFW.GLFW_KEY_UP && selected > 0) {
@@ -175,10 +254,23 @@ public final class IndexRecipeScreen extends Screen {
     }
 
     private void layout() {
-        panelW = Math.min(500, Math.max(320, width - 44));
-        panelH = Math.min(310, Math.max(232, height - 36));
+        panelW = Math.min(760, Math.max(360, width - 44));
+        panelH = Math.min(480, Math.max(280, height - 36));
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
+    }
+
+    private void drawScreenChrome(GuiGraphicsExtractor graphics) {
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, BG);
+        if (cinematicStyle()) {
+            renderCoreFrame(graphics, panelX, panelY, panelW, panelH);
+        } else {
+            graphics.outline(panelX, panelY, panelW, panelH, 0x8846DFF4);
+            graphics.fill(panelX, panelY, panelX + Math.max(40, panelW / 5), panelY + 3, CYAN);
+            graphics.fill(panelX, panelY + panelH - 2, panelX + Math.max(28, panelW / 7), panelY + panelH, CYAN);
+        }
+        graphics.fill(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + HEADER_HEIGHT, 0x33163843);
+        graphics.fill(panelX + 14, panelY + 30, panelX + panelW - 14, panelY + 31, 0x6632BFD7);
     }
 
     private void drawModeButton(GuiGraphicsExtractor graphics, Font font, int x, int y, Mode target, int mouseX, int mouseY) {
@@ -189,25 +281,86 @@ public final class IndexRecipeScreen extends Screen {
         graphics.centeredText(font, target.label(), x + 38, y + 5, active ? TEXT : MUTED);
     }
 
+    private void drawCategoryChips(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
+        int x = panelX + 14;
+        int y = panelY + 64;
+        chip(graphics, font, x, y, 34, "All", categoryFilter == null, mouseX, mouseY);
+        int cx = x + 38;
+        int hidden = 0;
+        for (Identifier category : categories()) {
+            int w = Math.min(86, Math.max(44, font.width(category.getPath()) + 12));
+            if (cx + w > panelX + panelW - 16) {
+                hidden++;
+                break;
+            }
+            chip(graphics, font, cx, y, w, category.getPath(), category.equals(categoryFilter), mouseX, mouseY);
+            cx += w + 4;
+        }
+        if (hidden > 0 && cx + 36 <= panelX + panelW - 16) {
+            chip(graphics, font, cx, y, 36, "+" + hidden, false, mouseX, mouseY);
+        }
+    }
+
+    private void chip(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, String label,
+            boolean active, int mouseX, int mouseY) {
+        boolean hover = inside(mouseX, mouseY, x, y, w, 16);
+        graphics.fill(x, y, x + w, y + 16, active ? 0xFF123241 : hover ? 0xCC102630 : PANEL);
+        graphics.outline(x, y, w, 16, active ? CYAN : 0x4438DFF4);
+        graphics.centeredText(font, trim(font, label, w - 4), x + w / 2, y + 5, active ? TEXT : MUTED);
+    }
+
+    private boolean handleCategoryClick(MouseButtonEvent event) {
+        int x = panelX + 14;
+        int y = panelY + 64;
+        if (inside(event.x(), event.y(), x, y, 34, 16)) {
+            categoryFilter = null;
+            selected = 0;
+            firstVisible = 0;
+            return true;
+        }
+        int cx = x + 38;
+        Font font = Minecraft.getInstance().font;
+        for (Identifier category : categories()) {
+            int w = Math.min(86, Math.max(44, font.width(category.getPath()) + 12));
+            if (cx + w > panelX + panelW - 16) {
+                break;
+            }
+            if (inside(event.x(), event.y(), cx, y, w, 16)) {
+                categoryFilter = category.equals(categoryFilter) ? null : category;
+                selected = 0;
+                firstVisible = 0;
+                return true;
+            }
+            cx += w + 4;
+        }
+        return false;
+    }
+
+    private void smallButton(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, int h,
+            String label, boolean active) {
+        graphics.fill(x, y, x + w, y + h, active ? 0xFF123241 : PANEL);
+        graphics.outline(x, y, w, h, active ? CYAN : 0x55244352);
+        graphics.centeredText(font, label, x + w / 2, y + 5, active ? TEXT : MUTED);
+    }
+
     private void drawCloseHint(GuiGraphicsExtractor graphics, Font font) {
         graphics.text(font, "ESC", panelX + panelW - 36, panelY + panelH - 18, MUTED, false);
     }
 
     private void drawEmpty(GuiGraphicsExtractor graphics, Font font) {
         int x = panelX + 18;
-        int y = panelY + 86;
+        int y = contentY() + 14;
         graphics.fill(x, y, panelX + panelW - 18, y + 58, 0xAA071014);
         graphics.text(font, "No " + mode.label().toLowerCase() + " indexed for this item.", x + 12, y + 15, WARN, false);
-        String message = mode == Mode.USES
-                ? "No recipe, machine, catalyst, or source rule currently consumes this item."
-                : "No crafting or source card is currently indexed for this item.";
+        String message = IndexRecipeUi.emptyMessage(Minecraft.getInstance().player, focusStack.getItem(), mode.viewMode());
         graphics.textWithWordWrap(font, Component.literal(message),
                 x + 12, y + 30, panelW - 60, MUTED);
     }
 
     private void drawRecipeList(GuiGraphicsExtractor graphics, Font font, List<IndexRecipeView> recipes, int mouseX, int mouseY) {
-        int x = panelX + 14;
-        int y = panelY + 72;
+        Rect list = listRect();
+        int x = list.x();
+        int y = list.y();
         int rowH = 24;
         int visible = Math.min(recipes.size() - firstVisible, visibleRows());
         String range = recipes.isEmpty() ? "0 / 0"
@@ -222,69 +375,108 @@ public final class IndexRecipeScreen extends Screen {
             graphics.fill(x, rowY, x + listWidth(), rowY + 21, active ? 0xFF123241 : hover ? 0xCC102630 : ROW);
             graphics.fill(x, rowY + 19, x + listWidth(), rowY + 21, active ? CYAN : 0x552F5B68);
             graphics.item(recipeIcon(recipe), x + 3, rowY + 2);
-            graphics.text(font, trim(font, recipe.title(), listWidth() - 28), x + 24, rowY + 6, active ? TEXT : 0xFFD8F6FF, false);
+            IndexRecipePlan plan = IndexRecipePlanner.plan(Minecraft.getInstance().player, recipe);
+            ItemStack categoryIcon = recipe.machine().isEmpty() ? recipeIcon(recipe) : recipe.machine();
+            int chipW = Math.min(56, Math.max(32, font.width(IndexRecipeUi.statusLabel(plan, mode == Mode.RECIPES)) + 8));
+            int iconX = x + listWidth() - 20;
+            graphics.item(categoryIcon, iconX, rowY + 2);
+            graphics.fill(iconX - chipW - 4, rowY + 3, iconX - 4, rowY + 18, 0x66102630);
+            graphics.outline(iconX - chipW - 4, rowY + 3, chipW, 15, IndexRecipeUi.statusColor(plan, mode == Mode.RECIPES));
+            graphics.centeredText(font, trim(font, IndexRecipeUi.statusLabel(plan, mode == Mode.RECIPES), chipW - 4),
+                    iconX - chipW - 4 + chipW / 2, rowY + 7, IndexRecipeUi.statusColor(plan, mode == Mode.RECIPES));
+            graphics.text(font, trim(font, recipe.title(), listWidth() - chipW - 54), x + 24, rowY + 6,
+                    active ? TEXT : 0xFFD8F6FF, false);
         }
     }
 
     private void drawRecipeDetails(GuiGraphicsExtractor graphics, Font font, IndexRecipeView recipe, int mouseX, int mouseY) {
-        int x = panelX + 24 + listWidth();
-        int y = panelY + 72;
-        int w = panelW - listWidth() - 42;
-        graphics.fill(x, y, x + w, panelY + panelH - 30, 0xAA071014);
-        graphics.text(font, trim(font, recipe.title(), w - 18), x + 9, y + 9, CYAN, true);
-        graphics.text(font, recipe.categoryId().getPath(), x + 9, y + 22, MUTED, false);
-        if (recipe.processTicks() > 0) {
-            graphics.text(font, recipe.processTicks() + " ticks", x + w - 68, y + 22, MUTED, false);
+        Rect detail = detailRect();
+        int x = detail.x();
+        int y = detail.y();
+        int w = detail.w();
+        int h = detail.h();
+        int traceH = drawTraceRail(graphics, font, recipe, x, y, w, mouseX, mouseY);
+        int cardH = Math.max(70, h - traceH - 25);
+        IndexRecipeUi.drawRecipeCard(graphics, font, recipe, x, y + traceH, w, cardH,
+                focusStack, mouseX, mouseY, slotHits);
+        drawRecipeActions(graphics, font, recipe, x + 6, y + traceH + cardH + 4, w - 12);
+    }
+
+    private int drawTraceRail(GuiGraphicsExtractor graphics, Font font, IndexRecipeView recipe,
+            int x, int y, int w, int mouseX, int mouseY) {
+        IndexRecipeTraceState.Trace trace = IndexRecipeTraceState.current();
+        if (!traceApplies(trace)) {
+            return 0;
         }
-        graphics.text(font, trim(font, "Source: " + recipe.sourceModId(), w - 18), x + 9, y + 34, MUTED, false);
-        int slotX = x + 10;
-        int slotY = y + 54;
-        int slot = 0;
-        for (IndexRecipeSlot recipeSlot : recipe.slots()) {
-            drawSlotGroup(graphics, font, recipeSlot, slotX, slotY + slot * 27, w - 20, mouseX, mouseY);
-            slot++;
-            if (slot > 5) {
-                break;
+        int h = 28;
+        graphics.fill(x, y, x + w, y + h - 4, 0x88102630);
+        graphics.outline(x, y, w, h - 4, 0x5538DFF4);
+        String label = "Path: " + trace.rootStack().getHoverName().getString() + " > missing inputs";
+        graphics.text(font, trim(font, label, w - 82), x + 7, y + 8, MUTED, false);
+        smallButton(graphics, font, x + w - 74, y + 4, 68, 16,
+                recipe != null && recipe.id().equals(trace.rootRecipeId()) ? "Tracing" : "Root", true);
+        return h;
+    }
+
+    private boolean traceApplies(IndexRecipeTraceState.Trace trace) {
+        if (trace == null || !trace.active() || focusStack.isEmpty()) {
+            return false;
+        }
+        Identifier focusId = IndexService.itemId(focusStack.getItem());
+        return trace.rootItemId().equals(focusId)
+                || trace.entries().stream().anyMatch(entry -> entry.itemId().equals(focusId));
+    }
+
+    private void drawRecipeActions(GuiGraphicsExtractor graphics, Font font, IndexRecipeView recipe, int x, int y, int w) {
+        IndexRecipePlan plan = IndexRecipePlanner.plan(Minecraft.getInstance().player, recipe);
+        int pinW = plan.pinned() ? 48 : 34;
+        smallButton(graphics, font, x, y, pinW, 16, plan.pinned() ? "Unpin" : "Pin", true);
+        int tx = x + pinW + 5;
+        if (plan.canTransfer()) {
+            smallButton(graphics, font, tx, y, 54, 16, "Transfer", true);
+            tx += 59;
+        }
+        if (plan.missingCount() > 0) {
+            smallButton(graphics, font, tx, y, 44, 16, "Trace", true);
+        } else if (!plan.canTransfer()) {
+            String note = IndexRecipeUi.statusDetail(plan, true);
+            if (!note.isBlank()) {
+                graphics.text(font, trim(font, note, Math.max(30, w - pinW - 8)), tx, y + 5,
+                        IndexRecipeUi.statusColor(plan, true), false);
             }
-        }
-        int noteY = Math.min(panelY + panelH - 62, slotY + slot * 27 + 4);
-        for (String note : recipe.notes().stream().limit(2).toList()) {
-            graphics.textWithWordWrap(font, Component.literal(note), x + 10, noteY, w - 20, MUTED);
-            noteY += 20;
-        }
-        if (Config.DEBUG_SHOW_RECIPE_IDS.get()) {
-            graphics.text(font, trim(font, recipe.id().toString(), w - 20), x + 10,
-                    panelY + panelH - 42, 0xFF6C7E84, false);
+        } else {
+            String note = IndexRecipeUi.statusDetail(plan, true);
+            graphics.text(font, trim(font, note, Math.max(30, w - (tx - x) - 8)), tx, y + 5,
+                    IndexRecipeUi.statusColor(plan, true), false);
         }
     }
 
-    private void drawSlotGroup(GuiGraphicsExtractor graphics, Font font, IndexRecipeSlot slot, int x, int y, int width,
-            int mouseX, int mouseY) {
-        int labelColor = switch (slot.role()) {
-            case OUTPUT -> 0xFFA8F7C5;
-            case MACHINE -> WARN;
-            case CATALYST -> 0xFFE09CFF;
-            case INPUT -> CYAN;
-            default -> MUTED;
-        };
-        graphics.text(font, slotLabel(slot), x, y + 6, labelColor, false);
-        int itemX = x + 58;
-        for (ItemStack stack : slot.stacks().stream().limit(Math.max(1, (width - 62) / 20)).toList()) {
-            graphics.fill(itemX, y, itemX + 20, y + 20, ROW);
-            graphics.outline(itemX, y, 20, 20, 0x5538DFF4);
-            graphics.item(stack, itemX + 2, y + 2);
-            if (inside(mouseX, mouseY, itemX, y, 20, 20)) {
-                graphics.setTooltipForNextFrame(font, stack, itemX + 10, y + 10);
-            }
-            itemX += 22;
+    private IndexRecipeView selectedRecipe() {
+        List<IndexRecipeView> recipes = recipes(focusStack.getItem());
+        if (recipes.isEmpty()) {
+            return null;
         }
+        return recipes.get(clamp(selected, 0, recipes.size() - 1));
     }
 
     private List<IndexRecipeView> recipes(Item item) {
+        List<IndexRecipeView> recipes = allRecipes(item);
+        return categoryFilter == null ? recipes : recipes.stream()
+                .filter(recipe -> recipe.categoryId().equals(categoryFilter))
+                .toList();
+    }
+
+    private List<IndexRecipeView> allRecipes(Item item) {
         Player player = Minecraft.getInstance().player;
-        return mode == Mode.USES
-                ? IndexService.INSTANCE.usesFor(player, item)
-                : IndexService.INSTANCE.recipesFor(player, item);
+        return IndexRecipeUi.viewsFor(player, item, mode.viewMode());
+    }
+
+    private List<Identifier> categories() {
+        Set<Identifier> categories = new LinkedHashSet<>();
+        for (IndexRecipeView recipe : allRecipes(focusStack.getItem())) {
+            categories.add(recipe.categoryId());
+        }
+        return List.copyOf(categories);
     }
 
     private ItemStack recipeIcon(IndexRecipeView recipe) {
@@ -297,28 +489,69 @@ public final class IndexRecipeScreen extends Screen {
     }
 
     private String titleLine() {
-        return mode == Mode.USES ? "ECHO: INDEX | USES" : "ECHO: INDEX | RECIPES";
+        return "ECHO: INDEX | " + mode.label().toUpperCase();
     }
 
-    private String slotLabel(IndexRecipeSlot slot) {
-        if (!slot.label().isBlank()) {
-            return slot.label();
-        }
-        return switch (slot.role()) {
-            case OUTPUT -> "Output";
-            case MACHINE -> "Machine";
-            case CATALYST -> "Catalyst";
-            case INPUT -> "Input";
-            default -> "Info";
-        };
+    private boolean wideLayout() {
+        return panelW >= 560;
     }
 
     private int listWidth() {
-        return Math.max(142, Math.min(190, panelW / 2 - 24));
+        return wideLayout() ? Math.max(150, Math.min(196, panelW / 3)) : panelW - 28;
+    }
+
+    private int listHeight() {
+        int available = Math.max(72, panelY + panelH - 34 - contentY());
+        if (wideLayout()) {
+            return available;
+        }
+        return clamp(available / 3, 72, Math.max(72, available - 112));
+    }
+
+    private Rect listRect() {
+        return new Rect(panelX + 14, contentY(), listWidth(), listHeight());
+    }
+
+    private Rect detailRect() {
+        if (wideLayout()) {
+            int x = panelX + 24 + listWidth();
+            int y = contentY();
+            return new Rect(x, y, panelW - listWidth() - 42, Math.max(96, panelY + panelH - 34 - y));
+        }
+        int y = contentY() + listHeight() + 18;
+        return new Rect(panelX + 14, y, panelW - 28, Math.max(96, panelY + panelH - 34 - y));
     }
 
     private int visibleRows() {
-        return Math.max(1, (panelH - 108) / 24);
+        return Math.max(1, listHeight() / 24);
+    }
+
+    private int contentY() {
+        return panelY + 90;
+    }
+
+    private static void renderCoreFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        try {
+            Class.forName("com.knoxhack.echoindex.integration.IndexRenderCoreScreenIntegration")
+                    .getMethod("drawOverlayFrame", GuiGraphicsExtractor.class, int.class, int.class, int.class, int.class)
+                    .invoke(null, graphics, x, y, width, height);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+        }
+    }
+
+    private static boolean cinematicStyle() {
+        try {
+            return Config.UI_CINEMATIC_STYLE.get();
+        } catch (RuntimeException exception) {
+            return true;
+        }
+    }
+
+    private static Mode modeForSlot(IndexRecipeUi.SlotHit hit, int button) {
+        if (button == 1) {
+            return Mode.USES;
+        }
+        return hit.role() == IndexSlotRole.OUTPUT ? Mode.RECIPES : Mode.USES;
     }
 
     private static boolean inside(double mx, double my, int x, int y, int w, int h) {
@@ -343,7 +576,8 @@ public final class IndexRecipeScreen extends Screen {
 
     public enum Mode {
         RECIPES("Recipes"),
-        USES("Uses");
+        USES("Uses"),
+        SOURCES("Sources");
 
         private final String label;
 
@@ -354,5 +588,29 @@ public final class IndexRecipeScreen extends Screen {
         public String label() {
             return label;
         }
+
+        public IndexRecipeUi.ViewMode viewMode() {
+            return switch (this) {
+                case RECIPES -> IndexRecipeUi.ViewMode.RECIPES;
+                case USES -> IndexRecipeUi.ViewMode.USES;
+                case SOURCES -> IndexRecipeUi.ViewMode.SOURCES;
+            };
+        }
+    }
+
+    private static void toggleBookmark(Identifier id) {
+        boolean currently = ClientIndexState.isBookmarked(id);
+        EchoNetClientActions.sendServerboundAction(new IndexActionPacket(
+                currently ? IndexActionPacket.Action.UNBOOKMARK : IndexActionPacket.Action.BOOKMARK,
+                id));
+    }
+
+    private static void sendRecipeAction(IndexActionPacket.Action action, Identifier recipeId) {
+        if (recipeId != null) {
+            EchoNetClientActions.sendServerboundAction(new IndexActionPacket(action, recipeId));
+        }
+    }
+
+    private record Rect(int x, int y, int w, int h) {
     }
 }

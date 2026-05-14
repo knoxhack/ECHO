@@ -24,6 +24,12 @@ public final class ModDataComponents {
                     .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT)
                     .build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.knoxhack.echorelictech.api.relic.UnidentifiedRelicData>> UNIDENTIFIED_RELIC_DATA =
+            DATA_COMPONENT_TYPES.register("unidentified_relic_data", () -> DataComponentType.<com.knoxhack.echorelictech.api.relic.UnidentifiedRelicData>builder()
+                    .persistent(com.knoxhack.echorelictech.api.relic.UnidentifiedRelicData.CODEC)
+                    .networkSynchronized(com.knoxhack.echorelictech.api.relic.UnidentifiedRelicData.STREAM_CODEC)
+                    .build());
+
     private ModDataComponents() {}
 
     public static void register(IEventBus eventBus) {

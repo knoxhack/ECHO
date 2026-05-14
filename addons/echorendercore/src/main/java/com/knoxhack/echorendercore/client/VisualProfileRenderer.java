@@ -6,11 +6,14 @@ import com.knoxhack.echorendercore.profile.VisualLayerKind;
 import com.knoxhack.echorendercore.profile.VisualLayerProfile;
 import com.knoxhack.echorendercore.profile.VisualMaterial;
 import com.knoxhack.echorendercore.profile.VisualProfile;
+import com.knoxhack.echorendercore.profile.VisualEffectProfile;
+import com.knoxhack.echorendercore.profile.VisualEffectTargetScope;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
 public final class VisualProfileRenderer {
@@ -30,6 +33,14 @@ public final class VisualProfileRenderer {
          texture = fallbackTexture;
       }
       VisualRenderLayer.submitBase(model, state, poseStack, collector, context, texture);
+      if (profile == null) {
+         return;
+      }
+      submitEntityLayers(model, state, poseStack, collector, context, profile);
+   }
+
+   public static <S extends EntityRenderState> void submitEntityLayers(EntityModel<S> model, S state,
+         PoseStack poseStack, SubmitNodeCollector collector, VisualContext context, VisualProfile profile) {
       if (profile == null) {
          return;
       }
@@ -55,20 +66,52 @@ public final class VisualProfileRenderer {
          if (material != VisualMaterial.DEFAULT) {
             color = mergeColor(color, material.color(), material.alpha());
          }
-         if (layer.kind() == VisualLayerKind.GLOW || layer.emissive() || material.emissive()) {
+         VisualEffectProfile effect = profile.effectFor(layer);
+         float layerAlpha = ((color >>> 24) & 0xFF) / 255.0F;
+         RenderCoreAdvancedFxPipeline.MaskSubmission mask = RenderCoreAdvancedFxPipeline.submit(
+            effect,
+            VisualEffectTargetScope.ENTITY,
+            layer.texture(),
+            color,
+            layerAlpha
+         );
+         color = RenderCoreEffectPipeline.color(color, effect);
+         int layerLight = layer.effectiveLight(material, context.packedLight());
+         int layerOverlay = layer.effectiveOverlay(material, OverlayTexture.NO_OVERLAY);
+         int outlineColor = layer.effectiveOutlineColor(material, state.outlineColor);
+         int layerOrder = RenderCoreEffectPipeline.order(Math.max(1, order + layer.effectiveSortOrder(material)), effect);
+         if (layer.kind() == VisualLayerKind.GLOW || layer.fullbright(material)) {
             if (!layer.partFilter().isEmpty()) {
+               if (mask != null) {
+                  VisualPartRenderMask.submit(model, state, poseStack, collector, layer.partFilter(), mask.renderType(),
+                     layerOrder, layerLight, layerOverlay, mask.color());
+               }
                VisualPartRenderMask.submit(model, state, poseStack, collector, layer.partFilter(), RenderTypes.eyes(layer.texture()),
-                  1, 0xF000F0, color);
+                  layerOrder, layerLight, layerOverlay, color);
                continue;
             }
-            GlowRenderLayer.submit(model, state, poseStack, collector, layer.texture(), color);
+            if (mask != null) {
+               collector.order(layerOrder).submitModel(model, state, poseStack, mask.renderType(), layerLight, layerOverlay,
+                  mask.color(), null, outlineColor, null);
+            }
+            GlowRenderLayer.submit(model, state, poseStack, collector, layer.texture(), color, layerOrder, layerLight, layerOverlay, outlineColor);
          } else {
             if (!layer.partFilter().isEmpty()) {
+               if (mask != null) {
+                  VisualPartRenderMask.submit(model, state, poseStack, collector, layer.partFilter(), mask.renderType(),
+                     layerOrder, layerLight, layerOverlay, mask.color());
+               }
                VisualPartRenderMask.submit(model, state, poseStack, collector, layer.partFilter(), RenderTypes.eyes(layer.texture()),
-                  order++, state.lightCoords, color);
+                  layerOrder, layerLight, layerOverlay, color);
+               order++;
                continue;
             }
-            OverlayRenderLayer.submit(model, state, poseStack, collector, layer.texture(), order++, color);
+            if (mask != null) {
+               collector.order(layerOrder).submitModel(model, state, poseStack, mask.renderType(), layerLight, layerOverlay,
+                  mask.color(), null, outlineColor, null);
+            }
+            OverlayRenderLayer.submit(model, state, poseStack, collector, layer.texture(), layerOrder, color, layerLight, layerOverlay, outlineColor);
+            order++;
          }
       }
    }

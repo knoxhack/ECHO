@@ -89,6 +89,29 @@ public final class IndexDiscoveryStore {
         return readSet(data(player), "bookmarked");
     }
 
+    public boolean setRecipePinned(ServerPlayer player, Identifier recipeId, boolean pinned) {
+        if (pinned) {
+            return add(player, "pinned_recipe", recipeId);
+        }
+        if (player == null || recipeId == null) {
+            return false;
+        }
+        CompoundTag root = data(player);
+        boolean changed = remove(root, "pinned_recipe", recipeId);
+        if (changed) {
+            save(player, root);
+        }
+        return changed;
+    }
+
+    public boolean isRecipePinned(Player player, Identifier recipeId) {
+        return contains(data(player), "pinned_recipe", recipeId);
+    }
+
+    public Set<Identifier> pinnedRecipes(Player player) {
+        return readSet(data(player), "pinned_recipe");
+    }
+
     public CompoundTag syncTag(Player player) {
         return data(player).copy();
     }

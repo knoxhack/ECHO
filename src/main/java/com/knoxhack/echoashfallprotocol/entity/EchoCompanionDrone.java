@@ -22,6 +22,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -132,6 +133,40 @@ public class EchoCompanionDrone extends Mob {
     }
 
     @Override
+    public boolean isInWall() {
+        return false;
+    }
+
+    protected boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+        return false;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        Player owner = getOwnerAttacker(source.getEntity());
+        if (owner != null) {
+            speak("Friendly fire lockout.", MOOD_PROFESSIONAL, 30, 0);
+            owner.sendSystemMessage(Component.literal("[ECHO-7 // DRONE] Friendly fire lockout engaged."));
+            return false;
+        }
+        if (getOwnerUUID() != null && amount >= getHealth()) {
+            setHealth(1.0F);
+            setRepairLevel(Math.max(1, getRepairLevel() - 20));
+            forceFollowMode();
+            if (!recallToOwner()) {
+                speak("Critical damage bypassed. Repair required.", MOOD_URGENT, 60, 12);
+            }
+            return false;
+        }
+        return super.hurtServer(level, source, amount);
+    }
+
+    @Override
+    public boolean isPushedByFluid() {
+        return false;
+    }
+
+    @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_MODE, 0);
@@ -162,6 +197,10 @@ public class EchoCompanionDrone extends Mob {
     public UUID getOwnerUUID() {
         String uuidStr = this.entityData.get(DATA_OWNER);
         return uuidStr != null && !uuidStr.isEmpty() ? UUID.fromString(uuidStr) : null;
+    }
+
+    private Player getOwnerAttacker(Entity entity) {
+        return entity instanceof Player player && player.getUUID().equals(getOwnerUUID()) ? player : null;
     }
 
     public DroneMode getCurrentMode() {
@@ -422,6 +461,8 @@ public class EchoCompanionDrone extends Mob {
     public void tick() {
         super.tick();
 
+        // Reset fall distance to prevent any accumulated fall damage
+        this.fallDistance = 0.0F;
         // Ensure we're in a valid mode based on repair level
         if (!isModeUnlocked(getCurrentMode())) {
             forceFollowMode();
@@ -689,11 +730,19 @@ public class EchoCompanionDrone extends Mob {
         }
 
         double distance = Math.sqrt(distanceSqr);
+        double moveX = dx / distance * speed;
+        double moveY = dy / distance * Math.min(speed, 0.28D);
+        double moveZ = dz / distance * speed;
+
+        // If blocked by a solid block, rise to clear the obstacle
+        if (!level().noCollision(this, getBoundingBox().move(moveX, moveY, moveZ))) {
+            moveY = Math.min(speed, 0.28D) + 0.12D;
+            moveX *= 0.5D;
+            moveZ *= 0.5D;
+        }
+
         Vec3 existing = getDeltaMovement().scale(0.35D);
-        setDeltaMovement(existing.add(
-                dx / distance * speed,
-                dy / distance * Math.min(speed, 0.28D),
-                dz / distance * speed));
+        setDeltaMovement(existing.add(moveX, moveY, moveZ));
     }
 
     private void tickOwnerFollow() {
@@ -731,12 +780,19 @@ public class EchoCompanionDrone extends Mob {
 
         double distance = Math.sqrt(distanceSqr);
         double speed = distanceSqr > 100.0D ? 0.38D : distanceSqr > FOLLOW_SLOW_DISTANCE_SQR ? 0.26D : 0.14D;
+        double moveX = dx / distance * speed;
+        double moveY = dy / distance * Math.min(speed, 0.24D);
+        double moveZ = dz / distance * speed;
+
+        // If blocked by a solid block, rise to clear the obstacle
+        if (!level().noCollision(this, getBoundingBox().move(moveX, moveY, moveZ))) {
+            moveY = Math.min(speed, 0.24D) + 0.12D;
+            moveX *= 0.5D;
+            moveZ *= 0.5D;
+        }
+
         Vec3 existing = this.getDeltaMovement().scale(0.28D);
-        this.setDeltaMovement(existing.add(
-            dx / distance * speed,
-            dy / distance * Math.min(speed, 0.24D),
-            dz / distance * speed
-        ));
+        this.setDeltaMovement(existing.add(moveX, moveY, moveZ));
     }
 
     private Vec3 getOwnerHoverTarget(Player owner) {

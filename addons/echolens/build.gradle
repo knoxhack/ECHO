@@ -64,6 +64,9 @@ repositories {
 
 dependencies {
     implementation project(':echocore')
+    implementation project(':echonetcore')
+    compileOnly project(':echoruntimeguard')
+    compileOnly project(':echorendercore')
     if (providers.gradleProperty('echoLensLoadOptionalAddons').map { it.toBoolean() }.orElse(false).get()) {
         localRuntime project(':echoterminal')
         localRuntime project(':echoindex')

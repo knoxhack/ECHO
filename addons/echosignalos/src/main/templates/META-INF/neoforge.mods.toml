@@ -29,7 +29,22 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echocore"
 type="required"
-versionRange="[1.1.0,)"
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echonetcore"
+type="required"
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echorendercore"
+type="optional"
+reason="Enables RenderCore V16 terminal, rack, and screen visual profiles."
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
 

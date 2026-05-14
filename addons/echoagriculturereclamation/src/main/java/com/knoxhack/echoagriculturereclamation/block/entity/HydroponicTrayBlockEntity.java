@@ -45,7 +45,7 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
          return;
       }
       tray.growthTicks = 0;
-      int greenhouse = ReclamationProgress.growthGreenhouseSafety(level, pos);
+      var greenhouse = ReclamationProgress.growthGreenhouseContext(level, pos);
       int chance = ReclamationCropLogic.growthChance(tray.profile.spec(), SoilState.STABILIZED, tray.profile, greenhouse, tray.nutrient);
       if (level.getRandom().nextInt(100) < chance) {
          tray.age++;
@@ -109,7 +109,7 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
          return true;
       }
       boolean stable = ReclamationCropLogic.stable(profile);
-      int greenhouse = level == null ? 0 : ReclamationProgress.scanGreenhouseSafety(level, worldPosition);
+      var greenhouse = level == null ? ReclamationProgress.GreenhouseScan.empty().asContext() : ReclamationProgress.greenhouseContext(level, worldPosition);
       int count = ReclamationCropLogic.yield(spec, profile, greenhouse, true);
       give(player, new ItemStack(ModItems.produceFor(spec).get(), Math.max(1, count)));
       ReclamationProgress.recordGrowth(player, spec, stable);
@@ -129,6 +129,26 @@ public class HydroponicTrayBlockEntity extends BlockEntity {
       sync();
       player.sendSystemMessage(Component.literal("ECHO FIELD // Hydroponic harvest complete: " + Math.max(1, count) + "x " + spec.displayName()
          + ". " + (returnSeed ? "Seed culture shed a contaminated cutting for stabilization." : "Tray culture reset for regrowth.")));
+      return true;
+   }
+
+   public boolean serviceFromPollinator(ServerLevel level, int baseGrowthBonus) {
+      if (profile == null || age >= 7) {
+         return false;
+      }
+      var greenhouse = ReclamationProgress.growthGreenhouseContext(level, worldPosition);
+      int bonus = greenhouse.pollinationBonus(baseGrowthBonus);
+      if (bonus <= 0 || !ReclamationCropLogic.canGrow(profile.spec(), SoilState.STABILIZED, profile, greenhouse)) {
+         return false;
+      }
+      int chance = Math.min(95, ReclamationCropLogic.growthChance(profile.spec(), SoilState.STABILIZED, profile, greenhouse, nutrient) + bonus);
+      if (level.getRandom().nextInt(100) < chance) {
+         age++;
+         if (nutrient > 0) {
+            nutrient--;
+         }
+         sync();
+      }
       return true;
    }
 

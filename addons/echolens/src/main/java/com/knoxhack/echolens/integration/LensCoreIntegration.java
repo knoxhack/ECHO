@@ -42,12 +42,13 @@ public final class LensCoreIntegration {
 
             @Override
             public String summary() {
-                return "Smart scanner HUD for blocks, entities, fluids, machines, and ECHO context.";
+                return "Smart scanner HUD with local inspection and server-assisted Deep Scan.";
             }
 
             @Override
             public String statusLine(Player player) {
-                return "Lens online. Providers: " + LensProviderRegistry.count() + ".";
+                return "Lens online. Providers: " + LensProviderRegistry.count()
+                        + " / server: " + LensProviderRegistry.serverProviders().size() + ".";
             }
         });
         EchoCoreServices.registerRouteRecordService(player -> List.of(new EchoRouteRecord(
@@ -57,7 +58,7 @@ public final class LensCoreIntegration {
                 "Inspection",
                 "Any dimension",
                 "ONLINE",
-                "Hold Shift for expanded details or the Deep Scan key for categorized diagnostics.",
+                "Hold Shift for local details or the Deep Scan key for server-assisted public diagnostics.",
                 true)));
         EchoCoreServices.registerDiagnosticService(player -> {
             if (LensProviderRegistry.count() > 0) {

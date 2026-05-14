@@ -19,6 +19,12 @@ public final class VisualPartRenderMask {
    public static <S extends EntityRenderState> boolean submit(EntityModel<S> model, S state, PoseStack poseStack,
          SubmitNodeCollector collector, Collection<String> partNames, RenderType renderType, int order, int light,
          int color) {
+      return submit(model, state, poseStack, collector, partNames, renderType, order, light, OverlayTexture.NO_OVERLAY, color);
+   }
+
+   public static <S extends EntityRenderState> boolean submit(EntityModel<S> model, S state, PoseStack poseStack,
+         SubmitNodeCollector collector, Collection<String> partNames, RenderType renderType, int order, int light,
+         int overlay, int color) {
       if (partNames == null || partNames.isEmpty()) {
          return false;
       }
@@ -40,7 +46,7 @@ public final class VisualPartRenderMask {
             warn("RenderCore layer mask skipped missing model part '{}'.", partName);
             continue;
          }
-         ordered.submitModelPart(part, poseStack, renderType, light, OverlayTexture.NO_OVERLAY, null, color, null);
+         ordered.submitModelPart(part, poseStack, renderType, light, overlay, null, color, null);
          submitted = true;
       }
       return submitted || !partNames.isEmpty();

@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "family": "rocket",
+  "intended_runtime": "NeoForge EntityModel with RenderCorePartProvider",
+  "texture_size": [
+    128,
+    128
+  ],
+  "anchors": {
+    "core": [
+      0.0,
+      1.15,
+      0.0
+    ],
+    "eyes": [
+      0.0,
+      1.5999999999999999,
+      -0.35
+    ],
+    "trail": [
+      0.0,
+      0.18,
+      0.55
+    ],
+    "ground": [
+      0.0,
+      0.04,
+      0.0
+    ],
+    "exhaust": [
+      0.0,
+      0.2,
+      0.65
+    ],
+    "scanner": [
+      0.0,
+      1.4,
+      -0.45
+    ]
+  },
+  "parts": [
+    {
+      "name": "hull",
+      "role": "structural model part",
+      "cube": [
+        72.0,
+        25.6,
+        35.2
+      ],
+      "pivot": [
+        0.0,
+        0.747,
+        0.0
+      ]
+    },
+    {
+      "name": "nose",
+      "role": "structural model part",
+      "cube": [
+        22.4,
+        28.8,
+        14.4
+      ],
+      "pivot": [
+        0.0,
+        0.747,
+        0.0
+      ]
+    },
+    {
+      "name": "fins",
+      "role": "structural model part",
+      "cube": [
+        22.4,
+        28.8,
+        14.4
+      ],
+      "pivot": [
+        0.0,
+        0.747,
+        0.0
+      ]
+    },
+    {
+      "name": "engine",
+      "role": "RenderCore glow and charge anchor",
+      "cube": [
+        14.4,
+        14.4,
+        8.8
+      ],
+      "pivot": [
+        0.0,
+        1.15,
+        0.0
+      ]
+    },
+    {
+      "name": "window",
+      "role": "structural model part",
+      "cube": [
+        16.0,
+        16.0,
+        12.8
+      ],
+      "pivot": [
+        0.0,
+        0.747,
+        0.0
+      ]
+    },
+    {
+      "name": "warning_lights",
+      "role": "emissive focal point",
+      "cube": [
+        22.4,
+        28.8,
+        14.4
+      ],
+      "pivot": [
+        0.0,
+        0.747,
+        0.0
+      ]
+    }
+  ],
+  "animation_contract": {
+    "idle": [
+      "hull"
+    ],
+    "active": [
+      "hull",
+      "core"
+    ],
+    "scan": [
+      "eyes",
+      "scanner"
+    ],
+    "charge": [
+      "core"
+    ],
+    "damaged": [
+      "hull",
+      "exhaust"
+    ],
+    "corrupt": [
+      "hull",
+      "core"
+    ]
+  }
+}

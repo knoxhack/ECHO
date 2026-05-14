@@ -29,7 +29,9 @@ public record MissionDefinition(
         Map<String, String> metadata,
         MissionStatusRule statusRule,
         MissionCompletionRule completionRule,
-        MissionCompletionHandler completionHandler) {
+        MissionCompletionHandler completionHandler,
+        MissionActionProvider actionProvider,
+        MissionActionHandler actionHandler) {
     public MissionDefinition {
         if (id == null) {
             throw new IllegalArgumentException("Mission id cannot be null.");
@@ -54,6 +56,8 @@ public record MissionDefinition(
         statusRule = statusRule == null ? MissionStatusRule.NONE : statusRule;
         completionRule = completionRule == null ? MissionCompletionRule.NONE : completionRule;
         completionHandler = completionHandler == null ? MissionCompletionHandler.NONE : completionHandler;
+        actionProvider = actionProvider == null ? MissionActionProvider.NONE : actionProvider;
+        actionHandler = actionHandler == null ? MissionActionHandler.NONE : actionHandler;
     }
 
     public static Builder builder(Identifier id, Identifier chapterId) {
@@ -83,6 +87,8 @@ public record MissionDefinition(
         private MissionStatusRule statusRule = MissionStatusRule.NONE;
         private MissionCompletionRule completionRule = MissionCompletionRule.NONE;
         private MissionCompletionHandler completionHandler = MissionCompletionHandler.NONE;
+        private MissionActionProvider actionProvider = MissionActionProvider.NONE;
+        private MissionActionHandler actionHandler = MissionActionHandler.NONE;
 
         private Builder(Identifier id, Identifier chapterId) {
             this.id = id;
@@ -180,10 +186,21 @@ public record MissionDefinition(
             return this;
         }
 
+        public Builder actionProvider(MissionActionProvider actionProvider) {
+            this.actionProvider = actionProvider == null ? MissionActionProvider.NONE : actionProvider;
+            return this;
+        }
+
+        public Builder actionHandler(MissionActionHandler actionHandler) {
+            this.actionHandler = actionHandler == null ? MissionActionHandler.NONE : actionHandler;
+            return this;
+        }
+
         public MissionDefinition build() {
             return new MissionDefinition(id, chapterId, phaseId, phaseTitle, phaseOrder, missionOrder, title,
                     briefing, fieldGuide, category, difficulty, icon, prerequisites, objectives, rewards, kind,
-                    repeatPolicy, hidden, metadata, statusRule, completionRule, completionHandler);
+                    repeatPolicy, hidden, metadata, statusRule, completionRule, completionHandler, actionProvider,
+                    actionHandler);
         }
     }
 }

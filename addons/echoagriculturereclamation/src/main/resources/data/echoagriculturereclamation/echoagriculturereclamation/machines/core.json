@@ -15,5 +15,9 @@
   "greenhouseFilterWeight": 18,
   "greenhouseDockWeight": 14,
   "greenhouseControllerWeight": 10,
-  "greenhouseTrayWeight": 4
+  "greenhouseTrayWeight": 4,
+  "pollinatorDroneServiceRadius": 4,
+  "pollinatorDroneHomeRadius": 8,
+  "pollinatorDroneServiceTicks": 120,
+  "pollinatorDroneGrowthBonus": 12
 }

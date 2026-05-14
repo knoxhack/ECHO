@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoarmory:block/veil_infuser"
+    "model": "echoarmory:item/veil_infuser"
   }
 }

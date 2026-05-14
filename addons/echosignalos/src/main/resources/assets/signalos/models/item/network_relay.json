@@ -1,3 +1,6 @@
 {
-  "parent": "signalos:block/network_relay"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "signalos:item/network_relay"
+  }
 }

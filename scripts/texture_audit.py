@@ -483,8 +483,8 @@ def audit_orbital_assets(errors: list[str], warnings: list[str]) -> tuple[list[P
             if not is_transparent_block(path.stem) and transparent > 0:
                 warnings.append(f"Orbital solid block texture contains transparent pixels: {rel_path}")
         elif folder == "entity":
-            if (width, height) not in {(64, 32), (64, 64), (128, 64)}:
-                errors.append(f"Orbital entity texture must remain 64x32, 64x64, or 128x64: {rel_path} is {width}x{height}")
+            if (width, height) not in {(64, 32), (64, 64), (128, 64), (128, 128), (256, 256)}:
+                errors.append(f"Orbital entity texture must remain a supported vanilla or RenderCore atlas size: {rel_path} is {width}x{height}")
         elif folder in {"gui", "fluid", "particle"}:
             continue
         else:
@@ -658,8 +658,8 @@ def audit() -> int:
             if colors > 8:
                 warnings.append(f"Block texture exceeds 8 opaque colors ({colors}): {rel_path}")
         elif folder == "entity":
-            if (width, height) not in {(64, 32), (64, 64), (128, 64)}:
-                errors.append(f"Entity texture must remain 64x32, 64x64, or 128x64: {rel_path} is {width}x{height}")
+            if (width, height) not in {(64, 32), (64, 64), (128, 64), (128, 128), (256, 256)}:
+                errors.append(f"Entity texture must remain a supported vanilla or RenderCore atlas size: {rel_path} is {width}x{height}")
         elif folder == "armor":
             if (width, height) != (64, 32):
                 errors.append(f"Armor layer must remain 64x32: {rel_path} is {width}x{height}")

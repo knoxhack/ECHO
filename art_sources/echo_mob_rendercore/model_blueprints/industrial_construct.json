@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "family": "industrial_construct",
+  "intended_runtime": "NeoForge EntityModel with RenderCorePartProvider",
+  "texture_size": [
+    128,
+    128
+  ],
+  "anchors": {
+    "core": [
+      0.0,
+      1.25,
+      0.0
+    ],
+    "eyes": [
+      0.0,
+      1.7,
+      -0.35
+    ],
+    "trail": [
+      0.0,
+      0.18,
+      0.55
+    ],
+    "ground": [
+      0.0,
+      0.04,
+      0.0
+    ],
+    "exhaust": [
+      0.0,
+      1.4,
+      0.65
+    ],
+    "scanner": [
+      0.0,
+      1.5,
+      -0.45
+    ]
+  },
+  "parts": [
+    {
+      "name": "head",
+      "role": "structural model part",
+      "cube": [
+        16.0,
+        16.0,
+        12.8
+      ],
+      "pivot": [
+        0.0,
+        1.7,
+        -0.25
+      ]
+    },
+    {
+      "name": "furnace_core",
+      "role": "RenderCore glow and charge anchor",
+      "cube": [
+        14.4,
+        14.4,
+        8.8
+      ],
+      "pivot": [
+        0.0,
+        1.25,
+        0.0
+      ]
+    },
+    {
+      "name": "torso",
+      "role": "structural model part",
+      "cube": [
+        22.4,
+        28.8,
+        14.4
+      ],
+      "pivot": [
+        0.0,
+        0.812,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm",
+      "role": "animated locomotion limb",
+      "cube": [
+        8.0,
+        22.4,
+        8.0
+      ],
+      "pivot": [
+        -0.35,
+        0.688,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm",
+      "role": "animated locomotion limb",
+      "cube": [
+        8.0,
+        22.4,
+        8.0
+      ],
+      "pivot": [
+        0.35,
+        0.688,
+        0.0
+      ]
+    },
+    {
+      "name": "legs",
+      "role": "animated locomotion limb",
+      "cube": [
+        8.0,
+        22.4,
+        8.0
+      ],
+      "pivot": [
+        0.0,
+        0.812,
+        0.0
+      ]
+    },
+    {
+      "name": "exhaust",
+      "role": "particle emission anchor",
+      "cube": [
+        22.4,
+        28.8,
+        14.4
+      ],
+      "pivot": [
+        0.0,
+        1.4,
+        0.65
+      ]
+    },
+    {
+      "name": "eyes",
+      "role": "emissive focal point",
+      "cube": [
+        22.4,
+        28.8,
+        14.4
+      ],
+      "pivot": [
+        0.0,
+        1.7,
+        -0.25
+      ]
+    }
+  ],
+  "animation_contract": {
+    "idle": [
+      "torso"
+    ],
+    "active": [
+      "torso",
+      "core"
+    ],
+    "scan": [
+      "eyes",
+      "scanner"
+    ],
+    "charge": [
+      "core"
+    ],
+    "damaged": [
+      "torso",
+      "exhaust"
+    ],
+    "corrupt": [
+      "torso",
+      "core"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echostationfall:block/command_console"
+    "model": "echostationfall:item/command_console"
   }
 }

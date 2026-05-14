@@ -4,6 +4,14 @@
   "order": 10,
   "requiredVehicle": "wasteland_rover",
   "minFuel": 60,
+  "logisticsNetworkId": "global",
+  "logisticsLoadoutId": "echoconvoyprotocol:repair_gantry_kit",
+  "autoRequestCargo": false,
+  "holomapMarker": {
+    "icon": "convoy_route",
+    "color": "ff9d00",
+    "layer": "echoconvoyprotocol:convoy_routes"
+  },
   "requiredCargo": [
     {"item": "echoconvoyprotocol:engine_core", "count": 1}
   ],

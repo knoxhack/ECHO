@@ -44,6 +44,9 @@ public record IndexActionPacket(Action action, Identifier targetId) implements C
         REQUEST_SYNC,
         MARK_READ,
         BOOKMARK,
-        UNBOOKMARK
+        UNBOOKMARK,
+        PIN_RECIPE,
+        UNPIN_RECIPE,
+        TRANSFER_RECIPE
     }
 }

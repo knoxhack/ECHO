@@ -1,0 +1,172 @@
+{
+  "id": "echothemecore:cyberglass",
+  "display_name": "CyberGlass",
+  "description": "A clean cyberpunk futuristic glass theme with dark translucent panels, cyan hologram glow, magenta accents, thin neon borders, and premium modern ECHO UI styling.",
+  "colors": {
+    "primary": "#00E5FF",
+    "secondary": "#B44CFF",
+    "accent": "#FF2BD6",
+    "background": "#030711",
+    "panel": "#08111FCC",
+    "panel_alt": "#0D1A2ECC",
+    "glass": "#10243A88",
+    "border": "#2BEAFF",
+    "border_soft": "#1A6F8A",
+    "text": "#EAFBFF",
+    "muted_text": "#8AAFC2",
+    "success": "#45FFB0",
+    "warning": "#FFD166",
+    "error": "#FF4D6D",
+    "locked": "#3B4652",
+    "glow": "#00E5FF",
+    "selection": "#B44CFF"
+  },
+  "ui": {
+    "background_texture": "echothemecore:textures/gui/themes/cyberglass/background.png",
+    "panel_texture": "echothemecore:textures/gui/themes/cyberglass/glass_panel.png",
+    "panel_alt_texture": "echothemecore:textures/gui/themes/cyberglass/glass_panel_alt.png",
+    "button_texture": "echothemecore:textures/gui/themes/cyberglass/glass_button.png",
+    "button_hover_texture": "echothemecore:textures/gui/themes/cyberglass/glass_button_hover.png",
+    "tab_texture": "echothemecore:textures/gui/themes/cyberglass/tab.png",
+    "tab_active_texture": "echothemecore:textures/gui/themes/cyberglass/tab_active.png",
+    "mission_card_texture": "echothemecore:textures/gui/themes/cyberglass/mission_card.png",
+    "mission_card_selected_texture": "echothemecore:textures/gui/themes/cyberglass/mission_card_selected.png",
+    "status_chip_texture": "echothemecore:textures/gui/themes/cyberglass/status_chip.png",
+    "progress_bar_texture": "echothemecore:textures/gui/themes/cyberglass/progress_bar.png",
+    "scrollbar_texture": "echothemecore:textures/gui/themes/cyberglass/scrollbar.png",
+    "icon_pack": "echothemecore:textures/gui/themes/cyberglass/icons/icon_theme.png",
+    "hologram_overlay": "echothemecore:textures/gui/themes/cyberglass/hologram_overlay.png",
+    "energy_overlay": "echothemecore:textures/gui/themes/cyberglass/energy_overlay.png",
+    "edge_glow": "echothemecore:textures/gui/themes/cyberglass/edge_glow.png",
+    "particle_glints": "echothemecore:textures/gui/themes/cyberglass/particle_glints.png",
+    "locked_overlay": "echothemecore:textures/gui/themes/cyberglass/locked_overlay.png"
+  },
+  "render": {
+    "hologram_color": "#00E5FF",
+    "hologram_secondary": "#B44CFF",
+    "particle_primary": "#00E5FF",
+    "particle_secondary": "#FF2BD6",
+    "emissive_primary": "#00E5FF",
+    "emissive_secondary": "#B44CFF",
+    "edge_glow_color": "#00E5FF",
+    "warning_glow_color": "#FFD166",
+    "success_glow_color": "#45FFB0",
+    "error_glow_color": "#FF4D6D",
+    "distortion_color": "#B44CFF",
+    "glow_intensity": 0.85,
+    "emissive_intensity": 0.9,
+    "hologram_opacity": 0.68,
+    "glass_opacity": 0.62,
+    "noise_strength": 0.05,
+    "distortion_strength": 0.0,
+    "edge_glow_strength": 0.75,
+    "hologram_pulse_strength": 0.45,
+    "energy_pattern_strength": 0.35,
+    "particle_intensity": 0.65,
+    "animation_intensity": 0.75,
+    "pulse_speed": 0.85,
+    "hologram_style": "CYBER_GLASS",
+    "particle_style": "SOFT_GLINTS",
+    "distortion_style": "NONE",
+    "overlay_style": "GLASS_GEOMETRIC",
+    "transition_style": "GLASS_FADE",
+    "hologram_reference": "echothemecore:textures/gui/themes/cyberglass/rendercore/hologram_style_reference.png",
+    "particle_reference": "echothemecore:textures/gui/themes/cyberglass/rendercore/particle_style_reference.png",
+    "distortion_overlay": "echothemecore:textures/gui/themes/cyberglass/rendercore/distortion_overlay.png"
+  },
+  "sound": {
+    "ui_click": "minecraft:ui.button.click",
+    "ui_error": "minecraft:block.note_block.bass",
+    "ui_open": "minecraft:block.beacon.activate",
+    "ui_close": "minecraft:block.beacon.deactivate",
+    "theme_music": "minecraft:music.creative",
+    "stinger_confirm": "minecraft:block.amethyst_block.chime",
+    "stinger_warning": "minecraft:block.note_block.pling"
+  },
+  "block_palette": {
+    "recommended_blocks": [
+      "minecraft:tinted_glass",
+      "minecraft:cyan_stained_glass",
+      "minecraft:magenta_stained_glass"
+    ],
+    "panel_blocks": [
+      "minecraft:blackstone",
+      "minecraft:deepslate_tiles"
+    ],
+    "glass_blocks": [
+      "minecraft:tinted_glass",
+      "minecraft:cyan_stained_glass"
+    ],
+    "light_blocks": [
+      "minecraft:sea_lantern",
+      "minecraft:end_rod"
+    ],
+    "accent_blocks": [
+      "minecraft:amethyst_block",
+      "minecraft:magenta_glazed_terracotta"
+    ]
+  },
+  "vanilla_ui": {
+    "background_texture": "echothemecore:textures/gui/themes/cyberglass/background.png",
+    "panel_texture": "echothemecore:textures/gui/themes/cyberglass/glass_panel.png",
+    "button_texture": "echothemecore:textures/gui/themes/cyberglass/glass_button.png",
+    "hotbar_texture": "echothemecore:textures/gui/themes/cyberglass/status_chip.png",
+    "tooltip_texture": "echothemecore:textures/gui/themes/cyberglass/glass_panel_alt.png",
+    "toast_texture": "echothemecore:textures/gui/themes/cyberglass/mission_card.png",
+    "boss_bar_texture": "echothemecore:textures/gui/themes/cyberglass/progress_bar.png",
+    "background_tint": "#03071188",
+    "panel_tint": "#08111FCC",
+    "tooltip_tint": "#10243ADD",
+    "widget_accent": "#2BEAFF",
+    "hotbar_accent": "#B44CFF",
+    "chat_accent": "#00E5FF",
+    "overlay_opacity": 0.34,
+    "panel_opacity": 0.58,
+    "edge_glow_strength": 0.72,
+    "reduce_vanilla_brown": true
+  },
+  "module_assets": {
+    "terminal": {
+      "panel_texture": "echothemecore:textures/gui/themes/cyberglass/glass_panel.png",
+      "tab_texture": "echothemecore:textures/gui/themes/cyberglass/tab.png",
+      "tab_active_texture": "echothemecore:textures/gui/themes/cyberglass/tab_active.png",
+      "mission_card_texture": "echothemecore:textures/gui/themes/cyberglass/mission_card.png",
+      "status_chip_texture": "echothemecore:textures/gui/themes/cyberglass/status_chip.png",
+      "button_texture": "echothemecore:textures/gui/themes/cyberglass/glass_button.png",
+      "icon_texture": "echothemecore:textures/gui/themes/cyberglass/icons/icon_terminal.png"
+    },
+    "holomap": {
+      "grid_texture": "echothemecore:textures/gui/themes/cyberglass/holomap_grid.png",
+      "panel_texture": "echothemecore:textures/gui/themes/cyberglass/holomap_panel.png",
+      "route_texture": "echothemecore:textures/gui/themes/cyberglass/route_line.png",
+      "marker_signal_texture": "echothemecore:textures/gui/themes/cyberglass/marker_signal.png",
+      "marker_hazard_texture": "echothemecore:textures/gui/themes/cyberglass/marker_hazard.png",
+      "marker_mission_texture": "echothemecore:textures/gui/themes/cyberglass/marker_mission.png",
+      "selected_ring_texture": "echothemecore:textures/gui/themes/cyberglass/selected_marker_ring.png"
+    },
+    "lens": {
+      "scan_ring_texture": "echothemecore:textures/gui/themes/cyberglass/lens_scan_ring.png",
+      "target_box_texture": "echothemecore:textures/gui/themes/cyberglass/lens_target_box.png",
+      "weak_point_texture": "echothemecore:textures/gui/themes/cyberglass/lens_weakpoint_marker.png",
+      "warning_texture": "echothemecore:textures/gui/themes/cyberglass/lens_warning_overlay.png",
+      "anomaly_reveal_texture": "echothemecore:textures/gui/themes/cyberglass/lens_anomaly_overlay.png"
+    },
+    "vanilla_ui": {
+      "container_frame_texture": "echothemecore:textures/gui/themes/cyberglass/vanilla_container_frame.png",
+      "inventory_frame_texture": "echothemecore:textures/gui/themes/cyberglass/vanilla_inventory_frame.png",
+      "title_backplate_texture": "echothemecore:textures/gui/themes/cyberglass/vanilla_title_backplate.png",
+      "pause_panel_texture": "echothemecore:textures/gui/themes/cyberglass/vanilla_pause_panel.png",
+      "selected_slot_texture": "echothemecore:textures/gui/themes/cyberglass/vanilla_hotbar_accent.png"
+    },
+    "rendercore": {
+      "glow_overlay_texture": "echothemecore:textures/gui/themes/cyberglass/rendercore/glow_overlay_reference.png",
+      "entity_highlight_texture": "echothemecore:textures/gui/themes/cyberglass/rendercore/entity_highlight_reference.png",
+      "multiblock_energy_texture": "echothemecore:textures/gui/themes/cyberglass/rendercore/multiblock_energy_lines.png"
+    }
+  },
+  "metadata": {
+    "module_tags": "terminal,signalos,holomap,lens,rendercore,soundcore,blockworks,vanilla_ui",
+    "default": "true",
+    "version": "0.2.0"
+  }
+}

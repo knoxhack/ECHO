@@ -125,4 +125,15 @@ public class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.knoxhack.echoashfallprotocol.block.entity.FactoryControllerBlockEntity>> FACTORY_CONTROLLER =
             BLOCK_ENTITIES.register("factory_controller",
                     () -> new BlockEntityType<>(com.knoxhack.echoashfallprotocol.block.entity.FactoryControllerBlockEntity::new, Set.of(ModBlocks.FACTORY_CONTROLLER.get())));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StructureCacheBlockEntity>> STRUCTURE_CACHE =
+            BLOCK_ENTITIES.register("structure_cache",
+                    () -> new BlockEntityType<>(StructureCacheBlockEntity::new, Set.of(ModBlocks.STRUCTURE_CACHE.get())));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EchoContainerBlockEntity>> ECHO_CONTAINER =
+            BLOCK_ENTITIES.register("echo_container",
+                    () -> new BlockEntityType<>(EchoContainerBlockEntity::new, Set.of(
+                            ModBlocks.ECHO_CACHE.get(),
+                            ModBlocks.ECHO_CRATE.get(),
+                            ModBlocks.SUPPLY_CRATE.get())));
 }

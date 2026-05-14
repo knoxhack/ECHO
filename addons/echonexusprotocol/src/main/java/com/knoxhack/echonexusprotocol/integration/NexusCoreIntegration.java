@@ -69,6 +69,7 @@ public final class NexusCoreIntegration {
          EchoCoreServices.registerHazardTelemetryService(NexusCoreIntegration::hazardTelemetry);
          EchoCoreServices.registerDiagnosticService(NexusCoreIntegration::diagnostics);
          EchoCoreServices.registerRouteRecordService(NexusCoreIntegration::routeRecords);
+         NexusIndexProvider.register();
          EchoNexusProtocol.LOGGER.info("ECHO platform providers after Nexus setup: {}", EchoCoreServices.platformProviderSummary());
       }
    }

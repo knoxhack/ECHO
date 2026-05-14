@@ -1,15 +1,15 @@
 {
   "id": "echorelictech:null_battery",
-  "tier": "PROTOTYPE",
-  "category": "POWER",
+  "tier": "prototype",
+  "category": "power",
   "origin": "Pre-Gridfall Energy Cell",
-  "defaultCondition": "STABILIZED",
+  "defaultCondition": "stabilized",
   "cooldownTicks": 0,
   "instabilityCost": 0,
   "nullChargeCost": 0,
   "riskTypes": [
-    "BATTERY_DRAIN",
-    "POWERGRID_OVERLOAD"
+    "battery_drain",
+    "powergrid_overload"
   ],
   "failureTable": "echorelictech:generic_relic",
   "terminal": {

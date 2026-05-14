@@ -89,7 +89,7 @@ public final class EchoCoreServices {
             new ExpectedEchoModule("echologisticsnetwork", "ECHO: Logistics Network",
                     "addons/echologisticsnetwork", "Storage, loadouts, remote requests, courier delivery, and depots."),
             new ExpectedEchoModule("echorendercore", "ECHO: RenderCore",
-                    "addons/echorendercore", "Shared rendering, animation, overlays, and particle anchors."),
+                    "addons/echorendercore", "Shared rendering, animation, overlays, particles, previews, and profile composition."),
             new ExpectedEchoModule("echoconvoyprotocol", "ECHO: Convoy Protocol",
                     "addons/echoconvoyprotocol", "Vehicles, fuel, cargo, checkpoint gates, and travel routes."),
             new ExpectedEchoModule("echoholomap", "ECHO: HoloMap",
@@ -99,7 +99,9 @@ public final class EchoCoreServices {
             new ExpectedEchoModule("echoarmory", "ECHO: Armory", "addons/echoarmory",
                     "Weapons, armor, modules, energy recharge, faction locks, and loadout hooks."),
             new ExpectedEchoModule("echolens", "ECHO: Lens", "addons/echolens",
-                    "Smart scanner HUD for blocks, entities, fluids, machines, and addon context."));
+                    "Smart scanner HUD with local inspection, server-assisted Deep Scan, and addon context."),
+            new ExpectedEchoModule("echoblockworks", "ECHO Blockworks", "addons/echoblockworks",
+                    "First-party decorative, structural, and themed block library for ECHO structures."));
     public static final Identifier ACCEPT_FACTION_CONTRACT_ACTION =
             Identifier.fromNamespaceAndPath(EchoCore.MODID, "accept_contract");
     public static final Identifier COMPLETE_FACTION_CONTRACT_ACTION =
@@ -210,6 +212,35 @@ public final class EchoCoreServices {
         }
     }
 
+    public static boolean recordMissionObjective(
+            ServerPlayer player,
+            MissionObjectiveType type,
+            Identifier target,
+            int amount) {
+        return recordMissionObjective(player, type, target, amount, Map.of());
+    }
+
+    public static void registerMissionHookCoverage(String source, Identifier missionId, Identifier objectiveTarget) {
+        if (missionId == null || objectiveTarget == null) {
+            return;
+        }
+        try {
+            missionService().registerHookCoverage(source, missionId, objectiveTarget);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission hook coverage", missionService(), exception);
+        }
+    }
+
+    public static Map<String, String> missionHookCoverageSummary() {
+        try {
+            Map<String, String> coverage = missionService().missionHookCoverageBySource();
+            return coverage == null ? Map.of() : coverage;
+        } catch (RuntimeException exception) {
+            warnProviderFailure("mission hook coverage summary", missionService(), exception);
+            return Map.of();
+        }
+    }
+
     private static void applyMissionRegistrar(IMissionRegistry registry, String source, MissionContentRegistrar registrar) {
         try {
             registrar.register(registry);
@@ -316,6 +347,15 @@ public final class EchoCoreServices {
         }
     }
 
+    public static void invalidateIndexRecipes(String reason) {
+        IIndexService service = indexService();
+        try {
+            service.recipes().invalidateRecipes(reason);
+        } catch (RuntimeException exception) {
+            warnProviderFailure("index recipe invalidation", service, exception);
+        }
+    }
+
     public static void registerIndexProvider(IIndexEntryProvider provider) {
         if (provider == null) {
             return;
@@ -412,7 +452,8 @@ public final class EchoCoreServices {
                 chapterCapability(player, modList, "logistics_network", "echologisticsnetwork", "Logistics Network"),
                 chapterCapability(player, modList, "convoy_protocol", "echoconvoyprotocol", "Convoy Protocol"),
                 chapterCapability(player, modList, "armory", "echoarmory", "Armory"),
-                chapterCapability(player, modList, "lens", "echolens", "Lens"));
+                chapterCapability(player, modList, "lens", "echolens", "Lens"),
+                chapterCapability(player, modList, "blockworks", "echoblockworks", "Blockworks"));
     }
 
     public static List<EchoModuleInfo> moduleReport() {

@@ -4,6 +4,7 @@ import com.knoxhack.echoarmory.content.ArmoryReloaders;
 import com.knoxhack.echoarmory.event.ArmoryEvents;
 import com.knoxhack.echoarmory.integration.ArmoryCoreIntegration;
 import com.knoxhack.echoarmory.integration.ArmoryIndexProvider;
+import com.knoxhack.echoarmory.integration.ArmoryMissionCoreIntegration;
 import com.knoxhack.echoarmory.registry.ModBlockEntities;
 import com.knoxhack.echoarmory.registry.ModBlocks;
 import com.knoxhack.echoarmory.registry.ModCreativeTabs;
@@ -46,6 +47,7 @@ public class EchoArmory {
       event.enqueueWork(() -> {
          ArmoryCoreIntegration.registerAddonChapter();
          ArmoryIndexProvider.register();
+         ArmoryMissionCoreIntegration.register();
          if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalIntegration();
          }

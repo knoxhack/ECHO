@@ -1,6 +1,7 @@
 package com.knoxhack.echonexusprotocol.item;
 
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
+import com.knoxhack.echonexusprotocol.integration.NexusMissionHooks;
 import com.knoxhack.echonexusprotocol.registry.ModBlocks;
 import com.knoxhack.echonexusprotocol.world.NexusWorldData;
 import net.minecraft.core.BlockPos;
@@ -46,6 +47,7 @@ public class NexusScannerVisorItem extends Item {
             data.markGearUsed("nexus_scanner_visor");
             data.unlockResearch("nexus_theory");
             NexusPlayerData.saveAndSync(serverPlayer, data);
+            NexusMissionHooks.recordScan(serverPlayer, "field_scan");
             NexusWorldData worldData = NexusWorldData.get(serverPlayer.level());
             ChunkPos chunk = serverPlayer.chunkPosition();
             serverPlayer.sendSystemMessage(Component.literal("ECHO-7 // NEXUS FIELD SCAN"));
@@ -78,6 +80,7 @@ public class NexusScannerVisorItem extends Item {
       unlockForBlock(data, state.getBlock());
       if (player instanceof ServerPlayer serverPlayer) {
          NexusPlayerData.saveAndSync(serverPlayer, data);
+         NexusMissionHooks.recordScan(serverPlayer, id.toString());
       }
 
       if (level instanceof ServerLevel serverLevel) {

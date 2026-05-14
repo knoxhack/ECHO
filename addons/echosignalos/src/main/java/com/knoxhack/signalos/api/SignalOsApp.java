@@ -1,6 +1,7 @@
 package com.knoxhack.signalos.api;
 
 import java.util.Locale;
+import java.util.List;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -16,7 +17,12 @@ public record SignalOsApp(
         int order,
         int accentColor,
         Identifier icon,
-        String permission) {
+        String permission,
+        String view,
+        List<String> recordTypes,
+        List<String> recordSources,
+        boolean includeArchived,
+        String emptyText) {
     public SignalOsApp {
         id = TerminalIds.requireLowercase(id, "SignalOS app");
         title = title == null || title.isBlank() ? id.getPath() : title.strip();
@@ -27,6 +33,16 @@ public record SignalOsApp(
             icon = TerminalIds.requireLowercase(icon, "SignalOS app icon");
         }
         permission = clean(permission, "user");
+        view = clean(view, "");
+        recordTypes = cleanList(recordTypes);
+        recordSources = cleanList(recordSources);
+        emptyText = emptyText == null || emptyText.isBlank() ? "NO RECORDS AVAILABLE" : emptyText.strip();
+    }
+
+    public SignalOsApp(Identifier id, String title, String type, String summary, int order, int accentColor,
+            Identifier icon, String permission) {
+        this(id, title, type, summary, order, accentColor, icon, permission, "", List.of(), List.of(), false,
+                "NO RECORDS AVAILABLE");
     }
 
     public static Builder builder(String id) {
@@ -42,6 +58,17 @@ public record SignalOsApp(
         return cleaned.isBlank() ? fallback : cleaned;
     }
 
+    private static List<String> cleanList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(value -> value.strip().toLowerCase(Locale.ROOT))
+                .distinct()
+                .toList();
+    }
+
     private static int opaque(int color) {
         return (color >>> 24) == 0 ? 0xFF000000 | color : color;
     }
@@ -55,6 +82,11 @@ public record SignalOsApp(
         private int accentColor = 0xFF66E8FF;
         private Identifier icon;
         private String permission = "user";
+        private String view = "";
+        private List<String> recordTypes = List.of();
+        private List<String> recordSources = List.of();
+        private boolean includeArchived;
+        private String emptyText = "NO RECORDS AVAILABLE";
 
         private Builder(Identifier id) {
             this.id = TerminalIds.requireLowercase(id, "SignalOS app");
@@ -95,8 +127,34 @@ public record SignalOsApp(
             return this;
         }
 
+        public Builder view(String view) {
+            this.view = view;
+            return this;
+        }
+
+        public Builder recordTypes(List<String> recordTypes) {
+            this.recordTypes = recordTypes == null ? List.of() : List.copyOf(recordTypes);
+            return this;
+        }
+
+        public Builder recordSources(List<String> recordSources) {
+            this.recordSources = recordSources == null ? List.of() : List.copyOf(recordSources);
+            return this;
+        }
+
+        public Builder includeArchived(boolean includeArchived) {
+            this.includeArchived = includeArchived;
+            return this;
+        }
+
+        public Builder emptyText(String emptyText) {
+            this.emptyText = emptyText;
+            return this;
+        }
+
         public SignalOsApp build() {
-            return new SignalOsApp(id, title, type, summary, order, accentColor, icon, permission);
+            return new SignalOsApp(id, title, type, summary, order, accentColor, icon, permission, view,
+                    recordTypes, recordSources, includeArchived, emptyText);
         }
     }
 }

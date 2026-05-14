@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "echoashfallprotocol:item/rad_zombie_spawn_egg"
+    "layer0": "echoashfallprotocol:item/signal_leech_spawn_egg"
   }
 }

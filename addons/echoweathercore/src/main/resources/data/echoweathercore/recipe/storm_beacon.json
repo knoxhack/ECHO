@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " t ",
+    "rir",
+    "isi"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "t": { "item": "minecraft:torch" },
+    "r": { "item": "minecraft:redstone" },
+    "s": { "item": "minecraft:stone" }
+  },
+  "result": {
+    "id": "echoweathercore:storm_beacon"
+  }
+}

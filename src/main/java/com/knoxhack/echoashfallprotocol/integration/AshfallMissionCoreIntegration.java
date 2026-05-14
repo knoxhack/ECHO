@@ -77,6 +77,35 @@ public final class AshfallMissionCoreIntegration {
         }
     }
 
+    public static boolean hasClaimableReward(Player player, Mission mission) {
+        if (player == null || mission == null || mission.rewards().isEmpty()) {
+            return false;
+        }
+        try {
+            return EchoCoreServices.missionCoreAvailable()
+                    && EchoCoreServices.missionService()
+                            .mission(player, missionId(mission.id()))
+                            .map(view -> (view.status() == MissionStatus.CLAIMABLE
+                                    || view.status() == MissionStatus.COMPLETED)
+                                    && view.rewards().stream().anyMatch(reward -> reward.claimable() && !reward.claimed()))
+                            .orElse(false);
+        } catch (RuntimeException | LinkageError exception) {
+            return false;
+        }
+    }
+
+    public static boolean claimReward(ServerPlayer player, String missionId) {
+        if (player == null || missionId == null || missionId.isBlank()) {
+            return false;
+        }
+        try {
+            return EchoCoreServices.missionCoreAvailable()
+                    && EchoCoreServices.claimMissionReward(player, missionId(missionId));
+        } catch (RuntimeException | LinkageError exception) {
+            return false;
+        }
+    }
+
     private static MissionDefinition definition(Mission mission, int phase, int order) {
         Identifier id = missionId(mission.id());
         MissionDefinition.Builder builder = MissionDefinition.builder(id, CHAPTER_ID)
@@ -233,7 +262,7 @@ public final class AshfallMissionCoreIntegration {
         return objectives;
     }
 
-    private static Identifier missionId(String missionId) {
+    public static Identifier missionId(String missionId) {
         return Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, safePath(missionId));
     }
 

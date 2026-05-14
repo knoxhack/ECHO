@@ -1,0 +1,18 @@
+{
+  "schema_version": 11,
+  "base_texture": "echoterminal:textures/gui/icons/terminal/brand_echo.png",
+  "default_state": "ACTIVE",
+  "effect": {
+    "preset": "terminal_hud",
+    "glow_intensity": 0.8,
+    "pulse_speed": 0.55,
+    "pulse_min_alpha": 0.74,
+    "pulse_max_alpha": 1.0,
+    "scanline_strength": 0.0,
+    "target_scope": "profile"
+  },
+  "anchors": {
+    "screen": { "offset": [0.0, 0.0, 0.0] },
+    "header": { "offset": [0.0, 0.9, 0.0] }
+  }
+}

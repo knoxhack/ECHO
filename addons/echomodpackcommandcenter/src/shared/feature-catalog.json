@@ -1166,10 +1166,10 @@
       "title": "Shared Service Addons",
       "category": "Core Services",
       "status": "partial",
-      "playerPromise": "Unify ECHO networking, persistent data, missions, world telemetry, and render state behind shared addon services.",
+      "playerPromise": "Unify ECHO networking, persistent data, missions, facility multiblocks, runtime performance, world telemetry, and render state behind shared addon services.",
       "loreContext": "The ECHO command stack becomes more believable when every chapter reports through common infrastructure instead of isolated systems.",
-      "implementationSummary": "NetCore, DataCore, MissionCore, WorldCore, and RenderCore now have Gradle modules and module metadata; each still needs scoped scans and GameTest evidence before being called release complete.",
-      "nextAction": "Run scoped quick scans and module GameTests for the new shared service modules.",
+      "implementationSummary": "NetCore, DataCore, MissionCore, MultiblockCore, RuntimeGuard, WorldCore, and RenderCore now have Gradle modules and module metadata; each still needs scoped scans and GameTest evidence before being called release complete.",
+      "nextAction": "Run scoped quick scans and module GameTests for the shared service modules, including MultiblockCore and RuntimeGuard.",
       "sources": [
         {
           "label": "ECHO settings.gradle",
@@ -1185,6 +1185,16 @@
           "label": "WorldCore README",
           "path": "C:/Github/Echo/addons/echoworldcore/README.md",
           "section": "Overview"
+        },
+        {
+          "label": "MultiblockCore README",
+          "path": "C:/Github/Echo/addons/echomultiblockcore/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "RuntimeGuard README",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/README.md",
+          "section": "Overview"
         }
       ],
       "evidence": [
@@ -1192,7 +1202,7 @@
           "kind": "build-config",
           "label": "Gradle workspace includes the shared service modules",
           "path": "C:/Github/Echo/settings.gradle",
-          "detail": "The current beta and release addon sets include NetCore, DataCore, MissionCore, WorldCore, and RenderCore."
+          "detail": "The current beta and release addon sets include NetCore, DataCore, MissionCore, MultiblockCore, RuntimeGuard, WorldCore, and RenderCore."
         }
       ],
       "order": 30
@@ -1203,10 +1213,10 @@
       "title": "Field Intel And Scanner Suite",
       "category": "Terminal Intel",
       "status": "partial",
-      "playerPromise": "Give players a HoloMap, shared Index archive, Armory readiness surface, and Lens scanner HUD inside the ECHO command layer.",
+      "playerPromise": "Give players a HoloMap, shared Index archive, Armory readiness surface, Lens scanner HUD, and Blockworks structural palette inside the ECHO command/build layer.",
       "loreContext": "Maps, archives, and combat loadouts turn scattered survival data into actionable ECHO field intelligence.",
-      "implementationSummary": "HoloMap, Index, Armory, and Lens have build modules and concrete terminal/scanner integration evidence; release confidence still depends on scoped validation and a clean promoted jar set.",
-      "nextAction": "Build, promote, and scan HoloMap, Index, Armory, and Lens through the Modpack pipeline after Minecraft releases the mods folder locks.",
+      "implementationSummary": "HoloMap, Index, Armory, Lens, and Blockworks have build modules and concrete terminal/scanner/resource evidence; release confidence still depends on scoped validation and a clean promoted jar set.",
+      "nextAction": "Build, promote, and scan HoloMap, Index, Armory, Lens, and Blockworks through the Modpack pipeline after Minecraft releases the mods folder locks.",
       "sources": [
         {
           "label": "HoloMap README",
@@ -1227,6 +1237,11 @@
           "label": "Lens metadata",
           "path": "C:/Github/Echo/addons/echolens/gradle.properties",
           "section": "Module description"
+        },
+        {
+          "label": "Blockworks README",
+          "path": "C:/Github/Echo/addons/echoblockworks/README.md",
+          "section": "Overview"
         }
       ],
       "evidence": [
@@ -1247,6 +1262,12 @@
           "label": "Lens registers a scanner HUD and ECHO Core service integration",
           "path": "C:/Github/Echo/addons/echolens/src/main/java/com/knoxhack/echolens/integration/LensCoreIntegration.java",
           "detail": "The integration registers Lens as an addon chapter and exposes inspection service diagnostics."
+        },
+        {
+          "kind": "doc",
+          "label": "Blockworks README describes block families, conversion tools, palette kits, and worldgen",
+          "path": "C:/Github/Echo/addons/echoblockworks/README.md",
+          "detail": "The module provides the first-party structural/decorative library used by ECHO locations and future multiblock casings."
         }
       ],
       "order": 31
@@ -1373,7 +1394,7 @@
       "playerPromise": "Drive data-defined visual states, animation, glow overlays, particle profiles, and debug validation for ECHO modules.",
       "loreContext": "ECHO visual feedback needs one render vocabulary for hazards, machines, mission states, and world markers.",
       "implementationSummary": "RenderCore documentation and versioned metadata identify a shared rendering/animation module with validation and debug tools.",
-      "nextAction": "Run RenderCore scoped scan and include the 0.5.0 jar in the next clean modpack promotion.",
+      "nextAction": "Run RenderCore scoped scan and include the 1.0.0 jar in the next clean modpack promotion.",
       "sources": [
         {
           "label": "RenderCore README",
@@ -1502,7 +1523,7 @@
       "playerPromise": "Inspect blocks, entities, fluids, machines, progression, and addon context through a compact modern ECHO HUD.",
       "loreContext": "Lens makes field intelligence immediate: operators read the world directly instead of opening a separate archive for every target.",
       "implementationSummary": "Gradle metadata describes the scanner HUD, Index resources document the player-facing overview, GameTests cover provider ordering and block/entity sections, and Core integration registers the inspection service.",
-      "nextAction": "Run Lens scoped scan and GameTests, then include echolens-0.1.0.jar in the next clean modpack promotion.",
+      "nextAction": "Run Lens scoped scan and GameTests, then include echolens-1.0.0.jar in the next clean modpack promotion.",
       "sources": [
         {
           "label": "Lens gradle metadata",
@@ -1532,6 +1553,141 @@
           "label": "GameTests cover provider ordering and block/entity section generation",
           "path": "C:/Github/Echo/addons/echolens/src/main/java/com/knoxhack/echolens/test/ModGameTests.java",
           "detail": "Tests assert provider order, duplicate rejection, safe failure handling, block sections, entity sections, and Core registration."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echomultiblockcore",
+      "id": "multiblockcore-facility-runtime",
+      "title": "Facility Multiblock Runtime",
+      "category": "Facility Automation",
+      "status": "implemented",
+      "playerPromise": "Form, validate, diagnose, persist, and operate facility-scale multiblocks with runtime snapshots, robotic task queues, workcells, integrity, blueprints, and optional ECHO UI/intel integrations.",
+      "loreContext": "MultiblockCore turns ECHO facilities from static ruins into rebuildable infrastructure with controllers, diagnostics, robotics, maps, scans, and mission-facing state.",
+      "implementationSummary": "The README documents v3 integration services, JSON definitions, controller runtime behavior, persisted task queues, diagnostics, public APIs, map markers, scan providers, and debug commands.",
+      "nextAction": "Run MultiblockCore scoped scan, GameTests, and promote echomultiblockcore-1.0.0.jar in the next clean modpack update.",
+      "sources": [
+        {
+          "label": "MultiblockCore README",
+          "path": "C:/Github/Echo/addons/echomultiblockcore/README.md",
+          "section": "v3 Integration Core"
+        },
+        {
+          "label": "MultiblockCore smoke test",
+          "path": "C:/Github/Echo/addons/echomultiblockcore/SMOKE_TEST.md",
+          "section": "Smoke coverage"
+        },
+        {
+          "label": "MultiblockCore metadata",
+          "path": "C:/Github/Echo/addons/echomultiblockcore/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "label": "README documents integration facade, validation diagnostics, runtime snapshots, and task queues",
+          "path": "C:/Github/Echo/addons/echomultiblockcore/README.md",
+          "detail": "The module has a concrete public API and runtime behavior for facility multiblocks."
+        },
+        {
+          "kind": "doc",
+          "label": "Smoke notes cover module validation and runtime acceptance",
+          "path": "C:/Github/Echo/addons/echomultiblockcore/SMOKE_TEST.md",
+          "detail": "The smoke test document gives release-facing verification steps."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echoruntimeguard",
+      "id": "runtimeguard-performance-manager",
+      "title": "Runtime Performance Manager",
+      "category": "Performance Services",
+      "status": "implemented",
+      "playerPromise": "Keep the ECHO modpack responsive with runtime modes, honest TPS/MSPT/FPS reports, smart tick budgets, particle budgets, multiblock validation queues, network accounting, and opt-in throttles for expensive addon work.",
+      "loreContext": "RuntimeGuard is the operational layer that keeps ECHO field systems from overwhelming fragile recovered hardware while still explaining what it can and cannot observe.",
+      "implementationSummary": "The README documents TPS/MSPT monitoring, client FPS monitoring, Potato/Balanced/Cinematic/Server/Debug/Emergency modes, smart tick recommendations, particle budgeting, multiblock validation queueing, network budget tracking, block entity/entity throttles, reports, commands, public APIs, and optional MultiblockCore/HoloMap/Lens integrations.",
+      "nextAction": "Run RuntimeGuard scoped scan, GameTests, and promote echoruntimeguard-1.0.0.jar in the next clean modpack update.",
+      "sources": [
+        {
+          "label": "RuntimeGuard README",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "RuntimeGuard smoke test",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/SMOKE_TEST.md",
+          "section": "Smoke coverage"
+        },
+        {
+          "label": "RuntimeGuard metadata",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "label": "README documents runtime modes, smart ticks, particle budgets, validation queues, and network budgets",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/README.md",
+          "detail": "The module has concrete player/admin commands and opt-in APIs for first-party addon performance management."
+        },
+        {
+          "kind": "doc",
+          "label": "Smoke notes cover commands, reports, permissions, and addon integrations",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/SMOKE_TEST.md",
+          "detail": "The smoke test backs release validation for commands, RuntimeGuard reports, server-safe behavior, and MultiblockCore/HoloMap/Lens integrations."
+        },
+        {
+          "kind": "source",
+          "label": "RuntimeGuard API and runtime services exist in source",
+          "path": "C:/Github/Echo/addons/echoruntimeguard/src/main/java/com/knoxhack/echoruntimeguard",
+          "detail": "Source includes RuntimeGuardServices, RuntimeGuardProfiler, SmartTickService, ParticleBudgetService, MultiblockValidationScheduler, NetworkBudgetService, and command/report classes."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echoblockworks",
+      "id": "blockworks-structural-library",
+      "title": "Structural Block Library",
+      "category": "World Building",
+      "status": "implemented",
+      "playerPromise": "Build ECHO bases, ruined cities, crash zones, convoy depots, orbital interiors, Terminal rooms, Blackbox vaults, Nexus structures, reclamation domes, and MultiblockCore casings with first-party block families and conversion tools.",
+      "loreContext": "Blockworks gives every ECHO chapter a consistent material language, from ash-choked starter ruins to orbital hulls, Blackbox vaults, Nexus crystal, and reclamation glass.",
+      "implementationSummary": "The README documents ten block families, structural variants, detail blocks, Blockworks Table conversion, Pattern Cutter cycling, tags, recipes, palette kits, rare showcase worldgen, procedural scatter, Index integration, and development tooling.",
+      "nextAction": "Run Blockworks scoped scan, GameTests, asset/resource validation, and promote echoblockworks-1.0.0.jar in the next clean modpack update.",
+      "sources": [
+        {
+          "label": "Blockworks README",
+          "path": "C:/Github/Echo/addons/echoblockworks/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "Blockworks smoke test",
+          "path": "C:/Github/Echo/addons/echoblockworks/SMOKE_TEST.md",
+          "section": "Smoke coverage"
+        },
+        {
+          "label": "Blockworks metadata",
+          "path": "C:/Github/Echo/addons/echoblockworks/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "label": "README lists block families, detail blocks, conversion systems, palette kits, and worldgen",
+          "path": "C:/Github/Echo/addons/echoblockworks/README.md",
+          "detail": "The module has concrete player-facing building content and generated resources."
+        },
+        {
+          "kind": "doc",
+          "label": "Smoke notes cover Blockworks release validation",
+          "path": "C:/Github/Echo/addons/echoblockworks/SMOKE_TEST.md",
+          "detail": "The smoke test document backs scoped QA and release acceptance."
         }
       ],
       "order": 1

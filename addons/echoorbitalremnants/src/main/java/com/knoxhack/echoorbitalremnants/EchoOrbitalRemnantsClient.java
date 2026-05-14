@@ -5,10 +5,13 @@ import com.knoxhack.echoorbitalremnants.suit.SuitState;
 import com.knoxhack.echoorbitalremnants.client.EchoTerminalScreen;
 import com.knoxhack.echoorbitalremnants.client.EmergencyRocketModel;
 import com.knoxhack.echoorbitalremnants.client.EmergencyRocketRenderer;
+import com.knoxhack.echoorbitalremnants.client.OrbitalFactionDialogueScreen;
+import com.knoxhack.echoorbitalremnants.client.OrbitalFactionNpcRenderer;
 import com.knoxhack.echoorbitalremnants.client.OrbitalMachineScreen;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIntegration;
 import com.knoxhack.echoorbitalremnants.network.OpenEchoTerminalPayload;
 import com.knoxhack.echoorbitalremnants.network.OrbitalEventVisualPayload;
+import com.knoxhack.echoorbitalremnants.network.OrbitalFactionDialogueOpenPayload;
 import com.knoxhack.echoorbitalremnants.registry.ModEntities;
 import com.knoxhack.echoorbitalremnants.registry.ModMenus;
 import com.knoxhack.echoorbitalremnants.client.TintedVexRenderer;
@@ -81,6 +84,8 @@ public class EchoOrbitalRemnantsClient {
             eventVisualName = payload.eventName().replace('_', ' ');
             triggerBaseOrbitalPulse(payload.overlayColor(), payload.particleColor(), payload.intensity(), payload.seed());
         });
+        event.register(OrbitalFactionDialogueOpenPayload.TYPE, (payload, context) ->
+                Minecraft.getInstance().setScreen(new OrbitalFactionDialogueScreen(payload)));
     }
 
     @SubscribeEvent
@@ -94,6 +99,15 @@ public class EchoOrbitalRemnantsClient {
     @SubscribeEvent
     static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.EMERGENCY_ROCKET_VEHICLE.get(), EmergencyRocketRenderer::new);
+        if (ModList.get().isLoaded("echorendercore") && registerRenderCoreEntityRenderers(event)) {
+            event.registerEntityRenderer(ModEntities.ORBITAL_FACTION_NPC.get(), OrbitalFactionNpcRenderer::new);
+            return;
+        }
+        registerTintedEntityRenderers(event);
+        event.registerEntityRenderer(ModEntities.ORBITAL_FACTION_NPC.get(), OrbitalFactionNpcRenderer::new);
+    }
+
+    public static void registerTintedEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ECHO_DEFENSE_DRONE.get(),
                 context -> new TintedVexRenderer(context, entityTexture("echo_defense_drone"), 0xFF82E9FF, 1.0F, 0.34F));
         event.registerEntityRenderer(ModEntities.VACUUM_WRAITH.get(),
@@ -120,6 +134,18 @@ public class EchoOrbitalRemnantsClient {
 
     private static Identifier entityTexture(String name) {
         return Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, "textures/entity/" + name + ".png");
+    }
+
+    private static boolean registerRenderCoreEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        try {
+            Class.forName("com.knoxhack.echoorbitalremnants.integration.OrbitalRenderCoreClientIntegration")
+                    .getMethod("registerEntityRenderers", EntityRenderersEvent.RegisterRenderers.class)
+                    .invoke(null, event);
+            return true;
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            EchoOrbitalRemnants.LOGGER.warn("ECHO Orbital Remnants RenderCore entity renderer integration unavailable; using tinted fallback renderers.", exception);
+            return false;
+        }
     }
 
     private static void triggerBaseOrbitalPulse(int overlayColor, int particleColor, float intensity, long seed) {

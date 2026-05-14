@@ -55,6 +55,8 @@ const expectedProjects = [
   "echonetcore",
   "echodatacore",
   "echomissioncore",
+  "echomultiblockcore",
+  "echoruntimeguard",
   "echoashfallprotocol",
   "echoterminal",
   "echosignalos",
@@ -73,6 +75,7 @@ const expectedProjects = [
   "echoindex",
   "echoarmory",
   "echolens",
+  "echoblockworks",
   "arcana"
 ];
 
@@ -90,7 +93,7 @@ for (const route of requiredRoutes) {
 const echo = seed.projects.find((project) => project.slug === "echo");
 assert.ok(echo, "ECHO project must be seeded");
 assert.deepEqual(seed.projects.map((project) => project.slug), expectedProjects, "Project cards must map to real workspace modules only");
-assert.equal(echo.modules.length, 22, "ECHO should seed the full real workspace release module set");
+assert.equal(echo.modules.length, 25, "ECHO should seed the full real workspace release module set");
 
 const actionIds = seed.releaseActions.filter((action) => action.projectSlug === "echo").map((action) => action.commandId);
 assert.deepEqual(actionIds, expectedCommands, "Release action allowlist changed unexpectedly");

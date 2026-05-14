@@ -35,7 +35,7 @@ public final class ReclamationCoreIntegration {
       new CoreMission("analyze_soil", "Analyze Soil", "Scan contaminated ground and run the first purification pass.", "Soil Recovery", "Soil", "Use Ecology Scanner or Soil Purifier near dead ecology blocks."),
       new CoreMission("first_growth", "First Growth", "Grow and harvest a recovered crop in soil or hydroponics.", "Cultivation", "Growth", "Plant a profiled seed on supported soil or insert it into a Hydroponic Tray."),
       new CoreMission("gene_stabilization", "Gene Stabilization", "Stabilize one contaminated seed route.", "Cultivation", "Genes", "Use Bio-Reactor crop output to make Bio-Gel, then use Gene Stabilizer with a contaminated seed and Bio-Gel or Gene Sample."),
-      new CoreMission("greenhouse_online", "Greenhouse Online", "Build a greenhouse that reaches safe growth envelope.", "Greenhouse", "Safety", "Use Greenhouse Glass, Spore Filter, Pollinator Dock, trays, and controller scan."),
+      new CoreMission("greenhouse_online", "Greenhouse Online", "Build a greenhouse zone that reaches safe growth envelope.", "Greenhouse", "Safety", "Use Greenhouse Glass, Spore Filter, Pollinator Dock, trays, a controller scan, and deploy the dock drone for active crop service."),
       new CoreMission("restore_chunk", "Restore a Chunk", "Raise local restoration score to 100 through crops, restored soil, and safe greenhouse support.", "Restoration", "Restoration", "Mature restoration crops and keep scanning ecology while soil improves.")
    );
 
@@ -85,6 +85,7 @@ public final class ReclamationCoreIntegration {
       EchoCoreServices.registerRouteRecordService(ROUTE_SERVICE);
       EchoCoreServices.registerDiagnosticService(DIAGNOSTIC_SERVICE);
       EchoCoreServices.registerRecoveryService(RECOVERY_SERVICE);
+      EchoCoreServices.registerIndexRecipeProvider(ReclamationIndexProvider.INSTANCE);
       EchoAgricultureReclamation.LOGGER.info("ECHO Agriculture Reclamation core chapter registered.");
    }
 

@@ -43,8 +43,17 @@ public final class MissionCoreService implements IMissionService {
     private final Map<Identifier, MissionDefinition> missions = new LinkedHashMap<>();
     private final Map<Identifier, String> chapterSources = new LinkedHashMap<>();
     private final Map<Identifier, String> missionSources = new LinkedHashMap<>();
+    private final Map<String, Map<Identifier, Set<Identifier>>> hookCoverage = new LinkedHashMap<>();
     private final List<String> validationWarnings = new ArrayList<>();
     private boolean builtInContentRegistered;
+    private static final Set<String> MIGRATED_TERMINAL_SOURCES = Set.of(
+            "echoagriculturereclamation",
+            "echoindustrialnexus",
+            "echoconvoyprotocol",
+            "echoorbitalremnants",
+            "echonexusprotocol",
+            "echoblackboxprotocol",
+            "echostationfall");
 
     private MissionCoreService() {
     }
@@ -60,6 +69,7 @@ public final class MissionCoreService implements IMissionService {
         }
         builtInContentRegistered = true;
         EchoCoreServices.replayMissionContent(this);
+        EchoCoreServices.invalidateIndexRecipes("mission built-in content registered");
     }
 
     public synchronized void replaceJsonContent(List<MissionChapterDefinition> jsonChapters, List<MissionDefinition> jsonMissions) {
@@ -115,6 +125,7 @@ public final class MissionCoreService implements IMissionService {
             }
         }
         EchoCoreServices.replayMissionContent(this);
+        EchoCoreServices.invalidateIndexRecipes("mission content changed");
     }
 
     @Override
@@ -199,6 +210,34 @@ public final class MissionCoreService implements IMissionService {
         return List.copyOf(validationWarnings);
     }
 
+    public synchronized Map<String, Integer> sourceCounts() {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (String source : missionSources.values()) {
+            counts.merge(source, 1, Integer::sum);
+        }
+        return Map.copyOf(counts);
+    }
+
+    @Override
+    public synchronized void registerHookCoverage(String source, Identifier missionId, Identifier objectiveTarget) {
+        if (missionId == null || objectiveTarget == null) {
+            return;
+        }
+        String safeSource = safeSource(source);
+        hookCoverage.computeIfAbsent(safeSource, ignored -> new LinkedHashMap<>())
+                .computeIfAbsent(missionId, ignored -> new LinkedHashSet<>())
+                .add(objectiveTarget);
+    }
+
+    @Override
+    public synchronized Map<String, String> missionHookCoverageBySource() {
+        Map<String, String> coverage = new LinkedHashMap<>();
+        for (String source : sourceCounts().keySet()) {
+            coverage.put(source, hookCoverageMode(source));
+        }
+        return Map.copyOf(coverage);
+    }
+
     public synchronized List<String> validateContent() {
         List<String> warnings = new ArrayList<>(validationWarnings);
         for (MissionDefinition mission : missions.values()) {
@@ -211,6 +250,20 @@ public final class MissionCoreService implements IMissionService {
                 }
             }
         }
+        Map<String, String> coverage = missionHookCoverageBySource();
+        for (String source : MIGRATED_TERMINAL_SOURCES) {
+            if (!coverage.containsKey(source)) {
+                continue;
+            }
+            String mode = coverage.get(source);
+            if ("adapter-state".equals(mode)) {
+                warnings.add("MissionCore source " + source
+                        + " is migrated through adapter-state only; no direct objective hook coverage is registered.");
+            } else if ("mixed".equals(mode)) {
+                warnings.add("MissionCore source " + source
+                        + " has mixed hook coverage; some migrated objectives still rely on adapter-state fallback.");
+            }
+        }
         return List.copyOf(warnings);
     }
 
@@ -219,6 +272,7 @@ public final class MissionCoreService implements IMissionService {
         missions.clear();
         chapterSources.clear();
         missionSources.clear();
+        hookCoverage.clear();
         validationWarnings.clear();
         builtInContentRegistered = false;
     }
@@ -329,7 +383,7 @@ public final class MissionCoreService implements IMissionService {
                 }
                 yield completeMission(player, definition, true);
             }
-            default -> false;
+            default -> definition.actionHandler().handle(player, definition, actionId);
         };
     }
 
@@ -494,7 +548,7 @@ public final class MissionCoreService implements IMissionService {
                 actionHint(status, definition, completeNow),
                 objectives,
                 rewards,
-                actions(status, definition, completeNow));
+                actions(player, status, definition, completeNow));
     }
 
     private MissionStatus status(Player player, MissionDefinition definition) {
@@ -628,7 +682,7 @@ public final class MissionCoreService implements IMissionService {
         return need <= 0 ? 0.0F : Math.max(0.0F, Math.min(1.0F, have / (float) need));
     }
 
-    private static List<MissionActionView> actions(MissionStatus status, MissionDefinition definition, boolean completeNow) {
+    private static List<MissionActionView> actions(Player player, MissionStatus status, MissionDefinition definition, boolean completeNow) {
         List<MissionActionView> actions = new ArrayList<>();
         if (status == MissionStatus.UNLOCKED) {
             actions.add(MissionActionView.enabled("start", "Track"));
@@ -646,6 +700,17 @@ public final class MissionCoreService implements IMissionService {
             }
         } else if (status == MissionStatus.CLAIMED && definition.repeatPolicy() == MissionRepeatPolicy.REPEATABLE) {
             actions.add(MissionActionView.enabled("start", "Repeat"));
+        }
+        List<MissionActionView> customActions = definition.actionProvider().actions(player, definition, status, completeNow);
+        if (customActions != null && !customActions.isEmpty()) {
+            Set<String> actionIds = actions.stream()
+                    .map(MissionActionView::id)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+            for (MissionActionView action : customActions) {
+                if (action != null && actionIds.add(action.id())) {
+                    actions.add(action);
+                }
+            }
         }
         return actions;
     }
@@ -698,6 +763,53 @@ public final class MissionCoreService implements IMissionService {
         }
         Set<String> candidates = Set.of(target.toString(), target.getPath());
         return candidates.contains(expected);
+    }
+
+    private String hookCoverageMode(String source) {
+        Set<Identifier> requiredTargets = objectiveTargetsForSource(source);
+        Set<Identifier> coveredTargets = coveredTargetsForSource(source);
+        if (requiredTargets.isEmpty()) {
+            return coveredTargets.isEmpty() ? "adapter-state" : "mixed";
+        }
+        int covered = 0;
+        for (Identifier required : requiredTargets) {
+            if (coveredTargets.contains(required)) {
+                covered++;
+            }
+        }
+        if (covered == 0) {
+            return "adapter-state";
+        }
+        return covered >= requiredTargets.size() ? "direct-hooks" : "mixed";
+    }
+
+    private Set<Identifier> objectiveTargetsForSource(String source) {
+        LinkedHashSet<Identifier> targets = new LinkedHashSet<>();
+        for (Map.Entry<Identifier, MissionDefinition> entry : missions.entrySet()) {
+            if (!source.equals(missionSources.get(entry.getKey()))) {
+                continue;
+            }
+            for (ObjectiveDefinition objective : entry.getValue().objectives()) {
+                String value = objective.criteria().getOrDefault("target", "");
+                Identifier target = value.isBlank() ? null : Identifier.tryParse(value);
+                if (target != null) {
+                    targets.add(target);
+                }
+            }
+        }
+        return Set.copyOf(targets);
+    }
+
+    private Set<Identifier> coveredTargetsForSource(String source) {
+        LinkedHashSet<Identifier> targets = new LinkedHashSet<>();
+        Map<Identifier, Set<Identifier>> sourceCoverage = hookCoverage.get(source);
+        if (sourceCoverage == null) {
+            return Set.of();
+        }
+        for (Set<Identifier> covered : sourceCoverage.values()) {
+            targets.addAll(covered);
+        }
+        return Set.copyOf(targets);
     }
 
     private static void giveReward(ServerPlayer player, RewardDefinition reward) {

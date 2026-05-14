@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "echoashfallprotocol:item/warden_boss_spawn_egg"
+    "layer0": "echoashfallprotocol:item/relay_warden_spawn_egg"
   }
 }

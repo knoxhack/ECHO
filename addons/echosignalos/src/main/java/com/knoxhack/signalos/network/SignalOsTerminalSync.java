@@ -1,7 +1,7 @@
 package com.knoxhack.signalos.network;
 
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class SignalOsTerminalSync {
     private SignalOsTerminalSync() {
@@ -9,7 +9,7 @@ public final class SignalOsTerminalSync {
 
     public static void send(ServerPlayer player) {
         if (player != null) {
-            PacketDistributor.sendToPlayer(player, SignalOsTerminalStatePacket.from(player));
+            EchoNetSend.toPlayer(player, SignalOsTerminalStatePacket.from(player));
         }
     }
 }

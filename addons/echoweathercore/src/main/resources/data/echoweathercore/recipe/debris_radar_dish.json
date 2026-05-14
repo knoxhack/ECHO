@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "iii",
+    "ici",
+    " s "
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "c": { "item": "minecraft:copper_block" },
+    "s": { "item": "minecraft:stone" }
+  },
+  "result": {
+    "id": "echoweathercore:debris_radar_dish"
+  }
+}

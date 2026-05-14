@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.integration;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echoashfallprotocol.echo.AshfallMissionActions;
 import com.knoxhack.echoashfallprotocol.echo.EchoGuideManager;
 import com.knoxhack.echoashfallprotocol.echo.Mission;
 import com.knoxhack.echoashfallprotocol.echo.MissionRegistry;
@@ -34,11 +35,11 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.knoxhack.echoterminal.api.recipe.TerminalRecipeRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -88,7 +89,7 @@ public final class AshfallTerminalCommonIntegration {
         TerminalMissionActions.registerForTab(SIDE_OPS);
         TerminalActionRegistry.register(MISSIONS, TURN_IN, AshfallTerminalCommonIntegration::turnInCurrentMission);
         TerminalActionRegistry.register(MISSIONS, CLAIM_REWARDS, (player, payload) -> {
-            EchoGuideManager.claimRewards(player);
+            EchoGuideManager.claimRewards(player, payload);
             QuestData.syncToClient(player);
         });
         TerminalActionRegistry.register(DRONE, DRONE_COMMAND,
@@ -97,6 +98,7 @@ public final class AshfallTerminalCommonIntegration {
             TerminalActionRegistry.register(NEXUS, NEXUS_CHOICE, AshfallTerminalCommonIntegration::chooseNexusPath);
             TerminalActionRegistry.register(NEXUS, NEXUS_WARFRONT, AshfallTerminalCommonIntegration::handleNexusWarfront);
         }
+        TerminalRecipeRegistry.register(AshfallTerminalRecipeProvider.INSTANCE);
 
         registerFieldManualEntries();
     }
@@ -111,16 +113,15 @@ public final class AshfallTerminalCommonIntegration {
             QuestData.saveAndSync(player, quest);
         }
 
-        Mission current = MissionRegistry.getMission(quest.getCurrentPhase(), quest.getCurrentMissionIndex());
-        if (current == null || quest.isMissionCompleted(current.id()) || !quest.isMissionUnlocked(current.id())
-                || !current.isTurnInMission()) {
-            player.sendSystemMessage(Component.literal("[ECHO-7] This protocol is not ready for turn-in.")
-                    .withStyle(ChatFormatting.YELLOW), true);
+        Mission target = AshfallMissionActions.resolveTarget(quest, payload);
+        String rejection = AshfallMissionActions.turnInRejection(player, quest, target);
+        if (!rejection.isBlank()) {
+            AshfallMissionActions.sendTurnInRejection(player, rejection);
             QuestData.syncToClient(player);
             return;
         }
 
-        EchoGuideManager.turnInMission(player, quest, current);
+        EchoGuideManager.turnInMission(player, quest, target);
         QuestData.syncToClient(player);
     }
 
@@ -257,7 +258,7 @@ public final class AshfallTerminalCommonIntegration {
             QuestData quest = QuestData.get(player);
             QuestData.MissionStatus status = quest.getMissionStatus(mission.id());
             boolean preview = mission.isPathPreview(player);
-            boolean pendingRewards = quest.hasPendingRewards(mission.id());
+            boolean pendingRewards = AshfallMissionActions.hasClaimableRewards(player, quest, mission);
             boolean completeNow = cheapMissionSatisfied(player, quest, mission);
             TerminalMissionStatus terminalStatus = preview
                     ? TerminalMissionStatus.VIEW_ONLY
@@ -267,13 +268,9 @@ public final class AshfallTerminalCommonIntegration {
                         case LOCKED -> TerminalMissionStatus.LOCKED;
                     };
             boolean current = isCurrentMission(quest, mission);
-            boolean turnInReady = current
-                    && status == QuestData.MissionStatus.UNLOCKED
-                    && !quest.isMissionCompleted(mission.id())
-                    && mission.isTurnInMission()
-                    && completeNow
-                    && !preview;
+            boolean turnInReady = AshfallMissionActions.canTurnIn(player, quest, mission);
             MissionUxSummary summary = MissionUxSummary.forHud(player, quest, mission);
+            String claimReason = AshfallMissionActions.claimReason(player, quest, mission);
             return new TerminalMissionSnapshot(
                     id(mission.id()),
                     terminalStatus,
@@ -287,11 +284,11 @@ public final class AshfallTerminalCommonIntegration {
                             turnInReady
                                     ? TerminalMissionAction.enabled(TURN_IN.getPath(), "TURN IN")
                                     : TerminalMissionAction.disabled(TURN_IN.getPath(), "TURN IN",
-                                            MissionUxSummary.turnInReason(player, quest, mission, status, current, completeNow, preview)),
+                                            AshfallMissionActions.turnInReason(player, quest, mission, status, current, completeNow, preview)),
                             pendingRewards
                                     ? TerminalMissionAction.enabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS")
                                     : TerminalMissionAction.disabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS",
-                                            "No sealed support cache is waiting for this protocol.")));
+                                            claimReason.isBlank() ? "No sealed support cache is waiting for this protocol." : claimReason)));
         }
 
         @Override
@@ -306,11 +303,11 @@ public final class AshfallTerminalCommonIntegration {
         @Override
         public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
             if (TURN_IN.getPath().equals(actionId)) {
-                turnInCurrentMission(player, "");
+                turnInCurrentMission(player, missionId == null ? "" : missionId.getPath());
                 return true;
             }
             if (CLAIM_REWARDS.getPath().equals(actionId)) {
-                EchoGuideManager.claimRewards(player);
+                EchoGuideManager.claimRewards(player, missionId == null ? "" : missionId.getPath());
                 QuestData.syncToClient(player);
                 return true;
             }

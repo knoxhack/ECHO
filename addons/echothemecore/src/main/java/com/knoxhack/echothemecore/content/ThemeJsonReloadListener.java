@@ -11,6 +11,7 @@ import com.knoxhack.echothemecore.api.EchoThemeBlockPalette;
 import com.knoxhack.echothemecore.api.EchoThemeColors;
 import com.knoxhack.echothemecore.api.EchoThemeRenderProfile;
 import com.knoxhack.echothemecore.api.EchoThemeSoundProfile;
+import com.knoxhack.echothemecore.api.EchoThemeTextureKey;
 import com.knoxhack.echothemecore.api.EchoThemeUiAssets;
 import com.knoxhack.echothemecore.api.EchoThemeVanillaUiProfile;
 import com.knoxhack.echothemecore.api.HologramStyle;
@@ -20,6 +21,7 @@ import com.knoxhack.echothemecore.config.ThemeCoreConfig;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,7 @@ public final class ThemeJsonReloadListener extends SimplePreparableReloadListene
         EchoThemeSoundProfile sound = parseSound(object(json, "sound"));
         EchoThemeBlockPalette blocks = parseBlocks(object(json, "block_palette"));
         EchoThemeVanillaUiProfile vanilla = parseVanilla(object(json, "vanilla_ui"), colors, ui, render);
+        Map<EchoThemeTextureKey, Identifier> moduleTextures = parseModuleTextures(object(json, "module_assets"), id);
         return new EchoTheme(
             id,
             string(json, "display_name", id.getPath()),
@@ -86,6 +89,7 @@ public final class ThemeJsonReloadListener extends SimplePreparableReloadListene
             sound,
             blocks,
             vanilla,
+            moduleTextures,
             stringMap(object(json, "metadata"))
         );
     }
@@ -215,6 +219,78 @@ public final class ThemeJsonReloadListener extends SimplePreparableReloadListene
             decimal(json, "edge_glow_strength", fallback.edgeGlowStrength()),
             bool(json, "reduce_vanilla_brown", fallback.reduceVanillaBrown())
         );
+    }
+
+    private static Map<EchoThemeTextureKey, Identifier> parseModuleTextures(JsonObject json, Identifier themeId) {
+        if (json == null) {
+            return Map.of();
+        }
+        String themeFolder = themeId.getPath();
+        Map<EchoThemeTextureKey, Identifier> result = new EnumMap<>(EchoThemeTextureKey.class);
+        JsonObject terminal = object(json, "terminal");
+        if (terminal != null) {
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_PANEL, "panel_texture", themeFolder, "glass_panel");
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_TAB, "tab_texture", themeFolder, "tab");
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_TAB_ACTIVE, "tab_active_texture", themeFolder, "tab_active");
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_MISSION_CARD, "mission_card_texture", themeFolder, "mission_card");
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_STATUS_CHIP, "status_chip_texture", themeFolder, "status_chip");
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_BUTTON, "button_texture", themeFolder, "glass_button");
+            putIfPresent(result, terminal, EchoThemeTextureKey.TERMINAL_ICON, "icon_texture", themeFolder, "icons/icon_terminal");
+        }
+        JsonObject holomap = object(json, "holomap");
+        if (holomap != null) {
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_GRID, "grid_texture", themeFolder, "holomap_grid");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_PANEL, "panel_texture", themeFolder, "holomap_panel");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_ROUTE, "route_texture", themeFolder, "route_line");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_MARKER_SIGNAL, "marker_signal_texture", themeFolder, "marker_signal");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_MARKER_HAZARD, "marker_hazard_texture", themeFolder, "marker_hazard");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_MARKER_MISSION, "marker_mission_texture", themeFolder, "marker_mission");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_MARKER_NEXUS, "marker_nexus_texture", themeFolder, "marker_nexus");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_MARKER_RECLAIMED, "marker_reclaimed_texture", themeFolder, "marker_reclamation");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_SELECTED_RING, "selected_ring_texture", themeFolder, "selected_marker_ring");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_DANGER, "danger_overlay_texture", themeFolder, "marker_hazard");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_ANOMALY, "anomaly_overlay_texture", themeFolder, "marker_nexus");
+            putIfPresent(result, holomap, EchoThemeTextureKey.HOLOMAP_RECLAIMED, "reclaimed_overlay_texture", themeFolder, "marker_reclamation");
+        }
+        JsonObject lens = object(json, "lens");
+        if (lens != null) {
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_SCAN_RING, "scan_ring_texture", themeFolder, "lens_scan_ring");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_TARGET_BOX, "target_box_texture", themeFolder, "lens_target_box");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_WEAK_POINT, "weak_point_texture", themeFolder, "lens_weakpoint_marker");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_WARNING, "warning_texture", themeFolder, "lens_warning_overlay");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_ANOMALY_REVEAL, "anomaly_reveal_texture", themeFolder, "lens_anomaly_overlay");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_COMPLETION_PULSE, "completion_pulse_texture", themeFolder, "lens_progress_arc");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_PROGRESS_ARC, "progress_arc_texture", themeFolder, "lens_progress_arc");
+            putIfPresent(result, lens, EchoThemeTextureKey.LENS_NOISE_OVERLAY, "noise_overlay_texture", themeFolder, "lens_noise_overlay");
+        }
+        JsonObject vanilla = object(json, "vanilla_ui");
+        if (vanilla != null) {
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_CONTAINER_FRAME, "container_frame_texture", themeFolder, "vanilla_container_frame");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_INVENTORY_FRAME, "inventory_frame_texture", themeFolder, "vanilla_inventory_frame");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_TITLE_BACKPLATE, "title_backplate_texture", themeFolder, "vanilla_title_backplate");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_PAUSE_PANEL, "pause_panel_texture", themeFolder, "vanilla_pause_panel");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_SELECTED_SLOT, "selected_slot_texture", themeFolder, "vanilla_hotbar_accent");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_TOOLTIP_PANEL, "tooltip_panel_texture", themeFolder, "vanilla_tooltip_panel");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_TOAST_ACCENT, "toast_accent_texture", themeFolder, "vanilla_toast_accent");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_BOSS_BAR_ACCENT, "boss_bar_accent_texture", themeFolder, "vanilla_boss_bar_accent");
+            putIfPresent(result, vanilla, EchoThemeTextureKey.VANILLA_WIDGET_OUTLINE, "widget_outline_texture", themeFolder, "vanilla_widget_outline");
+        }
+        JsonObject rendercore = object(json, "rendercore");
+        if (rendercore != null) {
+            putIfPresent(result, rendercore, EchoThemeTextureKey.RENDERCORE_GLOW_OVERLAY, "glow_overlay_texture", themeFolder, "rendercore/glow_overlay_reference");
+            putIfPresent(result, rendercore, EchoThemeTextureKey.RENDERCORE_DISTORTION_OVERLAY, "distortion_overlay_texture", themeFolder, "rendercore/distortion_overlay");
+            putIfPresent(result, rendercore, EchoThemeTextureKey.RENDERCORE_ENTITY_HIGHLIGHT, "entity_highlight_texture", themeFolder, "rendercore/entity_highlight_reference");
+            putIfPresent(result, rendercore, EchoThemeTextureKey.RENDERCORE_MULTIBLOCK_ENERGY, "multiblock_energy_texture", themeFolder, "rendercore/multiblock_energy_lines");
+        }
+        return result;
+    }
+
+    private static void putIfPresent(Map<EchoThemeTextureKey, Identifier> map, JsonObject json, EchoThemeTextureKey key, String jsonKey, String themeFolder, String fallbackName) {
+        Identifier parsed = Identifier.tryParse(string(json, jsonKey, ""));
+        if (parsed == null) {
+            parsed = Identifier.fromNamespaceAndPath(EchoThemeCore.MODID, "textures/gui/themes/" + themeFolder + "/" + fallbackName + ".png");
+        }
+        map.put(key, parsed);
     }
 
     private static Identifier contentId(Identifier resourceId, String folder) {

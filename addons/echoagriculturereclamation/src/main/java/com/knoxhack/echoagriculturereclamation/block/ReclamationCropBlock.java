@@ -85,7 +85,7 @@ public class ReclamationCropBlock extends Block implements EntityBlock {
       SoilState soil = level.getBlockState(pos.below()).getBlock() == ModBlocks.HYDROPONIC_TRAY.get()
          ? SoilState.STABILIZED
          : SoilState.fromBlock(level.getBlockState(pos.below()));
-      int greenhouse = ReclamationProgress.growthGreenhouseSafety(level, pos);
+      var greenhouse = ReclamationProgress.growthGreenhouseContext(level, pos);
       SeedProfile profile = profileAt(level, pos, state);
       if (!ReclamationCropLogic.canGrow(spec, soil, profile, greenhouse)) {
          if (random.nextInt(100) < ReclamationContent.crop(spec).failedGrowthDeathChance()) {
@@ -110,7 +110,7 @@ public class ReclamationCropBlock extends Block implements EntityBlock {
       }
       SeedProfile profile = profileAt(level, pos, state);
       boolean stable = ReclamationCropLogic.stable(profile);
-      int greenhouse = ReclamationProgress.scanGreenhouseSafety(level, pos);
+      var greenhouse = ReclamationProgress.greenhouseContext(level, pos);
       int count = ReclamationCropLogic.yield(spec, profile, greenhouse, false);
       give(player, new ItemStack(ModItems.produceFor(spec).get(), Math.max(1, count)));
       boolean returnSeed = !stable && ReclamationProgress.needsStabilizationSeed(player)
@@ -127,6 +127,30 @@ public class ReclamationCropBlock extends Block implements EntityBlock {
       }
       level.setBlock(pos, state.setValue(AGE, 0), 3);
       return InteractionResult.SUCCESS_SERVER;
+   }
+
+   public boolean serviceFromPollinator(ServerLevel level, BlockPos pos, int baseGrowthBonus) {
+      BlockState state = level.getBlockState(pos);
+      if (!state.is(this) || state.getValue(AGE) >= 7) {
+         return false;
+      }
+      var greenhouse = ReclamationProgress.growthGreenhouseContext(level, pos);
+      int bonus = greenhouse.pollinationBonus(baseGrowthBonus);
+      if (bonus <= 0) {
+         return false;
+      }
+      SoilState soil = level.getBlockState(pos.below()).getBlock() == ModBlocks.HYDROPONIC_TRAY.get()
+         ? SoilState.STABILIZED
+         : SoilState.fromBlock(level.getBlockState(pos.below()));
+      SeedProfile profile = profileAt(level, pos, state);
+      if (!ReclamationCropLogic.canGrow(spec, soil, profile, greenhouse)) {
+         return false;
+      }
+      int chance = Math.min(95, ReclamationCropLogic.growthChance(spec, soil, profile, greenhouse, 0) + bonus);
+      if (level.getRandom().nextInt(100) < chance) {
+         level.setBlock(pos, state.setValue(AGE, state.getValue(AGE) + 1), 3);
+      }
+      return true;
    }
 
    private SeedProfile profileAt(Level level, BlockPos pos, BlockState state) {

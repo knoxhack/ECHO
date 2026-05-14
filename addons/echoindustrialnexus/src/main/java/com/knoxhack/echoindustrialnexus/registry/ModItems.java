@@ -1,7 +1,12 @@
 package com.knoxhack.echoindustrialnexus.registry;
 
+import com.knoxhack.echomultiblockcore.api.RobotToolType;
+import com.knoxhack.echomultiblockcore.item.BlueprintItem;
+import com.knoxhack.echomultiblockcore.item.ToolHeadItem;
+import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
 import com.knoxhack.echoindustrialnexus.item.EmergencyCoolantPackItem;
 import com.knoxhack.echoindustrialnexus.item.FluxMultimeterItem;
+import com.knoxhack.echoindustrialnexus.item.FactoryDiagnosticToolItem;
 import com.knoxhack.echoindustrialnexus.item.FurnaceWardenSummonerItem;
 import com.knoxhack.echoindustrialnexus.item.SalvageMagnetItem;
 import com.knoxhack.echoindustrialnexus.item.ThermalWrenchItem;
@@ -43,6 +48,8 @@ public final class ModItems {
    public static final DeferredItem<Item> FIELD_RELAY = simple("field_relay", p -> p.rarity(Rarity.UNCOMMON));
    public static final DeferredItem<Item> THERMAL_REGULATOR = simple("thermal_regulator", p -> p.rarity(Rarity.UNCOMMON));
    public static final DeferredItem<Item> SCRAP_PLATE = simple("scrap_plate");
+   public static final DeferredItem<Item> REFINED_PLATE = simple("refined_plate");
+   public static final DeferredItem<Item> REINFORCED_PLATE = simple("reinforced_plate", p -> p.rarity(Rarity.UNCOMMON));
    public static final DeferredItem<Item> HEAT_COIL = simple("heat_coil");
    public static final DeferredItem<Item> FLUX_CRYSTAL = simple("flux_crystal", p -> p.rarity(Rarity.UNCOMMON));
    public static final DeferredItem<Item> STABILIZED_SLAG = simple("stabilized_slag");
@@ -60,6 +67,18 @@ public final class ModItems {
    public static final DeferredItem<Item> HYBRID_THERMAL_CORE = simple("hybrid_thermal_core", p -> p.rarity(Rarity.RARE).fireResistant());
    public static final DeferredItem<Item> MACHINE_FRAME = simple("machine_frame");
    public static final DeferredItem<Item> REINFORCED_MACHINE_FRAME = simple("reinforced_machine_frame", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> PRECISION_CIRCUIT = simple("precision_circuit", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> INDUSTRIAL_CIRCUIT = simple("industrial_circuit", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> ROBOTIC_JOINT = simple("robotic_joint");
+   public static final DeferredItem<Item> HYDRAULIC_ACTUATOR = simple("hydraulic_actuator");
+   public static final DeferredItem<Item> CONVEYOR_GEAR = simple("conveyor_gear");
+   public static final DeferredItem<Item> COOLING_COIL = simple("cooling_coil");
+   public static final DeferredItem<Item> DATA_PROCESSOR = simple("data_processor", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> RECIPE_MATRIX_SHARD = simple("recipe_matrix_shard", p -> p.rarity(Rarity.RARE));
+   public static final DeferredItem<Item> INDUSTRIAL_UPGRADE_CHIP = simple("industrial_upgrade_chip", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> SPEED_UPGRADE_CHIP = simple("speed_upgrade_chip", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> COOLING_UPGRADE_CHIP = simple("cooling_upgrade_chip", p -> p.rarity(Rarity.UNCOMMON));
+   public static final DeferredItem<Item> PRECISION_UPGRADE_CHIP = simple("precision_upgrade_chip", p -> p.rarity(Rarity.UNCOMMON));
    public static final DeferredItem<Item> STABILIZED_MACHINE_FRAME = simple("stabilized_machine_frame", p -> p.rarity(Rarity.RARE));
    public static final DeferredItem<Item> HYBRID_NEXUS_FRAME = simple("hybrid_nexus_frame", p -> p.rarity(Rarity.EPIC).fireResistant());
    public static final DeferredItem<Item> SPEED_SERVO = simple("speed_servo", p -> p.rarity(Rarity.UNCOMMON));
@@ -116,6 +135,20 @@ public final class ModItems {
    public static final DeferredItem<Item> SALVAGE_MAGNET = tracked(
       ITEMS.registerItem("salvage_magnet", SalvageMagnetItem::new, p -> p.stacksTo(1).durability(192).rarity(Rarity.UNCOMMON))
    );
+   public static final DeferredItem<Item> FACTORY_DIAGNOSTIC_TOOL = tracked(
+      ITEMS.registerItem("factory_diagnostic_tool", FactoryDiagnosticToolItem::new, p -> p.stacksTo(1).durability(256))
+   );
+   public static final DeferredItem<Item> ASSEMBLY_LINE_BLUEPRINT = blueprint("assembly_line_blueprint", "industrial_assembly_line");
+   public static final DeferredItem<Item> SCRAP_PROCESSOR_BLUEPRINT = blueprint("scrap_processor_blueprint", "scrap_processor");
+   public static final DeferredItem<Item> PLATE_PRESS_BLUEPRINT = blueprint("plate_press_blueprint", "plate_press");
+   public static final DeferredItem<Item> CIRCUIT_FABRICATOR_BLUEPRINT = blueprint("circuit_fabricator_blueprint", "circuit_fabricator");
+   public static final DeferredItem<Item> RECIPE_MATRIX_BLUEPRINT = blueprint("recipe_matrix_blueprint", "recipe_matrix_core");
+   public static final DeferredItem<Item> INDUSTRIAL_WELDER_HEAD = toolHead("industrial_welder_head", RobotToolType.WELDER);
+   public static final DeferredItem<Item> PRECISION_ASSEMBLER_HEAD = toolHead("precision_assembler_head", RobotToolType.ASSEMBLER);
+   public static final DeferredItem<Item> PLASMA_CUTTER_HEAD = toolHead("plasma_cutter_head", RobotToolType.CUTTER);
+   public static final DeferredItem<Item> INSPECTION_SCANNER_HEAD = toolHead("inspection_scanner_head", RobotToolType.SCANNER);
+   public static final DeferredItem<Item> HEAVY_GRIPPER_HEAD = toolHead("heavy_gripper_head", RobotToolType.GRIPPER);
+   public static final DeferredItem<Item> COOLANT_INJECTOR_HEAD = toolHead("coolant_injector_head", RobotToolType.INJECTOR);
    public static final DeferredItem<Item> INDUSTRIAL_EXO_HELMET = armor("industrial_exo_helmet", ArmorType.HELMET);
    public static final DeferredItem<Item> INDUSTRIAL_EXO_CHESTPLATE = armor("industrial_exo_chestplate", ArmorType.CHESTPLATE);
    public static final DeferredItem<Item> INDUSTRIAL_EXO_LEGGINGS = armor("industrial_exo_leggings", ArmorType.LEGGINGS);
@@ -142,6 +175,18 @@ public final class ModItems {
 
    private static DeferredItem<Item> simple(String name, UnaryOperator<Properties> properties) {
       return tracked(ITEMS.registerSimpleItem(name, properties));
+   }
+
+   private static DeferredItem<Item> toolHead(String name, RobotToolType toolType) {
+      return tracked(ITEMS.registerItem(name, properties -> new ToolHeadItem(toolType, properties), p -> p.stacksTo(1).rarity(Rarity.UNCOMMON)));
+   }
+
+   private static DeferredItem<Item> blueprint(String name, String definitionPath) {
+      return tracked(ITEMS.registerItem(
+         name,
+         properties -> new BlueprintItem(EchoIndustrialNexus.id(definitionPath), properties),
+         p -> p.stacksTo(1).rarity(Rarity.UNCOMMON)
+      ));
    }
 
    private static <T extends Item> DeferredItem<T> tracked(DeferredItem<T> item) {

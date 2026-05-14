@@ -1,11 +1,14 @@
 package com.knoxhack.echoconvoyprotocol.service;
 
 import com.knoxhack.echoconvoyprotocol.EchoConvoyProtocol;
+import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyMultiblockControllerBlockEntity;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
 import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyStationBlockEntity;
 import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleEntity;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyMissionHooks;
 import com.knoxhack.echoconvoyprotocol.progress.ConvoyProgress;
+import com.knoxhack.echoconvoyprotocol.world.ConvoyRouteMarkerIndex;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.WorldMarker;
 import com.knoxhack.echocore.api.WorldMarkerType;
@@ -14,6 +17,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -51,6 +55,7 @@ public final class ConvoyRouteService {
       }
       ConvoyProgress progress = ConvoyProgress.get(player);
       progress.activate(definition.id(), startPos, vehicle.getUUID());
+      joinNearestFieldOperation(player, definition.id(), startPos, vehicle.getUUID());
       progress.activateBeacon(Identifier.fromNamespaceAndPath(definition.id().getNamespace(), "beacon/" + definition.id().getPath()));
       recordWorldMarker(player, definition, startPos, WorldMarkerType.ROUTE_START,
          "Convoy Start: " + definition.title(), "Convoy route start beacon.");
@@ -60,6 +65,8 @@ public final class ConvoyRouteService {
             + ". Log " + definition.requiredSignalMarkers() + " roadside marker"
             + (definition.requiredSignalMarkers() == 1 ? "" : "s") + "."
       ));
+      ConvoyMissionHooks.recordVehiclePrepared(player);
+      ConvoyMissionHooks.recordRouteActivated(player, definition.id());
       if (player instanceof ServerPlayer serverPlayer) {
          EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
       }
@@ -126,12 +133,15 @@ public final class ConvoyRouteService {
       }
       if (nextLeg < definition.requiredSignalMarkers()) {
          progress.markSignal(definition.id(), markerPos);
+         recordRouteMarker(player, definition, leg, progress.activeRouteLeg() - 1, markerPos);
+         advanceNearestFieldOperation(player, definition.id(), progress.activeRouteStart().orElse(markerPos), progress.activeRouteLeg(), markerPos, vehicle.getUUID());
          recordWorldMarker(player, definition, markerPos, WorldMarkerType.ROUTE_CHECKPOINT,
             "Convoy Checkpoint: " + leg.title(), "Roadside signal logged for " + definition.title() + ".");
          player.sendSystemMessage(Component.literal(
             "ECHO CONVOY // Route leg " + nextLeg + "/" + definition.requiredSignalMarkers()
                + " logged: " + definition.title() + "."
          ));
+         ConvoyMissionHooks.recordCheckpoint(player, definition.id());
          if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
          }
@@ -154,11 +164,15 @@ public final class ConvoyRouteService {
          }
       }
       progress.markSignal(definition.id(), markerPos);
+      recordRouteMarker(player, definition, definition.leg(progress.activeRouteLeg() - 1), progress.activeRouteLeg() - 1, markerPos);
+      advanceNearestFieldOperation(player, definition.id(), progress.activeRouteStart().orElse(markerPos), definition.requiredSignalMarkers(), markerPos, vehicle.getUUID());
       progress.complete(definition.id());
       recordWorldMarker(player, definition, markerPos, WorldMarkerType.ROUTE_DESTINATION,
          "Convoy Destination: " + definition.title(), "Completed convoy route destination.");
       vehicle.setActiveRouteId("");
       player.sendSystemMessage(Component.literal("ECHO CONVOY // Contract complete: " + definition.title() + ". Rewards pending in Convoy Routes."));
+      ConvoyMissionHooks.recordCheckpoint(player, definition.id());
+      ConvoyMissionHooks.recordRouteCompleted(player, definition.id());
       if (player instanceof ServerPlayer serverPlayer) {
          EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
       }
@@ -186,6 +200,7 @@ public final class ConvoyRouteService {
       }
       progress.markClaimed(definition.id());
       player.sendSystemMessage(Component.literal("ECHO CONVOY // Rewards claimed: " + definition.title() + "."));
+      ConvoyMissionHooks.recordRouteClaimed(player, definition.id());
       if (player instanceof ServerPlayer serverPlayer) {
          EchoCoreServices.discoverVisibleRouteRecords(serverPlayer);
       }
@@ -223,6 +238,51 @@ public final class ConvoyRouteService {
          }
       }
       return new RouteCheck(true, "ready");
+   }
+
+   private static void recordRouteMarker(Player player, ConvoyRouteDefinition definition, ConvoyRouteDefinition.RouteLeg leg, int order, BlockPos pos) {
+      if (player instanceof ServerPlayer serverPlayer && serverPlayer.level() instanceof ServerLevel level) {
+         ConvoyRouteMarkerIndex.get(level).record(
+            definition.id(),
+            leg == null ? "destination" : leg.id(),
+            Math.max(0, order),
+            pos
+         );
+      }
+   }
+
+   private static void joinNearestFieldOperation(Player player, Identifier routeId, BlockPos startPos, UUID vehicleId) {
+      ConvoyMultiblockControllerBlockEntity controller = nearestController(player, startPos);
+      if (controller != null && controller.fieldOperation().canUseRoute(routeId)) {
+         controller.fieldOperation().joinVehicle(vehicleId);
+         controller.setChanged();
+      }
+   }
+
+   private static void advanceNearestFieldOperation(Player player, Identifier routeId, BlockPos startPos, int stage, BlockPos markerPos, UUID vehicleId) {
+      ConvoyMultiblockControllerBlockEntity controller = nearestController(player, startPos);
+      if (controller != null && controller.fieldOperation().advanceFromSignal(routeId, stage, markerPos, vehicleId)) {
+         controller.setChanged();
+      }
+   }
+
+   private static ConvoyMultiblockControllerBlockEntity nearestController(Player player, BlockPos origin) {
+      if (!(player instanceof ServerPlayer serverPlayer) || !(serverPlayer.level() instanceof ServerLevel level)) {
+         return null;
+      }
+      BlockPos center = origin == null ? player.blockPosition() : origin;
+      ConvoyMultiblockControllerBlockEntity best = null;
+      double bestDistance = Double.MAX_VALUE;
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-32, -8, -32), center.offset(32, 8, 32))) {
+         if (level.getBlockEntity(pos) instanceof ConvoyMultiblockControllerBlockEntity controller) {
+            double distance = pos.distSqr(center);
+            if (distance < bestDistance) {
+               bestDistance = distance;
+               best = controller;
+            }
+         }
+      }
+      return best;
    }
 
    public static String readinessHint(Player player, ConvoyVehicleEntity vehicle, ConvoyRouteDefinition route) {

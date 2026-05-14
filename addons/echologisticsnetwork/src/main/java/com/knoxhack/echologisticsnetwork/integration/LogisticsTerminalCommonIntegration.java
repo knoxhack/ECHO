@@ -44,7 +44,8 @@ public final class LogisticsTerminalCommonIntegration {
          + " | dock " + (view.dockOnline() ? "online" : "offline")
          + " | relay " + (view.relayOnline() ? "online" : "offline")
          + " | ready " + ready + "/" + snapshot.loadoutReadiness().size()
-         + " | active drones " + snapshot.activeDeliveries() + "."));
+         + " | active drones " + snapshot.activeDeliveries()
+         + " | factory restock " + snapshot.factoryRestock().message() + "."));
       if (!view.selectedLoadoutId().isBlank()) {
          player.sendSystemMessage(Component.literal("ECHO LOGISTICS // Selected loadout: " + view.selectedLoadoutTitle()
             + (view.selectedReady() ? " ready for dispatch." : " missing " + view.selectedMissing() + " required item(s).")));

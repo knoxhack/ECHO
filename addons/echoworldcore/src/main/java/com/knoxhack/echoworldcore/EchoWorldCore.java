@@ -5,6 +5,7 @@ import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoworldcore.content.WorldCoreReloaders;
 import com.knoxhack.echoworldcore.integration.WorldCoreDiscoveryProvider;
+import com.knoxhack.echoworldcore.integration.WorldCoreIndexProvider;
 import com.knoxhack.echoworldcore.registry.WorldCoreBuiltins;
 import com.knoxhack.echoworldcore.service.WorldRegionService;
 import com.knoxhack.echoworldcore.test.ModGameTests;
@@ -40,6 +41,7 @@ public final class EchoWorldCore {
             WorldCoreBuiltins.register(service);
             EchoCoreServices.registerWorldRegionService(service);
             EchoCoreServices.registerDiscoveryProvider(new WorldCoreDiscoveryProvider(service));
+            EchoCoreServices.registerIndexRecipeProvider(WorldCoreIndexProvider.INSTANCE);
             registerAddonChapter();
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();

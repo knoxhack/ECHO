@@ -1,1 +1,6 @@
-{"parent":"minecraft:item/generated","textures":{"layer0":"echoorbitalremnants:item/stabilized_echo_core"}}
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "echoorbitalremnants:item/titan_survey_core"
+  }
+}

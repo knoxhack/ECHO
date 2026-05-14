@@ -40,6 +40,11 @@ public final class HoloMapCommands {
                                 .then(Commands.argument("radius", IntegerArgumentType.integer(0, 24))
                                         .executes(context -> scanTerrain(context.getSource().getPlayerOrException(),
                                                 IntegerArgumentType.getInteger(context, "radius")))))
+                        .then(Commands.literal("resample_terrain")
+                                .executes(context -> resampleTerrain(context.getSource().getPlayerOrException(), configuredScanRadius()))
+                                .then(Commands.argument("radius", IntegerArgumentType.integer(0, 24))
+                                        .executes(context -> resampleTerrain(context.getSource().getPlayerOrException(),
+                                                IntegerArgumentType.getInteger(context, "radius")))))
                         .then(Commands.literal("clear_terrain")
                                 .executes(context -> clearTerrain(context.getSource().getPlayerOrException())))
                         .then(Commands.literal("dump_terrain")
@@ -94,6 +99,19 @@ public final class HoloMapCommands {
         return sampled;
     }
 
+    private static int resampleTerrain(ServerPlayer player, int radius) {
+        if (!debugEnabled()) {
+            player.sendSystemMessage(Component.literal("ECHO HoloMap // Debug terrain commands are disabled."));
+            return 0;
+        }
+        int safeRadius = Math.max(0, Math.min(24, radius));
+        int maxChunks = Math.max(1, (safeRadius * 2 + 1) * (safeRadius * 2 + 1));
+        int sampled = HoloMapTerrainScanner.scanAround(player, safeRadius, maxChunks, true);
+        player.sendSystemMessage(Component.translatable("command.echoholomap.terrain_resampled", sampled, safeRadius));
+        sendTerrainAround(player, safeRadius);
+        return sampled;
+    }
+
     private static int clearTerrain(ServerPlayer player) {
         if (!debugEnabled() || !(player.level() instanceof ServerLevel serverLevel)) {
             player.sendSystemMessage(Component.literal("ECHO HoloMap // Debug terrain commands are disabled."));
@@ -111,8 +129,10 @@ public final class HoloMapCommands {
         }
         int count = HoloMapTerrainSavedData.get(serverLevel)
                 .discoverableTileCount(player.getUUID(), serverLevel.dimension());
+        HoloMapTerrainSavedData.TerrainStats stats = HoloMapTerrainSavedData.get(serverLevel)
+                .stats(player.getUUID(), serverLevel.dimension());
         player.sendSystemMessage(Component.translatable("command.echoholomap.terrain_dump", count,
-                serverLevel.dimension().identifier().toString()));
+                serverLevel.dimension().identifier().toString(), stats.summary()));
         sendTerrainAround(player, configuredScanRadius());
         return count;
     }

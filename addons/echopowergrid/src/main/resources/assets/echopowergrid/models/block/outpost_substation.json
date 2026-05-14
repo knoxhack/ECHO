@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echopowergrid:block/outpost_substation",
+    "down": "echopowergrid:block/outpost_substation",
+    "up": "echopowergrid:block/outpost_substation",
+    "north": "echopowergrid:block/outpost_substation",
+    "south": "echopowergrid:block/outpost_substation",
+    "west": "echopowergrid:block/outpost_substation",
+    "east": "echopowergrid:block/outpost_substation"
+  }
+}

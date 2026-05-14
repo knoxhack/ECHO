@@ -59,6 +59,9 @@ public final class WorldRegionService implements IWorldRegionService {
         }
         boolean added = baseRegionDefinitions.putIfAbsent(definition.id(), definition) == null;
         rebuildDefinitionViews();
+        if (added) {
+            EchoCoreServices.invalidateIndexRecipes("world region definition registered");
+        }
         return added;
     }
 
@@ -112,6 +115,9 @@ public final class WorldRegionService implements IWorldRegionService {
         }
         boolean added = baseHazardDefinitions.putIfAbsent(definition.id(), definition) == null;
         rebuildDefinitionViews();
+        if (added) {
+            EchoCoreServices.invalidateIndexRecipes("world hazard definition registered");
+        }
         return added;
     }
 
@@ -268,6 +274,7 @@ public final class WorldRegionService implements IWorldRegionService {
             dataRegionDefinitions.putAll(regions);
         }
         rebuildDefinitionViews();
+        EchoCoreServices.invalidateIndexRecipes("world definitions changed");
         for (Identifier id : dataHazardDefinitions.keySet()) {
             if (baseHazardDefinitions.containsKey(id)) {
                 EchoWorldCore.LOGGER.info("WorldCore data hazard {} overrides bootstrap definition.", id);

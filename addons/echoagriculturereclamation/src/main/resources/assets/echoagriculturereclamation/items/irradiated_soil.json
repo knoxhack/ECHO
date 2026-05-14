@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/irradiated_soil"
+    "model": "echoagriculturereclamation:item/irradiated_soil"
   }
 }

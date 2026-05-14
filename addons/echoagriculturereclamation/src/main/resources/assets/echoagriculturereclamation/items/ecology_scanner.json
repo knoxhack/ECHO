@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/ecology_scanner"
+    "model": "echoagriculturereclamation:item/ecology_scanner"
   }
 }

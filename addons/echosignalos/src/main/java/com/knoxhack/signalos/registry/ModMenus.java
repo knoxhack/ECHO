@@ -1,6 +1,7 @@
 package com.knoxhack.signalos.registry;
 
 import com.knoxhack.signalos.SignalOS;
+import com.knoxhack.signalos.menu.SignalOsServerRackMenu;
 import com.knoxhack.signalos.menu.SignalOsTerminalMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -15,6 +16,8 @@ public final class ModMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<SignalOsTerminalMenu>> TERMINAL =
             MENUS.register("terminal", () -> IMenuTypeExtension.create(SignalOsTerminalMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<SignalOsServerRackMenu>> SERVER_RACK =
+            MENUS.register("server_rack", () -> IMenuTypeExtension.create(SignalOsServerRackMenu::new));
 
     private ModMenus() {
     }

@@ -23,6 +23,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -103,7 +105,7 @@ public class EnvironmentalEventHandler {
                 // Radiation storm exposure is centralized in SurvivalTickHandler/HazardZoneManager.
             }
             case TOXIC_STORM -> {
-                // Acid rain is a weather/shelter event. Filter drain stays limited to toxic-air hazards.
+                applyToxicStormEffects(player, eventData);
             }
             case BLACKOUT -> {
                 // No direct player effect - handled by machine effects
@@ -386,6 +388,28 @@ public class EnvironmentalEventHandler {
         if (player.tickCount % 600 == 0 && level.getRandom().nextFloat() < 0.08F * data.getEventIntensity()) {
             spawnThreatNear(player, ModEntities.ASH_WRAITH.get(), 18.0D);
         }
+    }
+
+    private static void applyToxicStormEffects(ServerPlayer player, EnvironmentalEventData data) {
+        if (!(player.level() instanceof ServerLevel level) || player.tickCount % 80 != 0) {
+            return;
+        }
+        if (!level.canSeeSky(player.blockPosition()) || HazardZoneManager.hasAcidProtection(player)) {
+            return;
+        }
+
+        SurvivalData survival = player.getData(ModAttachments.SURVIVAL_DATA.get());
+        int pressure = Math.max(1, Math.round(data.getEventIntensity()));
+        survival.decrementHydration(pressure);
+        if (survival.hasMask() && !survival.isFilterDepleted()) {
+            survival.decrementFilter(pressure);
+        }
+        player.setData(ModAttachments.SURVIVAL_DATA.get(), survival);
+        player.syncData(ModAttachments.SURVIVAL_DATA.get());
+
+        player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 0, false, false));
+        player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 0, false, false));
+        player.hurtServer(level, player.damageSources().magic(), 1.0F);
     }
 
     private static void applyCryoFrontEffects(ServerPlayer player, EnvironmentalEventData data) {

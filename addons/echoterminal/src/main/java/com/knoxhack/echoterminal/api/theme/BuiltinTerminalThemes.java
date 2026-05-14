@@ -92,7 +92,7 @@ public final class BuiltinTerminalThemes {
                 new TerminalThemeTokens.States(0xFFA7F06C, 0xFFFFC85A, 0xFF74D9FF,
                         0xFF8D8475, 0xFFFFC85A, 0xFFA7F06C, 0xFFFF6E6E),
                 new TerminalThemeTokens.Dividers(0x665F4A2E, 0xFFFFC85A, 0x66A66CFF, 0x184F8A5C),
-                new TerminalThemeTokens.Effects(true, true, true, 0xD0060706, 0x66A66CFF),
+                new TerminalThemeTokens.Effects(false, false, true, 0xD0060706, 0x66A66CFF),
                 new TerminalThemeTokens.Assets(
                         nexus("backgrounds/terminal_backdrop"),
                         nexus("panels/panel_plate"),

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echopowergrid:block/small_battery_bank",
+    "down": "echopowergrid:block/small_battery_bank",
+    "up": "echopowergrid:block/small_battery_bank",
+    "north": "echopowergrid:block/small_battery_bank",
+    "south": "echopowergrid:block/small_battery_bank",
+    "west": "echopowergrid:block/small_battery_bank",
+    "east": "echopowergrid:block/small_battery_bank"
+  }
+}

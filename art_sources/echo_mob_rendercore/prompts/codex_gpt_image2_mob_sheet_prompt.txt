@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: project source sheet for Minecraft mod entity texture production
+Primary request: Create a transparent-ready source sheet of 32 voxel-style ECHO ecosystem mob texture concepts inspired by the Echo Ashfall roster reference images. Arrange isolated full-body voxel creatures and machine entities in an 8 column x 4 row grid with generous padding, no labels, and no UI frame.
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for background removal; no shadows, gradients, texture, reflections, floor plane, or lighting variation.
+Subjects: radioactive zombies, scavenger bandits, irradiated wolves, drones, ash wraiths, toxic slimes, stealth stalkers, rust walkers, mutated crawlers, survivor NPCs, nexus spectral entities, blackbox sentinels, orbital drones, station suits, industrial constructs, convoy rigs.
+Style: modded Minecraft voxel/blocky model aesthetic, detailed but readable 64x64 texture inspiration, gritty ash wasteland, cyan/orange/green emissive accents.
+Constraints: no text, no numbers, no card UI, no logos, no watermarks. Keep each subject fully separated from the background with crisp edges. Do not use #ff00ff anywhere in the subjects.

@@ -203,7 +203,7 @@ public class Config {
 
     public static final ModConfigSpec.DoubleValue ECHO_SCANLINE_INTENSITY = BUILDER
             .comment("Visual intensity multiplier for ECHO scanlines. 0 disables scanlines; 1 keeps the default.")
-            .defineInRange("echoScanlineIntensity", 1.0, 0.0, 2.0);
+            .defineInRange("echoScanlineIntensity", 0.0, 0.0, 2.0);
 
     public static final ModConfigSpec.DoubleValue HUD_WARNING_INTENSITY = BUILDER
             .comment("Visual intensity multiplier for HUD warning flashes and mutation glitch overlays.")
@@ -215,7 +215,7 @@ public class Config {
 
     public static final ModConfigSpec.DoubleValue WEATHER_PARTICLE_DENSITY = BUILDER
             .comment("Client-side density multiplier for ECHO environmental weather particles. 0 disables extra particles.")
-            .defineInRange("weatherParticleDensity", 1.0, 0.0, 3.0);
+            .defineInRange("weatherParticleDensity", 0.35, 0.0, 3.0);
 
     public static final ModConfigSpec.BooleanValue ORBITAL_EVENT_VISUALS = BUILDER
             .comment("Show ECHO-7 visual feedback for Orbital Remnants route events when the addon is loaded.")

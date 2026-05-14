@@ -2,22 +2,22 @@
   "id": "echorelictech:phase_anchor",
   "entries": [
     {
-      "severity": "MINOR",
+      "severity": "minor",
       "weight": 60,
       "message": "Recall matrix flickered. Cooldown increased.",
-      "effects": ["COOLDOWN_MULTIPLY", "DAMAGE_ITEM"]
+      "effects": ["cooldown_multiply", "damage_item"]
     },
     {
-      "severity": "MEDIUM",
+      "severity": "medium",
       "weight": 30,
       "message": "Destination drift detected.",
-      "effects": ["TELEPORT_OFFSET", "ADD_DEBUFF"]
+      "effects": ["teleport_offset", "add_debuff"]
     },
     {
-      "severity": "MAJOR",
+      "severity": "major",
       "weight": 10,
       "message": "Nexus echo followed the recall path.",
-      "effects": ["HOSTILE_SIGNAL", "ADD_INSTABILITY"]
+      "effects": ["hostile_signal", "add_instability"]
     }
   ]
 }

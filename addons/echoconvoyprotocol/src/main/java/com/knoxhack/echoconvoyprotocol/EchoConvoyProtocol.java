@@ -1,8 +1,12 @@
 package com.knoxhack.echoconvoyprotocol;
 
 import com.knoxhack.echoconvoyprotocol.content.ConvoyReloaders;
+import com.knoxhack.echoconvoyprotocol.command.ConvoyCommands;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyCoreIntegration;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyHoloMapProvider;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyIndexProvider;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyLogisticsIntegration;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyMultiblockProviders;
 import com.knoxhack.echoconvoyprotocol.network.ModNetwork;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlocks;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlockEntities;
@@ -11,7 +15,9 @@ import com.knoxhack.echoconvoyprotocol.registry.ModEntities;
 import com.knoxhack.echoconvoyprotocol.registry.ModItems;
 import com.knoxhack.echoconvoyprotocol.registry.ModMenus;
 import com.knoxhack.echoconvoyprotocol.registry.ModRecipes;
+import com.knoxhack.echoconvoyprotocol.task.ConvoyMultiblockTasks;
 import com.knoxhack.echoconvoyprotocol.test.ModGameTests;
+import com.knoxhack.echocore.api.EchoCoreServices;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -39,13 +45,18 @@ public class EchoConvoyProtocol {
       modEventBus.addListener(ModNetwork::registerPayloads);
       modEventBus.addListener(ModGameTests::registerTests);
       NeoForge.EVENT_BUS.addListener(ConvoyReloaders::addServerReloadListeners);
+      NeoForge.EVENT_BUS.addListener(ConvoyCommands::register);
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
       LOGGER.info("ECHO Convoy Protocol initialized. Road crews are improvising.");
       event.enqueueWork(() -> {
+         ConvoyMultiblockProviders.register();
+         ConvoyMultiblockTasks.register();
          ConvoyCoreIntegration.registerAddonChapter();
          ConvoyIndexProvider.register();
+         ConvoyLogisticsIntegration.register();
+         EchoCoreServices.registerMapDataProvider(ConvoyHoloMapProvider.INSTANCE);
          if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalIntegration();
          }

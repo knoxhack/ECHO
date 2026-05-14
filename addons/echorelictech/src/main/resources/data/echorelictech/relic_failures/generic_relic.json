@@ -2,22 +2,22 @@
   "id": "echorelictech:generic_relic",
   "entries": [
     {
-      "severity": "MINOR",
+      "severity": "minor",
       "weight": 70,
       "message": "Relic fizzled. Nothing happened.",
-      "effects": ["FIZZLE"]
+      "effects": ["fizzle"]
     },
     {
-      "severity": "MEDIUM",
+      "severity": "medium",
       "weight": 20,
       "message": "Relic malfunction. Cooldown extended.",
-      "effects": ["COOLDOWN_MULTIPLY"]
+      "effects": ["cooldown_multiply"]
     },
     {
-      "severity": "MAJOR",
+      "severity": "major",
       "weight": 10,
       "message": "Relic backfired. Instability increased.",
-      "effects": ["ADD_INSTABILITY", "DAMAGE_ITEM"]
+      "effects": ["add_instability", "damage_item"]
     }
   ]
 }

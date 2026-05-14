@@ -21,6 +21,9 @@ public final class ConvoyProgress {
    }
 
    public static ConvoyProgress get(Player player) {
+      if (player == null) {
+         return new ConvoyProgress(null, new CompoundTag());
+      }
       CompoundTag root = player.getPersistentData().getCompoundOrEmpty(ROOT);
       return new ConvoyProgress(player, root);
    }
@@ -161,6 +164,31 @@ public final class ConvoyProgress {
 
    public boolean beaconActivated(Identifier beaconId) {
       return beaconId != null && readSet("activated_beacon").contains(beaconId.toString());
+   }
+
+   public boolean flag(String key) {
+      return key != null && !key.isBlank() && root.getBoolean(key).orElse(false);
+   }
+
+   public int value(String key) {
+      return key == null || key.isBlank() ? 0 : root.getIntOr(key, 0);
+   }
+
+   public void mark(String key) {
+      if (key == null || key.isBlank()) {
+         return;
+      }
+      root.putBoolean(key, true);
+      save();
+   }
+
+   public void increment(String key) {
+      if (key == null || key.isBlank()) {
+         return;
+      }
+      root.putInt(key, root.getIntOr(key, 0) + 1);
+      root.putBoolean(key + "_complete", true);
+      save();
    }
 
    public void save() {

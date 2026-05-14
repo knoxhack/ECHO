@@ -6,6 +6,7 @@ public final class IndexIds {
     public static final Identifier PROVIDER_BUILTIN = id("provider/builtin");
     public static final Identifier PROVIDER_VANILLA_RECIPES = id("provider/vanilla_recipes");
     public static final Identifier PROVIDER_TERMINAL = id("provider/terminal_bridge");
+    public static final Identifier PROVIDER_TERMINAL_IMPORT = id("provider/terminal_import");
     public static final Identifier CATEGORY_ITEMS = id("items");
     public static final Identifier CATEGORY_BLOCKS = id("blocks");
     public static final Identifier CATEGORY_MACHINES = id("machines");

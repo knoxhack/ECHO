@@ -61,7 +61,7 @@ public final class Echo7RouteCommandHandler {
                 + " reward=" + progress.echoZeroRewardClaimed()
                 + " anchors=" + progress.nexusStabilized()
                 + " final=" + progress.finalNetworkSealed(), ChatFormatting.AQUA);
-        tell(player, "surveys=" + progress.surveyStatus() + " | contracts=" + progress.completedFactionContractCount(),
+        tell(player, "surveys=" + progress.surveyStatus() + " | outpost_charters=" + progress.completedOutpostCharterCount(),
                 ChatFormatting.GRAY);
         return Command.SINGLE_SUCCESS;
     }

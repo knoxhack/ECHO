@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echorelictech:block/prototype_workbench",
+    "down": "echorelictech:block/prototype_workbench",
+    "up": "echorelictech:block/prototype_workbench",
+    "north": "echorelictech:block/prototype_workbench",
+    "south": "echorelictech:block/prototype_workbench",
+    "west": "echorelictech:block/prototype_workbench",
+    "east": "echorelictech:block/prototype_workbench"
+  }
+}

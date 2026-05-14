@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/nexus_infuser"
+    "model": "echonexusprotocol:item/nexus_infuser"
   }
 }

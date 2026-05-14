@@ -36,7 +36,10 @@ public final class StationfallIndustrialCompat {
          case "station_battery" -> progress.setSectionPower(player, StationSection.ENGINEERING_DECK, StationPowerState.STABLE);
          case "pressure_seal_kit", "hull_repair_foam" -> supportSuit(player, 0, 45, 0);
          case "emergency_oxygen_filter" -> supportSuit(player, 55, 0, 0);
-         case "signal_panic_dampener" -> SignalPanicState.get(player).decay(player, 35);
+         case "signal_panic_dampener" -> {
+            SignalPanicState.get(player).decay(player, 35);
+            StationfallMissionHooks.recordPanicDampened(player, componentId);
+         }
          case "ai_override_chip_casing" -> progress.markAiOverrideObtained(player);
          default -> {
          }
@@ -50,9 +53,11 @@ public final class StationfallIndustrialCompat {
       SuitState suit = SuitState.get(player);
       if (oxygenBoost > 0) {
          suit.boostOxygen(oxygenBoost);
+         StationfallMissionHooks.recordOxygenStabilized(player, "industrial_support");
       }
       if (pressureBoost > 0) {
          suit.applySealantPatch();
+         StationfallMissionHooks.recordPressureStabilized(player, "industrial_support");
       }
       suit.save(player);
       if (panicReduction > 0) {

@@ -1,0 +1,13 @@
+{
+  "schema_version": 11,
+  "base_texture": "minecraft:textures/block/glass.png",
+  "default_state": "ACTIVE",
+  "effect": {
+    "preset": "hologram",
+    "glow_intensity": 0.8,
+    "pulse_speed": 0.4,
+    "scanline_strength": 0.0,
+    "target_scope": "profile"
+  },
+  "anchors": { "screen": { "offset": [0.0, 0.0, 0.0] } }
+}

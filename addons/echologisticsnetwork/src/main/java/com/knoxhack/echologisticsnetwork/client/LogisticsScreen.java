@@ -35,12 +35,14 @@ public class LogisticsScreen extends AbstractContainerScreen<LogisticsMenu> {
       for (Slot slot : menu.slots) {
          drawSlot(graphics, x + slot.x, y + slot.y);
       }
-      drawStats(graphics, x, y);
+      drawDashboard(graphics, x, y);
       drawButton(graphics, x + 16, y + 58, 64, 18, "SCAN", mouseX, mouseY, true);
-      drawButton(graphics, x + 16, y + 82, 64, 18, "REQUEST", mouseX, mouseY, true);
+      drawButton(graphics, x + 16, y + 82, 64, 18, menu.canDispatch() ? "DISPATCH" : "MISSING", mouseX, mouseY, menu.canDispatch());
       drawButton(graphics, x + 16, y + 106, 64, 18, menu.kind() == com.knoxhack.echologisticsnetwork.block.LogisticsBlock.LogisticsKind.FACTION_TRADE_DEPOT ? "OFFER" : "CARD", mouseX, mouseY, true);
-      drawButton(graphics, x + 16, y + 190, 64, 18, "RELAY", mouseX, mouseY, menu.rewardCount() > 0);
-      drawButton(graphics, x + 16, y + 214, 64, 18, "DEPOT", mouseX, mouseY, menu.depotOffers() > 0);
+      drawButton(graphics, x + 16, y + 130, 64, 18, "CANCEL", mouseX, mouseY, menu.activeDeliveries() > 0);
+      drawButton(graphics, x + 16, y + 190, 64, 18, "RELAY", mouseX, mouseY, menu.rewardCount() > 0 && menu.relayOnline());
+      drawButton(graphics, x + 16, y + 214, 64, 18, "OFFERS", mouseX, mouseY, menu.depotOnline());
+      drawButton(graphics, x + 16, y + 238, 64, 18, "DEPOT", mouseX, mouseY, menu.depotOnline() && menu.depotOffers() > 0 && menu.depotCooldown() <= 0);
       super.extractContents(graphics, mouseX, mouseY, partialTick);
    }
 
@@ -54,16 +56,18 @@ public class LogisticsScreen extends AbstractContainerScreen<LogisticsMenu> {
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       int x = leftPos;
       int y = topPos;
-      if (clickButton(event, x + 16, y + 58, 64, 18, LogisticsMenu.BUTTON_SCAN)) return true;
-      if (clickButton(event, x + 16, y + 82, 64, 18, LogisticsMenu.BUTTON_REQUEST_LOADOUT)) return true;
-      if (clickButton(event, x + 16, y + 106, 64, 18, LogisticsMenu.BUTTON_CYCLE_LOADOUT)) return true;
-      if (clickButton(event, x + 16, y + 190, 64, 18, LogisticsMenu.BUTTON_CLAIM_RELAY)) return true;
-      if (clickButton(event, x + 16, y + 214, 64, 18, LogisticsMenu.BUTTON_DEPOT_EXCHANGE)) return true;
+      if (clickButton(event, x + 16, y + 58, 64, 18, LogisticsMenu.BUTTON_SCAN, true)) return true;
+      if (clickButton(event, x + 16, y + 82, 64, 18, LogisticsMenu.BUTTON_REQUEST_LOADOUT, menu.canDispatch())) return true;
+      if (clickButton(event, x + 16, y + 106, 64, 18, LogisticsMenu.BUTTON_CYCLE_LOADOUT, true)) return true;
+      if (clickButton(event, x + 16, y + 130, 64, 18, LogisticsMenu.BUTTON_CANCEL_DELIVERIES, menu.activeDeliveries() > 0)) return true;
+      if (clickButton(event, x + 16, y + 190, 64, 18, LogisticsMenu.BUTTON_CLAIM_RELAY, menu.rewardCount() > 0 && menu.relayOnline())) return true;
+      if (clickButton(event, x + 16, y + 214, 64, 18, LogisticsMenu.BUTTON_REFRESH_OFFERS, menu.depotOnline())) return true;
+      if (clickButton(event, x + 16, y + 238, 64, 18, LogisticsMenu.BUTTON_DEPOT_EXCHANGE, menu.depotOnline() && menu.depotOffers() > 0 && menu.depotCooldown() <= 0)) return true;
       return super.mouseClicked(event, doubleClick);
    }
 
-   private boolean clickButton(MouseButtonEvent event, int x, int y, int w, int h, int id) {
-      if (event.button() != 0 || !inside(event.x(), event.y(), x, y, w, h)) {
+   private boolean clickButton(MouseButtonEvent event, int x, int y, int w, int h, int id, boolean enabled) {
+      if (!enabled || event.button() != 0 || !inside(event.x(), event.y(), x, y, w, h)) {
          return false;
       }
       Minecraft minecraft = Minecraft.getInstance();
@@ -73,16 +77,25 @@ public class LogisticsScreen extends AbstractContainerScreen<LogisticsMenu> {
       return true;
    }
 
-   private void drawStats(GuiGraphicsExtractor graphics, int x, int y) {
+   private void drawDashboard(GuiGraphicsExtractor graphics, int x, int y) {
       int sx = x + 96;
       int sy = y + 48;
-      graphics.text(font, Component.literal("Categories " + menu.stockRows()), sx, sy, GREEN, false);
-      graphics.text(font, Component.literal("Low " + menu.missingRows()), sx + 86, sy, menu.missingRows() > 0 ? AMBER : GREEN, false);
-      graphics.text(font, Component.literal("Kits " + menu.readyRows()), sx + 148, sy, GREEN, false);
-      graphics.text(font, Component.literal("Drones " + menu.activeDeliveries()), sx + 226, sy, menu.activeDeliveries() > 0 ? CYAN : 0xFF8CA7B5, false);
+      graphics.text(font, Component.literal("Blocks " + menu.blockCount() + " | Endpoints " + menu.endpointCount()), sx, sy, GREEN, false);
+      graphics.text(font, Component.literal(fit("Dock " + online(menu.dockOnline()) + " | Relay " + online(menu.relayOnline()) + " | Depot " + online(menu.depotOnline()), 112)),
+         sx + 142, sy, menu.dockOnline() ? CYAN : AMBER, false);
+      graphics.text(font, Component.literal("Categories " + menu.stockRows()), sx, sy + 12, GREEN, false);
+      graphics.text(font, Component.literal("Low " + menu.missingRows()), sx + 86, sy + 12, menu.missingRows() > 0 ? AMBER : GREEN, false);
+      graphics.text(font, Component.literal("Kits " + menu.readyRows()), sx + 148, sy + 12, GREEN, false);
+      graphics.text(font, Component.literal("Drones " + menu.activeDeliveries()), sx + 226, sy + 12, menu.activeDeliveries() > 0 ? CYAN : 0xFF8CA7B5, false);
+      graphics.text(font, Component.literal(fit("Selected: " + endpointName() + " | "
+            + (menu.selectedReady() ? "READY" : "MISSING " + menu.selectedMissing())
+            + " | Delivery " + menu.firstDeliveryStatus()
+            + (menu.activeDeliveries() > 0 ? " ETA " + menu.firstDeliveryEta() + "t" : ""), 318)),
+         x + 16, y + 30, menu.selectedReady() ? GREEN : AMBER, false);
       graphics.text(font, Component.literal("Relay rewards " + menu.rewardCount()), x + 16, y + 166, menu.rewardCount() > 0 ? AMBER : 0xFF8CA7B5, false);
       graphics.text(font, Component.literal("Depot offers " + menu.depotOffers()), x + 16, y + 178, menu.depotOffers() > 0 ? CYAN : 0xFF8CA7B5, false);
-      graphics.text(font, Component.literal("Control cooldown " + menu.cooldown() + "t"), x + 16, y + 238, menu.cooldown() > 0 ? RED : 0xFF8CA7B5, false);
+      graphics.text(font, Component.literal("Control cooldown " + menu.cooldown() + "t"), sx, y + 238, menu.cooldown() > 0 ? RED : 0xFF8CA7B5, false);
+      graphics.text(font, Component.literal("Depot cooldown " + menu.depotCooldown() + "t"), sx + 126, y + 238, menu.depotCooldown() > 0 ? AMBER : 0xFF8CA7B5, false);
    }
 
    private void drawSlot(GuiGraphicsExtractor graphics, int x, int y) {
@@ -95,6 +108,15 @@ public class LogisticsScreen extends AbstractContainerScreen<LogisticsMenu> {
       graphics.fill(x, y, x + w, y + h, enabled ? 0xAA122530 : 0x77101418);
       graphics.outline(x, y, w, h, color);
       graphics.text(font, Component.literal(label), x + Math.max(3, (w - font.width(label)) / 2), y + 5, enabled ? 0xFFE9FBFF : 0xFF66777D, false);
+   }
+
+   private String online(boolean value) {
+      return value ? "ONLINE" : "OFFLINE";
+   }
+
+   private String endpointName() {
+      com.knoxhack.echologisticsnetwork.block.LogisticsBlock.LogisticsKind kind = menu.selectedEndpointKind();
+      return kind == null ? "No endpoint" : kind.displayName();
    }
 
    private boolean inside(double px, double py, int x, int y, int w, int h) {

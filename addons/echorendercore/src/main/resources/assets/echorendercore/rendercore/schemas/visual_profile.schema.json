@@ -5,8 +5,8 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
-    "schema_version": { "type": "integer", "minimum": 1 },
-    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "schema_version": { "type": "integer", "const": 11 },
+    "schemaVersion": { "type": "integer", "const": 11 },
     "base_texture": { "type": "string" },
     "baseTexture": { "type": "string" },
     "glow_texture": { "type": "string" },
@@ -17,6 +17,12 @@
     "particle_profile": { "type": "string" },
     "default_state": { "type": "string" },
     "transition_seconds": { "type": "number", "minimum": 0 },
+    "effect": { "$ref": "#/$defs/effect" },
+    "effects": { "$ref": "#/$defs/effect" },
+    "includes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileReference" }
+    },
     "materials": {
       "type": "object",
       "additionalProperties": {
@@ -27,7 +33,26 @@
           "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
           "emissive": { "type": "boolean" },
           "blend_mode": { "type": "string" },
-          "blendMode": { "type": "string" }
+          "blendMode": { "type": "string" },
+          "light_mode": { "type": "string" },
+          "lightMode": { "type": "string" },
+          "render_pass": { "type": "string" },
+          "renderPass": { "type": "string" },
+          "cull": { "type": "boolean" },
+          "depth_write": { "type": "boolean" },
+          "depthWrite": { "type": "boolean" },
+          "sort_order": { "type": "integer" },
+          "sortOrder": { "type": "integer" },
+          "light_override": { "type": "integer" },
+          "lightOverride": { "type": "integer" },
+          "overlay_override": { "type": "integer" },
+          "overlayOverride": { "type": "integer" },
+          "outline_color": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+          "outlineColor": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+          "render_priority": { "type": "integer" },
+          "renderPriority": { "type": "integer" },
+          "effect": { "$ref": "#/$defs/effect" },
+          "effects": { "$ref": "#/$defs/effect" }
         }
       }
     },
@@ -51,7 +76,26 @@
           "partFilter": { "type": "array", "items": { "type": "string" } },
           "color": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
           "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
-          "emissive": { "type": "boolean" }
+          "emissive": { "type": "boolean" },
+          "light_mode": { "type": "string" },
+          "lightMode": { "type": "string" },
+          "render_pass": { "type": "string" },
+          "renderPass": { "type": "string" },
+          "cull": { "type": "boolean" },
+          "depth_write": { "type": "boolean" },
+          "depthWrite": { "type": "boolean" },
+          "sort_order": { "type": "integer" },
+          "sortOrder": { "type": "integer" },
+          "light_override": { "type": "integer" },
+          "lightOverride": { "type": "integer" },
+          "overlay_override": { "type": "integer" },
+          "overlayOverride": { "type": "integer" },
+          "outline_color": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+          "outlineColor": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+          "render_priority": { "type": "integer" },
+          "renderPriority": { "type": "integer" },
+          "effect": { "$ref": "#/$defs/effect" },
+          "effects": { "$ref": "#/$defs/effect" }
         }
       }
     },
@@ -77,7 +121,30 @@
       }
     },
     "block_parts": { "$ref": "#/$defs/blockParts" },
-    "blockParts": { "$ref": "#/$defs/blockParts" }
+    "blockParts": { "$ref": "#/$defs/blockParts" },
+    "preview": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "title": { "type": "string" },
+        "notes": { "type": "string" },
+        "artifact": { "type": "string" },
+        "screenshot": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "provider": { "type": "string" },
+                "reason": { "type": "string" }
+              }
+            }
+          ]
+        }
+      }
+    }
   },
   "$defs": {
     "vector3": {
@@ -91,6 +158,74 @@
       "minItems": 3,
       "maxItems": 4,
       "items": { "type": "number" }
+    },
+    "profileReference": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "profile": { "type": "string" },
+            "id": { "type": "string" },
+            "state": { "type": "string" },
+            "states": { "type": "array", "items": { "type": "string" } },
+            "variant": { "type": "string" },
+            "variants": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "preset": { "type": "string" },
+        "kind": { "type": "string" },
+        "type": { "type": "string" },
+        "glow_intensity": { "type": "number", "minimum": 0 },
+        "glowIntensity": { "type": "number", "minimum": 0 },
+        "bloom_intensity": { "type": "number", "minimum": 0 },
+        "bloomIntensity": { "type": "number", "minimum": 0 },
+        "pulse_speed": { "type": "number", "minimum": 0 },
+        "pulseSpeed": { "type": "number", "minimum": 0 },
+        "pulse_min_alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "pulseMinAlpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "pulse_max_alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "pulseMaxAlpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "flicker_intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "flickerIntensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scanline_strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scanlineStrength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hue_shift_speed": { "type": "number" },
+        "hueShiftSpeed": { "type": "number" },
+        "depth_bias": { "type": "number" },
+        "depthBias": { "type": "number" },
+        "advanced_enabled": { "type": "boolean" },
+        "advancedEnabled": { "type": "boolean" },
+        "bloom_radius": { "type": "number", "minimum": 0 },
+        "bloomRadius": { "type": "number", "minimum": 0 },
+        "bloom_threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bloomThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bloom_passes": { "type": "integer", "minimum": 0 },
+        "bloomPasses": { "type": "integer", "minimum": 0 },
+        "screen_blend": { "type": "number", "minimum": 0, "maximum": 1 },
+        "screenBlend": { "type": "number", "minimum": 0, "maximum": 1 },
+        "target_scope": { "type": "string", "enum": ["profile", "entity", "block", "global"] },
+        "targetScope": { "type": "string", "enum": ["profile", "entity", "block", "global"] },
+        "bloom_mask_mode": { "type": "string", "enum": ["auto", "emissive", "layer_alpha", "solid", "none"] },
+        "bloomMaskMode": { "type": "string", "enum": ["auto", "emissive", "layer_alpha", "solid", "none"] },
+        "bloom_tint": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+        "bloomTint": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/colorArray" }] },
+        "bloom_mask_alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bloomMaskAlpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bloom_channel": { "type": "string", "minLength": 1 },
+        "bloomChannel": { "type": "string", "minLength": 1 },
+        "bloom_downscale": { "type": "integer", "enum": [1, 2, 4] },
+        "bloomDownscale": { "type": "integer", "enum": [1, 2, 4] },
+        "advanced_priority": { "type": "integer", "minimum": -100, "maximum": 100 },
+        "advancedPriority": { "type": "integer", "minimum": -100, "maximum": 100 }
+      }
     },
     "blockStateRule": {
       "type": "object",

@@ -249,8 +249,55 @@ public final class BuiltinTerminalTabs {
                 .toList();
     }
 
+    public static boolean addonConfigControlsStackForTests(int width, EchoConfigValueKind kind) {
+        return configControlsStack(width, kind);
+    }
+
+    public static int addonConfigRowHeightForTests(int width, EchoConfigValueKind kind, boolean hasBadges) {
+        return configEntryMinimumHeight(width, kind, hasBadges);
+    }
+
+    public static List<String> addonConfigSideTitlesForTests(String moduleId) {
+        return configSnapshotsFor(moduleId).stream()
+                .map(BuiltinTerminalTabs::configSideTitle)
+                .toList();
+    }
+
     public static TerminalAddonGuide addonGuideForTests(String chapterId) {
         return fallbackGuide(chapterId, "ECHO Chapter");
+    }
+
+    private static List<EchoConfigModuleSnapshot> configSnapshotsFor(String moduleId) {
+        List<EchoConfigModuleSnapshot> modules = new ArrayList<>();
+        TerminalConfigClientState.commonModule(moduleId).ifPresent(modules::add);
+        EchoConfigRegistry.snapshot(moduleId, EchoConfigSide.CLIENT)
+                .filter(EchoConfigModuleSnapshot::hasEntries)
+                .ifPresent(modules::add);
+        return modules;
+    }
+
+    private static String configSideTitle(EchoConfigModuleSnapshot module) {
+        return module.categories().stream()
+                .flatMap(category -> category.entries().stream())
+                .findFirst()
+                .map(entry -> entry.side() == EchoConfigSide.CLIENT ? "Client Local" : "Server/Common")
+                .orElse("Config");
+    }
+
+    private static boolean textConfigKind(EchoConfigValueKind kind) {
+        return kind != EchoConfigValueKind.BOOLEAN && kind != EchoConfigValueKind.ENUM;
+    }
+
+    private static boolean configControlsStack(int width, EchoConfigValueKind kind) {
+        return TerminalUi.shouldStackControls(width, textConfigKind(kind));
+    }
+
+    private static int configEntryMinimumHeight(int width, EchoConfigValueKind kind, boolean hasBadges) {
+        return TerminalUi.responsiveControlRowHeight(width, textConfigKind(kind), hasBadges);
+    }
+
+    private static int configControlsWidth(int width, EchoConfigValueKind kind) {
+        return TerminalUi.responsiveControlWidth(width, textConfigKind(kind));
     }
 
     private static Identifier commandDeckPriorityTab(
@@ -796,8 +843,7 @@ public final class BuiltinTerminalTabs {
                 String label, int value, boolean highGood, int x, int y, int w) {
             int danger = highGood ? 100 - value : value;
             int color = danger >= 70 ? TerminalUi.RED : danger >= 40 ? TerminalUi.AMBER : TerminalUi.GREEN;
-            graphics.fill(x, y, x + w, y + 16, 0xAA071017);
-            graphics.outline(x, y, w, 16, 0x33244352);
+            TerminalUi.dataSurfaceRow(context, graphics, x, y, w, 16, color, false, false, true);
             TerminalUi.line(context, graphics, label, x + 5, y + 4, Math.max(20, w - 34), TerminalUi.MUTED);
             TerminalUi.line(context, graphics, value + "%", x + w - 30, y + 4, 28, color);
         }
@@ -1872,7 +1918,7 @@ public final class BuiltinTerminalTabs {
 
         private int drawConfigSections(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 String moduleId, int x, int y, int width, int mouseX, int mouseY) {
-            List<EchoConfigModuleSnapshot> modules = configSnapshots(moduleId);
+            List<EchoConfigModuleSnapshot> modules = configSnapshotsFor(moduleId);
             TerminalUi.line(context, graphics, "Addon Config", x, y, width, TerminalUi.CYAN);
             TerminalUi.divider(graphics, x, y + 14, width, TerminalUi.CYAN);
             int cy = y + 22;
@@ -1886,12 +1932,9 @@ public final class BuiltinTerminalTabs {
                         x, cy, width, TerminalUi.MUTED) + 8;
             }
             for (EchoConfigModuleSnapshot module : modules) {
-                String sideTitle = module.categories().stream()
-                        .flatMap(category -> category.entries().stream())
-                        .findFirst()
-                        .map(entry -> entry.side() == EchoConfigSide.CLIENT ? "Client Local" : "Server/Common")
-                        .orElse("Config");
-                TerminalUi.section(context, graphics, sideTitle, x, cy, descriptor.accentColor());
+                String sideTitle = configSideTitle(module);
+                TerminalUi.section(context, graphics, sideTitle, x, cy,
+                        "Client Local".equals(sideTitle) ? TerminalUi.CYAN : TerminalUi.GREEN);
                 cy += 18;
                 for (EchoConfigCategorySnapshot category : module.categories()) {
                     TerminalUi.line(context, graphics, category.title(), x + 6, cy, width - 6, TerminalUi.MUTED);
@@ -1907,35 +1950,53 @@ public final class BuiltinTerminalTabs {
 
         private int drawConfigEntry(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 EchoConfigEntrySnapshot entry, int x, int y, int width, int mouseX, int mouseY) {
-            int rowH = entry.kind() == EchoConfigValueKind.BOOLEAN || entry.kind() == EchoConfigValueKind.ENUM ? 44 : 58;
+            int rowH = configEntryHeight(context, entry, width);
             boolean hovered = TerminalUi.inside(mouseX, mouseY, x, y, width, rowH);
-            graphics.fill(x, y, x + width, y + rowH, hovered ? 0x2216E8FF : 0x14000000);
-            graphics.outline(x, y, width, rowH, 0x5536D6FF);
-            TerminalUi.line(context, graphics, entry.label(), x + 8, y + 6, Math.max(80, width - 174), TerminalUi.TEXT);
-            String detail = configDetail(entry);
-            TerminalUi.wrap(context, graphics, detail, x + 8, y + 20, Math.max(80, width - 174), TerminalUi.MUTED);
-            int buttonX = x + width - 160;
+            int color = entryColor(entry);
+            boolean textEntry = textConfigKind(entry.kind());
+            boolean stacked = configControlsStack(width, entry.kind());
+            int controlsW = configControlsWidth(width, entry.kind());
+            int buttonGap = 6;
+            int buttonW = Math.max(30, (controlsW - buttonGap) / 2);
+            int controlsX = stacked ? x + 8 : x + width - controlsW - 8;
+            int copyW = stacked ? width - 16 : Math.max(72, controlsX - x - 18);
+            int copyX = x + 8;
+            List<String> badges = configBadges(entry);
+
+            TerminalUi.dataSurfaceRow(context, graphics, x, y, width, rowH, color, hovered, false, entry.editable());
+            TerminalUi.line(context, graphics, entry.label(), copyX, y + 6, copyW, entry.editable()
+                    ? TerminalUi.TEXT : TerminalUi.MUTED);
+            int detailY = y + 20;
+            if (!badges.isEmpty()) {
+                detailY = TerminalUi.statusBadgeRow(context, graphics, badges, copyX, detailY, copyW, color) + 2;
+            }
+            TerminalUi.wrap(context, graphics, configDescription(entry), copyX, detailY, copyW, TerminalUi.MUTED);
+
             if (entry.kind() == EchoConfigValueKind.BOOLEAN) {
-                drawConfigButton(context, graphics, entry.value(), buttonX, y + 7, 72, entry.editable(),
+                int buttonY = stacked ? y + rowH - 24 : y + Math.max(7, (rowH - 18) / 2);
+                drawConfigButton(context, graphics, entry.value(), controlsX, buttonY, buttonW, 18, entry.editable(),
                         hovered, entryColor(entry), () -> toggleConfig(context, entry));
-                drawConfigButton(context, graphics, "RESET", buttonX + 78, y + 7, 72, entry.editable(),
+                drawConfigButton(context, graphics, "RESET", controlsX + buttonW + buttonGap, buttonY, buttonW, 18,
+                        entry.editable(),
                         hovered, TerminalUi.AMBER, () -> resetConfig(context, entry));
             } else if (entry.kind() == EchoConfigValueKind.ENUM) {
-                drawConfigButton(context, graphics, entry.value(), buttonX, y + 7, 72, entry.editable(),
+                int buttonY = stacked ? y + rowH - 24 : y + Math.max(7, (rowH - 18) / 2);
+                drawConfigButton(context, graphics, entry.value(), controlsX, buttonY, buttonW, 18, entry.editable(),
                         hovered, entryColor(entry), () -> cycleConfig(context, entry));
-                drawConfigButton(context, graphics, "RESET", buttonX + 78, y + 7, 72, entry.editable(),
+                drawConfigButton(context, graphics, "RESET", controlsX + buttonW + buttonGap, buttonY, buttonW, 18,
+                        entry.editable(),
                         hovered, TerminalUi.AMBER, () -> resetConfig(context, entry));
             } else {
                 boolean editing = configKey(entry).equals(editingConfigKey);
                 String fieldText = editing ? editDraft + "_" : entry.value();
-                graphics.fill(buttonX, y + 6, buttonX + 150, y + 24, editing ? 0x3336D6FF : 0x22000000);
-                graphics.outline(buttonX, y + 6, 150, 18, editing ? 0xAA66E8FF : 0x5536D6FF);
-                graphics.text(context.minecraft().font,
-                        TerminalUi.trim(context.minecraft().font, fieldText, 144), buttonX + 4, y + 11,
-                        TerminalUi.opaque(entry.editable() ? TerminalUi.TEXT : TerminalUi.MUTED), false);
-                configHitboxes.add(new ConfigHitbox(buttonX, y + 6, 150, 18,
+                int fieldY = stacked ? y + rowH - 48 : y + 7;
+                int buttonY = stacked ? y + rowH - 24 : y + 31;
+                TerminalUi.inlineValueField(context, graphics, controlsX, fieldY, controlsW, 18, fieldText,
+                        color, editing, entry.editable());
+                configHitboxes.add(new ConfigHitbox(controlsX, fieldY, controlsW, 18,
                         () -> beginConfigEdit(context, entry)));
-                drawConfigButton(context, graphics, editing ? "SAVE" : "EDIT", buttonX, y + 31, 72, entry.editable(),
+                drawConfigButton(context, graphics, editing ? "SAVE" : "EDIT", controlsX, buttonY, buttonW, 18,
+                        entry.editable(),
                         hovered, TerminalUi.CYAN,
                         () -> {
                             if (editing) {
@@ -1944,19 +2005,20 @@ public final class BuiltinTerminalTabs {
                                 beginConfigEdit(context, entry);
                             }
                         });
-                drawConfigButton(context, graphics, "RESET", buttonX + 78, y + 31, 72, entry.editable(),
+                drawConfigButton(context, graphics, "RESET", controlsX + buttonW + buttonGap, buttonY, buttonW, 18,
+                        entry.editable(),
                         hovered, TerminalUi.AMBER, () -> resetConfig(context, entry));
             }
             return y + rowH;
         }
 
         private void drawConfigButton(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                String label, int x, int y, int width, boolean enabled, boolean hovered,
+                String label, int x, int y, int width, int height, boolean enabled, boolean hovered,
                 int color, Runnable action) {
-            TerminalUi.compactButton(context, graphics, x, y, width,
+            TerminalUi.compactButton(context, graphics, x, y, width, height,
                     label == null || label.isBlank() ? "-" : label.toLowerCase(java.util.Locale.ROOT),
                     color, enabled, hovered && enabled);
-            configHitboxes.add(new ConfigHitbox(x, y, width, 16, () -> {
+            configHitboxes.add(new ConfigHitbox(x, y, width, height, () -> {
                 if (!enabled) {
                     context.playRejectedSound();
                     return;
@@ -1965,7 +2027,7 @@ public final class BuiltinTerminalTabs {
             }));
         }
 
-        private String configDetail(EchoConfigEntrySnapshot entry) {
+        private static List<String> configBadges(EchoConfigEntrySnapshot entry) {
             List<String> badges = new ArrayList<>();
             if (!entry.editable()) {
                 badges.add("OP required");
@@ -1976,12 +2038,14 @@ public final class BuiltinTerminalTabs {
             if (entry.newWorldOnly()) {
                 badges.add("new chunks");
             }
+            return badges;
+        }
+
+        private String configDescription(EchoConfigEntrySnapshot entry) {
             String range = !entry.minValue().isBlank() || !entry.maxValue().isBlank()
                     ? " [" + entry.minValue() + ".." + entry.maxValue() + "]"
                     : "";
-            String prefix = badges.isEmpty() ? "" : String.join(" / ", badges) + " | ";
-            String body = entry.description().isBlank() ? "Default " + entry.defaultValue() + range : entry.description();
-            return prefix + body;
+            return entry.description().isBlank() ? "Default " + entry.defaultValue() + range : entry.description();
         }
 
         private int entryColor(EchoConfigEntrySnapshot entry) {
@@ -2001,21 +2065,8 @@ public final class BuiltinTerminalTabs {
                     TerminalConfigActionPacket.Action.REQUEST, EchoConfigSide.COMMON, "", "", ""));
         }
 
-        private List<EchoConfigModuleSnapshot> configSnapshots(String moduleId) {
-            List<EchoConfigModuleSnapshot> modules = new ArrayList<>();
-            TerminalConfigClientState.commonModule(moduleId).ifPresent(modules::add);
-            EchoConfigRegistry.snapshot(moduleId, EchoConfigSide.CLIENT)
-                    .filter(EchoConfigModuleSnapshot::hasEntries)
-                    .ifPresent(modules::add);
-            return modules;
-        }
-
-        private static int addonConfigHeight(String moduleId, int width) {
-            List<EchoConfigModuleSnapshot> modules = new ArrayList<>();
-            TerminalConfigClientState.commonModule(moduleId).ifPresent(modules::add);
-            EchoConfigRegistry.snapshot(moduleId, EchoConfigSide.CLIENT)
-                    .filter(EchoConfigModuleSnapshot::hasEntries)
-                    .ifPresent(modules::add);
+        private static int addonConfigHeight(TerminalRenderContext context, String moduleId, int width) {
+            List<EchoConfigModuleSnapshot> modules = configSnapshotsFor(moduleId);
             if (modules.isEmpty()) {
                 return 52;
             }
@@ -2025,12 +2076,27 @@ public final class BuiltinTerminalTabs {
                 categories += module.categories().size() + 1;
                 for (EchoConfigCategorySnapshot category : module.categories()) {
                     rows += category.entries().stream()
-                            .mapToInt(entry -> entry.kind() == EchoConfigValueKind.BOOLEAN
-                                    || entry.kind() == EchoConfigValueKind.ENUM ? 49 : 63)
+                            .mapToInt(entry -> configEntryHeight(context, entry, width - 6) + 5)
                             .sum();
                 }
             }
             return 34 + categories * 22 + rows + (width < 320 ? 30 : 0);
+        }
+
+        private static int configEntryHeight(TerminalRenderContext context, EchoConfigEntrySnapshot entry, int width) {
+            List<String> badges = configBadges(entry);
+            int minimum = configEntryMinimumHeight(width, entry.kind(), !badges.isEmpty());
+            boolean stacked = configControlsStack(width, entry.kind());
+            int controlsW = configControlsWidth(width, entry.kind());
+            int copyW = stacked ? Math.max(48, width - 16) : Math.max(72, width - controlsW - 26);
+            String range = !entry.minValue().isBlank() || !entry.maxValue().isBlank()
+                    ? " [" + entry.minValue() + ".." + entry.maxValue() + "]"
+                    : "";
+            String detail = entry.description().isBlank() ? "Default " + entry.defaultValue() + range : entry.description();
+            int detailH = TerminalUi.wrappedHeight(context, detail, copyW);
+            int badgeH = badges.isEmpty() ? 0 : TerminalUi.statusBadgeRowsHeight(context, badges, copyW) + 2;
+            int controlsH = stacked ? (textConfigKind(entry.kind()) ? 48 : 24) : 0;
+            return Math.max(minimum, 24 + badgeH + detailH + controlsH + 10);
         }
 
         private void beginConfigEdit(TerminalRenderContext context, EchoConfigEntrySnapshot entry) {
@@ -2101,7 +2167,7 @@ public final class BuiltinTerminalTabs {
             }
             String[] parts = editingConfigKey.split("\\|", 3);
             String moduleId = parts.length >= 2 ? parts[1] : selectedChapterId;
-            return configSnapshots(moduleId).stream()
+            return configSnapshotsFor(moduleId).stream()
                     .flatMap(module -> module.categories().stream())
                     .flatMap(category -> category.entries().stream())
                     .filter(entry -> configKey(entry).equals(editingConfigKey))
@@ -2158,7 +2224,7 @@ public final class BuiltinTerminalTabs {
                     ? 0
                     : TerminalUi.wrappedHeight(context, info.summary(), wrapWidth) + 8;
             int linkHeight = 26 + Math.max(1, links.size()) * LINK_HEIGHT;
-            int configHeight = addonConfigHeight(chapterModId(chapter), width);
+            int configHeight = addonConfigHeight(context, chapterModId(chapter), width);
             return Math.max(220,
                     98
                             + guideHeight

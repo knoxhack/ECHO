@@ -1,8 +1,8 @@
 # ECHO-7: Orbital Remnants Release Status
 
-## v1.5.0 Full Endgame Scope
+## v1.0.0 Faction Outposts Scope
 
-ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth recovery through route repair chains, explorable Low Earth Orbit, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, the Nexus Anomaly Belt, ECHO-0, post-ECHO-0 surveys, faction contracts, and the final survey network seal.
+ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth recovery through route repair chains, explorable Low Earth Orbit, the Lunar Scar Zone, Mars Ash Basin, Europa Cryo Ocean, Saturn Ring Graveyard, Titan Methane Shelf, the Nexus Anomaly Belt, ECHO-0, post-ECHO-0 surveys, NPC-driven faction outpost charters, and the final survey network seal.
 
 ## Implemented Systems
 
@@ -16,8 +16,8 @@ ECHO-7 is complete as a standalone NeoForge space-survival arc from ruined Earth
 - Terminal-led route surveys for Orbit, Moon, Mars, Europa, Saturn, Titan, and post-ECHO-0 Nexus stabilization.
 - Route repair chains with compatibility-safe gates, repair resources, visible terminal counts, and old-save bypass handling.
 - Hostile orbital/deep-space mobs, major encounters with command bars, route-relevant rewards, and ECHO-0 final protocol completion.
-- Final network completion after ECHO-0, all route surveys, Nexus stabilization, and three faction contracts.
-- Faction pledge items, reward bundles, custom weapons, loot tables, advancements, docs, CI, and 44 required Orbital GameTests.
+- Final network completion after ECHO-0, all route surveys, Nexus stabilization, and three Tier I faction outpost charters.
+- Faction pledge items, NPC outpost contacts, reward bundles, custom weapons, loot tables, advancements, docs, CI, and required Orbital GameTests.
 
 ## Release Checks
 

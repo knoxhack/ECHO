@@ -1,43 +1,43 @@
 package com.knoxhack.echoashfallprotocol.client.renderer;
 
-import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.entity.NexusPressureMobEntity;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.resources.Identifier;
 
-public class NexusPressureMobRenderer extends HumanoidMobRenderer<NexusPressureMobEntity, NexusPressureMobRenderer.State, HumanoidModel<NexusPressureMobRenderer.State>> {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "textures/entity/glowing_ghoul.png");
-
-    public NexusPressureMobRenderer(EntityRendererProvider.Context context) {
-        super(context, new HumanoidModel<>(context.bakeLayer(ModelLayers.ZOMBIE)), 0.55F);
+public final class NexusPressureMobRenderer {
+    private NexusPressureMobRenderer() {
     }
 
-    @Override
-    public State createRenderState() {
-        return new State();
+    public static EntityRendererProvider<NexusPressureMobEntity> humanoid(String entityName) {
+        return context -> new Humanoid(context, entityName);
     }
 
-    @Override
-    public void extractRenderState(NexusPressureMobEntity entity, State state, float partialTick) {
-        super.extractRenderState(entity, state, partialTick);
-        state.tint = entity.profile().accentColor();
+    public static EntityRendererProvider<NexusPressureMobEntity> heavy(String entityName) {
+        return context -> new Heavy(context, entityName);
     }
 
-    @Override
-    protected int getModelTint(State state) {
-        return state.tint;
+    public static EntityRendererProvider<NexusPressureMobEntity> crawler(String entityName) {
+        return context -> new Crawler(context, entityName);
     }
 
-    @Override
-    public Identifier getTextureLocation(State state) {
-        return TEXTURE;
+    private static int tint(NexusPressureMobEntity entity) {
+        return entity.profile().accentColor();
     }
 
-    public static class State extends HumanoidRenderState {
-        private int tint = 0xFFFFFFFF;
+    private static final class Humanoid extends AshfallBoardHumanoidRenderer<NexusPressureMobEntity> {
+        private Humanoid(EntityRendererProvider.Context context, String entityName) {
+            super(context, entityName, "glowing_ghoul", 0.55F, 1.0F, NexusPressureMobRenderer::tint);
+        }
+    }
+
+    private static final class Heavy extends AshfallBoardHeavyBossRenderer<NexusPressureMobEntity> {
+        private Heavy(EntityRendererProvider.Context context, String entityName) {
+            super(context, entityName, 0.85F, NexusPressureMobRenderer::tint);
+        }
+    }
+
+    private static final class Crawler extends AshfallBoardCrawlerRenderer<NexusPressureMobEntity> {
+        private Crawler(EntityRendererProvider.Context context, String entityName) {
+            super(context, entityName, 0.35F, NexusPressureMobRenderer::tint);
+        }
     }
 }

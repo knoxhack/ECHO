@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/seed_vault_terminal"
+    "model": "echoagriculturereclamation:item/seed_vault_terminal"
   }
 }

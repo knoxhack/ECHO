@@ -10,12 +10,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 
 public final class TerminalRecipeRegistry {
     private static final Map<Identifier, TerminalRecipeProvider> PROVIDERS = new ConcurrentHashMap<>();
+    private static final List<Runnable> CHANGE_LISTENERS = new CopyOnWriteArrayList<>();
+    private static final AtomicLong REVISION = new AtomicLong();
     private static volatile List<TerminalRecipeProvider> sortedProviders = List.of();
 
     private TerminalRecipeRegistry() {
@@ -30,11 +34,28 @@ public final class TerminalRecipeRegistry {
         if (previous != null && previous != provider) {
             throw new IllegalArgumentException("Duplicate terminal recipe provider id: " + id);
         }
-        ensureSorted();
+        if (previous == null) {
+            ensureSorted();
+            notifyChanged();
+        }
     }
 
     public static List<TerminalRecipeProvider> providers() {
         return sortedProviders;
+    }
+
+    public static long revision() {
+        return REVISION.get();
+    }
+
+    public static void addChangeListener(Runnable listener) {
+        if (listener != null && !CHANGE_LISTENERS.contains(listener)) {
+            CHANGE_LISTENERS.add(listener);
+        }
+    }
+
+    public static void removeChangeListener(Runnable listener) {
+        CHANGE_LISTENERS.remove(listener);
     }
 
     public static List<TerminalRecipeCategory> categories(Player player) {
@@ -135,6 +156,7 @@ public final class TerminalRecipeRegistry {
     public static void clearForTests() {
         PROVIDERS.clear();
         sortedProviders = List.of();
+        notifyChanged();
     }
 
     public static void withClearedForTests(Runnable runnable) {
@@ -142,12 +164,25 @@ public final class TerminalRecipeRegistry {
         List<TerminalRecipeProvider> sortedSnapshot = sortedProviders;
         PROVIDERS.clear();
         sortedProviders = List.of();
+        notifyChanged();
         try {
             runnable.run();
         } finally {
             PROVIDERS.clear();
             PROVIDERS.putAll(snapshot);
             sortedProviders = sortedSnapshot;
+            notifyChanged();
+        }
+    }
+
+    private static void notifyChanged() {
+        REVISION.incrementAndGet();
+        for (Runnable listener : CHANGE_LISTENERS) {
+            try {
+                listener.run();
+            } catch (RuntimeException exception) {
+                EchoTerminal.LOGGER.warn("Terminal recipe registry change listener failed.", exception);
+            }
         }
     }
 }

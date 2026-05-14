@@ -3,6 +3,8 @@ package com.knoxhack.echoindex.content;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.knoxhack.echoindex.EchoIndex;
+import com.knoxhack.echoindex.service.IndexRecipeSourceKind;
+import com.knoxhack.echoindex.service.IndexService;
 import com.knoxhack.echoindex.service.IndexSourceRecipeProvider;
 import java.io.IOException;
 import java.io.Reader;
@@ -36,6 +38,7 @@ public final class IndexSourceReloadListener
     @Override
     protected void apply(List<IndexSourceRecipeProvider.SourceFact> payload, ResourceManager manager, ProfilerFiller profiler) {
         IndexSourceRecipeProvider.INSTANCE.replaceSources(payload);
+        IndexService.INSTANCE.invalidateRecipes("source resources reloaded");
         EchoIndex.LOGGER.debug("ECHO: Index loaded {} source card fact(s).", payload.size());
     }
 
@@ -51,6 +54,7 @@ public final class IndexSourceReloadListener
                 add(facts, IndexSourceRecipeProvider.SourceFact.of(
                         itemId,
                         resourceId,
+                        blockLoot ? IndexRecipeSourceKind.BLOCK_DROP : IndexRecipeSourceKind.LOOT_TABLE,
                         blockLoot ? "Block Drop" : "Loot Source",
                         lootNotes(resourceId, blockLoot),
                         blockLoot ? Items.GRASS_BLOCK : Items.CHEST,
@@ -65,6 +69,7 @@ public final class IndexSourceReloadListener
                 add(facts, IndexSourceRecipeProvider.SourceFact.of(
                         itemId,
                         resourceId,
+                        IndexRecipeSourceKind.WORLDGEN,
                         "World Generation",
                         List.of("Referenced by world generation.", "Definition: " + displayId(resourceId)),
                         Items.GRASS_BLOCK,
@@ -139,7 +144,7 @@ public final class IndexSourceReloadListener
 
     private static void add(Map<String, IndexSourceRecipeProvider.SourceFact> facts,
             IndexSourceRecipeProvider.SourceFact fact) {
-        facts.putIfAbsent(fact.itemId() + "|" + fact.title() + "|" + fact.sourceId(), fact);
+        facts.putIfAbsent(fact.itemId() + "|" + fact.kind() + "|" + fact.title() + "|" + fact.sourceId(), fact);
     }
 
     private static String displayId(Identifier resourceId) {

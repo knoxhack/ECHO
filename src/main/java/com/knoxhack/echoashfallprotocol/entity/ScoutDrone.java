@@ -1,7 +1,10 @@
 package com.knoxhack.echoashfallprotocol.entity;
 
 import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
+import com.knoxhack.echoashfallprotocol.registry.ModItems;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -87,6 +90,10 @@ public class ScoutDrone extends PathfinderMob {
         return owner != null && !owner.isEmpty() ? UUID.fromString(owner) : null;
     }
 
+    private Player getOwnerAttacker(Entity entity) {
+        return entity instanceof Player player && player.getUUID().equals(getOwnerUUID()) ? player : null;
+    }
+
     public DroneMode getMode() {
         int ordinal = this.entityData.get(DATA_MODE);
         DroneMode[] modes = DroneMode.values();
@@ -140,6 +147,25 @@ public class ScoutDrone extends PathfinderMob {
         int modeOrdinal = input.getIntOr("Mode", DroneMode.FOLLOW.ordinal());
         DroneMode[] modes = DroneMode.values();
         setMode(modeOrdinal >= 0 && modeOrdinal < modes.length ? modes[modeOrdinal] : DroneMode.FOLLOW);
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        Player owner = getOwnerAttacker(source.getEntity());
+        if (owner != null) {
+            owner.sendSystemMessage(Component.literal("[DRONE] Friendly fire lockout engaged."));
+            return false;
+        }
+        return super.hurtServer(level, source, amount);
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+        if (getOwnerUUID() != null) {
+            level.addFreshEntity(new ItemEntity(level, getX(), getY(), getZ(),
+                    new ItemStack(ModItems.SCOUT_DRONE_ITEM.get())));
+        }
     }
 
     @Override

@@ -567,6 +567,7 @@ def export_theme(folder: str, palette: Palette) -> dict[str, object]:
     motifs = load_motifs(folder)
     mission_records = mission_icon_records()
     mission_sheets, mission_index = mission_source_sheets(folder, mission_records)
+    mission_sheet_page_count = sum(sheet["page_count"] for sheet in mission_sheets.values())
     mission_sheet_cache: dict[Path, Image.Image] = {}
     chrome_dims = chrome_dimensions()
     counts = {
@@ -575,7 +576,7 @@ def export_theme(folder: str, palette: Palette) -> dict[str, object]:
         "chrome": 0,
         "semantic_icons": 0,
         "mission_icons": 0,
-        "mission_source_sheets": len(mission_sheets),
+        "mission_source_sheets": mission_sheet_page_count,
     }
     base_files = [
         path for path in GUI_ROOT.rglob("*.png")

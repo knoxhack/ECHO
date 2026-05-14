@@ -20,30 +20,65 @@ import java.util.Map;
 import java.util.Set;
 
 public final class BakedBlockPartResolver {
+   private static final int CACHE_LIMIT = 512;
+   private static final Map<BlockState, List<BlockStateModelPart>> COLLECTED_CACHE =
+      new LinkedHashMap<>(64, 0.75F, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<BlockState, List<BlockStateModelPart>> eldest) {
+            return size() > CACHE_LIMIT;
+         }
+      };
+   private static final Map<ResolveKey, Map<String, List<BlockStateModelPart>>> RESOLVED_CACHE =
+      new LinkedHashMap<>(64, 0.75F, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<ResolveKey, Map<String, List<BlockStateModelPart>>> eldest) {
+            return size() > CACHE_LIMIT;
+         }
+      };
+
    private BakedBlockPartResolver() {
    }
 
-   public static List<BlockStateModelPart> collect(BlockState blockState) {
+   public static synchronized List<BlockStateModelPart> collect(BlockState blockState) {
       if (blockState == null) {
          return List.of();
+      }
+      List<BlockStateModelPart> cached = COLLECTED_CACHE.get(blockState);
+      if (cached != null) {
+         return cached;
       }
       BlockStateModel model = Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(blockState);
       ArrayList<BlockStateModelPart> parts = new ArrayList<>();
       model.collectParts(RandomSource.create(42L), parts);
-      return parts;
+      List<BlockStateModelPart> immutable = List.copyOf(parts);
+      COLLECTED_CACHE.put(blockState, immutable);
+      return immutable;
    }
 
-   public static Map<String, List<BlockStateModelPart>> resolve(BlockState blockState, VisualProfile profile) {
+   public static synchronized Map<String, List<BlockStateModelPart>> resolve(BlockState blockState, VisualProfile profile) {
+      if (blockState == null || profile == null || profile.blockParts().isEmpty()) {
+         return Map.of();
+      }
+      ResolveKey key = ResolveKey.from(blockState, profile);
+      Map<String, List<BlockStateModelPart>> cached = RESOLVED_CACHE.get(key);
+      if (cached != null) {
+         return cached;
+      }
       List<BlockStateModelPart> collected = collect(blockState);
-      if (profile != null && !profile.blockParts().isEmpty()) {
+      if (DebugVisualOverrides.missingPartWarnings()) {
          var report = RenderCoreProfileValidator.validateBlockPartSelectors(profile, collected.size(), blockState, availableTintIndices(collected));
          report.issues().forEach(issue -> {
-            if (DebugVisualOverrides.missingPartWarnings()) {
-               RenderCoreWarnings.warn(issue.message());
-            }
+            RenderCoreWarnings.warn(issue.message());
          });
       }
-      return resolve(collected, blockState, profile);
+      Map<String, List<BlockStateModelPart>> resolved = copyResolved(resolve(collected, blockState, profile));
+      RESOLVED_CACHE.put(key, resolved);
+      return resolved;
+   }
+
+   public static synchronized void clearCaches() {
+      COLLECTED_CACHE.clear();
+      RESOLVED_CACHE.clear();
    }
 
    public static Map<String, List<BlockStateModelPart>> resolve(List<BlockStateModelPart> collected, VisualProfile profile) {
@@ -202,5 +237,23 @@ public final class BakedBlockPartResolver {
    @SuppressWarnings({"rawtypes", "unchecked"})
    private static String serializedPropertyValue(BlockState blockState, Property property) {
       return property.getName((Comparable)blockState.getValue(property));
+   }
+
+   private static Map<String, List<BlockStateModelPart>> copyResolved(Map<String, List<BlockStateModelPart>> source) {
+      if (source == null || source.isEmpty()) {
+         return Map.of();
+      }
+      Map<String, List<BlockStateModelPart>> copy = new LinkedHashMap<>();
+      for (Map.Entry<String, List<BlockStateModelPart>> entry : source.entrySet()) {
+         copy.put(entry.getKey(), entry.getValue() == null ? List.of() : List.copyOf(entry.getValue()));
+      }
+      return Map.copyOf(copy);
+   }
+
+   private record ResolveKey(BlockState blockState, String profileId, int selectorHash) {
+      private static ResolveKey from(BlockState blockState, VisualProfile profile) {
+         String profileId = profile.id() == null ? "" : profile.id().toString();
+         return new ResolveKey(blockState, profileId, profile.blockParts().hashCode());
+      }
    }
 }

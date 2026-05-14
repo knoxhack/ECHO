@@ -2,6 +2,7 @@ package com.knoxhack.echonexusprotocol.block;
 
 import com.knoxhack.echonexusprotocol.block.entity.NexusMachineBlockEntity;
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
+import com.knoxhack.echonexusprotocol.integration.NexusMissionHooks;
 import com.knoxhack.echonexusprotocol.item.NexusScannerVisorItem;
 import com.knoxhack.echonexusprotocol.registry.ModBlockEntities;
 import com.mojang.serialization.Codec;
@@ -56,6 +57,7 @@ public class NexusMachineBlock extends Block implements EntityBlock {
             NexusPlayerData data = NexusPlayerData.get(serverPlayer);
             data.markMachineUsed(this.kind);
             NexusPlayerData.saveAndSync(serverPlayer, data);
+            NexusMissionHooks.recordMachine(serverPlayer, this.kind);
          }
          if (player.isShiftKeyDown()) {
             player.sendSystemMessage(Component.literal(machine.statusLine()));

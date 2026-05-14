@@ -2,6 +2,11 @@ package com.knoxhack.echoarmory.registry;
 
 import com.google.gson.JsonParser;
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.api.mission.InMemoryMissionRegistry;
+import com.knoxhack.echocore.api.mission.MissionDefinition;
+import com.knoxhack.echocore.api.mission.MissionHookTargets;
+import com.knoxhack.echocore.api.mission.MissionKind;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echoarmory.EchoArmory;
 import com.knoxhack.echoarmory.block.entity.ArmoryStationBlockEntity;
 import com.knoxhack.echoarmory.content.ArmoryContent;
@@ -18,6 +23,7 @@ import com.knoxhack.echoarmory.data.EquipmentTier;
 import com.knoxhack.echoarmory.data.InstabilityState;
 import com.knoxhack.echoarmory.data.InstalledModules;
 import com.knoxhack.echoarmory.integration.ArmoryCoreIntegration;
+import com.knoxhack.echoarmory.integration.ArmoryMissionCoreIntegration;
 import com.knoxhack.echoarmory.integration.ArmoryTerminalCommonIntegration;
 import com.knoxhack.echoarmory.integration.ArmoryTerminalIds;
 import com.knoxhack.echoarmory.item.ArmoryData;
@@ -92,6 +98,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("station_slot_and_transfer_safety", () -> ModGameTests::stationSlotAndTransferSafety);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_SELECTED_ACTIONS =
       TEST_FUNCTIONS.register("terminal_selected_action_paths", () -> ModGameTests::terminalSelectedActionPaths);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
+      TEST_FUNCTIONS.register("missioncore_content_registration", () -> ModGameTests::missionCoreContentRegistration);
 
    private ModGameTests() {
    }
@@ -119,6 +127,7 @@ public final class ModGameTests {
       register(event, "station_inventory_round_trip_persists_items_and_gear_state", STATION_INVENTORY_PERSISTENCE.getId());
       register(event, "station_slot_and_transfer_safety", STATION_SLOT_SAFETY.getId());
       register(event, "terminal_selected_action_paths", TERMINAL_SELECTED_ACTIONS.getId());
+      register(event, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
    }
 
    private static void moduleRegistration(GameTestHelper helper) {
@@ -485,6 +494,37 @@ public final class ModGameTests {
          }
       }
       return total;
+   }
+
+   private static void missionCoreContentRegistration(GameTestHelper helper) {
+      InMemoryMissionRegistry registry = new InMemoryMissionRegistry();
+      ArmoryMissionCoreIntegration.registerContent(registry);
+      helper.assertTrue(registry.chapter(id("armory")).isPresent(), "Armory MissionCore chapter should be owned by Armory.");
+      assertMission(helper, registry, "inspect_loadout", "scan", MissionObjectiveType.SCAN_ENTITY);
+      assertMission(helper, registry, "forge_upgrade", "upgrade", MissionObjectiveType.CRAFT_ITEM);
+      assertMission(helper, registry, "install_module", "module", MissionObjectiveType.REPAIR_MACHINE);
+      assertMission(helper, registry, "recharge_core", "recharge", MissionObjectiveType.REPAIR_MACHINE);
+      assertMission(helper, registry, "bind_loadout", "bind", MissionObjectiveType.SCAN_ENTITY);
+      helper.succeed();
+   }
+
+   private static void assertMission(
+      GameTestHelper helper,
+      InMemoryMissionRegistry registry,
+      String missionPath,
+      String objectiveKey,
+      MissionObjectiveType type
+   ) {
+      Identifier missionId = id(missionPath);
+      MissionDefinition mission = registry.missionDefinition(missionId)
+         .orElseThrow(() -> new AssertionError("Missing MissionCore mission: " + missionId));
+      helper.assertTrue(mission.kind() == MissionKind.SIDE_OP, "Armory MissionCore missions should be side ops.");
+      helper.assertTrue(!mission.rewards().isEmpty(), "Armory MissionCore mission should have a claimable reward: " + missionId);
+      helper.assertTrue(mission.objectives().size() == 1, "Armory MissionCore mission should have one direct objective: " + missionId);
+      helper.assertTrue(mission.objectives().getFirst().type() == type, "Armory objective type should stay stable: " + missionId);
+      String target = mission.objectives().getFirst().criteria().get("target");
+      helper.assertTrue(MissionHookTargets.objectiveTarget(EchoArmory.MODID, missionId, objectiveKey).toString().equals(target),
+         "Armory MissionCore objective target should use MissionHookTargets: " + missionId);
    }
 
    private static ItemStack roundTripStack(GameTestHelper helper, ItemStack stack) {

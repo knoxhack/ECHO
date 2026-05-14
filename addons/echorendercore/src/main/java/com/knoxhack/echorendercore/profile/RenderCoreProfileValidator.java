@@ -1,6 +1,7 @@
 package com.knoxhack.echorendercore.profile;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -19,8 +20,21 @@ public final class RenderCoreProfileValidator {
          int discoveredJsonCount,
          int loadedJsonCount,
          int failedJsonCount) {
+      return diagnostics(visuals, animations, particles, discoveredJsonCount, loadedJsonCount, failedJsonCount, ProfileValidationReport.EMPTY);
+   }
+
+   public static ProfileDiagnosticsReport diagnostics(
+         Map<Identifier, VisualProfile> visuals,
+         Map<Identifier, AnimationProfile> animations,
+         Map<Identifier, ParticleProfile> particles,
+         int discoveredJsonCount,
+         int loadedJsonCount,
+         int failedJsonCount,
+         ProfileValidationReport additionalValidation) {
       ProfilePerformanceReport performanceReport = analyzePerformance(visuals, animations, particles);
-      ProfileValidationReport validationReport = validate(visuals, animations, particles).merge(performanceReport.asValidationReport());
+      ProfileValidationReport validationReport = validate(visuals, animations, particles)
+         .merge(additionalValidation)
+         .merge(performanceReport.asValidationReport());
       ProfileCacheMetrics metrics = ProfileCacheMetrics.from(
          visuals,
          animations,
@@ -69,6 +83,14 @@ public final class RenderCoreProfileValidator {
          int maskedLayerCount = (int)visual.layers().stream()
             .filter(layer -> !layer.partFilter().isEmpty())
             .count();
+         int activeEffectCount = activeEffectCount(visual);
+         int effectCost = effectCost(visual);
+         int bloomCost = bloomCost(visual);
+         int advancedPassCount = advancedPassCount(visual);
+         int maskSubmissions = estimatedMaskSubmissions(visual);
+         int bloomChannelCount = estimatedBloomChannelCount(visual);
+         int bloomDownscale = estimatedBloomDownscale(visual);
+         int prioritySkips = Math.max(0, maskSubmissions - 96);
          summaries.put(visual.id().toString(), new ProfilePerformanceSummary(
             visual.id(),
             visual.layers().size(),
@@ -77,9 +99,22 @@ public final class RenderCoreProfileValidator {
             trackCount,
             emitterCount,
             maxBurst,
-            emitterRate
+            emitterRate,
+            activeEffectCount,
+            effectCost,
+            bloomCost,
+            advancedPassCount,
+            primaryEffectTargetScope(visual).id(),
+            maskSubmissions,
+            bloomChannelCount,
+            bloomDownscale,
+            prioritySkips,
+            "isolated",
+            false,
+            true
          ));
-         addPerformanceWarnings(issues, visual.id(), visual.layers().size(), emitterRate, trackCount);
+         addPerformanceWarnings(issues, visual.id(), visual.layers().size(), emitterRate, trackCount, effectCost, bloomCost,
+            advancedPassCount, maskSubmissions, bloomChannelCount, prioritySkips);
       }
       return new ProfilePerformanceReport(summaries, issues);
    }
@@ -90,6 +125,8 @@ public final class RenderCoreProfileValidator {
          warn(issues, visual.id(), "missing_base_texture", "base_texture", "Visual profile has no base texture; callers must provide a fallback texture.",
             "Add base_texture or make sure every caller supplies a fallback texture.");
       }
+      validateMaterialControls(visual, issues);
+      validateEffectControls(visual, issues);
       if (visual.animationProfile() != null && !animations.containsKey(visual.animationProfile())) {
          warn(issues, visual.id(), "missing_profile_reference", "animation_profile", "Referenced animation profile " + visual.animationProfile() + " was not loaded.",
             "Create the animation profile JSON or update animation_profile.");
@@ -125,12 +162,156 @@ public final class RenderCoreProfileValidator {
                   continue;
                }
                warn(issues, visual.id(), "unsupported_particle_option", "particles." + emitter.id() + ".options." + option,
-                  "Particle option '" + option + "' is parsed for forward compatibility but has no built-in V4 resolver.",
+                  "Particle option '" + option + "' is parsed for forward compatibility but has no built-in resolver.",
                   "Register a client particle option resolver for options.type or remove the unsupported option.");
             }
          }
       }
       validateBlockPartSelectors(visual, -1).issues().forEach(issues::add);
+   }
+
+   private static void validateEffectControls(VisualProfile visual, ArrayList<ProfileValidationIssue> issues) {
+      validateEffect(issues, visual.id(), "effects", visual.effect());
+      for (Map.Entry<String, VisualMaterial> entry : visual.materials().entrySet()) {
+         validateEffect(issues, visual.id(), "materials." + entry.getKey() + ".effects", entry.getValue().effect());
+      }
+      for (VisualLayerProfile layer : visual.layers()) {
+         validateEffect(issues, visual.id(), "layers." + layer.id() + ".effects", layer.effect());
+      }
+   }
+
+   private static void validateEffect(ArrayList<ProfileValidationIssue> issues, Identifier id, String path, VisualEffectProfile effect) {
+      VisualEffectProfile resolved = effect == null ? VisualEffectProfile.NONE : effect;
+      if (!resolved.kind().supported()) {
+         warn(issues, id, "unsupported_effect_option", path + ".preset",
+            "Effect preset is not supported by RenderCore V11.",
+            "Use none, neon, hologram, energy_field, terminal_hud, or atmosphere.");
+      }
+      if (!resolved.targetScope().supported()) {
+         warn(issues, id, "unsupported_effect_option", path + ".target_scope",
+            "Effect target_scope is not supported by RenderCore V11.",
+            "Use profile, entity, block, or global.");
+      }
+      if (!resolved.bloomMaskMode().supported()) {
+         warn(issues, id, "unsupported_effect_option", path + ".bloom_mask_mode",
+            "Effect bloom_mask_mode is not supported by RenderCore V11.",
+            "Use auto, emissive, layer_alpha, solid, or none.");
+      }
+      if (resolved.glowIntensity() > 8.0F || resolved.bloomIntensity() > 8.0F) {
+         warn(issues, id, "invalid_effect_option", path,
+            "Effect glow and bloom intensity values above 8 are outside RenderCore's supported range.",
+            "Use lower intensity values and add extra layers only where needed.");
+      }
+      if (resolved.bloomRadius() > 64.0F || resolved.bloomPasses() > 8) {
+         warn(issues, id, "invalid_effect_option", path,
+            "Effect bloom_radius above 64 or bloom_passes above 8 can overwhelm the advanced FX chain.",
+            "Use a smaller radius/pass count and layer stable emissive materials for extra punch.");
+      }
+      if (resolved.bloomMaskAlpha() != null
+         && (!Float.isFinite(resolved.bloomMaskAlpha()) || resolved.bloomMaskAlpha() < 0.0F || resolved.bloomMaskAlpha() > 1.0F)) {
+         warn(issues, id, "invalid_effect_option", path + ".bloom_mask_alpha",
+            "Effect bloom_mask_alpha must be between 0 and 1.",
+            "Clamp the bloom mask alpha or omit it to use computed layer alpha.");
+      }
+      if (resolved.bloomChannel() != null && resolved.bloomChannel().isBlank()) {
+         warn(issues, id, "invalid_effect_option", path + ".bloom_channel",
+            "Effect bloom_channel must be a nonblank string.",
+            "Use default or a short channel id such as neon, terminal, or atmosphere.");
+      }
+      if (resolved.bloomDownscale() != null && resolved.bloomDownscale() != 1
+         && resolved.bloomDownscale() != 2 && resolved.bloomDownscale() != 4) {
+         warn(issues, id, "invalid_effect_option", path + ".bloom_downscale",
+            "Effect bloom_downscale must be 1, 2, or 4.",
+            "Use 2 for the default balanced isolated bloom mask.");
+      }
+      if (resolved.advancedPriority() < -100 || resolved.advancedPriority() > 100) {
+         warn(issues, id, "invalid_effect_option", path + ".advanced_priority",
+            "Effect advanced_priority must be between -100 and 100.",
+            "Keep priority near 0 and reserve high priority for hero visuals.");
+      }
+      if (resolved.bloomCapable()) {
+         warn(issues, id, "effect_pipeline_unavailable", path + ".bloom_intensity",
+            "Bloom-capable effects require the optional client advanced FX pipeline and fall back to stable emissive rendering otherwise.",
+            "Enable advanced FX on clients that support it, and keep stable emissive values for fallback visuals.");
+      }
+      if (resolved.advancedEnabled() && resolved.bloomCapable()) {
+         warn(issues, id, "advanced_effect_config_disabled", path + ".advanced_enabled",
+            "Advanced FX is disabled by default and only runs when the client config or debug override enables it.",
+            "Keep stable emissive fallback values, or enable advanced FX per client/session.");
+      }
+      if (resolved.advancedEnabled() && resolved.bloomCapable() && resolved.bloomMaskMode() != VisualEffectBloomMaskMode.NONE) {
+         warn(issues, id, "advanced_effect_mask_unavailable", path + ".bloom_mask_mode",
+            "V11 isolated bloom masks require client-only mask render targets and fall back when unavailable.",
+            "Use bloom_mask_mode none for stable-only visuals, or keep fallback_to_stable enabled.");
+      }
+      if (resolved.bloomCapable() && !resolved.advancedEnabled()) {
+         warn(issues, id, "advanced_effect_disabled", path + ".advanced_enabled",
+            "Bloom-capable effect fields are present but advanced_enabled is false.",
+            "Set advanced_enabled to true where postprocessing is intended, or keep this as fallback-only metadata.");
+      }
+      if (resolved.pulseSpeed() > 20.0F || Math.abs(resolved.hueShiftSpeed()) > 10.0F) {
+         warn(issues, id, "invalid_effect_option", path,
+            "Effect animation speeds are high enough to flicker or become visually noisy.",
+            "Keep pulse_speed at or below 20 and hue_shift_speed between -10 and 10.");
+      }
+   }
+
+   private static void validateMaterialControls(VisualProfile visual, ArrayList<ProfileValidationIssue> issues) {
+      for (Map.Entry<String, VisualMaterial> entry : visual.materials().entrySet()) {
+         VisualMaterial material = entry.getValue();
+         if (!material.lightMode().supported()) {
+            warn(issues, visual.id(), "unsupported_material_option", "materials." + entry.getKey() + ".light_mode",
+               "Material '" + entry.getKey() + "' requests an unsupported light_mode.",
+               "Use profile, packed, fullbright, or emissive.");
+         }
+         if (!material.renderPass().supported()) {
+            warn(issues, visual.id(), "unsupported_material_option", "materials." + entry.getKey() + ".render_pass",
+               "Material '" + entry.getKey() + "' requests an unsupported render_pass.",
+               "Use auto, base, cutout, translucent, or emissive.");
+         }
+         validateLightOverride(issues, visual.id(), "materials." + entry.getKey() + ".light_override", material.lightOverride());
+         validateOverlayOverride(issues, visual.id(), "materials." + entry.getKey() + ".overlay_override", material.overlayOverride());
+         validateRenderPriority(issues, visual.id(), "materials." + entry.getKey() + ".render_priority", material.renderPriority());
+      }
+      for (VisualLayerProfile layer : visual.layers()) {
+         if (!layer.lightMode().supported()) {
+            warn(issues, visual.id(), "unsupported_material_option", "layers." + layer.id() + ".light_mode",
+               "Layer '" + layer.id() + "' requests an unsupported light_mode.",
+               "Use profile, packed, fullbright, or emissive.");
+         }
+         if (!layer.renderPass().supported()) {
+            warn(issues, visual.id(), "unsupported_material_option", "layers." + layer.id() + ".render_pass",
+               "Layer '" + layer.id() + "' requests an unsupported render_pass.",
+               "Use auto, base, cutout, translucent, or emissive.");
+         }
+         validateLightOverride(issues, visual.id(), "layers." + layer.id() + ".light_override", layer.lightOverride());
+         validateOverlayOverride(issues, visual.id(), "layers." + layer.id() + ".overlay_override", layer.overlayOverride());
+         validateRenderPriority(issues, visual.id(), "layers." + layer.id() + ".render_priority", layer.renderPriority());
+      }
+   }
+
+   private static void validateLightOverride(ArrayList<ProfileValidationIssue> issues, Identifier id, String path, Integer value) {
+      if (value != null && (value < 0 || value > 0xF000F0)) {
+         warn(issues, id, "invalid_material_option", path,
+            "light_override must be between 0 and 15728880.",
+            "Use a packed light value exposed by the renderer, or omit light_override.");
+      }
+   }
+
+   private static void validateOverlayOverride(ArrayList<ProfileValidationIssue> issues, Identifier id, String path, Integer value) {
+      if (value != null && value < 0) {
+         warn(issues, id, "invalid_material_option", path,
+            "overlay_override must be a non-negative packed overlay value.",
+            "Use OverlayTexture.NO_OVERLAY-equivalent 0 or omit overlay_override.");
+      }
+   }
+
+   private static void validateRenderPriority(ArrayList<ProfileValidationIssue> issues, Identifier id, String path, int value) {
+      if (value < -1000 || value > 1000) {
+         warn(issues, id, "invalid_material_option", path,
+            "render_priority is outside RenderCore's supported -1000..1000 range.",
+            "Keep render_priority near zero and use sort_order for coarse layer ordering.");
+      }
    }
 
    public static ProfileValidationReport validateLayerParts(VisualProfile visual, Set<String> knownParts) {
@@ -243,7 +424,88 @@ public final class RenderCoreProfileValidator {
       };
    }
 
-   private static void addPerformanceWarnings(ArrayList<ProfilePerformanceIssue> issues, Identifier id, int layerCount, float emitterRate, int trackCount) {
+   private static int activeEffectCount(VisualProfile visual) {
+      int count = visual.effect().active() ? 1 : 0;
+      count += (int)visual.materials().values().stream().filter(material -> material.effect().active()).count();
+      count += (int)visual.layers().stream().filter(layer -> visual.effectFor(layer).active()).count();
+      return count;
+   }
+
+   private static int effectCost(VisualProfile visual) {
+      int cost = visual.effect().cost();
+      cost += visual.materials().values().stream().mapToInt(material -> material.effect().cost()).sum();
+      cost += visual.layers().stream().mapToInt(layer -> visual.effectFor(layer).cost()).sum();
+      return cost;
+   }
+
+   private static int bloomCost(VisualProfile visual) {
+      int cost = visual.effect().bloomCost();
+      cost += visual.materials().values().stream().mapToInt(material -> material.effect().bloomCost()).sum();
+      cost += visual.layers().stream().mapToInt(layer -> visual.effectFor(layer).bloomCost()).sum();
+      return cost;
+   }
+
+   private static int advancedPassCount(VisualProfile visual) {
+      int count = visual.effect().advancedPassCount();
+      count += visual.materials().values().stream().mapToInt(material -> material.effect().advancedPassCount()).sum();
+      count += visual.layers().stream().mapToInt(layer -> visual.effectFor(layer).advancedPassCount()).sum();
+      return count;
+   }
+
+   private static VisualEffectTargetScope primaryEffectTargetScope(VisualProfile visual) {
+      if (visual.effect().active()) {
+         return visual.effect().targetScope();
+      }
+      for (VisualLayerProfile layer : visual.layers()) {
+         VisualEffectProfile effect = visual.effectFor(layer);
+         if (effect.active()) {
+            return effect.targetScope();
+         }
+      }
+      return VisualEffectTargetScope.PROFILE;
+   }
+
+   private static int estimatedMaskSubmissions(VisualProfile visual) {
+      int count = visual.effect().advancedEnabled() && visual.effect().bloomCapable()
+         && visual.effect().bloomMaskMode() != VisualEffectBloomMaskMode.NONE ? 1 : 0;
+      for (VisualLayerProfile layer : visual.layers()) {
+         VisualEffectProfile effect = visual.effectFor(layer);
+         if (effect.advancedEnabled() && effect.bloomCapable() && effect.bloomMaskMode() != VisualEffectBloomMaskMode.NONE) {
+            count++;
+         }
+      }
+      return count;
+   }
+
+   private static int estimatedBloomChannelCount(VisualProfile visual) {
+      HashSet<String> channels = new HashSet<>();
+      if (visual.effect().advancedEnabled() && visual.effect().bloomCapable()) {
+         channels.add(visual.effect().effectiveBloomChannel());
+      }
+      for (VisualLayerProfile layer : visual.layers()) {
+         VisualEffectProfile effect = visual.effectFor(layer);
+         if (effect.advancedEnabled() && effect.bloomCapable() && effect.bloomMaskMode() != VisualEffectBloomMaskMode.NONE) {
+            channels.add(effect.effectiveBloomChannel());
+         }
+      }
+      return channels.size();
+   }
+
+   private static int estimatedBloomDownscale(VisualProfile visual) {
+      if (visual.effect().bloomDownscale() != null) {
+         return visual.effect().effectiveBloomDownscale(2);
+      }
+      for (VisualLayerProfile layer : visual.layers()) {
+         VisualEffectProfile effect = visual.effectFor(layer);
+         if (effect.bloomDownscale() != null) {
+            return effect.effectiveBloomDownscale(2);
+         }
+      }
+      return 2;
+   }
+
+   private static void addPerformanceWarnings(ArrayList<ProfilePerformanceIssue> issues, Identifier id, int layerCount, float emitterRate,
+         int trackCount, int effectCost, int bloomCost, int advancedPassCount, int maskSubmissions, int bloomChannelCount, int prioritySkips) {
       if (layerCount > 12) {
          issues.add(new ProfilePerformanceIssue(id, "profile_perf_high_layer_count", ProfileValidationSeverity.WARNING,
             "Visual profile has " + layerCount + " layer(s), which can become expensive when many instances render.", layerCount, 12));
@@ -255,6 +517,29 @@ public final class RenderCoreProfileValidator {
       if (trackCount > 96) {
          issues.add(new ProfilePerformanceIssue(id, "profile_perf_high_animation_track_count", ProfileValidationSeverity.WARNING,
             "Animation profile contains " + trackCount + " track(s).", trackCount, 96));
+      }
+      if (effectCost > 18) {
+         issues.add(new ProfilePerformanceIssue(id, "profile_perf_high_effect_cost", ProfileValidationSeverity.WARNING,
+            "Visual profile has estimated effect cost " + effectCost + " from active V11 effects.", effectCost, 18));
+      }
+      if (bloomCost > 24) {
+         issues.add(new ProfilePerformanceIssue(id, "profile_perf_high_bloom_cost", ProfileValidationSeverity.WARNING,
+            "Visual profile has estimated bloom cost " + bloomCost + " from advanced FX settings.", bloomCost, 24));
+      }
+      if (maskSubmissions > 96 || advancedPassCount > 4) {
+         issues.add(new ProfilePerformanceIssue(id, "advanced_effect_budget_exceeded", ProfileValidationSeverity.WARNING,
+            "Visual profile estimates " + maskSubmissions + " isolated bloom mask submission(s) and " + advancedPassCount + " pass(es).",
+            Math.max(maskSubmissions, advancedPassCount), maskSubmissions > 96 ? 96 : 4));
+      }
+      if (bloomChannelCount > 4) {
+         issues.add(new ProfilePerformanceIssue(id, "advanced_effect_channel_limit", ProfileValidationSeverity.WARNING,
+            "Visual profile estimates " + bloomChannelCount + " bloom channel(s), above the default V11 channel budget.",
+            bloomChannelCount, 4));
+      }
+      if (prioritySkips > 0) {
+         issues.add(new ProfilePerformanceIssue(id, "advanced_effect_budget_exceeded", ProfileValidationSeverity.WARNING,
+            "Visual profile may skip " + prioritySkips + " low-priority isolated bloom submission(s) at the default budget.",
+            prioritySkips, 0));
       }
    }
 

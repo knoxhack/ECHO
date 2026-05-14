@@ -329,7 +329,9 @@ public class OreGrinderBlockEntity extends BlockEntity implements MenuProvider, 
 
         register(recipes, ModBlocks.WASTELAND_STONE.get().asItem(), 3, ModItems.IRON_SHARD.get(), 2, ModItems.COAL_DUST.get(), 1, 0.25f, 100, 250);
         register(recipes, ModBlocks.WASTELAND_TRACE_RUBBLE.get().asItem(), 2, ModItems.IRON_SHARD.get(), 2, ModItems.COPPER_SHARD.get(), 1, 0.30f, 90, 260);
+        register(recipes, ModBlocks.SCRAP_ORE.get().asItem(), 2, ModItems.SCRAP_METAL.get(), 3, ModItems.IRON_SHARD.get(), 1, 0.35f, 90, 240);
         register(recipes, ModBlocks.RUBBLE.get().asItem(), 3, Items.GRAVEL, 4, ModItems.SCRAP_METAL.get(), 1, 0.15f, 80, 200);
+        register(recipes, ModBlocks.SCATTERED_BONES.get().asItem(), 1, ModItems.ANIMAL_BONE.get(), 3, Items.BONE_MEAL, 1, 0.25f, 80, 180);
         register(recipes, ModBlocks.CONCRETE_RUBBLE.get().asItem(), 3, Items.GRAVEL, 4, ModItems.SCRAP_METAL.get(), 1, 0.20f, 90, 220);
         register(recipes, ModBlocks.CONCRETE_CHUNK.get().asItem(), 2, Items.GRAVEL, 4, ModItems.SCRAP_METAL.get(), 1, 0.30f, 100, 240);
         register(recipes, ModBlocks.INDUSTRIAL_AGGREGATE.get().asItem(), 2, ModItems.COPPER_SHARD.get(), 2, ModItems.SCRAP_WIRE.get(), 1, 0.30f, 110, 300);

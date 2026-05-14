@@ -1,0 +1,12 @@
+{
+  "id": "echotutorialcore:missing_filter",
+  "type": "HAZARD_HELP",
+  "category": "HAZARDS",
+  "title": "Missing Filter",
+  "message": "Atmospheric Scrubber or gas mask lacks a filter cartridge.",
+  "details": "Insert a Filter Cartridge to begin cleaning local air or protect your lungs.",
+  "cooldownTicks": 12000,
+  "guideModes": ["NORMAL", "ASSISTED"],
+  "priority": 80,
+  "dismissible": true
+}

@@ -2,8 +2,10 @@ package com.knoxhack.echostationfall.progression;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoHandoffs;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.world.ModDimensions;
+import com.knoxhack.echostationfall.integration.StationfallMissionHooks;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import net.minecraft.nbt.CompoundTag;
@@ -53,6 +55,9 @@ public final class StationfallProgress {
     }
 
     public static StationfallProgress get(Player player) {
+        if (player == null) {
+            return new StationfallProgress();
+        }
         return read(player.getPersistentData().getCompoundOrEmpty(ROOT));
     }
 
@@ -193,15 +198,20 @@ public final class StationfallProgress {
     }
 
     public void markBoarded(Player player) {
+        boolean first = !boarded;
         coordinatesUnlocked = true;
         boarded = true;
         save(player);
         if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.recordMilestone(serverPlayer, MILESTONE_BOARDED);
         }
+        if (first) {
+            StationfallMissionHooks.record(player, "board_station", MissionObjectiveType.ESTABLISH_ROUTE, 1, "route", "stationfall");
+        }
     }
 
     public void setSectionPower(Player player, StationSection section, StationPowerState state) {
+        StationPowerState previous = powerState(section);
         power.put(section, state);
         if (state.opensDoors()) {
             doors.put(section, true);
@@ -213,14 +223,21 @@ public final class StationfallProgress {
         if (state.stableOrBetter() && player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.recordMilestone(serverPlayer, "stationfall.power." + section.key());
         }
+        if (!previous.stableOrBetter() && state.stableOrBetter()) {
+            StationfallMissionHooks.record(player, "restore_power", MissionObjectiveType.REPAIR_MACHINE, 1, "section", section.key());
+        }
     }
 
     public void decodeLog(Player player, StationSection section) {
+        boolean first = !logDecoded(section);
         logs.put(section, true);
         save(player);
         if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.unlockArchive(serverPlayer, StationLore.crewLogId(section));
             EchoCoreServices.recordMilestone(serverPlayer, "stationfall.log." + section.key());
+        }
+        if (first) {
+            StationfallMissionHooks.record(player, "decode_logs", MissionObjectiveType.UNLOCK_RESEARCH, 1, "section", section.key());
         }
     }
 
@@ -234,6 +251,8 @@ public final class StationfallProgress {
         if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.recordMilestone(serverPlayer, "stationfall.objective." + objective.key());
         }
+        StationfallMissionHooks.record(player, "stabilize_sections", MissionObjectiveType.REPAIR_MACHINE, 1, "section", objective.key());
+        StationfallMissionHooks.recordSectionStabilized(player, objective);
         return true;
     }
 
@@ -250,35 +269,49 @@ public final class StationfallProgress {
             if (player instanceof ServerPlayer serverPlayer) {
                 EchoCoreServices.recordMilestone(serverPlayer, "stationfall.objective." + objective.key());
             }
+            StationfallMissionHooks.record(player, "stabilize_sections", MissionObjectiveType.REPAIR_MACHINE, 1, "section", objective.key());
+            StationfallMissionHooks.recordSectionStabilized(player, objective);
         }
         save(player);
         return true;
     }
 
     public void markAiOverrideObtained(Player player) {
+        boolean first = !aiOverrideObtained;
         aiOverrideObtained = true;
         save(player);
         if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.recordMilestone(serverPlayer, MILESTONE_OVERRIDE);
         }
+        if (first) {
+            StationfallMissionHooks.record(player, "ai_override", MissionObjectiveType.OBTAIN_ITEM, 1, "item", "ai_override_chip");
+        }
     }
 
     public void markBossDefeated(Player player) {
+        boolean first = !bossDefeated;
         bossDefeated = true;
         save(player);
         if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.recordMilestone(serverPlayer, MILESTONE_BOSS);
             EchoCoreServices.unlockArchive(serverPlayer, StationLore.STATION_MOTHER_RECORD);
         }
+        if (first) {
+            StationfallMissionHooks.record(player, "station_mother", MissionObjectiveType.KILL_ENTITY, 1, "entity", "station_mother");
+        }
     }
 
     public void markBlackboxRetrieved(Player player) {
+        boolean first = !blackboxRetrieved;
         blackboxRetrieved = true;
         bossDefeated = true;
         save(player);
         if (player instanceof ServerPlayer serverPlayer) {
             EchoCoreServices.recordMilestone(serverPlayer, MILESTONE_BLACKBOX);
             EchoCoreServices.unlockArchive(serverPlayer, StationLore.BLACKBOX_RECORD);
+        }
+        if (first) {
+            StationfallMissionHooks.record(player, "blackbox", MissionObjectiveType.OBTAIN_ITEM, 1, "item", "stationfall_blackbox");
         }
     }
 

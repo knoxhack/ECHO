@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "family": "station_suit",
+  "intended_runtime": "NeoForge EntityModel with RenderCorePartProvider",
+  "texture_size": [
+    64,
+    64
+  ],
+  "anchors": {
+    "core": [
+      0.0,
+      1.05,
+      0.0
+    ],
+    "eyes": [
+      0.0,
+      1.5,
+      -0.35
+    ],
+    "trail": [
+      0.0,
+      0.18,
+      0.55
+    ],
+    "ground": [
+      0.0,
+      0.04,
+      0.0
+    ],
+    "exhaust": [
+      0.0,
+      0.6,
+      0.65
+    ],
+    "scanner": [
+      0.0,
+      1.3,
+      -0.45
+    ]
+  },
+  "parts": [
+    {
+      "name": "helmet",
+      "role": "structural model part",
+      "cube": [
+        8.0,
+        8.0,
+        6.4
+      ],
+      "pivot": [
+        0.0,
+        1.5,
+        -0.25
+      ]
+    },
+    {
+      "name": "torso",
+      "role": "structural model part",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.683,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm",
+      "role": "animated locomotion limb",
+      "cube": [
+        4.0,
+        11.2,
+        4.0
+      ],
+      "pivot": [
+        -0.35,
+        0.578,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm",
+      "role": "animated locomotion limb",
+      "cube": [
+        4.0,
+        11.2,
+        4.0
+      ],
+      "pivot": [
+        0.35,
+        0.578,
+        0.0
+      ]
+    },
+    {
+      "name": "left_leg",
+      "role": "animated locomotion limb",
+      "cube": [
+        4.0,
+        11.2,
+        4.0
+      ],
+      "pivot": [
+        -0.35,
+        0.578,
+        0.0
+      ]
+    },
+    {
+      "name": "right_leg",
+      "role": "animated locomotion limb",
+      "cube": [
+        4.0,
+        11.2,
+        4.0
+      ],
+      "pivot": [
+        0.35,
+        0.578,
+        0.0
+      ]
+    },
+    {
+      "name": "life_support",
+      "role": "structural model part",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.683,
+        0.0
+      ]
+    },
+    {
+      "name": "warning_lights",
+      "role": "emissive focal point",
+      "cube": [
+        11.2,
+        14.4,
+        7.2
+      ],
+      "pivot": [
+        0.0,
+        0.683,
+        0.0
+      ]
+    }
+  ],
+  "animation_contract": {
+    "idle": [
+      "torso"
+    ],
+    "active": [
+      "torso",
+      "core"
+    ],
+    "scan": [
+      "eyes",
+      "scanner"
+    ],
+    "charge": [
+      "core"
+    ],
+    "damaged": [
+      "torso",
+      "exhaust"
+    ],
+    "corrupt": [
+      "torso",
+      "core"
+    ]
+  }
+}

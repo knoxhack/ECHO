@@ -1,6 +1,7 @@
 package com.knoxhack.echologisticsnetwork.entity;
 
 import com.knoxhack.echologisticsnetwork.service.LogisticsNetworkService;
+import com.knoxhack.echologisticsnetwork.integration.LogisticsMissionHooks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -157,6 +158,7 @@ public class CourierDroneEntity extends Vex {
          status = "delivered";
          LogisticsNetworkService.recordDeliveryStatus(level(), sourceDock, targetPos, "Delivery " + shortJob() + " delivered: " + presetId.getPath().replace('_', ' '));
          notifyOwner("Courier delivered " + presetId.getPath().replace('_', ' ') + ".");
+         recordDeliveryMission();
          returning = true;
       } else {
          failRecoverably("target inventory unavailable");
@@ -196,6 +198,16 @@ public class CourierDroneEntity extends Vex {
       ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(owner);
       if (player != null) {
          player.sendSystemMessage(Component.literal("ECHO LOGISTICS // " + line));
+      }
+   }
+
+   private void recordDeliveryMission() {
+      if (!(level() instanceof ServerLevel serverLevel) || owner == null) {
+         return;
+      }
+      ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(owner);
+      if (player != null) {
+         LogisticsMissionHooks.recordCourierDelivery(player, presetId.toString());
       }
    }
 

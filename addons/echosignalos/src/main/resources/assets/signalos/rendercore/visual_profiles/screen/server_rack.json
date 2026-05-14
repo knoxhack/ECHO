@@ -1,0 +1,13 @@
+{
+  "schema_version": 11,
+  "base_texture": "signalos:textures/item/server_rack.png",
+  "default_state": "ACTIVE",
+  "effect": {
+    "preset": "terminal_hud",
+    "glow_intensity": 0.8,
+    "pulse_speed": 0.65,
+    "scanline_strength": 0.26,
+    "target_scope": "profile"
+  },
+  "anchors": { "screen": { "offset": [0.0, 0.0, 0.0] } }
+}

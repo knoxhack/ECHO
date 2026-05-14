@@ -1,6 +1,9 @@
 package com.knoxhack.echolens.integration;
 
 import com.knoxhack.echolens.EchoLens;
+import com.knoxhack.echolens.api.LensProviderDiagnostic;
+import com.knoxhack.echolens.config.LensConfig;
+import com.knoxhack.echolens.network.ModNetwork;
 import com.knoxhack.echolens.registry.LensProviderRegistry;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
@@ -66,17 +69,29 @@ public final class LensTerminalCommonIntegration {
         Constructor<?> metric = metricClass.getConstructor(String.class, String.class, String.class, int.class);
         Object providers = metric.newInstance("Providers", Integer.toString(LensProviderRegistry.count()),
                 "Registered structured Lens providers", 0x66D9EF);
+        long enabledProviders = LensProviderRegistry.diagnostics().stream()
+                .filter(LensProviderDiagnostic::enabled)
+                .count();
+        Object enabled = metric.newInstance("Enabled", Long.toString(enabledProviders),
+                "Providers whose categories are visible in current config", 0xA6E22E);
         Object privacy = metric.newInstance("Privacy", "Public first",
                 "Inventory contents remain hidden by default", 0xA6E22E);
+        Object serverScan = metric.newInstance("Server Scan",
+                LensConfig.bool(LensConfig.SERVER_DEEP_SCAN_ENABLED, true) ? "Enabled" : "Disabled",
+                LensProviderRegistry.serverProviders().size() + " server providers / packets "
+                        + (ModNetwork.registered() ? "registered" : "offline"),
+                LensConfig.bool(LensConfig.SERVER_DEEP_SCAN_ENABLED, true) ? 0x66D9EF : 0x888888);
 
         Constructor<?> section = sectionClass.getConstructor(String.class, List.class);
         Object usage = section.newInstance("How to use", List.of(
                 "Look at a block, fluid, or entity to show the compact HUD.",
                 "Hold Shift for expanded stats such as harvest, light, redstone, and health.",
-                "Hold the Deep Scan key for categorized ECHO context."));
+                "Hold the Deep Scan key for server-verified public ECHO context."));
         Object safety = section.newInstance("Pack safety", List.of(
-                "No serverbound scan packet is sent by the MVP HUD.",
+                "Compact and expanded scans stay local and instant.",
+                "Deep Scan requests public server-verified rows through NetCore.",
                 "Protected inventories report only safe public state unless config allows more."));
+        Object diagnostics = section.newInstance("Provider diagnostics", providerDiagnosticLines());
 
         Constructor<?> link = linkClass.getConstructor(Identifier.class, String.class, String.class, int.class);
         Object archive = link.newInstance(Identifier.fromNamespaceAndPath("echoterminal", "archive"),
@@ -92,10 +107,24 @@ public final class LensTerminalCommonIntegration {
         return infoClass.getConstructor(String.class, List.class, List.class, List.class, guideClass)
                 .newInstance(
                         "Smart scanner HUD for contextual block, entity, fluid, machine, and progression diagnostics.",
-                        List.of(providers, privacy),
-                        List.of(usage, safety),
+                        List.of(providers, enabled, privacy, serverScan),
+                        List.of(usage, safety, diagnostics),
                         List.of(archive),
                         guide);
+    }
+
+    private static List<String> providerDiagnosticLines() {
+        List<LensProviderDiagnostic> diagnostics = LensProviderRegistry.diagnostics();
+        if (diagnostics.isEmpty()) {
+            return List.of("No Lens providers are currently registered.");
+        }
+        return diagnostics.stream()
+                .limit(8)
+                .map(diagnostic -> diagnostic.id()
+                        + " | p" + diagnostic.priority()
+                        + " | " + diagnostic.category()
+                        + " | " + (diagnostic.enabled() ? "enabled" : "category hidden"))
+                .toList();
     }
 
     private static final class AddonInfoHandler implements InvocationHandler {

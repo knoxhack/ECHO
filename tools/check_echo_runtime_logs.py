@@ -20,6 +20,9 @@ CRASH_SIGNATURES = (
     "Loading errors encountered",
     "Error during pre-loading phase",
     "Mixin apply failed",
+    "Caught error loading resourcepacks",
+    "Failed to create model",
+    "Can't find part",
 )
 
 IGNORED_TEST_WARNINGS = (

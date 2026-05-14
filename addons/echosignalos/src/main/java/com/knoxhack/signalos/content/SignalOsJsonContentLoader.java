@@ -14,6 +14,7 @@ import com.knoxhack.signalos.api.TerminalMission;
 import com.knoxhack.signalos.api.SignalOsApp;
 import com.knoxhack.signalos.api.SignalOsDataRecord;
 import com.knoxhack.signalos.api.SignalOsDriveData;
+import com.knoxhack.signalos.service.SignalOsComputerNetworkService;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedHashMap;
@@ -57,6 +58,7 @@ public final class SignalOsJsonContentLoader
     @Override
     protected void apply(SignalOsContentRegistry.LoadedContent loaded, ResourceManager manager, ProfilerFiller profiler) {
         SignalOsContentRegistry.replaceJsonContent(loaded);
+        SignalOsComputerNetworkService.invalidateCache();
     }
 
     public static TerminalChapter parseChapterForTests(Identifier id, JsonObject json) {
@@ -219,7 +221,12 @@ public final class SignalOsJsonContentLoader
                 .summary(string(json, "summary", ""))
                 .order(integer(json, "order", 0))
                 .accentColor(integer(json, "accentColor", 0x66E8FF))
-                .permission(string(json, "permission", "user"));
+                .permission(string(json, "permission", "user"))
+                .view(string(json, "view", ""))
+                .recordTypes(stringList(json, "recordTypes"))
+                .recordSources(stringList(json, "recordSources"))
+                .includeArchived(bool(json, "includeArchived", false))
+                .emptyText(string(json, "emptyText", "NO RECORDS AVAILABLE"));
         String icon = string(json, "icon", "");
         if (!icon.isBlank()) {
             builder.icon(icon);
@@ -333,6 +340,18 @@ public final class SignalOsJsonContentLoader
             throw new JsonParseException("Field '" + key + "' must be an array.");
         }
         return element.getAsJsonArray();
+    }
+
+    private static java.util.List<String> stringList(JsonObject json, String key) {
+        JsonArray values = array(json, key);
+        if (values == null) {
+            return java.util.List.of();
+        }
+        java.util.ArrayList<String> result = new java.util.ArrayList<>();
+        for (int i = 0; i < values.size(); i++) {
+            result.add(nonBlankStringElement(values.get(i), key + "[" + i + "]"));
+        }
+        return result;
     }
 
     private static String stringElement(JsonElement element, String fieldLabel) {

@@ -1,0 +1,13 @@
+{
+  "schema_version": 11,
+  "base_texture": "minecraft:textures/item/spyglass.png",
+  "default_state": "SCANNING",
+  "effect": {
+    "preset": "terminal_hud",
+    "glow_intensity": 0.78,
+    "pulse_speed": 0.5,
+    "scanline_strength": 0.0,
+    "target_scope": "profile"
+  },
+  "anchors": { "screen": { "offset": [0.0, 0.0, 0.0] } }
+}

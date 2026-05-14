@@ -3,6 +3,7 @@ package com.knoxhack.echoconvoyprotocol;
 import com.knoxhack.echoconvoyprotocol.client.ConvoyVehicleModel;
 import com.knoxhack.echoconvoyprotocol.client.ConvoyVehicleRenderer;
 import com.knoxhack.echoconvoyprotocol.client.ConvoyStationScreen;
+import com.knoxhack.echoconvoyprotocol.client.ConvoyUpgradeScreen;
 import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleKind;
 import com.knoxhack.echoconvoyprotocol.registry.ModEntities;
 import com.knoxhack.echoconvoyprotocol.registry.ModMenus;
@@ -26,6 +27,7 @@ public class EchoConvoyProtocolClient {
    @SubscribeEvent
    static void registerMenuScreens(RegisterMenuScreensEvent event) {
       event.register(ModMenus.CONVOY_STATION.get(), ConvoyStationScreen::new);
+      event.register(ModMenus.VEHICLE_UPGRADES.get(), ConvoyUpgradeScreen::new);
    }
 
    @SubscribeEvent
@@ -37,12 +39,12 @@ public class EchoConvoyProtocolClient {
 
    @SubscribeEvent
    static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-      event.registerEntityRenderer(ModEntities.SCRAP_BIKE.get(), ConvoyVehicleRenderer::new);
-      if (!registerRenderCoreWastelandRover(event)) {
+      if (!registerRenderCoreVehicleRenderers(event)) {
+         event.registerEntityRenderer(ModEntities.SCRAP_BIKE.get(), ConvoyVehicleRenderer::new);
          event.registerEntityRenderer(ModEntities.WASTELAND_ROVER.get(), ConvoyVehicleRenderer::new);
+         event.registerEntityRenderer(ModEntities.CARGO_CRAWLER.get(), ConvoyVehicleRenderer::new);
+         event.registerEntityRenderer(ModEntities.ARMORED_RELAY_TRUCK.get(), ConvoyVehicleRenderer::new);
       }
-      event.registerEntityRenderer(ModEntities.CARGO_CRAWLER.get(), ConvoyVehicleRenderer::new);
-      event.registerEntityRenderer(ModEntities.ARMORED_RELAY_TRUCK.get(), ConvoyVehicleRenderer::new);
    }
 
    private static void registerTerminalClientIntegration() {
@@ -55,17 +57,17 @@ public class EchoConvoyProtocolClient {
       }
    }
 
-   private static boolean registerRenderCoreWastelandRover(EntityRenderersEvent.RegisterRenderers event) {
+   private static boolean registerRenderCoreVehicleRenderers(EntityRenderersEvent.RegisterRenderers event) {
       if (!ModList.get().isLoaded("echorendercore")) {
          return false;
       }
       try {
          Class.forName("com.knoxhack.echoconvoyprotocol.integration.ConvoyRenderCoreClientIntegration")
-            .getMethod("registerWastelandRoverRenderer", EntityRenderersEvent.RegisterRenderers.class)
+            .getMethod("registerVehicleRenderers", EntityRenderersEvent.RegisterRenderers.class)
             .invoke(null, event);
          return true;
       } catch (ReflectiveOperationException exception) {
-         EchoConvoyProtocol.LOGGER.warn("ECHO Convoy Protocol RenderCore rover integration could not be registered; using fallback renderer.", exception);
+         EchoConvoyProtocol.LOGGER.warn("ECHO Convoy Protocol RenderCore vehicle integration could not be registered; using fallback renderers.", exception);
          return false;
       }
    }

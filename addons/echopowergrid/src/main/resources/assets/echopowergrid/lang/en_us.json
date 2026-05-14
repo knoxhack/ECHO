@@ -1,0 +1,25 @@
+{
+  "itemGroup.echopowergrid.powergrid": "ECHO: PowerGrid",
+
+  "block.echopowergrid.hand_crank_generator": "Hand Crank Generator",
+  "block.echopowergrid.scrap_burner_generator": "Scrap Burner Generator",
+  "block.echopowergrid.solar_panel": "Solar Panel",
+  "block.echopowergrid.creative_power_source": "Creative Power Source",
+  "block.echopowergrid.small_battery_bank": "Small Battery Bank",
+  "block.echopowergrid.low_voltage_cable": "Low Voltage Cable",
+  "block.echopowergrid.industrial_cable": "Industrial Cable",
+  "block.echopowergrid.outpost_substation": "Outpost Substation",
+  "block.echopowergrid.emergency_breaker": "Emergency Breaker",
+  "block.echopowergrid.power_meter": "Power Meter",
+  "block.echopowergrid.creative_power_sink": "Creative Power Sink",
+  "block.echopowergrid.test_power_consumer": "Test Power Consumer",
+
+  "item.echopowergrid.copper_coil": "Copper Coil",
+  "item.echopowergrid.scrap_wire": "Scrap Wire",
+  "item.echopowergrid.insulated_wire": "Insulated Wire",
+  "item.echopowergrid.power_cell": "Power Cell",
+  "item.echopowergrid.battery_core": "Battery Core",
+  "item.echopowergrid.fuse": "Fuse",
+  "item.echopowergrid.breaker_switch": "Breaker Switch",
+  "item.echopowergrid.grid_diagnostic_tool": "Grid Diagnostic Tool"
+}

@@ -29,6 +29,21 @@ MODS = (
         ROOT / "addons/echonetcore/src/main/java/com/knoxhack/echonetcore",
     ),
     (
+        "echoruntimeguard",
+        ROOT / "addons/echoruntimeguard/src/main/resources",
+        ROOT / "addons/echoruntimeguard/src/main/java/com/knoxhack/echoruntimeguard",
+    ),
+    (
+        "echothemecore",
+        ROOT / "addons/echothemecore/src/main/resources",
+        ROOT / "addons/echothemecore/src/main/java/com/knoxhack/echothemecore",
+    ),
+    (
+        "echoplayercore",
+        ROOT / "addons/echoplayercore/src/main/resources",
+        ROOT / "addons/echoplayercore/src/main/java/com/knoxhack/echoplayercore",
+    ),
+    (
         "echomissioncore",
         ROOT / "addons/echomissioncore/src/main/resources",
         ROOT / "addons/echomissioncore/src/main/java/com/knoxhack/echomissioncore",
@@ -124,20 +139,61 @@ MODS = (
         ROOT / "addons/echolens/src/main/resources",
         ROOT / "addons/echolens/src/main/java/com/knoxhack/echolens",
     ),
+    (
+        "echomultiblockcore",
+        ROOT / "addons/echomultiblockcore/src/main/resources",
+        ROOT / "addons/echomultiblockcore/src/main/java/com/knoxhack/echomultiblockcore",
+    ),
+    (
+        "echoblockworks",
+        ROOT / "addons/echoblockworks/src/main/resources",
+        ROOT / "addons/echoblockworks/src/main/java/com/knoxhack/echoblockworks",
+    ),
+    (
+        "echopowergrid",
+        ROOT / "addons/echopowergrid/src/main/resources",
+        ROOT / "addons/echopowergrid/src/main/java/com/knoxhack/echopowergrid",
+    ),
+    (
+        "echosoundcore",
+        ROOT / "addons/echosoundcore/src/main/resources",
+        ROOT / "addons/echosoundcore/src/main/java/com/knoxhack/echosoundcore",
+    ),
+    (
+        "echotutorialcore",
+        ROOT / "addons/echotutorialcore/src/main/resources",
+        ROOT / "addons/echotutorialcore/src/main/java/com/knoxhack/echotutorialcore",
+    ),
+    (
+        "echorelictech",
+        ROOT / "addons/echorelictech/src/main/resources",
+        ROOT / "addons/echorelictech/src/main/java/com/knoxhack/echorelictech",
+    ),
+    (
+        "echoweathercore",
+        ROOT / "addons/echoweathercore/src/main/resources",
+        ROOT / "addons/echoweathercore/src/main/java/com/knoxhack/echoweathercore",
+    ),
 )
 BETA_MOD_IDS = {
     "echocore",
     "echonetcore",
+    "echoruntimeguard",
+    "echothemecore",
+    "echoplayercore",
     "echoterminal",
     "echomissioncore",
     "echodatacore",
     "signalos",
     "signalosexample",
+    "echorendercore",
     "echoashfallprotocol",
     "echoorbitalremnants",
     "echonexusprotocol",
     "echoagriculturereclamation",
     "echoworldcore",
+    "echomultiblockcore",
+    "echoblockworks",
 }
 ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
 ADDON_DIR_TO_MODID = {
@@ -175,6 +231,8 @@ RELEASE_POLISH_SCAN_ROOTS = (
     ROOT / "src/main/resources",
     ROOT / "core/echocore/src/main",
     ROOT / "addons/echonetcore/src/main",
+    ROOT / "addons/echothemecore/src/main",
+    ROOT / "addons/echoplayercore/src/main",
     ROOT / "addons/echomissioncore/src/main",
     ROOT / "addons/echodatacore/src/main",
     ROOT / "addons/echoworldcore/src/main",
@@ -194,6 +252,13 @@ RELEASE_POLISH_SCAN_ROOTS = (
     ROOT / "addons/echoindex/src/main",
     ROOT / "addons/echoarmory/src/main",
     ROOT / "addons/echolens/src/main",
+    ROOT / "addons/echomultiblockcore/src/main",
+    ROOT / "addons/echoblockworks/src/main",
+    ROOT / "addons/echopowergrid/src/main",
+    ROOT / "addons/echosoundcore/src/main",
+    ROOT / "addons/echotutorialcore/src/main",
+    ROOT / "addons/echorelictech/src/main",
+    ROOT / "addons/echoweathercore/src/main",
     ROOT / ".github",
     ROOT / "README.md",
     ROOT / "GETTING_STARTED.md",
@@ -228,6 +293,8 @@ STALE_RELEASE_TOKENS = (
 MODID_CONSTANTS = {
     "EchoCore.MODID": "echocore",
     "EchoNetCore.MODID": "echonetcore",
+    "EchoThemeCore.MODID": "echothemecore",
+    "EchoPlayerCore.MODID": "echoplayercore",
     "EchoMissionCore.MODID": "echomissioncore",
     "EchoDataCore.MODID": "echodatacore",
     "EchoWorldCore.MODID": "echoworldcore",
@@ -247,6 +314,13 @@ MODID_CONSTANTS = {
     "EchoStationfall.MODID": "echostationfall",
     "EchoArmory.MODID": "echoarmory",
     "EchoLens.MODID": "echolens",
+    "EchoMultiblockCore.MODID": "echomultiblockcore",
+    "EchoBlockworks.MODID": "echoblockworks",
+    "EchoPowerGrid.MODID": "echopowergrid",
+    "EchoSoundCore.MODID": "echosoundcore",
+    "EchoTutorialCore.MODID": "echotutorialcore",
+    "EchoRelicTech.MODID": "echorelictech",
+    "EchoWeatherCore.MODID": "echoweathercore",
 }
 ALLOWED_PACKET_NAMESPACE_CONSTANTS = {
     ("echonetcore", "EchoCore.MODID"),
@@ -265,6 +339,7 @@ TEXTURE_QUALITY_MOD_IDS = {
     "echostationfall",
     "echoterminal",
     "echoarmory",
+    "echoblockworks",
 }
 LOW_DETAIL_BLOCK_EXEMPTIONS = {
     "ash_layer",
@@ -273,7 +348,17 @@ LOW_DETAIL_BLOCK_EXEMPTIONS = {
 }
 ALLOWED_PIXEL_TEXTURE_SIZES = {
     (16, 16),
+    (16, 32),
+    (16, 48),
+    (16, 64),
+    (16, 80),
+    (16, 96),
     (144, 144),
+}
+REQUIRED_16X16_ITEM_TEXTURE_MOD_IDS = {
+    "echoblackboxprotocol",
+    "echonexusprotocol",
+    "echostationfall",
 }
 REQUIRED_16X16_BLOCK_TEXTURES = {
     "acid_mud",
@@ -297,6 +382,8 @@ REQUIRED_16X16_BLOCK_TEXTURES = {
     "industrial_aggregate",
     "irradiated_cactus",
     "irradiated_crust",
+    "mutated_leaves_gray",
+    "mutated_leaves_purple",
     "mutated_wasteland_grass_block",
     "nexus_cracked_soil",
     "oil_stained_concrete",
@@ -568,6 +655,29 @@ def load_json(path: Path, errors: list[str]) -> Any | None:
     except Exception as exc:  # noqa: BLE001 - report any malformed JSON.
         errors.append(f"JSON_PARSE {rel(path)}: {exc}")
         return None
+
+
+def check_pack_metadata(pack_path: Path, errors: list[str]) -> None:
+    metadata = load_json(pack_path, errors)
+    if not isinstance(metadata, dict):
+        return
+    pack = metadata.get("pack")
+    if not isinstance(pack, dict):
+        errors.append(f"BAD_PACK_METADATA {rel(pack_path)}: missing pack object")
+        return
+
+    if "pack_format" in pack:
+        errors.append(
+            f"BAD_PACK_METADATA {rel(pack_path)}: declares legacy pack_format; "
+            "use min_format and max_format"
+        )
+
+
+def check_source_pack_metadata(errors: list[str]) -> None:
+    for pack_path in sorted(ROOT.rglob("pack.mcmeta")):
+        if any(part in SKIPPED_SCAN_DIRS for part in pack_path.relative_to(ROOT).parts):
+            continue
+        check_pack_metadata(pack_path, errors)
 
 
 def walk(value: Any) -> Iterable[Any]:
@@ -1239,6 +1349,13 @@ def check_pixel_texture_quality(modid: str, resource_root: Path, errors: list[st
                 errors.append(f"BAD_PIXEL_TEXTURE_SIZE {rel(path)}: {width}x{height}, expected {expected}")
 
             if (
+                modid in REQUIRED_16X16_ITEM_TEXTURE_MOD_IDS
+                and folder == "item"
+                and (width, height) != (16, 16)
+            ):
+                errors.append(f"BAD_ADDON_ITEM_TEXTURE_SIZE {rel(path)}: {width}x{height}, expected 16x16")
+
+            if (
                 modid == "echoashfallprotocol"
                 and folder == "block"
                 and path.stem in REQUIRED_16X16_BLOCK_TEXTURES
@@ -1443,6 +1560,7 @@ def main() -> int:
     args = parse_args()
     configure_addon_set(args.addon_set)
     errors: list[str] = []
+    check_source_pack_metadata(errors)
     for modid, resources, java_root in MODS:
         check_assets(modid, resources, errors)
         check_global_loot_modifier_paths(modid, resources, errors)

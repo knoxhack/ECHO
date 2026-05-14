@@ -23,9 +23,9 @@ function makeProject() {
     description: "Fixture",
     workspacePath: "",
     modules: [
-      { modId: "echoashfallprotocol", label: "Ashfall", version: "1.3.0", path: "." },
-      { modId: "echostationfall", label: "Stationfall", version: "1.1.0", path: "addons/echostationfall" },
-      { modId: "signalos", label: "SignalOS", version: "0.1.0", path: "addons/echosignalos" }
+      { modId: "echoashfallprotocol", label: "Ashfall", version: "1.0.0", path: "." },
+      { modId: "echostationfall", label: "Stationfall", version: "1.0.0", path: "addons/echostationfall" },
+      { modId: "signalos", label: "SignalOS", version: "1.0.0", path: "addons/echosignalos" }
     ]
   };
 }
@@ -74,11 +74,11 @@ test("jar manifest reports expected, missing, stale, duplicate, and current jars
   const modsDir = path.join(root, "mods");
   fs.mkdirSync(modsDir);
 
-  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.3.0.jar"), "ashfall-current");
-  write(path.join(buildRoot, "echostationfall", "libs", "echostationfall-1.1.0.jar"), "station-current");
-  write(path.join(modsDir, "echoashfallprotocol-1.3.0.jar"), "ashfall-current");
-  write(path.join(modsDir, "echoashfallprotocol-1.2.0.jar"), "ashfall-old");
-  write(path.join(modsDir, "echostationfall-1.1.0.jar"), "station-old-bytes");
+  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.0.0.jar"), "ashfall-current");
+  write(path.join(buildRoot, "echostationfall", "libs", "echostationfall-1.0.0.jar"), "station-current");
+  write(path.join(modsDir, "echoashfallprotocol-1.0.0.jar"), "ashfall-current");
+  write(path.join(modsDir, "echoashfallprotocol-0.9.0.jar"), "ashfall-old");
+  write(path.join(modsDir, "echostationfall-1.0.0.jar"), "station-old-bytes");
   write(path.join(modsDir, "unrelatedmod-9.9.9.jar"), "foreign");
 
   const manifest = buildJarManifest(makeProject(), makeSettings(root, modsDir), { buildRoot });
@@ -88,9 +88,9 @@ test("jar manifest reports expected, missing, stale, duplicate, and current jars
   assert.equal(manifest.summary.built, 2);
   assert.equal(manifest.summary.missing, 1);
   assert.equal(manifest.summary.current, 1);
-  assert.equal(statuses.get("echoashfallprotocol-1.3.0.jar"), "current");
-  assert.equal(statuses.get("echoashfallprotocol-1.2.0.jar"), "duplicate");
-  assert.equal(statuses.get("echostationfall-1.1.0.jar"), "stale");
+  assert.equal(statuses.get("echoashfallprotocol-1.0.0.jar"), "current");
+  assert.equal(statuses.get("echoashfallprotocol-0.9.0.jar"), "duplicate");
+  assert.equal(statuses.get("echostationfall-1.0.0.jar"), "stale");
   assert.equal(manifest.targetEntries.some((entry) => entry.fileName === "unrelatedmod-9.9.9.jar"), false);
 });
 
@@ -110,7 +110,7 @@ test("jar manifest discovers standalone project build outputs", () => {
 test("promote blocks when the configured mods folder is missing", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "noxhack-jars-blocked-"));
   const buildRoot = path.join(root, "EchoBuild", "Echo");
-  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.3.0.jar"), "ashfall-current");
+  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.0.0.jar"), "ashfall-current");
 
   assert.throws(
     () => promoteJarArtifacts(makeProject(), makeSettings(root, path.join(root, "missing-mods")), { buildRoot }),
@@ -125,12 +125,12 @@ test("promote quarantines stale jars, copies current jars, and verifies checksum
   const quarantineDir = path.join(root, "quarantine");
   const project = {
     ...makeProject(),
-    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.3.0", path: "." }]
+    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.0.0", path: "." }]
   };
   fs.mkdirSync(modsDir);
-  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.3.0.jar"), "ashfall-current");
-  write(path.join(modsDir, "echoashfallprotocol-1.3.0.jar"), "old-same-name");
-  write(path.join(modsDir, "echoashfallprotocol-1.2.0.jar"), "old-version");
+  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.0.0.jar"), "ashfall-current");
+  write(path.join(modsDir, "echoashfallprotocol-1.0.0.jar"), "old-same-name");
+  write(path.join(modsDir, "echoashfallprotocol-0.9.0.jar"), "old-version");
 
   const result = promoteJarArtifacts(project, makeSettings(root, modsDir), {
     buildRoot,
@@ -141,10 +141,10 @@ test("promote quarantines stale jars, copies current jars, and verifies checksum
   assert.equal(result.moved.length, 2);
   assert.equal(result.copied.length, 1);
   assert.equal(result.verified.length, 1);
-  assert.equal(fs.readFileSync(path.join(modsDir, "echoashfallprotocol-1.3.0.jar"), "utf-8"), "ashfall-current");
+  assert.equal(fs.readFileSync(path.join(modsDir, "echoashfallprotocol-1.0.0.jar"), "utf-8"), "ashfall-current");
   assert.equal(result.manifest.summary.current, 1);
-  assert.ok(fs.existsSync(path.join(quarantineDir, "2026-05-10T00-00-00-000Z", "echo", "echoashfallprotocol-1.2.0.jar")));
-  assert.ok(fs.existsSync(path.join(quarantineDir, "2026-05-10T00-00-00-000Z", "echo", "echoashfallprotocol-1.3.0.jar")));
+  assert.ok(fs.existsSync(path.join(quarantineDir, "2026-05-10T00-00-00-000Z", "echo", "echoashfallprotocol-0.9.0.jar")));
+  assert.ok(fs.existsSync(path.join(quarantineDir, "2026-05-10T00-00-00-000Z", "echo", "echoashfallprotocol-1.0.0.jar")));
 });
 
 test("promote fails when copied checksum does not match source", () => {
@@ -153,10 +153,10 @@ test("promote fails when copied checksum does not match source", () => {
   const modsDir = path.join(root, "mods");
   const project = {
     ...makeProject(),
-    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.3.0", path: "." }]
+    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.0.0", path: "." }]
   };
   fs.mkdirSync(modsDir);
-  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.3.0.jar"), "source-bytes");
+  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.0.0.jar"), "source-bytes");
 
   const originalCopy = fs.copyFileSync;
   fs.copyFileSync = (source, target) => {
@@ -172,7 +172,7 @@ test("promote fails when copied checksum does not match source", () => {
     fs.copyFileSync = originalCopy;
   }
 
-  assert.notEqual(checksum(fs.readFileSync(path.join(modsDir, "echoashfallprotocol-1.3.0.jar"))), checksum("source-bytes"));
+  assert.notEqual(checksum(fs.readFileSync(path.join(modsDir, "echoashfallprotocol-1.0.0.jar"))), checksum("source-bytes"));
 });
 
 test("promote explains locked target jars instead of leaking EBUSY", () => {
@@ -181,11 +181,11 @@ test("promote explains locked target jars instead of leaking EBUSY", () => {
   const modsDir = path.join(root, "mods");
   const project = {
     ...makeProject(),
-    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.3.0", path: "." }]
+    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.0.0", path: "." }]
   };
   fs.mkdirSync(modsDir);
-  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.3.0.jar"), "ashfall-current");
-  write(path.join(modsDir, "echoashfallprotocol-1.3.0.jar"), "old-same-name");
+  write(path.join(buildRoot, "root", "libs", "echoashfallprotocol-1.0.0.jar"), "ashfall-current");
+  write(path.join(modsDir, "echoashfallprotocol-1.0.0.jar"), "old-same-name");
 
   const originalRename = fs.renameSync;
   fs.renameSync = () => {
@@ -215,7 +215,7 @@ test("runJarPromotion records promote history", () => {
   const store = new CommandCenterStore(path.join(dbDir, "command-center.sqlite"));
   try {
     fs.mkdirSync(modsDir);
-    write(path.join(buildRoot, "echostationfall", "libs", "echostationfall-1.1.0.jar"), "station-current");
+    write(path.join(buildRoot, "echostationfall", "libs", "echostationfall-1.0.0.jar"), "station-current");
     const project = store.getProject("echostationfall");
     assert.ok(project);
     const settings = store.updateSettings({ echoRoot: root, modpackModsDir: modsDir });

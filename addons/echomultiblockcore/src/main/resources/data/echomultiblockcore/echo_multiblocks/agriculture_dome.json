@@ -1,0 +1,27 @@
+{
+  "id": "echomultiblockcore:agriculture_dome",
+  "display_name": "Agriculture Dome",
+  "translation_key": "multiblock.echomultiblockcore.agriculture_dome",
+  "role": "AGRICULTURE",
+  "category": "reclamation",
+  "size": [3, 2, 3],
+  "controller": "echomultiblockcore:multiblock_controller",
+  "allowed_rotations": true,
+  "mirrorable": true,
+  "layers": [["FIF","DCR","FOF"],[".S.",".P.",".A."]],
+  "palette": {
+    "F": { "tag": "echomultiblockcore:reinforced_frames" },
+    "I": { "block": "echomultiblockcore:input_crate", "component": true },
+    "O": { "block": "echomultiblockcore:output_crate", "component": true },
+    "S": { "block": "echomultiblockcore:signal_conduit", "component": true },
+    "D": { "block": "echomultiblockcore:data_bus", "component": true },
+    "P": { "block": "echomultiblockcore:power_bus", "component": true },
+    "R": { "block": "echomultiblockcore:robotic_arm", "robotics": true },
+    "A": { "block": "echomultiblockcore:auto_builder", "component": true, "optional": true },
+    "C": { "block": "echomultiblockcore:multiblock_controller", "controller": true },
+    ".": { "air": true }
+  },
+  "capabilities": ["echo:hazard_suppression","echo:item_input","echo:item_output","echo:terminal_tab"],
+  "workcells": [{"id":"echomultiblockcore:agriculture_dome/reclamation","type":"RECLAMATION","pos":[1,1,0],"size":[1,1,1]}],
+  "preview": {"color":"8af6b6"}
+}

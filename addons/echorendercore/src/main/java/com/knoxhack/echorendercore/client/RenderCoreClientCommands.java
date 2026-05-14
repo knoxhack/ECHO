@@ -1,22 +1,44 @@
 package com.knoxhack.echorendercore.client;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.knoxhack.echorendercore.EchoRenderCore;
 import com.knoxhack.echorendercore.api.IAdvancedVisualBlockEntity;
 import com.knoxhack.echorendercore.api.VisualState;
 import com.knoxhack.echorendercore.profile.BlockPartSelectorProfile;
+import com.knoxhack.echorendercore.profile.CreatorCertificationReport;
+import com.knoxhack.echorendercore.profile.CreatorExportIndex;
+import com.knoxhack.echorendercore.profile.CreatorMigrationReport;
+import com.knoxhack.echorendercore.profile.CreatorProfileCard;
+import com.knoxhack.echorendercore.profile.CreatorVisualQaReport;
 import com.knoxhack.echorendercore.profile.ProfileValidationIssue;
+import com.knoxhack.echorendercore.profile.RenderCoreCreatorPackExporter;
+import com.knoxhack.echorendercore.profile.RenderCoreProfileMigration;
 import com.knoxhack.echorendercore.profile.RenderCoreProfiles;
 import com.knoxhack.echorendercore.profile.VisualProfile;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,6 +48,9 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 public final class RenderCoreClientCommands {
+   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+   private static final String VISUAL_DIR = "rendercore/visual_profiles";
+
    private RenderCoreClientCommands() {
    }
 
@@ -38,6 +63,33 @@ public final class RenderCoreClientCommands {
                .executes(context -> validate("all"))
                .then(Commands.argument("namespace", StringArgumentType.word())
                   .executes(context -> validate(StringArgumentType.getString(context, "namespace")))))
+            .then(Commands.literal("creator")
+               .executes(context -> creatorStatus())
+               .then(Commands.literal("status")
+                  .executes(context -> creatorStatus()))
+               .then(Commands.literal("open")
+                  .executes(context -> creatorOpen()))
+               .then(Commands.literal("index")
+                  .executes(context -> creatorIndex("all"))
+                  .then(Commands.argument("namespace", StringArgumentType.word())
+                     .executes(context -> creatorIndex(StringArgumentType.getString(context, "namespace")))))
+               .then(Commands.literal("profile")
+                  .then(Commands.argument("profile", StringArgumentType.word())
+                     .executes(context -> creatorProfile(StringArgumentType.getString(context, "profile")))))
+               .then(Commands.literal("export")
+                  .executes(context -> creatorExport("all"))
+                  .then(Commands.argument("namespace", StringArgumentType.word())
+                     .executes(context -> creatorExport(StringArgumentType.getString(context, "namespace")))))
+               .then(Commands.literal("certify")
+                  .executes(context -> creatorCertify("all"))
+                  .then(Commands.argument("namespace", StringArgumentType.word())
+                     .executes(context -> creatorCertify(StringArgumentType.getString(context, "namespace")))))
+               .then(Commands.literal("migrate")
+                  .then(Commands.argument("namespace", StringArgumentType.word())
+                     .then(Commands.literal("dryrun")
+                        .executes(context -> creatorMigrate(StringArgumentType.getString(context, "namespace"), false)))
+                     .then(Commands.literal("write")
+                        .executes(context -> creatorMigrate(StringArgumentType.getString(context, "namespace"), true))))))
             .then(Commands.literal("debug")
                .then(Commands.literal("state")
                   .then(Commands.argument("state", StringArgumentType.word())
@@ -56,6 +108,27 @@ public final class RenderCoreClientCommands {
                .then(Commands.literal("anchors")
                   .then(Commands.argument("enabled", BoolArgumentType.bool())
                      .executes(context -> anchors(BoolArgumentType.getBool(context, "enabled")))))
+               .then(Commands.literal("advancedfx")
+                  .executes(context -> advancedFxStatus())
+                  .then(Commands.literal("status")
+                     .executes(context -> advancedFxStatus()))
+                  .then(Commands.literal("reset")
+                     .executes(context -> advancedFxReset()))
+                  .then(Commands.literal("evidence")
+                     .then(Commands.literal("start")
+                        .executes(context -> advancedFxEvidenceStart()))
+                     .then(Commands.literal("capture")
+                        .executes(context -> advancedFxEvidenceCapture("manual"))
+                        .then(Commands.argument("label", StringArgumentType.word())
+                           .executes(context -> advancedFxEvidenceCapture(StringArgumentType.getString(context, "label")))))
+                     .then(Commands.literal("status")
+                        .executes(context -> advancedFxEvidenceStatus()))
+                     .then(Commands.literal("export")
+                        .executes(context -> advancedFxEvidenceExport()))
+                     .then(Commands.literal("reset")
+                        .executes(context -> advancedFxEvidenceReset())))
+                  .then(Commands.argument("enabled", BoolArgumentType.bool())
+                     .executes(context -> advancedFx(BoolArgumentType.getBool(context, "enabled")))))
                .then(Commands.literal("blockparts")
                   .executes(context -> blockParts())))
       );
@@ -107,8 +180,164 @@ public final class RenderCoreClientCommands {
          .limit(6)
          .peek(RenderCoreClientCommands::messageIssue)
          .count();
-      message("RenderCore validation: " + report.summaryLine() + ". Showing " + shown + " issue(s) for " + normalized + ".");
+      if (RenderCoreAdvancedFxPipeline.compileFailed()) {
+         message("[WARNING] advanced_effect_compile_failed: " + RenderCoreAdvancedFxPipeline.unavailableReason());
+      }
+      message("RenderCore validation: " + report.summaryLine() + " / " + RenderCoreEffectPipeline.statusLine()
+         + " / mode " + RenderCoreAdvancedFxPipeline.modeLine()
+         + " / masks " + RenderCoreAdvancedFxPipeline.lastMaskSubmissionCount()
+         + " skipped " + RenderCoreAdvancedFxPipeline.lastSkippedSubmissions()
+         + " channels " + RenderCoreAdvancedFxPipeline.lastChannelCount()
+         + " downscale " + RenderCoreAdvancedFxPipeline.lastDownscale()
+         + " passes " + RenderCoreAdvancedFxPipeline.lastPassCount()
+         + " bloomCost " + RenderCoreAdvancedFxPipeline.lastBloomCost()
+         + ". Showing " + shown + " issue(s) for " + normalized + ".");
       return report.hasErrors() ? 0 : 1;
+   }
+
+   private static int creatorStatus() {
+      CreatorExportIndex export = creatorExportIndex();
+      long migrationRequired = export.certification().migrationRequiredCount();
+      long screenshots = export.cards().stream().filter(CreatorProfileCard::screenshotAvailable).count();
+      message("RenderCore Creator Workbench: profiles " + export.cards().size()
+         + ", certification " + export.certification().status().id()
+         + ", visual QA blockers " + export.visualQa().remainingBlockers().size()
+         + ", migration required " + migrationRequired
+         + ", screenshots " + screenshots
+         + ", addon coverage " + export.addonIntegrations().size()
+         + ", export root " + creatorRoot("all") + ".");
+      return 1;
+   }
+
+   private static int creatorOpen() {
+      Minecraft.getInstance().setScreen(new RenderCoreCreatorWorkbenchScreen(
+         creatorExportIndex()
+      ));
+      return 1;
+   }
+
+   private static int creatorIndex(String namespace) {
+      CreatorExportIndex export = creatorExportIndex().forNamespace(namespace);
+      String normalized = normalizeNamespace(namespace);
+      export.cards().stream()
+         .sorted(Comparator.comparing(card -> card.profileId().toString()))
+         .limit(8)
+         .forEach(card -> message("Creator profile " + card.profileId()
+            + " schema " + card.schemaVersion()
+            + " effects " + card.effectPresets()
+            + " warnings " + card.validationWarningCount()
+            + (card.migrationRequired() ? " migration_required" : "")));
+      message("RenderCore creator index " + normalized + ": " + export.summaryLine() + ".");
+      return export.cards().isEmpty() ? 0 : 1;
+   }
+
+   private static int creatorCertify(String namespace) {
+      CreatorExportIndex export = creatorExportIndex().forNamespace(namespace);
+      CreatorCertificationReport certification = export.certification();
+      certification.issueSummaries().stream()
+         .limit(8)
+         .forEach(issue -> message("Certification " + issue.severity() + " " + issue.code()
+            + " " + issue.profile() + " [" + issue.path() + "]: " + issue.message()));
+      EchoRenderCore.LOGGER.info("RenderCore creator certification {}: {}", normalizeNamespace(namespace), GSON.toJson(certification.toJson()));
+      message("RenderCore creator certification " + normalizeNamespace(namespace) + ": "
+         + certification.summaryLine() + ".");
+      return certification.failed() ? 0 : 1;
+   }
+
+   private static int creatorProfile(String profileName) {
+      Identifier id;
+      try {
+         id = Identifier.parse(profileName);
+      } catch (RuntimeException exception) {
+         message("Invalid RenderCore profile id: " + profileName);
+         return 0;
+      }
+      CreatorExportIndex export = creatorExportIndex();
+      CreatorProfileCard card = export.cards().stream()
+         .filter(value -> id.equals(value.profileId()))
+         .findFirst()
+         .orElse(null);
+      if (card == null) {
+         message("RenderCore creator profile " + id + " is not in the active V11 cache.");
+         return 0;
+      }
+      message("RenderCore creator profile " + id
+         + ": schema " + card.schemaVersion()
+         + ", layers " + card.layerCount()
+         + ", materials " + card.materialCount()
+         + ", effects " + card.effectPresets()
+         + ", warnings " + card.validationWarningCount()
+         + ", errors " + card.validationErrorCount()
+         + ", screenshot " + (card.screenshotAvailable() ? card.screenshotProvider() : "metadata-card")
+         + ".");
+      return card.validationErrorCount() > 0 ? 0 : 1;
+   }
+
+   private static int creatorExport(String namespace) {
+      CreatorExportIndex export = creatorExportIndex().forNamespace(namespace);
+      Path root = creatorRoot(namespace);
+      try {
+         Files.createDirectories(root);
+         writeJson(root.resolve("index.creator.json"), export.toJson());
+         writeJson(root.resolve("visual_qa").resolve("advancedfx.evidence.json"), export.visualQa().toJson());
+         for (var artifact : export.artifacts()) {
+            Path path = root.resolve("assets")
+               .resolve(artifact.id().getNamespace())
+               .resolve("rendercore")
+               .resolve("creator")
+               .resolve("profiles")
+               .resolve(artifact.id().getPath() + ".creator.json");
+            writeJson(path, artifact.json());
+         }
+      } catch (IOException exception) {
+         message("RenderCore creator export failed: " + exception.getMessage());
+         EchoRenderCore.LOGGER.warn("RenderCore creator export failed", exception);
+         return 0;
+      }
+      message("RenderCore creator export wrote " + export.artifacts().size()
+         + " artifact(s) and index for " + normalizeNamespace(namespace)
+         + " to " + root
+         + " with certification " + export.certification().status().id()
+         + " and " + export.visualQa().remainingBlockers().size() + " visual QA blocker(s).");
+      return 1;
+   }
+
+   private static int creatorMigrate(String namespace, boolean write) {
+      List<CreatorMigrationReport> reports = migrationReports(namespace);
+      long required = reports.stream().filter(CreatorMigrationReport::migrationRequired).count();
+      long writeSafeRequired = reports.stream().filter(CreatorMigrationReport::migrationRequired).filter(CreatorMigrationReport::writeSafe).count();
+      reports.stream()
+         .filter(CreatorMigrationReport::migrationRequired)
+         .limit(8)
+         .forEach(report -> message("Migration " + report.profileId()
+            + " schema " + report.sourceSchemaVersion()
+            + " -> " + report.targetSchemaVersion()
+            + " changes " + report.changes().size()));
+      if (write) {
+         Path root = migrationRoot();
+         try {
+            for (CreatorMigrationReport report : reports) {
+               if (!report.migrationRequired() || !report.writeSafe()) {
+                  continue;
+               }
+               Path path = root.resolve("assets")
+                  .resolve(report.profileId().getNamespace())
+                  .resolve("rendercore")
+                  .resolve("visual_profiles")
+                  .resolve(report.profileId().getPath() + ".json");
+               writeJson(path, report.migratedJson());
+            }
+         } catch (IOException exception) {
+            message("RenderCore migration write failed: " + exception.getMessage());
+            EchoRenderCore.LOGGER.warn("RenderCore migration write failed", exception);
+            return 0;
+         }
+         message("RenderCore migration wrote " + writeSafeRequired + " V11 profile(s) to " + root + ".");
+         return 1;
+      }
+      message("RenderCore migration dry-run for " + normalizeNamespace(namespace)
+         + ": scanned " + reports.size() + " profile(s), " + required + " require V11 migration.");
+      return required > 0 ? 1 : 0;
    }
 
    private static int hud(boolean enabled) {
@@ -121,6 +350,122 @@ public final class RenderCoreClientCommands {
       DebugVisualOverrides.setAnchorsEnabled(enabled);
       message("RenderCore anchor debug " + (enabled ? "enabled." : "disabled."));
       return 1;
+   }
+
+   private static int advancedFx(boolean enabled) {
+      RenderCoreEffectPipeline.setAdvancedFxEnabled(enabled);
+      String detail = enabled ? " (" + RenderCoreAdvancedFxPipeline.unavailableReason() + ")" : "";
+      message("RenderCore advanced FX session override " + (enabled ? "enabled: " : "disabled: ") + RenderCoreEffectPipeline.statusLine()
+         + " / mode " + RenderCoreAdvancedFxPipeline.modeLine() + detail + ".");
+      return 1;
+   }
+
+   private static int advancedFxStatus() {
+      String fallback = RenderCoreAdvancedFxPipeline.fallbackReason().isBlank() ? "" : " / fallback " + RenderCoreAdvancedFxPipeline.fallbackReason();
+      message("RenderCore advanced FX status: " + RenderCoreEffectPipeline.statusLine()
+         + " / mode " + RenderCoreAdvancedFxPipeline.modeLine()
+         + " / masks " + RenderCoreAdvancedFxPipeline.lastMaskSubmissionCount()
+         + " active " + RenderCoreAdvancedFxPipeline.lastEffectCount()
+         + " skipped " + RenderCoreAdvancedFxPipeline.lastSkippedSubmissions()
+         + " channels " + RenderCoreAdvancedFxPipeline.lastChannelCount()
+         + " downscale " + RenderCoreAdvancedFxPipeline.lastDownscale()
+         + " passes " + RenderCoreAdvancedFxPipeline.lastPassCount()
+         + " bloomCost " + RenderCoreAdvancedFxPipeline.lastBloomCost()
+         + fallback
+         + (RenderCoreAdvancedFxPipeline.unavailableReason().isBlank() ? "" : " / " + RenderCoreAdvancedFxPipeline.unavailableReason())
+         + ".");
+      return 1;
+   }
+
+   private static int advancedFxReset() {
+      RenderCoreEffectPipeline.resetAdvancedFxOverride();
+      message("RenderCore advanced FX session override reset: " + RenderCoreEffectPipeline.statusLine()
+         + " / mode " + RenderCoreAdvancedFxPipeline.modeLine() + ".");
+      return 1;
+   }
+
+   private static int advancedFxEvidenceStart() {
+      CreatorVisualQaReport.EvidenceSnapshot snapshot = RenderCoreVisualQaEvidence.start();
+      message("RenderCore advanced FX evidence started: " + snapshot.label()
+         + " / " + snapshot.statusLine()
+         + " / " + snapshot.modeLine() + ".");
+      return 1;
+   }
+
+   private static int advancedFxEvidenceCapture(String label) {
+      String screenshotPath = captureEvidenceScreenshot(label);
+      CreatorVisualQaReport.EvidenceSnapshot snapshot = RenderCoreVisualQaEvidence.capture(label, screenshotPath);
+      message("RenderCore advanced FX evidence captured: " + snapshot.label()
+         + " / masks " + snapshot.maskSubmissions()
+         + " active " + snapshot.activeEffects()
+         + " skipped " + snapshot.skippedSubmissions()
+         + (snapshot.screenshotPath().isBlank() ? "" : " / screenshot " + snapshot.screenshotPath())
+         + " / " + snapshot.statusLine() + ".");
+      return 1;
+   }
+
+   private static int advancedFxEvidenceStatus() {
+      CreatorVisualQaReport report = RenderCoreVisualQaEvidence.report();
+      message("RenderCore advanced FX evidence: snapshots " + report.snapshots().size()
+         + ", screenshots " + report.screenshotEvidenceCount()
+         + ", modes " + report.testedFallbackModes()
+         + ", blockers " + report.remainingBlockers()
+         + ".");
+      return report.remainingBlockers().isEmpty() ? 1 : 0;
+   }
+
+   private static int advancedFxEvidenceExport() {
+      CreatorVisualQaReport report = RenderCoreVisualQaEvidence.report();
+      Path path = creatorRoot("all").resolve("visual_qa").resolve("advancedfx.evidence.json");
+      try {
+         writeJson(path, report.toJson());
+      } catch (IOException exception) {
+         message("RenderCore advanced FX evidence export failed: " + exception.getMessage());
+         EchoRenderCore.LOGGER.warn("RenderCore advanced FX evidence export failed", exception);
+         return 0;
+      }
+      message("RenderCore advanced FX evidence exported to " + path
+         + " with " + report.remainingBlockers().size() + " blocker(s).");
+      return 1;
+   }
+
+   private static int advancedFxEvidenceReset() {
+      RenderCoreVisualQaEvidence.reset();
+      message("RenderCore advanced FX evidence reset.");
+      return 1;
+   }
+
+   private static String captureEvidenceScreenshot(String label) {
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.getMainRenderTarget() == null) {
+         return "";
+      }
+      String safeLabel = safeEvidenceLabel(label);
+      Path relative = Path.of("visual_qa", "screenshots", safeLabel + ".png");
+      Path absolute = creatorRoot("all").resolve(relative);
+      try {
+         Files.createDirectories(absolute.getParent());
+         Screenshot.grab(
+            absolute.getParent().toFile(),
+            absolute.getFileName().toString(),
+            minecraft.getMainRenderTarget(),
+            1,
+            component -> EchoRenderCore.LOGGER.info("RenderCore advanced FX evidence screenshot {}: {}", safeLabel, component.getString())
+         );
+         return relative.toString().replace('\\', '/');
+      } catch (IOException | RuntimeException exception) {
+         EchoRenderCore.LOGGER.warn("RenderCore advanced FX evidence screenshot failed for {}", safeLabel, exception);
+         return "";
+      }
+   }
+
+   private static String safeEvidenceLabel(String label) {
+      String value = label == null || label.isBlank() ? "manual" : label.toLowerCase(java.util.Locale.ROOT);
+      value = value.replaceAll("[^a-z0-9_\\-]+", "_").replaceAll("_+", "_");
+      if (value.isBlank()) {
+         return "manual";
+      }
+      return value.length() > 48 ? value.substring(0, 48) : value;
    }
 
    private static int blockParts() {
@@ -186,6 +531,93 @@ public final class RenderCoreClientCommands {
          + ", tint_indices=" + selector.tintIndices()
          + ", block_state=" + selector.blockState()
          + "}";
+   }
+
+   private static List<CreatorMigrationReport> migrationReports(String namespace) {
+      Minecraft minecraft = Minecraft.getInstance();
+      String normalized = normalizeNamespace(namespace);
+      ArrayList<CreatorMigrationReport> reports = new ArrayList<>();
+      for (Map.Entry<Identifier, Resource> entry : minecraft.getResourceManager().listResources(VISUAL_DIR, id -> id.getPath().endsWith(".json")).entrySet()) {
+         Identifier resourceId = entry.getKey();
+         Identifier id = contentId(resourceId, VISUAL_DIR);
+         if (!"all".equals(normalized) && !id.getNamespace().equals(normalized)) {
+            continue;
+         }
+         try {
+            JsonObject json = readObject(entry.getValue());
+            reports.add(RenderCoreProfileMigration.migrateVisualProfile(id, json));
+         } catch (IOException | JsonParseException | IllegalArgumentException exception) {
+            JsonObject empty = new JsonObject();
+            empty.addProperty("schema_version", VisualProfile.CURRENT_SCHEMA_VERSION);
+            reports.add(new CreatorMigrationReport(
+               id,
+               0,
+               VisualProfile.CURRENT_SCHEMA_VERSION,
+               true,
+               false,
+               List.of("source JSON could not be parsed"),
+               List.of(new ProfileValidationIssue(
+                  com.knoxhack.echorendercore.profile.ProfileValidationSeverity.ERROR,
+                  id,
+                  "migration_parse_failed",
+                  resourceId.toString(),
+                  exception.getMessage(),
+                  "Fix the source JSON before running the V11 migration writer."
+               )),
+               "generated/rendercore_migrations/assets/" + id.getNamespace() + "/rendercore/visual_profiles/" + id.getPath() + ".json",
+               empty
+            ));
+         }
+      }
+      return reports.stream()
+         .sorted(Comparator.comparing(report -> report.profileId().toString()))
+         .toList();
+   }
+
+   private static JsonObject readObject(Resource resource) throws IOException {
+      try (Reader reader = resource.openAsReader()) {
+         JsonElement root = JsonParser.parseReader(reader);
+         if (!root.isJsonObject()) {
+            throw new JsonParseException("Root must be a JSON object.");
+         }
+         return root.getAsJsonObject();
+      }
+   }
+
+   private static Identifier contentId(Identifier resourceId, String directory) {
+      String path = resourceId.getPath();
+      String prefix = directory + "/";
+      if (path.startsWith(prefix)) {
+         path = path.substring(prefix.length());
+      }
+      if (path.endsWith(".json")) {
+         path = path.substring(0, path.length() - ".json".length());
+      }
+      return Identifier.fromNamespaceAndPath(resourceId.getNamespace(), path);
+   }
+
+   private static void writeJson(Path path, JsonObject json) throws IOException {
+      Files.createDirectories(path.getParent());
+      Files.writeString(path, GSON.toJson(json), StandardCharsets.UTF_8);
+   }
+
+   private static Path creatorRoot(String namespace) {
+      return Minecraft.getInstance().gameDirectory.toPath()
+         .resolve("rendercore_creator")
+         .resolve(normalizeNamespace(namespace));
+   }
+
+   private static Path migrationRoot() {
+      return Minecraft.getInstance().gameDirectory.toPath().resolve("rendercore_migrations");
+   }
+
+   private static CreatorExportIndex creatorExportIndex() {
+      return RenderCoreCreatorPackExporter.export(RenderCoreProfiles.loaded(), RenderCoreClientScreenshotPreviewProvider.INSTANCE)
+         .withVisualQa(RenderCoreVisualQaEvidence.report());
+   }
+
+   private static String normalizeNamespace(String namespace) {
+      return namespace == null || namespace.isBlank() ? "all" : namespace.toLowerCase(java.util.Locale.ROOT);
    }
 
    private static void messageIssue(ProfileValidationIssue issue) {

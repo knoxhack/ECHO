@@ -1,6 +1,7 @@
 package com.knoxhack.echologisticsnetwork.content;
 
 import com.knoxhack.echologisticsnetwork.EchoLogisticsNetwork;
+import com.knoxhack.echocore.api.EchoCoreServices;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,7 +17,8 @@ public final class LogisticsContent {
       Identifier.fromNamespaceAndPath(EchoLogisticsNetwork.MODID, "loadout_locker"),
       Identifier.fromNamespaceAndPath(EchoLogisticsNetwork.MODID, "supply_crate"),
       Identifier.fromNamespaceAndPath(EchoLogisticsNetwork.MODID, "route_requester"),
-      Identifier.fromNamespaceAndPath(EchoLogisticsNetwork.MODID, "auto_restock_station")
+      Identifier.fromNamespaceAndPath(EchoLogisticsNetwork.MODID, "auto_restock_station"),
+      Identifier.fromNamespaceAndPath("echoindustrialnexus", "input_depot_crate")
    );
    private static volatile LoadedContent jsonContent = LoadedContent.empty();
 
@@ -31,6 +33,7 @@ public final class LogisticsContent {
       jsonContent = loaded == null ? LoadedContent.empty() : loaded;
       EchoLogisticsNetwork.LOGGER.info("ECHO Logistics loaded {} JSON categories, {} JSON loadouts, and {} JSON depot offers.",
          jsonContent.categories().size(), jsonContent.loadouts().size(), jsonContent.offers().size());
+      EchoCoreServices.invalidateIndexRecipes("logistics content changed");
    }
 
    public static List<SupplyCategory> categories() {

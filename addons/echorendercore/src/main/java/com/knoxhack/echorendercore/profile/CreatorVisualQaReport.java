@@ -1,0 +1,295 @@
+package com.knoxhack.echorendercore.profile;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * Deterministic release-evidence summary for V14 creator-pack exports.
+ */
+public record CreatorVisualQaReport(
+   String advancedFxMode,
+   String advancedFxStatus,
+   int screenshotEvidenceCount,
+   List<String> testedFallbackModes,
+   List<String> testedAddonNamespaces,
+   List<String> remainingBlockers,
+   List<EvidenceSnapshot> snapshots
+) {
+   public static final CreatorVisualQaReport EMPTY = new CreatorVisualQaReport(
+      "unverified",
+      "visual_qa_pending",
+      0,
+      List.of(),
+      List.of(),
+      List.of(
+         "isolated_bloom_evidence_missing",
+         "fullscreen_fallback_evidence_missing",
+         "stable_fallback_evidence_missing",
+         "screenshot_evidence_missing"
+      ),
+      List.of()
+   );
+
+   private static final List<String> REQUIRED_FALLBACK_MODES = List.of(
+      "isolated",
+      "fullscreen_fallback",
+      "stable_fallback",
+      "shader_unavailable",
+      "resize_reload",
+      "entity_masks",
+      "block_masks"
+   );
+
+   public CreatorVisualQaReport {
+      advancedFxMode = normalizeText(advancedFxMode, "unverified");
+      advancedFxStatus = normalizeText(advancedFxStatus, "visual_qa_pending");
+      screenshotEvidenceCount = Math.max(0, screenshotEvidenceCount);
+      testedFallbackModes = sortedStrings(testedFallbackModes);
+      testedAddonNamespaces = sortedStrings(testedAddonNamespaces);
+      remainingBlockers = sortedStrings(remainingBlockers);
+      snapshots = snapshots == null
+         ? List.of()
+         : snapshots.stream()
+            .filter(Objects::nonNull)
+            .sorted(Comparator
+               .comparing(EvidenceSnapshot::label)
+               .thenComparing(EvidenceSnapshot::statusLine)
+               .thenComparing(EvidenceSnapshot::modeLine))
+            .toList();
+   }
+
+   public static CreatorVisualQaReport fromAddonIntegrations(List<CreatorAddonIntegration> addonIntegrations) {
+      return fromSnapshots(List.of(), addonIntegrations);
+   }
+
+   public static CreatorVisualQaReport fromSnapshots(
+      List<EvidenceSnapshot> snapshots,
+      List<CreatorAddonIntegration> addonIntegrations
+   ) {
+      List<EvidenceSnapshot> safeSnapshots = snapshots == null ? List.of() : snapshots;
+      Set<String> modes = new TreeSet<>();
+      int screenshotCount = 0;
+      String latestMode = "unverified";
+      String latestStatus = "visual_qa_pending";
+
+      for (EvidenceSnapshot snapshot : safeSnapshots) {
+         if (snapshot == null) {
+            continue;
+         }
+         if (!snapshot.screenshotPath().isBlank()) {
+            screenshotCount++;
+         }
+         modes.addAll(snapshot.inferredModes());
+         latestMode = normalizeText(snapshot.modeLine(), latestMode);
+         latestStatus = normalizeText(snapshot.statusLine(), latestStatus);
+      }
+
+      Set<String> namespaces = new TreeSet<>();
+      if (addonIntegrations != null) {
+         for (CreatorAddonIntegration integration : addonIntegrations) {
+            if (integration != null && "integrated".equalsIgnoreCase(integration.status())) {
+               namespaces.add(integration.namespace());
+            }
+         }
+      }
+
+      Set<String> blockers = new TreeSet<>();
+      for (String requiredMode : REQUIRED_FALLBACK_MODES) {
+         if (!modes.contains(requiredMode)) {
+            blockers.add(requiredMode + "_evidence_missing");
+         }
+      }
+      if (screenshotCount == 0) {
+         blockers.add("screenshot_evidence_missing");
+      }
+
+      return new CreatorVisualQaReport(
+         latestMode,
+         latestStatus,
+         screenshotCount,
+         List.copyOf(modes),
+         List.copyOf(namespaces),
+         List.copyOf(blockers),
+         safeSnapshots
+      );
+   }
+
+   public CreatorVisualQaReport forNamespace(String namespace, List<CreatorAddonIntegration> addonIntegrations) {
+      String normalized = normalizeText(namespace, "all");
+      if ("all".equals(normalized)) {
+         return this;
+      }
+      Set<String> namespaces = new TreeSet<>();
+      if (addonIntegrations != null) {
+         for (CreatorAddonIntegration integration : addonIntegrations) {
+            if (integration != null
+               && normalized.equals(integration.namespace())
+               && "integrated".equalsIgnoreCase(integration.status())) {
+               namespaces.add(integration.namespace());
+            }
+         }
+      }
+      return new CreatorVisualQaReport(
+         advancedFxMode,
+         advancedFxStatus,
+         screenshotEvidenceCount,
+         testedFallbackModes,
+         List.copyOf(namespaces),
+         remainingBlockers,
+         snapshots
+      );
+   }
+
+   public JsonObject toJson() {
+      JsonObject root = new JsonObject();
+      root.addProperty("advanced_fx_mode", advancedFxMode);
+      root.addProperty("advanced_fx_status", advancedFxStatus);
+      root.addProperty("screenshot_evidence_count", screenshotEvidenceCount);
+      root.add("tested_fallback_modes", stringArray(testedFallbackModes));
+      root.add("tested_addon_namespaces", stringArray(testedAddonNamespaces));
+      root.add("remaining_blockers", stringArray(remainingBlockers));
+      JsonArray snapshotArray = new JsonArray();
+      for (EvidenceSnapshot snapshot : snapshots) {
+         snapshotArray.add(snapshot.toJson());
+      }
+      root.add("snapshots", snapshotArray);
+      return root;
+   }
+
+   public String summaryLine() {
+      return "visual_qa "
+         + advancedFxStatus
+         + " screenshots="
+         + screenshotEvidenceCount
+         + " modes="
+         + testedFallbackModes.size()
+         + " blockers="
+         + remainingBlockers.size();
+   }
+
+   private static List<String> sortedStrings(List<String> values) {
+      if (values == null) {
+         return List.of();
+      }
+      return values.stream()
+         .filter(Objects::nonNull)
+         .map(value -> normalizeText(value, ""))
+         .filter(value -> !value.isBlank())
+         .distinct()
+         .sorted()
+         .toList();
+   }
+
+   private static JsonArray stringArray(List<String> values) {
+      JsonArray array = new JsonArray();
+      for (String value : values) {
+         array.add(value);
+      }
+      return array;
+   }
+
+   private static String normalizeText(String value, String fallback) {
+      if (value == null || value.isBlank()) {
+         return fallback;
+      }
+      return value.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+   }
+
+   public record EvidenceSnapshot(
+      String label,
+      String statusLine,
+      String modeLine,
+      String fallbackReason,
+      String unavailableReason,
+      int maskSubmissions,
+      int skippedSubmissions,
+      int activeEffects,
+      int channelCount,
+      int downscale,
+      int passCount,
+      int bloomCost,
+      boolean compileFailed,
+      String screenshotPath
+   ) {
+      public EvidenceSnapshot {
+         label = normalizeText(label, "manual");
+         statusLine = normalizeText(statusLine, "effects_stable");
+         modeLine = normalizeText(modeLine, "unverified");
+         fallbackReason = normalizeText(fallbackReason, "");
+         unavailableReason = normalizeText(unavailableReason, "");
+         maskSubmissions = Math.max(0, maskSubmissions);
+         skippedSubmissions = Math.max(0, skippedSubmissions);
+         activeEffects = Math.max(0, activeEffects);
+         channelCount = Math.max(0, channelCount);
+         downscale = Math.max(0, downscale);
+         passCount = Math.max(0, passCount);
+         bloomCost = Math.max(0, bloomCost);
+         screenshotPath = sanitizePath(screenshotPath);
+      }
+
+      public List<String> inferredModes() {
+         ArrayList<String> modes = new ArrayList<>();
+         String combined = statusLine + " " + modeLine + " " + fallbackReason + " " + unavailableReason + " " + label;
+         if (combined.contains("advanced_isolated")) {
+            modes.add("isolated");
+         }
+         if (combined.contains("fullscreen_fallback")) {
+            modes.add("fullscreen_fallback");
+         }
+         if (combined.contains("stable_fallback") || combined.contains("effects_stable")) {
+            modes.add("stable_fallback");
+         }
+         if (compileFailed || combined.contains("compile_failed") || combined.contains("unavailable") || combined.contains("shader")) {
+            modes.add("shader_unavailable");
+         }
+         if (combined.contains("resize") || combined.contains("reload")) {
+            modes.add("resize_reload");
+         }
+         if (combined.contains("entity")) {
+            modes.add("entity_masks");
+         }
+         if (combined.contains("block")) {
+            modes.add("block_masks");
+         }
+         return modes;
+      }
+
+      public JsonObject toJson() {
+         JsonObject root = new JsonObject();
+         root.addProperty("label", label);
+         root.addProperty("status_line", statusLine);
+         root.addProperty("mode_line", modeLine);
+         root.addProperty("fallback_reason", fallbackReason);
+         root.addProperty("unavailable_reason", unavailableReason);
+         root.addProperty("mask_submissions", maskSubmissions);
+         root.addProperty("skipped_submissions", skippedSubmissions);
+         root.addProperty("active_effects", activeEffects);
+         root.addProperty("channel_count", channelCount);
+         root.addProperty("downscale", downscale);
+         root.addProperty("pass_count", passCount);
+         root.addProperty("bloom_cost", bloomCost);
+         root.addProperty("compile_failed", compileFailed);
+         root.addProperty("screenshot_path", screenshotPath);
+         root.add("tested_modes", stringArray(inferredModes().stream().distinct().sorted().toList()));
+         return root;
+      }
+   }
+
+   private static String sanitizePath(String value) {
+      if (value == null || value.isBlank()) {
+         return "";
+      }
+      String normalized = value.replace('\\', '/').replaceFirst("^/+", "");
+      if (normalized.matches("^[A-Za-z]:/.*")) {
+         return "";
+      }
+      return normalized;
+   }
+}

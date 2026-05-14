@@ -55,13 +55,17 @@ public record ProfileCacheMetrics(
       if (particles != null) {
          particles.keySet().forEach(id -> namespaces.add(id.getNamespace()));
       }
+      ProfileValidationReport validation = validationReport == null ? ProfileValidationReport.EMPTY : validationReport;
+      validation.issues().stream()
+         .map(ProfileValidationIssue::profileId)
+         .filter(id -> id != null)
+         .forEach(id -> namespaces.add(id.getNamespace()));
       int minSchema = 0;
       int maxSchema = 0;
       if (visuals != null && !visuals.isEmpty()) {
          minSchema = visuals.values().stream().mapToInt(VisualProfile::schemaVersion).min().orElse(0);
          maxSchema = visuals.values().stream().mapToInt(VisualProfile::schemaVersion).max().orElse(0);
       }
-      ProfileValidationReport validation = validationReport == null ? ProfileValidationReport.EMPTY : validationReport;
       ProfilePerformanceReport performance = performanceReport == null ? ProfilePerformanceReport.EMPTY : performanceReport;
       return new ProfileCacheMetrics(
          visuals == null ? 0 : visuals.size(),

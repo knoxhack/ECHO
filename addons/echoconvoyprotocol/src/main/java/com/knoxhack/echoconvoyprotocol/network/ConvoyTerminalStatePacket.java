@@ -177,11 +177,11 @@ public record ConvoyTerminalStatePacket(
          return "No owned vehicle within 12 blocks. Pair an active route vehicle with a Route Beacon.";
       }
       int distance = (int)Math.floor(Math.sqrt(vehicle.distanceToSqr(player)));
-      return "Fuel " + vehicle.fuel() + "/" + vehicle.kind().maxFuel()
-         + " | Battery " + vehicle.battery() + "/" + vehicle.kind().maxBattery()
-         + " | Damage " + vehicle.damage() + "/" + vehicle.kind().maxDamage()
+      return "Fuel " + vehicle.fuel() + "/" + vehicle.maxFuel()
+         + " | Battery " + vehicle.battery() + "/" + vehicle.maxBattery()
+         + " | Damage " + vehicle.damage() + "/" + vehicle.maxDamage()
          + " | Shielding " + vehicle.shieldingPlates() + "/" + vehicle.kind().maxShieldingPlates()
-         + " | Scanner " + vehicle.kind().scannerRange() + "m"
+         + " | Scanner " + vehicle.scannerRange() + "m"
          + " | " + distance + "m away";
    }
 
@@ -189,7 +189,7 @@ public record ConvoyTerminalStatePacket(
       if (vehicle == null) {
          return "Cargo unavailable";
       }
-      return "Cargo " + vehicle.filledCargoSlots() + "/" + vehicle.kind().cargoSlots() + " slots";
+      return "Cargo " + vehicle.filledCargoSlots() + "/" + vehicle.cargoSlots() + " slots";
    }
 
    private static List<String> cargoLines(ConvoyVehicleEntity vehicle) {
@@ -224,8 +224,8 @@ public record ConvoyTerminalStatePacket(
       ConvoyRouteDefinition definition = route.get();
       ConvoyRouteDefinition.RouteLeg leg = definition.leg(progress.activeRouteLeg());
       int remaining = remainingDistance(progress, vehicle == null ? null : vehicle.blockPosition(), leg);
-      String range = vehicle != null && vehicle.kind().scannerRange() > 0
-         ? remaining <= vehicle.kind().scannerRange() ? "within scanner range" : "outside scanner range"
+      String range = vehicle != null && vehicle.scannerRange() > 0
+         ? remaining <= vehicle.scannerRange() ? "within scanner range" : "outside scanner range"
          : "scanner unavailable";
       return leg.title()
          + " | marker " + leg.roadsideStructure()

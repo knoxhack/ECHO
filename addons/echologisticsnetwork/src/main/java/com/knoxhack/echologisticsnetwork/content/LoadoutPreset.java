@@ -13,8 +13,19 @@ public record LoadoutPreset(
    Identifier icon,
    List<LoadoutRequirement> requirements,
    List<Identifier> targetBlockTypes,
-   int deliveryTicks
+   int deliveryTicks,
+   FactoryRestockPolicy restockPolicy
 ) {
+   public LoadoutPreset(Identifier id,
+                        String title,
+                        int order,
+                        Identifier icon,
+                        List<LoadoutRequirement> requirements,
+                        List<Identifier> targetBlockTypes,
+                        int deliveryTicks) {
+      this(id, title, order, icon, requirements, targetBlockTypes, deliveryTicks, FactoryRestockPolicy.disabled());
+   }
+
    public LoadoutPreset {
       if (id == null) {
          throw new IllegalArgumentException("Loadout preset id is required.");
@@ -24,6 +35,7 @@ public record LoadoutPreset(
       requirements = List.copyOf(requirements == null ? List.of() : requirements);
       targetBlockTypes = List.copyOf(targetBlockTypes == null ? List.of() : targetBlockTypes);
       deliveryTicks = Math.max(40, deliveryTicks);
+      restockPolicy = restockPolicy == null ? FactoryRestockPolicy.disabled() : restockPolicy;
    }
 
    public Item iconItem() {

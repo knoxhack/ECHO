@@ -1,0 +1,87 @@
+package com.knoxhack.echopowergrid.block;
+
+import com.knoxhack.echopowergrid.api.EchoPowerGridApi;
+import com.knoxhack.echopowergrid.api.PowerGridSnapshot;
+import com.knoxhack.echopowergrid.block.entity.SubstationBlockEntity;
+import com.knoxhack.echopowergrid.registry.ModBlockEntities;
+import com.knoxhack.echopowergrid.grid.PowerNetworkManager;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import org.jspecify.annotations.Nullable;
+
+public class SubstationBlock extends Block implements EntityBlock {
+    public SubstationBlock(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new SubstationBlockEntity(pos, state);
+    }
+
+    @Override
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        if (level.isClientSide()) return null;
+        return type == ModBlockEntities.SUBSTATION.get() ? (l, p, s, be) -> SubstationBlockEntity.tick(l, p, s, (SubstationBlockEntity) be) : null;
+    }
+
+    @Override
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (player.isShiftKeyDown()) {
+            PowerGridSnapshot snap = EchoPowerGridApi.getSnapshot(level, pos);
+            player.sendSystemMessage(Component.literal("ECHO GRID // Substation Report"));
+            player.sendSystemMessage(Component.literal("  Network: " + snap.networkId().toString().substring(0, 8)));
+            player.sendSystemMessage(Component.literal("  Generation: " + snap.totalGeneration() + " EP/t"));
+            player.sendSystemMessage(Component.literal("  Demand: " + snap.totalDemand() + " EP/t"));
+            player.sendSystemMessage(Component.literal("  Stored: " + snap.totalStored() + "/" + snap.totalCapacity() + " EP"));
+            player.sendSystemMessage(Component.literal("  State: " + snap.state()));
+            player.sendSystemMessage(Component.literal("  Quality: " + snap.quality()));
+            if (snap.state().name().contains("BROWNOUT") || snap.state().name().contains("OVERLOAD")) {
+                player.sendSystemMessage(Component.literal("  WARNING: Grid unstable."));
+            }
+            return InteractionResult.SUCCESS;
+        }
+        if (level.getBlockEntity(pos) instanceof SubstationBlockEntity be) {
+            player.openMenu(new MenuProvider() {
+                @Override
+                public Component getDisplayName() {
+                    return Component.literal("Outpost Substation");
+                }
+
+                @Override
+                public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+                    return be.createMenu(containerId, playerInventory);
+                }
+            }, pos);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        if (!level.isClientSide()) {
+            PowerNetworkManager.get(level).onBlockPlaced(pos);
+        }
+    }
+
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            PowerNetworkManager.get(level).onBlockRemoved(pos);
+        }
+    }
+}

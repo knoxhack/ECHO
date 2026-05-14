@@ -4,11 +4,13 @@ import com.knoxhack.echocore.api.EchoAddonChapter;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echoindex.content.IndexReloaders;
+import com.knoxhack.echoindex.integration.IndexMissionCoreIntegration;
 import com.knoxhack.echoindex.network.ModNetwork;
 import com.knoxhack.echoindex.service.BuiltinIndexProvider;
 import com.knoxhack.echoindex.service.IndexService;
 import com.knoxhack.echoindex.service.IndexSourceRecipeProvider;
 import com.knoxhack.echoindex.service.VanillaIndexRecipeProvider;
+import com.knoxhack.echoindex.test.ModGameTests;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
@@ -28,8 +30,10 @@ public class EchoIndex {
     public EchoIndex(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         Config.registerEchoConfig();
+        ModGameTests.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ModNetwork::registerPayloads);
+        modEventBus.addListener(ModGameTests::registerTests);
         NeoForge.EVENT_BUS.addListener(IndexReloaders::addServerReloadListeners);
     }
 
@@ -66,6 +70,7 @@ public class EchoIndex {
             EchoCoreServices.registerIndexProvider(BuiltinIndexProvider.INSTANCE);
             EchoCoreServices.registerIndexRecipeProvider(VanillaIndexRecipeProvider.INSTANCE);
             EchoCoreServices.registerIndexRecipeProvider(IndexSourceRecipeProvider.INSTANCE);
+            IndexMissionCoreIntegration.register();
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();
             }

@@ -3,9 +3,15 @@ package com.knoxhack.echothemecore.test;
 import com.google.gson.JsonParser;
 import com.knoxhack.echothemecore.EchoThemeCore;
 import com.knoxhack.echothemecore.api.EchoTheme;
+import com.knoxhack.echothemecore.api.EchoThemeSoundKey;
+import com.knoxhack.echothemecore.api.EchoThemeTextureKey;
 import com.knoxhack.echothemecore.api.ThemeVisualSettings;
 import com.knoxhack.echothemecore.content.ThemeJsonReloadListener;
 import com.knoxhack.echothemecore.content.ThemeRegistry;
+import com.knoxhack.echothemecore.integration.ThemeCoreTerminalBridge;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
@@ -34,6 +40,8 @@ public final class ModGameTests {
         TEST_FUNCTIONS.register("visual_settings", () -> ModGameTests::visualSettings);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NO_LEGACY_LINE_OVERLAYS =
         TEST_FUNCTIONS.register("no_legacy_line_overlay_terms", () -> ModGameTests::noLegacyLineOverlayTerms);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CYBERGLASS_FULL_THEME =
+        TEST_FUNCTIONS.register("cyberglass_full_theme_contract", () -> ModGameTests::cyberglassFullThemeContract);
 
     private ModGameTests() {
     }
@@ -50,6 +58,7 @@ public final class ModGameTests {
         register(event, "registry_fallback", REGISTRY_FALLBACK.getId());
         register(event, "visual_settings", VISUAL_SETTINGS.getId());
         register(event, "no_legacy_line_overlay_terms", NO_LEGACY_LINE_OVERLAYS.getId());
+        register(event, "cyberglass_full_theme_contract", CYBERGLASS_FULL_THEME.getId());
     }
 
     private static void themeJsonParse(GameTestHelper helper) {
@@ -111,6 +120,74 @@ public final class ModGameTests {
                 "Theme metadata should not contain forbidden legacy line-overlay terms.");
         }
         helper.succeed();
+    }
+
+    private static void cyberglassFullThemeContract(GameTestHelper helper) {
+        EchoTheme parsed = parsePackagedCyberGlass();
+        ThemeRegistry.replaceLoaded(Map.of());
+        EchoTheme builtin = ThemeRegistry.get(ThemeRegistry.CYBERGLASS_ID);
+        helper.assertTrue(parsed.id().equals(builtin.id()), "Packaged and builtin CyberGlass ids should match.");
+        helper.assertTrue(parsed.colors().primary() == builtin.colors().primary(), "Builtin CyberGlass primary color should match JSON.");
+        helper.assertTrue(parsed.soundProfile().sound(EchoThemeSoundKey.UI_CLICK).isPresent(), "CyberGlass should expose themed UI click sound.");
+        helper.assertFalse(builtin.blockPalette().recommendedBlocks().isEmpty(), "Builtin CyberGlass should expose block palette data.");
+        for (EchoThemeTextureKey key : new EchoThemeTextureKey[] {
+            EchoThemeTextureKey.HOLOMAP_MARKER_NEXUS,
+            EchoThemeTextureKey.HOLOMAP_MARKER_RECLAIMED,
+            EchoThemeTextureKey.LENS_PROGRESS_ARC,
+            EchoThemeTextureKey.LENS_NOISE_OVERLAY,
+            EchoThemeTextureKey.VANILLA_TOOLTIP_PANEL,
+            EchoThemeTextureKey.VANILLA_TOAST_ACCENT,
+            EchoThemeTextureKey.VANILLA_BOSS_BAR_ACCENT,
+            EchoThemeTextureKey.VANILLA_WIDGET_OUTLINE,
+            EchoThemeTextureKey.RENDERCORE_DISTORTION_OVERLAY
+        }) {
+            Identifier texture = parsed.moduleTexture(key)
+                .orElseThrow(() -> new AssertionError("CyberGlass should expose module texture " + key));
+            assertPackagedTexture(helper, texture);
+            helper.assertTrue(builtin.moduleTexture(key).isPresent(), "Builtin CyberGlass should expose " + key);
+        }
+        assertTerminalBridgeIfLoaded(helper);
+        helper.succeed();
+    }
+
+    private static void assertTerminalBridgeIfLoaded(GameTestHelper helper) {
+        if (!ThemeCoreTerminalBridge.isTerminalLoaded()) {
+            return;
+        }
+        ThemeCoreTerminalBridge.registerIfAvailable();
+        try {
+            Class<?> registry = Class.forName("com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry");
+            boolean contains = ((Boolean) registry.getMethod("contains", Identifier.class)
+                .invoke(null, ThemeRegistry.CYBERGLASS_ID)).booleanValue();
+            Object theme = registry.getMethod("byId", Identifier.class).invoke(null, ThemeRegistry.CYBERGLASS_ID);
+            Object tokens = theme.getClass().getMethod("tokens").invoke(theme);
+            Object assets = tokens.getClass().getMethod("assets").invoke(tokens);
+            Object icons = theme.getClass().getMethod("icons").invoke(theme);
+            helper.assertTrue(contains, "Terminal should register the CyberGlass ThemeCore theme when loaded.");
+            helper.assertTrue(assets != null, "CyberGlass Terminal theme should expose asset tokens.");
+            helper.assertTrue(icons != null, "CyberGlass Terminal theme should expose icons.");
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Could not inspect CyberGlass Terminal bridge.", exception);
+        }
+    }
+
+    private static EchoTheme parsePackagedCyberGlass() {
+        String resource = "data/echothemecore/themes/cyberglass.json";
+        try (InputStreamReader reader = new InputStreamReader(
+            ModGameTests.class.getClassLoader().getResourceAsStream(resource), StandardCharsets.UTF_8)) {
+            return ThemeJsonReloadListener.parseThemeForTests(ThemeRegistry.CYBERGLASS_ID, JsonParser.parseReader(reader).getAsJsonObject());
+        } catch (IOException | NullPointerException exception) {
+            throw new AssertionError("Could not read packaged CyberGlass JSON.", exception);
+        }
+    }
+
+    private static void assertPackagedTexture(GameTestHelper helper, Identifier texture) {
+        String path = "assets/" + texture.getNamespace() + "/" + texture.getPath();
+        try (var stream = ModGameTests.class.getClassLoader().getResourceAsStream(path)) {
+            helper.assertTrue(stream != null, "Expected packaged texture " + path);
+        } catch (IOException exception) {
+            helper.fail("Could not read packaged texture " + path + ": " + exception.getMessage());
+        }
     }
 
     private static void register(RegisterGameTestsEvent event, String testName, Identifier functionId) {

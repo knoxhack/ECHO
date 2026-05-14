@@ -1,5 +1,6 @@
 package com.knoxhack.echoconvoyprotocol.integration;
 
+import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyMultiblockControllerBlockEntity;
 import com.knoxhack.echoconvoyprotocol.block.entity.ConvoyStationBlockEntity;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
@@ -44,6 +45,12 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
    public static final Identifier PREP_VEHICLE = ConvoyTerminalIds.id("prep_vehicle");
    public static final Identifier START_ROUTE = ConvoyTerminalIds.id("start_route_mission");
    public static final Identifier CLOSE_ROUTE = ConvoyTerminalIds.id("close_route");
+   public static final Identifier DEPOT_FORMATION = ConvoyTerminalIds.id("depot_formation");
+   public static final Identifier REFUEL_REPAIR = ConvoyTerminalIds.id("refuel_repair");
+   public static final Identifier FIELD_OPERATION_STAGING = ConvoyTerminalIds.id("field_operation_staging");
+   public static final Identifier INCIDENT_RESOLUTION = ConvoyTerminalIds.id("incident_resolution");
+   public static final Identifier CONVOY_RECOVERY = ConvoyTerminalIds.id("convoy_recovery");
+   public static final Identifier SALVAGE_EXPORT = ConvoyTerminalIds.id("salvage_export");
 
    private static final String ACTION_SCAN = "scan_routes";
    private static final String ACTION_START = "start_ready_route";
@@ -51,6 +58,14 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
    private static final String ACTION_CLAIM = "claim_route_reward";
    private static final int ACCENT = 0x92D66B;
    private static final String COPY = "terminal.echoconvoyprotocol.mission.";
+   private static final List<SideMission> SIDE_MISSIONS = List.of(
+      new SideMission(DEPOT_FORMATION, "depot_formation", "Depot Formation", "Validate a Convoy Depot controller and bring the depot network online.", "Build or revalidate a Convoy Depot multiblock near your route crew.", "Depot Ops", "Depot", 40, "Convoy depot validated"),
+      new SideMission(REFUEL_REPAIR, "refuel_repair", "Refuel And Repair", "Use a dock, field station, or maintenance kit to restore a convoy vehicle.", "Top up fuel or repair damage before staging a longer field operation.", "Vehicle Support", "Field", 50, "Vehicle support completed"),
+      new SideMission(FIELD_OPERATION_STAGING, "field_operation_staging", "Stage Field Operation", "Stage or launch a depot-backed field operation for a Convoy route.", "Use the depot operation tasks to prepare the route, cargo, and dispatch plan.", "Field Ops", "Field", 60, "Field operation staged"),
+      new SideMission(INCIDENT_RESOLUTION, "incident_resolution", "Resolve Road Incident", "Clear a field incident so the convoy can continue its operation.", "Run the incident response task after an operation reports a blocker.", "Field Ops", "Hazard", 70, "Incident resolved"),
+      new SideMission(CONVOY_RECOVERY, "convoy_recovery", "Recovery Beacon", "Recover a recalled or failed convoy operation back to depot state.", "Use depot recovery when damage or recall strands a field operation.", "Recovery", "Hazard", 80, "Convoy recovered"),
+      new SideMission(SALVAGE_EXPORT, "salvage_export", "Salvage Export", "Export a completed route salvage manifest into Logistics or a depot output crate.", "Close the route, unload salvage, and export the return manifest once.", "Closeout", "Field", 90, "Salvage exported")
+   );
 
    private ConvoyMissionProvider() {
    }
@@ -69,7 +84,12 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
 
    @Override
    public List<TerminalMissionDefinition> missions(Player player) {
-      return List.of(prepDefinition(player), routeDefinition(player), closeDefinition(player));
+      List<TerminalMissionDefinition> definitions = new ArrayList<>();
+      definitions.add(prepDefinition(player));
+      definitions.add(routeDefinition(player));
+      definitions.add(closeDefinition(player));
+      SIDE_MISSIONS.stream().map(side -> sideDefinition(player, side)).forEach(definitions::add);
+      return List.copyOf(definitions);
    }
 
    @Override
@@ -82,6 +102,10 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
       }
       if (CLOSE_ROUTE.equals(missionId)) {
          return closeSnapshot(player);
+      }
+      SideMission side = sideMission(missionId);
+      if (side != null) {
+         return sideSnapshot(player, side);
       }
       return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.LOCKED, 0.0F, tr("status.unknown"), "", "", List.of());
    }
@@ -242,6 +266,28 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
       );
    }
 
+   private static TerminalMissionDefinition sideDefinition(Player player, SideMission side) {
+      boolean complete = sideComplete(player, side);
+      ItemStack icon = sideIcon(side.key());
+      return new TerminalMissionDefinition(
+         side.id(),
+         ConvoyTerminalIds.CONVOY_TAB,
+         "side_ops",
+         side.category(),
+         20,
+         side.order(),
+         side.title(),
+         side.briefing(),
+         side.guide(),
+         side.category(),
+         side.difficulty(),
+         icon,
+         List.of(PREP_VEHICLE.toString()),
+         List.of(TerminalMissionRequirement.custom(side.requirement(), side.guide(), icon.copy(), complete ? 1 : 0, 1, complete)),
+         List.of(TerminalMissionReward.text(side.title(), side.requirement()))
+      );
+   }
+
    private static TerminalMissionSnapshot prepSnapshot(Player player) {
       ConvoyVehicleEntity vehicle = nearestVehicle(player, 12.0D);
       boolean progressed = hasAnyRouteProgress(player);
@@ -321,6 +367,19 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
       );
    }
 
+   private static TerminalMissionSnapshot sideSnapshot(Player player, SideMission side) {
+      boolean complete = sideComplete(player, side);
+      return new TerminalMissionSnapshot(
+         side.id(),
+         complete ? TerminalMissionStatus.COMPLETED : TerminalMissionStatus.UNLOCKED,
+         complete ? 1.0F : 0.0F,
+         complete ? "Complete" : "Active",
+         "",
+         complete ? side.requirement() : side.guide(),
+         List.of(TerminalMissionAction.enabled(ACTION_SCAN, tr("action.scan_routes")))
+      );
+   }
+
    private static List<TerminalMissionRequirement> prepRequirements(Player player) {
       boolean workbench = hasWorkbench(player);
       int kitCount = inventoryCount(player, ModItems.SCRAP_BIKE_KIT.get());
@@ -374,6 +433,40 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
          TerminalMissionRequirement.block(tr("requirement.signal_marker"), tr("requirement.signal_marker.detail"), new ItemStack(ModBlocks.ROADSIDE_SIGNAL_MARKER.get().asItem()), marker ? 1 : 0, 1, marker),
          TerminalMissionRequirement.custom(tr("requirement.reward_state"), tr("requirement.reward_state.detail"), new ItemStack(ModItems.CARGO_NET.get()), ConvoyRouteService.claimableRewards(player) > 0 || allRoutesClaimed(progress) ? 1 : 0, 1, ConvoyRouteService.claimableRewards(player) > 0 || allRoutesClaimed(progress))
       );
+   }
+
+   private static boolean sideComplete(Player player, SideMission side) {
+      if (player == null || side == null) {
+         return false;
+      }
+      ConvoyProgress progress = ConvoyProgress.get(player);
+      return switch (side.key()) {
+         case "depot_formation" -> progress.flag(side.key()) || hasNearbyBlock(player, ModBlocks.CONVOY_DEPOT_CONTROLLER.get(), 16);
+         case "field_operation_staging" -> progress.flag(side.key()) || nearestConvoyController(player, 24.0D)
+            .map(controller -> !controller.fieldOperation().routeId().isBlank())
+            .orElse(false);
+         case "salvage_export" -> progress.flag(side.key()) || nearestConvoyController(player, 24.0D)
+            .map(controller -> controller.fieldOperation().salvageExported())
+            .orElse(false);
+         default -> progress.flag(side.key());
+      };
+   }
+
+   private static ItemStack sideIcon(String key) {
+      return switch (key) {
+         case "depot_formation" -> new ItemStack(ModBlocks.CONVOY_DEPOT_CONTROLLER.get().asItem());
+         case "refuel_repair" -> new ItemStack(ModItems.CONVOY_REPAIR_KIT.get());
+         case "field_operation_staging" -> new ItemStack(ModBlocks.ROUTE_DISPATCH_TOWER_CONTROLLER.get().asItem());
+         case "incident_resolution" -> new ItemStack(ModItems.ROUTE_BEACON.get());
+         case "convoy_recovery" -> new ItemStack(ModBlocks.CONVOY_RECOVERY_BEACON_CONTROLLER.get().asItem());
+         case "salvage_export" -> new ItemStack(ModBlocks.CARGO_OUTPUT_CRATE.get().asItem());
+         default -> new ItemStack(ModBlocks.CONVOY_BEACON.get().asItem());
+      };
+   }
+
+   @Nullable
+   private static SideMission sideMission(Identifier missionId) {
+      return SIDE_MISSIONS.stream().filter(side -> side.id().equals(missionId)).findFirst().orElse(null);
    }
 
    private static Optional<ConvoyRouteDefinition> activeRoute(Player player) {
@@ -488,6 +581,27 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
          .filter(vehicle -> vehicle.isOwner(player))
          .min(Comparator.comparingDouble(vehicle -> vehicle.distanceToSqr(player)))
          .orElse(null);
+   }
+
+   private static Optional<ConvoyMultiblockControllerBlockEntity> nearestConvoyController(Player player, double radius) {
+      if (player == null) {
+         return Optional.empty();
+      }
+      Level level = player.level();
+      BlockPos center = player.blockPosition();
+      ConvoyMultiblockControllerBlockEntity best = null;
+      double bestDistance = Double.MAX_VALUE;
+      int horizontal = Math.max(1, (int)Math.ceil(radius));
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-horizontal, -8, -horizontal), center.offset(horizontal, 8, horizontal))) {
+         if (level.getBlockEntity(pos) instanceof ConvoyMultiblockControllerBlockEntity controller) {
+            double distance = pos.distSqr(center);
+            if (distance < bestDistance) {
+               bestDistance = distance;
+               best = controller;
+            }
+         }
+      }
+      return Optional.ofNullable(best);
    }
 
    @Nullable
@@ -632,6 +746,19 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
    }
 
    private record RouteGuidance(Optional<ConvoyRouteDefinition> route, ConvoyRouteService.RouteCheck check, BlockerKind blocker) {
+   }
+
+   private record SideMission(
+      Identifier id,
+      String key,
+      String title,
+      String briefing,
+      String guide,
+      String category,
+      String difficulty,
+      int order,
+      String requirement
+   ) {
    }
 
    private enum BlockerKind {

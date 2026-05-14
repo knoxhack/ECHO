@@ -12,14 +12,18 @@ public final class LensBuiltins {
         if (registered) {
             return;
         }
-        LensProviderRegistry.register(TargetIdentityProvider.INSTANCE);
-        LensProviderRegistry.register(BlockStatsProvider.INSTANCE);
-        LensProviderRegistry.register(FluidStateProvider.INSTANCE);
-        LensProviderRegistry.register(EntityStatsProvider.INSTANCE);
-        LensProviderRegistry.register(MachineStatusProvider.INSTANCE);
-        LensProviderRegistry.register(SafeInventoryProvider.INSTANCE);
-        LensProviderRegistry.register(IntegrationStatusProvider.INSTANCE);
-        LensProviderRegistry.register(BeginnerHintProvider.INSTANCE);
+        LensProviderRegistry.registerAll(java.util.List.of(
+                TargetIdentityProvider.INSTANCE,
+                BlockStatsProvider.INSTANCE,
+                FluidStateProvider.INSTANCE,
+                EntityStatsProvider.INSTANCE,
+                MachineStatusProvider.INSTANCE,
+                SafeInventoryProvider.INSTANCE,
+                IntegrationStatusProvider.INSTANCE,
+                ServerBlockEntityProvider.INSTANCE,
+                ServerPrivacyProvider.INSTANCE,
+                ServerProgressionProvider.INSTANCE,
+                BeginnerHintProvider.INSTANCE));
         registered = true;
     }
 

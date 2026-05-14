@@ -118,13 +118,9 @@ public enum OrbitalIndexProvider implements IIndexEntryProvider, IIndexRecipePro
     }
 
     private static List<RecipeHolder<?>> recipeHolders(Player player) {
-        MinecraftServer server = player.level().getServer();
-        if (server == null) {
-            return List.of();
-        }
         try {
             List<RecipeHolder<?>> holders = new ArrayList<>();
-            for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            for (RecipeHolder<?> holder : allRecipeHolders(player)) {
                 if (holder.value().getType() == ModRecipes.ORBITAL_PROCESSING_TYPE.get()) {
                     holders.add(holder);
                 }
@@ -132,6 +128,29 @@ public enum OrbitalIndexProvider implements IIndexEntryProvider, IIndexRecipePro
             return holders;
         } catch (RuntimeException ignored) {
             EchoOrbitalRemnants.LOGGER.debug("ECHO: Index could not enumerate Orbital recipes.");
+        }
+        return List.of();
+    }
+
+    private static List<RecipeHolder<?>> allRecipeHolders(Player player) {
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            return List.copyOf(server.getRecipeManager().getRecipes());
+        }
+        try {
+            Object recipes = player.level().recipeAccess().getClass().getMethod("getRecipes")
+                    .invoke(player.level().recipeAccess());
+            if (recipes instanceof Iterable<?> iterable) {
+                List<RecipeHolder<?>> holders = new ArrayList<>();
+                for (Object candidate : iterable) {
+                    if (candidate instanceof RecipeHolder<?> holder) {
+                        holders.add(holder);
+                    }
+                }
+                return holders;
+            }
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            EchoOrbitalRemnants.LOGGER.debug("ECHO: Index could not enumerate client Orbital recipes.");
         }
         return List.of();
     }

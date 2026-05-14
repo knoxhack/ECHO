@@ -4,6 +4,14 @@
   "order": 20,
   "requiredVehicle": "cargo_crawler",
   "minFuel": 100,
+  "logisticsNetworkId": "global",
+  "logisticsLoadoutId": "echoconvoyprotocol:fuel_cell_resupply",
+  "autoRequestCargo": false,
+  "holomapMarker": {
+    "icon": "high_risk_delivery",
+    "color": "ff9d00",
+    "layer": "echoconvoyprotocol:convoy_routes"
+  },
   "requiredCargo": [
     {"item": "minecraft:iron_block", "count": 2}
   ],

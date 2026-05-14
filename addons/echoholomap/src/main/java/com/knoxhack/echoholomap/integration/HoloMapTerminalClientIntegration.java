@@ -4,11 +4,19 @@ import com.knoxhack.echocore.api.IMapMarker;
 import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoholomap.Config;
 import com.knoxhack.echoholomap.HoloMapIds;
+import com.knoxhack.echoholomap.client.HoloMapGlyphRenderer;
+import com.knoxhack.echoholomap.client.HoloMapLocalWaypointStore;
+import com.knoxhack.echoholomap.client.HoloMapVisualStyle;
+import com.knoxhack.echoholomap.map.HoloMapVisualPriority;
 import com.knoxhack.echoholomap.map.HoloMapTerrainTile;
 import com.knoxhack.echoholomap.network.HoloMapClientState;
 import com.knoxhack.echoholomap.network.HoloMapSnapshotPacket;
 import com.knoxhack.echoholomap.network.HoloMapTerrainClientState;
 import com.knoxhack.echoholomap.network.HoloMapTileRequestPacket;
+import com.knoxhack.echoholomap.network.HoloMapWaypointActionPacket;
+import com.knoxhack.echoholomap.network.HoloMapWaypointClientState;
+import com.knoxhack.echoholomap.waypoint.HoloMapWaypoint;
+import com.knoxhack.echoholomap.waypoint.HoloMapWaypoint.Scope;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalRenderContext;
@@ -24,7 +32,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -63,6 +73,24 @@ public final class HoloMapTerminalClientIntegration {
         }
     }
 
+    private enum SortMode {
+        NEAREST("NEAR"),
+        NAME("NAME"),
+        LAYER("LAYER"),
+        STATE("STATE");
+
+        private final String label;
+
+        SortMode(String label) {
+            this.label = label;
+        }
+
+        private SortMode next() {
+            SortMode[] values = values();
+            return values[(ordinal() + 1) % values.length];
+        }
+    }
+
     private static final class HoloMapTab implements TerminalTab {
         private final TerminalTabDescriptor descriptor = new TerminalTabDescriptor(HoloMapIds.TAB, "HOLOMAP", 185, ACCENT);
         private final TerminalTabChrome chrome = TerminalTabChrome.of("HoloMap", TerminalTabChrome.GROUP_FIELD,
@@ -70,14 +98,30 @@ public final class HoloMapTerminalClientIntegration {
         private final Map<Identifier, Boolean> layerEnabled = new LinkedHashMap<>();
         private final List<Button> buttons = new ArrayList<>();
         private final List<MarkerHit> markerHits = new ArrayList<>();
+        private final List<WaypointHit> waypointHits = new ArrayList<>();
+        private final List<ListEntryHit> listHits = new ArrayList<>();
         private StateFilter stateFilter = StateFilter.ALL;
+        private SortMode sortMode = SortMode.NEAREST;
         private String selectedMarkerId = "";
+        private String selectedWaypointId = "";
+        private String searchText = "";
+        private boolean searchFocused;
+        private boolean showWaypoints = true;
         private int detailMode = 1;
         private long lastRefreshTick = -200L;
         private double centerX;
         private double centerZ;
         private double zoom = 1.35D;
         private boolean cameraReady;
+        private boolean draggingMap;
+        private long lastClickMs;
+        private double lastClickX;
+        private double lastClickY;
+        private boolean actionMenuOpen;
+        private int actionMenuX;
+        private int actionMenuY;
+        private double actionWorldX;
+        private double actionWorldZ;
         private long lastTerrainRequestTick = -200L;
         private int lastRequestChunkX = Integer.MIN_VALUE;
         private int lastRequestChunkZ = Integer.MIN_VALUE;
@@ -86,6 +130,10 @@ public final class HoloMapTerminalClientIntegration {
         private int lastMapY;
         private int lastMapW;
         private int lastMapH;
+        private int lastSearchX;
+        private int lastSearchY;
+        private int lastSearchW;
+        private int lastSearchH;
 
         @Override
         public TerminalTabDescriptor descriptor() {
@@ -99,6 +147,7 @@ public final class HoloMapTerminalClientIntegration {
 
         @Override
         public void onSelected(TerminalRenderContext context) {
+            HoloMapLocalWaypointStore.ensureLoaded();
             requestRefresh(context);
         }
 
@@ -106,8 +155,11 @@ public final class HoloMapTerminalClientIntegration {
         public void render(TerminalRenderContext context, GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                 float partialTick) {
             maybeRefresh(context);
+            HoloMapLocalWaypointStore.ensureLoaded();
             buttons.clear();
             markerHits.clear();
+            waypointHits.clear();
+            listHits.clear();
 
             HoloMapSnapshotPacket snapshot = HoloMapClientState.snapshot();
             syncLayers(snapshot.layers());
@@ -116,7 +168,7 @@ public final class HoloMapTerminalClientIntegration {
             int w = context.contentWidth() - 24;
             y = TerminalUi.sectionHeader(context, graphics, "HOLOMAP", "COMMAND MAP", x, y, w, ACCENT);
 
-            int controlH = 70;
+            int controlH = 92;
             TerminalUi.flatHudPanel(context, graphics, x, y, w, controlH, ACCENT);
             TerminalUi.line(context, graphics, snapshot.statusLine(), x + 12, y + 10, w - 192,
                     TerminalUi.accent(context));
@@ -127,22 +179,44 @@ public final class HoloMapTerminalClientIntegration {
                     mouseX, mouseY, ButtonKind.STATE, "");
             button(graphics, context, detailMode == 0 ? "LOW" : detailMode == 1 ? "MED" : "HIGH",
                     x + w - 54, y + 34, 34, true, mouseX, mouseY, ButtonKind.DETAIL, "");
+            button(graphics, context, showWaypoints ? "WP ON" : "WP OFF", x + w - 166, y + 58, 70, true,
+                    mouseX, mouseY, ButtonKind.WAYPOINTS, "");
+            button(graphics, context, "SORT " + sortMode.label, x + w - 88, y + 58, 68, true,
+                    mouseX, mouseY, ButtonKind.SORT, "");
             drawLayerButtons(context, graphics, snapshot.layers(), x + 12, y + 34, Math.max(120, w - 194),
                     mouseX, mouseY);
+            drawSearchBox(context, graphics, x + 12, y + 58, Math.max(140, Math.min(310, w - 202)), mouseX, mouseY);
 
             int bodyY = y + controlH + 12;
             int bodyH = Math.max(330, context.contentHeight() - 116);
             int detailW = Math.min(220, Math.max(174, w / 3));
             int mapW = Math.max(260, w - detailW - 12);
             List<HoloMapSnapshotPacket.MarkerData> visible = visibleMarkers(snapshot.markers());
-            drawMap(context, graphics, visible, x, bodyY, mapW, bodyH, mouseX, mouseY, snapshot.gameTime());
-            drawDetailPanel(context, graphics, snapshot, visible, x + mapW + 12, bodyY, detailW, bodyH);
+            List<HoloMapWaypoint> waypoints = visibleWaypoints(context);
+            drawMap(context, graphics, visible, waypoints, x, bodyY, mapW, bodyH, mouseX, mouseY, snapshot.gameTime());
+            drawDetailPanel(context, graphics, snapshot, visible, waypoints, x + mapW + 12, bodyY, detailW, bodyH,
+                    mouseX, mouseY);
         }
 
         @Override
         public boolean mouseClicked(TerminalRenderContext context, double mouseX, double mouseY, int button) {
+            if (button == 1 && TerminalUi.inside(mouseX, mouseY, lastMapX, lastMapY, lastMapW, lastMapH)) {
+                actionMenuOpen = true;
+                actionMenuX = (int) mouseX;
+                actionMenuY = (int) mouseY;
+                actionWorldX = screenToWorldX(mouseX);
+                actionWorldZ = screenToWorldZ(mouseY);
+                searchFocused = false;
+                return true;
+            }
             if (button != 0) {
+                actionMenuOpen = false;
                 return false;
+            }
+            if (TerminalUi.inside(mouseX, mouseY, lastSearchX, lastSearchY, lastSearchW, lastSearchH)) {
+                searchFocused = true;
+                actionMenuOpen = false;
+                return true;
             }
             for (Button hit : buttons) {
                 if (!TerminalUi.inside(mouseX, mouseY, hit.x(), hit.y(), hit.w(), hit.h())) {
@@ -155,15 +229,89 @@ public final class HoloMapTerminalClientIntegration {
                     case STATE -> stateFilter = stateFilter.next();
                     case DETAIL -> detailMode = (detailMode + 1) % 3;
                     case LAYER -> layerEnabled.put(hit.layerId(), !layerEnabled.getOrDefault(hit.layerId(), true));
+                    case WAYPOINTS -> showWaypoints = !showWaypoints;
+                    case SORT -> sortMode = sortMode.next();
+                    case SEARCH_CLEAR -> searchText = "";
+                    case MENU_LOCAL -> createWaypoint(context, Scope.LOCAL);
+                    case MENU_PERSONAL -> createWaypoint(context, Scope.PERSONAL);
+                    case MENU_SHARED -> createWaypoint(context, Scope.SHARED);
+                    case MENU_COPY -> copyActionCoordinates(context);
+                    case MENU_MOVE_SELECTED -> moveSelectedWaypointToAction(context);
+                    case WAYPOINT_DELETE -> deleteSelectedWaypoint();
                 }
+                if (hit.kind() != ButtonKind.SEARCH_CLEAR) {
+                    searchFocused = false;
+                }
+                actionMenuOpen = false;
                 return true;
+            }
+            for (ListEntryHit hit : listHits) {
+                if (TerminalUi.inside(mouseX, mouseY, hit.x(), hit.y(), hit.w(), hit.h())) {
+                    focusListEntry(context, hit.entry());
+                    searchFocused = false;
+                    actionMenuOpen = false;
+                    return true;
+                }
+            }
+            for (WaypointHit hit : waypointHits) {
+                if (TerminalUi.inside(mouseX, mouseY, hit.x() - 6, hit.y() - 6, 12, 12)) {
+                    selectedWaypointId = hit.waypoint().id().toString();
+                    selectedMarkerId = "";
+                    context.playCommandSound();
+                    return true;
+                }
             }
             for (MarkerHit hit : markerHits) {
                 if (TerminalUi.inside(mouseX, mouseY, hit.x() - 5, hit.y() - 5, 10, 10)) {
                     selectedMarkerId = hit.marker().id().toString();
+                    selectedWaypointId = "";
                     context.playCommandSound();
                     return true;
                 }
+            }
+            if (TerminalUi.inside(mouseX, mouseY, lastMapX, lastMapY, lastMapW, lastMapH)) {
+                long now = System.currentTimeMillis();
+                double dx = mouseX - lastClickX;
+                double dy = mouseY - lastClickY;
+                if (now - lastClickMs < 320L && dx * dx + dy * dy < 64.0D) {
+                    centerOnPlayer(context);
+                    draggingMap = false;
+                } else {
+                    draggingMap = true;
+                    selectedMarkerId = "";
+                    selectedWaypointId = "";
+                }
+                lastClickMs = now;
+                lastClickX = mouseX;
+                lastClickY = mouseY;
+                searchFocused = false;
+                actionMenuOpen = false;
+                return true;
+            }
+            searchFocused = false;
+            actionMenuOpen = false;
+            return false;
+        }
+
+        @Override
+        public boolean mouseDragged(TerminalRenderContext context, double mouseX, double mouseY, int button,
+                double dragX, double dragY) {
+            if (button != 0 || !draggingMap || lastMapW <= 0 || lastMapH <= 0) {
+                return false;
+            }
+            centerX -= dragX / Math.max(0.35D, zoom);
+            centerZ -= dragY / Math.max(0.35D, zoom);
+            cameraReady = true;
+            requestTerrain(context, false);
+            return true;
+        }
+
+        @Override
+        public boolean mouseReleased(TerminalRenderContext context, double mouseX, double mouseY, int button) {
+            if (button == 0 && draggingMap) {
+                draggingMap = false;
+                requestTerrain(context, true);
+                return true;
             }
             return false;
         }
@@ -190,6 +338,27 @@ public final class HoloMapTerminalClientIntegration {
         @Override
         public boolean keyPressed(TerminalRenderContext context, KeyEvent event) {
             int key = event.key();
+            if (searchFocused) {
+                if (key == GLFW.GLFW_KEY_BACKSPACE && !searchText.isEmpty()) {
+                    searchText = searchText.substring(0, searchText.offsetByCodePoints(searchText.length(), -1));
+                    return true;
+                }
+                if (key == GLFW.GLFW_KEY_ESCAPE) {
+                    searchFocused = false;
+                    if (!searchText.isEmpty()) {
+                        searchText = "";
+                    }
+                    return true;
+                }
+                if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                    searchFocused = false;
+                    return true;
+                }
+                if (key != GLFW.GLFW_KEY_LEFT && key != GLFW.GLFW_KEY_RIGHT
+                        && key != GLFW.GLFW_KEY_UP && key != GLFW.GLFW_KEY_DOWN) {
+                    return false;
+                }
+            }
             double pan = Math.max(16.0D, 72.0D / Math.max(0.35D, zoom));
             if (key == GLFW.GLFW_KEY_LEFT) {
                 centerX -= pan;
@@ -214,6 +383,19 @@ public final class HoloMapTerminalClientIntegration {
         }
 
         @Override
+        public boolean charTyped(TerminalRenderContext context, CharacterEvent event) {
+            if (!searchFocused || event == null || !event.isAllowedChatCharacter() || searchText.length() >= 72) {
+                return false;
+            }
+            String typed = event.codepointAsString();
+            if (typed == null || typed.isBlank()) {
+                return false;
+            }
+            searchText += typed.toLowerCase(Locale.ROOT);
+            return true;
+        }
+
+        @Override
         public int contentHeight(TerminalRenderContext context) {
             return 620;
         }
@@ -234,6 +416,7 @@ public final class HoloMapTerminalClientIntegration {
             }
             lastRefreshTick = context.player().level().getGameTime();
             context.sendAction(HoloMapIds.TAB, HoloMapIds.REFRESH_ACTION, "");
+            EchoNetClientActions.sendServerboundAction(HoloMapWaypointActionPacket.requestSync());
         }
 
         private void ensureCamera(TerminalRenderContext context) {
@@ -329,8 +512,29 @@ public final class HoloMapTerminalClientIntegration {
             }
         }
 
+        private void drawSearchBox(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int mouseX, int mouseY) {
+            lastSearchX = x;
+            lastSearchY = y;
+            lastSearchW = w;
+            lastSearchH = 16;
+            int border = searchFocused ? TerminalUi.text(context) : ACCENT;
+            graphics.fill(x, y, x + w, y + 16, 0xAA061014);
+            graphics.outline(x, y, w, 16, border);
+            String label = searchText.isBlank() ? "SEARCH MARKERS / WAYPOINTS" : searchText;
+            TerminalUi.line(context, graphics, label, x + 6, y + 4, Math.max(24, w - 30),
+                    searchText.isBlank() ? TerminalUi.muted(context) : TerminalUi.text(context));
+            if (!searchText.isBlank()) {
+                TerminalUi.compactButton(context, graphics, x + w - 22, y, 20, "X", TerminalUi.danger(context), true,
+                        TerminalUi.inside(mouseX, mouseY, x + w - 22, y, 20, 16));
+                buttons.add(new Button(x + w - 22, y, 20, 16, ButtonKind.SEARCH_CLEAR,
+                        HoloMapIds.id("button/search_clear")));
+            }
+        }
+
         private void drawMap(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                List<HoloMapSnapshotPacket.MarkerData> markers, int x, int y, int w, int h,
+                List<HoloMapSnapshotPacket.MarkerData> markers, List<HoloMapWaypoint> waypoints,
+                int x, int y, int w, int h,
                 int mouseX, int mouseY, long gameTime) {
             ensureCamera(context);
             lastMapX = x;
@@ -342,13 +546,11 @@ public final class HoloMapTerminalClientIntegration {
             graphics.enableScissor(x + 4, y + 4, x + w - 4, y + h - 4);
             int terrainTiles = drawTerrain(context, graphics, x, y, w, h, gameTime);
             drawWorldGrid(context, graphics, x, y, w, h);
-            if (markers.isEmpty()) {
+            if (markers.isEmpty() && waypoints.isEmpty()) {
                 TerminalUi.line(context, graphics, terrainTiles == 0
                                 ? "Terrain scan pending. Move through loaded chunks or run debug scan_terrain."
-                                : "No synced markers for the current filters.",
+                                : "No synced markers or waypoints for the current filters.",
                         x + 16, y + 22, w - 32, TerminalUi.muted(context));
-                graphics.disableScissor();
-                return;
             }
             Map<String, List<MarkerPoint>> routePoints = new LinkedHashMap<>();
             List<MarkerPoint> points = new ArrayList<>();
@@ -367,10 +569,11 @@ public final class HoloMapTerminalClientIntegration {
             for (List<MarkerPoint> route : routePoints.values()) {
                 route.sort(Comparator.comparingInt(point -> point.marker().routeOrder()));
                 for (int i = 1; i < route.size(); i++) {
-                    drawLine(graphics, route.get(i - 1).x(), route.get(i - 1).y(),
+                    HoloMapGlyphRenderer.drawLine(graphics, route.get(i - 1).x(), route.get(i - 1).y(),
                             route.get(i).x(), route.get(i).y(), 0xAA92F7A6);
                 }
             }
+            drawWaypoints(context, graphics, waypoints, mouseX, mouseY);
             int labels = detailLabelLimit();
             int drawnLabels = 0;
             for (MarkerPoint point : points) {
@@ -383,11 +586,62 @@ public final class HoloMapTerminalClientIntegration {
                             124, selected ? TerminalUi.text(context) : colorForMarker(context, point.marker()));
                 }
             }
+            String dimension = context.player() == null
+                    ? "minecraft:overworld"
+                    : context.player().level().dimension().identifier().toString();
+            HoloMapTerrainClientState.DetailStats terrainStats = HoloMapTerrainClientState.detailStats(dimension);
+            String freshness = terrainStats.newestSample() <= 0L
+                    ? "scan pending"
+                    : "sample t+" + terrainStats.newestSample();
             TerminalUi.line(context, graphics, "ECHO TERRAIN ATLAS | " + terrainTiles + " cached / "
                             + HoloMapTerrainClientState.discoveredCount() + " discovered | "
-                            + String.format(Locale.ROOT, "%.2fx", zoom),
+                            + terrainStats.label() + " | " + freshness + " | "
+                            + "XYZ " + (int) centerX + " / " + (int) centerZ + " | "
+                            + String.format(Locale.ROOT, "%.2fx", zoom) + " | WP " + waypoints.size(),
                     x + 12, y + 10, w - 24, TerminalUi.accent(context));
+            drawLegendRow(context, graphics, x + 12, y + h - 18, w - 24, markers.size(), waypoints.size());
+            if (actionMenuOpen) {
+                drawActionMenu(context, graphics, mouseX, mouseY);
+            }
             graphics.disableScissor();
+        }
+
+        private void drawLegendRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                int x, int y, int w, int markerCount, int waypointCount) {
+            Config.VisualDensity density = HoloMapVisualStyle.visualDensity();
+            int bg = density == Config.VisualDensity.LOW ? 0x66061014 : 0xAA061014;
+            graphics.fill(x - 4, y - 2, x + w + 4, y + 14, bg);
+            graphics.outline(x - 4, y - 2, w + 8, 16, 0x5538DFF4);
+            int sx = x + 6;
+            sx = legendGlyph(graphics, context, sx, y + 6, IMapMarker.MarkerKind.MISSION,
+                    IMapMarker.MarkerState.DISCOVERED, "MISSION", HoloMapVisualStyle.ACCENT);
+            sx = legendGlyph(graphics, context, sx, y + 6, IMapMarker.MarkerKind.HAZARD,
+                    IMapMarker.MarkerState.DISCOVERED, "HAZARD", HoloMapVisualStyle.DANGER);
+            sx = legendGlyph(graphics, context, sx, y + 6, IMapMarker.MarkerKind.ROUTE,
+                    IMapMarker.MarkerState.DISCOVERED, "ROUTE", HoloMapVisualStyle.SUCCESS);
+            if (density != Config.VisualDensity.LOW) {
+                sx = legendWaypoint(graphics, context, sx, y + 6, Scope.PERSONAL, "WP", 0xFF92F7A6);
+                sx = legendGlyph(graphics, context, sx, y + 6, IMapMarker.MarkerKind.ORBITAL_SCAN,
+                        IMapMarker.MarkerState.LOCKED, "LOCKED", HoloMapVisualStyle.MUTED);
+            }
+            String counts = "visible " + markerCount + " / wp " + waypointCount + " / "
+                    + String.format(Locale.ROOT, "%.2fx", zoom);
+            TerminalUi.line(context, graphics, counts, Math.min(sx + 4, x + w - 120), y + 2, 116,
+                    TerminalUi.muted(context));
+        }
+
+        private int legendGlyph(GuiGraphicsExtractor graphics, TerminalRenderContext context, int x, int y,
+                IMapMarker.MarkerKind kind, IMapMarker.MarkerState state, String label, int color) {
+            HoloMapGlyphRenderer.drawMarkerKind(graphics, kind, state, x, y, color, 4);
+            TerminalUi.line(context, graphics, label, x + 8, y - 4, 54, color);
+            return x + 62;
+        }
+
+        private int legendWaypoint(GuiGraphicsExtractor graphics, TerminalRenderContext context, int x, int y,
+                Scope scope, String label, int color) {
+            HoloMapGlyphRenderer.drawWaypointScope(graphics, scope, x, y, color, 4);
+            TerminalUi.line(context, graphics, label, x + 8, y - 4, 32, color);
+            return x + 40;
         }
 
         private int drawTerrain(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -419,7 +673,8 @@ public final class HoloMapTerminalClientIntegration {
             int screenY = worldToScreenZ(baseZ);
             int chunkSize = Math.max(1, (int) Math.ceil(16.0D * zoom));
             if (chunkSize <= 18) {
-                graphics.fill(screenX, screenY, screenX + chunkSize, screenY + chunkSize, tile.averageColor());
+                graphics.fill(screenX, screenY, screenX + chunkSize, screenY + chunkSize,
+                        HoloMapVisualStyle.terrainColor(tile.averageColor()));
                 return;
             }
             int pixelSize = Math.max(1, (int) Math.ceil(zoom));
@@ -427,7 +682,8 @@ public final class HoloMapTerminalClientIntegration {
                 for (int localX = 0; localX < HoloMapTerrainTile.SIZE; localX++) {
                     int px = worldToScreenX(baseX + localX);
                     int py = worldToScreenZ(baseZ + localZ);
-                    graphics.fill(px, py, px + pixelSize, py + pixelSize, tile.pixel(localX, localZ));
+                    graphics.fill(px, py, px + pixelSize, py + pixelSize,
+                            HoloMapVisualStyle.terrainColor(tile.pixel(localX, localZ)));
                 }
             }
         }
@@ -484,6 +740,78 @@ public final class HoloMapTerminalClientIntegration {
                     TerminalUi.accent(context));
         }
 
+        private void drawWaypoints(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                List<HoloMapWaypoint> waypoints, int mouseX, int mouseY) {
+            if (!showWaypoints || waypoints.isEmpty()) {
+                return;
+            }
+            int labels = Math.max(2, detailLabelLimit() / 2);
+            int drawn = 0;
+            for (HoloMapWaypoint waypoint : waypoints) {
+                int px = worldToScreenX(waypoint.x());
+                int py = worldToScreenZ(waypoint.z());
+                if (px < lastMapX - 32 || px > lastMapX + lastMapW + 32
+                        || py < lastMapY - 32 || py > lastMapY + lastMapH + 32) {
+                    continue;
+                }
+                boolean selected = waypoint.id().toString().equals(selectedWaypointId);
+                boolean hovered = TerminalUi.inside(mouseX, mouseY, px - 6, py - 6, 12, 12);
+                drawWaypoint(context, graphics, waypoint, px, py, selected || hovered);
+                waypointHits.add(new WaypointHit(waypoint, px, py));
+                if (selected || hovered || drawn++ < labels) {
+                    TerminalUi.line(context, graphics, waypoint.title(), px + 8, py - 4, 116,
+                            selected ? TerminalUi.text(context) : waypoint.color());
+                }
+            }
+        }
+
+        private void drawWaypoint(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+                HoloMapWaypoint waypoint, int x, int y, boolean highlighted) {
+            int color = waypoint.visible() ? waypoint.color() : TerminalUi.muted(context);
+            if (waypoint.scope() == Scope.SHARED) {
+                graphics.outline(x - 6, y - 6, 12, 12, TerminalUi.opaque(color));
+                graphics.fill(x - 2, y - 2, x + 3, y + 3, TerminalUi.opaque(color));
+            } else if (waypoint.scope() == Scope.PERSONAL) {
+                graphics.fill(x - 1, y - 7, x + 2, y + 8, TerminalUi.opaque(color));
+                graphics.fill(x - 7, y - 1, x + 8, y + 2, TerminalUi.opaque(color));
+                graphics.outline(x - 4, y - 4, 8, 8, TerminalUi.opaque(color));
+            } else {
+                graphics.fill(x, y - 6, x + 1, y - 2, TerminalUi.opaque(color));
+                graphics.fill(x, y + 3, x + 1, y + 7, TerminalUi.opaque(color));
+                graphics.fill(x - 6, y, x - 2, y + 1, TerminalUi.opaque(color));
+                graphics.fill(x + 3, y, x + 7, y + 1, TerminalUi.opaque(color));
+                graphics.outline(x - 4, y - 4, 8, 8, TerminalUi.opaque(color));
+            }
+            if (highlighted) {
+                graphics.outline(x - 9, y - 9, 18, 18, TerminalUi.text(context));
+            }
+        }
+
+        private void drawActionMenu(TerminalRenderContext context, GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+            int w = 112;
+            int h = selectedWaypointId.isBlank() ? 76 : 96;
+            int x = Math.max(lastMapX + 8, Math.min(actionMenuX, lastMapX + lastMapW - w - 8));
+            int y = Math.max(lastMapY + 8, Math.min(actionMenuY, lastMapY + lastMapH - h - 8));
+            graphics.fill(x, y, x + w, y + h, 0xEE061014);
+            graphics.outline(x, y, w, h, ACCENT);
+            TerminalUi.line(context, graphics, "MAP ACTION", x + 8, y + 6, w - 16, TerminalUi.accent(context));
+            menuButton(graphics, context, "LOCAL WP", x + 8, y + 22, 46, mouseX, mouseY, ButtonKind.MENU_LOCAL);
+            menuButton(graphics, context, "PERSONAL", x + 58, y + 22, 46, mouseX, mouseY, ButtonKind.MENU_PERSONAL);
+            menuButton(graphics, context, "SHARED", x + 8, y + 42, 46, mouseX, mouseY, ButtonKind.MENU_SHARED);
+            menuButton(graphics, context, "COPY", x + 58, y + 42, 46, mouseX, mouseY, ButtonKind.MENU_COPY);
+            if (!selectedWaypointId.isBlank()) {
+                menuButton(graphics, context, "MOVE SEL", x + 8, y + 62, 96, mouseX, mouseY,
+                        ButtonKind.MENU_MOVE_SELECTED);
+            }
+        }
+
+        private void menuButton(GuiGraphicsExtractor graphics, TerminalRenderContext context, String label,
+                int x, int y, int w, int mouseX, int mouseY, ButtonKind kind) {
+            TerminalUi.compactButton(context, graphics, x, y, w, label, ACCENT, true,
+                    TerminalUi.inside(mouseX, mouseY, x, y, w, 16));
+            buttons.add(new Button(x, y, w, 16, kind, HoloMapIds.id("button/" + kind.name().toLowerCase(Locale.ROOT))));
+        }
+
         private void drawMarker(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 MarkerPoint point, boolean highlighted) {
             HoloMapSnapshotPacket.MarkerData marker = point.marker();
@@ -538,42 +866,87 @@ public final class HoloMapTerminalClientIntegration {
 
         private void drawDetailPanel(TerminalRenderContext context, GuiGraphicsExtractor graphics,
                 HoloMapSnapshotPacket snapshot, List<HoloMapSnapshotPacket.MarkerData> markers,
-                int x, int y, int w, int h) {
+                List<HoloMapWaypoint> waypoints, int x, int y, int w, int h, int mouseX, int mouseY) {
             TerminalUi.flatHudPanel(context, graphics, x, y, w, h, ACCENT);
-            TerminalUi.line(context, graphics, "FILTERED MARKERS", x + 12, y + 10, w - 24, TerminalUi.accent(context));
+            TerminalUi.line(context, graphics, "MAP INDEX", x + 12, y + 10, w - 24, TerminalUi.accent(context));
             int cy = y + 30;
             cy = metric(context, graphics, x + 12, cy, w - 24, "Visible", String.valueOf(markers.size()), ACCENT);
             cy = metric(context, graphics, x + 12, cy, w - 24, "Synced", String.valueOf(snapshot.markers().size()),
                     TerminalUi.muted(context));
+            cy = metric(context, graphics, x + 12, cy, w - 24, "Waypoints", String.valueOf(waypoints.size()),
+                    TerminalUi.warning(context));
             cy = metric(context, graphics, x + 12, cy, w - 24, "Layers", String.valueOf(snapshot.layers().size()),
                     TerminalUi.muted(context));
             String dimension = context.player() == null ? "minecraft:overworld"
                     : context.player().level().dimension().identifier().toString();
+            HoloMapTerrainClientState.DetailStats terrainStats = HoloMapTerrainClientState.detailStats(dimension);
             cy = metric(context, graphics, x + 12, cy, w - 24, "Tiles",
                     HoloMapTerrainClientState.tileCount(dimension) + " / " + HoloMapTerrainClientState.discoveredCount(),
                     TerminalUi.accent(context));
-            HoloMapSnapshotPacket.MarkerData selected = selectedMarker(markers);
+            cy = metric(context, graphics, x + 12, cy, w - 24, "Detail",
+                    terrainStats.compactLabel(), TerminalUi.success(context));
+            List<MapListEntry> entries = listEntries(context, markers, waypoints);
             TerminalUi.divider(graphics, x + 12, cy + 2, w - 24, ACCENT);
             cy += 12;
-            if (selected == null) {
-                TerminalUi.wrap(context, graphics, "Select a marker on the atlas to inspect source, state, and coordinates.",
+            TerminalUi.line(context, graphics, "RESULTS " + entries.size() + " / " + sortMode.label,
+                    x + 12, cy, w - 24, TerminalUi.accent(context));
+            cy += 14;
+            int rows = Math.max(3, Math.min(8, (h - (cy - y) - 116) / 17));
+            for (int i = 0; i < Math.min(rows, entries.size()); i++) {
+                MapListEntry entry = entries.get(i);
+                boolean selected = entry.id().equals(selectedMarkerId) || entry.id().equals(selectedWaypointId);
+                int rowColor = selected ? TerminalUi.text(context) : entry.color(context);
+                graphics.fill(x + 10, cy - 2, x + w - 10, cy + 14,
+                        selected ? 0x4426DFF4 : TerminalUi.inside(mouseX, mouseY, x + 10, cy - 2, w - 20, 16)
+                                ? 0x22163843 : 0x00000000);
+                TerminalUi.line(context, graphics, entry.prefix() + " " + entry.title(),
+                        x + 14, cy, w - 28, rowColor);
+                listHits.add(new ListEntryHit(entry, x + 10, cy - 2, w - 20, 16));
+                cy += 17;
+            }
+            TerminalUi.divider(graphics, x + 12, cy + 2, w - 24, ACCENT);
+            cy += 12;
+            HoloMapWaypoint selectedWaypoint = selectedWaypoint(waypoints);
+            HoloMapSnapshotPacket.MarkerData selectedMarker = selectedMarkerId.isBlank() || selectedWaypoint != null
+                    ? null
+                    : selectedMarker(markers);
+            if (selectedWaypoint != null) {
+                TerminalUi.line(context, graphics, selectedWaypoint.title(), x + 12, cy, w - 24,
+                        selectedWaypoint.color());
+                cy += 16;
+                cy = metric(context, graphics, x + 12, cy, w - 24, "Scope", selectedWaypoint.scope().name(),
+                        selectedWaypoint.color());
+                cy = metric(context, graphics, x + 12, cy, w - 24, "Dim", selectedWaypoint.dimension(),
+                        TerminalUi.muted(context));
+                cy = metric(context, graphics, x + 12, cy, w - 24, "XYZ",
+                        (int) selectedWaypoint.x() + " / " + (int) selectedWaypoint.y() + " / " + (int) selectedWaypoint.z(),
+                        TerminalUi.text(context));
+                TerminalUi.compactButton(context, graphics, x + 12, cy + 6, 62, "DELETE",
+                        TerminalUi.danger(context), true,
+                        TerminalUi.inside(mouseX, mouseY, x + 12, cy + 6, 62, 16));
+                buttons.add(new Button(x + 12, cy + 6, 62, 16, ButtonKind.WAYPOINT_DELETE, selectedWaypoint.id()));
+                return;
+            }
+            if (selectedMarker == null) {
+                TerminalUi.wrap(context, graphics, "Select a marker or waypoint, search by name/source/coords, or right-click the atlas to place a waypoint.",
                         x + 12, cy, w - 24, TerminalUi.muted(context));
                 return;
             }
-            TerminalUi.line(context, graphics, selected.title(), x + 12, cy, w - 24, colorForMarker(context, selected));
+            TerminalUi.line(context, graphics, selectedMarker.title(), x + 12, cy, w - 24, colorForMarker(context, selectedMarker));
             cy += 16;
-            cy = metric(context, graphics, x + 12, cy, w - 24, "State", selected.state().name(), colorForMarker(context, selected));
-            cy = metric(context, graphics, x + 12, cy, w - 24, "Source", selected.sourceId().toString(), TerminalUi.muted(context));
-            cy = metric(context, graphics, x + 12, cy, w - 24, "Layer", selected.layerId().getPath().replace("layer/", ""),
+            cy = metric(context, graphics, x + 12, cy, w - 24, "State", selectedMarker.state().name(),
+                    colorForMarker(context, selectedMarker));
+            cy = metric(context, graphics, x + 12, cy, w - 24, "Source", selectedMarker.sourceId().toString(), TerminalUi.muted(context));
+            cy = metric(context, graphics, x + 12, cy, w - 24, "Layer", selectedMarker.layerId().getPath().replace("layer/", ""),
                     TerminalUi.muted(context));
-            cy = metric(context, graphics, x + 12, cy, w - 24, "Dim", selected.dimension(), TerminalUi.muted(context));
+            cy = metric(context, graphics, x + 12, cy, w - 24, "Dim", selectedMarker.dimension(), TerminalUi.muted(context));
             cy = metric(context, graphics, x + 12, cy, w - 24, "XYZ",
-                    (int) selected.x() + " / " + (int) selected.y() + " / " + (int) selected.z(),
-                    selected.precise() ? TerminalUi.text(context) : TerminalUi.warning(context));
-            if (!selected.routeId().isBlank()) {
-                cy = metric(context, graphics, x + 12, cy, w - 24, "Route", selected.routeId(), TerminalUi.success(context));
+                    (int) selectedMarker.x() + " / " + (int) selectedMarker.y() + " / " + (int) selectedMarker.z(),
+                    selectedMarker.precise() ? TerminalUi.text(context) : TerminalUi.warning(context));
+            if (!selectedMarker.routeId().isBlank()) {
+                cy = metric(context, graphics, x + 12, cy, w - 24, "Route", selectedMarker.routeId(), TerminalUi.success(context));
             }
-            TerminalUi.wrap(context, graphics, selected.summary(), x + 12, cy + 8, w - 24, TerminalUi.text(context));
+            TerminalUi.wrap(context, graphics, selectedMarker.summary(), x + 12, cy + 8, w - 24, TerminalUi.text(context));
         }
 
         private int metric(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -593,6 +966,18 @@ public final class HoloMapTerminalClientIntegration {
                 }
             }
             return markers.isEmpty() ? null : markers.getFirst();
+        }
+
+        private HoloMapWaypoint selectedWaypoint(List<HoloMapWaypoint> waypoints) {
+            if (selectedWaypointId.isBlank()) {
+                return null;
+            }
+            for (HoloMapWaypoint waypoint : waypoints) {
+                if (selectedWaypointId.equals(waypoint.id().toString())) {
+                    return waypoint;
+                }
+            }
+            return null;
         }
 
         private int detailLabelLimit() {
@@ -616,10 +1001,198 @@ public final class HoloMapTerminalClientIntegration {
                     .filter(marker -> layerEnabled.getOrDefault(marker.layerId(), true))
                     .filter(this::matchesStateFilter)
                     .filter(marker -> marker.state() != IMapMarker.MarkerState.HIDDEN)
+                    .filter(this::matchesSearch)
                     .sorted(Comparator.comparing((HoloMapSnapshotPacket.MarkerData marker) -> marker.layerId().toString())
                             .thenComparing(marker -> marker.state().ordinal())
                             .thenComparing(HoloMapSnapshotPacket.MarkerData::title))
                     .toList();
+        }
+
+        private List<HoloMapWaypoint> visibleWaypoints(TerminalRenderContext context) {
+            if (!showWaypoints) {
+                return List.of();
+            }
+            String dimension = context.player() == null
+                    ? "minecraft:overworld"
+                    : context.player().level().dimension().identifier().toString();
+            return HoloMapWaypointClientState.waypoints().stream()
+                    .filter(HoloMapWaypoint::visible)
+                    .filter(waypoint -> waypoint.inDimension(dimension))
+                    .filter(this::matchesSearch)
+                    .sorted(Comparator.comparing(HoloMapWaypoint::scope)
+                            .thenComparing(HoloMapWaypoint::title, String.CASE_INSENSITIVE_ORDER)
+                            .thenComparing(waypoint -> waypoint.id().toString()))
+                    .toList();
+        }
+
+        private List<MapListEntry> listEntries(TerminalRenderContext context,
+                List<HoloMapSnapshotPacket.MarkerData> markers, List<HoloMapWaypoint> waypoints) {
+            List<MapListEntry> entries = new ArrayList<>();
+            for (HoloMapSnapshotPacket.MarkerData marker : markers) {
+                entries.add(MapListEntry.marker(marker, distanceToPlayer(context, marker.x(), marker.z())));
+            }
+            for (HoloMapWaypoint waypoint : waypoints) {
+                entries.add(MapListEntry.waypoint(waypoint, distanceToPlayer(context, waypoint.x(), waypoint.z())));
+            }
+            Comparator<MapListEntry> comparator = switch (sortMode) {
+                case NEAREST -> Comparator.comparingDouble(MapListEntry::distance)
+                        .thenComparing(MapListEntry::title, String.CASE_INSENSITIVE_ORDER);
+                case NAME -> Comparator.comparing(MapListEntry::title, String.CASE_INSENSITIVE_ORDER);
+                case LAYER -> Comparator.comparing(MapListEntry::layer, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(MapListEntry::title, String.CASE_INSENSITIVE_ORDER);
+                case STATE -> Comparator.comparing(MapListEntry::state, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(MapListEntry::title, String.CASE_INSENSITIVE_ORDER);
+            };
+            entries.sort(comparator);
+            return entries;
+        }
+
+        private double distanceToPlayer(TerminalRenderContext context, double x, double z) {
+            if (context.player() == null) {
+                double dx = x - centerX;
+                double dz = z - centerZ;
+                return Math.sqrt(dx * dx + dz * dz);
+            }
+            double dx = x - context.player().getX();
+            double dz = z - context.player().getZ();
+            return Math.sqrt(dx * dx + dz * dz);
+        }
+
+        private boolean matchesSearch(HoloMapSnapshotPacket.MarkerData marker) {
+            String query = normalizedSearch();
+            if (query.isBlank()) {
+                return true;
+            }
+            String haystack = (marker.title() + " " + marker.summary() + " " + marker.layerId()
+                    + " " + marker.sourceId() + " " + marker.dimension()
+                    + " " + (int) marker.x() + " " + (int) marker.y() + " " + (int) marker.z())
+                    .toLowerCase(Locale.ROOT);
+            return haystack.contains(query);
+        }
+
+        private boolean matchesSearch(HoloMapWaypoint waypoint) {
+            String query = normalizedSearch();
+            if (query.isBlank()) {
+                return true;
+            }
+            String haystack = (waypoint.title() + " " + waypoint.scope() + " " + waypoint.dimension()
+                    + " " + (int) waypoint.x() + " " + (int) waypoint.y() + " " + (int) waypoint.z())
+                    .toLowerCase(Locale.ROOT);
+            return haystack.contains(query);
+        }
+
+        private String normalizedSearch() {
+            return searchText == null ? "" : searchText.strip().toLowerCase(Locale.ROOT);
+        }
+
+        private void focusListEntry(TerminalRenderContext context, MapListEntry entry) {
+            if (entry == null) {
+                return;
+            }
+            centerX = entry.x();
+            centerZ = entry.z();
+            cameraReady = true;
+            if (entry.marker() != null) {
+                selectedMarkerId = entry.marker().id().toString();
+                selectedWaypointId = "";
+            } else if (entry.waypoint() != null) {
+                selectedWaypointId = entry.waypoint().id().toString();
+                selectedMarkerId = "";
+            }
+            context.playCommandSound();
+            requestTerrain(context, true);
+        }
+
+        private void createWaypoint(TerminalRenderContext context, Scope scope) {
+            if (context.player() == null) {
+                return;
+            }
+            long time = context.player().level().getGameTime();
+            String dimension = context.player().level().dimension().identifier().toString();
+            double y = Math.floor(context.player().getY());
+            String title = scope == Scope.LOCAL
+                    ? "Local " + (int) actionWorldX + ", " + (int) actionWorldZ
+                    : scope == Scope.PERSONAL
+                            ? "Personal " + (int) actionWorldX + ", " + (int) actionWorldZ
+                            : "Shared " + (int) actionWorldX + ", " + (int) actionWorldZ;
+            int color = scope == Scope.SHARED ? 0xFFFFDA73 : scope == Scope.PERSONAL ? 0xFF92F7A6 : ACCENT;
+            HoloMapWaypoint waypoint = HoloMapWaypoint.create(scope, context.player().getUUID(), dimension,
+                    actionWorldX, y, actionWorldZ, title, color, time);
+            if (scope == Scope.LOCAL) {
+                HoloMapLocalWaypointStore.upsert(waypoint);
+                selectedWaypointId = waypoint.id().toString();
+                selectedMarkerId = "";
+                context.playCommandSound();
+            } else {
+                EchoNetClientActions.sendServerboundAction(HoloMapWaypointActionPacket.upsert(waypoint));
+            }
+        }
+
+        private void deleteSelectedWaypoint() {
+            Identifier id = Identifier.tryParse(selectedWaypointId);
+            if (id == null) {
+                return;
+            }
+            HoloMapWaypoint selected = HoloMapWaypointClientState.waypoints().stream()
+                    .filter(waypoint -> waypoint.id().equals(id))
+                    .findFirst()
+                    .orElse(null);
+            if (selected == null) {
+                return;
+            }
+            if (selected.scope() == Scope.LOCAL) {
+                HoloMapLocalWaypointStore.remove(id);
+            } else {
+                EchoNetClientActions.sendServerboundAction(HoloMapWaypointActionPacket.delete(id));
+            }
+            selectedWaypointId = "";
+        }
+
+        private void moveSelectedWaypointToAction(TerminalRenderContext context) {
+            if (context.player() == null) {
+                return;
+            }
+            Identifier id = Identifier.tryParse(selectedWaypointId);
+            if (id == null) {
+                return;
+            }
+            HoloMapWaypoint selected = HoloMapWaypointClientState.waypoints().stream()
+                    .filter(waypoint -> waypoint.id().equals(id))
+                    .findFirst()
+                    .orElse(null);
+            if (selected == null) {
+                return;
+            }
+            long time = context.player().level().getGameTime();
+            HoloMapWaypoint moved = new HoloMapWaypoint(
+                    selected.id(),
+                    selected.owner(),
+                    selected.scope(),
+                    context.player().level().dimension().identifier().toString(),
+                    actionWorldX,
+                    Math.floor(context.player().getY()),
+                    actionWorldZ,
+                    selected.title(),
+                    selected.color(),
+                    selected.icon(),
+                    selected.visible(),
+                    selected.createdTime(),
+                    time);
+            if (moved.scope() == Scope.LOCAL) {
+                HoloMapLocalWaypointStore.upsert(moved);
+            } else {
+                EchoNetClientActions.sendServerboundAction(HoloMapWaypointActionPacket.upsert(moved));
+            }
+            selectedWaypointId = moved.id().toString();
+            selectedMarkerId = "";
+            context.playCommandSound();
+        }
+
+        private void copyActionCoordinates(TerminalRenderContext context) {
+            String coords = (int) actionWorldX + " " + (context.player() == null ? 64 : (int) context.player().getY())
+                    + " " + (int) actionWorldZ;
+            Minecraft.getInstance().keyboardHandler.setClipboard(coords);
+            context.playCommandSound();
         }
 
         private boolean matchesStateFilter(HoloMapSnapshotPacket.MarkerData marker) {
@@ -697,7 +1270,16 @@ public final class HoloMapTerminalClientIntegration {
         TEST,
         STATE,
         DETAIL,
-        LAYER
+        LAYER,
+        WAYPOINTS,
+        SORT,
+        SEARCH_CLEAR,
+        MENU_LOCAL,
+        MENU_PERSONAL,
+        MENU_SHARED,
+        MENU_COPY,
+        MENU_MOVE_SELECTED,
+        WAYPOINT_DELETE
     }
 
     private record Button(int x, int y, int w, int h, ButtonKind kind, Identifier layerId) {
@@ -706,7 +1288,46 @@ public final class HoloMapTerminalClientIntegration {
     private record MarkerHit(HoloMapSnapshotPacket.MarkerData marker, int x, int y) {
     }
 
+    private record WaypointHit(HoloMapWaypoint waypoint, int x, int y) {
+    }
+
+    private record ListEntryHit(MapListEntry entry, int x, int y, int w, int h) {
+    }
+
     private record MarkerPoint(HoloMapSnapshotPacket.MarkerData marker, int x, int y) {
+    }
+
+    private record MapListEntry(
+            String id,
+            String title,
+            String layer,
+            String state,
+            double x,
+            double z,
+            double distance,
+            HoloMapSnapshotPacket.MarkerData marker,
+            HoloMapWaypoint waypoint) {
+        private static MapListEntry marker(HoloMapSnapshotPacket.MarkerData marker, double distance) {
+            return new MapListEntry(marker.id().toString(), marker.title(),
+                    marker.layerId().getPath().replace("layer/", ""), marker.state().name(),
+                    marker.x(), marker.z(), distance, marker, null);
+        }
+
+        private static MapListEntry waypoint(HoloMapWaypoint waypoint, double distance) {
+            return new MapListEntry(waypoint.id().toString(), waypoint.title(),
+                    "waypoint", waypoint.scope().name(), waypoint.x(), waypoint.z(), distance, null, waypoint);
+        }
+
+        private String prefix() {
+            return waypoint == null ? "M" : "W";
+        }
+
+        private int color(TerminalRenderContext context) {
+            if (waypoint != null) {
+                return waypoint.color();
+            }
+            return HoloMapTab.colorForMarker(context, marker);
+        }
     }
 
     private record Bounds(double minX, double maxX, double minZ, double maxZ) {

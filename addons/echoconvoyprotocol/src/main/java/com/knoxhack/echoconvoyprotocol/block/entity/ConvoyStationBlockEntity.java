@@ -5,7 +5,9 @@ import com.knoxhack.echoconvoyprotocol.block.ConvoyBlock.ConvoyBlockKind;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
 import com.knoxhack.echoconvoyprotocol.entity.ConvoyVehicleEntity;
 import com.knoxhack.echoconvoyprotocol.integration.ConvoyLogisticsIntegration;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyMissionHooks;
 import com.knoxhack.echoconvoyprotocol.menu.ConvoyStationMenu;
+import com.knoxhack.echoconvoyprotocol.menu.ConvoyUpgradeMenu;
 import com.knoxhack.echoconvoyprotocol.recipe.ConvoyStationRecipe;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlockEntities;
 import com.knoxhack.echoconvoyprotocol.registry.ModItems;
@@ -184,6 +186,7 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
          vehicle.refuel(60);
          input.shrink(1);
          markSupport("Refueled " + vehicle.callsign());
+         ConvoyMissionHooks.recordRefuelRepairNear(level, worldPosition, "vehicle_dock_refuel");
       } else if (input.is(ModItems.BATTERY_CELL.get()) && kind == ConvoyBlockKind.VEHICLE_DOCK) {
          vehicle.recharge(60);
          input.shrink(1);
@@ -192,6 +195,7 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
          vehicle.repair(45);
          input.shrink(1);
          markSupport("Repaired " + vehicle.callsign());
+         ConvoyMissionHooks.recordRefuelRepairNear(level, worldPosition, "vehicle_repair_station");
       } else if (kind == ConvoyBlockKind.CARGO_ANCHOR) {
          if (input.is(ModItems.CARGO_NET.get())) {
             if (ConvoyLogisticsIntegration.depositVehicleCargo(level, worldPosition, vehicle)) {
@@ -239,7 +243,7 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
          return false;
       }
       boolean movedAny = false;
-      for (int i = 0; i < vehicle.kind().cargoSlots(); i++) {
+      for (int i = 0; i < vehicle.cargoSlots(); i++) {
          ItemStack cargo = vehicle.removeFirstCargo();
          if (cargo.isEmpty()) {
             break;
@@ -279,6 +283,14 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
          .filter(vehicle -> vehicle.isOwner(player))
          .min((left, right) -> Double.compare(left.distanceToSqr(pos.getCenter()), right.distanceToSqr(pos.getCenter())))
          .orElse(null);
+   }
+
+   @Nullable
+   public ConvoyVehicleEntity nearestUpgradeVehicle(Player player) {
+      if (level == null || player == null) {
+         return null;
+      }
+      return nearestVehicle(level, worldPosition, player);
    }
 
    @Nullable
@@ -427,6 +439,9 @@ public class ConvoyStationBlockEntity extends BaseContainerBlockEntity {
 
    @Override
    protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
+      if (kind() == ConvoyBlockKind.VEHICLE_UPGRADE_BAY) {
+         return new ConvoyUpgradeMenu(containerId, inventory, this);
+      }
       return new ConvoyStationMenu(containerId, inventory, this, data);
    }
 

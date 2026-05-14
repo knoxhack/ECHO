@@ -13,7 +13,12 @@
     "placed_power_node": {
       "trigger": "minecraft:placed_block",
       "conditions": {
-        "block": "echoashfallprotocol:power_node"
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "echoashfallprotocol:power_node"
+          }
+        ]
       }
     }
   },

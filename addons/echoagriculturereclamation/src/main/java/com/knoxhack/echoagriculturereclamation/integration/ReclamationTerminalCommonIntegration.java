@@ -9,6 +9,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.network.chat.Component;
+import net.neoforged.fml.ModList;
 
 public final class ReclamationTerminalCommonIntegration {
    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
@@ -20,7 +21,12 @@ public final class ReclamationTerminalCommonIntegration {
       if (!REGISTERED.compareAndSet(false, true)) {
          return;
       }
-      TerminalMissionRegistry.register(ReclamationMissionProvider.INSTANCE);
+      boolean missionCoreLoaded = ModList.get().isLoaded("echomissioncore");
+      if (missionCoreLoaded) {
+         ReclamationMissionCoreIntegration.register();
+      } else {
+         TerminalMissionRegistry.register(ReclamationMissionProvider.INSTANCE);
+      }
       TerminalMissionActions.registerForTab(ReclamationTerminalIds.FIELD_TAB);
       TerminalActionRegistry.register(ReclamationTerminalIds.FIELD_TAB, ReclamationTerminalIds.SCAN_ACTION, (player, payload) -> {
          player.sendSystemMessage(Component.literal(ReclamationTerminalReport.summary(player)));
@@ -42,7 +48,7 @@ public final class ReclamationTerminalCommonIntegration {
             "Recovered seed capsules carry crop identity, contamination tier, and stability.",
             "Seed Vault Terminals identify capsules and record known recovered seeds.",
             "Hydroponic trays preserve a reusable seed culture; crouch-use extracts it if you need to move the route.",
-            "Stabilized seeds are safer, but still depend on soil, greenhouse safety, or hydroponics."
+            "Stabilized seeds are safer, but still depend on soil, greenhouse zones, or hydroponics."
          ),
          false
       ));
@@ -53,7 +59,7 @@ public final class ReclamationTerminalCommonIntegration {
          "OPEN",
          List.of(
             "Restoration is chunk-local and block-local. Agriculture Reclamation does not rewrite biome ids.",
-            "Mature restoration crops, restored soil, safe greenhouses, and Ecology Scanner reports raise the local score.",
+            "Mature restoration crops, restored soil, safe greenhouse zones, and Ecology Scanner reports raise the local score.",
             "Higher scores convert nearby dead, contaminated, irradiated, and toxic soil toward purified, stabilized, then restored."
          ),
          false

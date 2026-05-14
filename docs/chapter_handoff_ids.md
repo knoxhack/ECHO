@@ -8,6 +8,9 @@ Canonical IDs are stable contract strings used by ECHO Core services, Terminal n
 | --- | --- | --- | --- |
 | Core services | `core` | `echocore` | Service contracts, addon registry, route/progress/reward APIs. |
 | NetCore | `net_core` | `echonetcore` | Shared packet bridge, sync helpers, and network diagnostics. |
+| RuntimeGuard | `runtime_guard` | `echoruntimeguard` | Runtime budgets, pressure telemetry, smart tick hints, and performance diagnostics. |
+| ThemeCore | `theme_core` | `echothemecore` | Shared visual/theme/UI skin service for ECHO modules and vanilla surfaces. |
+| PlayerCore | `player_core` | `echoplayercore` | Player utility commands, homes, back, spawn, random teleport, and travel QoL. |
 | MissionCore | `mission_core` | `echomissioncore` | Shared mission service, objectives, progression, and reward contracts. |
 | DataCore | `data_core` | `echodatacore` | Shared persistent player, world, and team data contracts. |
 | WorldCore | `world_core` | `echoworldcore` | Shared regions, hazards, world markers, structure discoveries, and runtime world events. |
@@ -27,6 +30,8 @@ Canonical IDs are stable contract strings used by ECHO Core services, Terminal n
 | Index | `index` | `echoindex` | Shared item, recipe, usage, and archive index. |
 | Armory | `armory` | `echoarmory` | Modular combat gear, armor, modules, energy recharge, faction locks, and loadout hooks. |
 | Lens | `lens` | `echolens` | Smart scanner HUD for contextual inspection and addon relevance. |
+| MultiblockCore | `multiblock_core` | `echomultiblockcore` | Shared multiblock validation, runtime, robotics, workcell, and scan contracts. |
+| Blockworks | `blockworks` | `echoblockworks` | Themed block family catalog for ECHO structures, ruins, and build palettes. |
 | Blackbox Protocol | `blackbox_protocol` | `echoblackboxprotocol` | Late-game memory finale and final directive chapter. |
 
 ## Release Handoff IDs
@@ -56,8 +61,8 @@ Canonical IDs are stable contract strings used by ECHO Core services, Terminal n
 
 | Addon set | Included modules | Purpose |
 | --- | --- | --- |
-| `-PechoAddonSet=beta` | Core, NetCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, ECHO: Ashfall Protocol, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, WorldCore | Smaller compatibility build. |
-| `-PechoAddonSet=all` | Core, NetCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, RenderCore, ECHO: Ashfall Protocol, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, WorldCore, Stationfall, Blackbox Protocol, Industrial Nexus, Logistics Network, Convoy Protocol, HoloMap, Index, Armory | Current full-stack release verification target. |
+| `-PechoAddonSet=beta` | Core, NetCore, RuntimeGuard, ThemeCore, PlayerCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, RenderCore, ECHO: Ashfall Protocol, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, WorldCore, MultiblockCore, Blockworks | Smaller compatibility build. |
+| `-PechoAddonSet=all` | Core, NetCore, RuntimeGuard, ThemeCore, PlayerCore, Terminal, MissionCore, DataCore, SignalOS, SignalOS Example, RenderCore, ECHO: Ashfall Protocol, Orbital Remnants, Nexus Protocol, Agriculture Reclamation, WorldCore, Stationfall, Blackbox Protocol, Industrial Nexus, Logistics Network, Convoy Protocol, HoloMap, Index, Armory, Lens, MultiblockCore, Blockworks | Current full-stack release verification target. |
 
 ## Rules
 
@@ -66,3 +71,7 @@ Canonical IDs are stable contract strings used by ECHO Core services, Terminal n
 - Addons must register Terminal navigation profiles explicitly; group-name fallbacks are not a chapter ownership contract.
 - Recipe-aware addons should register `TerminalRecipeProvider` instances explicitly; duplicate provider/category/recipe IDs are compatibility errors or warnings, not ownership negotiation.
 - Existing save keys may remain for compatibility, but current UI should guide Ashfall completion toward the full post-Nexus addon chain.
+
+## Service Addon IDs
+
+Active service addon IDs now include `echopowergrid`, `echosoundcore`, `echotutorialcore`, `echorelictech`, and `echoweathercore`. These IDs are service/integration surfaces rather than linear chapter handoff gates unless a specific addon mission references them.

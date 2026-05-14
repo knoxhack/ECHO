@@ -62,7 +62,46 @@ public final class EchoThemeApi {
     public static Optional<Identifier> getTexture(Player player, EchoThemeTextureKey key) {
         EchoTheme theme = getTheme(player);
         Optional<Identifier> vanilla = theme.vanillaUiProfile().texture(key);
-        return vanilla.isPresent() ? vanilla : theme.uiAssets().texture(key);
+        if (vanilla.isPresent()) {
+            return vanilla;
+        }
+        Optional<Identifier> ui = theme.uiAssets().texture(key);
+        if (ui.isPresent()) {
+            return ui;
+        }
+        return theme.moduleTexture(key);
+    }
+
+    public static Optional<Identifier> getModuleTexture(Player player, EchoThemeTextureKey key) {
+        EchoTheme theme = getTheme(player);
+        Optional<Identifier> direct = theme.moduleTexture(key);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        return switch (key) {
+            case TERMINAL_PANEL, TERMINAL_TAB, TERMINAL_TAB_ACTIVE, TERMINAL_MISSION_CARD,
+                 TERMINAL_STATUS_CHIP, TERMINAL_BUTTON -> theme.uiAssets().texture(EchoThemeTextureKey.PANEL);
+            case TERMINAL_ICON -> theme.uiAssets().texture(EchoThemeTextureKey.ICON_PACK);
+            case HOLOMAP_GRID, HOLOMAP_PANEL, HOLOMAP_ROUTE, HOLOMAP_MARKER_SIGNAL,
+                 HOLOMAP_MARKER_HAZARD, HOLOMAP_MARKER_MISSION, HOLOMAP_MARKER_NEXUS,
+                 HOLOMAP_MARKER_RECLAIMED, HOLOMAP_SELECTED_RING, HOLOMAP_DANGER,
+                 HOLOMAP_ANOMALY, HOLOMAP_RECLAIMED ->
+                theme.uiAssets().texture(EchoThemeTextureKey.PANEL);
+            case LENS_SCAN_RING, LENS_TARGET_BOX, LENS_WEAK_POINT, LENS_WARNING, LENS_ANOMALY_REVEAL,
+                 LENS_COMPLETION_PULSE, LENS_PROGRESS_ARC, LENS_NOISE_OVERLAY ->
+                theme.uiAssets().texture(EchoThemeTextureKey.EDGE_GLOW);
+            case VANILLA_CONTAINER_FRAME, VANILLA_INVENTORY_FRAME, VANILLA_TITLE_BACKPLATE,
+                 VANILLA_PAUSE_PANEL, VANILLA_TOOLTIP_PANEL, VANILLA_WIDGET_OUTLINE ->
+                theme.vanillaUiProfile().texture(EchoThemeTextureKey.VANILLA_PANEL);
+            case VANILLA_SELECTED_SLOT -> theme.vanillaUiProfile().texture(EchoThemeTextureKey.VANILLA_HOTBAR);
+            case VANILLA_TOAST_ACCENT -> theme.vanillaUiProfile().texture(EchoThemeTextureKey.VANILLA_TOAST);
+            case VANILLA_BOSS_BAR_ACCENT -> theme.vanillaUiProfile().texture(EchoThemeTextureKey.VANILLA_BOSS_BAR);
+            case RENDERCORE_GLOW_OVERLAY -> theme.uiAssets().texture(EchoThemeTextureKey.ENERGY_OVERLAY);
+            case RENDERCORE_DISTORTION_OVERLAY -> theme.uiAssets().texture(EchoThemeTextureKey.HOLOGRAM_OVERLAY);
+            case RENDERCORE_ENTITY_HIGHLIGHT -> theme.uiAssets().texture(EchoThemeTextureKey.HOLOGRAM_OVERLAY);
+            case RENDERCORE_MULTIBLOCK_ENERGY -> theme.uiAssets().texture(EchoThemeTextureKey.ENERGY_OVERLAY);
+            default -> Optional.empty();
+        };
     }
 
     public static Optional<Identifier> getSound(Player player, EchoThemeSoundKey key) {

@@ -1,0 +1,12 @@
+{
+  "id": "echotutorialcore:schematic_fragments_unused",
+  "type": "PROGRESSION",
+  "category": "RESEARCH",
+  "title": "Schematic Fragments Unused",
+  "message": "You have schematic fragments. Research them to unlock recipes.",
+  "details": "Use a Research Lab to convert fragments into usable technology.",
+  "cooldownTicks": 48000,
+  "guideModes": ["NORMAL", "ASSISTED"],
+  "priority": 65,
+  "dismissible": true
+}

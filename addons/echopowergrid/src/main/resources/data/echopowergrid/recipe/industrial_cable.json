@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["WWW","ICI","WWW"],"key":{"W":{"item":"echopowergrid:insulated_wire"},"I":{"item":"minecraft:copper_ingot"},"C":{"item":"echopowergrid:copper_coil"}},"result":{"id":"echopowergrid:industrial_cable","count":8}}

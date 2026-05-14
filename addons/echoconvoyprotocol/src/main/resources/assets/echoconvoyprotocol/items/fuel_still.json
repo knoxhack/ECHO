@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoconvoyprotocol:block/fuel_still"
+    "model": "echoconvoyprotocol:item/fuel_still"
   }
 }

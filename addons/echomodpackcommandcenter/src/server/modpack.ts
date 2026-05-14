@@ -221,12 +221,18 @@ async function executePipeline(
       const report = store.createScanReport(scan);
       scanReports.push(report);
       appendOutput(`\n[scan:${project.slug}] ${report.status} ${report.summary.buildHealth}% health, ${report.findings.length} finding(s).\n`);
+      const scanBlocksPipeline = scanFailureBlocksPipeline(report, project, settings, startedAt);
+      if (report.status === "failed" && !scanBlocksPipeline) {
+        appendOutput(`[scan:${project.slug}] non-blocking: only pre-existing runtime crash reports were found.\n`);
+      }
       updateStep(store, runId, `scan-${project.slug}`, {
-        status: report.status === "failed" ? "failed" : "succeeded",
+        status: scanBlocksPipeline ? "failed" : "succeeded",
         finishedAt: new Date().toISOString(),
-        detail: `${project.name} quick scan ${report.status}: ${report.summary.buildHealth}% health, ${report.findings.length} finding(s).`
+        detail: scanBlocksPipeline
+          ? `${project.name} quick scan ${report.status}: ${report.summary.buildHealth}% health, ${report.findings.length} finding(s).`
+          : `${project.name} quick scan completed with no pipeline-blocking findings.`
       });
-      if (report.status === "failed") {
+      if (scanBlocksPipeline) {
         throw new Error(`${project.name} quick scan failed after promotion.`);
       }
     }
@@ -267,6 +273,37 @@ async function executePipeline(
     }) as CommandRun;
     throw new ModpackPipelineError(message, pipelineErrorStatusCode(error), failedSummary, commandRunToPipelineRun(failed));
   }
+}
+
+function scanFailureBlocksPipeline(report: ScanReport, project: Project, settings: AppSettings, pipelineStartedAt: string): boolean {
+  if (report.status !== "failed") {
+    return false;
+  }
+  return report.findings.some((finding) => !isPreExistingCrashReportFinding(finding, project, settings, pipelineStartedAt));
+}
+
+function isPreExistingCrashReportFinding(finding: ScanReport["findings"][number], project: Project, settings: AppSettings, pipelineStartedAt: string): boolean {
+  if (finding.code !== "FRESH_CRASH_REPORT" || !finding.path) {
+    return false;
+  }
+  const runtimeRoot = projectRuntimeRoot(project, settings);
+  const crashPath = path.resolve(runtimeRoot, finding.path);
+  if (!crashPath.startsWith(runtimeRoot) || !fs.existsSync(crashPath)) {
+    return false;
+  }
+  return fs.statSync(crashPath).mtimeMs < Date.parse(pipelineStartedAt);
+}
+
+function projectRuntimeRoot(project: Project, settings: AppSettings): string {
+  const workspaceRoot = projectWorkspaceRoot(project, settings);
+  if (project.slug === "echo") {
+    return workspaceRoot;
+  }
+  const modulePath = project.modules[0]?.path ?? project.workspacePath;
+  if (!modulePath || modulePath === ".") {
+    return workspaceRoot;
+  }
+  return path.resolve(workspaceRoot, modulePath);
 }
 
 function isRejectedPipelineError(error: unknown): boolean {

@@ -2,10 +2,14 @@ package com.knoxhack.echoconvoyprotocol.entity;
 
 import com.knoxhack.echoconvoyprotocol.content.ConvoyContent;
 import com.knoxhack.echoconvoyprotocol.content.ConvoyRouteDefinition;
+import com.knoxhack.echoconvoyprotocol.integration.ConvoyMissionHooks;
+import com.knoxhack.echoconvoyprotocol.item.VehicleUpgradeItem;
 import com.knoxhack.echoconvoyprotocol.progress.ConvoyProgress;
 import com.knoxhack.echoconvoyprotocol.registry.ModBlocks;
 import com.knoxhack.echoconvoyprotocol.registry.ModItems;
 import com.knoxhack.echoconvoyprotocol.service.ConvoyRouteService;
+import com.knoxhack.echoconvoyprotocol.upgrade.ConvoyUpgradeSlot;
+import com.knoxhack.echoconvoyprotocol.upgrade.VehicleUpgradeStats;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -63,6 +67,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
 
    private final ConvoyVehicleKind kind;
    private final NonNullList<ItemStack> cargo = NonNullList.withSize(MAX_CARGO_SLOTS, ItemStack.EMPTY);
+   private final NonNullList<ItemStack> upgrades = NonNullList.withSize(ConvoyUpgradeSlot.values().length, ItemStack.EMPTY);
    @Nullable
    private UUID owner;
    private String activeRouteId = "";
@@ -112,11 +117,11 @@ public class ConvoyVehicleEntity extends VehicleEntity {
          float forward = forwardInput(controller);
          float strafe = strafeInput(controller);
          if (Math.abs(forward) > 0.01F || Math.abs(strafe) > 0.01F) {
-            setYRot(getYRot() - strafe * kind.turnRate());
+            setYRot(getYRot() - strafe * turnRate());
          }
          if (Math.abs(forward) > 0.01F && hasTravelPower()) {
-            double cargoPenalty = 1.0D - Math.min(0.35D, filledCargoSlots() / (double) Math.max(1, kind.cargoSlots()) * kind.cargoWeightPenalty() * 0.35D);
-            double speed = kind.speed() * cargoPenalty * (forward < 0.0F ? 0.45D : 1.0D);
+            double cargoPenalty = 1.0D - Math.min(0.35D, filledCargoSlots() / (double) Math.max(1, cargoSlots()) * cargoWeightPenalty() * 0.35D);
+            double speed = speed() * cargoPenalty * (forward < 0.0F ? 0.45D : 1.0D);
             double radians = Math.toRadians(getYRot());
             Vec3 acceleration = new Vec3(-Math.sin(radians) * speed * forward, 0.0D, Math.cos(radians) * speed * forward);
             motion = motion.add(acceleration);
@@ -152,7 +157,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    private boolean hasTravelPower() {
-      return fuel() > 0 || (kind.maxBattery() > 0 && battery() > 0);
+      return fuel() > 0 || (maxBattery() > 0 && battery() > 0);
    }
 
    private void consumeTravelPower() {
@@ -169,7 +174,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
       }
       double speed = getDeltaMovement().horizontalDistance();
       if (speed > 0.16D) {
-         int impact = Math.max(1, (int)Math.round((speed - 0.12D) * 18.0D * (1.0D - kind.armor())));
+         int impact = Math.max(1, (int)Math.round((speed - 0.12D) * 18.0D * (1.0D - armor())));
          applyVehicleDamage(impact);
          lastCollisionDamageTick = tickCount;
       }
@@ -229,14 +234,16 @@ public class ConvoyVehicleEntity extends VehicleEntity {
          return applyCallsign(player, stack);
       } else if (stack.is(ModBlocks.FIELD_REPAIR_STATION.get().asItem())) {
          return deployFieldStation(player, stack);
-      } else if (stack.is(ModItems.FUEL_CANISTER.get()) && fuel() < kind.maxFuel()) {
-         setFuel(Math.min(kind.maxFuel(), fuel() + 50));
+      } else if (stack.is(ModItems.FUEL_CANISTER.get()) && fuel() < maxFuel()) {
+         setFuel(Math.min(maxFuel(), fuel() + 50));
+         ConvoyMissionHooks.recordRefuelRepair(player, "vehicle_refuel");
          changed = true;
-      } else if (stack.is(ModItems.BATTERY_CELL.get()) && kind.maxBattery() > 0 && battery() < kind.maxBattery()) {
-         setBattery(Math.min(kind.maxBattery(), battery() + 50));
+      } else if (stack.is(ModItems.BATTERY_CELL.get()) && maxBattery() > 0 && battery() < maxBattery()) {
+         setBattery(Math.min(maxBattery(), battery() + 50));
          changed = true;
       } else if (stack.is(ModItems.CONVOY_REPAIR_KIT.get()) && damage() > 0) {
          repair(35);
+         ConvoyMissionHooks.recordRefuelRepair(player, "vehicle_repair");
          changed = true;
       } else if (stack.is(ModItems.RADIATION_SHIELDING_PLATE.get())) {
          if (kind.maxShieldingPlates() <= 0) {
@@ -253,7 +260,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
       } else if (stack.is(ModItems.ROUTE_BEACON.get())) {
          String routeId = ConvoyProgress.get(player).activeRouteId();
          if (routeId.isBlank()) {
-            if (kind.scannerRange() > 0) {
+            if (scannerRange() > 0) {
                scanRouteOptions(player);
             } else {
                player.sendSystemMessage(Component.literal("ECHO CONVOY // Route Beacon has no active convoy route to pair."));
@@ -348,7 +355,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
          return;
       }
       player.sendSystemMessage(Component.literal(
-         "ECHO CONVOY // " + callsign() + " scanner sweep range " + kind.scannerRange() + "m. Compatible routes:"
+         "ECHO CONVOY // " + callsign() + " scanner sweep range " + scannerRange() + "m. Compatible routes:"
       ));
       for (ConvoyRouteDefinition route : compatible) {
          ConvoyRouteService.RouteCheck check = ConvoyRouteService.readiness(player, this, route);
@@ -362,7 +369,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    private void scanActiveRoute(Player player) {
-      if (kind.scannerRange() <= 0) {
+      if (scannerRange() <= 0) {
          return;
       }
       Identifier routeId = Identifier.tryParse(activeRouteId());
@@ -377,7 +384,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
          }
          ConvoyRouteDefinition.RouteLeg leg = route.leg(progress.activeRouteLeg());
          int remaining = remainingDistanceToLeg(progress, leg);
-         String range = remaining <= kind.scannerRange() ? "within scanner range" : "beyond scanner range";
+         String range = remaining <= scannerRange() ? "within scanner range" : "beyond scanner range";
          player.sendSystemMessage(Component.literal(
             "ECHO CONVOY // Scanner next leg: " + leg.title()
                + " | " + remaining + "m minimum remaining, " + range
@@ -430,7 +437,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
 
    public ItemStack insertCargo(ItemStack stack) {
       ItemStack remainder = stack.copy();
-      for (int i = 0; i < kind.cargoSlots() && !remainder.isEmpty(); i++) {
+      for (int i = 0; i < cargoSlots() && !remainder.isEmpty(); i++) {
          ItemStack existing = cargo.get(i);
          if (existing.isEmpty()) {
             int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
@@ -447,7 +454,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    public ItemStack removeFirstCargo() {
-      for (int i = 0; i < kind.cargoSlots(); i++) {
+      for (int i = 0; i < cargoSlots(); i++) {
          ItemStack stack = cargo.get(i);
          if (!stack.isEmpty()) {
             ItemStack copy = stack.copy();
@@ -461,7 +468,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
 
    public List<ItemStack> cargoStacks() {
       List<ItemStack> stacks = new ArrayList<>();
-      for (int i = 0; i < kind.cargoSlots(); i++) {
+      for (int i = 0; i < cargoSlots(); i++) {
          if (!cargo.get(i).isEmpty()) {
             stacks.add(cargo.get(i).copy());
          }
@@ -471,7 +478,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
 
    public int cargoItemCount(Item item) {
       int total = 0;
-      for (int i = 0; i < kind.cargoSlots(); i++) {
+      for (int i = 0; i < cargoSlots(); i++) {
          if (cargo.get(i).is(item)) {
             total += cargo.get(i).getCount();
          }
@@ -484,7 +491,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
          return false;
       }
       int remaining = count;
-      for (int i = 0; i < kind.cargoSlots() && remaining > 0; i++) {
+      for (int i = 0; i < cargoSlots() && remaining > 0; i++) {
          ItemStack stack = cargo.get(i);
          if (stack.is(item)) {
             int moved = Math.min(remaining, stack.getCount());
@@ -514,9 +521,9 @@ public class ConvoyVehicleEntity extends VehicleEntity {
       if (amount <= 0) {
          return;
       }
-      int next = Math.min(kind.maxDamage(), damage() + amount);
+      int next = Math.min(maxDamage(), damage() + amount);
       setVehicleDamage(next);
-      if (next >= kind.maxDamage() && level() instanceof ServerLevel serverLevel) {
+      if (next >= maxDamage() && level() instanceof ServerLevel serverLevel) {
          destroy(serverLevel, getDropItem());
       }
    }
@@ -530,11 +537,11 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    public void refuel(int amount) {
-      setFuel(Math.min(kind.maxFuel(), fuel() + Math.max(0, amount)));
+      setFuel(Math.min(maxFuel(), fuel() + Math.max(0, amount)));
    }
 
    public void recharge(int amount) {
-      setBattery(Math.min(kind.maxBattery(), battery() + Math.max(0, amount)));
+      setBattery(Math.min(maxBattery(), battery() + Math.max(0, amount)));
    }
 
    public int filledCargoSlots() {
@@ -543,7 +550,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
 
    private int calculateFilledCargoSlots() {
       int count = 0;
-      for (int i = 0; i < kind.cargoSlots(); i++) {
+      for (int i = 0; i < cargoSlots(); i++) {
          if (!cargo.get(i).isEmpty()) {
             count++;
          }
@@ -653,15 +660,18 @@ public class ConvoyVehicleEntity extends VehicleEntity {
       if (getCustomName() != null) {
          output.putString("callsign", getCustomName().getString());
       }
+      ContainerHelper.saveAllItems(output.child("vehicle_upgrades"), upgrades);
       ContainerHelper.saveAllItems(output, cargo);
    }
 
    @Override
    protected void readAdditionalSaveData(ValueInput input) {
       owner = readUuid(input.getStringOr("owner", ""));
-      setFuel(Math.min(kind.maxFuel(), input.getIntOr("fuel", kind.maxFuel() / 2)));
-      setBattery(Math.min(kind.maxBattery(), input.getIntOr("battery", kind.maxBattery() / 3)));
-      setVehicleDamage(Math.min(kind.maxDamage(), input.getIntOr("vehicle_damage", 0)));
+      input.child("vehicle_upgrades").ifPresent(child -> ContainerHelper.loadAllItems(child, upgrades));
+      normalizeUpgradeSlots();
+      setFuel(Math.min(maxFuel(), input.getIntOr("fuel", kind.maxFuel() / 2)));
+      setBattery(Math.min(maxBattery(), input.getIntOr("battery", kind.maxBattery() / 3)));
+      setVehicleDamage(Math.min(maxDamage(), input.getIntOr("vehicle_damage", 0)));
       setShieldingPlates(input.getIntOr("shielding_plates", 0));
       setDocked(input.getBooleanOr("docked", false));
       activeRouteId = input.getStringOr("active_route", "");
@@ -675,6 +685,96 @@ public class ConvoyVehicleEntity extends VehicleEntity {
 
    public ConvoyVehicleKind kind() {
       return kind;
+   }
+
+   public int maxFuel() {
+      return kind.maxFuel();
+   }
+
+   public int maxBattery() {
+      return Math.max(0, kind.maxBattery() + upgradeStats().maxBatteryBonus());
+   }
+
+   public int maxDamage() {
+      return Math.max(1, kind.maxDamage() + upgradeStats().maxDamageBonus());
+   }
+
+   public int cargoSlots() {
+      return Math.max(0, Math.min(MAX_CARGO_SLOTS, kind.cargoSlots() + upgradeStats().cargoSlotsBonus()));
+   }
+
+   public double speed() {
+      return kind.speed() * (1.0D + upgradeStats().speedMultiplier());
+   }
+
+   public float turnRate() {
+      return kind.turnRate() + upgradeStats().turnBonus();
+   }
+
+   public double cargoWeightPenalty() {
+      return Math.max(0.0D, kind.cargoWeightPenalty() * (1.0D - Math.min(0.9D, upgradeStats().cargoPenaltyReduction())));
+   }
+
+   public double armor() {
+      return kind.armor() + upgradeStats().armorBonus();
+   }
+
+   public int scannerRange() {
+      return Math.max(0, kind.scannerRange() + upgradeStats().scannerRangeBonus());
+   }
+
+   public ItemStack upgradeStack(ConvoyUpgradeSlot slot) {
+      return upgrades.get(slot.ordinal()).copy();
+   }
+
+   public boolean canInstallUpgrade(ConvoyUpgradeSlot slot, ItemStack stack) {
+      if (slot == null || stack.isEmpty() || stack.getCount() != 1 || !upgrades.get(slot.ordinal()).isEmpty()) {
+         return false;
+      }
+      if (!(stack.getItem() instanceof VehicleUpgradeItem upgrade)) {
+         return false;
+      }
+      return upgrade.targetKind() == kind && upgrade.slot() == slot && !hasUpgrade(stack.getItem());
+   }
+
+   public boolean canRemoveUpgrade(ConvoyUpgradeSlot slot) {
+      if (slot == null || upgrades.get(slot.ordinal()).isEmpty()) {
+         return true;
+      }
+      VehicleUpgradeStats remainingStats = upgradeStatsExcluding(slot);
+      int remainingCargoSlots = effectiveCargoSlots(remainingStats);
+      int remainingMaxDamage = effectiveMaxDamage(remainingStats);
+      return !hasCargoBeyond(remainingCargoSlots) && damage() <= remainingMaxDamage;
+   }
+
+   public boolean setUpgrade(ConvoyUpgradeSlot slot, ItemStack stack) {
+      if (slot == null) {
+         return false;
+      }
+      if (stack.isEmpty()) {
+         if (!canRemoveUpgrade(slot)) {
+            return false;
+         }
+         upgrades.set(slot.ordinal(), ItemStack.EMPTY);
+         clampStatsAfterUpgradeChange();
+         return true;
+      }
+      if (!canInstallUpgrade(slot, stack)) {
+         return false;
+      }
+      upgrades.set(slot.ordinal(), stack.copyWithCount(1));
+      clampStatsAfterUpgradeChange();
+      return true;
+   }
+
+   public ItemStack removeUpgrade(ConvoyUpgradeSlot slot) {
+      if (!canRemoveUpgrade(slot)) {
+         return ItemStack.EMPTY;
+      }
+      ItemStack removed = upgradeStack(slot);
+      upgrades.set(slot.ordinal(), ItemStack.EMPTY);
+      clampStatsAfterUpgradeChange();
+      return removed;
    }
 
    public int fuel() {
@@ -694,7 +794,7 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    public double hazardDamageReduction() {
-      return Math.min(0.8D, kind.armor() + shieldingPlates() * 0.12D);
+      return Math.min(0.8D, armor() + shieldingPlates() * 0.12D);
    }
 
    public boolean docked() {
@@ -714,15 +814,15 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    private void setFuel(int fuel) {
-      entityData.set(DATA_FUEL, Math.max(0, Math.min(kind.maxFuel(), fuel)));
+      entityData.set(DATA_FUEL, Math.max(0, Math.min(maxFuel(), fuel)));
    }
 
    private void setBattery(int battery) {
-      entityData.set(DATA_BATTERY, Math.max(0, Math.min(kind.maxBattery(), battery)));
+      entityData.set(DATA_BATTERY, Math.max(0, Math.min(maxBattery(), battery)));
    }
 
    private void setVehicleDamage(int damage) {
-      entityData.set(DATA_DAMAGE, Math.max(0, Math.min(kind.maxDamage(), damage)));
+      entityData.set(DATA_DAMAGE, Math.max(0, Math.min(maxDamage(), damage)));
    }
 
    private void setShieldingPlates(int plates) {
@@ -730,17 +830,17 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    }
 
    private boolean isDisabled() {
-      return damage() >= kind.maxDamage();
+      return damage() >= maxDamage();
    }
 
    private void sendStatus(Player player, boolean actionBar) {
       Component status = Component.literal("ECHO CONVOY // " + callsign()
-         + " fuel " + fuel() + "/" + kind.maxFuel()
-         + " | battery " + battery() + "/" + kind.maxBattery()
-         + " | damage " + damage() + "/" + kind.maxDamage()
-         + " | cargo " + filledCargoSlots() + "/" + kind.cargoSlots()
+         + " fuel " + fuel() + "/" + maxFuel()
+         + " | battery " + battery() + "/" + maxBattery()
+         + " | damage " + damage() + "/" + maxDamage()
+         + " | cargo " + filledCargoSlots() + "/" + cargoSlots()
          + (kind.maxShieldingPlates() <= 0 ? "" : " | shielding " + shieldingPlates() + "/" + kind.maxShieldingPlates())
-         + (kind.scannerRange() <= 0 ? "" : " | scanner " + kind.scannerRange() + "m")
+         + (scannerRange() <= 0 ? "" : " | scanner " + scannerRange() + "m")
          + (activeRouteId().isBlank() ? "" : " | route " + activeRouteId()));
       if (player instanceof ServerPlayer serverPlayer) {
          serverPlayer.sendSystemMessage(status, actionBar);
@@ -752,6 +852,96 @@ public class ConvoyVehicleEntity extends VehicleEntity {
    public String callsign() {
       Component customName = getCustomName();
       return customName == null ? kind.displayName() : customName.getString();
+   }
+
+   private boolean hasUpgrade(Item item) {
+      for (ItemStack upgrade : upgrades) {
+         if (upgrade.is(item)) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private VehicleUpgradeStats upgradeStats() {
+      return upgradeStatsExcluding(null);
+   }
+
+   private VehicleUpgradeStats upgradeStatsExcluding(@Nullable ConvoyUpgradeSlot excludedSlot) {
+      double speedMultiplier = 0.0D;
+      float turnBonus = 0.0F;
+      double cargoPenaltyReduction = 0.0D;
+      int cargoSlotsBonus = 0;
+      int maxBatteryBonus = 0;
+      int maxDamageBonus = 0;
+      int scannerRangeBonus = 0;
+      double armorBonus = 0.0D;
+      for (ConvoyUpgradeSlot slot : ConvoyUpgradeSlot.values()) {
+         if (slot == excludedSlot) {
+            continue;
+         }
+         ItemStack stack = upgrades.get(slot.ordinal());
+         if (stack.getItem() instanceof VehicleUpgradeItem upgrade && upgrade.targetKind() == kind && upgrade.slot() == slot) {
+            VehicleUpgradeStats stats = upgrade.stats();
+            speedMultiplier += stats.speedMultiplier();
+            turnBonus += stats.turnBonus();
+            cargoPenaltyReduction += stats.cargoPenaltyReduction();
+            cargoSlotsBonus += stats.cargoSlotsBonus();
+            maxBatteryBonus += stats.maxBatteryBonus();
+            maxDamageBonus += stats.maxDamageBonus();
+            scannerRangeBonus += stats.scannerRangeBonus();
+            armorBonus += stats.armorBonus();
+         }
+      }
+      return new VehicleUpgradeStats(
+         speedMultiplier,
+         turnBonus,
+         cargoPenaltyReduction,
+         cargoSlotsBonus,
+         maxBatteryBonus,
+         maxDamageBonus,
+         scannerRangeBonus,
+         armorBonus
+      );
+   }
+
+   private int effectiveCargoSlots(VehicleUpgradeStats stats) {
+      return Math.max(0, Math.min(MAX_CARGO_SLOTS, kind.cargoSlots() + stats.cargoSlotsBonus()));
+   }
+
+   private int effectiveMaxDamage(VehicleUpgradeStats stats) {
+      return Math.max(1, kind.maxDamage() + stats.maxDamageBonus());
+   }
+
+   private boolean hasCargoBeyond(int slotLimit) {
+      for (int i = Math.max(0, slotLimit); i < cargo.size(); i++) {
+         if (!cargo.get(i).isEmpty()) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private void normalizeUpgradeSlots() {
+      for (ConvoyUpgradeSlot slot : ConvoyUpgradeSlot.values()) {
+         ItemStack stack = upgrades.get(slot.ordinal());
+         if (stack.isEmpty()) {
+            continue;
+         }
+         if (!(stack.getItem() instanceof VehicleUpgradeItem upgrade) || upgrade.targetKind() != kind || upgrade.slot() != slot) {
+            upgrades.set(slot.ordinal(), ItemStack.EMPTY);
+         } else if (stack.getCount() > 1) {
+            upgrades.set(slot.ordinal(), stack.copyWithCount(1));
+         }
+      }
+      clampStatsAfterUpgradeChange();
+   }
+
+   private void clampStatsAfterUpgradeChange() {
+      setFuel(fuel());
+      setBattery(battery());
+      setVehicleDamage(damage());
+      syncCargoCount();
    }
 
    @Nullable

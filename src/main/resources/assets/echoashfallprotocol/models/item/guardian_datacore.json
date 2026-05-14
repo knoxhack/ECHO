@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "echoashfallprotocol:item/data_log_biome_bosses"
+    "layer0": "echoashfallprotocol:item/guardian_datacore"
   }
 }

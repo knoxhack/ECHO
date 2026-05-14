@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoblackboxprotocol:block/signal_glass"
+    "model": "echoblackboxprotocol:item/signal_glass"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echopowergrid:block/power_meter",
+    "down": "echopowergrid:block/power_meter",
+    "up": "echopowergrid:block/power_meter",
+    "north": "echopowergrid:block/power_meter",
+    "south": "echopowergrid:block/power_meter",
+    "west": "echopowergrid:block/power_meter",
+    "east": "echopowergrid:block/power_meter"
+  }
+}

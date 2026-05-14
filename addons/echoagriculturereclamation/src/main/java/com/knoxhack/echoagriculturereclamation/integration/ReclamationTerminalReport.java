@@ -14,9 +14,11 @@ final class ReclamationTerminalReport {
 
    static String summary(Player player) {
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
+      ReclamationProgress.GreenhouseContext greenhouse = greenhouse(player);
       return "ECHO FIELD // Reclamation status: seeds " + metrics.knownSeeds() + "/" + CropSpec.ALL.size()
          + ", soil " + metrics.soilLabel()
          + ", greenhouse " + metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold()
+         + " (" + greenhouse.summaryLabel() + ")"
          + ", stability " + metrics.cropStability()
          + "%, food " + metrics.foodSecurity()
          + "%, restoration " + metrics.restorationScore() + "/" + ReclamationContent.progression().restoreThreshold()
@@ -30,9 +32,13 @@ final class ReclamationTerminalReport {
 
    static List<String> fieldFeed(Player player) {
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
+      ReclamationProgress.GreenhouseContext greenhouse = greenhouse(player);
       return List.of(
          "Soil state: " + metrics.soilLabel(),
-         "Greenhouse safety: " + metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold(),
+         "Greenhouse safety: " + metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold()
+            + " (" + greenhouse.summaryLabel() + ")",
+         "Pollination: " + countLabel(greenhouse.scan().deployedDrones(), "drone") + " | "
+            + countLabel(greenhouse.scan().serviceTargets(), "service target"),
          "Hydroponics: " + (ReclamationProgress.flag(player, "hydroponics_online") ? "culture online" : "tray route pending"),
          "Harvests: " + ReclamationProgress.value(player, "crops_grown")
             + " | stabilization seed: " + (ReclamationProgress.flag(player, "stabilization_seed_recovered") ? "available" : "pending"),
@@ -69,11 +75,22 @@ final class ReclamationTerminalReport {
          return "craft the Gene Stabilizer with Bio-Gel and Soil Nutrient Mix, then use it with a contaminated seed and Bio-Gel or Gene Sample.";
       }
       if (metrics.greenhouseSafety() < ReclamationContent.progression().greenhouseSafeThreshold()) {
-         return "raise greenhouse safety with glass, filters, trays, controller, and dock blocks.";
+         return greenhouse(player).nextAction();
       }
       if (metrics.restorationScore() < ReclamationContent.progression().restoreThreshold()) {
          return "grow restoration-weight crops and use Ecology Scanner reports until this chunk restores.";
       }
       return "local field route complete; keep collecting seed profiles and expand restored soil block by block.";
+   }
+
+   private static ReclamationProgress.GreenhouseContext greenhouse(Player player) {
+      if (player == null) {
+         return ReclamationProgress.GreenhouseScan.empty().asContext();
+      }
+      return ReclamationProgress.greenhouseContext(player.level(), player.blockPosition());
+   }
+
+   private static String countLabel(int count, String noun) {
+      return count + " " + noun + (count == 1 ? "" : "s");
    }
 }

@@ -108,7 +108,7 @@ public final class ThemeCoreConfig {
         FORCE_HIGH_CONTRAST = CLIENT_BUILDER.define("force_high_contrast", false);
         REDUCE_GLOW = CLIENT_BUILDER.define("reduce_glow", false);
         DISABLE_DISTORTION = CLIENT_BUILDER.define("disable_distortion", false);
-        DISABLE_NOISE = CLIENT_BUILDER.define("disable_noise", true);
+        DISABLE_NOISE = CLIENT_BUILDER.define("disable_noise", false);
         CLIENT_BUILDER.pop();
 
         CLIENT_BUILDER.push("vanilla_ui");
@@ -131,7 +131,7 @@ public final class ThemeCoreConfig {
         CLIENT_BUILDER.pop();
 
         CLIENT_BUILDER.push("vanilla_ui_safety");
-        VANILLA_SAFE_MODE = CLIENT_BUILDER.define("safe_mode", true);
+        VANILLA_SAFE_MODE = CLIENT_BUILDER.define("safe_mode", false);
         DISABLE_IF_SCREEN_UNKNOWN = CLIENT_BUILDER.define("disable_if_screen_unknown", true);
         DO_NOT_MODIFY_SLOT_POSITIONS = CLIENT_BUILDER.define("do_not_modify_slot_positions", true);
         PRESERVE_VANILLA_TEXT_CONTRAST = CLIENT_BUILDER.define("preserve_vanilla_text_contrast", true);

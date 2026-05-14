@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoblackboxprotocol:block/archive_terminal"
+    "model": "echoblackboxprotocol:item/archive_terminal"
   }
 }

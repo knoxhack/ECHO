@@ -22,8 +22,8 @@ function makeProject() {
     description: "Fixture",
     workspacePath: "",
     modules: [
-      { modId: "echocore", label: "Core", version: "1.1.0", path: "core/echocore" },
-      { modId: "echostationfall", label: "Stationfall", version: "1.1.0", path: "addons/echostationfall" }
+      { modId: "echocore", label: "Core", version: "1.0.0", path: "core/echocore" },
+      { modId: "echostationfall", label: "Stationfall", version: "1.0.0", path: "addons/echostationfall" }
     ]
   };
 }
@@ -142,7 +142,7 @@ test("clean quick scan plus current target jars reaches 100", () => {
 
 test("missing built jar creates a missing jar checklist item", () => {
   const { root, buildRoot, modsDir, project } = fixture();
-  write(path.join(buildRoot, "echocore", "libs", "echocore-1.1.0.jar"), "echocore-current");
+  write(path.join(buildRoot, "echocore", "libs", "echocore-1.0.0.jar"), "echocore-current");
   fs.mkdirSync(modsDir, { recursive: true });
   const settings = makeSettings(root, modsDir);
   const manifest = buildJarManifest(project, settings, { buildRoot });
@@ -150,7 +150,7 @@ test("missing built jar creates a missing jar checklist item", () => {
   const report = buildReadinessReport(project, settings, [scan()], manifest);
 
   assert.equal(item(report, "built-jars")?.status, "missing");
-  assert.match(item(report, "built-jars")?.detail ?? "", /echostationfall-1\.1\.0\.jar/);
+  assert.match(item(report, "built-jars")?.detail ?? "", /echostationfall-1\.0\.0\.jar/);
   assert.equal(report.score < 100, true);
 });
 
@@ -158,7 +158,7 @@ test("stale target jar creates promote and quarantine checklist work", () => {
   const { root, buildRoot, modsDir, project } = fixture();
   writeBuiltJars(buildRoot, project);
   fs.mkdirSync(modsDir, { recursive: true });
-  write(path.join(modsDir, "echocore-1.1.0.jar"), "old-core-bytes");
+  write(path.join(modsDir, "echocore-1.0.0.jar"), "old-core-bytes");
   write(path.join(modsDir, "echostationfall-1.0.0.jar"), "old-stationfall");
   const settings = makeSettings(root, modsDir);
   const manifest = buildJarManifest(project, settings, { buildRoot });

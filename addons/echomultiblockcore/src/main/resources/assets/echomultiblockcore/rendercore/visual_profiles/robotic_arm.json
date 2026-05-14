@@ -1,0 +1,16 @@
+{
+  "schema_version": 11,
+  "base_texture": "echomultiblockcore:textures/block/robotic_arm.png",
+  "particle_profile": "echomultiblockcore:robotic_arm",
+  "default_state": "IDLE",
+  "effect": { "preset": "neon", "glow_intensity": 0.7, "pulse_speed": 0.8, "target_scope": "block" },
+  "anchors": {
+    "base": { "offset": [0.0, 0.2, 0.0] },
+    "joint": { "offset": [0.0, 0.72, 0.0] },
+    "tool": { "offset": [0.0, 0.92, -0.34] },
+    "core": { "offset": [0.0, 0.55, 0.0] }
+  },
+  "block_parts": {
+    "arm": { "directions": ["north", "south", "east", "west", "up"], "ambient_occlusion": true }
+  }
+}

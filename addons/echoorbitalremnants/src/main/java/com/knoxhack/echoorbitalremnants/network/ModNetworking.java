@@ -2,6 +2,7 @@ package com.knoxhack.echoorbitalremnants.network;
 
 import com.knoxhack.echonetcore.api.EchoNetPayloads;
 import com.knoxhack.echonetcore.api.EchoRateLimitPolicy;
+import com.knoxhack.echoorbitalremnants.faction.OrbitalFactionDialogueService;
 import com.knoxhack.echoorbitalremnants.item.EchoTerminalItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
@@ -15,9 +16,13 @@ public final class ModNetworking {
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = EchoNetPayloads.optional(event);
         EchoNetPayloads.clientboundSync(registrar, OpenEchoTerminalPayload.TYPE, OpenEchoTerminalPayload.STREAM_CODEC);
+        EchoNetPayloads.clientboundSync(registrar, OrbitalFactionDialogueOpenPayload.TYPE, OrbitalFactionDialogueOpenPayload.STREAM_CODEC);
         registrar.playToClient(OrbitalEventVisualPayload.TYPE, OrbitalEventVisualPayload.STREAM_CODEC);
         EchoNetPayloads.serverboundAction(registrar, EchoTerminalActionPayload.TYPE, EchoTerminalActionPayload.STREAM_CODEC,
                 EchoRateLimitPolicy.of(10, "orbital_terminal_action"), ModNetworking::handleTerminalAction);
+        EchoNetPayloads.serverboundAction(registrar, OrbitalFactionNpcActionPayload.TYPE, OrbitalFactionNpcActionPayload.STREAM_CODEC,
+                EchoRateLimitPolicy.of(8, "orbital_faction_npc_action"),
+                (payload, player, context) -> OrbitalFactionDialogueService.handleAction(payload, player));
     }
 
     private static void handleTerminalAction(EchoTerminalActionPayload payload, ServerPlayer player,

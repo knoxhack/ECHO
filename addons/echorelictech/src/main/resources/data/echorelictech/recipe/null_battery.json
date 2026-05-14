@@ -6,9 +6,9 @@
     " I "
   ],
   "key": {
-    "R": { "item": "minecraft:redstone" },
-    "I": { "item": "minecraft:iron_nugget" },
-    "C": { "item": "echorelictech:null_cell" }
+    "R": "minecraft:redstone",
+    "I": "minecraft:iron_nugget",
+    "C": "echorelictech:null_cell"
   },
   "result": {
     "id": "echorelictech:null_battery"

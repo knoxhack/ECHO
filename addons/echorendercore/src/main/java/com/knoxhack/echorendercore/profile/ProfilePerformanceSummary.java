@@ -10,6 +10,18 @@ public record ProfilePerformanceSummary(
         int animationTrackCount,
         int emitterCount,
         int estimatedMaxEmitterBurst,
-        float estimatedEmitterRate
+        float estimatedEmitterRate,
+        int activeEffectCount,
+        int estimatedEffectCost,
+        int estimatedBloomCost,
+        int advancedEffectPassCount,
+        String primaryEffectTargetScope,
+        int estimatedMaskSubmissions,
+        int estimatedBloomChannelCount,
+        int estimatedBloomDownscale,
+        int estimatedPrioritySkips,
+        String advancedFxMode,
+        boolean isolatedFxAvailable,
+        boolean fullscreenFallbackAvailable
 ) {
 }

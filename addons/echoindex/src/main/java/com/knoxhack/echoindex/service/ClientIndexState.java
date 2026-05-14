@@ -7,12 +7,19 @@ import net.minecraft.resources.Identifier;
 
 public final class ClientIndexState {
     private static volatile CompoundTag snapshot = new CompoundTag();
+    private static volatile long revision;
 
     private ClientIndexState() {
     }
 
     public static void replace(CompoundTag tag) {
         snapshot = tag == null ? new CompoundTag() : tag.copy();
+        IndexRecipeQueryClientState.applyHealth(snapshot.getCompoundOrEmpty("recipe_health"));
+        revision++;
+    }
+
+    public static long revision() {
+        return revision;
     }
 
     public static boolean isBookmarked(Identifier id) {
@@ -21,6 +28,14 @@ public final class ClientIndexState {
 
     public static Set<Identifier> bookmarks() {
         return readSet("bookmarked");
+    }
+
+    public static boolean isRecipePinned(Identifier id) {
+        return contains("pinned_recipe", id);
+    }
+
+    public static Set<Identifier> pinnedRecipes() {
+        return readSet("pinned_recipe");
     }
 
     private static boolean contains(String prefix, Identifier id) {

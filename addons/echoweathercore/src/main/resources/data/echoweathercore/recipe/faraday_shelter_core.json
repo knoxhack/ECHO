@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ccc",
+    "cic",
+    "crc"
+  ],
+  "key": {
+    "c": { "item": "echoweathercore:faraday_coil" },
+    "i": { "item": "minecraft:iron_block" },
+    "r": { "item": "minecraft:redstone_block" }
+  },
+  "result": {
+    "id": "echoweathercore:faraday_shelter_core"
+  }
+}

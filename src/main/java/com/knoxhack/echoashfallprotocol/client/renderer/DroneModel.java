@@ -1,6 +1,9 @@
 package com.knoxhack.echoashfallprotocol.client.renderer;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echorendercore.client.NamedModelParts;
+import com.knoxhack.echorendercore.client.RenderCorePartProvider;
+import java.util.Map;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -11,7 +14,7 @@ import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.Identifier;
 
-public class DroneModel extends EntityModel<DroneRenderState> {
+public class DroneModel extends EntityModel<DroneRenderState> implements RenderCorePartProvider {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
             Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "drone"), "main");
 
@@ -31,6 +34,7 @@ public class DroneModel extends EntityModel<DroneRenderState> {
     private final ModelPart hoverCoreBr;
     private final ModelPart antennaLeft;
     private final ModelPart antennaRight;
+    private final Map<String, ModelPart> renderCoreParts;
 
     public DroneModel(ModelPart root) {
         super(root);
@@ -50,6 +54,24 @@ public class DroneModel extends EntityModel<DroneRenderState> {
         this.hoverCoreBr = root.getChild("hover_core_br");
         this.antennaLeft = root.getChild("antenna_left");
         this.antennaRight = root.getChild("antenna_right");
+        this.renderCoreParts = NamedModelParts.builder()
+                .put("root", root)
+                .put("chassis", chassis)
+                .put("body", chassis)
+                .put("torso", chassis)
+                .put("lens", frontDisplay)
+                .put("eyes", frontDisplay)
+                .put("scanner", frontDisplay)
+                .put("left_rotor", leftEngine)
+                .put("right_rotor", rightEngine)
+                .put("rear_rotor", rearPanel)
+                .put("tool_arm", bottomDisplay)
+                .put("core", bottomDisplay)
+                .put("trail", rearPanel)
+                .put("exhaust", rearPanel)
+                .put("ground", bottomDisplay)
+                .build()
+                .asMap();
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -178,4 +200,8 @@ public class DroneModel extends EntityModel<DroneRenderState> {
         part.zScale = pulse;
     }
 
+    @Override
+    public Map<String, ModelPart> renderCoreParts() {
+        return renderCoreParts;
+    }
 }

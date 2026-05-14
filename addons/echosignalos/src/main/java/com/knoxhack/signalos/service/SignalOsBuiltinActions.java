@@ -1,5 +1,7 @@
 package com.knoxhack.signalos.service;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.knoxhack.signalos.SignalOS;
 import com.knoxhack.signalos.api.TerminalActionRegistry;
 import com.knoxhack.signalos.api.TerminalArchiveRecord;
@@ -24,6 +26,7 @@ public final class SignalOsBuiltinActions {
     public static final Identifier CLAIM_MISSION = id("claim_mission");
     public static final Identifier MARK_ARCHIVE_READ = id("mark_archive_read");
     public static final Identifier SAVE_NOTE = id("save_note");
+    public static final Identifier DELETE_NOTE = id("delete_note");
     public static final Identifier CLEAR_NOTES = id("clear_notes");
     public static final Identifier SET_PREFERENCE = id("set_preference");
     private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
@@ -40,6 +43,7 @@ public final class SignalOsBuiltinActions {
         TerminalActionRegistry.register(PAGE_MISSIONS, CLAIM_MISSION, SignalOsBuiltinActions::claimMission);
         TerminalActionRegistry.register(PAGE_ARCHIVES, MARK_ARCHIVE_READ, SignalOsBuiltinActions::markArchiveRead);
         TerminalActionRegistry.register(PAGE_NOTES, SAVE_NOTE, SignalOsBuiltinActions::saveNote);
+        TerminalActionRegistry.register(PAGE_NOTES, DELETE_NOTE, SignalOsBuiltinActions::deleteNote);
         TerminalActionRegistry.register(PAGE_NOTES, CLEAR_NOTES,
                 (player, payload) -> SignalOsPlayerData.clearNotes(player));
         TerminalActionRegistry.register(PAGE_SETTINGS, SET_PREFERENCE, SignalOsBuiltinActions::setPreference);
@@ -116,15 +120,38 @@ public final class SignalOsBuiltinActions {
         String safe = payload == null ? "" : payload;
         String title = "Operator Note";
         String body = "Created from the SignalOS Notes app.";
-        int split = safe.indexOf('\n');
-        if (split >= 0) {
-            title = safe.substring(0, split).strip();
-            body = safe.substring(split + 1).strip();
-        } else if (!safe.isBlank()) {
-            body = safe.strip();
+        Identifier noteId = null;
+        if (safe.stripLeading().startsWith("{")) {
+            try {
+                JsonObject json = JsonParser.parseString(safe).getAsJsonObject();
+                title = string(json, "title", title);
+                body = string(json, "body", body);
+                String idValue = string(json, "id", "");
+                noteId = idValue.isBlank() ? null : Identifier.tryParse(idValue);
+            } catch (RuntimeException exception) {
+                status(player, "[SignalOS] Invalid note payload.");
+                return;
+            }
+        } else {
+            int split = safe.indexOf('\n');
+            if (split >= 0) {
+                title = safe.substring(0, split).strip();
+                body = safe.substring(split + 1).strip();
+            } else if (!safe.isBlank()) {
+                body = safe.strip();
+            }
         }
-        SignalOsPlayerData.addNote(player, title, body);
+        SignalOsPlayerData.saveNote(player, noteId, title, body);
         status(player, "[SignalOS] Note saved.");
+    }
+
+    private static void deleteNote(ServerPlayer player, String payload) {
+        Identifier noteId = Identifier.tryParse(payload == null ? "" : payload.strip());
+        if (!SignalOsPlayerData.deleteNote(player, noteId)) {
+            status(player, "[SignalOS] Note unavailable.");
+            return;
+        }
+        status(player, "[SignalOS] Note deleted.");
     }
 
     private static void setPreference(ServerPlayer player, String payload) {
@@ -142,6 +169,10 @@ public final class SignalOsBuiltinActions {
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(SignalOS.MODID, path);
+    }
+
+    private static String string(JsonObject json, String key, String fallback) {
+        return json.has(key) && json.get(key).isJsonPrimitive() ? json.get(key).getAsString() : fallback;
     }
 
     private static void status(Player player, String message) {

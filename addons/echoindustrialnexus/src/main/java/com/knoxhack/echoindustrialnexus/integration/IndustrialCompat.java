@@ -59,6 +59,7 @@ public final class IndustrialCompat {
       if (!(level instanceof ServerLevel serverLevel) || output.isEmpty()) {
          return;
       }
+      IndustrialMissionHooks.recordOutput(serverLevel, pos, output);
       String itemId = BuiltInRegistries.ITEM.getKey(output.getItem()).getPath();
       for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, new AABB(pos).inflate(20.0D))) {
          recordOrbitalComponent(player, itemId);

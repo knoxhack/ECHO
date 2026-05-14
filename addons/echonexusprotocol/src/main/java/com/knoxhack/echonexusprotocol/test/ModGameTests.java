@@ -10,6 +10,7 @@ import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
 import com.knoxhack.echonexusprotocol.entity.NexusMobEntity;
 import com.knoxhack.echonexusprotocol.event.NexusArmorEvents;
 import com.knoxhack.echonexusprotocol.event.NexusWorldEvents;
+import com.knoxhack.echonexusprotocol.integration.NexusFieldMapPlanner;
 import com.knoxhack.echonexusprotocol.integration.NexusTerminalIds;
 import com.knoxhack.echonexusprotocol.integration.NexusTerminalMissionProvider;
 import com.knoxhack.echonexusprotocol.integration.NexusProgression;
@@ -646,6 +647,26 @@ public final class ModGameTests {
       helper.assertTrue(playerData.telemetryMapCorruption(rowStart + NexusPlayerData.FIELD_MAP_RADIUS) >= 44, "Field map should sync chunk corruption pressure");
       helper.assertTrue(playerData.telemetryMapStorm(rowStart + 4), "Field map should mark active storms");
       helper.assertTrue(playerData.telemetryMapTears(rowStart + 4) > 0, "Field map should mark reality tears");
+      int centerIndex = rowStart + NexusPlayerData.FIELD_MAP_RADIUS;
+      int stormIndex = rowStart + 4;
+      NexusFieldMapPlanner.Analysis analysis = NexusFieldMapPlanner.analyze(playerData);
+      helper.assertTrue(analysis.center().index() == centerIndex, "Field map planner should identify the center chunk deterministically");
+      int expectedCenterRisk = (100 - playerData.telemetryMapField(centerIndex)) + playerData.telemetryMapCorruption(centerIndex);
+      helper.assertTrue(analysis.center().risk() == expectedCenterRisk, "Field map planner should score local field and corruption risk");
+      int expectedStormRisk = (100 - playerData.telemetryMapField(stormIndex))
+         + playerData.telemetryMapCorruption(stormIndex)
+         + NexusFieldMapPlanner.STORM_RISK_PENALTY
+         + playerData.telemetryMapTears(stormIndex) * NexusFieldMapPlanner.TEAR_RISK_PENALTY;
+      helper.assertTrue(analysis.cell(stormIndex).risk() == expectedStormRisk, "Field map planner should score storm and tear risk");
+      helper.assertTrue(analysis.highestRisk().index() == stormIndex, "Field map planner should identify the highest-risk recovery cell");
+      helper.assertTrue(
+         analysis.safestAdjacent().index() == centerIndex - NexusPlayerData.FIELD_MAP_DIAMETER,
+         "Field map planner should tie-break equally safe cardinal cells toward north"
+      );
+      helper.assertTrue(
+         analysis.collapsedCells() >= 1 && analysis.stormCells() == 1 && analysis.tearCells() == 1,
+         "Field map planner should summarize collapsed, storm, and tear cells"
+      );
       helper.succeed();
    }
 
@@ -964,6 +985,7 @@ public final class ModGameTests {
       int expectedMapField = original.telemetryMapField(centerIndex);
       int expectedMapCorruption = original.telemetryMapCorruption(centerIndex);
       boolean expectedMapStorm = original.telemetryMapStorm(centerIndex);
+      int expectedMapTears = original.telemetryMapTears(centerIndex);
 
       NexusPlayerData restored = roundTripNexusPlayerData(helper, original);
       helper.assertTrue(restored.hasResearch(NexusPlayerData.RESEARCH_NEXUS_THEORY), "Research unlocks should survive player-data serialization");
@@ -990,9 +1012,11 @@ public final class ModGameTests {
       helper.assertTrue(restored.telemetryQuarantineTicks() == expectedQuarantine, "Quarantine telemetry should survive player-data serialization");
       helper.assertTrue(restored.telemetryActiveStorm() == expectedStorm, "Storm telemetry should survive player-data serialization");
       helper.assertTrue(restored.telemetryRealityTears() == expectedTears, "Reality tear telemetry should survive player-data serialization");
+      helper.assertTrue(restored.telemetryFieldMapSize() == NexusPlayerData.FIELD_MAP_SIZE, "Field map telemetry should remain a stable 5x5 sync shape");
       helper.assertTrue(restored.telemetryMapField(centerIndex) == expectedMapField, "Field map values should survive player-data serialization");
       helper.assertTrue(restored.telemetryMapCorruption(centerIndex) == expectedMapCorruption, "Field map corruption should survive player-data serialization");
       helper.assertTrue(restored.telemetryMapStorm(centerIndex) == expectedMapStorm, "Field map storm markers should survive player-data serialization");
+      helper.assertTrue(restored.telemetryMapTears(centerIndex) == expectedMapTears, "Field map tear markers should survive player-data serialization");
       helper.assertTrue("restore".equals(restored.telemetryWorldEndingState()), "World ending telemetry should survive player-data serialization");
       helper.succeed();
    }

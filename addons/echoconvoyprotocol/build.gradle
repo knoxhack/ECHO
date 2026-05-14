@@ -31,11 +31,15 @@ configurations { runtimeClasspath.extendsFrom localRuntime }
 dependencies {
     implementation project(":echocore")
     implementation project(":echonetcore")
+    implementation project(":echomultiblockcore")
     compileOnly project(":echoterminal")
     compileOnly project(":echologisticsnetwork")
+    compileOnly project(":echoholomap")
     compileOnly project(":echorendercore")
+    localRuntime project(":echomultiblockcore")
     localRuntime project(":echoterminal")
     localRuntime project(":echologisticsnetwork")
+    localRuntime project(":echoholomap")
     localRuntime project(":echorendercore")
 }
 

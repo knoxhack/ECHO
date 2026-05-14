@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "echoorbitalremnants:item/orbit_survey_data"
+    "layer0": "echoorbitalremnants:item/orbital_black_box"
   }
 }

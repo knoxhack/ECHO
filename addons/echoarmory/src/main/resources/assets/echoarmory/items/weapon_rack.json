@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoarmory:block/weapon_rack"
+    "model": "echoarmory:item/weapon_rack"
   }
 }

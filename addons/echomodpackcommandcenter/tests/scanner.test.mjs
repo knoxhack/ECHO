@@ -20,7 +20,7 @@ function makeProject() {
     accent: "#58d7ff",
     description: "Fixture",
     workspacePath: "",
-    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.3.0", path: "." }]
+    modules: [{ modId: "echoashfallprotocol", label: "Ashfall", version: "1.0.0", path: "." }]
   };
 }
 
@@ -43,7 +43,7 @@ test("quick scan reports real resource, lang, jar, JSON, and runtime-log issues"
   write(path.join(root, "src", "main", "resources", "data", "echoashfallprotocol", "recipes", "bad.json"), "{ nope");
   write(path.join(root, "run", "logs", "latest.log"), "[main/ERROR] NoClassDefFoundError: com/example/Missing");
   write(path.join(root, "docs", "chapter_handoff_ids.md"), "Ashfall");
-  fs.writeFileSync(path.join(modsDir, "echoashfallprotocol-1.2.0.jar"), "");
+  fs.writeFileSync(path.join(modsDir, "echoashfallprotocol-0.9.0.jar"), "");
 
   const report = runHybridScan(makeProject(), [], {
     echoRoot: root,
@@ -136,7 +136,7 @@ test("quick scan supports scoped module projects", () => {
   const report = runHybridScan({
     ...makeProject(),
     slug: "echostationfall",
-    modules: [{ modId: "echostationfall", label: "Stationfall", version: "1.1.0", path: "addons/echostationfall" }]
+    modules: [{ modId: "echostationfall", label: "Stationfall", version: "1.0.0", path: "addons/echostationfall" }]
   }, [], {
     echoRoot: root,
     modpackModsDir: "",

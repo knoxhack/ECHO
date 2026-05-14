@@ -1,1 +1,6 @@
-{"parent":"minecraft:item/generated","textures":{"layer0":"echorelictech:item/blackbox_relic_record"}}
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "echorelictech:item/blackbox_relic_record"
+  }
+}

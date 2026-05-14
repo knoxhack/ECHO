@@ -1,8 +1,10 @@
 package com.knoxhack.echoindex;
 
+import com.knoxhack.echoindex.client.IndexCatalogScreen;
 import com.knoxhack.echoindex.client.IndexOverlay;
 import com.knoxhack.echoindex.client.IndexRecipeScreen;
 import com.knoxhack.echoindex.content.IndexSourceReloadListener;
+import com.knoxhack.echoindex.service.IndexService;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -13,6 +15,8 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
@@ -38,14 +42,24 @@ public class EchoIndexClient {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_B,
             KEY_CATEGORY);
+    public static final KeyMapping OPEN_INDEX_KEY = new KeyMapping(
+            "key.echoindex.catalog",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_G,
+            KEY_CATEGORY);
 
     public EchoIndexClient(ModContainer container) {
         NeoForge.EVENT_BUS.addListener(EchoIndexClient::onKeyInput);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onRender);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseClicked);
+        NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseDragged);
+        NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseReleased);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseScrolled);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onKeyPressed);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onCharTyped);
+        NeoForge.EVENT_BUS.addListener(EchoIndexClient::onClientLoggingIn);
+        NeoForge.EVENT_BUS.addListener(EchoIndexClient::onClientLoggingOut);
+        NeoForge.EVENT_BUS.addListener(EchoIndexClient::onClientResourceLoadFinished);
         if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalClientIntegration();
         }
@@ -63,7 +77,21 @@ public class EchoIndexClient {
             minecraft.setScreen(new IndexRecipeScreen(minecraft.player.getMainHandItem(), IndexRecipeScreen.Mode.RECIPES));
         } else if (SHOW_USAGE_KEY.matches(event.getKeyEvent())) {
             minecraft.setScreen(new IndexRecipeScreen(minecraft.player.getMainHandItem(), IndexRecipeScreen.Mode.USES));
+        } else if (OPEN_INDEX_KEY.matches(event.getKeyEvent())) {
+            minecraft.setScreen(new IndexCatalogScreen());
         }
+    }
+
+    private static void onClientLoggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
+        IndexService.INSTANCE.invalidateRecipes("client login");
+    }
+
+    private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        IndexService.INSTANCE.invalidateRecipes("client logout");
+    }
+
+    private static void onClientResourceLoadFinished(ClientResourceLoadFinishedEvent event) {
+        IndexService.INSTANCE.invalidateRecipes("client resources reloaded");
     }
 
     private static void registerTerminalClientIntegration() {
@@ -87,6 +115,7 @@ public class EchoIndexClient {
             event.register(SHOW_RECIPE_KEY);
             event.register(SHOW_USAGE_KEY);
             event.register(BOOKMARK_KEY);
+            event.register(OPEN_INDEX_KEY);
         }
 
         @SubscribeEvent

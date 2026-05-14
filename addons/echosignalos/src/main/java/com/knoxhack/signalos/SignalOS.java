@@ -8,6 +8,7 @@ import com.knoxhack.signalos.registry.ModCreativeTabs;
 import com.knoxhack.signalos.registry.ModDataComponents;
 import com.knoxhack.signalos.registry.ModGameTests;
 import com.knoxhack.signalos.registry.ModMenus;
+import com.knoxhack.signalos.integration.SignalOsMissionCoreIntegration;
 import com.knoxhack.signalos.service.SignalOsBuiltinActions;
 import com.knoxhack.signalos.service.SignalOsTerminalServices;
 import com.knoxhack.signalos.network.ModNetwork;
@@ -42,6 +43,7 @@ public class SignalOS {
             SignalOsBuiltinActions.register();
             SignalOsBuiltinContent.register();
             SignalOsTerminalServices.registerEchoCoreServices();
+            SignalOsMissionCoreIntegration.register();
         });
         LOGGER.info("SignalOS computer OS online.");
     }

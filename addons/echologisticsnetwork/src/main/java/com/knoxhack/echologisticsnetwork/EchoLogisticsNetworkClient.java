@@ -34,6 +34,9 @@ public class EchoLogisticsNetworkClient {
 
    @SubscribeEvent
    static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      if (ModList.get().isLoaded("echorendercore") && registerRenderCoreEntityRenderers(event)) {
+         return;
+      }
       event.registerEntityRenderer(ModEntities.COURIER_DRONE.get(), CourierDroneRenderer::new);
    }
 
@@ -44,6 +47,18 @@ public class EchoLogisticsNetworkClient {
             .invoke(null);
       } catch (ReflectiveOperationException exception) {
          EchoLogisticsNetwork.LOGGER.warn("ECHO Logistics Network terminal client integration could not be registered.", exception);
+      }
+   }
+
+   private static boolean registerRenderCoreEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      try {
+         Class.forName("com.knoxhack.echologisticsnetwork.integration.LogisticsRenderCoreClientIntegration")
+            .getMethod("registerEntityRenderers", EntityRenderersEvent.RegisterRenderers.class)
+            .invoke(null, event);
+         return true;
+      } catch (ReflectiveOperationException | LinkageError exception) {
+         EchoLogisticsNetwork.LOGGER.warn("ECHO Logistics Network RenderCore entity renderer integration unavailable; using courier drone fallback renderer.", exception);
+         return false;
       }
    }
 }

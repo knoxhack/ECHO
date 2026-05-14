@@ -2,6 +2,7 @@ package com.knoxhack.echoconvoyprotocol.content;
 
 import com.knoxhack.echoconvoyprotocol.EchoConvoyProtocol;
 import com.knoxhack.echoconvoyprotocol.registry.ModItems;
+import com.knoxhack.echocore.api.EchoCoreServices;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,10 +12,13 @@ import net.minecraft.resources.Identifier;
 
 public final class ConvoyContent {
    private static final Map<Identifier, ConvoyRouteDefinition> DEFAULT_ROUTES = new LinkedHashMap<>();
+   private static final Map<Identifier, ConvoyIncidentProfile> DEFAULT_INCIDENTS = new LinkedHashMap<>();
    private static volatile Map<Identifier, ConvoyRouteDefinition> jsonRoutes = Map.of();
+   private static volatile Map<Identifier, ConvoyIncidentProfile> jsonIncidents = Map.of();
 
    static {
       defaults();
+      defaultIncidents();
    }
 
    private ConvoyContent() {
@@ -23,6 +27,13 @@ public final class ConvoyContent {
    public static void replaceJsonRoutes(Map<Identifier, ConvoyRouteDefinition> routes) {
       jsonRoutes = Map.copyOf(routes == null ? Map.of() : routes);
       EchoConvoyProtocol.LOGGER.info("ECHO Convoy loaded {} JSON convoy routes.", jsonRoutes.size());
+      EchoCoreServices.invalidateIndexRecipes("convoy routes changed");
+   }
+
+   public static void replaceJsonIncidents(Map<Identifier, ConvoyIncidentProfile> incidents) {
+      jsonIncidents = Map.copyOf(incidents == null ? Map.of() : incidents);
+      EchoConvoyProtocol.LOGGER.info("ECHO Convoy loaded {} JSON field incident profiles.", jsonIncidents.size());
+      EchoCoreServices.invalidateIndexRecipes("convoy incidents changed");
    }
 
    public static List<ConvoyRouteDefinition> routes() {
@@ -41,8 +52,21 @@ public final class ConvoyContent {
       return routes().stream().findFirst();
    }
 
+   public static Optional<ConvoyIncidentProfile> incidentProfile(Identifier id) {
+      if (id == null) {
+         return Optional.empty();
+      }
+      ConvoyIncidentProfile json = jsonIncidents.get(id);
+      if (json != null) {
+         return Optional.of(json);
+      }
+      return Optional.ofNullable(DEFAULT_INCIDENTS.get(id))
+         .or(() -> Optional.ofNullable(DEFAULT_INCIDENTS.get(id("standard"))));
+   }
+
    public static void clearJsonForTests() {
       jsonRoutes = Map.of();
+      jsonIncidents = Map.of();
    }
 
    private static void defaults() {
@@ -86,5 +110,14 @@ public final class ConvoyContent {
 
    private static Identifier id(String path) {
       return Identifier.fromNamespaceAndPath(EchoConvoyProtocol.MODID, path);
+   }
+
+   private static void defaultIncidents() {
+      Identifier standard = id("standard");
+      DEFAULT_INCIDENTS.put(standard, new ConvoyIncidentProfile(standard, List.of(
+         new ConvoyIncidentDefinition(standard, id("standard_signal_drop"), 1,
+            "Signal drift slowed the convoy and needs a diagnostic response.",
+            62, -5, -4, 0, 120, id("resolve_field_incident"), "field_incident")
+      )));
    }
 }

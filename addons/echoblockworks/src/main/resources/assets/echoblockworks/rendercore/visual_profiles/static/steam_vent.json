@@ -1,0 +1,8 @@
+{
+  "schema_version": 11,
+  "base_texture": "echoblockworks:textures/block/steam_vent.png",
+  "particle_profile": "echoblockworks:static/steam_vent",
+  "default_state": "ACTIVE",
+  "effect": { "preset": "atmosphere", "glow_intensity": 0.35, "pulse_speed": 0.45, "target_scope": "block" },
+  "anchors": { "vent": { "offset": [0.0, 0.65, 0.0] }, "core": { "offset": [0.0, 0.5, 0.0] } }
+}

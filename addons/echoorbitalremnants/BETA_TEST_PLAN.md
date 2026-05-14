@@ -7,10 +7,10 @@ Use this checklist before publishing a release jar.
 1. Run `.\gradlew.bat :echoorbitalremnants:build` from the ECHO workspace root.
 2. Run `.\gradlew.bat validateEchoResources -PechoAddonSet=beta -PechoPythonExecutable="<python.exe>"` from the ECHO workspace root.
 3. Run `.\gradlew.bat :echoorbitalremnants:runGameTestServer` from the ECHO workspace root.
-4. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.5.0.jar`.
-5. Confirm the primary redirected output is `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\echoorbitalremnants-1.5.0.jar`.
-6. Confirm all 44 required Orbital GameTests pass, including `terminal_mission_cache_state`, `terminal_mission_integration`, `core_integration_contract`, `machine_break_drops_inventory`, `rocket_assembly_virtual_output`, `route_arrival_seed_once`, `high_altitude_scan_gate`, `ambient_threat_cap`, `strict_playable_path`, and `progress_persistence_round_trip`.
-7. Confirm Core/Terminal/Ashfall stack versions are aligned: ECHO Core `1.1.0`, ECHO Terminal `1.1.0`, Ashfall Protocol `1.3.0`, and Orbital Remnants `1.5.0`.
+4. Confirm the release jar is `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.0.0.jar`.
+5. Confirm the primary redirected output is `%LOCALAPPDATA%\EchoGradleBuild\Echo\echoorbitalremnants\libs\echoorbitalremnants-1.0.0.jar`.
+6. Confirm all required Orbital GameTests pass, including `outpost_npc_registration`, `outpost_charter_gating`, `outpost_legacy_migration`, `outpost_action_validation`, `terminal_mission_cache_state`, `terminal_mission_integration`, `core_integration_contract`, `machine_break_drops_inventory`, `rocket_assembly_virtual_output`, `route_arrival_seed_once`, `high_altitude_scan_gate`, `ambient_threat_cap`, `strict_playable_path`, and `progress_persistence_round_trip`.
+7. Confirm Core/Terminal/Ashfall stack versions are aligned: ECHO Core `1.0.0`, ECHO Terminal `1.0.0`, Ashfall Protocol `1.0.0`, and Orbital Remnants `1.0.0`.
 
 ## Clean Survival Smoke Test
 
@@ -45,7 +45,7 @@ Use this checklist before publishing a release jar.
 6. Defeat ECHO-0 and confirm the terminal reports quarantine resolution and grants the final-protocol reward once.
 7. Confirm Nexus stabilization is locked before ECHO-0, then complete three unique survey logs for Orbit, Moon, Mars, Europa, Saturn, Titan, and Nexus.
 8. Confirm Nexus 0/3 through 2/3 guidance names Anchor/Growth sites and Nexus Stabilizer Shard recovery, and that stabilization grants the survey reward once.
-9. Complete three faction contracts, press SCAN to seal the final survey network, and repeat SCAN to confirm only completion guidance refreshes.
+9. Complete Crashbreak, Radwarden, and Sporebound Tier I outpost charters, press SCAN to seal the final survey network, and repeat SCAN to confirm only completion guidance refreshes.
 
 ## Route Pacing Smoke Test
 
@@ -64,16 +64,17 @@ Use this checklist before publishing a release jar.
 5. Repeat one route burn after first arrival and confirm it reuses travel/return-vector behavior without reseeding the first-arrival cache or duplicating the arrival threat wave.
 6. At Saturn and Titan, confirm the route identities read differently: Saturn relay ribs/salvage lanes, Titan methane/tholin pressure cues.
 7. During encounters, confirm special attacks have a readable tell before pressure/oxygen/radiation effects land and ambient threats do not pile up beyond the local cap.
-8. Confirm terminal next-step text, return vectors, faction hub wording, ECHO-0 guidance, Nexus stabilization, and final seal all match the automated route state.
+8. Confirm terminal next-step text, return vectors, faction outpost wording, ECHO-0 guidance, Nexus stabilization, and final seal all match the automated route state.
 
-## Faction Contract Smoke Test
+## Faction Outpost Smoke Test
 
 1. Use each pledge item: Radwarden Orbital Badge, Crashbreak Salvage Marker, and Sporebound Anomaly Sigil.
-2. Confirm the ECHO tab shows the current faction contract and beta faction hub scans distinguish no pledge, already-serviced hubs, active contract chains, and authorized cache rewards.
-3. Complete a Radwarden orbital containment contract by scanning a Low Orbit relay or spending Orbit Survey Data.
-4. Complete a Crashbreak orbital salvage contract by scanning salvage or turning in Orbital Alloy plus Vacuum Circuit.
-5. Complete a Sporebound anomaly contract after ECHO-0 by scanning Nexus growth/anchors or spending a Nexus Stabilizer Shard.
-6. Confirm each completion grants rewards once and the cooldown prevents immediate double-grants.
+2. Visit Saturn, Titan, and Nexus faction hubs and confirm the Orbital Faction Contact NPC appears without duplicate stacking.
+3. Confirm the custom ECHO dialogue screen opens and shows Talk, Request Service, Barter, Accept Charter, and Complete Charter actions.
+4. Complete the Crashbreak Saturn Salvage Charter by scanning a Saturn Ring Relay or delivering Saturn Ring Fragment plus Vacuum Circuit.
+5. Complete the Radwarden Titan Containment Charter by scanning a Titan Methane Pump or delivering Titan Methane Cell plus Suit Sealant Patch.
+6. Complete the Sporebound Nexus Anchor Charter after ECHO-0 by scanning Nexus Anchor/Growth or delivering a Nexus Stabilizer Shard.
+7. Confirm services and barters consume costs, grant rewards once, respect cooldowns, and do not require Ashfall UI/classes.
 
 ## Return Vector Checks
 
@@ -84,6 +85,6 @@ Use this checklist before publishing a release jar.
 ## Release Sanity
 
 1. Check `README.md`, `guide.md`, `CHANGELOG.md`, and `KNOWN_ISSUES.md` for the shipped version.
-2. Upload only the latest `1.5.0` jar.
+2. Upload only the latest `1.0.0` jar.
 3. Include the known issues and feedback link in the release notes.
 4. Record the manual smoke-test result in the release verification notes.

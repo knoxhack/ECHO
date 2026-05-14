@@ -54,6 +54,14 @@ public class ModItems {
     // === SURVIVAL ITEMS ===
     public static final DeferredItem<Item> DIRTY_WATER_BOTTLE = register("dirty_water_bottle",
             DirtyWaterItem::new, new Item.Properties().stacksTo(16), AshfallTooltip.of("dirty_water"));
+    public static final DeferredItem<Item> FILTERED_WATER_BOTTLE = register("filtered_water_bottle",
+            FilteredWaterItem::new, new Item.Properties().stacksTo(16)
+                    .food(new FoodProperties.Builder().nutrition(0).saturationModifier(0.1f).build()),
+            AshfallTooltip.of("filtered_water"));
+    public static final DeferredItem<Item> BOILED_WATER_BOTTLE = register("boiled_water_bottle",
+            BoiledWaterItem::new, new Item.Properties().stacksTo(16)
+                    .food(new FoodProperties.Builder().nutrition(0).saturationModifier(0.1f).build()),
+            AshfallTooltip.of("boiled_water"));
     public static final DeferredItem<Item> CLEAN_WATER_BOTTLE = register("clean_water_bottle",
             CleanWaterItem::new, new Item.Properties().stacksTo(16)
                     .food(new FoodProperties.Builder().nutrition(0).saturationModifier(0.1f).build()),
@@ -75,6 +83,9 @@ public class ModItems {
     public static final DeferredItem<Item> FILTER_CARTRIDGE_ELITE = register("filter_cartridge_elite",
             props -> new FilterCartridgeItem(props, FilterCartridgeItem.Tier.ELITE), new Item.Properties().durability(1500),
             AshfallTooltip.of("filter_elite"));
+    public static final DeferredItem<Item> CRUDE_FILTER = register("crude_filter",
+            CrudeFilterItem::new, new Item.Properties().durability(4),
+            AshfallTooltip.of("crude_filter"));
 
     // === SCHEMATIC FRAGMENTS (Exploration 1.1) ===
     public static final DeferredItem<Item> SCHEMATIC_FRAGMENT_WEAPONS = register("schematic_fragment_weapons",

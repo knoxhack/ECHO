@@ -30,12 +30,16 @@ public final class ModEntities {
    }
 
    public static EntityType<ConvoyVehicleEntity> typeFor(ConvoyVehicleKind kind) {
-      return switch (kind) {
-         case SCRAP_BIKE -> SCRAP_BIKE.get();
-         case WASTELAND_ROVER -> WASTELAND_ROVER.get();
-         case CARGO_CRAWLER -> CARGO_CRAWLER.get();
-         case ARMORED_RELAY_TRUCK -> ARMORED_RELAY_TRUCK.get();
-      };
+      if (kind == ConvoyVehicleKind.SCRAP_BIKE) {
+         return SCRAP_BIKE.get();
+      }
+      if (kind == ConvoyVehicleKind.WASTELAND_ROVER) {
+         return WASTELAND_ROVER.get();
+      }
+      if (kind == ConvoyVehicleKind.CARGO_CRAWLER) {
+         return CARGO_CRAWLER.get();
+      }
+      return ARMORED_RELAY_TRUCK.get();
    }
 
    private static DeferredHolder<EntityType<?>, EntityType<ConvoyVehicleEntity>> vehicle(ConvoyVehicleKind kind, float width, float height) {

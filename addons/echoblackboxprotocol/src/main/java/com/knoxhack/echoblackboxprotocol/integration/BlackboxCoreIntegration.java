@@ -66,6 +66,7 @@ public final class BlackboxCoreIntegration {
       EchoCoreServices.registerRouteRecordService(BlackboxCoreIntegration::routeRecords);
       EchoCoreServices.registerDiagnosticService(BlackboxCoreIntegration::diagnostics);
       EchoCoreServices.registerHazardTelemetryService(BlackboxCoreIntegration::hazardTelemetry);
+      BlackboxIndexProvider.register();
       EchoBlackboxProtocol.LOGGER.info("ECHO platform providers after Blackbox setup: {}", EchoCoreServices.platformProviderSummary());
    }
 

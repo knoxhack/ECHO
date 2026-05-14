@@ -20,6 +20,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -274,22 +276,12 @@ public class StructureGenCommand {
             }
         }
 
-        // Containment cells - glass and radiation blocks
-        level.setBlockAndUpdate(center.offset(-4, 0, -4), Blocks.GLASS.defaultBlockState());
-        level.setBlockAndUpdate(center.offset(-4, 1, -4), Blocks.GLASS.defaultBlockState());
+        // Containment cells - Echo glass and radiation blocks
+        level.setBlockAndUpdate(center.offset(-4, 0, -4), ModBlocks.SHATTERED_GLASS.get().defaultBlockState());
+        level.setBlockAndUpdate(center.offset(-4, 1, -4), ModBlocks.SHATTERED_GLASS.get().defaultBlockState());
         level.setBlockAndUpdate(center.offset(-4, 0, -3), ModBlocks.RADIATION_BLOCK.get().defaultBlockState());
 
-        // Loot chest
-        level.setBlockAndUpdate(center.offset(0, 0, 0), Blocks.CHEST.defaultBlockState());
-        
-        // Set loot table for the chest
-        if (level.getBlockEntity(center.offset(0, 0, 0)) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
-            Identifier lootTableId = Identifier.tryParse("echoashfallprotocol:chests/bio_lab_cache");
-            if (lootTableId != null) {
-                ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, lootTableId);
-                chest.setLootTable(lootTableKey, level.getRandom().nextLong());
-            }
-        }
+        placeLootCache(level, center.offset(0, 0, 0), "chests/bio_lab_cache");
 
         player.sendSystemMessage(Component.literal("§a[BIO LAB]§r Generated at " + center.toShortString()));
     }
@@ -310,7 +302,7 @@ public class StructureGenCommand {
         // Floor
         for (int x = -9; x <= 9; x++) {
             for (int z = -7; z <= 7; z++) {
-                level.setBlockAndUpdate(center.offset(x, -1, z), Blocks.STONE.defaultBlockState());
+                level.setBlockAndUpdate(center.offset(x, -1, z), ModBlocks.ASH_STONE.get().defaultBlockState());
             }
         }
 
@@ -335,8 +327,7 @@ public class StructureGenCommand {
             }
         }
 
-        // Loot chest
-        level.setBlockAndUpdate(center.offset(0, 0, 0), Blocks.CHEST.defaultBlockState());
+        placeLootCache(level, center.offset(0, 0, 0), "chests/data_center_cache");
 
         player.sendSystemMessage(Component.literal("§a[DATA CENTER]§r Generated at " + center.toShortString()));
     }
@@ -368,7 +359,7 @@ public class StructureGenCommand {
         // Floor and ceiling
         for (int x = -6; x <= 6; x++) {
             for (int z = -6; z <= 6; z++) {
-                level.setBlockAndUpdate(center.offset(x, -3, z), Blocks.OBSIDIAN.defaultBlockState());
+                level.setBlockAndUpdate(center.offset(x, -3, z), ModBlocks.RIFTSTONE.get().defaultBlockState());
                 level.setBlockAndUpdate(center.offset(x, 3, z), ModBlocks.RUSTED_METAL_SHEET.get().defaultBlockState());
             }
         }
@@ -382,9 +373,8 @@ public class StructureGenCommand {
         level.setBlockAndUpdate(center.offset(-5, -2, -5), ModBlocks.BATTERY_BANK.get().defaultBlockState());
         level.setBlockAndUpdate(center.offset(-3, -2, -5), ModBlocks.POWER_NODE.get().defaultBlockState());
 
-        // Loot chests
-        level.setBlockAndUpdate(center.offset(0, -2, 0), Blocks.CHEST.defaultBlockState());
-        level.setBlockAndUpdate(center.offset(3, -2, 3), Blocks.CHEST.defaultBlockState());
+        placeLootCache(level, center.offset(0, -2, 0), "chests/military_vault_cache");
+        placeLootCache(level, center.offset(3, -2, 3), "chests/military_vault_cache");
 
         // Entrance tunnel
         for (int z = 7; z <= 12; z++) {
@@ -415,10 +405,10 @@ public class StructureGenCommand {
             }
         }
 
-        // Reactor chamber floor - obsidian (melted/reinforced)
+        // Reactor chamber floor - riftstone (melted/reinforced)
         for (int x = -10; x <= 10; x++) {
             for (int z = -10; z <= 10; z++) {
-                level.setBlockAndUpdate(center.offset(x, -8, z), Blocks.OBSIDIAN.defaultBlockState());
+                level.setBlockAndUpdate(center.offset(x, -8, z), ModBlocks.RIFTSTONE.get().defaultBlockState());
             }
         }
 
@@ -454,10 +444,22 @@ public class StructureGenCommand {
             }
         }
 
-        // Loot chests (survived the disaster)
-        level.setBlockAndUpdate(center.offset(-8, -7, -8), Blocks.CHEST.defaultBlockState());
-        level.setBlockAndUpdate(center.offset(8, -7, 8), Blocks.CHEST.defaultBlockState());
+        placeLootCache(level, center.offset(-8, -7, -8), "chests/reactor_ruin_cache");
+        placeLootCache(level, center.offset(8, -7, 8), "chests/reactor_ruin_cache");
 
         player.sendSystemMessage(Component.literal("§a[REACTOR RUIN]§r Generated at " + center.toShortString()));
+    }
+
+    private static void placeLootCache(ServerLevel level, BlockPos pos, String lootTablePath) {
+        BlockState state = ModBlocks.STRUCTURE_CACHE.get().defaultBlockState();
+        level.setBlockAndUpdate(pos, state);
+        if (level.getBlockEntity(pos) instanceof RandomizableContainerBlockEntity cache) {
+            Identifier lootTableId = Identifier.tryParse(EchoAshfallProtocol.MODID + ":" + lootTablePath);
+            if (lootTableId != null) {
+                cache.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, lootTableId), level.getRandom().nextLong());
+                cache.setChanged();
+                level.sendBlockUpdated(pos, state, state, 2);
+            }
+        }
     }
 }

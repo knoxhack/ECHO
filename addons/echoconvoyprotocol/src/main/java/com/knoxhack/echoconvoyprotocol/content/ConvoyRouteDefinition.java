@@ -26,7 +26,22 @@ public record ConvoyRouteDefinition(
    String destinationHint,
    int requiredSignalMarkers,
    int minDistanceFromStart,
-   List<RouteLeg> legs
+   List<RouteLeg> legs,
+   String missionType,
+   int distance,
+   String biomeTheme,
+   int fuelCost,
+   int cargoCapacityRecommendation,
+   int requiredReadiness,
+   List<String> possibleHazards,
+   String holomapIcon,
+   int holomapColor,
+   String unlockRequirement,
+   String logisticsNetworkId,
+   Identifier logisticsLoadoutId,
+   boolean autoRequestCargo,
+   Identifier holomapLayerId,
+   FieldOpsSpec fieldOps
 ) {
    public ConvoyRouteDefinition {
       if (id == null) {
@@ -50,6 +65,23 @@ public record ConvoyRouteDefinition(
          ? defaultLegs(requiredSignalMarkers, minDistanceFromStart, minReputation > 0)
          : legs);
       requiredSignalMarkers = Math.max(1, legs.size());
+      missionType = missionType == null || missionType.isBlank() ? "delivery" : missionType.strip();
+      distance = Math.max(minDistanceFromStart, distance);
+      biomeTheme = biomeTheme == null || biomeTheme.isBlank() ? "ruined_highway" : biomeTheme.strip();
+      fuelCost = Math.max(minFuel, fuelCost);
+      cargoCapacityRecommendation = Math.max(0, cargoCapacityRecommendation);
+      requiredReadiness = Math.max(0, Math.min(100, requiredReadiness));
+      possibleHazards = List.copyOf(possibleHazards == null ? List.of() : possibleHazards);
+      holomapIcon = holomapIcon == null || holomapIcon.isBlank() ? "convoy_route" : holomapIcon.strip();
+      holomapColor = holomapColor == 0 ? 0xFF00D8FF : holomapColor;
+      unlockRequirement = unlockRequirement == null ? "" : unlockRequirement.strip();
+      logisticsNetworkId = logisticsNetworkId == null || logisticsNetworkId.isBlank() ? "global" : logisticsNetworkId.strip();
+      holomapLayerId = holomapLayerId == null
+         ? Identifier.fromNamespaceAndPath("echoconvoyprotocol", "convoy_routes")
+         : holomapLayerId;
+      fieldOps = fieldOps == null
+         ? FieldOpsSpec.defaults(distance, requiredSignalMarkers, biomeTheme)
+         : fieldOps;
    }
 
    public ConvoyRouteDefinition(
@@ -83,7 +115,22 @@ public record ConvoyRouteDefinition(
          destinationHint,
          1,
          24,
-         List.of()
+         List.of(),
+         "delivery",
+         24,
+         "ruined_highway",
+         minFuel,
+         1,
+         50,
+         List.of(),
+         "convoy_route",
+         0xFF00D8FF,
+         "",
+         "global",
+         null,
+         false,
+         null,
+         null
       );
    }
 
@@ -120,7 +167,22 @@ public record ConvoyRouteDefinition(
          destinationHint,
          requiredSignalMarkers,
          minDistanceFromStart,
-         List.of()
+         List.of(),
+         "delivery",
+         minDistanceFromStart,
+         "ruined_highway",
+         minFuel,
+         1,
+         50,
+         List.of(),
+         "convoy_route",
+         0xFF00D8FF,
+         "",
+         "global",
+         null,
+         false,
+         null,
+         null
       );
    }
 
@@ -158,7 +220,22 @@ public record ConvoyRouteDefinition(
          destinationHint,
          requiredSignalMarkers,
          minDistanceFromStart,
-         legs
+         legs,
+         "delivery",
+         minDistanceFromStart,
+         "ruined_highway",
+         minFuel,
+         1,
+         50,
+         List.of(),
+         "convoy_route",
+         0xFF00D8FF,
+         "",
+         "global",
+         null,
+         false,
+         null,
+         null
       );
    }
 
@@ -296,6 +373,41 @@ public record ConvoyRouteDefinition(
             .replace("%faction%", route.checkpointFactionId().toString())
             .replace("%reputation%", Integer.toString(reputation))
             .replace("%required%", Integer.toString(route.minReputation()));
+      }
+   }
+
+   public record FieldOpsSpec(
+      int durationTicks,
+      int stageCount,
+      Identifier incidentProfile,
+      String vehicleJoinPolicy,
+      String completionMode
+   ) {
+      public FieldOpsSpec {
+         durationTicks = Math.max(200, durationTicks);
+         stageCount = Math.max(1, stageCount);
+         incidentProfile = incidentProfile == null
+            ? Identifier.fromNamespaceAndPath("echoconvoyprotocol", "standard")
+            : incidentProfile;
+         vehicleJoinPolicy = vehicleJoinPolicy == null || vehicleJoinPolicy.isBlank() ? "optional" : vehicleJoinPolicy.strip().toLowerCase(java.util.Locale.ROOT);
+         completionMode = completionMode == null || completionMode.isBlank() ? "depot_return" : completionMode.strip().toLowerCase(java.util.Locale.ROOT);
+      }
+
+      public static FieldOpsSpec defaults(int distance, int stageCount, String biomeTheme) {
+         String profile = biomeTheme == null || biomeTheme.isBlank() ? "standard" : biomeTheme.strip().toLowerCase(java.util.Locale.ROOT);
+         int duration = Math.max(300, Math.max(1, distance) * 4);
+         return new FieldOpsSpec(duration, Math.max(1, stageCount),
+            Identifier.fromNamespaceAndPath("echoconvoyprotocol", profile),
+            "optional",
+            "depot_return");
+      }
+
+      public int durationTicks(ConvoyRouteDefinition route) {
+         return Math.max(200, durationTicks <= 0 ? Math.max(300, route.distance() * 4) : durationTicks);
+      }
+
+      public int stageCount(ConvoyRouteDefinition route) {
+         return Math.max(1, stageCount <= 0 ? route.legs().size() : stageCount);
       }
    }
 

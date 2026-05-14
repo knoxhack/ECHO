@@ -4,6 +4,14 @@
   "order": 0,
   "requiredVehicle": "scrap_bike",
   "minFuel": 20,
+  "logisticsNetworkId": "global",
+  "logisticsLoadoutId": "echoconvoyprotocol:field_supply_convoy",
+  "autoRequestCargo": false,
+  "holomapMarker": {
+    "icon": "convoy_route",
+    "color": "00d8ff",
+    "layer": "echoconvoyprotocol:convoy_routes"
+  },
   "requiredCargo": [],
   "rewards": [
     {"item": "echoconvoyprotocol:fuel_canister", "count": 1},

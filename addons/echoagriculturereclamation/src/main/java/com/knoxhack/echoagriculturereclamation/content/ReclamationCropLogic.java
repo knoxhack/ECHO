@@ -1,5 +1,6 @@
 package com.knoxhack.echoagriculturereclamation.content;
 
+import com.knoxhack.echoagriculturereclamation.progress.ReclamationProgress.GreenhouseContext;
 import net.minecraft.util.RandomSource;
 
 public final class ReclamationCropLogic {
@@ -19,6 +20,10 @@ public final class ReclamationCropLogic {
       return soil.canSupport(spec, profile.stability()) || greenhouseSafety >= crop.greenhouseBypassThreshold();
    }
 
+   public static boolean canGrow(CropSpec spec, SoilState soil, SeedProfile profile, GreenhouseContext greenhouse) {
+      return canGrow(spec, soil, profile, greenhouse.score());
+   }
+
    public static int growthChance(CropSpec spec, SoilState soil, SeedProfile profile, int greenhouseSafety, int nutrient) {
       ReclamationCropRule crop = ReclamationContent.crop(spec);
       int stableBonus = stable(profile) ? crop.stableGrowthBonus() : 0;
@@ -30,6 +35,10 @@ public final class ReclamationCropLogic {
          + stableBonus);
    }
 
+   public static int growthChance(CropSpec spec, SoilState soil, SeedProfile profile, GreenhouseContext greenhouse, int nutrient) {
+      return Math.max(1, growthChance(spec, soil, profile, greenhouse.score(), nutrient) - greenhouse.growthPenalty());
+   }
+
    public static int yield(CropSpec spec, SeedProfile profile, int greenhouseSafety, boolean hydroponic) {
       ReclamationCropRule crop = ReclamationContent.crop(spec);
       int safeGreenhouseBonus = greenhouseSafety >= ReclamationContent.progression().greenhouseSafeThreshold() ? crop.safeGreenhouseYieldBonus() : 0;
@@ -39,12 +48,20 @@ public final class ReclamationCropLogic {
          + safeGreenhouseBonus);
    }
 
+   public static int yield(CropSpec spec, SeedProfile profile, GreenhouseContext greenhouse, boolean hydroponic) {
+      return ReclamationCropLogic.yield(spec, profile, greenhouse.score(), hydroponic);
+   }
+
    public static boolean shouldReturnContaminatedSeed(RandomSource random, SeedProfile profile, int greenhouseSafety) {
       if (stable(profile)) {
          return false;
       }
       int ceiling = ReclamationContent.crop(profile.spec()).contaminatedSeedReturnCeiling();
       return random.nextInt(100) >= Math.min(ceiling, greenhouseSafety + profile.stability());
+   }
+
+   public static boolean shouldReturnContaminatedSeed(RandomSource random, SeedProfile profile, GreenhouseContext greenhouse) {
+      return shouldReturnContaminatedSeed(random, profile, greenhouse.seedSafety());
    }
 
    public static SeedProfile degradedSeed(SeedProfile profile) {
@@ -58,5 +75,9 @@ public final class ReclamationCropLogic {
 
    public static int restorationGain(CropSpec spec, SeedProfile profile, int greenhouseSafety) {
       return Math.max(1, ReclamationContent.crop(spec).restorationWeight() + (stable(profile) ? 1 : 0) + greenhouseSafety / 40);
+   }
+
+   public static int restorationGain(CropSpec spec, SeedProfile profile, GreenhouseContext greenhouse) {
+      return greenhouse.restorationGain(restorationGain(spec, profile, greenhouse.score()));
    }
 }

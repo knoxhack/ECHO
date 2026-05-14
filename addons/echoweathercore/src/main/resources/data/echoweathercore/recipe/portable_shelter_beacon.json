@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " t ",
+    "rir",
+    " s "
+  ],
+  "key": {
+    "t": { "item": "minecraft:torch" },
+    "r": { "item": "minecraft:redstone" },
+    "i": { "item": "minecraft:iron_ingot" },
+    "s": { "item": "minecraft:stone" }
+  },
+  "result": {
+    "id": "echoweathercore:portable_shelter_beacon"
+  }
+}

@@ -8,7 +8,10 @@ public final class ConvoyRenderCoreClientIntegration {
    private ConvoyRenderCoreClientIntegration() {
    }
 
-   public static void registerWastelandRoverRenderer(EntityRenderersEvent.RegisterRenderers event) {
+   public static void registerVehicleRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      event.registerEntityRenderer(ModEntities.SCRAP_BIKE.get(), ConvoyRenderCoreVehicleRenderer::new);
       event.registerEntityRenderer(ModEntities.WASTELAND_ROVER.get(), ConvoyRenderCoreVehicleRenderer::new);
+      event.registerEntityRenderer(ModEntities.CARGO_CRAWLER.get(), ConvoyRenderCoreVehicleRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARMORED_RELAY_TRUCK.get(), ConvoyRenderCoreVehicleRenderer::new);
    }
 }

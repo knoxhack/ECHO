@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 public final class MissionCoreCommands {
@@ -119,7 +120,18 @@ public final class MissionCoreCommands {
     }
 
     private static int validate(CommandSourceStack source) {
-        java.util.List<String> warnings = MissionCoreService.INSTANCE.validateContent();
+        java.util.Map<String, Integer> sourceCounts = MissionCoreService.INSTANCE.sourceCounts();
+        if (sourceCounts.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("MissionCore source counts: none"), false);
+        } else {
+            source.sendSuccess(() -> Component.literal("MissionCore source counts: " + sourceCounts), false);
+        }
+        java.util.Map<String, String> hookCoverage = MissionCoreService.INSTANCE.missionHookCoverageBySource();
+        if (!hookCoverage.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("MissionCore hook coverage: " + hookCoverage), false);
+        }
+        java.util.List<String> warnings = new java.util.ArrayList<>(MissionCoreService.INSTANCE.validateContent());
+        warnings.addAll(legacyProviderWarnings(sourceCounts));
         if (warnings.isEmpty()) {
             source.sendSuccess(() -> Component.literal("MissionCore validation passed."), false);
             return Command.SINGLE_SUCCESS;
@@ -128,6 +140,40 @@ public final class MissionCoreCommands {
         warnings.stream().limit(8).forEach(warning ->
                 source.sendSuccess(() -> Component.literal("- " + warning), false));
         return warnings.size();
+    }
+
+    private static java.util.List<String> legacyProviderWarnings(java.util.Map<String, Integer> sourceCounts) {
+        if (!ModList.get().isLoaded("echoterminal") || sourceCounts.isEmpty()) {
+            return java.util.List.of();
+        }
+        java.util.Map<String, String> providerClasses = java.util.Map.of(
+                "echoagriculturereclamation", "com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider",
+                "echoindustrialnexus", "com.knoxhack.echoindustrialnexus.integration.IndustrialMissionProvider",
+                "echoconvoyprotocol", "com.knoxhack.echoconvoyprotocol.integration.ConvoyMissionProvider",
+                "echoorbitalremnants", "com.knoxhack.echoorbitalremnants.integration.OrbitalMissionProvider",
+                "echonexusprotocol", "com.knoxhack.echonexusprotocol.integration.NexusTerminalMissionProvider",
+                "echoblackboxprotocol", "com.knoxhack.echoblackboxprotocol.integration.BlackboxMissionProvider",
+                "echostationfall", "com.knoxhack.echostationfall.integration.StationfallTerminalCommonIntegration$Provider");
+        try {
+            Class<?> registry = Class.forName("com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry");
+            Object value = registry.getMethod("providers").invoke(null);
+            if (!(value instanceof java.util.List<?> providers)) {
+                return java.util.List.of();
+            }
+            java.util.Set<String> activeClasses = providers.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(provider -> provider.getClass().getName())
+                    .collect(java.util.stream.Collectors.toSet());
+            java.util.List<String> warnings = new java.util.ArrayList<>();
+            providerClasses.forEach((source, providerClass) -> {
+                if (sourceCounts.containsKey(source) && activeClasses.contains(providerClass)) {
+                    warnings.add("Legacy Terminal mission provider is still registered while MissionCore owns " + source + " missions: " + providerClass);
+                }
+            });
+            return warnings;
+        } catch (ReflectiveOperationException exception) {
+            return java.util.List.of("Could not inspect Terminal mission providers for duplicate display suppression: " + exception.getClass().getSimpleName());
+        }
     }
 
     private static Identifier parse(String value) {

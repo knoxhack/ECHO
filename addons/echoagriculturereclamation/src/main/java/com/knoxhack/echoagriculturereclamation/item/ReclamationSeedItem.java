@@ -102,10 +102,10 @@ public class ReclamationSeedItem extends Item {
          return InteractionResult.CONSUME;
       }
       SoilState soil = SoilState.fromBlock(level.getBlockState(soilPos));
-      int greenhouse = ReclamationProgress.scanGreenhouseSafety(level, soilPos);
+      var greenhouse = ReclamationProgress.greenhouseContext(level, soilPos);
       if (!ReclamationCropLogic.canGrow(profile.spec(), soil, profile, greenhouse)) {
          player.sendSystemMessage(Component.literal("ECHO FIELD // " + profile.spec().displayName() + " rejected " + soil.displayName()
-            + " at greenhouse safety " + greenhouse + "/100. Purify soil, raise greenhouse safety, or use a Hydroponic Tray."));
+            + " at greenhouse safety " + greenhouse.score() + "/100. Purify soil, raise greenhouse safety, or use a Hydroponic Tray."));
          return InteractionResult.CONSUME;
       }
       level.setBlock(cropPos, ModBlocks.cropBlock(profile.spec()).plantedState(profile), 3);

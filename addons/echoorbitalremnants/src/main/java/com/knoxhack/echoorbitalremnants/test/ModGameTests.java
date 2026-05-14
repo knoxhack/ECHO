@@ -8,6 +8,10 @@ import com.knoxhack.echoorbitalremnants.entity.CorruptedDockingAiEntity;
 import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
 import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
+import com.knoxhack.echoorbitalremnants.entity.OrbitalFactionNpcEntity;
+import com.knoxhack.echoorbitalremnants.faction.OrbitalFactionDialogueService;
+import com.knoxhack.echoorbitalremnants.faction.OrbitalOutpostSpawner;
+import com.knoxhack.echoorbitalremnants.faction.OrbitalOutpostProfiles;
 import com.knoxhack.echoorbitalremnants.integration.AshfallCompat;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalFactions;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalMissionProvider;
@@ -15,6 +19,7 @@ import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIds;
 import com.knoxhack.echoorbitalremnants.item.FactionPledgeItem;
 import com.knoxhack.echoorbitalremnants.menu.OrbitalMachineMenu;
 import com.knoxhack.echoorbitalremnants.network.EchoTerminalSnapshot;
+import com.knoxhack.echoorbitalremnants.network.OrbitalFactionNpcActionPayload;
 import com.knoxhack.echoorbitalremnants.progression.EchoTerminalProgress;
 import com.knoxhack.echoorbitalremnants.progression.FactionStanding;
 import com.knoxhack.echoorbitalremnants.progression.LaunchReadiness;
@@ -70,6 +75,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
@@ -85,6 +91,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
@@ -149,6 +157,20 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("beta_crashbreak_contract", () -> ModGameTests::betaCrashbreakContract);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BETA_SPOREBOUND_CONTRACT =
             TEST_FUNCTIONS.register("beta_sporebound_contract", () -> ModGameTests::betaSporeboundContract);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_NPC_REGISTRATION =
+            TEST_FUNCTIONS.register("outpost_npc_registration", () -> ModGameTests::outpostNpcRegistration);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_CHARTER_GATING =
+            TEST_FUNCTIONS.register("outpost_charter_gating", () -> ModGameTests::outpostCharterGating);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_LEGACY_MIGRATION =
+            TEST_FUNCTIONS.register("outpost_legacy_migration", () -> ModGameTests::outpostLegacyMigration);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_ACTION_VALIDATION =
+            TEST_FUNCTIONS.register("outpost_action_validation", () -> ModGameTests::outpostActionValidation);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_NPC_PERSISTENCE =
+            TEST_FUNCTIONS.register("outpost_npc_persistence", () -> ModGameTests::outpostNpcPersistence);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_SPAWN_CAPS =
+            TEST_FUNCTIONS.register("outpost_spawn_caps", () -> ModGameTests::outpostSpawnCaps);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> OUTPOST_BARTER_BEHAVIOR =
+            TEST_FUNCTIONS.register("outpost_barter_behavior", () -> ModGameTests::outpostBarterBehavior);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MID_GAME_OBJECTIVE_CHAIN =
             TEST_FUNCTIONS.register("mid_game_objective_chain", () -> ModGameTests::midGameObjectiveChain);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MID_GAME_ROUTE_GATES =
@@ -224,6 +246,13 @@ public final class ModGameTests {
         register(event, environment, "beta_radwarden_contract", BETA_RADWARDEN_CONTRACT.getId());
         register(event, environment, "beta_crashbreak_contract", BETA_CRASHBREAK_CONTRACT.getId());
         register(event, environment, "beta_sporebound_contract", BETA_SPOREBOUND_CONTRACT.getId());
+        register(event, environment, "outpost_npc_registration", OUTPOST_NPC_REGISTRATION.getId());
+        register(event, environment, "outpost_charter_gating", OUTPOST_CHARTER_GATING.getId());
+        register(event, environment, "outpost_legacy_migration", OUTPOST_LEGACY_MIGRATION.getId());
+        register(event, environment, "outpost_action_validation", OUTPOST_ACTION_VALIDATION.getId());
+        register(event, environment, "outpost_npc_persistence", OUTPOST_NPC_PERSISTENCE.getId());
+        register(event, environment, "outpost_spawn_caps", OUTPOST_SPAWN_CAPS.getId());
+        register(event, environment, "outpost_barter_behavior", OUTPOST_BARTER_BEHAVIOR.getId());
         register(event, environment, "mid_game_objective_chain", MID_GAME_OBJECTIVE_CHAIN.getId());
         register(event, environment, "mid_game_route_gates", MID_GAME_ROUTE_GATES.getId());
         register(event, environment, "mid_game_recipes_and_sites", MID_GAME_RECIPES_AND_SITES.getId());
@@ -597,17 +626,7 @@ public final class ModGameTests {
             progress = EchoTerminalProgress.get(player);
         }
 
-        progress.alignFaction(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
-        progress = EchoTerminalProgress.get(player);
-        progress.completeFactionContract(player);
-        progress = EchoTerminalProgress.get(player);
-        progress.alignFaction(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
-        progress = EchoTerminalProgress.get(player);
-        progress.completeFactionContract(player);
-        progress = EchoTerminalProgress.get(player);
-        progress.alignFaction(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
-        progress = EchoTerminalProgress.get(player);
-        progress.completeFactionContract(player);
+        completeAllOutpostCharters(player);
         progress = EchoTerminalProgress.get(player);
         helper.assertTrue(progress.finalNetworkSealed(), "Pre-save state should be seal-complete before reload simulation");
 
@@ -635,8 +654,8 @@ public final class ModGameTests {
                         && loaded.marsHabitatGateOpen() && loaded.europaArrayGateOpen()
                         && loaded.saturnRelayGateOpen() && loaded.titanPumpGateOpen(),
                 "Reloaded progress should retain all route repair gates");
-        helper.assertTrue(loaded.completedFactionContractCount() == 3,
-                "Reloaded progress should retain completed faction contract count");
+        helper.assertTrue(loaded.completedOutpostCharterCount() == 3,
+                "Reloaded progress should retain completed outpost charter count");
         helper.assertTrue(loaded.finalNetworkSealed(),
                 "Reloaded progress should retain final seal state");
         helper.assertTrue(loaded.lastTerminalReport().contains("Orbital Remnants arc complete"),
@@ -1059,29 +1078,27 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).recordTitanSurvey(player, "titan:c");
         EchoTerminalProgress.get(player).recordNexusStabilization(player, "nexus:c");
         EchoTerminalSnapshot needsContract = EchoTerminalSnapshot.from(player);
-        helper.assertTrue(needsContract.nextObjective().contains("faction contract"),
-                "Complete surveys should point to the required faction contract");
-        helper.assertTrue(needsContract.scanRequirement().contains("pledge"),
-                "Missing faction pledge should remain explicit before the final seal");
+        helper.assertTrue(needsContract.nextObjective().contains("outpost charters"),
+                "Complete surveys should point to the required outpost charters");
+        helper.assertTrue(needsContract.scanRequirement().contains("Crashbreak NPC outpost"),
+                "Missing outpost support should name the first required NPC charter");
 
-        EchoTerminalProgress.get(player).alignFaction(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        EchoTerminalProgress.get(player).acceptOutpostCharter(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
         EchoTerminalSnapshot activeContract = EchoTerminalSnapshot.from(player);
-        helper.assertTrue(activeContract.nextObjective().contains("Orbital Alloy"),
-                "Active faction contract guidance should name the missing proof");
-        EchoTerminalProgress.get(player).completeFactionContract(player);
-        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
-        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
-        EchoTerminalProgress.get(player).completeFactionContract(player);
-        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
-        EchoTerminalProgress.get(player).tickFactionContractCooldown(player);
-        EchoTerminalProgress.get(player).completeFactionContract(player);
+        helper.assertTrue(activeContract.factionContract().contains("Crashbreak"),
+                "Active outpost guidance should expose Crashbreak charter state");
+        EchoTerminalProgress.get(player).completeOutpostCharter(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        EchoTerminalProgress.get(player).acceptOutpostCharter(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        EchoTerminalProgress.get(player).completeOutpostCharter(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        EchoTerminalProgress.get(player).acceptOutpostCharter(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
+        EchoTerminalProgress.get(player).completeOutpostCharter(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
         EchoTerminalSnapshot finalSnapshot = EchoTerminalSnapshot.from(player);
         helper.assertTrue(finalSnapshot.nextObjective().contains("Orbital Remnants arc complete"),
-                "Final terminal state should clearly name completed surveys and a faction contract");
+                "Final terminal state should clearly name completed surveys and outpost support");
         helper.assertTrue(finalSnapshot.missionHelp().contains("Orbital Remnants arc complete"),
                 "Final terminal help should name the completed orbital arc");
         helper.assertTrue(finalSnapshot.scanReport().contains("Orbital Remnants arc complete"),
-                "The scan that completes the faction contract should emit one final completion report");
+                "The scan that completes the final outpost charter should emit one final completion report");
         helper.assertTrue(finalSnapshot.finalComplete(),
                 "Final terminal state should only set the final-complete flag after the network is sealed");
         int stabilizedCores = count(player.getInventory(), ModItems.STABILIZED_ECHO_CORE.get());
@@ -1404,7 +1421,8 @@ public final class ModGameTests {
                 ModEntities.ECHO_ZERO.get(),
                 ModEntities.EUROPA_CRYO_WARDEN.get(),
                 ModEntities.SATURN_RELAY_SENTINEL.get(),
-                ModEntities.TITAN_METHANE_STALKER.get()
+                ModEntities.TITAN_METHANE_STALKER.get(),
+                ModEntities.ORBITAL_FACTION_NPC.get()
         ).forEach(type -> {
             Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
             helper.assertTrue(lang.contains("\"entity." + EchoOrbitalRemnants.MODID + "." + id.getPath() + "\""),
@@ -1827,6 +1845,8 @@ public final class ModGameTests {
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.VOID_SALVAGER_MARKER.get()));
         ModItems.VOID_SALVAGER_MARKER.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        progress.prepareFactionContract(player);
+        progress = EchoTerminalProgress.get(player);
         helper.assertTrue(progress.voidSalvagerStanding() == FactionStanding.ALIGNED,
                 "Crashbreak pledge should persist aligned standing");
         helper.assertTrue(progress.factionContractStatus().contains("Crashbreak"),
@@ -1863,6 +1883,7 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.ORBITAL_REMNANT_BADGE.get()));
         ModItems.ORBITAL_REMNANT_BADGE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        EchoTerminalProgress.get(player).prepareFactionContract(player);
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
         helper.assertTrue(EchoTerminalProgress.get(player).lastTerminalReport().contains("wrong dimension"),
@@ -1882,6 +1903,7 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.VOID_SALVAGER_MARKER.get()));
         ModItems.VOID_SALVAGER_MARKER.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        EchoTerminalProgress.get(player).prepareFactionContract(player);
         player.getInventory().clearContent();
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
@@ -1903,6 +1925,7 @@ public final class ModGameTests {
         EchoTerminalProgress.get(player).markLowOrbitReached(player);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.NEXUS_CHOIR_SIGIL.get()));
         ModItems.NEXUS_CHOIR_SIGIL.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+        EchoTerminalProgress.get(player).prepareFactionContract(player);
         player.setPos(player.getX(), Config.ORBITAL_ALTITUDE.get(), player.getZ());
         player.getInventory().add(new ItemStack(ModItems.NEXUS_STABILIZER_SHARD.get()));
         com.knoxhack.echoorbitalremnants.item.EchoTerminalItem.performScan(player);
@@ -1916,6 +1939,146 @@ public final class ModGameTests {
                 "Sporebound contract should complete from stabilizer shard proof after ECHO-0");
         helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.CRYO_BATTERY.get())),
                 "Sporebound contract should grant late-route support rewards");
+        helper.succeed();
+    }
+
+    private static void outpostNpcRegistration(GameTestHelper helper) {
+        OrbitalFactionNpcEntity npc = ModEntities.ORBITAL_FACTION_NPC.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(npc != null, "Orbital faction NPC entity should be registered and spawnable");
+        npc.configure(FactionPledgeItem.Faction.ORBITAL_REMNANT, OrbitalOutpostProfiles.roleId(FactionPledgeItem.Faction.ORBITAL_REMNANT));
+        helper.assertTrue(npc.faction() == FactionPledgeItem.Faction.ORBITAL_REMNANT,
+                "Orbital faction NPC should retain synced faction identity");
+        helper.assertTrue(npc.roleId().equals(OrbitalOutpostProfiles.roleId(FactionPledgeItem.Faction.ORBITAL_REMNANT)),
+                "Orbital faction NPC should retain synced role identity");
+        helper.assertTrue(npc.getCustomName() != null && npc.getCustomName().getString().contains("Radwarden"),
+                "Orbital faction NPC nameplate should expose the faction");
+        helper.succeed();
+    }
+
+    private static void outpostCharterGating(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        completeFinalSurveyPrerequisites(player);
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(!progress.finalNetworkSealed() && !progress.canSealFinalNetwork(),
+                "Final seal should remain blocked before outpost charters");
+        progress.acceptOutpostCharter(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        EchoTerminalProgress.get(player).completeOutpostCharter(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.completedOutpostCharterCount() == 1 && !progress.canSealFinalNetwork(),
+                "One Tier I charter should not unlock the final seal");
+        progress.acceptOutpostCharter(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        EchoTerminalProgress.get(player).completeOutpostCharter(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.completedOutpostCharterCount() == 2 && !progress.canSealFinalNetwork(),
+                "Two Tier I charters should not unlock the final seal");
+        progress.acceptOutpostCharter(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
+        EchoTerminalProgress.get(player).completeOutpostCharter(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
+        progress = EchoTerminalProgress.get(player);
+        helper.assertTrue(progress.completedOutpostCharterCount() == 3 && progress.finalNetworkSealed(),
+                "All three Tier I charters should seal the final network when surveys and ECHO-0 are complete");
+        helper.succeed();
+    }
+
+    private static void outpostLegacyMigration(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        EchoTerminalProgress.reset(player);
+        CompoundTag legacy = new CompoundTag();
+        legacy.putString("completedFactionContracts", "legacy:a|legacy:b|legacy:c");
+        player.getPersistentData().put("echoorbitalremnants_progress", legacy);
+        EchoTerminalProgress migrated = EchoTerminalProgress.get(player);
+        helper.assertTrue(migrated.allOutpostChartersComplete(),
+                "Old saves with three completed faction contracts should migrate to all Tier I outpost charters");
+        helper.assertTrue(migrated.completedOutpostCharterCount() == 3,
+                "Legacy faction contract migration should expose three completed outpost charters");
+        EchoTerminalProgress.reset(player);
+        CompoundTag sealed = new CompoundTag();
+        sealed.putBoolean("final_network_sealed", true);
+        player.getPersistentData().put("echoorbitalremnants_progress", sealed);
+        helper.assertTrue(EchoTerminalProgress.get(player).allOutpostChartersComplete(),
+                "Already sealed old saves should stay eligible under the new outpost gate");
+        helper.succeed();
+    }
+
+    private static void outpostActionValidation(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        EchoTerminalProgress.reset(player);
+        OrbitalFactionNpcEntity npc = ModEntities.ORBITAL_FACTION_NPC.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(npc != null, "Orbital faction NPC should be spawnable for action validation");
+        npc.configure(FactionPledgeItem.Faction.VOID_SALVAGERS, OrbitalOutpostProfiles.roleId(FactionPledgeItem.Faction.VOID_SALVAGERS));
+        npc.setPos(player.getX() + 1.0D, player.getY(), player.getZ());
+        helper.getLevel().addFreshEntity(npc);
+        OrbitalFactionDialogueService.handleAction(
+                new OrbitalFactionNpcActionPayload(npc.getId(), OrbitalFactionDialogueService.ACTION_ACCEPT_CHARTER,
+                        OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.VOID_SALVAGERS)),
+                player);
+        helper.assertTrue(EchoTerminalProgress.get(player).activeOutpostCharterId().isBlank(),
+                "Outpost NPC actions should reject wrong-dimension charter attempts server-side");
+        OrbitalFactionDialogueService.handleAction(
+                new OrbitalFactionNpcActionPayload(npc.getId() + 999, OrbitalFactionDialogueService.ACTION_ACCEPT_CHARTER,
+                        OrbitalOutpostProfiles.contractId(FactionPledgeItem.Faction.VOID_SALVAGERS)),
+                player);
+        helper.assertTrue(EchoTerminalProgress.get(player).activeOutpostCharterId().isBlank(),
+                "Outpost NPC actions should reject invalid entity ids server-side");
+        helper.succeed();
+    }
+
+    private static void outpostNpcPersistence(GameTestHelper helper) {
+        OrbitalFactionNpcEntity npc = ModEntities.ORBITAL_FACTION_NPC.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(npc != null, "Orbital faction NPC should be spawnable for persistence testing");
+        npc.configure(FactionPledgeItem.Faction.NEXUS_CHOIR, OrbitalOutpostProfiles.roleId(FactionPledgeItem.Faction.NEXUS_CHOIR));
+        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+        npc.saveWithoutId(output);
+        CompoundTag saved = output.buildResult();
+
+        OrbitalFactionNpcEntity loaded = ModEntities.ORBITAL_FACTION_NPC.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(loaded != null, "Orbital faction NPC should be reloadable from saved data");
+        loaded.load(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
+        helper.assertTrue(loaded.faction() == FactionPledgeItem.Faction.NEXUS_CHOIR,
+                "Orbital faction NPC should persist faction identity");
+        helper.assertTrue(loaded.roleId().equals(OrbitalOutpostProfiles.roleId(FactionPledgeItem.Faction.NEXUS_CHOIR)),
+                "Orbital faction NPC should persist role identity");
+        helper.succeed();
+    }
+
+    private static void outpostSpawnCaps(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        int totalCap = outpostSpawnerIntField("MAX_NEARBY_TOTAL");
+        int factionCap = outpostSpawnerIntField("MAX_NEARBY_FACTION");
+        for (int i = 0; i < totalCap; i++) {
+            FactionPledgeItem.Faction faction = i == 0
+                    ? FactionPledgeItem.Faction.VOID_SALVAGERS
+                    : i == 1 ? FactionPledgeItem.Faction.ORBITAL_REMNANT : FactionPledgeItem.Faction.NEXUS_CHOIR;
+            OrbitalFactionNpcEntity npc = ModEntities.ORBITAL_FACTION_NPC.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+            helper.assertTrue(npc != null, "Orbital faction NPC should be spawnable for cap testing");
+            npc.configure(faction, OrbitalOutpostProfiles.roleId(faction));
+            npc.setPos(player.getX() + i + 1.0D, player.getY(), player.getZ());
+            helper.getLevel().addFreshEntity(npc);
+        }
+        helper.assertTrue(outpostNearbyCount(helper.getLevel(), player, null) >= totalCap,
+                "Outpost spawner should count nearby NPCs against the total cap");
+        helper.assertTrue(outpostNearbyCount(helper.getLevel(), player, FactionPledgeItem.Faction.VOID_SALVAGERS) >= factionCap,
+                "Outpost spawner should count nearby NPCs against the faction cap");
+        helper.succeed();
+    }
+
+    private static void outpostBarterBehavior(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setGameMode(GameType.SURVIVAL);
+        player.getAbilities().instabuild = false;
+        player.getInventory().clearContent();
+        player.getInventory().add(new ItemStack(ModItems.SATURN_RING_FRAGMENT.get()));
+        OrbitalFactionNpcEntity npc = ModEntities.ORBITAL_FACTION_NPC.get().create(helper.getLevel(), EntitySpawnReason.EVENT);
+        helper.assertTrue(npc != null, "Orbital faction NPC should be spawnable for barter testing");
+        npc.configure(FactionPledgeItem.Faction.VOID_SALVAGERS, OrbitalOutpostProfiles.roleId(FactionPledgeItem.Faction.VOID_SALVAGERS));
+        npc.setPos(player.getX() + 1.0D, player.getY(), player.getZ());
+        helper.getLevel().addFreshEntity(npc);
+
+        invokeOutpostBarter(player, npc, FactionPledgeItem.Faction.VOID_SALVAGERS, "barter_crashbreak_navigation");
+        helper.assertTrue(count(player.getInventory(), ModItems.SATURN_RING_FRAGMENT.get()) == 0,
+                "Outpost barter should consume the offered cost item");
+        helper.assertTrue(count(player.getInventory(), ModItems.NAVIGATION_CHIP.get()) == 1,
+                "Outpost barter should grant the configured reward item");
         helper.succeed();
     }
 
@@ -2326,6 +2489,82 @@ public final class ModGameTests {
     private static void placeBossForIdentityTest(Mob boss, net.minecraft.world.entity.player.Player player, double xOffset, double zOffset) {
         boss.setPos(player.getX() + xOffset, player.getY(), player.getZ() + zOffset);
         boss.setTarget(player);
+    }
+
+    private static void completeFinalSurveyPrerequisites(net.minecraft.world.entity.player.Player player) {
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        progress.markEchoZeroEncountered(player);
+        progress = EchoTerminalProgress.get(player);
+        for (int i = 1; i <= 3; i++) {
+            progress.recordOrbitSurvey(player, "outpost:orbit:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordMoonSurvey(player, "outpost:moon:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordMarsSurvey(player, "outpost:mars:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordEuropaSurvey(player, "outpost:europa:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordSaturnSurvey(player, "outpost:saturn:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordTitanSurvey(player, "outpost:titan:" + i);
+            progress = EchoTerminalProgress.get(player);
+            progress.recordNexusStabilization(player, "outpost:nexus:" + i);
+            progress = EchoTerminalProgress.get(player);
+        }
+    }
+
+    private static void completeAllOutpostCharters(net.minecraft.world.entity.player.Player player) {
+        EchoTerminalProgress progress = EchoTerminalProgress.get(player);
+        progress.acceptOutpostCharter(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        progress = EchoTerminalProgress.get(player);
+        progress.completeOutpostCharter(player, FactionPledgeItem.Faction.VOID_SALVAGERS);
+        progress = EchoTerminalProgress.get(player);
+        progress.acceptOutpostCharter(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        progress = EchoTerminalProgress.get(player);
+        progress.completeOutpostCharter(player, FactionPledgeItem.Faction.ORBITAL_REMNANT);
+        progress = EchoTerminalProgress.get(player);
+        progress.acceptOutpostCharter(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
+        progress = EchoTerminalProgress.get(player);
+        progress.completeOutpostCharter(player, FactionPledgeItem.Faction.NEXUS_CHOIR);
+    }
+
+    private static int outpostSpawnerIntField(String fieldName) {
+        try {
+            java.lang.reflect.Field field = OrbitalOutpostSpawner.class.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.getInt(null);
+        } catch (ReflectiveOperationException error) {
+            throw new RuntimeException("Unable to read outpost spawner cap " + fieldName, error);
+        }
+    }
+
+    private static int outpostNearbyCount(net.minecraft.server.level.ServerLevel level, ServerPlayer player,
+            FactionPledgeItem.Faction faction) {
+        try {
+            Method method = OrbitalOutpostSpawner.class.getDeclaredMethod("countNearby",
+                    net.minecraft.server.level.ServerLevel.class,
+                    ServerPlayer.class,
+                    FactionPledgeItem.Faction.class);
+            method.setAccessible(true);
+            return (Integer) method.invoke(null, level, player, faction);
+        } catch (ReflectiveOperationException error) {
+            throw new RuntimeException("Unable to invoke outpost nearby NPC count", error);
+        }
+    }
+
+    private static void invokeOutpostBarter(ServerPlayer player, OrbitalFactionNpcEntity npc,
+            FactionPledgeItem.Faction faction, String actionId) {
+        try {
+            Method method = OrbitalFactionDialogueService.class.getDeclaredMethod("barter",
+                    ServerPlayer.class,
+                    OrbitalFactionNpcEntity.class,
+                    FactionPledgeItem.Faction.class,
+                    String.class);
+            method.setAccessible(true);
+            method.invoke(null, player, npc, faction, actionId);
+        } catch (ReflectiveOperationException error) {
+            throw new RuntimeException("Unable to invoke outpost barter behavior", error);
+        }
     }
 
     private static int count(net.minecraft.world.entity.player.Inventory inventory, Item item) {

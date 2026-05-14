@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoblackboxprotocol:block/core_brick"
+    "model": "echoblackboxprotocol:item/core_brick"
   }
 }

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "echopowergrid:item/low_voltage_cable"
+  }
+}

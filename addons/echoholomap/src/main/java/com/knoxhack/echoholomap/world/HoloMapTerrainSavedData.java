@@ -27,6 +27,9 @@ public final class HoloMapTerrainSavedData extends SavedData {
             Codec.INT.fieldOf("chunk_x").forGetter(StoredTile::chunkX),
             Codec.INT.fieldOf("chunk_z").forGetter(StoredTile::chunkZ),
             Codec.LONG.optionalFieldOf("sampled_time", 0L).forGetter(StoredTile::sampledTime),
+            Codec.INT.optionalFieldOf("version", HoloMapTerrainTile.LEGACY_VERSION).forGetter(StoredTile::version),
+            Codec.STRING.optionalFieldOf("detail_mode", HoloMapTerrainTile.DetailMode.BIOME_FALLBACK.serializedName())
+                    .forGetter(StoredTile::detailMode),
             Codec.STRING.fieldOf("pixels").forGetter(StoredTile::pixels)
     ).apply(instance, StoredTile::new));
 
@@ -40,6 +43,7 @@ public final class HoloMapTerrainSavedData extends SavedData {
             CODEC);
 
     private final Map<String, StoredTile> tiles = new LinkedHashMap<>();
+    private final Map<String, Map<String, StoredTile>> tilesByOwnerDimension = new LinkedHashMap<>();
 
     public HoloMapTerrainSavedData() {
     }
@@ -47,7 +51,7 @@ public final class HoloMapTerrainSavedData extends SavedData {
     private HoloMapTerrainSavedData(List<StoredTile> storedTiles) {
         for (StoredTile tile : storedTiles) {
             if (tile.valid()) {
-                tiles.put(key(tile.player(), tile.dimension(), tile.chunkX(), tile.chunkZ()), tile);
+                putTile(tile);
             }
         }
     }
@@ -58,15 +62,31 @@ public final class HoloMapTerrainSavedData extends SavedData {
 
     public boolean saveTile(UUID playerId, ResourceKey<Level> dimension, int chunkX, int chunkZ,
             long sampledTime, int[] pixels) {
+        return saveTile(playerId, dimension, chunkX, chunkZ, sampledTime, HoloMapTerrainTile.CURRENT_VERSION,
+                HoloMapTerrainTile.DetailMode.SURFACE_SHADED, pixels);
+    }
+
+    public boolean saveTile(UUID playerId, ResourceKey<Level> dimension, int chunkX, int chunkZ,
+            HoloMapTerrainTile tile) {
+        if (tile == null) {
+            return false;
+        }
+        return saveTile(playerId, dimension, chunkX, chunkZ, tile.sampledTime(), tile.version(),
+                tile.detailMode(), tile.pixels());
+    }
+
+    public boolean saveTile(UUID playerId, ResourceKey<Level> dimension, int chunkX, int chunkZ,
+            long sampledTime, int version, HoloMapTerrainTile.DetailMode detailMode, int[] pixels) {
         if (playerId == null || dimension == null || pixels == null) {
             return false;
         }
         String player = playerId.toString();
         String dim = dimension.identifier().toString();
-        StoredTile next = StoredTile.from(player, dim, chunkX, chunkZ, sampledTime, pixels);
-        String key = key(player, dim, chunkX, chunkZ);
-        StoredTile previous = tiles.put(key, next);
+        StoredTile next = StoredTile.from(player, dim, chunkX, chunkZ, sampledTime, version, detailMode, pixels);
+        StoredTile previous = putTile(next);
         boolean changed = previous == null || previous.sampledTime() != next.sampledTime()
+                || previous.version() != next.version()
+                || !previous.detailMode().equals(next.detailMode())
                 || !previous.pixels().equals(next.pixels());
         if (changed) {
             evictOldest(player, maxTilesPerPlayer());
@@ -80,8 +100,11 @@ public final class HoloMapTerrainSavedData extends SavedData {
         if (playerId == null || dimension == null) {
             return false;
         }
-        StoredTile tile = tiles.get(key(playerId.toString(), dimension.identifier().toString(), chunkX, chunkZ));
-        return tile == null || resampleInterval <= 0L || now - tile.sampledTime() >= resampleInterval;
+        StoredTile tile = tile(playerId.toString(), dimension.identifier().toString(), chunkX, chunkZ);
+        return tile == null
+                || tile.version() < HoloMapTerrainTile.CURRENT_VERSION
+                || resampleInterval <= 0L
+                || now - tile.sampledTime() >= resampleInterval;
     }
 
     public List<HoloMapTerrainTile> tiles(UUID playerId, ResourceKey<Level> dimension,
@@ -94,10 +117,8 @@ public final class HoloMapTerrainSavedData extends SavedData {
         int safeRadius = Math.max(0, Math.min(64, radius));
         int safeLimit = Math.max(1, Math.min(1024, limit));
         List<StoredTile> matching = new ArrayList<>();
-        for (StoredTile tile : tiles.values()) {
-            if (tile.player().equals(player)
-                    && tile.dimension().equals(dim)
-                    && Math.abs(tile.chunkX() - centerChunkX) <= safeRadius
+        for (StoredTile tile : ownerDimensionTilesOrEmpty(player, dim).values()) {
+            if (Math.abs(tile.chunkX() - centerChunkX) <= safeRadius
                     && Math.abs(tile.chunkZ() - centerChunkZ) <= safeRadius) {
                 matching.add(tile);
             }
@@ -117,13 +138,7 @@ public final class HoloMapTerrainSavedData extends SavedData {
         }
         String player = playerId.toString();
         String dim = dimension.identifier().toString();
-        int count = 0;
-        for (StoredTile tile : tiles.values()) {
-            if (tile.player().equals(player) && tile.dimension().equals(dim)) {
-                count++;
-            }
-        }
-        return count;
+        return ownerDimensionTilesOrEmpty(player, dim).size();
     }
 
     public int clear(UUID playerId) {
@@ -132,7 +147,9 @@ public final class HoloMapTerrainSavedData extends SavedData {
         }
         String player = playerId.toString();
         int before = tiles.size();
-        tiles.values().removeIf(tile -> tile.player().equals(player));
+        for (StoredTile tile : tiles.values().stream().filter(tile -> tile.player().equals(player)).toList()) {
+            removeTile(tile);
+        }
         int cleared = before - tiles.size();
         if (cleared > 0) {
             setDirty();
@@ -140,9 +157,45 @@ public final class HoloMapTerrainSavedData extends SavedData {
         return cleared;
     }
 
+    public TerrainStats stats(UUID playerId, ResourceKey<Level> dimension) {
+        if (playerId == null || dimension == null) {
+            return TerrainStats.EMPTY;
+        }
+        String player = playerId.toString();
+        String dim = dimension.identifier().toString();
+        int total = 0;
+        int legacy = 0;
+        int biomeFallback = 0;
+        int surfaceBlock = 0;
+        int surfaceShaded = 0;
+        long newestSample = 0L;
+        for (StoredTile tile : ownerDimensionTilesOrEmpty(player, dim).values()) {
+            total++;
+            if (tile.version() < HoloMapTerrainTile.CURRENT_VERSION) {
+                legacy++;
+            }
+            HoloMapTerrainTile.DetailMode mode = HoloMapTerrainTile.DetailMode.byName(tile.detailMode());
+            if (mode == HoloMapTerrainTile.DetailMode.BIOME_FALLBACK) {
+                biomeFallback++;
+            } else if (mode == HoloMapTerrainTile.DetailMode.SURFACE_BLOCK) {
+                surfaceBlock++;
+            } else if (mode == HoloMapTerrainTile.DetailMode.SURFACE_SHADED) {
+                surfaceShaded++;
+            }
+            newestSample = Math.max(newestSample, tile.sampledTime());
+        }
+        return new TerrainStats(total, legacy, biomeFallback, surfaceBlock, surfaceShaded, newestSample);
+    }
+
     public void putForTests(String player, String dimension, int chunkX, int chunkZ, long sampledTime, int[] pixels) {
-        StoredTile tile = StoredTile.from(player, dimension, chunkX, chunkZ, sampledTime, pixels);
-        tiles.put(key(player, dimension, chunkX, chunkZ), tile);
+        putForTests(player, dimension, chunkX, chunkZ, sampledTime, HoloMapTerrainTile.LEGACY_VERSION,
+                HoloMapTerrainTile.DetailMode.BIOME_FALLBACK, pixels);
+    }
+
+    public void putForTests(String player, String dimension, int chunkX, int chunkZ, long sampledTime,
+            int version, HoloMapTerrainTile.DetailMode detailMode, int[] pixels) {
+        StoredTile tile = StoredTile.from(player, dimension, chunkX, chunkZ, sampledTime, version, detailMode, pixels);
+        putTile(tile);
         setDirty();
     }
 
@@ -160,9 +213,48 @@ public final class HoloMapTerrainSavedData extends SavedData {
                 .toList();
         int remove = playerTiles.size() - maxTiles;
         for (int i = 0; i < remove; i++) {
-            StoredTile tile = playerTiles.get(i);
-            tiles.remove(key(tile.player(), tile.dimension(), tile.chunkX(), tile.chunkZ()));
+            removeTile(playerTiles.get(i));
         }
+    }
+
+    private StoredTile tile(String player, String dimension, int chunkX, int chunkZ) {
+        return ownerDimensionTilesOrEmpty(player, dimension).get(key(player, dimension, chunkX, chunkZ));
+    }
+
+    private StoredTile putTile(StoredTile tile) {
+        String key = key(tile.player(), tile.dimension(), tile.chunkX(), tile.chunkZ());
+        StoredTile previous = tiles.put(key, tile);
+        if (previous != null) {
+            removeFromOwnerDimensionIndex(previous);
+        }
+        ownerDimensionTiles(tile.player(), tile.dimension()).put(key, tile);
+        return previous;
+    }
+
+    private void removeTile(StoredTile tile) {
+        tiles.remove(key(tile.player(), tile.dimension(), tile.chunkX(), tile.chunkZ()));
+        removeFromOwnerDimensionIndex(tile);
+    }
+
+    private void removeFromOwnerDimensionIndex(StoredTile tile) {
+        String ownerDimension = ownerDimensionKey(tile.player(), tile.dimension());
+        Map<String, StoredTile> indexed = tilesByOwnerDimension.get(ownerDimension);
+        if (indexed == null) {
+            return;
+        }
+        indexed.remove(key(tile.player(), tile.dimension(), tile.chunkX(), tile.chunkZ()));
+        if (indexed.isEmpty()) {
+            tilesByOwnerDimension.remove(ownerDimension);
+        }
+    }
+
+    private Map<String, StoredTile> ownerDimensionTiles(String player, String dimension) {
+        return tilesByOwnerDimension.computeIfAbsent(ownerDimensionKey(player, dimension), ignored -> new LinkedHashMap<>());
+    }
+
+    private Map<String, StoredTile> ownerDimensionTilesOrEmpty(String player, String dimension) {
+        Map<String, StoredTile> indexed = tilesByOwnerDimension.get(ownerDimensionKey(player, dimension));
+        return indexed == null ? Map.of() : indexed;
     }
 
     private static int maxTilesPerPlayer() {
@@ -183,15 +275,22 @@ public final class HoloMapTerrainSavedData extends SavedData {
         return player + "|" + dimension + "|" + chunkX + "|" + chunkZ;
     }
 
-    public record StoredTile(String player, String dimension, int chunkX, int chunkZ, long sampledTime, String pixels) {
+    private static String ownerDimensionKey(String player, String dimension) {
+        return player + "|" + dimension;
+    }
+
+    public record StoredTile(String player, String dimension, int chunkX, int chunkZ, long sampledTime,
+            int version, String detailMode, String pixels) {
         private static StoredTile from(String player, String dimension, int chunkX, int chunkZ,
-                long sampledTime, int[] pixels) {
+                long sampledTime, int version, HoloMapTerrainTile.DetailMode detailMode, int[] pixels) {
             return new StoredTile(
                     player == null ? "" : player,
                     dimension == null || dimension.isBlank() ? Level.OVERWORLD.identifier().toString() : dimension,
                     chunkX,
                     chunkZ,
                     Math.max(0L, sampledTime),
+                    Math.max(HoloMapTerrainTile.LEGACY_VERSION, version),
+                    (detailMode == null ? HoloMapTerrainTile.DetailMode.BIOME_FALLBACK : detailMode).serializedName(),
                     encodePixels(pixels));
         }
 
@@ -200,7 +299,23 @@ public final class HoloMapTerrainSavedData extends SavedData {
         }
 
         private HoloMapTerrainTile toTile() {
-            return new HoloMapTerrainTile(dimension, chunkX, chunkZ, sampledTime, decodePixels(pixels));
+            return new HoloMapTerrainTile(dimension, chunkX, chunkZ, sampledTime,
+                    version, HoloMapTerrainTile.DetailMode.byName(detailMode), decodePixels(pixels));
+        }
+    }
+
+    public record TerrainStats(int total, int legacy, int biomeFallback, int surfaceBlock, int surfaceShaded,
+            long newestSample) {
+        private static final TerrainStats EMPTY = new TerrainStats(0, 0, 0, 0, 0, 0L);
+
+        public String summary() {
+            return "v" + HoloMapTerrainTile.CURRENT_VERSION
+                    + " total=" + total
+                    + " legacy=" + legacy
+                    + " bio=" + biomeFallback
+                    + " block=" + surfaceBlock
+                    + " shaded=" + surfaceShaded
+                    + " newest=" + newestSample;
         }
     }
 

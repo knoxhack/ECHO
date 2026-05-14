@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echopowergrid:block/scrap_burner_generator",
+    "down": "echopowergrid:block/scrap_burner_generator",
+    "up": "echopowergrid:block/scrap_burner_generator",
+    "north": "echopowergrid:block/scrap_burner_generator",
+    "south": "echopowergrid:block/scrap_burner_generator",
+    "west": "echopowergrid:block/scrap_burner_generator",
+    "east": "echopowergrid:block/scrap_burner_generator"
+  }
+}

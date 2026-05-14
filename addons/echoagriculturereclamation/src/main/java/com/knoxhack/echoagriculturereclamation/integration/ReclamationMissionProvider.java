@@ -35,7 +35,7 @@ public final class ReclamationMissionProvider implements TerminalMissionProvider
       mission("analyze_soil", "Analyze Soil", "Scan contaminated ground and run the first purification pass.", "Soil Recovery", 1, "Soil", "Use Ecology Scanner or Soil Purifier near dead ecology blocks.", 1, () -> new ItemStack(ModBlocks.SOIL_PURIFIER.get())),
       mission("first_growth", "First Growth", "Grow and harvest a recovered crop in soil or hydroponics.", "Cultivation", 2, "Growth", "Plant a profiled seed on supported soil or insert it into a reusable Hydroponic Tray culture.", 1, () -> new ItemStack(ModBlocks.HYDROPONIC_TRAY.get())),
       mission("gene_stabilization", "Gene Stabilization", "Stabilize one contaminated seed route.", "Cultivation", 3, "Genes", "Craft a Bio-Reactor with Soil Nutrient Mix, make Bio-Gel from crop matter, then use a contaminated seed cutting in the Gene Stabilizer.", 1, () -> new ItemStack(ModBlocks.GENE_STABILIZER.get())),
-      mission("greenhouse_online", "Greenhouse Online", "Build a greenhouse that reaches safe growth envelope.", "Greenhouse", 4, "Safety", "Use Greenhouse Glass, Spore Filter, Pollinator Dock, trays, and controller scan.", 70, () -> new ItemStack(ModBlocks.GREENHOUSE_CONTROLLER.get())),
+      mission("greenhouse_online", "Greenhouse Online", "Build a greenhouse zone that reaches safe growth envelope.", "Greenhouse", 4, "Safety", "Use Greenhouse Glass, Spore Filter, Pollinator Dock, trays, and a controller scan to establish the zone; deploy the dock drone for active crop service.", 70, () -> new ItemStack(ModBlocks.GREENHOUSE_CONTROLLER.get())),
       mission("restore_chunk", "Restore a Chunk", "Raise local restoration score to 100 through crops, restored soil, and safe greenhouse support.", "Restoration", 5, "Restoration", "Mature restoration crops and keep scanning ecology while soil improves.", 100, () -> new ItemStack(ModBlocks.RESTORED_SOIL.get()))
    );
 
@@ -184,6 +184,9 @@ public final class ReclamationMissionProvider implements TerminalMissionProvider
 
    private static String detail(Player player, Mission mission) {
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
+      ReclamationProgress.GreenhouseContext greenhouse = player == null
+         ? ReclamationProgress.GreenhouseScan.empty().asContext()
+         : ReclamationProgress.greenhouseContext(player.level(), player.blockPosition());
       return switch (mission.key()) {
          case "recover_seed" -> "Known seeds: " + metrics.knownSeeds() + "/" + CropSpec.ALL.size() + ".";
          case "analyze_soil" -> "Local soil: " + metrics.soilLabel() + ". Purified blocks: " + ReclamationProgress.value(player, "soil_purified") + ".";
@@ -191,7 +194,10 @@ public final class ReclamationMissionProvider implements TerminalMissionProvider
          case "gene_stabilization" -> "Stabilized seeds: " + ReclamationProgress.value(player, "stabilized_seeds")
             + ". Bio-Gel carried " + ReclamationProgress.count(player, ModItems.BIO_GEL.get())
             + ". Seed cutting " + (ReclamationProgress.flag(player, "stabilization_seed_recovered") ? "available" : "pending") + ".";
-         case "greenhouse_online" -> "Greenhouse safety: " + metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold() + ".";
+         case "greenhouse_online" -> "Greenhouse safety: " + metrics.greenhouseSafety() + "/" + ReclamationContent.progression().greenhouseSafeThreshold()
+            + " (" + greenhouse.summaryLabel() + ", " + countLabel(greenhouse.scan().deployedDrones(), "drone") + ", "
+            + countLabel(greenhouse.scan().serviceTargets(), "service target")
+            + "). " + greenhouse.nextAction();
          case "restore_chunk" -> "Restoration score: " + metrics.restorationScore() + "/" + ReclamationContent.progression().restoreThreshold() + ".";
          default -> mission.briefing();
       };
@@ -241,6 +247,10 @@ public final class ReclamationMissionProvider implements TerminalMissionProvider
          case "restore_chunk" -> Math.max(1, ReclamationContent.progression().restoreThreshold());
          default -> mission.need();
       };
+   }
+
+   private static String countLabel(int count, String noun) {
+      return count + " " + noun + (count == 1 ? "" : "s");
    }
 
    private static Mission mission(String key, String title, String briefing, String phase, int order, String category, String guide, int need, Supplier<ItemStack> icon) {

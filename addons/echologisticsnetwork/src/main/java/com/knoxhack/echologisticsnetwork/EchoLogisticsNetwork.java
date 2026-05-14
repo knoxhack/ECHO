@@ -2,6 +2,7 @@ package com.knoxhack.echologisticsnetwork;
 
 import com.knoxhack.echologisticsnetwork.content.LogisticsReloaders;
 import com.knoxhack.echologisticsnetwork.integration.LogisticsCoreIntegration;
+import com.knoxhack.echologisticsnetwork.integration.LogisticsMissionCoreIntegration;
 import com.knoxhack.echologisticsnetwork.registry.ModBlockEntities;
 import com.knoxhack.echologisticsnetwork.registry.ModBlocks;
 import com.knoxhack.echologisticsnetwork.registry.ModCreativeTabs;
@@ -15,6 +16,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
@@ -25,6 +27,8 @@ public class EchoLogisticsNetwork {
    public static final Logger LOGGER = LogUtils.getLogger();
 
    public EchoLogisticsNetwork(IEventBus modEventBus, ModContainer modContainer) {
+      modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+      Config.registerEchoConfig();
       ModDataComponents.register(modEventBus);
       ModBlocks.register(modEventBus);
       ModBlockEntities.register(modEventBus);
@@ -43,6 +47,7 @@ public class EchoLogisticsNetwork {
       LOGGER.info("ECHO Logistics Network online. Supply chaos is now a routing problem.");
       event.enqueueWork(() -> {
          LogisticsCoreIntegration.registerAddonChapter();
+         LogisticsMissionCoreIntegration.register();
          if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalIntegration();
          }

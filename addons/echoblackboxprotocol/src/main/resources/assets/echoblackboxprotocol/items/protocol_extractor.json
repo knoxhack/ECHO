@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoblackboxprotocol:block/protocol_extractor"
+    "model": "echoblackboxprotocol:item/protocol_extractor"
   }
 }

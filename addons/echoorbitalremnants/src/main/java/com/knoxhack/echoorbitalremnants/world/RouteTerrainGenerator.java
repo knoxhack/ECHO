@@ -614,6 +614,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             ring(chunk, x, z, y - 1, 5, touched);
             ring(chunk, x, z, y, 3, growth);
             pillar(chunk, x, z, y, 4, ModBlocks.NEXUS_ANCHOR.get().defaultBlockState());
+            setSafe(chunk, x - 2, y, z + 2, ModBlocks.FACTION_RELAY_HUB.get().defaultBlockState());
             setSafe(chunk, x - 3, y, z, hazardBlock(Route.NEXUS, variant));
             setSafe(chunk, x + 2, y, z, dust);
             placeCache(chunk, x + 3, y, z - 2, Route.NEXUS, variant);
@@ -621,6 +622,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             lineLocal(chunk, x - 6, y - 1, z, x + 6, y - 1, z, ModBlocks.ORBITAL_PLATING.get().defaultBlockState());
             lineLocal(chunk, x - 3, y, z - 2, x + 3, y, z + 2, ModBlocks.STATION_WALL_PANEL.get().defaultBlockState());
             setSafe(chunk, x, y, z, ModBlocks.NEXUS_ANCHOR.get().defaultBlockState());
+            setSafe(chunk, x - 2, y, z + 2, ModBlocks.FACTION_VENDOR_KIOSK.get().defaultBlockState());
             setSafe(chunk, x - 3, y, z, hazardBlock(Route.NEXUS, variant));
             setSafe(chunk, x + 2, y, z + 2, dust);
             placeCache(chunk, x + 3, y, z - 2, Route.NEXUS, variant);
@@ -630,6 +632,7 @@ public class RouteTerrainGenerator extends ChunkGenerator {
             }
             ring(chunk, x, z, y - 1, 4, touched);
             setSafe(chunk, x, y, z, ModBlocks.NEXUS_ANCHOR.get().defaultBlockState());
+            setSafe(chunk, x - 2, y, z + 1, ModBlocks.FACTION_RELAY_HUB.get().defaultBlockState());
             setSafe(chunk, x - 3, y, z, hazardBlock(Route.NEXUS, variant));
             setSafe(chunk, x + 2, y, z, dust);
             placeCache(chunk, x + 3, y, z - 2, Route.NEXUS, variant);

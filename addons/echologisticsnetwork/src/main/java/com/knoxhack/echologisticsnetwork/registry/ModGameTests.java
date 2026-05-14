@@ -4,8 +4,10 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonParseException;
 import com.mojang.authlib.GameProfile;
 import com.knoxhack.echologisticsnetwork.EchoLogisticsNetwork;
+import com.knoxhack.echologisticsnetwork.block.LogisticsBlock.LogisticsKind;
 import com.knoxhack.echologisticsnetwork.block.entity.LogisticsBlockEntity;
 import com.knoxhack.echologisticsnetwork.content.FactionDepotOffer;
+import com.knoxhack.echologisticsnetwork.content.FactoryRestockPolicy;
 import com.knoxhack.echologisticsnetwork.content.LoadoutPreset;
 import com.knoxhack.echologisticsnetwork.content.LoadoutRequirement;
 import com.knoxhack.echologisticsnetwork.content.LogisticsContent;
@@ -17,9 +19,11 @@ import com.knoxhack.echologisticsnetwork.content.SupplyCategory;
 import com.knoxhack.echologisticsnetwork.content.SupplyTagSelection;
 import com.knoxhack.echologisticsnetwork.entity.CourierDroneEntity;
 import com.knoxhack.echologisticsnetwork.integration.LogisticsCoreIntegration;
+import com.knoxhack.echologisticsnetwork.integration.LogisticsMissionCoreIntegration;
 import com.knoxhack.echologisticsnetwork.integration.LogisticsTerminalCommonIntegration;
 import com.knoxhack.echologisticsnetwork.integration.LogisticsTerminalIds;
 import com.knoxhack.echologisticsnetwork.item.LogisticsToolItem;
+import com.knoxhack.echologisticsnetwork.menu.LogisticsMenu;
 import com.knoxhack.echologisticsnetwork.service.LogisticsNetworkService;
 import com.knoxhack.echocore.api.EchoDiagnosticBlocker;
 import com.knoxhack.echocore.api.EchoCoreServices;
@@ -30,6 +34,11 @@ import com.knoxhack.echocore.api.EchoDiscoveryState;
 import com.knoxhack.echocore.api.EchoRouteRecord;
 import com.knoxhack.echocore.api.EchoServiceRegistry;
 import com.knoxhack.echocore.api.TerminalRewardService;
+import com.knoxhack.echocore.api.mission.InMemoryMissionRegistry;
+import com.knoxhack.echocore.api.mission.MissionDefinition;
+import com.knoxhack.echocore.api.mission.MissionHookTargets;
+import com.knoxhack.echocore.api.mission.MissionKind;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
@@ -103,6 +112,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("remote_tablet_route_requester_loop", () -> ModGameTests::remoteTabletRouteRequesterLoop);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> AUTO_RESTOCK_LOOP =
       TEST_FUNCTIONS.register("auto_restock_station_loop", () -> ModGameTests::autoRestockStationLoop);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DASHBOARD_SNAPSHOT =
+      TEST_FUNCTIONS.register("dashboard_snapshot", () -> ModGameTests::dashboardSnapshot);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROUTE_DISCOVERY =
       TEST_FUNCTIONS.register("route_discovery", () -> ModGameTests::routeDiscovery);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DRONE_DELIVERY =
@@ -121,12 +132,18 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("industrial_duct_reach", () -> ModGameTests::industrialDuctReach);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INDUSTRIAL_DUCT_LIMIT =
       TEST_FUNCTIONS.register("industrial_duct_graph_limit", () -> ModGameTests::industrialDuctGraphLimit);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTORY_LOADOUT =
+      TEST_FUNCTIONS.register("factory_loadout_to_industrial_input_depot", () -> ModGameTests::factoryLoadoutToIndustrialInputDepot);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTORY_AUTO_RESTOCK =
+      TEST_FUNCTIONS.register("factory_auto_restock_to_industrial_input_depot", () -> ModGameTests::factoryAutoRestockToIndustrialInputDepot);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_ROUTE_REFRESH =
       TEST_FUNCTIONS.register("terminal_route_refresh", () -> ModGameTests::terminalRouteRefresh);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RECOVERY_NO_DUPLICATION =
       TEST_FUNCTIONS.register("recovery_no_duplication", () -> ModGameTests::recoveryNoDuplication);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERMINAL_ACTIONS =
       TEST_FUNCTIONS.register("terminal_actions", () -> ModGameTests::terminalActions);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
+      TEST_FUNCTIONS.register("missioncore_content_registration", () -> ModGameTests::missionCoreContentRegistration);
 
    private ModGameTests() {
    }
@@ -152,6 +169,7 @@ public final class ModGameTests {
       register(event, "depot_offer_selection_cooldown", DEPOT_SELECTION.getId());
       register(event, "remote_tablet_route_requester_loop", REMOTE_TABLET_LOOP.getId(), 1200);
       register(event, "auto_restock_station_loop", AUTO_RESTOCK_LOOP.getId(), 800);
+      register(event, "dashboard_snapshot", DASHBOARD_SNAPSHOT.getId());
       register(event, "route_discovery", ROUTE_DISCOVERY.getId());
       register(event, "courier_drone_delivery", DRONE_DELIVERY.getId());
       register(event, "courier_failure_recovery", FAILURE_RECOVERY.getId());
@@ -161,9 +179,12 @@ public final class ModGameTests {
       register(event, "relay_idempotency_edges", RELAY_IDEMPOTENCY.getId());
       register(event, "industrial_duct_reach", INDUSTRIAL_DUCT_REACH.getId());
       register(event, "industrial_duct_graph_limit", INDUSTRIAL_DUCT_LIMIT.getId());
+      register(event, "factory_loadout_to_industrial_input_depot", FACTORY_LOADOUT.getId(), 400);
+      register(event, "factory_auto_restock_to_industrial_input_depot", FACTORY_AUTO_RESTOCK.getId(), 400);
       register(event, "terminal_route_refresh", TERMINAL_ROUTE_REFRESH.getId());
       register(event, "recovery_no_duplication", RECOVERY_NO_DUPLICATION.getId());
       register(event, "terminal_actions", TERMINAL_ACTIONS.getId());
+      register(event, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
    }
 
    private static void moduleRegistration(GameTestHelper helper) {
@@ -181,6 +202,12 @@ public final class ModGameTests {
          JsonParser.parseString("{\"title\":\"Kit\",\"requirements\":[{\"item\":\"minecraft:apple\",\"count\":2}],\"targetBlockTypes\":[\"echologisticsnetwork:loadout_locker\"],\"deliveryTicks\":80}").getAsJsonObject());
       helper.assertTrue(preset.requirements().size() == 1 && preset.deliveryTicks() == 80, "Loadout parser should load requirements");
       helper.assertTrue(preset.targetBlockTypes().contains(id("loadout_locker")), "Loadout parser should load target block restrictions");
+      LoadoutPreset restockPreset = LogisticsJsonReloadListener.parseLoadoutForTests(id("factory_restock_parser"),
+         JsonParser.parseString("{\"requirements\":[{\"item\":\"minecraft:apple\",\"count\":2}],\"factoryTaskId\":\"echoindustrialnexus:weld_reinforced_machine_frame\",\"restockTargetRuns\":5,\"restockMinRuns\":1,\"restockMaxInFlight\":2,\"restockCooldownTicks\":240}").getAsJsonObject());
+      helper.assertTrue(restockPreset.restockPolicy().enabled()
+         && restockPreset.restockPolicy().targetRuns() == 5
+         && restockPreset.restockPolicy().maxInFlight() == 2,
+         "Loadout parser should load optional factory restock policy metadata");
       FactionDepotOffer offer = LogisticsJsonReloadListener.parseOfferForTests(id("offer"),
          JsonParser.parseString("{\"factionId\":\"echoashfallprotocol:crashbreak_salvage\",\"input\":{\"item\":\"minecraft:emerald\",\"count\":1},\"output\":{\"item\":\"minecraft:bread\",\"count\":2},\"cooldownTicks\":77}").getAsJsonObject());
       helper.assertTrue(offer.output().getCount() == 2, "Faction offer parser should load output stacks");
@@ -535,7 +562,53 @@ public final class ModGameTests {
                + totals(countItem(crate, Items.POTION), countItem(crate, Items.APPLE), countItem(crate, Items.PAPER), countItem(crate, Items.GOLDEN_APPLE))
                + ", active="
                + LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(restockPos), "restock-loop", player).activeDeliveries());
-      });
+         });
+   }
+
+   private static void dashboardSnapshot(GameTestHelper helper) {
+      BlockPos dockPos = new BlockPos(1, 1, 1);
+      BlockPos cratePos = new BlockPos(2, 1, 1);
+      BlockPos requesterPos = new BlockPos(5, 1, 1);
+      BlockPos relayPos = new BlockPos(1, 1, 4);
+      BlockPos depotPos = new BlockPos(2, 1, 4);
+      helper.setBlock(dockPos, (Block)ModBlocks.DRONE_DELIVERY_DOCK.get());
+      helper.setBlock(cratePos, (Block)ModBlocks.SUPPLY_CRATE.get());
+      helper.setBlock(requesterPos, (Block)ModBlocks.ROUTE_REQUESTER.get());
+      helper.setBlock(relayPos, (Block)ModBlocks.REMOTE_REWARD_RELAY.get());
+      helper.setBlock(depotPos, (Block)ModBlocks.FACTION_TRADE_DEPOT.get());
+      for (BlockPos pos : List.of(dockPos, cratePos, requesterPos, relayPos, depotPos)) {
+         helper.getBlockEntity(pos, LogisticsBlockEntity.class).setNetworkId("dashboard-net");
+      }
+      LogisticsBlockEntity requester = helper.getBlockEntity(requesterPos, LogisticsBlockEntity.class);
+      requester.setLoadoutId("echologisticsnetwork:toxic_expedition_kit");
+      LogisticsBlockEntity depot = helper.getBlockEntity(depotPos, LogisticsBlockEntity.class);
+      depot.setCooldownTicks(81);
+      LogisticsBlockEntity crate = helper.getBlockEntity(cratePos, LogisticsBlockEntity.class);
+      fillBasicKit(crate);
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      player.setPos(helper.absolutePos(requesterPos.above()).getCenter());
+
+      LogisticsNetworkService.LogisticsSnapshot snapshot = LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(requesterPos), "dashboard-net", player);
+      helper.assertTrue(snapshot.blockCount() == 5, "Dashboard snapshot should count all Logistics blocks on the network; counted " + snapshot.blockCount());
+      helper.assertTrue(snapshot.endpointCount() == 1, "Dashboard snapshot should count request endpoints; counted " + snapshot.endpointCount());
+      helper.assertTrue(snapshot.dockOnline() && snapshot.relayOnline() && snapshot.depotOnline(),
+         "Dashboard snapshot should report dock, relay, and depot online");
+      helper.assertTrue(snapshot.depotCooldown() == 81, "Dashboard snapshot should expose depot cooldowns");
+      helper.assertTrue(snapshot.selectedEndpoint() != null && snapshot.selectedEndpoint().kind() == LogisticsKind.ROUTE_REQUESTER,
+         "Dashboard snapshot should choose the nearby Route Requester as the selected endpoint");
+      helper.assertTrue("echologisticsnetwork:toxic_expedition_kit".equals(snapshot.selectedLoadoutId()) && snapshot.selectedReady(),
+         "Dashboard snapshot should expose selected loadout readiness");
+      helper.assertTrue("dashboard-net|echologisticsnetwork:toxic_expedition_kit".equals(snapshot.requestPayload()),
+         "Dashboard snapshot should expose the terminal/block request payload");
+
+      boolean dispatched = LogisticsNetworkService.requestDashboardLoadout(player, helper.absolutePos(dockPos), "dashboard-net");
+      helper.assertTrue(dispatched, "Dashboard dispatch should use the selected endpoint/loadout");
+      LogisticsNetworkService.LogisticsSnapshot active = LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(requesterPos), "dashboard-net", player);
+      helper.assertTrue(active.activeDeliveries() == 1 && active.deliveryJobs().size() == 1,
+         "Dashboard snapshot should expose a bounded active delivery row after dispatch");
+      helper.assertTrue(active.deliveryJobs().getFirst().targetPos().equals(helper.absolutePos(requesterPos)),
+         "Dashboard delivery row should target the selected endpoint");
+      helper.succeed();
    }
 
    private static void routeDiscovery(GameTestHelper helper) {
@@ -840,6 +913,99 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void factoryLoadoutToIndustrialInputDepot(GameTestHelper helper) {
+      Block inputDepotBlock = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("echoindustrialnexus", "input_depot_crate"));
+      helper.assertTrue(inputDepotBlock != Blocks.AIR, "Industrial input depot should be present for factory loadout integration");
+      Identifier presetId = id("factory_apple_test");
+      LogisticsContent.replaceJsonContent(new LogisticsContent.LoadedContent(Map.of(), Map.of(presetId, new LoadoutPreset(
+         presetId,
+         "Factory Apple Test",
+         700,
+         Identifier.withDefaultNamespace("apple"),
+         List.of(new LoadoutRequirement(LoadoutRequirement.Kind.ITEM, Identifier.withDefaultNamespace("apple"), 1, false)),
+         List.of(Identifier.fromNamespaceAndPath("echoindustrialnexus", "input_depot_crate")),
+         40
+      )), Map.of()));
+
+      BlockPos origin = new BlockPos(5, 1, 1);
+      BlockPos dockPos = new BlockPos(1, 1, 1);
+      BlockPos sourcePos = new BlockPos(2, 1, 1);
+      BlockPos labelPos = new BlockPos(5, 1, 2);
+      BlockPos depotPos = new BlockPos(5, 1, 3);
+      helper.setBlock(dockPos, (Block)ModBlocks.DRONE_DELIVERY_DOCK.get());
+      helper.setBlock(sourcePos, (Block)ModBlocks.SUPPLY_CRATE.get());
+      helper.setBlock(labelPos, (Block)ModBlocks.SMART_STORAGE_LABEL.get());
+      helper.setBlock(depotPos, inputDepotBlock);
+      helper.getBlockEntity(dockPos, LogisticsBlockEntity.class).setNetworkId("factory-test");
+      helper.getBlockEntity(sourcePos, LogisticsBlockEntity.class).setNetworkId("factory-test");
+      helper.getBlockEntity(labelPos, LogisticsBlockEntity.class).setNetworkId("factory-test");
+      LogisticsBlockEntity source = helper.getBlockEntity(sourcePos, LogisticsBlockEntity.class);
+      source.setItem(0, new ItemStack(Items.APPLE, 1));
+      ServerPlayer player = makeServerPlayer(helper);
+      try {
+         player.setPos(helper.absolutePos(origin).getCenter());
+         LogisticsNetworkService.FactoryDispatchResult result =
+            LogisticsNetworkService.requestFactoryLoadout(player, helper.absolutePos(origin), presetId.toString());
+         helper.assertTrue(result.dispatched(), "Factory bridge should dispatch a loadout to the connected Industrial input depot: " + result.message());
+         helper.assertTrue(result.targetPos().equals(helper.absolutePos(depotPos)), "Factory bridge should choose the Industrial input depot as delivery target");
+         helper.assertTrue(countItem(source, Items.APPLE) == 0, "Factory bridge should reserve source stock before dispatch");
+      } finally {
+         LogisticsContent.clearJsonForTests();
+         helper.getLevel().getServer().getPlayerList().remove(player);
+      }
+      helper.succeed();
+   }
+
+   private static void factoryAutoRestockToIndustrialInputDepot(GameTestHelper helper) {
+      Block inputDepotBlock = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("echoindustrialnexus", "input_depot_crate"));
+      helper.assertTrue(inputDepotBlock != Blocks.AIR, "Industrial input depot should be present for factory auto-restock integration");
+      Identifier presetId = id("factory_restock_apple_test");
+      LogisticsContent.replaceJsonContent(new LogisticsContent.LoadedContent(Map.of(), Map.of(presetId, new LoadoutPreset(
+         presetId,
+         "Factory Restock Apple Test",
+         710,
+         Identifier.withDefaultNamespace("apple"),
+         List.of(new LoadoutRequirement(LoadoutRequirement.Kind.ITEM, Identifier.withDefaultNamespace("apple"), 1, false)),
+         List.of(Identifier.fromNamespaceAndPath("echoindustrialnexus", "input_depot_crate")),
+         40,
+          new FactoryRestockPolicy(Identifier.fromNamespaceAndPath("echoindustrialnexus", "weld_reinforced_machine_frame"), 3, 2, 1, 120)
+      )), Map.of()));
+
+      BlockPos origin = new BlockPos(5, 1, 1);
+      BlockPos dockPos = new BlockPos(1, 1, 1);
+      BlockPos sourcePos = new BlockPos(2, 1, 1);
+      BlockPos labelPos = new BlockPos(5, 1, 2);
+      BlockPos depotPos = new BlockPos(5, 1, 3);
+      helper.setBlock(dockPos, (Block)ModBlocks.DRONE_DELIVERY_DOCK.get());
+      helper.setBlock(sourcePos, (Block)ModBlocks.SUPPLY_CRATE.get());
+      helper.setBlock(labelPos, (Block)ModBlocks.SMART_STORAGE_LABEL.get());
+      helper.setBlock(depotPos, inputDepotBlock);
+      helper.getBlockEntity(dockPos, LogisticsBlockEntity.class).setNetworkId("factory-restock-test");
+      helper.getBlockEntity(labelPos, LogisticsBlockEntity.class).setNetworkId("factory-restock-test");
+      LogisticsBlockEntity source = helper.getBlockEntity(sourcePos, LogisticsBlockEntity.class);
+      source.setNetworkId("factory-restock-test");
+      source.setItem(0, new ItemStack(Items.APPLE, 2));
+      ServerPlayer player = makeServerPlayer(helper);
+      try {
+         player.setPos(helper.absolutePos(origin).getCenter());
+         LogisticsNetworkService.FactoryRestockStatus status =
+            LogisticsNetworkService.requestFactoryAutoRestock(helper.getLevel(), player.getUUID(), player,
+               helper.absolutePos(origin), "factory-restock-test", presetId.toString());
+         helper.assertTrue(status.dispatched(), "Factory auto-restock should dispatch to the Industrial input depot: " + status.message());
+         helper.assertTrue(status.targetPos().equals(helper.absolutePos(depotPos)), "Factory auto-restock should choose the Industrial input depot as delivery target");
+         helper.assertTrue(countItem(source, Items.APPLE) == 1, "Factory auto-restock should reserve one loadout run before dispatch");
+         LogisticsNetworkService.FactoryRestockStatus duplicate =
+            LogisticsNetworkService.requestFactoryAutoRestock(helper.getLevel(), player.getUUID(), player,
+               helper.absolutePos(origin), "factory-restock-test", presetId.toString());
+         helper.assertTrue(!duplicate.dispatched() && duplicate.message().contains("in-flight"),
+            "Factory auto-restock should respect the in-flight cap instead of duplicate-dispatching: " + duplicate.message());
+      } finally {
+         LogisticsContent.clearJsonForTests();
+         helper.getLevel().getServer().getPlayerList().remove(player);
+      }
+      helper.succeed();
+   }
+
    private static void terminalRouteRefresh(GameTestHelper helper) {
       resetCoreServicesForLogisticsTests();
       registerRouteDiscoveryProviderForTests();
@@ -965,10 +1131,16 @@ public final class ModGameTests {
       BlockPos dockPos = new BlockPos(1, 1, 1);
       BlockPos cratePos = new BlockPos(2, 1, 1);
       BlockPos requesterPos = new BlockPos(5, 1, 1);
+      BlockPos relayPos = new BlockPos(1, 1, 4);
+      BlockPos depotPos = new BlockPos(2, 1, 4);
       helper.setBlock(dockPos, (Block)ModBlocks.DRONE_DELIVERY_DOCK.get());
       helper.setBlock(cratePos, (Block)ModBlocks.SUPPLY_CRATE.get());
       helper.setBlock(requesterPos, (Block)ModBlocks.ROUTE_REQUESTER.get());
+      helper.setBlock(relayPos, (Block)ModBlocks.REMOTE_REWARD_RELAY.get());
+      helper.setBlock(depotPos, (Block)ModBlocks.FACTION_TRADE_DEPOT.get());
       helper.getBlockEntity(dockPos, LogisticsBlockEntity.class).setNetworkId("terminal-loop");
+      helper.getBlockEntity(relayPos, LogisticsBlockEntity.class).setNetworkId("terminal-loop");
+      helper.getBlockEntity(depotPos, LogisticsBlockEntity.class).setNetworkId("terminal-loop");
       LogisticsBlockEntity requester = helper.getBlockEntity(requesterPos, LogisticsBlockEntity.class);
       requester.setNetworkId("terminal-loop");
       requester.setLoadoutId("echologisticsnetwork:toxic_expedition_kit");
@@ -985,11 +1157,25 @@ public final class ModGameTests {
          player.setPos(helper.absolutePos(requesterPos.above()).getCenter());
          helper.assertTrue(TerminalActionRegistry.handle(player, LogisticsTerminalIds.LOGISTICS_TAB, LogisticsTerminalIds.SCAN_ACTION, ""),
             "Logistics terminal scan should read a nearby logistics network");
+         LogisticsNetworkService.LogisticsSnapshot dashboard = LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(requesterPos), "terminal-loop", player);
+         helper.assertTrue(dashboard.blockCount() == 5 && dashboard.endpointCount() == 1 && dashboard.dockOnline()
+               && dashboard.relayOnline() && dashboard.depotOnline() && dashboard.canDispatch(),
+            "Terminal action loop should start from a complete shared dashboard snapshot");
+         helper.assertTrue(TerminalActionRegistry.handle(player, LogisticsTerminalIds.LOGISTICS_TAB, LogisticsTerminalIds.REFRESH_OFFERS_ACTION, ""),
+            "Logistics terminal offer refresh action should be handled when the depot is online");
          helper.assertTrue(TerminalActionRegistry.handle(player, LogisticsTerminalIds.LOGISTICS_TAB, LogisticsTerminalIds.REQUEST_ACTION,
                "terminal-loop|echologisticsnetwork:toxic_expedition_kit"),
             "Logistics terminal request action should be handled");
          LogisticsNetworkService.LogisticsSnapshot active = LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(requesterPos), "terminal-loop", player);
          helper.assertTrue(active.activeDeliveries() == 1, "Terminal request action should dispatch a tracked courier delivery");
+         helper.assertTrue(helper.getBlockEntity(dockPos, LogisticsBlockEntity.class).handleMenuButton(player, LogisticsMenu.BUTTON_CANCEL_DELIVERIES),
+            "Block dashboard cancel action should be handled");
+         helper.assertTrue(LogisticsNetworkService.snapshot(helper.getLevel(), helper.absolutePos(requesterPos), "terminal-loop", player).activeDeliveries() == 0,
+            "Block dashboard cancel action should recover the active terminal delivery");
+         fillBasicKit(crate);
+         helper.assertTrue(TerminalActionRegistry.handle(player, LogisticsTerminalIds.LOGISTICS_TAB, LogisticsTerminalIds.REQUEST_ACTION,
+               "terminal-loop|echologisticsnetwork:toxic_expedition_kit"),
+            "Logistics terminal request action should dispatch again after block cancellation");
          helper.assertTrue(TerminalActionRegistry.handle(player, LogisticsTerminalIds.LOGISTICS_TAB, LogisticsTerminalIds.CANCEL_ACTION, ""),
             "Logistics terminal cancel action should be handled");
          helper.assertTrue(countItem(helper.getBlockEntity(dockPos, LogisticsBlockEntity.class), Items.POTION) > 0,
@@ -1139,6 +1325,38 @@ public final class ModGameTests {
       } catch (JsonParseException expected) {
          // Expected validation failure.
       }
+   }
+
+   private static void missionCoreContentRegistration(GameTestHelper helper) {
+      InMemoryMissionRegistry registry = new InMemoryMissionRegistry();
+      LogisticsMissionCoreIntegration.registerContent(registry);
+      helper.assertTrue(registry.chapter(id("logistics")).isPresent(), "Logistics MissionCore chapter should be owned by Logistics.");
+      assertMission(helper, registry, "network_online", "route", MissionObjectiveType.ESTABLISH_ROUTE);
+      assertMission(helper, registry, "label_supplies", "label", MissionObjectiveType.CUSTOM);
+      assertMission(helper, registry, "request_loadout", "request", MissionObjectiveType.ESTABLISH_ROUTE);
+      assertMission(helper, registry, "courier_delivery", "deliver", MissionObjectiveType.DELIVER_ITEM);
+      assertMission(helper, registry, "depot_exchange", "exchange", MissionObjectiveType.DELIVER_ITEM);
+      assertMission(helper, registry, "industrial_auto_restock", "restock", MissionObjectiveType.ESTABLISH_ROUTE);
+      helper.succeed();
+   }
+
+   private static void assertMission(
+      GameTestHelper helper,
+      InMemoryMissionRegistry registry,
+      String missionPath,
+      String objectiveKey,
+      MissionObjectiveType type
+   ) {
+      Identifier missionId = id(missionPath);
+      MissionDefinition mission = registry.missionDefinition(missionId)
+         .orElseThrow(() -> new AssertionError("Missing MissionCore mission: " + missionId));
+      helper.assertTrue(mission.kind() == MissionKind.SIDE_OP, "Logistics MissionCore missions should be side ops.");
+      helper.assertTrue(!mission.rewards().isEmpty(), "Logistics MissionCore mission should have a claimable reward: " + missionId);
+      helper.assertTrue(mission.objectives().size() == 1, "Logistics MissionCore mission should have one direct objective: " + missionId);
+      helper.assertTrue(mission.objectives().getFirst().type() == type, "Logistics objective type should stay stable: " + missionId);
+      String target = mission.objectives().getFirst().criteria().get("target");
+      helper.assertTrue(MissionHookTargets.objectiveTarget(EchoLogisticsNetwork.MODID, missionId, objectiveKey).toString().equals(target),
+         "Logistics MissionCore objective target should use MissionHookTargets: " + missionId);
    }
 
    private static void register(RegisterGameTestsEvent event, String testName, Identifier functionId) {

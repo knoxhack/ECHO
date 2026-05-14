@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" R ","ICI"," R "],"key":{"R":{"item":"minecraft:redstone"},"I":{"item":"minecraft:iron_nugget"},"C":{"item":"echopowergrid:copper_coil"}},"result":{"id":"echopowergrid:power_cell"}}

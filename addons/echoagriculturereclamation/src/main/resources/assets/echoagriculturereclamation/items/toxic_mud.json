@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/toxic_mud"
+    "model": "echoagriculturereclamation:item/toxic_mud"
   }
 }

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/data_cracked_stone"
+    "model": "echonexusprotocol:item/data_cracked_stone"
   }
 }

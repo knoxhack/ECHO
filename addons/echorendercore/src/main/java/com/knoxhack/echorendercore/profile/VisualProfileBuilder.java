@@ -10,6 +10,7 @@ import net.minecraft.resources.Identifier;
 public final class VisualProfileBuilder extends RenderCoreProfileBuilder<VisualProfileBuilder> {
    private VisualProfileBuilder(Identifier id) {
       super(id);
+      schemaVersion(VisualProfile.CURRENT_SCHEMA_VERSION);
    }
 
    public static VisualProfileBuilder create(Identifier id) {
@@ -40,6 +41,13 @@ public final class VisualProfileBuilder extends RenderCoreProfileBuilder<VisualP
       return add("transition_seconds", seconds);
    }
 
+   public VisualProfileBuilder effect(VisualEffectProfile effect) {
+      if (effect != null && effect.active()) {
+         json.add("effect", effectJson(effect));
+      }
+      return this;
+   }
+
    public VisualProfileBuilder stateAnimation(VisualState state, String clip) {
       JsonObject animations = object("state_animations");
       animations.addProperty(state.name(), clip);
@@ -65,6 +73,32 @@ public final class VisualProfileBuilder extends RenderCoreProfileBuilder<VisualP
       value.addProperty("alpha", material.alpha());
       value.addProperty("emissive", material.emissive());
       value.addProperty("blend_mode", material.blendMode().name().toLowerCase(java.util.Locale.ROOT));
+      value.addProperty("light_mode", material.lightMode().name().toLowerCase(java.util.Locale.ROOT));
+      value.addProperty("render_pass", material.renderPass().name().toLowerCase(java.util.Locale.ROOT));
+      if (material.cull() != null) {
+         value.addProperty("cull", material.cull());
+      }
+      if (material.depthWrite() != null) {
+         value.addProperty("depth_write", material.depthWrite());
+      }
+      if (material.sortOrder() != 0) {
+         value.addProperty("sort_order", material.sortOrder());
+      }
+      if (material.lightOverride() != null) {
+         value.addProperty("light_override", material.lightOverride());
+      }
+      if (material.overlayOverride() != null) {
+         value.addProperty("overlay_override", material.overlayOverride());
+      }
+      if (material.outlineColor() != null) {
+         value.addProperty("outline_color", color(material.outlineColor()));
+      }
+      if (material.renderPriority() != 0) {
+         value.addProperty("render_priority", material.renderPriority());
+      }
+      if (material.effect().active()) {
+         value.add("effect", effectJson(material.effect()));
+      }
       materials.add(material.id(), value);
       return this;
    }
@@ -83,7 +117,52 @@ public final class VisualProfileBuilder extends RenderCoreProfileBuilder<VisualP
       value.addProperty("color", color(layer.color()));
       value.addProperty("alpha", layer.alpha());
       value.addProperty("emissive", layer.emissive());
+      value.addProperty("light_mode", layer.lightMode().name().toLowerCase(java.util.Locale.ROOT));
+      value.addProperty("render_pass", layer.renderPass().name().toLowerCase(java.util.Locale.ROOT));
+      if (layer.cull() != null) {
+         value.addProperty("cull", layer.cull());
+      }
+      if (layer.depthWrite() != null) {
+         value.addProperty("depth_write", layer.depthWrite());
+      }
+      if (layer.sortOrder() != 0) {
+         value.addProperty("sort_order", layer.sortOrder());
+      }
+      if (layer.lightOverride() != null) {
+         value.addProperty("light_override", layer.lightOverride());
+      }
+      if (layer.overlayOverride() != null) {
+         value.addProperty("overlay_override", layer.overlayOverride());
+      }
+      if (layer.outlineColor() != null) {
+         value.addProperty("outline_color", color(layer.outlineColor()));
+      }
+      if (layer.renderPriority() != 0) {
+         value.addProperty("render_priority", layer.renderPriority());
+      }
+      if (layer.effect().active()) {
+         value.add("effect", effectJson(layer.effect()));
+      }
       layers().add(value);
+      return this;
+   }
+
+   public VisualProfileBuilder include(Identifier profile) {
+      if (profile != null) {
+         includes().add(profile.toString());
+      }
+      return this;
+   }
+
+   public VisualProfileBuilder include(VisualProfileReference reference) {
+      if (reference == null || reference.profileId() == null) {
+         return this;
+      }
+      JsonObject value = new JsonObject();
+      value.addProperty("profile", reference.profileId().toString());
+      value.add("states", names(reference.states()));
+      value.add("variants", variants(reference.variants()));
+      includes().add(value);
       return this;
    }
 
@@ -143,6 +222,13 @@ public final class VisualProfileBuilder extends RenderCoreProfileBuilder<VisualP
       return json.getAsJsonArray("layers");
    }
 
+   private JsonArray includes() {
+      if (!json.has("includes") || !json.get("includes").isJsonArray()) {
+         json.add("includes", new JsonArray());
+      }
+      return json.getAsJsonArray("includes");
+   }
+
    private static JsonArray names(java.util.Set<VisualState> states) {
       JsonArray array = new JsonArray();
       states.forEach(state -> array.add(state.name()));
@@ -165,5 +251,38 @@ public final class VisualProfileBuilder extends RenderCoreProfileBuilder<VisualP
       JsonArray array = new JsonArray();
       values.forEach(array::add);
       return array;
+   }
+
+   private static JsonObject effectJson(VisualEffectProfile effect) {
+      JsonObject value = new JsonObject();
+      value.addProperty("preset", effect.kind().name().toLowerCase(java.util.Locale.ROOT));
+      value.addProperty("glow_intensity", effect.glowIntensity());
+      value.addProperty("bloom_intensity", effect.bloomIntensity());
+      value.addProperty("pulse_speed", effect.pulseSpeed());
+      value.addProperty("pulse_min_alpha", effect.pulseMinAlpha());
+      value.addProperty("pulse_max_alpha", effect.pulseMaxAlpha());
+      value.addProperty("flicker_intensity", effect.flickerIntensity());
+      value.addProperty("scanline_strength", effect.scanlineStrength());
+      value.addProperty("hue_shift_speed", effect.hueShiftSpeed());
+      value.addProperty("depth_bias", effect.depthBias());
+      value.addProperty("advanced_enabled", effect.advancedEnabled());
+      value.addProperty("bloom_radius", effect.bloomRadius());
+      value.addProperty("bloom_threshold", effect.bloomThreshold());
+      value.addProperty("bloom_passes", effect.bloomPasses());
+      value.addProperty("screen_blend", effect.screenBlend());
+      value.addProperty("target_scope", effect.targetScope().id());
+      value.addProperty("bloom_mask_mode", effect.bloomMaskMode().id());
+      if (effect.bloomTint() != null) {
+         value.addProperty("bloom_tint", color(effect.bloomTint()));
+      }
+      if (effect.bloomMaskAlpha() != null) {
+         value.addProperty("bloom_mask_alpha", effect.bloomMaskAlpha());
+      }
+      value.addProperty("bloom_channel", effect.effectiveBloomChannel());
+      if (effect.bloomDownscale() != null) {
+         value.addProperty("bloom_downscale", effect.bloomDownscale());
+      }
+      value.addProperty("advanced_priority", effect.advancedPriority());
+      return value;
    }
 }

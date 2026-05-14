@@ -1,3 +1,64 @@
+<!-- CURSEFORGE_README_START -->
+# ECHO: DataCore
+
+![ECHO: DataCore banner](docs/curseforge/echodatacore-banner.png)
+
+**Persistent player, world, and team data services for modular ECHO progression.**
+
+![ECHO: DataCore feature overview](docs/curseforge/echodatacore-features.png)
+
+## CurseForge Summary
+
+Shared persistent data service for player, world, team, progression, sync, and addon-owned state.
+
+## Overview
+
+ECHO: DataCore is the concrete persistence layer behind the lightweight data contracts exposed by ECHO: Core. It gives addons a safe way to register data keys, store player/world/team values, sync public state, and keep optional modules from hard-crashing when a backend is absent.
+
+The design keeps ownership clear. Addons define stable namespaced keys for their own state, Core exposes no-op-safe service access, and DataCore provides the real storage and sync behavior when installed.
+
+For players, DataCore is a library mod. For pack authors and addon developers, it is the part that makes cross-addon progression more reliable without forcing every gameplay chapter to reinvent persistence.
+
+## Main Features
+
+- Player, world, and team data scopes for addon-owned keys.
+- Registration helpers through ECHO Core services.
+- Safe no-op fallback behavior when the backend is absent.
+- NetCore-backed sync support for public progression and diagnostics.
+- Stable key naming guidance for long-term save compatibility.
+
+## How It Plays
+
+- Install it alongside ECHO gameplay chapters that need shared persistent state. Most players will never interact with DataCore directly; it quietly keeps route flags, unlocks, team data, and world records stable.
+- Addon authors can depend on Core contracts and let DataCore supply the storage implementation.
+
+## Requirements
+
+- Minecraft 26.1.2
+- NeoForge 26.1.2.29-beta or newer
+- Java 25+
+- ECHO: Core 1.0.0 or newer
+- ECHO: NetCore 1.0.0 or newer
+
+## Recommended Pairings
+
+- ECHO: Terminal for surfacing synced records and diagnostics
+
+## Compatibility Notes
+
+- Data keys should remain namespaced to the owning addon.
+- If missing, Core no-op services avoid hard failure for optional integrations.
+
+## CurseForge Asset Files
+
+- Banner: `docs/curseforge/echodatacore-banner.png`
+- Feature image: `docs/curseforge/echodatacore-features.png`
+
+<!-- CURSEFORGE_README_END -->
+---
+
+## Existing Developer Notes
+
 # ECHO: DataCore
 
 ECHO: DataCore is the shared persistent data and progression layer for the ECHO/Ashfall addon ecosystem. It owns the concrete data service behind the lightweight contracts in ECHO: Core.

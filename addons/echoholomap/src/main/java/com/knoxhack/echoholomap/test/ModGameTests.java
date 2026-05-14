@@ -7,9 +7,16 @@ import com.knoxhack.echocore.api.EchoMapMarker;
 import com.knoxhack.echocore.api.IMapDataProvider;
 import com.knoxhack.echocore.api.IMapLayer;
 import com.knoxhack.echocore.api.IMapMarker;
+import com.knoxhack.echocore.api.mission.InMemoryMissionRegistry;
+import com.knoxhack.echocore.api.mission.MissionDefinition;
+import com.knoxhack.echocore.api.mission.MissionHookTargets;
+import com.knoxhack.echocore.api.mission.MissionKind;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.echoholomap.Config;
 import com.knoxhack.echoholomap.EchoHoloMap;
 import com.knoxhack.echoholomap.HoloMapIds;
+import com.knoxhack.echoholomap.client.HoloMapVisualStyle;
+import com.knoxhack.echoholomap.integration.HoloMapMissionCoreIntegration;
 import com.knoxhack.echoholomap.map.HoloMapLayers;
 import com.knoxhack.echoholomap.map.HoloMapService;
 import com.knoxhack.echoholomap.map.HoloMapTerrainPalette;
@@ -18,8 +25,13 @@ import com.knoxhack.echoholomap.map.HoloMapTerrainTile;
 import com.knoxhack.echoholomap.network.HoloMapSnapshotPacket;
 import com.knoxhack.echoholomap.network.HoloMapTileBatchPacket;
 import com.knoxhack.echoholomap.network.HoloMapTileRequestPacket;
+import com.knoxhack.echoholomap.network.HoloMapWaypointClientState;
+import com.knoxhack.echoholomap.network.HoloMapWaypointSyncPacket;
+import com.knoxhack.echoholomap.waypoint.HoloMapWaypoint;
+import com.knoxhack.echoholomap.waypoint.HoloMapWaypoint.Scope;
 import com.knoxhack.echoholomap.world.HoloMapSavedData;
 import com.knoxhack.echoholomap.world.HoloMapTerrainSavedData;
+import com.knoxhack.echoholomap.world.HoloMapWaypointSavedData;
 import com.mojang.serialization.JsonOps;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,10 +68,22 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("debug_marker_saved_data_codec", () -> ModGameTests::debugMarkerSavedDataCodec);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERRAIN_SAVED_DATA_CODEC =
             TEST_FUNCTIONS.register("terrain_saved_data_codec", () -> ModGameTests::terrainSavedDataCodec);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERRAIN_V3_TILE_METADATA =
+            TEST_FUNCTIONS.register("terrain_v3_tile_metadata", () -> ModGameTests::terrainV3TileMetadata);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERRAIN_PALETTE_DETERMINISM =
             TEST_FUNCTIONS.register("terrain_palette_determinism", () -> ModGameTests::terrainPaletteDeterminism);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> TERRAIN_SCANNER_AND_REQUEST_CAPS =
             TEST_FUNCTIONS.register("terrain_scanner_and_request_caps", () -> ModGameTests::terrainScannerAndRequestCaps);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WAYPOINT_SAVED_DATA_CODEC =
+            TEST_FUNCTIONS.register("waypoint_saved_data_codec", () -> ModGameTests::waypointSavedDataCodec);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WAYPOINT_MUTATION_RULES =
+            TEST_FUNCTIONS.register("waypoint_mutation_rules", () -> ModGameTests::waypointMutationRules);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WAYPOINT_CLIENT_MERGE =
+            TEST_FUNCTIONS.register("waypoint_client_merge", () -> ModGameTests::waypointClientMerge);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
+            TEST_FUNCTIONS.register("missioncore_content_registration", () -> ModGameTests::missionCoreContentRegistration);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> THEME_CORE_STYLE_FALLBACK =
+            TEST_FUNCTIONS.register("theme_core_style_fallback", () -> ModGameTests::themeCoreStyleFallback);
 
     private ModGameTests() {
     }
@@ -75,8 +99,14 @@ public final class ModGameTests {
         register(event, environment, "snapshot_filtering_and_cap", SNAPSHOT_FILTERING_AND_CAP.getId());
         register(event, environment, "debug_marker_saved_data_codec", DEBUG_MARKER_SAVED_DATA_CODEC.getId());
         register(event, environment, "terrain_saved_data_codec", TERRAIN_SAVED_DATA_CODEC.getId());
+        register(event, environment, "terrain_v3_tile_metadata", TERRAIN_V3_TILE_METADATA.getId());
         register(event, environment, "terrain_palette_determinism", TERRAIN_PALETTE_DETERMINISM.getId());
         register(event, environment, "terrain_scanner_and_request_caps", TERRAIN_SCANNER_AND_REQUEST_CAPS.getId());
+        register(event, environment, "waypoint_saved_data_codec", WAYPOINT_SAVED_DATA_CODEC.getId());
+        register(event, environment, "waypoint_mutation_rules", WAYPOINT_MUTATION_RULES.getId());
+        register(event, environment, "waypoint_client_merge", WAYPOINT_CLIENT_MERGE.getId());
+        register(event, environment, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
+        register(event, environment, "theme_core_style_fallback", THEME_CORE_STYLE_FALLBACK.getId());
     }
 
     private static void builtinProviderRegistration(GameTestHelper helper) {
@@ -89,6 +119,25 @@ public final class ModGameTests {
         helper.assertTrue(layerIds.containsAll(requiredLayerIds()),
                 "Built-in HoloMap provider should expose every required layer");
         resetHoloMapService();
+        helper.succeed();
+    }
+
+    private static void themeCoreStyleFallback(GameTestHelper helper) {
+        HoloMapSnapshotPacket.MarkerData route = HoloMapSnapshotPacket.MarkerData.from(marker(
+                id("theme_route"), HoloMapIds.ROUTES, HoloMapIds.ROUTE_SOURCE,
+                IMapMarker.MarkerKind.ROUTE, IMapMarker.MarkerState.DISCOVERED, 0.0D));
+        HoloMapSnapshotPacket.MarkerData hazard = HoloMapSnapshotPacket.MarkerData.from(marker(
+                id("theme_hazard"), HoloMapIds.HAZARDS, HoloMapIds.HAZARD_SOURCE,
+                IMapMarker.MarkerKind.HAZARD, IMapMarker.MarkerState.DISCOVERED, 1.0D));
+        HoloMapSnapshotPacket.MarkerData nexus = HoloMapSnapshotPacket.MarkerData.from(marker(
+                id("theme_nexus"), HoloMapIds.NEXUS_ANOMALY, HoloMapIds.CORE_SOURCE,
+                IMapMarker.MarkerKind.NEXUS_ANOMALY, IMapMarker.MarkerState.DISCOVERED, 2.0D));
+        helper.assertTrue(HoloMapVisualStyle.markerColor(null, route) == HoloMapVisualStyle.SUCCESS,
+                "HoloMap route marker fallback should remain stable without ThemeCore.");
+        helper.assertTrue(HoloMapVisualStyle.markerColor(null, hazard) == HoloMapVisualStyle.DANGER,
+                "HoloMap hazard marker fallback should remain stable without ThemeCore.");
+        helper.assertTrue(HoloMapVisualStyle.markerColor(null, nexus) == 0xFFFF8FEA,
+                "HoloMap Nexus marker fallback should remain stable without ThemeCore.");
         helper.succeed();
     }
 
@@ -233,6 +282,39 @@ public final class ModGameTests {
                 "Terrain tile chunk coordinates should survive codec save/load");
         helper.assertTrue(tile.pixel(0, 0) == 0xFF356E4A,
                 "Terrain tile pixels should survive codec save/load");
+        helper.assertTrue(tile.version() == HoloMapTerrainTile.LEGACY_VERSION,
+                "Legacy terrain tiles without explicit metadata should remain readable");
+        helper.assertTrue(tile.detailMode() == HoloMapTerrainTile.DetailMode.BIOME_FALLBACK,
+                "Legacy terrain tiles should default to biome fallback detail");
+        helper.succeed();
+    }
+
+    private static void terrainV3TileMetadata(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        HoloMapTerrainSavedData data = new HoloMapTerrainSavedData();
+        int[] pixels = filledPixels(0xFF6D7C70);
+        data.putForTests(player.getUUID().toString(), Level.OVERWORLD.identifier().toString(), 2, 3, 144L,
+                HoloMapTerrainTile.CURRENT_VERSION, HoloMapTerrainTile.DetailMode.SURFACE_SHADED, pixels);
+
+        JsonElement encoded = HoloMapTerrainSavedData.CODEC.encodeStart(JsonOps.INSTANCE, data).result().orElseThrow();
+        HoloMapTerrainSavedData decoded = HoloMapTerrainSavedData.CODEC.parse(JsonOps.INSTANCE, encoded).result().orElseThrow();
+        List<HoloMapTerrainTile> tiles = decoded.tiles(player.getUUID(), Level.OVERWORLD, 2, 3, 1, 8);
+        helper.assertTrue(tiles.size() == 1, "V3 terrain tile should survive codec save/load");
+        HoloMapTerrainTile tile = tiles.getFirst();
+        helper.assertTrue(tile.version() == HoloMapTerrainTile.CURRENT_VERSION,
+                "V3 terrain tile version should survive codec save/load");
+        helper.assertTrue(tile.detailMode() == HoloMapTerrainTile.DetailMode.SURFACE_SHADED,
+                "V3 terrain tile detail mode should survive codec save/load");
+        HoloMapTerrainSavedData.TerrainStats stats = decoded.stats(player.getUUID(), Level.OVERWORLD);
+        helper.assertTrue(stats.surfaceShaded() == 1 && stats.legacy() == 0,
+                "V3 terrain stats should count shaded non-legacy tiles");
+        helper.assertFalse(decoded.needsSample(player.getUUID(), Level.OVERWORLD, 2, 3, 145L, 2400L),
+                "Fresh V3 terrain tiles should not need immediate resampling");
+
+        HoloMapTerrainSavedData legacy = new HoloMapTerrainSavedData();
+        legacy.putForTests(player.getUUID().toString(), Level.OVERWORLD.identifier().toString(), 2, 3, 144L, pixels);
+        helper.assertTrue(legacy.needsSample(player.getUUID(), Level.OVERWORLD, 2, 3, 145L, 2400L),
+                "Legacy terrain tiles should be eligible for lazy V3 resampling");
         helper.succeed();
     }
 
@@ -241,9 +323,20 @@ public final class ModGameTests {
         int plainsB = HoloMapTerrainPalette.colorForBiome("minecraft:overworld", "plains", 64, false);
         int water = HoloMapTerrainPalette.colorForBiome("minecraft:overworld", "river", 64, true);
         int end = HoloMapTerrainPalette.colorForBiome("minecraft:the_end", "end_highlands", 64, false);
+        int sand = HoloMapTerrainPalette.colorForDescriptor("minecraft:overworld", "desert", 64,
+                "sand", false, false);
+        int stone = HoloMapTerrainPalette.colorForDescriptor("minecraft:overworld", "stony_peaks", 90,
+                "stone", false, false);
+        int snow = HoloMapTerrainPalette.colorForDescriptor("minecraft:overworld", "snowy_plains", 74,
+                "snow", false, false);
+        int lava = HoloMapTerrainPalette.colorForDescriptor("minecraft:the_nether", "nether_wastes", 32,
+                "lava", false, false);
         helper.assertTrue(plainsA == plainsB, "Terrain palette should be deterministic for identical input");
         helper.assertTrue(plainsA != water, "Terrain palette should distinguish land from water");
         helper.assertTrue(end != plainsA, "Terrain palette should distinguish End terrain from overworld plains");
+        helper.assertTrue(sand != stone, "Surface palette should distinguish sand from stone");
+        helper.assertTrue(snow != sand, "Surface palette should highlight snow separately from sand");
+        helper.assertTrue(lava != stone, "Surface palette should highlight lava separately from stone");
         helper.succeed();
     }
 
@@ -260,6 +353,18 @@ public final class ModGameTests {
 
         int centerChunkX = Math.floorDiv(player.blockPosition().getX(), 16);
         int centerChunkZ = Math.floorDiv(player.blockPosition().getZ(), 16);
+        level.getChunk(centerChunkX, centerChunkZ);
+        data.clear(player.getUUID());
+        data.putForTests(player.getUUID().toString(), level.dimension().identifier().toString(),
+                centerChunkX, centerChunkZ, level.getGameTime(),
+                HoloMapTerrainTile.CURRENT_VERSION, HoloMapTerrainTile.DetailMode.SURFACE_SHADED,
+                filledPixels(0xFF51615F));
+        HoloMapTerrainScanner.clearForTests();
+        int skipped = HoloMapTerrainScanner.scanAround(player, 0, 1, false);
+        helper.assertTrue(skipped == 0, "Scanner should skip fresh current-version terrain tiles");
+        int forced = HoloMapTerrainScanner.scanAround(player, 0, 1, true);
+        helper.assertTrue(forced == 1, "Forced terrain resample should refresh a loaded current tile");
+
         int beforeRemote = data.discoverableTileCount(player.getUUID(), level.dimension());
         HoloMapTileBatchPacket remote = HoloMapTileBatchPacket.from(player, new HoloMapTileRequestPacket(
                 level.dimension().identifier().toString(), centerChunkX + 1000, centerChunkZ + 1000, 4));
@@ -280,6 +385,63 @@ public final class ModGameTests {
                 "Tile batch response should respect configured packet cap");
         data.clear(player.getUUID());
         HoloMapTerrainScanner.clearForTests();
+        helper.succeed();
+    }
+
+    private static void waypointSavedDataCodec(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        HoloMapWaypointSavedData data = new HoloMapWaypointSavedData();
+        HoloMapWaypoint waypoint = HoloMapWaypoint.create(Scope.PERSONAL, player.getUUID(),
+                Level.OVERWORLD.identifier().toString(), 32.0D, 70.0D, -48.0D,
+                "Codec Relay", 0xFF92F7A6, 12L);
+        helper.assertTrue(data.upsert(player, waypoint, false), "Personal waypoint should be accepted");
+        JsonElement encoded = HoloMapWaypointSavedData.CODEC.encodeStart(JsonOps.INSTANCE, data).result().orElseThrow();
+        HoloMapWaypointSavedData decoded = HoloMapWaypointSavedData.CODEC.parse(JsonOps.INSTANCE, encoded).result().orElseThrow();
+        List<HoloMapWaypoint> waypoints = decoded.waypointsFor(player.getUUID(), 16);
+        helper.assertTrue(waypoints.size() == 1, "Waypoint should survive codec save/load");
+        HoloMapWaypoint decodedWaypoint = waypoints.getFirst();
+        helper.assertTrue(decodedWaypoint.scope() == Scope.PERSONAL, "Waypoint scope should survive codec save/load");
+        helper.assertTrue(decodedWaypoint.owner().equals(player.getUUID()), "Waypoint owner should survive codec save/load");
+        helper.assertTrue(decodedWaypoint.x() == 32.0D && decodedWaypoint.z() == -48.0D,
+                "Waypoint coordinates should survive codec save/load");
+        helper.succeed();
+    }
+
+    private static void waypointMutationRules(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        HoloMapWaypointSavedData data = new HoloMapWaypointSavedData();
+        HoloMapWaypoint personal = HoloMapWaypoint.create(Scope.PERSONAL, player.getUUID(),
+                Level.OVERWORLD.identifier().toString(), 8.0D, 64.0D, 8.0D,
+                "Personal", 0xFF92F7A6, 1L);
+        HoloMapWaypoint shared = HoloMapWaypoint.create(Scope.SHARED, player.getUUID(),
+                Level.OVERWORLD.identifier().toString(), 16.0D, 64.0D, 16.0D,
+                "Shared", 0xFFFFDA73, 1L);
+        helper.assertTrue(data.upsert(player, personal, false), "Players should be able to upsert personal waypoints");
+        helper.assertFalse(data.upsert(player, shared, false), "Shared waypoint upsert should require permission");
+        helper.assertTrue(data.upsert(player, shared, true), "Shared waypoint upsert should work with permission");
+        helper.assertFalse(data.delete(player, shared.id(), false), "Shared waypoint delete should require permission");
+        helper.assertTrue(data.delete(player, shared.id(), true), "Shared waypoint delete should work with permission");
+        helper.assertTrue(data.delete(player, personal.id(), false), "Personal waypoint delete should work for owner");
+        helper.succeed();
+    }
+
+    private static void waypointClientMerge(GameTestHelper helper) {
+        HoloMapWaypointClientState.clearForTests();
+        HoloMapWaypoint local = HoloMapWaypoint.create(Scope.LOCAL, HoloMapWaypoint.NO_OWNER,
+                Level.OVERWORLD.identifier().toString(), 1.0D, 64.0D, 1.0D,
+                "Local", 0xFF38DFF4, 1L);
+        HoloMapWaypoint personal = HoloMapWaypoint.create(Scope.PERSONAL, java.util.UUID.randomUUID(),
+                Level.OVERWORLD.identifier().toString(), 2.0D, 64.0D, 2.0D,
+                "Personal", 0xFF92F7A6, 2L);
+        HoloMapWaypointClientState.setLocalWaypoints(List.of(local));
+        HoloMapWaypointClientState.apply(new HoloMapWaypointSyncPacket(List.of(personal), 42L));
+        List<HoloMapWaypoint> merged = HoloMapWaypointClientState.waypoints();
+        helper.assertTrue(merged.size() == 2, "Client waypoint cache should merge local and server waypoints");
+        helper.assertTrue(merged.getFirst().scope() == Scope.LOCAL,
+                "Local waypoints should sort before synced server waypoints");
+        helper.assertTrue(HoloMapWaypointClientState.lastSyncGameTime() == 42L,
+                "Waypoint sync packet should update client sync time");
+        HoloMapWaypointClientState.clearForTests();
         helper.succeed();
     }
 
@@ -307,6 +469,35 @@ public final class ModGameTests {
         HoloMapService.INSTANCE.clearForTests();
         HoloMapService.INSTANCE.registerBuiltins();
         EchoCoreServices.registerMapMarkerService(HoloMapService.INSTANCE);
+    }
+
+    private static void missionCoreContentRegistration(GameTestHelper helper) {
+        InMemoryMissionRegistry registry = new InMemoryMissionRegistry();
+        HoloMapMissionCoreIntegration.registerContent(registry);
+        helper.assertTrue(registry.chapter(id("holomap")).isPresent(), "HoloMap MissionCore chapter should be owned by HoloMap.");
+        assertMission(helper, registry, "discover_terrain", "terrain", MissionObjectiveType.ENTER_REGION);
+        assertMission(helper, registry, "create_waypoint", "waypoint", MissionObjectiveType.CUSTOM);
+        assertMission(helper, registry, "reveal_marker", "marker", MissionObjectiveType.DISCOVER_STRUCTURE);
+        assertMission(helper, registry, "sync_route", "sync", MissionObjectiveType.ESTABLISH_ROUTE);
+        helper.succeed();
+    }
+
+    private static void assertMission(
+            GameTestHelper helper,
+            InMemoryMissionRegistry registry,
+            String missionPath,
+            String objectiveKey,
+            MissionObjectiveType type) {
+        Identifier missionId = id(missionPath);
+        MissionDefinition mission = registry.missionDefinition(missionId)
+                .orElseThrow(() -> new AssertionError("Missing MissionCore mission: " + missionId));
+        helper.assertTrue(mission.kind() == MissionKind.SIDE_OP, "HoloMap MissionCore missions should be side ops.");
+        helper.assertTrue(!mission.rewards().isEmpty(), "HoloMap MissionCore mission should have a claimable reward: " + missionId);
+        helper.assertTrue(mission.objectives().size() == 1, "HoloMap MissionCore mission should have one direct objective: " + missionId);
+        helper.assertTrue(mission.objectives().getFirst().type() == type, "HoloMap objective type should stay stable: " + missionId);
+        String target = mission.objectives().getFirst().criteria().get("target");
+        helper.assertTrue(MissionHookTargets.objectiveTarget(EchoHoloMap.MODID, missionId, objectiveKey).toString().equals(target),
+                "HoloMap MissionCore objective target should use MissionHookTargets: " + missionId);
     }
 
     private static List<Identifier> requiredLayerIds() {

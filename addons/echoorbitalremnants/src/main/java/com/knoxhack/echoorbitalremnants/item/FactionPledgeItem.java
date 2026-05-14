@@ -32,8 +32,8 @@ public class FactionPledgeItem extends Item {
                 player.getItemInHand(hand).shrink(1);
             }
             String message = alreadyAligned
-                    ? "ECHO-7 // Faction alignment already active: " + faction.displayName() + ". Contract remains on terminal."
-                    : "ECHO-7 // Faction alignment accepted: " + faction.displayName() + ". Relay contract assigned on terminal.";
+                    ? "ECHO-7 // Faction alignment already active: " + faction.displayName() + ". Outpost support remains available."
+                    : "ECHO-7 // Faction alignment accepted: " + faction.displayName() + ". Pledge support unlocked; Tier I outpost charters remain faction-neutral.";
             player.sendSystemMessage(Component.literal(message));
         }
         return InteractionResult.SUCCESS_SERVER;

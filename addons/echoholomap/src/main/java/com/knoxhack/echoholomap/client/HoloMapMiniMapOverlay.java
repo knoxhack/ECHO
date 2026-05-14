@@ -4,6 +4,7 @@ import com.knoxhack.echocore.api.IMapMarker;
 import com.knoxhack.echonetcore.client.EchoNetClientActions;
 import com.knoxhack.echoholomap.Config;
 import com.knoxhack.echoholomap.map.HoloMapTerrainTile;
+import com.knoxhack.echoholomap.map.HoloMapVisualPriority;
 import com.knoxhack.echoholomap.network.HoloMapClientState;
 import com.knoxhack.echoholomap.network.HoloMapSnapshotPacket;
 import com.knoxhack.echoholomap.network.HoloMapTerrainClientState;
@@ -18,15 +19,30 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 public final class HoloMapMiniMapOverlay {
-    private static final int ACCENT = 0xFF38DFF4;
     private static boolean toggledVisible = true;
     private static long lastRequestTick = -200L;
+    private static Config.MiniMapCorner cornerOverride;
+    private static double zoomOffset;
 
     private HoloMapMiniMapOverlay() {
     }
 
     public static void toggle() {
         toggledVisible = !toggledVisible;
+    }
+
+    public static void zoomIn() {
+        zoomOffset = Math.min(1.5D, zoomOffset + 0.25D);
+    }
+
+    public static void zoomOut() {
+        zoomOffset = Math.max(-0.75D, zoomOffset - 0.25D);
+    }
+
+    public static void cycleCorner() {
+        Config.MiniMapCorner current = corner();
+        Config.MiniMapCorner[] values = Config.MiniMapCorner.values();
+        cornerOverride = values[(current.ordinal() + 1) % values.length];
     }
 
     public static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
@@ -48,17 +64,19 @@ public final class HoloMapMiniMapOverlay {
             case BOTTOM_LEFT, BOTTOM_RIGHT -> screenH - size - margin;
         };
         requestNearbyTiles(player);
-        graphics.fill(x - 4, y - 4, x + size + 4, y + size + 18, 0xB8061014);
-        graphics.outline(x - 4, y - 4, size + 8, size + 22, 0xAA38DFF4);
-        graphics.fill(x - 3, y - 3, x + size + 3, y - 1, ACCENT);
+        int accent = HoloMapVisualStyle.accent(player);
+        int panel = HoloMapVisualStyle.withAlpha(HoloMapVisualStyle.panel(player),
+                Math.round(HoloMapVisualStyle.hologramOpacity(player) * 255.0F));
+        graphics.fill(x - 4, y - 4, x + size + 4, y + size + 18, panel);
+        graphics.outline(x - 4, y - 4, size + 8, size + 22, HoloMapVisualStyle.withAlpha(accent, 0xAA));
+        graphics.fill(x - 3, y - 3, x + size + 3, y - 1, accent);
         graphics.enableScissor(x, y, x + size, y + size);
         drawTerrain(graphics, player, x, y, size, size, minimapZoom());
         drawMarkers(graphics, player, x, y, size, size, minimapZoom());
         drawPlayer(graphics, player, x, y, size);
         graphics.disableScissor();
-        Font font = minecraft.font;
-        graphics.text(font, Component.literal("HOLOMAP " + HoloMapTerrainClientState.discoveredCount()),
-                x, y + size + 5, 0xD9F7FF, true);
+        drawReadout(graphics, minecraft.font, player, x, y, size);
+        renderCoreFrame(graphics, x - 4, y - 4, size + 8, size + 22);
     }
 
     private static void requestNearbyTiles(Player player) {
@@ -100,8 +118,9 @@ public final class HoloMapMiniMapOverlay {
         int screenX = x + w / 2 + (int) Math.floor((baseX - centerX) * zoom);
         int screenY = y + h / 2 + (int) Math.floor((baseZ - centerZ) * zoom);
         int chunkSize = Math.max(1, (int) Math.ceil(16.0D * zoom));
-        if (chunkSize <= 18) {
-            graphics.fill(screenX, screenY, screenX + chunkSize, screenY + chunkSize, tile.averageColor());
+        if (chunkSize <= 18 || !highDetailTerrain()) {
+            graphics.fill(screenX, screenY, screenX + chunkSize, screenY + chunkSize,
+                    HoloMapVisualStyle.terrainColor(tile.averageColor()));
             return;
         }
         int pixelSize = Math.max(1, (int) Math.ceil(zoom));
@@ -109,7 +128,8 @@ public final class HoloMapMiniMapOverlay {
             for (int localX = 0; localX < HoloMapTerrainTile.SIZE; localX++) {
                 int px = x + w / 2 + (int) Math.floor((baseX + localX - centerX) * zoom);
                 int py = y + h / 2 + (int) Math.floor((baseZ + localZ - centerZ) * zoom);
-                graphics.fill(px, py, px + pixelSize, py + pixelSize, tile.pixel(localX, localZ));
+                graphics.fill(px, py, px + pixelSize, py + pixelSize,
+                        HoloMapVisualStyle.terrainColor(tile.pixel(localX, localZ)));
             }
         }
     }
@@ -120,24 +140,25 @@ public final class HoloMapMiniMapOverlay {
         double centerX = player.getX();
         double centerZ = player.getZ();
         HoloMapSnapshotPacket snapshot = HoloMapClientState.snapshot();
+        int limit = markerLimit();
         snapshot.markers().stream()
                 .filter(marker -> dimension.equals(marker.dimension()))
                 .filter(marker -> marker.state() != IMapMarker.MarkerState.HIDDEN)
-                .sorted(Comparator.comparing(marker -> marker.state().ordinal()))
-                .limit(48)
+                .sorted(Comparator.comparingDouble(marker -> HoloMapVisualPriority.drawPriority(
+                        distance(centerX, centerZ, marker.x(), marker.z()), marker.state(), marker.kind(), false)))
+                .limit(limit)
                 .forEach(marker -> {
                     int mx = x + w / 2 + (int) Math.round((marker.x() - centerX) * zoom);
                     int my = y + h / 2 + (int) Math.round((marker.z() - centerZ) * zoom);
-                    if (mx < x - 6 || mx > x + w + 6 || my < y - 6 || my > y + h + 6) {
+                    int color = HoloMapVisualStyle.markerColor(player, marker);
+                    int size = HoloMapVisualStyle.markerScalePixels(4);
+                    if (mx < x - 8 || mx > x + w + 8 || my < y - 8 || my > y + h + 8) {
+                        HoloMapGlyphRenderer.drawEdgeIndicator(graphics,
+                                Math.max(x + 4, Math.min(x + w - 4, mx)),
+                                Math.max(y + 4, Math.min(y + h - 4, my)), color);
                         return;
                     }
-                    int color = markerColor(marker);
-                    if (marker.radius() > 0.0F) {
-                        int radius = Math.max(3, Math.min(32, (int) Math.round(marker.radius() * zoom)));
-                        graphics.outline(mx - radius, my - radius, radius * 2, radius * 2, withAlpha(color, 0x55));
-                    }
-                    graphics.fill(mx - 2, my - 2, mx + 3, my + 3, color);
-                    graphics.outline(mx - 4, my - 4, 8, 8, withAlpha(color, 0xAA));
+                    HoloMapGlyphRenderer.drawMarker(graphics, marker, mx, my, color, size, false);
                 });
     }
 
@@ -148,15 +169,23 @@ public final class HoloMapMiniMapOverlay {
         double yaw = Math.toRadians(player.getYRot());
         int tipX = cx - (int) Math.round(Math.sin(yaw) * 11.0D);
         int tipY = cy + (int) Math.round(Math.cos(yaw) * 11.0D);
-        drawLine(graphics, cx, cy, tipX, tipY, 0xFFFFFFFF);
+        HoloMapGlyphRenderer.drawLine(graphics, cx, cy, tipX, tipY, 0xFFFFFFFF);
+    }
+
+    private static void drawReadout(GuiGraphicsExtractor graphics, Font font, Player player, int x, int y, int size) {
+        String text = "HOLOMAP " + HoloMapTerrainClientState.discoveredCount();
+        if (booleanConfig(Config.MINIMAP_SHOW_COORDINATES, true)) {
+            text += " // " + player.blockPosition().getX() + "," + player.blockPosition().getZ();
+        }
+        graphics.text(font, Component.literal(text), x, y + size + 5, HoloMapVisualStyle.text(player), true);
     }
 
     private static void drawGrid(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
         for (int gx = x; gx <= x + w; gx += 16) {
-            graphics.fill(gx, y, gx + 1, y + h, 0x2438DFF4);
+            graphics.fill(gx, y, gx + 1, y + h, HoloMapVisualStyle.withAlpha(HoloMapVisualStyle.accent(Minecraft.getInstance().player), 0x24));
         }
         for (int gy = y; gy <= y + h; gy += 16) {
-            graphics.fill(x, gy, x + w, gy + 1, 0x2438DFF4);
+            graphics.fill(x, gy, x + w, gy + 1, HoloMapVisualStyle.withAlpha(HoloMapVisualStyle.accent(Minecraft.getInstance().player), 0x24));
         }
     }
 
@@ -169,6 +198,9 @@ public final class HoloMapMiniMapOverlay {
     }
 
     private static Config.MiniMapCorner corner() {
+        if (cornerOverride != null) {
+            return cornerOverride;
+        }
         try {
             return Config.MINIMAP_CORNER.get();
         } catch (RuntimeException exception) {
@@ -186,48 +218,45 @@ public final class HoloMapMiniMapOverlay {
 
     private static double minimapZoom() {
         try {
-            return Math.max(0.5D, Math.min(4.0D, Config.MINIMAP_ZOOM.get()));
+            return Math.max(0.5D, Math.min(4.0D, Config.MINIMAP_ZOOM.get() + zoomOffset));
         } catch (RuntimeException exception) {
             return 1.35D;
         }
     }
 
-    private static int markerColor(HoloMapSnapshotPacket.MarkerData marker) {
-        if (marker.state() == IMapMarker.MarkerState.LOCKED) {
-            return 0xFF9FB4BE;
+    private static int markerLimit() {
+        try {
+            return Math.max(0, Math.min(192, Config.MINIMAP_MARKER_DENSITY.get()));
+        } catch (RuntimeException exception) {
+            return 24;
         }
-        if (marker.state() == IMapMarker.MarkerState.CHECKED) {
-            return 0xFF92F7A6;
-        }
-        return switch (marker.kind()) {
-            case CRASH_SITE -> 0xFFFFA05B;
-            case ROUTE -> 0xFF92F7A6;
-            case HAZARD -> 0xFFFF6688;
-            case MISSION -> ACCENT;
-            case BASE_OUTPOST -> 0xFFFFDA73;
-            case ORBITAL_SCAN -> 0xFFA58BFF;
-            case NEXUS_ANOMALY -> 0xFFFF8FEA;
-            case DRONE_SCAN -> 0xFF7CF7D4;
-            case REGION, GENERIC -> 0xFFD9F7FF;
-        };
     }
 
-    private static int withAlpha(int color, int alpha) {
-        return ((alpha & 0xFF) << 24) | (color & 0x00FFFFFF);
+    private static boolean highDetailTerrain() {
+        return booleanConfig(Config.MINIMAP_HIGH_DETAIL_TERRAIN, false);
     }
 
-    private static void drawLine(GuiGraphicsExtractor graphics, int x0, int y0, int x1, int y1, int color) {
-        int dx = x1 - x0;
-        int dy = y1 - y0;
-        int steps = Math.max(Math.abs(dx), Math.abs(dy));
-        if (steps <= 0) {
-            graphics.fill(x0, y0, x0 + 1, y0 + 1, color);
-            return;
+    private static void renderCoreFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        try {
+            Class.forName("com.knoxhack.echoholomap.integration.HoloMapRenderCoreClientIntegration")
+                    .getMethod("drawMinimapFrame", GuiGraphicsExtractor.class, int.class, int.class, int.class, int.class)
+                    .invoke(null, graphics, x, y, width, height);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
         }
-        for (int i = 0; i <= steps; i++) {
-            int px = x0 + dx * i / steps;
-            int py = y0 + dy * i / steps;
-            graphics.fill(px, py, px + 1, py + 1, color);
+    }
+
+    private static boolean booleanConfig(net.neoforged.neoforge.common.ModConfigSpec.BooleanValue value,
+            boolean fallback) {
+        try {
+            return value.get();
+        } catch (RuntimeException exception) {
+            return fallback;
         }
+    }
+
+    private static double distance(double x0, double z0, double x1, double z1) {
+        double dx = x1 - x0;
+        double dz = z1 - z0;
+        return Math.sqrt(dx * dx + dz * dz);
     }
 }

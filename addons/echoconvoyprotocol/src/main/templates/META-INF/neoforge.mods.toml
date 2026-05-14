@@ -7,7 +7,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="Knoxhack"
-description='''Ruined-Earth convoy travel, vehicles, route contracts, fuel, cargo, checkpoints, and roadside threats for ECHO.'''
+description='''Ruined-Earth convoy travel, vehicles, depot logistics, deterministic field operations, route contracts, fuel, cargo, checkpoints, and roadside threats for ECHO.'''
 
 [[dependencies.${mod_id}]]
 modId="minecraft"
@@ -26,34 +26,48 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echocore"
 type="required"
-versionRange="[0,)"
+versionRange="[1.1.0,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echonetcore"
 type="required"
-versionRange="[0.1.0,)"
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echomultiblockcore"
+type="required"
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
-versionRange="[0,)"
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echologisticsnetwork"
 type="optional"
-versionRange="[0,)"
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echoholomap"
+type="optional"
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echorendercore"
 type="optional"
-versionRange="[0,)"
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoarmory:block/module_upgrade_table"
+    "model": "echoarmory:item/module_upgrade_table"
   }
 }

@@ -6,8 +6,7 @@ import com.knoxhack.echoarmory.data.ArmoryLoadout;
 import com.knoxhack.echoarmory.data.CosmeticTrim;
 import com.knoxhack.echoarmory.data.EnergyState;
 import com.knoxhack.echoarmory.data.InstabilityState;
-import com.knoxhack.echocore.api.EchoCoreServices;
-import com.knoxhack.echocore.api.mission.MissionObjectiveType;
+import com.knoxhack.echoarmory.integration.ArmoryMissionHooks;
 import com.knoxhack.echoarmory.item.ArmoryData;
 import com.knoxhack.echoarmory.item.ArmoryGearItem;
 import com.knoxhack.echoarmory.menu.ArmoryStationMenu;
@@ -15,13 +14,11 @@ import com.knoxhack.echoarmory.registry.ModBlockEntities;
 import com.knoxhack.echoarmory.registry.ModDataComponents;
 import com.knoxhack.echoarmory.registry.ModItems;
 import java.util.List;
-import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.WorldlyContainer;
@@ -109,12 +106,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
       if (!gear.isEmpty()) {
          ArmoryData.initialize(gear);
       }
-      EchoCoreServices.recordMissionObjective(
-         player,
-         MissionObjectiveType.SCAN_ENTITY,
-         Identifier.fromNamespaceAndPath("echoarmory", "armory_loadout"),
-         1,
-         Map.of("station", kind().getSerializedName()));
+      ArmoryMissionHooks.recordInspectLoadout(player, kind().getSerializedName());
       player.sendSystemMessage(Component.literal("ECHO ARMORY // " + kind().displayName() + " scan: " + statusLine()));
       return true;
    }
@@ -171,6 +163,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
          : "ECHO ARMORY // Module rejected: duplicate, incompatible, locked, or no open slot."));
       if (installed) {
          lastAction = "module install";
+         ArmoryMissionHooks.recordInstallModule(player, kind().getSerializedName());
       }
       return installed;
    }
@@ -178,6 +171,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
    private boolean recharge(ServerPlayer player, ItemStack gear) {
       if (ArmoryData.rechargeWithFuel(gear, items.get(AUX_SLOT))) {
          lastAction = "recharge";
+         ArmoryMissionHooks.recordRechargeCore(player, kind().getSerializedName());
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Energy core charged using AUX reserve. " + statusLine()));
          return true;
       }
@@ -210,6 +204,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
       }
       if (ArmoryData.upgradeTier(gear, items.get(AUX_SLOT), weaponStation)) {
          lastAction = "tier upgrade";
+         ArmoryMissionHooks.recordForgeUpgrade(player, kind().getSerializedName());
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Gear tier upgraded. " + statusLine()));
          return true;
       }
@@ -229,12 +224,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
    private boolean bindLoadout(ServerPlayer player, ItemStack gear) {
       gear.set(ModDataComponents.ARMORY_LOADOUT.get(), new ArmoryLoadout("manual:" + player.getUUID().toString().substring(0, 8), player.getScoreboardName() + " field kit"));
       lastAction = "loadout bind";
-      EchoCoreServices.recordMissionObjective(
-         player,
-         MissionObjectiveType.SCAN_ENTITY,
-         Identifier.fromNamespaceAndPath("echoarmory", "armory_loadout"),
-         1,
-         Map.of("station", kind().getSerializedName(), "action", "bind_loadout"));
+      ArmoryMissionHooks.recordBindLoadout(player, kind().getSerializedName());
       player.sendSystemMessage(Component.literal("ECHO ARMORY // Gear bound to current operator loadout."));
       return true;
    }

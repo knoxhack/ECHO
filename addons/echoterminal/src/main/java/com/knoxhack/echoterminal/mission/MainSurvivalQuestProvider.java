@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
 
@@ -75,7 +76,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
                 child.statusLabel(),
                 child.unlockReason(),
                 guideHint(record, child),
-                List.of());
+                child.actions());
     }
 
     @Override
@@ -120,6 +121,22 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         return record == null
                 ? TerminalMissionRole.REFERENCE
                 : safeRole(record.provider(), player, record.definition(), usableSnapshot(snapshot, record));
+    }
+
+    @Override
+    public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
+        if (missionId == null || actionId == null || actionId.isBlank()) {
+            return false;
+        }
+        SourceRecord record = routeSnapshot(player).sourceById().get(missionId);
+        if (record == null) {
+            return false;
+        }
+        boolean handled = record.provider().handleAction(player, record.definition().id(), actionId);
+        if (handled) {
+            routeCache.clear();
+        }
+        return handled;
     }
 
     public static int maxRouteRecordsForTests() {
@@ -381,7 +398,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
     private static String guideHint(SourceRecord record, TerminalMissionSnapshot snapshot) {
         String childHint = snapshot == null ? "" : snapshot.actionHint();
         String source = "Source: " + record.chapter().title()
-                + ". Use that chapter tab for rewards and chapter-specific commands.";
+                + ". Survival Route forwards available mission commands.";
         return childHint == null || childHint.isBlank() ? source : childHint + " " + source;
     }
 

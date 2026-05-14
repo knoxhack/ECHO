@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/hydroponic_tray"
+    "model": "echoagriculturereclamation:item/hydroponic_tray"
   }
 }

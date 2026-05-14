@@ -1,16 +1,16 @@
 {
   "id": "echorelictech:guardian_lens",
-  "tier": "PROTOTYPE",
-  "category": "SCANNER",
+  "tier": "prototype",
+  "category": "scanner",
   "origin": "Guardian Interface Prototype",
-  "defaultCondition": "DAMAGED",
+  "defaultCondition": "damaged",
   "cooldownTicks": 1200,
   "instabilityCost": 5,
   "nullChargeCost": 0,
   "riskTypes": [
-    "FALSE_GUIDANCE",
-    "HOSTILE_SIGNAL_ATTRACTION",
-    "NEXUS_INSTABILITY"
+    "false_guidance",
+    "hostile_signal_attraction",
+    "nexus_instability"
   ],
   "failureTable": "echorelictech:guardian_lens",
   "terminal": {

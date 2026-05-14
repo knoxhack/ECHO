@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.worldgen;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -108,10 +109,11 @@ public class VanillaVillageHouseBuilder {
                 original == Blocks.SOUL_WALL_TORCH) {
                 return lightBlock;
             }
+            if (original == Blocks.CHEST || original == Blocks.BARREL) {
+                return ModBlocks.STRUCTURE_CACHE.get();
+            }
             if (original == Blocks.CRAFTING_TABLE ||
-                original == Blocks.FURNACE ||
-                original == Blocks.CHEST ||
-                original == Blocks.BARREL) {
+                original == Blocks.FURNACE) {
                 return detailBlock;
             }
             return original;
@@ -122,38 +124,38 @@ public class VanillaVillageHouseBuilder {
     
     /** Radwarden: Military/harsh - Stone bricks, iron, dark materials */
     public static final FactionPalette RADWARDEN_PALETTE = new FactionPalette(
-        Blocks.STONE_BRICKS,        // wallBlock - sturdy military
-        Blocks.STONE_BRICKS,        // floorBlock - stone flooring
-        Blocks.STONE_BRICK_STAIRS,  // roofBlock - stone sloped roof
-        Blocks.IRON_BARS,           // windowBlock - fortified windows
-        Blocks.IRON_DOOR,           // doorBlock - heavy security door
-        Blocks.IRON_BLOCK,          // supportBlock - iron supports
-        Blocks.REDSTONE_TORCH,      // lightBlock - military lighting
-        Blocks.CRAFTING_TABLE       // detailBlock - work areas
+        ModBlocks.CONCRETE_RUBBLE.get(),
+        ModBlocks.ASH_STONE.get(),
+        ModBlocks.RUSTED_METAL_SHEET.get(),
+        ModBlocks.REBAR_BLOCK.get(),
+        ModBlocks.RUSTED_METAL_SHEET.get(),
+        ModBlocks.DROP_POD_HULL.get(),
+        ModBlocks.POWER_NODE.get(),
+        ModBlocks.WORKSHOP_BLOCK.get()
     );
 
     /** Crashbreak: Neutral/trade - Oak wood, maintained, classic village */
     public static final FactionPalette CRASHBREAK_PALETTE = new FactionPalette(
-        Blocks.OAK_PLANKS,          // wallBlock - classic village
-        Blocks.OAK_PLANKS,          // floorBlock - wooden floors
-        Blocks.OAK_STAIRS,          // roofBlock - classic gable roof
-        Blocks.GLASS_PANE,          // windowBlock - clear windows
-        Blocks.OAK_DOOR,            // doorBlock - standard door
-        Blocks.OAK_LOG,             // supportBlock - timber framing
-        Blocks.LANTERN,             // lightBlock - warm lanterns
-        Blocks.CHEST                // detailBlock - trade storage
+        ModBlocks.CHARRED_WOOD_LOG.get(),
+        ModBlocks.DEAD_WOOD_LOG.get(),
+        ModBlocks.RUSTED_METAL_SHEET.get(),
+        ModBlocks.SHATTERED_GLASS.get(),
+        ModBlocks.RUSTED_METAL_SHEET.get(),
+        ModBlocks.DEAD_WOOD_LOG.get(),
+        ModBlocks.POWER_NODE.get(),
+        ModBlocks.STRUCTURE_CACHE.get()
     );
 
     /** Sporebound: Overgrown/bio-adapted - Mossy, spruce, tinted glass, organic */
     public static final FactionPalette SPOREBOUND_PALETTE = new FactionPalette(
-        Blocks.MOSSY_STONE_BRICKS,  // wallBlock - overgrown stone
-        Blocks.SPRUCE_PLANKS,       // floorBlock - dark wood floors
-        Blocks.SPRUCE_STAIRS,       // roofBlock - dark sloped roof
-        Blocks.TINTED_GLASS,        // windowBlock - dark tinted glass
-        Blocks.SPRUCE_DOOR,         // doorBlock - dark wood door
-        Blocks.SPRUCE_LOG,          // supportBlock - dark timber
-        Blocks.SOUL_LANTERN,        // lightBlock - eerie blue light
-        Blocks.BARREL               // detailBlock - storage
+        ModBlocks.TOXIC_MOSS.get(),
+        ModBlocks.CONTAMINATED_SOIL.get(),
+        ModBlocks.CHARRED_WOOD_LOG.get(),
+        ModBlocks.SHATTERED_GLASS.get(),
+        ModBlocks.CORRODED_PIPE.get(),
+        ModBlocks.CHARRED_WOOD_LOG.get(),
+        ModBlocks.OOZE_CRYSTAL.get(),
+        ModBlocks.BIO_PROCESSING_STATION.get()
     );
 
     /**
@@ -426,7 +428,7 @@ public class VanillaVillageHouseBuilder {
         for (int h = -1; h < 5; h++) {
             BlockPos pos = origin.offset(rx + fireX, y + h, rz + fireZ);
             if (h < 0) {
-                level.setBlock(pos, Blocks.CAMPFIRE.defaultBlockState(), 2);
+                level.setBlock(pos, ModBlocks.POWER_NODE.get().defaultBlockState(), 2);
             } else {
                 level.setBlock(pos, palette.supportBlock.defaultBlockState(), 2);
             }
@@ -520,8 +522,10 @@ public class VanillaVillageHouseBuilder {
      * Place a door with upper and lower halves.
      */
     private static void placeDoor(ServerLevel level, BlockPos pos, Block doorBlock, Direction facing) {
-        BlockState doorState = doorBlock.defaultBlockState()
-            .setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
+        BlockState doorState = doorBlock.defaultBlockState();
+        if (doorState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            doorState = doorState.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
+        }
         level.setBlock(pos, doorState, 2);
     }
 
@@ -535,21 +539,16 @@ public class VanillaVillageHouseBuilder {
         int bedX = 1 + random.nextInt(Math.max(1, width - 3));
         int bedZ = 1 + random.nextInt(Math.max(1, depth - 3));
         BlockPos bedPos = origin.offset(rx + bedX, y, rz + bedZ);
-        Block bedBlock = switch (random.nextInt(4)) {
-            case 0 -> Blocks.RED_BED;
-            case 1 -> Blocks.BLUE_BED;
-            case 2 -> Blocks.GREEN_BED;
-            default -> Blocks.WHITE_BED;
-        };
         Direction bedDir = Direction.Plane.HORIZONTAL.getRandomDirection(random);
-        BlockState bedFoot = bedBlock.defaultBlockState()
-            .setValue(BlockStateProperties.HORIZONTAL_FACING, bedDir)
-            .setValue(BlockStateProperties.BED_PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT);
-        BlockState bedHead = bedBlock.defaultBlockState()
-            .setValue(BlockStateProperties.HORIZONTAL_FACING, bedDir)
-            .setValue(BlockStateProperties.BED_PART, net.minecraft.world.level.block.state.properties.BedPart.HEAD);
-        level.setBlock(bedPos, bedFoot, 2);
-        level.setBlock(bedPos.relative(bedDir), bedHead, 2);
+        BlockState bunkFoot = ModBlocks.EMERGENCY_BUNK.get().defaultBlockState()
+                .setValue(com.knoxhack.echoashfallprotocol.block.EmergencyBunkBlock.FACING, bedDir)
+                .setValue(com.knoxhack.echoashfallprotocol.block.EmergencyBunkBlock.PART,
+                        net.minecraft.world.level.block.state.properties.BedPart.FOOT);
+        level.setBlock(bedPos, bunkFoot, 2);
+        level.setBlock(bedPos.relative(bedDir),
+                bunkFoot.setValue(com.knoxhack.echoashfallprotocol.block.EmergencyBunkBlock.PART,
+                        net.minecraft.world.level.block.state.properties.BedPart.HEAD),
+                2);
 
         // Work/Detail station
         int workX = width - 2;
@@ -580,14 +579,13 @@ public class VanillaVillageHouseBuilder {
             int stoolZ = depth / 2 + 1;
             BlockPos stoolPos = origin.offset(rx + stoolX, y, rz + stoolZ);
             if (random.nextFloat() < 0.5f) {
-                level.setBlock(stoolPos, Blocks.OAK_STAIRS.defaultBlockState(), 2);
+                level.setBlock(stoolPos, ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
             }
         }
     }
 
     private static void placeLootChest(ServerLevel level, BlockPos pos, RandomSource random) {
-        BlockState state = Blocks.CHEST.defaultBlockState()
-            .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+        BlockState state = ModBlocks.STRUCTURE_CACHE.get().defaultBlockState();
         level.setBlock(pos, state, 2);
 
         BlockEntity blockEntity = level.getBlockEntity(pos);

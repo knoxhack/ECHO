@@ -1,0 +1,89 @@
+{
+  "tile_size": 32,
+  "crop_inset": 0.045,
+  "sheets": [
+    {
+      "id": "reinforced_metal",
+      "grid": [4, 2],
+      "prefix": "reinforced_metal",
+      "variants": ["panel", "riveted", "grate", "frame", "cracked", "hazard_stripe", "lit_panel", "pillar"]
+    },
+    {
+      "id": "rusted_metal",
+      "grid": [4, 2],
+      "prefix": "rusted_metal",
+      "variants": ["panel", "riveted", "grate", "pipe_wall", "cracked", "hazard_stripe", "dark_plate", "pillar"]
+    },
+    {
+      "id": "ashstone",
+      "grid": [4, 2],
+      "prefix": "ashstone",
+      "variants": ["raw", "brick", "cracked_brick", "chiseled", "tile", "pillar", "debris", "smooth"]
+    },
+    {
+      "id": "charred_concrete",
+      "grid": [4, 2],
+      "prefix": "charred_concrete",
+      "variants": ["smooth", "cracked", "tile", "rebar", "road_plate", "warning_stripe", "scorched", "broken"]
+    },
+    {
+      "id": "terminal_panel",
+      "grid": [4, 2],
+      "prefix": "terminal_panel",
+      "variants": ["wall_panel", "screen", "trim", "cyan_lit", "dark_panel", "data_panel", "warning_panel", "server_rack"]
+    },
+    {
+      "id": "echo_circuit",
+      "grid": [4, 2],
+      "prefix": "echo_circuit",
+      "variants": ["circuit_panel", "data_conduit", "service_node", "matrix", "glowing_circuit", "offline_circuit", "warning_circuit", "encrypted_circuit"]
+    },
+    {
+      "id": "orbital_hull",
+      "grid": [4, 2],
+      "prefix": "orbital_hull",
+      "variants": ["hull_panel", "thermal_tile", "airlock_frame", "docking_trim", "lit_strip", "damaged_hull", "white_hull", "black_hull"]
+    },
+    {
+      "id": "nexus_crystal",
+      "grid": [4, 2],
+      "prefix": "nexus_crystal",
+      "variants": ["nexus_glass", "nexus_frame", "glowing_crystal", "cracked_crystal", "energy_conduit", "anomaly_tile", "pillar", "rift_panel"]
+    },
+    {
+      "id": "blackbox_vault",
+      "grid": [4, 2],
+      "prefix": "blackbox_vault",
+      "variants": ["vault_wall", "locked_panel", "archive_panel", "memory_glass", "warning_light", "dark_alloy", "secure_frame", "cracked_vault"]
+    },
+    {
+      "id": "reclamation_glass",
+      "grid": [4, 2],
+      "prefix": "reclamation_glass",
+      "variants": ["clear_glass", "framed_glass", "green_glass", "overgrown_glass", "hydroponic_panel", "lit_grow_panel", "dome_panel", "irrigation_pipe"]
+    },
+    {
+      "id": "details",
+      "grid": [5, 4],
+      "textures": [
+        "echo_strip_light",
+        "warning_beacon",
+        "flickering_warning_light",
+        "data_wall",
+        "broken_monitor",
+        "server_cabinet",
+        "cable_bundle",
+        "wall_pipe",
+        "ceiling_pipe",
+        "steam_vent",
+        "sparking_cable_panel",
+        "rubble_pile",
+        "scattered_debris",
+        "hanging_wire",
+        "hologram_floor_projector",
+        "signal_dish_decorative",
+        "echo_blockworks_table"
+      ]
+    }
+  ]
+}

@@ -18,7 +18,7 @@ from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 MODID = "echoashfallprotocol"
-KNOWN_NAMESPACES = {MODID, "minecraft"}
+KNOWN_NAMESPACES = {MODID, "minecraft", "echoblockworks"}
 CANONICAL_ASHFALL_FACTION_IDS = {
     f"{MODID}:radwarden_compact",
     f"{MODID}:crashbreak_salvage",
@@ -31,6 +31,7 @@ ORBITAL_JAVA_ROOT = ROOT / "addons/echoorbitalremnants/src/main/java/com/knoxhac
 TERMINAL_JAVA_ROOT = ROOT / "addons/echoterminal/src/main/java/com/knoxhack/echoterminal"
 DATA_ROOT = ROOT / f"src/main/resources/data/{MODID}"
 ASSET_ROOT = ROOT / f"src/main/resources/assets/{MODID}"
+BLOCKWORKS_ASSET_ROOT = ROOT / "addons/echoblockworks/src/main/resources/assets/echoblockworks"
 POD_TEMPLATE_PATHS = (
     DATA_ROOT / "structure/drop_pod.nbt",
     DATA_ROOT / "structure/global/drop_pod.nbt",
@@ -158,127 +159,27 @@ SUBSTRATE_GRINDER_ITEMS = (
 
 SUBSTRATE_GRINDER_BLOCKS = SUBSTRATE_GRINDER_ITEMS[:19]
 
-POD_EXPECTED_SIZE = (20, 10, 20)
-POD_EXPECTED_BED_STATES = {
-    (5, 3, 10): (
-        "minecraft:white_bed",
+POD_EXPECTED_SIZE = (16, 9, 16)
+POD_EXPECTED_BUNK_STATES = {
+    (4, 3, 7): (
+        f"{MODID}:emergency_bunk",
         (("facing", "south"), ("occupied", "false"), ("part", "foot")),
     ),
-    (5, 3, 11): (
-        "minecraft:white_bed",
+    (4, 3, 8): (
+        f"{MODID}:emergency_bunk",
         (("facing", "south"), ("occupied", "false"), ("part", "head")),
     ),
+}
+POD_EXPECTED_MIN_COUNTS = {
+    f"{MODID}:echo_crate": 4,
+    f"{MODID}:echo_cache": 1,
 }
 
 POD_VANILLA_STATE_SCHEMAS = {
     "minecraft:air": {},
-    "minecraft:barrel": {
-        "facing": {"down", "up", "north", "south", "west", "east"},
-        "open": {"false", "true"},
-    },
-    "minecraft:blast_furnace": {},
-    "minecraft:campfire": {
-        "facing": {"north", "south", "west", "east"},
-        "lit": {"false", "true"},
-        "signal_fire": {"false", "true"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:chain": {
-        "axis": {"x", "y", "z"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:black_concrete": {},
-    "minecraft:chest": {
-        "facing": {"north", "south", "west", "east"},
-        "type": {"single", "left", "right"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:blackstone": {},
-    "minecraft:cartography_table": {},
-    "minecraft:coarse_dirt": {},
-    "minecraft:crafting_table": {},
-    "minecraft:crying_obsidian": {},
-    "minecraft:cut_copper": {},
-    "minecraft:deepslate": {},
-    "minecraft:fire": {},
-    "minecraft:gravel": {},
-    "minecraft:gray_concrete": {},
-    "minecraft:grindstone": {
-        "face": {"floor", "wall", "ceiling"},
-        "facing": {"north", "south", "west", "east"},
-    },
-    "minecraft:heavy_weighted_pressure_plate": {
-        "power": {str(value) for value in range(16)},
-    },
-    "minecraft:iron_bars": {
-        "east": {"false", "true"},
-        "north": {"false", "true"},
-        "south": {"false", "true"},
-        "waterlogged": {"false", "true"},
-        "west": {"false", "true"},
-    },
-    "minecraft:iron_door": {
-        "facing": {"north", "south", "west", "east"},
-        "half": {"upper", "lower"},
-        "hinge": {"left", "right"},
-        "open": {"false", "true"},
-        "powered": {"false", "true"},
-    },
-    "minecraft:iron_trapdoor": {
-        "facing": {"north", "south", "west", "east"},
-        "half": {"top", "bottom"},
-        "open": {"false", "true"},
-        "powered": {"false", "true"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:lava": {},
-    "minecraft:lectern": {
-        "facing": {"north", "south", "west", "east"},
-        "has_book": {"false", "true"},
-        "powered": {"false", "true"},
-    },
-    "minecraft:light_gray_concrete": {},
-    "minecraft:lightning_rod": {},
-    "minecraft:magma_block": {},
-    "minecraft:netherrack": {},
-    "minecraft:oak_stairs": {
-        "facing": {"north", "south", "west", "east"},
-        "half": {"top", "bottom"},
-        "shape": {"straight", "inner_left", "inner_right", "outer_left", "outer_right"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:oak_wall_sign": {
-        "facing": {"north", "south", "west", "east"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:polished_andesite": {},
-    "minecraft:polished_andesite_slab": {
-        "type": {"top", "bottom", "double"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:polished_blackstone": {},
-    "minecraft:polished_deepslate": {},
-    "minecraft:quartz_block": {},
-    "minecraft:quartz_pillar": {"axis": {"x", "y", "z"}},
-    "minecraft:redstone_torch": {"lit": {"false", "true"}},
-    "minecraft:sea_lantern": {},
-    "minecraft:smooth_stone": {},
-    "minecraft:stone_button": {
-        "face": {"floor", "wall", "ceiling"},
-        "facing": {"north", "south", "west", "east"},
-        "powered": {"false", "true"},
-    },
-    "minecraft:stone_slab": {
-        "type": {"top", "bottom", "double"},
-        "waterlogged": {"false", "true"},
-    },
-    "minecraft:white_bed": {
-        "facing": {"north", "south", "west", "east"},
-        "occupied": {"false", "true"},
-        "part": {"head", "foot"},
-    },
-    "minecraft:yellow_concrete": {},
 }
+
+POD_EXTERNAL_BLOCK_PREFIXES = ("echoblockworks:",)
 
 
 REGISTER_PATTERNS = (
@@ -294,7 +195,7 @@ REGISTER_PATTERNS = (
 
 def load_json(path: Path, errors: list[str]) -> Any | None:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception as exc:  # noqa: BLE001 - report any malformed JSON.
         errors.append(f"JSON_PARSE {path.relative_to(ROOT)}: {exc}")
         return None
@@ -833,11 +734,16 @@ def check_structure_nbt_palettes(registered_blocks: set[str], errors: list[str])
                     )
 
 
-def validate_mod_block_asset(block_id: str, errors: list[str]) -> None:
+def validate_mod_block_asset(
+    block_id: str,
+    errors: list[str],
+    asset_root: Path = ASSET_ROOT,
+    namespace: str = MODID,
+) -> None:
     block_name = block_id.split(":", 1)[1]
-    blockstate_path = ASSET_ROOT / "blockstates" / f"{block_name}.json"
+    blockstate_path = asset_root / "blockstates" / f"{block_name}.json"
     if not blockstate_path.exists():
-        errors.append(f"MISSING_POD_BLOCKSTATE assets/{MODID}/blockstates/{block_name}.json")
+        errors.append(f"MISSING_POD_BLOCKSTATE assets/{namespace}/blockstates/{block_name}.json")
         return
 
     blockstate = load_json(blockstate_path, errors)
@@ -846,12 +752,12 @@ def validate_mod_block_asset(block_id: str, errors: list[str]) -> None:
 
     model_refs = set()
     for ref in walk_strings(blockstate):
-        if ref.startswith(f"{MODID}:block/"):
+        if ref.startswith(f"{namespace}:block/"):
             model_refs.add(ref.split(":", 1)[1].removeprefix("block/"))
         elif ref.startswith("block/"):
             model_refs.add(ref.removeprefix("block/"))
 
-    if not model_refs and (ASSET_ROOT / "models/block" / f"{block_name}.json").exists():
+    if not model_refs and (asset_root / "models/block" / f"{block_name}.json").exists():
         model_refs.add(block_name)
 
     seen_models: set[str] = set()
@@ -861,9 +767,9 @@ def validate_mod_block_asset(block_id: str, errors: list[str]) -> None:
             return
         seen_models.add(model_name)
 
-        model_path = ASSET_ROOT / "models/block" / f"{model_name}.json"
+        model_path = asset_root / "models/block" / f"{model_name}.json"
         if not model_path.exists():
-            errors.append(f"MISSING_POD_BLOCK_MODEL assets/{MODID}/models/block/{model_name}.json")
+            errors.append(f"MISSING_POD_BLOCK_MODEL assets/{namespace}/models/block/{model_name}.json")
             return
 
         model = load_json(model_path, errors)
@@ -872,7 +778,7 @@ def validate_mod_block_asset(block_id: str, errors: list[str]) -> None:
 
         parent = model.get("parent")
         if isinstance(parent, str):
-            if parent.startswith(f"{MODID}:block/"):
+            if parent.startswith(f"{namespace}:block/"):
                 validate_model(parent.split(":", 1)[1].removeprefix("block/"))
             elif parent.startswith("block/"):
                 validate_model(parent.removeprefix("block/"))
@@ -885,8 +791,8 @@ def validate_mod_block_asset(block_id: str, errors: list[str]) -> None:
                 continue
             texture_path = texture.split(":", 1)[1] if ":" in texture else texture
             texture_path = texture_path.removeprefix("block/")
-            if not (ASSET_ROOT / "textures/block" / f"{texture_path}.png").exists():
-                errors.append(f"MISSING_POD_BLOCK_TEXTURE assets/{MODID}/textures/block/{texture_path}.png")
+            if not (asset_root / "textures/block" / f"{texture_path}.png").exists():
+                errors.append(f"MISSING_POD_BLOCK_TEXTURE assets/{namespace}/textures/block/{texture_path}.png")
 
     for model_ref in model_refs:
         validate_model(model_ref)
@@ -901,6 +807,7 @@ def check_starting_drop_pod_templates(registered_blocks: set[str], errors: list[
 
     reference_signature = None
     pod_custom_blocks: set[str] = set()
+    pod_external_blocks: set[str] = set()
 
     for path in POD_TEMPLATE_PATHS:
         if not path.exists():
@@ -931,11 +838,14 @@ def check_starting_drop_pod_templates(registered_blocks: set[str], errors: list[
                 pod_custom_blocks.add(block_id)
                 if block_id not in registered_blocks:
                     errors.append(f"MISSING_POD_BLOCK {path.relative_to(ROOT)} palette[{index}]: {block_id}")
+            elif block_id.startswith(POD_EXTERNAL_BLOCK_PREFIXES):
+                pod_external_blocks.add(block_id)
+                continue
             elif block_id.startswith("minecraft:"):
                 schema = POD_VANILLA_STATE_SCHEMAS.get(block_id)
                 prop_map = dict(properties)
                 if schema is None:
-                    errors.append(f"UNREVIEWED_POD_VANILLA_BLOCK {path.relative_to(ROOT)} palette[{index}]: {block_id}")
+                    errors.append(f"VANILLA_POD_BLOCK {path.relative_to(ROOT)} palette[{index}]: {block_id}")
                     continue
                 if set(prop_map) != set(schema):
                     errors.append(
@@ -954,16 +864,45 @@ def check_starting_drop_pod_templates(registered_blocks: set[str], errors: list[
             nbt_pos(block["pos"]): palette_signature[int(block["state"])]
             for block in blocks
         }
-        for pos, expected in POD_EXPECTED_BED_STATES.items():
+        for pos, expected in POD_EXPECTED_BUNK_STATES.items():
             actual = blocks_by_pos.get(pos)
             if actual != expected:
                 errors.append(
-                    f"BAD_STARTING_POD_BED {path.relative_to(ROOT)} pos={pos}: "
+                    f"BAD_STARTING_POD_BUNK {path.relative_to(ROOT)} pos={pos}: "
                     f"expected {expected}, found {actual}"
+                )
+        for block_id, minimum in POD_EXPECTED_MIN_COUNTS.items():
+            actual_count = sum(1 for state in blocks_by_pos.values() if state[0] == block_id)
+            if actual_count < minimum:
+                errors.append(
+                    f"BAD_STARTING_POD_BLOCK_COUNT {path.relative_to(ROOT)} {block_id}: "
+                    f"expected at least {minimum}, found {actual_count}"
+                )
+        for block in blocks:
+            state = palette_signature[int(block["state"])]
+            if state[0] not in {f"{MODID}:echo_cache", f"{MODID}:echo_crate"}:
+                continue
+            nbt = block.get("nbt")
+            if not isinstance(nbt, dict):
+                errors.append(f"MISSING_STARTING_POD_CONTAINER_NBT {path.relative_to(ROOT)} pos={nbt_pos(block['pos'])}")
+                continue
+            if str(nbt.get("id", "")) != f"{MODID}:echo_container":
+                errors.append(
+                    f"BAD_STARTING_POD_CONTAINER_BE {path.relative_to(ROOT)} pos={nbt_pos(block['pos'])}: "
+                    f"{nbt.get('id')}"
+                )
+            if not str(nbt.get("LootTable", "")).startswith(f"{MODID}:chests/"):
+                errors.append(
+                    f"BAD_STARTING_POD_CONTAINER_LOOT {path.relative_to(ROOT)} pos={nbt_pos(block['pos'])}: "
+                    f"{nbt.get('LootTable')}"
                 )
 
     for block_id in sorted(pod_custom_blocks):
         validate_mod_block_asset(block_id, errors)
+    for block_id in sorted(pod_external_blocks):
+        namespace = block_id.split(":", 1)[0]
+        if namespace == "echoblockworks":
+            validate_mod_block_asset(block_id, errors, BLOCKWORKS_ASSET_ROOT, namespace)
 
 
 def read_source(relative_path: str, errors: list[str]) -> str:

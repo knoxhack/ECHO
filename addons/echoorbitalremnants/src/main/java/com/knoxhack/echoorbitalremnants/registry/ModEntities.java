@@ -10,6 +10,7 @@ import com.knoxhack.echoorbitalremnants.entity.EchoZeroEntity;
 import com.knoxhack.echoorbitalremnants.entity.EuropaCryoWardenEntity;
 import com.knoxhack.echoorbitalremnants.entity.LunarNexusHuskEntity;
 import com.knoxhack.echoorbitalremnants.entity.NexusHuskEntity;
+import com.knoxhack.echoorbitalremnants.entity.OrbitalFactionNpcEntity;
 import com.knoxhack.echoorbitalremnants.entity.SaturnRelaySentinelEntity;
 import com.knoxhack.echoorbitalremnants.entity.TitanMethaneStalkerEntity;
 import com.knoxhack.echoorbitalremnants.entity.VacuumWraithEntity;
@@ -71,6 +72,10 @@ public final class ModEntities {
             ENTITIES.registerEntityType("titan_methane_stalker", TitanMethaneStalkerEntity::new, MobCategory.MONSTER,
                     builder -> builder.sized(0.7F, 2.05F).clientTrackingRange(10));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<OrbitalFactionNpcEntity>> ORBITAL_FACTION_NPC =
+            ENTITIES.registerEntityType("orbital_faction_npc", OrbitalFactionNpcEntity::new, MobCategory.MISC,
+                    builder -> builder.sized(0.6F, 1.95F).clientTrackingRange(10));
+
     private ModEntities() {
     }
 
@@ -90,5 +95,6 @@ public final class ModEntities {
         event.put(EUROPA_CRYO_WARDEN.get(), EuropaCryoWardenEntity.createAttributes().build());
         event.put(SATURN_RELAY_SENTINEL.get(), SaturnRelaySentinelEntity.createAttributes().build());
         event.put(TITAN_METHANE_STALKER.get(), TitanMethaneStalkerEntity.createAttributes().build());
+        event.put(ORBITAL_FACTION_NPC.get(), OrbitalFactionNpcEntity.createAttributes().build());
     }
 }

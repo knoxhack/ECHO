@@ -113,6 +113,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          data.markScanned(NexusTerminalIds.id("terminal_field_scan"));
          data.markGearUsed("terminal_field_scan");
          NexusPlayerData.saveAndSync(player, data);
+         NexusMissionHooks.recordScan(player, "terminal_field_scan");
          player.sendSystemMessage(Component.literal("ECHO-7 // Nexus field scan indexed."));
          return true;
       } else if (actionId != null && actionId.startsWith("choose_")) {
@@ -169,6 +170,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          data.setEndingPath(path);
          data.setFinalChoiceState("committed");
          NexusPlayerData.saveAndSync(player, data);
+         NexusMissionHooks.recordEndingPath(player, path);
          if (player.level() instanceof ServerLevel serverLevel) {
             NexusWorldData.get(serverLevel).commitEndingState(path);
          }

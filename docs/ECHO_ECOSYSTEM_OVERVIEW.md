@@ -38,6 +38,8 @@ Beta modules:
 | `echoterminal` | Terminal UI and mission/intel surface. |
 | `echomissioncore` | Shared mission, objective, reward, and feed backend. |
 | `echodatacore` | Shared persistent data and progression state layer. |
+| `echomultiblockcore` | Facility-scale multiblock definitions, validation, runtime snapshots, robotics, and integration contracts. |
+| `echoruntimeguard` | Shared TPS/MSPT/FPS reporting, runtime modes, smart tick budgets, particle budgets, validation queues, and network accounting. |
 | `echosignalos` | Terminal framework and UI toolkit. |
 | `signalosexample` | SignalOS integration example. |
 | `echoorbitalremnants` | Orbital route content and telemetry. |
@@ -61,41 +63,45 @@ The `all` set includes the beta set plus the release modules:
 | `echoblackboxprotocol` | Memory fragments, archive gates, late-route endings, and Blackbox support. |
 | `echorendercore` | Shared rendering, animation, glow, overlay, particle, and debug profiles. |
 | `echoindustrialnexus` | Machine routes, recipe coverage, and industrial support. |
-| `echologisticsnetwork` | Delivery loops, route infrastructure, and connected storage support. |
+| `echologisticsnetwork` | Delivery loops, route infrastructure, connected storage support, and operations dashboards. |
 | `echoconvoyprotocol` | Mobile operations and late-pack traversal systems. |
 | `echoholomap` | Terminal map telemetry and world route visualization. |
 | `echoindex` | Item, recipe, usage, archive, bookmark, and Terminal index browsing. |
 | `echoarmory` | Weapons, armor, augments, energy cores, faction gear, and loadouts. |
 | `echolens` | Scanner HUD for blocks, entities, fluids, machines, and progression cues. |
+| `echoblockworks` | First-party decorative and structural block library, palette kits, conversion tools, and rare showcase worldgen. |
 
 ## Complete Module Inventory
 
 | Project | Mod Id | Version | Lane | Path | Status | Summary |
 | --- | --- | --- | --- | --- | --- | --- |
 | ECHO Full Stack | Multiple | Multiple | Full Stack | `C:\Github\Echo` | Release Candidate | Full workspace release target for all ECHO jars. |
-| ECHO: Core | `echocore` | `1.1.0` | Core Module | `core\echocore` | Active | Shared services, data contracts, runtime hooks, and cross-addon infrastructure. |
-| ECHO: NetCore | `echonetcore` | `1.1.0` | Core Module | `addons\echonetcore` | Active | Shared packet, sync, server action, rate limiting, and debug network layer. |
+| ECHO: Core | `echocore` | `1.0.0` | Core Module | `core\echocore` | Active | Shared services, data contracts, runtime hooks, and cross-addon infrastructure. |
+| ECHO: NetCore | `echonetcore` | `1.0.0` | Core Module | `addons\echonetcore` | Active | Shared packet, sync, server action, rate limiting, and debug network layer. |
 | ECHO: DataCore | `echodatacore` | `1.0.0` | Core Module | `addons\echodatacore` | Active | Shared persistent data and progression layer. |
-| ECHO: MissionCore | `echomissioncore` | `0.1.0` | Core Module | `addons\echomissioncore` | Active | Shared mission, objective, reward, and Terminal feed backend. |
-| ECHO: WorldCore | `echoworldcore` | `0.1.0` | Core Module | `addons\echoworldcore` | Active | Shared world vocabulary and runtime services for regions, hazards, markers, discoveries, and overlays. |
-| ECHO: RenderCore | `echorendercore` | `0.5.0` | Core Module | `addons\echorendercore` | Active | Shared rendering, animation, glow, overlay, particle profile, validation, and debug tools. |
-| ECHO: Ashfall Protocol | `echoashfallprotocol` | `1.3.0` | Root Module | `.` | Release Candidate | Root survival campaign module with resources, gameplay data, POIs, factions, and the first ECHO route. |
-| ECHO: Terminal | `echoterminal` | `1.1.0` | Beta/Dev Module | `addons\echoterminal` | Active | Terminal UI, mission surfaces, reward inbox, route records, and addon tab integration. |
-| SignalOS | `signalos` | `0.1.0` | Tooling/Example | `addons\echosignalos` | Active | Terminal framework and shared UI primitives. |
-| SignalOS Example Addon | `signalosexample` | `0.1.0` | Tooling/Example | `addons\signalosexample` | Example | Example addon for SignalOS integration patterns and test wiring. |
-| ECHO: Orbital Remnants | `echoorbitalremnants` | `1.5.0` | Beta/Dev Module | `addons\echoorbitalremnants` | Ready | Orbital route content, launch chain, telemetry, caches, and suit support. |
-| ECHO: Nexus Protocol | `echonexusprotocol` | `1.0.0` | Beta/Dev Module | `addons\echonexusprotocol` | Ready | Nexus unlocks, anomaly storms, route gates, and Blackbox bridge support. |
-| ECHO: Agriculture Reclamation | `echoagriculturereclamation` | `0.1.1` | Beta/Dev Module | `addons\echoagriculturereclamation` | Active | Agriculture reclamation content for survival loops and recovery infrastructure. |
-| ECHO: Stationfall | `echostationfall` | `1.1.0` | Release Module | `addons\echostationfall` | Needs Pass | Station pressure route, crew logs, AI override chain, hostile station entities, and terminal support. |
+| ECHO: MissionCore | `echomissioncore` | `1.0.0` | Core Module | `addons\echomissioncore` | Active | Shared mission, objective, reward, and Terminal feed backend. |
+| ECHO: MultiblockCore | `echomultiblockcore` | `1.0.0` | Core Module | `addons\echomultiblockcore` | Active | Shared data-driven multiblock definitions, validation, runtime snapshots, robotics, workcells, integrity, blueprints, and scan/map/terminal contracts. |
+| ECHO: RuntimeGuard | `echoruntimeguard` | `1.0.0` | Core Module | `addons\echoruntimeguard` | Active | Shared performance manager for TPS/MSPT/FPS reporting, runtime modes, smart tick budgets, particle budgets, validation queues, network budgets, and opt-in addon throttling. |
+| ECHO: WorldCore | `echoworldcore` | `1.0.0` | Core Module | `addons\echoworldcore` | Active | Shared world vocabulary and runtime services for regions, hazards, markers, discoveries, and overlays. |
+| ECHO: RenderCore | `echorendercore` | `1.0.0` | Core Module | `addons\echorendercore` | Active | Shared rendering, animation, glow, overlay, particle profile, preview, composition, validation, and debug tools. |
+| ECHO: Ashfall Protocol | `echoashfallprotocol` | `1.0.0` | Root Module | `.` | Release Candidate | Root survival campaign module with resources, gameplay data, POIs, factions, and the first ECHO route. |
+| ECHO: Terminal | `echoterminal` | `1.0.0` | Beta/Dev Module | `addons\echoterminal` | Active | Terminal UI, mission surfaces, reward inbox, route records, and addon tab integration. |
+| SignalOS | `signalos` | `1.0.0` | Tooling/Example | `addons\echosignalos` | Active | Terminal framework and shared UI primitives. |
+| SignalOS Example Addon | `signalosexample` | `1.0.0` | Tooling/Example | `addons\signalosexample` | Example | Example addon for SignalOS integration patterns and test wiring. |
+| ECHO: Orbital Remnants | `echoorbitalremnants` | `1.0.0` | Beta/Dev Module | `addons\echoorbitalremnants` | Ready | Orbital route content, launch chain, telemetry, caches, and suit support. |
+| ECHO: Nexus Protocol | `echonexusprotocol` | `1.0.0` | Beta/Dev Module | `addons\echonexusprotocol` | Ready | Nexus unlocks, smarter field-map risk planning, anomaly storms, route gates, and Blackbox bridge support. |
+| ECHO: Agriculture Reclamation | `echoagriculturereclamation` | `1.0.0` | Beta/Dev Module | `addons\echoagriculturereclamation` | Active | Agriculture reclamation content for survival loops, pollinator drones, and recovery infrastructure. |
+| ECHO: Stationfall | `echostationfall` | `1.0.0` | Release Module | `addons\echostationfall` | Needs Pass | Station pressure route, crew logs, AI override chain, hostile station entities, and terminal support. |
 | ECHO: Blackbox Protocol | `echoblackboxprotocol` | `1.0.0` | Release Module | `addons\echoblackboxprotocol` | Needs Pass | Memory fragments, dungeon gates, archive terminal hooks, and late-route endings. |
-| ECHO: Industrial Nexus | `echoindustrialnexus` | `0.1.0` | Release Module | `addons\echoindustrialnexus` | Needs Pass | Machine routes, compat hooks, recipe coverage, and station/blackbox industrial support. |
-| ECHO: Logistics Network | `echologisticsnetwork` | `0.1.0` | Release Module | `addons\echologisticsnetwork` | Active | Logistics routes, delivery loops, and connected storage support. |
-| ECHO: Convoy Protocol | `echoconvoyprotocol` | `0.1.0` | Release Module | `addons\echoconvoyprotocol` | Active | Convoy route content, mobile operations, and late-pack traversal. |
-| ECHO: HoloMap | `echoholomap` | `0.1.0` | Beta/Dev Module | `addons\echoholomap` | Active | Terminal command-map tab for crash sites, routes, hazards, missions, bases, overlays, anomalies, and scan markers. |
-| ECHO: Index | `echoindex` | `0.1.0` | Beta/Dev Module | `addons\echoindex` | Active | Shared item, recipe, usage, archive, bookmark, and Terminal index browser. |
-| ECHO: Armory | `echoarmory` | `0.1.0` | Release Module | `addons\echoarmory` | Active | Modular weapons, armor, augments, energy cores, mission loadouts, faction gear, and combat readiness. |
-| ECHO: Lens | `echolens` | `0.1.0` | Release Module | `addons\echolens` | Active | Scanner HUD for blocks, entities, fluids, machines, progression, and addon integrations. |
-| ARCANA: Veilbound Studies | `arcanaveil` | `0.1.0` | Managed Companion | `C:\Github\ARCANA` | Active | Separate magic research mod managed by Command Center for local modpack deployment. |
+| ECHO: Industrial Nexus | `echoindustrialnexus` | `1.0.0` | Release Module | `addons\echoindustrialnexus` | Needs Pass | Machine routes, compat hooks, recipe coverage, and station/blackbox industrial support. |
+| ECHO: Logistics Network | `echologisticsnetwork` | `1.0.0` | Release Module | `addons\echologisticsnetwork` | Active | Logistics routes, delivery loops, connected storage support, and operations dashboards. |
+| ECHO: Convoy Protocol | `echoconvoyprotocol` | `1.0.0` | Release Module | `addons\echoconvoyprotocol` | Active | Convoy route content, deterministic Field Ops, mobile operations, and late-pack traversal. |
+| ECHO: HoloMap | `echoholomap` | `1.0.0` | Beta/Dev Module | `addons\echoholomap` | Active | Terminal command-map tab for crash sites, routes, hazards, missions, bases, overlays, anomalies, and scan markers. |
+| ECHO: Index | `echoindex` | `1.0.0` | Beta/Dev Module | `addons\echoindex` | Active | Shared item, recipe, usage, archive, bookmark, and Terminal index browser. |
+| ECHO: Armory | `echoarmory` | `1.0.0` | Release Module | `addons\echoarmory` | Active | Modular weapons, armor, augments, energy cores, mission loadouts, faction gear, and combat readiness. |
+| ECHO: Lens | `echolens` | `1.0.0` | Release Module | `addons\echolens` | Active | Scanner HUD with local inspection, server-assisted Deep Scan, progression, and addon integrations. |
+| ECHO Blockworks | `echoblockworks` | `1.0.0` | Release Module | `addons\echoblockworks` | Active | Decorative, structural, themed block families, palette kits, and rare showcase ruin palettes for ECHO builds. |
+| ARCANA: Veilbound Studies | `arcanaveil` | `0.2.0` | Managed Companion | `C:\Github\ARCANA` | Active | Separate magic research mod managed by Command Center for local modpack deployment. |
 | ECHO Command Center | N/A | N/A | Operations App | `addons\echomodpackcommandcenter` | Active | Local ops console for scans, readiness, features, jars, releases, exports, and modpack updates. |
 
 ## Core Service Layer
@@ -156,6 +162,34 @@ Key responsibilities:
 - Mission feed backend.
 - Terminal mission integration.
 - Shared route/chapter task infrastructure.
+
+### ECHO: MultiblockCore
+
+MultiblockCore is the shared service layer for facility-scale structures. It owns data-driven multiblock definitions, controller orchestration, validation diagnostics, formed runtime snapshots, persisted robotic task queues, workcells, integrity state, blueprints, and optional integration contracts for Terminal, Lens, HoloMap, MissionCore, DataCore, and content addons.
+
+It is the infrastructure bridge between static ECHO ruins and rebuildable player-operated facilities.
+
+Key responsibilities:
+
+- Data-driven multiblock JSON definitions.
+- Controller validation, formation, diagnostics, and runtime snapshots.
+- Robotic task queues, workcells, transaction checks, and integrity state.
+- Public providers for terminal snapshots, scanner output, map markers, and data snapshots.
+- Debug commands for integrations, snapshots, scans, and markers.
+
+### ECHO: RuntimeGuard
+
+RuntimeGuard is the shared runtime performance manager. It gives the ECHO stack honest TPS/MSPT/FPS reporting, named runtime modes, smart tick recommendations, particle budgets, multiblock validation queueing, network budget accounting, profiling reports, and opt-in throttles for expensive addon work.
+
+It does not pretend to globally rewrite vanilla behavior. Modules opt into RuntimeGuard services, and metrics that cannot be safely measured are reported as unavailable instead of guessed.
+
+Key responsibilities:
+
+- `/echo_perf` commands for status, mode switching, emergency mode, dumps, top offenders, particles, multiblocks, HoloMap, Lens, network, entities, block entities, and reset.
+- Smart tick budgeting for block entities, UI refreshes, particles, robotics, convoys, Lens scans, HoloMap refreshes, and Nexus effects.
+- Particle, network, multiblock validation, entity AI, and block entity sleep budget services.
+- Runtime reports under `run/echo-runtimeguard/reports/`.
+- Optional-safe MultiblockCore, HoloMap, and Lens integrations.
 
 ### ECHO: WorldCore
 
@@ -253,7 +287,7 @@ Key responsibilities:
 
 ### ECHO: Lens
 
-Lens is the scanner HUD. It reads the world through an ECHO lens: blocks, entities, fluids, machines, progression state, and addon-specific integrations.
+Lens is the scanner HUD. It reads the world through an ECHO lens: blocks, entities, fluids, machines, progression state, server-verified public Deep Scan rows, and addon-specific integrations.
 
 Lens should become the player's fast, in-world intelligence layer, complementing the deeper Terminal, HoloMap, and Index views.
 
@@ -264,6 +298,20 @@ Key responsibilities:
 - Machine and progression cues.
 - Addon integration hooks.
 - Player-facing scan readability.
+
+### ECHO: Blockworks
+
+Blockworks is the first-party decorative and structural block library for ECHO locations. It supplies themed block families, structural variants, detail blocks, conversion tools, palette kits, tags, recipes, showcase worldgen, procedural scatter, and Index-ready catalog entries.
+
+It gives ECHO builders and chapter modules one shared material language for ruined cities, crash zones, convoy depots, orbital interiors, Terminal rooms, Blackbox vaults, Nexus structures, reclamation domes, and MultiblockCore casings.
+
+Key responsibilities:
+
+- Ten themed full-block families plus slab, stair, and wall variants where supported.
+- Blockworks Table and Pattern Cutter conversion workflows.
+- Palette kits for Ashfall, Terminal, Orbital, Nexus, Blackbox, Reclamation, Convoy, Industrial, and starter builds.
+- Rare showcase structure and optional procedural scatter.
+- Tags and resources for module use, including future MultiblockCore casing support.
 
 ## Main Campaign And Chapter Modules
 
@@ -307,13 +355,14 @@ Key responsibilities:
 
 ### ECHO: Agriculture Reclamation
 
-Agriculture Reclamation adds food, reclamation, and recovery systems. It supports the survival loop by giving the player infrastructure for restoration rather than only scavenging.
+Agriculture Reclamation adds food, reclamation, greenhouse, and pollinator drone systems. It supports the survival loop by giving the player infrastructure for restoration rather than only scavenging.
 
 Key responsibilities:
 
 - Agriculture recovery content.
 - Food and survival support.
 - Reclamation infrastructure.
+- Pollinator Drone service for established greenhouse zones.
 - Route support for long-term base viability.
 
 ### ECHO: Stationfall
@@ -361,7 +410,7 @@ Key responsibilities:
 
 ### ECHO: Logistics Network
 
-Logistics Network handles route infrastructure, delivery loops, and connected storage support.
+Logistics Network handles route infrastructure, delivery loops, connected storage support, and operations dashboard visibility.
 
 It is the connective tissue for moving resources and mission materials through the pack.
 
@@ -403,7 +452,7 @@ Key responsibilities:
 
 ### ARCANA: Veilbound Studies
 
-ARCANA is not an ECHO addon, but it is managed alongside ECHO by Command Center. It lives at `C:\Github\ARCANA` and builds the `arcanaveil-0.1.0.jar` companion mod.
+ARCANA is not an ECHO addon, but it is managed alongside ECHO by Command Center. It lives at `C:\Github\ARCANA` and builds the `arcanaveil-0.2.0.jar` companion mod.
 
 ARCANA's feature catalog covers hidden resonances, research theory, Veil pressure, rituals, convergence, fracture risk, late-game Veil choices, Field Journal UI, research JSON/layout support, assets/resources, creative test coverage, and validation workflow.
 
@@ -500,21 +549,21 @@ Current expected managed jar count:
 
 | Target Group | Expected Jars |
 | --- | ---: |
-| ECHO Full Stack | 22 |
+| ECHO Full Stack | 24 |
 | ARCANA | 1 |
-| Total | 23 |
+| Total | 25 |
 
 The latest observed Command Center state:
 
 | State | Count |
 | --- | ---: |
-| Source jars built | 23 / 23 |
-| Current target jars | 22 / 23 |
-| Stale managed target jars | 1 |
+| Source jars built | 26 / 26 |
+| Current target jars | 13 / 26 |
+| Stale managed target jars | 12 |
 | Duplicate managed target jars | 0 |
 | Missing source jars | 0 |
 
-The remaining stale jar is `echodatacore-1.0.0.jar`. It can stay stale when Minecraft or CurseForge is running because Windows locks jars loaded by the game process. Command Center quarantines stale managed jars instead of deleting them, but it cannot move a locked file.
+Several target jars can stay stale after active development builds, especially when Minecraft or CurseForge is running because Windows locks jars loaded by the game process. Command Center quarantines stale managed jars instead of deleting them, but it cannot move a locked file.
 
 If promotion reports `EBUSY` or `resource busy or locked`, close Minecraft and the CurseForge profile, then run Command Center's modpack update button again.
 
@@ -524,29 +573,32 @@ The full modpack pipeline expects these first-party jars:
 
 | Jar | Source Project |
 | --- | --- |
-| `echocore-1.1.0.jar` | ECHO: Core |
-| `echonetcore-1.1.0.jar` | ECHO: NetCore |
+| `echocore-1.0.0.jar` | ECHO: Core |
+| `echonetcore-1.0.0.jar` | ECHO: NetCore |
 | `echodatacore-1.0.0.jar` | ECHO: DataCore |
-| `echomissioncore-0.1.0.jar` | ECHO: MissionCore |
-| `echoterminal-1.1.0.jar` | ECHO: Terminal |
-| `echoashfallprotocol-1.3.0.jar` | ECHO: Ashfall Protocol |
-| `signalos-0.1.0.jar` | SignalOS |
-| `signalosexample-0.1.0.jar` | SignalOS Example |
-| `echoorbitalremnants-1.5.0.jar` | ECHO: Orbital Remnants |
+| `echomissioncore-1.0.0.jar` | ECHO: MissionCore |
+| `echomultiblockcore-1.0.0.jar` | ECHO: MultiblockCore |
+| `echoruntimeguard-1.0.0.jar` | ECHO: RuntimeGuard |
+| `echoterminal-1.0.0.jar` | ECHO: Terminal |
+| `echoashfallprotocol-1.0.0.jar` | ECHO: Ashfall Protocol |
+| `signalos-1.0.0.jar` | SignalOS |
+| `signalosexample-1.0.0.jar` | SignalOS Example |
+| `echoorbitalremnants-1.0.0.jar` | ECHO: Orbital Remnants |
 | `echonexusprotocol-1.0.0.jar` | ECHO: Nexus Protocol |
-| `echoagriculturereclamation-0.1.1.jar` | ECHO: Agriculture Reclamation |
-| `echoworldcore-0.1.0.jar` | ECHO: WorldCore |
-| `echostationfall-1.1.0.jar` | ECHO: Stationfall |
+| `echoagriculturereclamation-1.0.0.jar` | ECHO: Agriculture Reclamation |
+| `echoworldcore-1.0.0.jar` | ECHO: WorldCore |
+| `echostationfall-1.0.0.jar` | ECHO: Stationfall |
 | `echoblackboxprotocol-1.0.0.jar` | ECHO: Blackbox Protocol |
-| `echoindustrialnexus-0.1.0.jar` | ECHO: Industrial Nexus |
-| `echologisticsnetwork-0.1.0.jar` | ECHO: Logistics Network |
-| `echorendercore-0.5.0.jar` | ECHO: RenderCore |
-| `echoconvoyprotocol-0.1.0.jar` | ECHO: Convoy Protocol |
-| `echoholomap-0.1.0.jar` | ECHO: HoloMap |
-| `echoindex-0.1.0.jar` | ECHO: Index |
-| `echoarmory-0.1.0.jar` | ECHO: Armory |
-| `echolens-0.1.0.jar` | ECHO: Lens |
-| `arcanaveil-0.1.0.jar` | ARCANA: Veilbound Studies |
+| `echoindustrialnexus-1.0.0.jar` | ECHO: Industrial Nexus |
+| `echologisticsnetwork-1.0.0.jar` | ECHO: Logistics Network |
+| `echorendercore-1.0.0.jar` | ECHO: RenderCore |
+| `echoconvoyprotocol-1.0.0.jar` | ECHO: Convoy Protocol |
+| `echoholomap-1.0.0.jar` | ECHO: HoloMap |
+| `echoindex-1.0.0.jar` | ECHO: Index |
+| `echoarmory-1.0.0.jar` | ECHO: Armory |
+| `echolens-1.0.0.jar` | ECHO: Lens |
+| `echoblockworks-1.0.0.jar` | ECHO Blockworks |
+| `arcanaveil-0.2.0.jar` | ARCANA: Veilbound Studies |
 
 ## Recommended Workflows
 
@@ -601,7 +653,7 @@ Full build, GameTests, and verify-release are higher-confidence release gates. T
 1. Keep the Command Center project catalog synced with `settings.gradle` when new addons are added.
 2. Keep feature records evidence-based. Do not mark features implemented unless docs or concrete project code support it.
 3. Close Minecraft before promoting jars into the CurseForge `mods` folder.
-4. Treat Core, NetCore, DataCore, MissionCore, WorldCore, and RenderCore changes as high-blast-radius work.
+4. Treat Core, NetCore, DataCore, MissionCore, MultiblockCore, RuntimeGuard, WorldCore, and RenderCore changes as high-blast-radius work.
 5. Use the `all` build set before release or modpack deployment.
 6. Use the `beta` build set for faster iteration across active service and development modules.
 7. Keep ARCANA managed as a companion target, not an ECHO addon, unless the project structure changes.
@@ -613,7 +665,7 @@ These are the local docs that currently back the ecosystem overview. Some newer 
 | Area | Existing Docs |
 | --- | --- |
 | Whole ECHO pack | `C:\Github\Echo\README.md`, `C:\Github\Echo\MODPACK_OVERVIEW.md`, `C:\Github\Echo\LORE_BIBLE.md`, `C:\Github\Echo\wiki\Lore-and-World-Canon.md`, `C:\Github\Echo\wiki\Build-and-Release.md` |
-| Release process | `C:\Github\Echo\docs\release_process.md`, `C:\Github\Echo\docs\FULL_GRADLE_STACK.md`, `C:\Github\Echo\docs\releases\ashfall_1.3.0_smoke_test.md` |
+| Release process | `C:\Github\Echo\docs\release_process.md`, `C:\Github\Echo\docs\FULL_GRADLE_STACK.md`, `C:\Github\Echo\docs\releases\ashfall_1.0.0_smoke_test.md` |
 | Ownership and handoff | `C:\Github\Echo\docs\OWNERSHIP_ROADMAP.md`, `C:\Github\Echo\docs\chapter_handoff_ids.md`, `C:\Github\Echo\docs\missioncore_addon_registration.md` |
 | ECHO: NetCore | `C:\Github\Echo\addons\echonetcore\README.md` |
 | ECHO: DataCore | `C:\Github\Echo\addons\echodatacore\README.md` |
@@ -634,7 +686,10 @@ These are the local docs that currently back the ecosystem overview. Some newer 
 | ECHO: HoloMap | `C:\Github\Echo\addons\echoholomap\README.md` |
 | ECHO: Index | Source tree and Command Center catalog; no dedicated README found yet. |
 | ECHO: Armory | `C:\Github\Echo\addons\echoarmory\RELEASE_NOTES.md`, `C:\Github\Echo\addons\echoarmory\SMOKE_TEST.md` |
-| ECHO: Lens | Source tree and Command Center catalog; no dedicated README found yet. |
+| ECHO: Lens | Source tree, Command Center catalog, Index entry, and dedicated addon README. |
+| ECHO: MultiblockCore | `C:\Github\Echo\addons\echomultiblockcore\README.md`, `C:\Github\Echo\addons\echomultiblockcore\SMOKE_TEST.md` |
+| ECHO: RuntimeGuard | `C:\Github\Echo\addons\echoruntimeguard\README.md`, `C:\Github\Echo\addons\echoruntimeguard\SMOKE_TEST.md` |
+| ECHO Blockworks | `C:\Github\Echo\addons\echoblockworks\README.md`, `C:\Github\Echo\addons\echoblockworks\SMOKE_TEST.md` |
 | Command Center | `C:\Github\Echo\addons\echomodpackcommandcenter\README.md` |
 | ARCANA | `C:\Github\ARCANA\README.md`, `C:\Github\ARCANA\docs\ARCANA_CREATIVE_TEST_CHECKLIST.md`, `C:\Github\ARCANA\docs\ARCANA_ASSET_AUDIT.md`, `C:\Github\ARCANA\docs\ARCANA_VISUAL_STYLE.md` |
 

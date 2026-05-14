@@ -1,5 +1,6 @@
 package com.knoxhack.echoashfallprotocol.echo;
 
+import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
 import com.knoxhack.echoashfallprotocol.registry.ModAttachments;
 import com.knoxhack.echoashfallprotocol.endgame.PostNexusData;
 import com.knoxhack.echoashfallprotocol.event.PostNexusEventHandler;
@@ -22,6 +23,10 @@ import java.util.*;
  * Expanded to support conversation history and asset discovery.
  */
 public class QuestData implements ValueIOSerializable {
+    private static final Identifier NEXUS_CORE_FOUND_ADVANCEMENT =
+            Identifier.fromNamespaceAndPath(EchoAshfallProtocol.MODID, "nexus_core_found");
+    private static final String NEXUS_CORE_FOUND_CRITERION = "found_nexus_core";
+
     private int currentPhase = 0;
     private int currentMissionIndex = 0;
     private boolean echoIntroPlayed = false;
@@ -343,8 +348,18 @@ public class QuestData implements ValueIOSerializable {
         }
 
         updateUnlockedMissions(player);
+        if ("find_nexus_core".equals(missionId)) {
+            awardNexusCoreFoundAdvancement(player);
+        }
         if (isPostNexusEpilogueMission(missionId)) {
             PostNexusEventHandler.completeFinalProtocol(player, missionId);
+        }
+    }
+
+    private static void awardNexusCoreFoundAdvancement(ServerPlayer player) {
+        var holder = player.level().getServer().getAdvancements().get(NEXUS_CORE_FOUND_ADVANCEMENT);
+        if (holder != null) {
+            player.getAdvancements().award(holder, NEXUS_CORE_FOUND_CRITERION);
         }
     }
     

@@ -1,6 +1,7 @@
 package com.knoxhack.echonexusprotocol.item;
 
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
+import com.knoxhack.echonexusprotocol.integration.NexusMissionHooks;
 import com.knoxhack.echonexusprotocol.integration.NexusProgression;
 import com.knoxhack.echonexusprotocol.registry.ModBlocks;
 import com.knoxhack.echonexusprotocol.world.ModDimensions;
@@ -56,6 +57,7 @@ public class CoreAccessKeyItem extends Item {
       data.markCoreEntered();
       data.markGearUsed(this == com.knoxhack.echonexusprotocol.registry.ModItems.CORE_KEY_ASSEMBLY.get() ? "core_key_assembly" : "core_access_key");
       NexusPlayerData.saveAndSync(serverPlayer, data);
+      NexusMissionHooks.recordCoreEntered(serverPlayer);
       BlockPos target = NEXUS_ENTRY_POS;
       serverPlayer.teleportTo(targetLevel, target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, Set.of(), player.getYRot(), player.getXRot(), false);
       player.sendSystemMessage(Component.literal("ECHO-7 // Nexus Core route opened. Reality lock engaged."));

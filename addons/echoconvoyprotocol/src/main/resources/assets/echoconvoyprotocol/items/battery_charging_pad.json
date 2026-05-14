@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoconvoyprotocol:block/battery_charging_pad"
+    "model": "echoconvoyprotocol:item/battery_charging_pad"
   }
 }

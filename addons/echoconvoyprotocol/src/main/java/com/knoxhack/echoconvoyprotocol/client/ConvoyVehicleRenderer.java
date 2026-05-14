@@ -32,10 +32,10 @@ public class ConvoyVehicleRenderer extends EntityRenderer<ConvoyVehicleEntity, C
       super.extractRenderState(entity, state, partialTick);
       state.yRot = entity.getYRot(partialTick);
       state.kind = entity.kind().ordinal();
-      state.damageRatio = ratio(entity.damage(), entity.kind().maxDamage());
-      state.fuelRatio = ratio(entity.fuel(), entity.kind().maxFuel());
-      state.batteryRatio = ratio(entity.battery(), entity.kind().maxBattery());
-      state.cargoRatio = ratio(entity.filledCargoSlots(), entity.kind().cargoSlots());
+      state.damageRatio = ratio(entity.damage(), entity.maxDamage());
+      state.fuelRatio = ratio(entity.fuel(), entity.maxFuel());
+      state.batteryRatio = ratio(entity.battery(), entity.maxBattery());
+      state.cargoRatio = ratio(entity.filledCargoSlots(), entity.cargoSlots());
       state.shieldingRatio = ratio(entity.shieldingPlates(), entity.kind().maxShieldingPlates());
       state.docked = entity.docked();
       state.speed = (float)entity.getDeltaMovement().horizontalDistance();
@@ -77,7 +77,7 @@ public class ConvoyVehicleRenderer extends EntityRenderer<ConvoyVehicleEntity, C
       for (int i = 0; i < kinds.length; i++) {
          textures[i] = Identifier.fromNamespaceAndPath(
             EchoConvoyProtocol.MODID,
-            "textures/entity/" + kinds[i].getSerializedName() + ".png"
+            "textures/entity/rendercore_echo_mobs/" + kinds[i].getSerializedName() + ".png"
          );
       }
       return textures;

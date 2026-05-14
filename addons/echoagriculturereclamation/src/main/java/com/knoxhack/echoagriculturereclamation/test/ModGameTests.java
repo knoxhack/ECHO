@@ -13,16 +13,20 @@ import com.knoxhack.echoagriculturereclamation.block.entity.HydroponicTrayBlockE
 import com.knoxhack.echoagriculturereclamation.block.entity.ReclamationCropBlockEntity;
 import com.knoxhack.echoagriculturereclamation.content.CropSpec;
 import com.knoxhack.echoagriculturereclamation.content.ReclamationContent;
+import com.knoxhack.echoagriculturereclamation.content.ReclamationCropLogic;
 import com.knoxhack.echoagriculturereclamation.content.ReclamationMetrics;
 import com.knoxhack.echoagriculturereclamation.content.SeedProfile;
 import com.knoxhack.echoagriculturereclamation.content.SoilState;
+import com.knoxhack.echoagriculturereclamation.entity.PollinatorDroneEntity;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCoreIntegration;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCrossAddonIntegration;
 import com.knoxhack.echoagriculturereclamation.integration.ReclamationCrossAddonIntegration.FactionPreference;
+import com.knoxhack.echoagriculturereclamation.integration.ReclamationTerminalIds;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationProgress;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationRestoration;
 import com.knoxhack.echoagriculturereclamation.progress.ReclamationWorldData;
 import com.knoxhack.echoagriculturereclamation.registry.ModBlocks;
+import com.knoxhack.echoagriculturereclamation.registry.ModEntities;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import com.mojang.serialization.JsonOps;
 import java.io.IOException;
@@ -49,12 +53,14 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -76,6 +82,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("hydroponic_tray_persistence", () -> ModGameTests::hydroponicTrayPersistence);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> GREENHOUSE =
       TEST_FUNCTIONS.register("greenhouse_safety_scoring", () -> ModGameTests::greenhouseSafetyScoring);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> POLLINATOR_DRONE =
+      TEST_FUNCTIONS.register("pollinator_drone_system", () -> ModGameTests::pollinatorDroneSystem);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> GROWTH_GREENHOUSE_CACHE =
       TEST_FUNCTIONS.register("growth_greenhouse_cache_regression", () -> ModGameTests::growthGreenhouseCacheRegression);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SEED_STABILIZATION =
@@ -126,6 +134,7 @@ public final class ModGameTests {
       register(event, environment, "soil_state_conversion", SOIL_CONVERSION.getId());
       register(event, environment, "hydroponic_tray_persistence", HYDROPONIC_TRAY.getId());
       register(event, environment, "greenhouse_safety_scoring", GREENHOUSE.getId());
+      register(event, environment, "pollinator_drone_system", POLLINATOR_DRONE.getId());
       register(event, environment, "growth_greenhouse_cache_regression", GROWTH_GREENHOUSE_CACHE.getId());
       register(event, environment, "seed_stabilization_profile", SEED_STABILIZATION.getId());
       register(event, environment, "terminal_status_metrics", TERMINAL.getId());
@@ -197,6 +206,23 @@ public final class ModGameTests {
       helper.assertTrue(open.score() >= 30, "Open greenhouse support should still provide partial safety");
       helper.assertTrue(open.score() < ReclamationContent.progression().greenhouseSafeThreshold(), "Open support should not reach safe greenhouse threshold");
       helper.assertFalse(open.enclosed(), "Open greenhouse support should report a leaking enclosure");
+      ReclamationProgress.GreenhouseContext outdoor = ReclamationProgress.GreenhouseScan.empty().asContext();
+      helper.assertFalse(outdoor.established(), "Outdoor crops should not be treated as a saved greenhouse zone");
+      helper.assertTrue(outdoor.growthPenalty() == 0, "Outdoor crops without an established zone should not receive greenhouse penalties");
+      ReclamationProgress.recordGreenhouseZone(helper.getLevel(), helper.absolutePos(openCenter), open);
+      ReclamationProgress.GreenhouseContext unsafe = ReclamationProgress.greenhouseContext(helper.getLevel(), helper.absolutePos(openCenter));
+      helper.assertTrue(unsafe.established(), "Controller scan should establish a saved greenhouse zone");
+      helper.assertTrue(unsafe.growthPenalty() > 0, "Unsafe established greenhouse zone should apply a soft growth penalty");
+      SeedProfile testProfile = new SeedProfile("clean_corn", 1, 70);
+      helper.assertTrue(
+         ReclamationCropLogic.canGrow(CropSpec.byPath("clean_corn"), SoilState.STABILIZED, testProfile, unsafe),
+         "Unsafe greenhouse zone should not hard-block crops on valid soil"
+      );
+      helper.assertTrue(
+         ReclamationCropLogic.growthChance(CropSpec.byPath("clean_corn"), SoilState.STABILIZED, testProfile, unsafe, 0)
+            < ReclamationCropLogic.growthChance(CropSpec.byPath("clean_corn"), SoilState.STABILIZED, testProfile, unsafe.score(), 0),
+         "Unsafe greenhouse zone should reduce growth chance softly"
+      );
 
       BlockPos sealedController = new BlockPos(16, 2, 14);
       buildSealedGreenhouse(helper, sealedController);
@@ -205,6 +231,16 @@ public final class ModGameTests {
       helper.assertTrue(sealed.greenhouseRoof(), "Sealed greenhouse should detect Greenhouse Glass overhead");
       helper.assertTrue(sealed.activeDocks() >= 1, "Pollinator Dock should become active when crops or trays are nearby");
       helper.assertTrue(sealed.score() >= ReclamationContent.progression().greenhouseSafeThreshold(), "Sealed greenhouse should reach safe threshold");
+      ReclamationWorldData.GreenhouseZoneProfile profile = ReclamationProgress.recordGreenhouseZone(helper.getLevel(), helper.absolutePos(sealedController), sealed);
+      helper.assertTrue(profile.score() == sealed.score(), "Saved greenhouse profile should preserve the controller scan score");
+      ReclamationProgress.GreenhouseContext safe = ReclamationProgress.greenhouseContext(helper.getLevel(), helper.absolutePos(sealedController));
+      helper.assertTrue(safe.established(), "Sealed controller scan should establish a greenhouse zone");
+      helper.assertTrue(safe.quality() == ReclamationProgress.GreenhouseZoneQuality.SAFE, "Sealed greenhouse zone should be safe");
+      helper.assertTrue(safe.growthPenalty() == 0, "Safe greenhouse zone should not apply growth penalties");
+      helper.setBlock(sealedController, Blocks.AIR);
+      ReclamationProgress.GreenhouseContext stale = ReclamationProgress.greenhouseContext(helper.getLevel(), helper.absolutePos(sealedController));
+      helper.assertTrue(stale.score() == 0, "Removed controller should prevent stale greenhouse profiles from over-crediting safety");
+      helper.assertTrue(stale.nextAction().contains("missing"), "Stale greenhouse profiles should explain that the controller or structure is missing");
       helper.succeed();
    }
 
@@ -213,7 +249,8 @@ public final class ModGameTests {
       ServerLevel level = helper.getLevel();
       BlockPos controller = new BlockPos(8, 2, 8);
       buildSealedGreenhouse(helper, controller);
-      int exact = ReclamationProgress.scanGreenhouseSafety(level, helper.absolutePos(controller));
+      ReclamationProgress.recordGreenhouseZone(level, helper.absolutePos(controller), ReclamationProgress.scanGreenhouse(level, helper.absolutePos(controller)));
+      int exact = ReclamationProgress.greenhouseContext(level, helper.absolutePos(controller)).score();
       int cached = ReclamationProgress.growthGreenhouseSafety(level, helper.absolutePos(controller));
       helper.assertTrue(cached == exact, "Growth greenhouse cache should match exact scoring for the first section scan");
 
@@ -249,6 +286,115 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void pollinatorDroneSystem(GameTestHelper helper) {
+      ServerLevel level = helper.getLevel();
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      BlockPos controller = new BlockPos(8, 2, 8);
+      buildSealedGreenhouse(helper, controller);
+      BlockPos dockLocal = controller.west();
+      BlockPos dock = helper.absolutePos(dockLocal);
+      BlockPos trayLocal = controller.south();
+      BlockPos trayPos = helper.absolutePos(trayLocal);
+      HydroponicTrayBlockEntity tray = helper.getBlockEntity(trayLocal, HydroponicTrayBlockEntity.class);
+      ItemStack seed = new ItemStack(ModItems.STABILIZED_SEED.get());
+      seed.set(ModItems.seedProfileComponent(), new SeedProfile("clean_corn", 0, 100));
+      helper.assertTrue(tray.insertSeed(player, seed), "Pollinator test tray should accept a profiled seed");
+      tray.addNutrient(player, new ItemStack(ModItems.SOIL_NUTRIENT_MIX.get()));
+      ReclamationProgress.recordGreenhouseZone(level, helper.absolutePos(controller), ReclamationProgress.scanGreenhouse(level, helper.absolutePos(controller)));
+      ReclamationProgress.GreenhouseContext preDeploy = ReclamationProgress.greenhouseContext(level, dock);
+      helper.assertTrue(preDeploy.nextAction().contains("deploy a Pollinator Drone"),
+         "Safe greenhouse diagnostics should recommend drone deployment when service targets exist");
+
+      PollinatorDroneEntity drone = PollinatorDroneEntity.deployOrFind(level, dock);
+      int deployedCount = PollinatorDroneEntity.boundDroneCount(level, dock);
+      helper.assertTrue(deployedCount == 1, "Dock deploy should create exactly one bound Pollinator Drone, found " + deployedCount
+         + " (removed=" + drone.isRemoved() + ")");
+      List<PollinatorDroneEntity> queriedDrones = PollinatorDroneEntity.boundDrones(level, dock);
+      long distinctDroneIds = queriedDrones.stream().map(PollinatorDroneEntity::getUUID).distinct().count();
+      helper.assertTrue(queriedDrones.size() == 1 && distinctDroneIds == 1,
+         "Bound drone lookup should de-duplicate overlapping entity queries by drone id");
+      PollinatorDroneEntity sameDrone = PollinatorDroneEntity.deployOrFind(level, dock);
+      helper.assertTrue(sameDrone == drone && PollinatorDroneEntity.boundDroneCount(level, dock) == 1,
+         "Repeated dock deploy should reuse the existing bound Pollinator Drone");
+
+      PollinatorDroneEntity duplicate = ModEntities.POLLINATOR_DRONE.get().create(level, EntitySpawnReason.EVENT);
+      helper.assertTrue(duplicate != null, "Duplicate Pollinator Drone should instantiate for cleanup test");
+      duplicate.configureDock(dock);
+      duplicate.setPos(dock.getX() + 0.5D, dock.getY() + 1.25D, dock.getZ() + 0.5D);
+      level.addFreshEntity(duplicate);
+      PollinatorDroneEntity autoKeeper = PollinatorDroneEntity.cleanupDuplicateDrones(level, dock, null);
+      helper.assertTrue(autoKeeper == drone, "Duplicate cleanup without a preferred drone should keep the oldest valid bound drone");
+      helper.assertTrue(PollinatorDroneEntity.boundDroneCount(level, dock) == 1 && duplicate.isRemoved(),
+         "Duplicate Pollinator Drones for one dock should be recalled");
+
+      TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+      drone.saveWithoutId(output);
+      PollinatorDroneEntity loaded = ModEntities.POLLINATOR_DRONE.get().create(level, EntitySpawnReason.EVENT);
+      helper.assertTrue(loaded != null, "Reloaded Pollinator Drone should instantiate");
+      loaded.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), output.buildResult()));
+      helper.assertTrue(loaded.homeDock().equals(dock), "Pollinator Drone should persist its home dock");
+      helper.assertTrue(loaded.targetPos().equals(drone.targetPos()), "Pollinator Drone should persist its current target");
+      helper.assertTrue(loaded.serviceCooldown() == drone.serviceCooldown(), "Pollinator Drone should persist its service cooldown");
+      helper.assertTrue(loaded.serviceCount() == drone.serviceCount(), "Pollinator Drone should persist its service count");
+
+      for (int ticks = 0; ticks < 120 && drone.serviceCount() == 0; ticks++) {
+         drone.tick();
+      }
+      helper.assertTrue(drone.serviceCount() > 0, "Pollinator Drone should service greenhouse crop/tray targets");
+      int ageBefore = tray.age();
+      for (int attempts = 0; attempts < 100 && tray.age() == ageBefore; attempts++) {
+         ReclamationProgress.servicePollinationTarget(level, trayPos, 200);
+      }
+      helper.assertTrue(tray.age() > ageBefore, "Safe greenhouse pollinator service should be able to advance tray growth");
+
+      BlockPos openController = new BlockPos(4, 2, 18);
+      BlockPos openTrayLocal = openController.south();
+      helper.setBlock(openController, (Block)ModBlocks.GREENHOUSE_CONTROLLER.get());
+      helper.setBlock(openController.west(), (Block)ModBlocks.POLLINATOR_DRONE_DOCK.get());
+      helper.setBlock(openController.east(), (Block)ModBlocks.SPORE_FILTER.get());
+      helper.setBlock(openTrayLocal, (Block)ModBlocks.HYDROPONIC_TRAY.get());
+      HydroponicTrayBlockEntity openTray = helper.getBlockEntity(openTrayLocal, HydroponicTrayBlockEntity.class);
+      ItemStack openSeed = new ItemStack(ModItems.STABILIZED_SEED.get());
+      openSeed.set(ModItems.seedProfileComponent(), new SeedProfile("clean_corn", 0, 100));
+      helper.assertTrue(openTray.insertSeed(player, openSeed), "Unsafe greenhouse test tray should accept a profiled seed");
+      BlockPos openControllerPos = helper.absolutePos(openController);
+      int softZoneScore = Math.max(0, ReclamationContent.progression().greenhouseSafeThreshold() - 10);
+      ReclamationWorldData.get(level).setGreenhouseZone(new ChunkPos(openControllerPos.getX() >> 4, openControllerPos.getZ() >> 4),
+         new ReclamationWorldData.GreenhouseZoneProfile(
+            softZoneScore, 24, 0, 0, 1, 1, 0, 1, 0, 1,
+            false, false, false, openControllerPos.getX(), openControllerPos.getY(), openControllerPos.getZ(), level.getGameTime()
+         ));
+      ReclamationProgress.clearGrowthGreenhouseSafetyCacheForTests();
+      ReclamationProgress.GreenhouseContext openContext = ReclamationProgress.greenhouseContext(level, helper.absolutePos(openTrayLocal));
+      helper.assertTrue(openContext.established() && openContext.quality() != ReclamationProgress.GreenhouseZoneQuality.SAFE,
+         "Open greenhouse should establish a strained or unsafe zone for soft service (established=" + openContext.established()
+            + ", quality=" + openContext.quality().label() + ", score=" + openContext.score() + ", saved=" + openContext.savedScore()
+            + ", live=" + openContext.liveScore() + ", profile=" + softZoneScore + ")");
+      helper.assertTrue(openContext.pollinationBonus(12) > 0 && openContext.pollinationBonus(12) < 12,
+         "Strained/unsafe greenhouse zones should reduce but not remove pollinator service");
+      helper.assertTrue(ReclamationProgress.servicePollinationTarget(level, helper.absolutePos(openTrayLocal), 12),
+         "Strained/unsafe established greenhouse service should not hard-block trays");
+
+      BlockPos outdoorTrayLocal = new BlockPos(20, 1, 30);
+      helper.setBlock(outdoorTrayLocal, (Block)ModBlocks.HYDROPONIC_TRAY.get());
+      HydroponicTrayBlockEntity outdoorTray = helper.getBlockEntity(outdoorTrayLocal, HydroponicTrayBlockEntity.class);
+      ItemStack outdoorSeed = new ItemStack(ModItems.STABILIZED_SEED.get());
+      outdoorSeed.set(ModItems.seedProfileComponent(), new SeedProfile("clean_corn", 0, 100));
+      helper.assertTrue(outdoorTray.insertSeed(player, outdoorSeed), "Outdoor tray should accept a profiled seed");
+      helper.assertFalse(ReclamationProgress.servicePollinationTarget(level, helper.absolutePos(outdoorTrayLocal), 200),
+         "Outdoor tray without an established greenhouse zone should not receive pollinator service");
+      helper.assertTrue(outdoorTray.age() == 0, "Outdoor tray should not advance from pollinator service");
+
+      int recalled = PollinatorDroneEntity.recallDrones(level, dock);
+      helper.assertTrue(recalled == 1 && PollinatorDroneEntity.boundDroneCount(level, dock) == 0,
+         "Dock recall should remove the bound Pollinator Drone");
+      PollinatorDroneEntity orphan = PollinatorDroneEntity.deployOrFind(level, dock);
+      helper.setBlock(dockLocal, Blocks.AIR);
+      orphan.tick();
+      helper.assertTrue(orphan.isRemoved(), "Pollinator Drone should discard itself when its dock is removed");
+      helper.succeed();
+   }
+
    private static void seedStabilizationProfile(GameTestHelper helper) {
       SeedProfile contaminated = new SeedProfile("ash_wheat", 3, 22);
       SeedProfile stable = contaminated.stabilized();
@@ -271,6 +417,14 @@ public final class ModGameTests {
          "Terminal mission snapshot should render seed recovery state");
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
       helper.assertTrue(metrics.knownSeeds() >= 1, "Terminal metrics should include known seeds");
+      String greenhouseDetail = terminalSnapshotDetail(player, ReclamationTerminalIds.id("mission/greenhouse_online"));
+      helper.assertTrue(greenhouseDetail.contains("greenhouse") || greenhouseDetail.contains("Greenhouse"),
+         "Terminal greenhouse mission detail should mention greenhouse state");
+      helper.assertTrue(greenhouseDetail.contains("zone"), "Terminal greenhouse mission detail should include zone quality");
+      helper.assertTrue(greenhouseDetail.contains("drone") && greenhouseDetail.contains("service target"),
+         "Terminal greenhouse mission detail should include drone service diagnostics");
+      helper.assertTrue(greenhouseDetail.contains("Scan a Greenhouse Controller"),
+         "Terminal greenhouse mission detail should include an actionable greenhouse next step");
       helper.succeed();
    }
 
@@ -279,6 +433,9 @@ public final class ModGameTests {
       ReclamationWorldData saved = new ReclamationWorldData();
       saved.setRestorationScore(chunk, 77);
       saved.setGreenhouseSafety(chunk, 64);
+      saved.setGreenhouseZone(chunk, new ReclamationWorldData.GreenhouseZoneProfile(
+         72, 48, 24, 18, 1, 1, 0, 3, 2, 4, true, true, true, 48, 51, 64, 700L
+      ));
       saved.setLastSoilState(chunk, SoilState.STABILIZED.displayName());
       saved.addStat("soil_purified", 5);
 
@@ -290,9 +447,15 @@ public final class ModGameTests {
          .orElseThrow(() -> new IllegalStateException("Reclamation world data should decode"));
 
       helper.assertTrue(decoded.restorationScore(chunk) == 77, "Restoration score should survive saved-data serialization");
-      helper.assertTrue(decoded.greenhouseSafety(chunk) == 64, "Greenhouse safety should survive saved-data serialization");
+      helper.assertTrue(decoded.greenhouseSafety(chunk) == 72, "Greenhouse safety should preserve the latest saved zone score");
+      ReclamationWorldData.GreenhouseZoneProfile decodedZone = decoded.greenhouseZone(chunk);
+      helper.assertTrue(decodedZone != null, "Greenhouse zone profile should survive saved-data serialization");
+      helper.assertTrue(decodedZone.controllerPos().equals(new BlockPos(48, 51, 64)), "Greenhouse zone controller position should survive serialization");
+      helper.assertTrue(decodedZone.activeDocks() == 1 && decodedZone.cropTargets() == 3, "Greenhouse zone support details should survive serialization");
+      helper.assertTrue(decodedZone.deployedDrones() == 2 && decodedZone.serviceTargets() == 4, "Greenhouse zone drone details should survive serialization");
       helper.assertTrue(decoded.lastSoilState(chunk).equals(SoilState.STABILIZED.displayName()), "Last soil state should survive saved-data serialization");
       helper.assertTrue(decoded.stat("soil_purified") == 5, "World stats should survive saved-data serialization");
+      helper.assertTrue(decoded.stat("greenhouse_zone_scans") == 1, "Greenhouse zone scan stats should survive saved-data serialization");
       helper.succeed();
    }
 
@@ -763,6 +926,17 @@ public final class ModGameTests {
          return status instanceof Enum<?> value ? value.name() : String.valueOf(status);
       } catch (ReflectiveOperationException exception) {
          throw new AssertionError("Unable to inspect Agriculture terminal snapshot.", exception);
+      }
+   }
+
+   private static String terminalSnapshotDetail(Player player, Identifier missionId) {
+      try {
+         Class<?> providerClass = Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider");
+         Object provider = providerClass.getField("INSTANCE").get(null);
+         Object snapshot = providerClass.getMethod("snapshot", Player.class, Identifier.class).invoke(provider, player, missionId);
+         return String.valueOf(snapshot.getClass().getMethod("unlockReason").invoke(snapshot));
+      } catch (ReflectiveOperationException exception) {
+         throw new AssertionError("Unable to inspect Agriculture terminal snapshot detail.", exception);
       }
    }
 

@@ -19,6 +19,10 @@ public final class LensConfig {
     public static final ModConfigSpec.BooleanValue MACHINE_STATUS_VISIBILITY;
     public static final ModConfigSpec.BooleanValue BEGINNER_HINTS;
     public static final ModConfigSpec.BooleanValue DEBUG_COMMANDS;
+    public static final ModConfigSpec.BooleanValue SERVER_DEEP_SCAN_ENABLED;
+    public static final ModConfigSpec.DoubleValue SERVER_SCAN_DISTANCE;
+    public static final ModConfigSpec.IntValue SERVER_SCAN_RATE_LIMIT;
+    public static final ModConfigSpec.BooleanValue SERVER_REDACT_PROTECTED_TARGETS;
 
     public static final ModConfigSpec.BooleanValue HUD_ENABLED;
     public static final ModConfigSpec.EnumValue<OverlayPosition> OVERLAY_POSITION;
@@ -41,6 +45,9 @@ public final class LensConfig {
     public static final ModConfigSpec.IntValue EXPANDED_ROW_LIMIT;
     public static final ModConfigSpec.IntValue DEEP_ROW_LIMIT;
     public static final ModConfigSpec.DoubleValue MAX_SCAN_DISTANCE;
+    public static final ModConfigSpec.IntValue SERVER_DEEP_SCAN_TIMEOUT_TICKS;
+    public static final ModConfigSpec.IntValue SERVER_DEEP_SCAN_CACHE_TICKS;
+    public static final ModConfigSpec.BooleanValue SHOW_SERVER_SCAN_STATUS;
 
     static {
         ModConfigSpec.Builder common = new ModConfigSpec.Builder();
@@ -54,6 +61,14 @@ public final class LensConfig {
         common.pop();
         common.push("debug");
         DEBUG_COMMANDS = common.define("commands", true);
+        common.pop();
+        common.push("server_scan");
+        SERVER_DEEP_SCAN_ENABLED = common.comment("Allow Deep Scan to request public server-verified data.")
+                .define("enabled", true);
+        SERVER_SCAN_DISTANCE = common.defineInRange("distance", 24.0D, 4.0D, 64.0D);
+        SERVER_SCAN_RATE_LIMIT = common.defineInRange("rate_limit", 4, 1, 20);
+        SERVER_REDACT_PROTECTED_TARGETS = common.comment("Redact protected/private targets instead of exposing details.")
+                .define("redact_protected_targets", true);
         common.pop();
         COMMON_SPEC = common.build();
 
@@ -85,6 +100,11 @@ public final class LensConfig {
         EXPANDED_ROW_LIMIT = client.defineInRange("expanded_rows", 12, 4, 32);
         DEEP_ROW_LIMIT = client.defineInRange("deep_rows", 40, 8, 96);
         client.pop();
+        client.push("server_scan");
+        SERVER_DEEP_SCAN_TIMEOUT_TICKS = client.defineInRange("timeout_ticks", 40, 10, 200);
+        SERVER_DEEP_SCAN_CACHE_TICKS = client.defineInRange("cache_ticks", 20, 0, 200);
+        SHOW_SERVER_SCAN_STATUS = client.define("show_status", true);
+        client.pop();
         CLIENT_SPEC = client.build();
     }
 
@@ -112,6 +132,21 @@ public final class LensConfig {
                         EchoConfigEntry.booleanSpec("beginner_hints", "Beginner Hints",
                                 "Show beginner-friendly Lens hints.",
                                 EchoConfigSide.COMMON, BEGINNER_HINTS, true, false, false))),
+                new EchoConfigCategory("server_scan", "Server Deep Scan", List.of(
+                        EchoConfigEntry.booleanSpec("server_deep_scan_enabled", "Server Deep Scan Enabled",
+                                "Allow Deep Scan to request public server-verified facts.",
+                                EchoConfigSide.COMMON, SERVER_DEEP_SCAN_ENABLED, true, false, false),
+                        EchoConfigEntry.doubleSpec("server_scan_distance", "Server Scan Distance",
+                                "Maximum distance for server-assisted Deep Scan requests.",
+                                EchoConfigSide.COMMON, SERVER_SCAN_DISTANCE, 4.0D, 64.0D,
+                                true, false, false),
+                        EchoConfigEntry.intSpec("server_scan_rate_limit", "Server Scan Rate Limit",
+                                "Per-player Deep Scan request rate limit.",
+                                EchoConfigSide.COMMON, SERVER_SCAN_RATE_LIMIT, 1, 20,
+                                true, false, false),
+                        EchoConfigEntry.booleanSpec("server_redact_protected_targets", "Redact Protected Targets",
+                                "Hide private/protected server details from Lens responses.",
+                                EchoConfigSide.COMMON, SERVER_REDACT_PROTECTED_TARGETS, true, false, false))),
                 new EchoConfigCategory("hud", "HUD", List.of(
                         EchoConfigEntry.booleanSpec("hud_enabled", "HUD Enabled", "",
                                 EchoConfigSide.CLIENT, HUD_ENABLED, true, false, false),
@@ -140,6 +175,18 @@ public final class LensConfig {
                         EchoConfigEntry.doubleSpec("max_scan_distance", "Max Scan Distance", "",
                                 EchoConfigSide.CLIENT, MAX_SCAN_DISTANCE, 4.0D, 64.0D,
                                 true, false, false))),
+                new EchoConfigCategory("client_server_scan", "Client Server Scan", List.of(
+                        EchoConfigEntry.intSpec("server_deep_scan_timeout_ticks", "Server Scan Timeout",
+                                "Ticks before pending Deep Scan data is marked unavailable.",
+                                EchoConfigSide.CLIENT, SERVER_DEEP_SCAN_TIMEOUT_TICKS, 10, 200,
+                                true, false, false),
+                        EchoConfigEntry.intSpec("server_deep_scan_cache_ticks", "Server Scan Cache",
+                                "Ticks to reuse verified Deep Scan data for the same target.",
+                                EchoConfigSide.CLIENT, SERVER_DEEP_SCAN_CACHE_TICKS, 0, 200,
+                                true, false, false),
+                        EchoConfigEntry.booleanSpec("show_server_scan_status", "Show Server Scan Status",
+                                "Show Deep Scan status badges such as Querying, Verified, and Redacted.",
+                                EchoConfigSide.CLIENT, SHOW_SERVER_SCAN_STATUS, true, false, false))),
                 new EchoConfigCategory("categories", "Categories", List.of(
                         EchoConfigEntry.booleanSpec("show_identity", "Identity", "",
                                 EchoConfigSide.CLIENT, SHOW_IDENTITY, true, false, false),

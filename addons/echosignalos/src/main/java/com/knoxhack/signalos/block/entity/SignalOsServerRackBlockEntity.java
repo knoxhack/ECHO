@@ -2,19 +2,27 @@ package com.knoxhack.signalos.block.entity;
 
 import com.knoxhack.signalos.api.SignalOsDataRecord;
 import com.knoxhack.signalos.item.SignalOsDataDriveItem;
+import com.knoxhack.signalos.menu.SignalOsServerRackMenu;
 import com.knoxhack.signalos.registry.ModBlockEntities;
 import com.knoxhack.signalos.registry.ModBlocks;
+import com.knoxhack.signalos.service.SignalOsComputerNetworkService;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import org.jspecify.annotations.Nullable;
 
-public class SignalOsServerRackBlockEntity extends BlockEntity {
+public class SignalOsServerRackBlockEntity extends BlockEntity implements MenuProvider {
     public static final int DRIVE_SLOTS = 4;
     private final DriveInventory drives = new DriveInventory(DRIVE_SLOTS, this::setChanged);
 
@@ -79,9 +87,26 @@ public class SignalOsServerRackBlockEntity extends BlockEntity {
                 + driveRecords().size() + " record(s). Sneak-use empty hand to eject the last drive.";
     }
 
+    @Override
+    public Component getDisplayName() {
+        return Component.literal("SignalOS Server Rack");
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new SignalOsServerRackMenu(containerId, playerInventory, this);
+    }
+
     public void clearContent() {
         drives.clearContent();
         setChanged();
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        SignalOsComputerNetworkService.invalidateCache();
     }
 
     @Override

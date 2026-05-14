@@ -1,11 +1,15 @@
 package com.knoxhack.echorelictech.block;
 
+import com.knoxhack.echorelictech.api.RelicTechApi;
+import com.knoxhack.echorelictech.api.event.RelicTechEvents;
 import com.knoxhack.echorelictech.api.relic.RelicCondition;
 import com.knoxhack.echorelictech.api.relic.RelicInstanceData;
+import com.knoxhack.echorelictech.api.relic.UnidentifiedRelicData;
 import com.knoxhack.echorelictech.block.entity.RelicAnalyzerBlockEntity;
+import com.knoxhack.echorelictech.data.RelicDefinitionLoader;
 import com.knoxhack.echorelictech.registry.ModBlockEntities;
-import com.knoxhack.echorelictech.registry.ModItems;
 import com.knoxhack.echorelictech.registry.ModDataComponents;
+import com.knoxhack.echorelictech.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -19,6 +23,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RelicAnalyzerBlock extends Block implements EntityBlock {
     public RelicAnalyzerBlock(Properties props) {
         super(props);
@@ -27,26 +34,107 @@ public class RelicAnalyzerBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
-        player.sendSystemMessage(Component.literal("Relic Analyzer // Insert Unidentified Relic to analyze."));
+        if (level.getBlockEntity(pos) instanceof RelicAnalyzerBlockEntity be) {
+            if (be.hasOutput()) {
+                ItemStack out = be.takeOutput();
+                if (!player.getInventory().add(out)) {
+                    player.drop(out, false);
+                }
+                player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.take_output"));
+                return InteractionResult.SUCCESS;
+            }
+            if (!be.getInput().isEmpty()) {
+                ItemStack in = be.getInput();
+                be.setInput(ItemStack.EMPTY);
+                if (!player.getInventory().add(in)) {
+                    player.drop(in, false);
+                }
+                player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.take_input"));
+                return InteractionResult.SUCCESS;
+            }
+        }
+        player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.insert_relic"));
         return InteractionResult.SUCCESS;
     }
 
     @Override
     public InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
-        if (stack.is(ModItems.UNIDENTIFIED_RELIC.get())) {
-            stack.shrink(1);
-            ItemStack output = new ItemStack(ModItems.PHASE_ANCHOR.get());
-            output.set(ModDataComponents.RELIC_DATA.get(), new RelicInstanceData(
-                Identifier.fromNamespaceAndPath("echorelictech", "phase_anchor"),
-                RelicCondition.DAMAGED, 0, BlockPos.ZERO, "", 0, false, false, false, false, 0));
-            if (!player.getInventory().add(output)) {
-                player.drop(output, false);
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return InteractionResult.SUCCESS;
+        if (level.getBlockEntity(pos) instanceof RelicAnalyzerBlockEntity be) {
+            if (be.hasOutput()) {
+                player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.has_output"));
+                return InteractionResult.SUCCESS;
             }
-            player.sendSystemMessage(Component.literal("Relic Analyzer // Identification complete. Phase Anchor recovered."));
-            return InteractionResult.SUCCESS;
+            if (stack.is(ModItems.UNIDENTIFIED_RELIC.get())) {
+                ItemStack input = stack.split(1);
+                be.setInput(input);
+                // Process immediately for beta (could be timed)
+                ItemStack result = resolveUnidentified(input);
+                if (result != null) {
+                    be.setInput(ItemStack.EMPTY);
+                    be.setOutput(result);
+                    RelicTechEvents.fireAnalyze(serverPlayer, input, result);
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.analysis_complete"));
+                } else {
+                    be.setInput(input); // give it back
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.analysis_failed"));
+                }
+                return InteractionResult.SUCCESS;
+            }
+            if (!be.getInput().isEmpty()) {
+                player.sendSystemMessage(Component.translatable("block.echorelictech.relic_analyzer.busy"));
+                return InteractionResult.SUCCESS;
+            }
         }
         return InteractionResult.PASS;
+    }
+
+    private ItemStack resolveUnidentified(ItemStack unidentified) {
+        var hidden = unidentified.get(ModDataComponents.UNIDENTIFIED_RELIC_DATA.get());
+        Identifier targetId;
+        if (hidden != null && hidden.targetRelicId() != null) {
+            targetId = hidden.targetRelicId();
+        } else {
+            targetId = pickRandomRelicId();
+        }
+        if (targetId == null) return null;
+        ItemStack result = createRelicStack(targetId);
+        if (result == null) return null;
+        var data = result.get(ModDataComponents.RELIC_DATA.get());
+        if (data != null) {
+            result.set(ModDataComponents.RELIC_DATA.get(), data.makeIdentified());
+        }
+        return result;
+    }
+
+    private Identifier pickRandomRelicId() {
+        var defs = RelicDefinitionLoader.all();
+        List<Identifier> enabled = new ArrayList<>();
+        for (var entry : defs.entrySet()) {
+            if (entry.getValue().enabled()) {
+                enabled.add(entry.getValue().id());
+            }
+        }
+        if (enabled.isEmpty()) return Identifier.fromNamespaceAndPath("echorelictech", "phase_anchor");
+        return enabled.get((int)(Math.random() * enabled.size()));
+    }
+
+    private ItemStack createRelicStack(Identifier id) {
+        String path = id.getPath();
+        return switch (path) {
+            case "phase_anchor" -> new ItemStack(ModItems.PHASE_ANCHOR.get());
+            case "null_battery" -> new ItemStack(ModItems.NULL_BATTERY.get());
+            case "guardian_lens" -> new ItemStack(ModItems.GUARDIAN_LENS.get());
+            case "echo_mirror" -> new ItemStack(ModItems.ECHO_MIRROR.get());
+            case "matter_stitcher" -> new ItemStack(ModItems.MATTER_STITCHER.get());
+            default -> {
+                ItemStack fallback = new ItemStack(ModItems.PHASE_ANCHOR.get());
+                fallback.set(ModDataComponents.RELIC_DATA.get(), new RelicInstanceData(
+                    id, RelicCondition.DAMAGED, 0, BlockPos.ZERO, "", 0, false, false, false, false, 0));
+                yield fallback;
+            }
+        };
     }
 
     @Override

@@ -31,6 +31,9 @@ public record EchoThemeVanillaUiProfile(
             case VANILLA_TOOLTIP -> tooltipTexture;
             case VANILLA_TOAST -> toastTexture;
             case VANILLA_BOSS_BAR -> bossBarTexture;
+            case VANILLA_TOOLTIP_PANEL -> tooltipTexture;
+            case VANILLA_TOAST_ACCENT -> toastTexture;
+            case VANILLA_BOSS_BAR_ACCENT -> bossBarTexture;
             default -> null;
         });
     }

@@ -31,5 +31,12 @@ public interface IMissionService extends IMissionRegistry {
             int amount,
             Map<String, String> context);
 
+    default void registerHookCoverage(String source, Identifier missionId, Identifier objectiveTarget) {
+    }
+
+    default Map<String, String> missionHookCoverageBySource() {
+        return Map.of();
+    }
+
     String debugState(Player player, Identifier missionId);
 }

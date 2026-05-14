@@ -1,5 +1,7 @@
 package com.knoxhack.signalos.client;
 
+import com.knoxhack.echonetcore.client.EchoNetClientActions;
+import com.google.gson.JsonObject;
 import com.knoxhack.signalos.api.TerminalArchiveRecord;
 import com.knoxhack.signalos.api.TerminalChapter;
 import com.knoxhack.signalos.api.TerminalDiagnosticProvider;
@@ -7,6 +9,9 @@ import com.knoxhack.signalos.api.TerminalMission;
 import com.knoxhack.signalos.api.TerminalPage;
 import com.knoxhack.signalos.api.SignalOsApp;
 import com.knoxhack.signalos.api.SignalOsDataRecord;
+import com.knoxhack.signalos.client.api.SignalOsAppRenderContext;
+import com.knoxhack.signalos.client.api.SignalOsAppRenderer;
+import com.knoxhack.signalos.client.api.SignalOsAppRenderers;
 import com.knoxhack.signalos.content.SignalOsContentRegistry;
 import com.knoxhack.signalos.menu.SignalOsTerminalMenu;
 import com.knoxhack.signalos.network.SignalOsActionPacket;
@@ -17,32 +22,44 @@ import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerminalMenu> {
-    private static final int BG = 0xFF03080D;
-    private static final int PANEL = 0xF0071017;
-    private static final int PANEL_ALT = 0xE80B1720;
-    private static final int ROW = 0x94112430;
-    private static final int ROW_HOVER = 0xD0152B38;
-    private static final int TEXT = 0xFFE9FBFF;
-    private static final int MUTED = 0xFF8CA7B5;
-    private static final int CYAN = 0xFF66E8FF;
-    private static final int GREEN = 0xFF91F7A5;
-    private static final int WARN = 0xFFFFD166;
-    private static final int RED = 0xFFFF8FA3;
+    private static final int DEFAULT_BG = 0xFF03080D;
+    private static final int DEFAULT_PANEL = 0xF0071017;
+    private static final int DEFAULT_PANEL_ALT = 0xE80B1720;
+    private static final int DEFAULT_ROW = 0x94112430;
+    private static final int DEFAULT_ROW_HOVER = 0xD0152B38;
+    private static final int DEFAULT_TEXT = 0xFFE9FBFF;
+    private static final int DEFAULT_MUTED = 0xFF8CA7B5;
+    private static final int DEFAULT_CYAN = 0xFF66E8FF;
+    private static final int DEFAULT_GREEN = 0xFF91F7A5;
+    private static final int DEFAULT_WARN = 0xFFFFD166;
+    private static final int DEFAULT_RED = 0xFFFF8FA3;
+
+    private static int BG = DEFAULT_BG;
+    private static int PANEL = DEFAULT_PANEL;
+    private static int PANEL_ALT = DEFAULT_PANEL_ALT;
+    private static int ROW = DEFAULT_ROW;
+    private static int ROW_HOVER = DEFAULT_ROW_HOVER;
+    private static int TEXT = DEFAULT_TEXT;
+    private static int MUTED = DEFAULT_MUTED;
+    private static int CYAN = DEFAULT_CYAN;
+    private static int GREEN = DEFAULT_GREEN;
+    private static int WARN = DEFAULT_WARN;
+    private static int RED = DEFAULT_RED;
 
     private final List<HitBox> hitBoxes = new ArrayList<>();
     private Identifier selectedAppId;
@@ -51,6 +68,10 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
     private Identifier selectedMissionId;
     private Identifier selectedArchiveId;
     private Identifier selectedRecordId;
+    private String noteTitleDraft = "";
+    private String noteBodyDraft = "";
+    private NoteField activeNoteField = NoteField.NONE;
+    private Identifier draftNoteId;
     private int ticks;
     private int panelX;
     private int panelY;
@@ -71,6 +92,7 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
 
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        applyThemeCoreColors();
         ticks++;
         hitBoxes.clear();
         layout();
@@ -82,7 +104,7 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         graphics.fill(0, 0, width, height, BG);
         drawFrame(graphics, apps);
         drawAppLauncher(graphics, apps, mouseX, mouseY);
-        drawDesktopApp(graphics, activeApp(apps), activeChapter(chapters), mouseX, mouseY);
+        drawDesktopApp(graphics, activeApp(apps), activeChapter(chapters), mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -93,6 +115,14 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
     public boolean keyPressed(KeyEvent event) {
         if (event.key() == GLFW.GLFW_KEY_ESCAPE || SignalOSClient.OPEN_TERMINAL_KEY.matches(event)) {
             Minecraft.getInstance().setScreen(null);
+            return true;
+        }
+        if (handleNoteKey(event)) {
+            return true;
+        }
+        SignalOsApp app = activeApp(SignalOsContentRegistry.apps());
+        SignalOsAppRenderer renderer = rendererFor(app);
+        if (renderer != null && renderer.keyPressed(contextFor(app), event)) {
             return true;
         }
         if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_TAB) {
@@ -116,6 +146,7 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                     selectedMissionId = null;
                     selectedArchiveId = null;
                     selectedRecordId = null;
+                    activeNoteField = NoteField.NONE;
                     playClick();
                     return true;
                 }
@@ -151,6 +182,30 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                 }
                 case RECORD -> {
                     selectedRecordId = box.id();
+                    if (isNotesApp(activeApp(SignalOsContentRegistry.apps()))) {
+                        loadSelectedNoteDraft();
+                    }
+                    playClick();
+                    return true;
+                }
+                case NOTE_TITLE -> {
+                    activeNoteField = NoteField.TITLE;
+                    loadSelectedNoteDraft();
+                    playClick();
+                    return true;
+                }
+                case NOTE_BODY -> {
+                    activeNoteField = NoteField.BODY;
+                    loadSelectedNoteDraft();
+                    playClick();
+                    return true;
+                }
+                case NOTE_NEW -> {
+                    selectedRecordId = null;
+                    draftNoteId = null;
+                    noteTitleDraft = "Operator Note";
+                    noteBodyDraft = "";
+                    activeNoteField = NoteField.TITLE;
                     playClick();
                     return true;
                 }
@@ -160,7 +215,22 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                 }
             }
         }
+        SignalOsApp app = activeApp(SignalOsContentRegistry.apps());
+        SignalOsAppRenderer renderer = rendererFor(app);
+        if (renderer != null && inside(event.x(), event.y(), contentX, contentY, contentW, contentH)
+                && renderer.mouseClicked(contextFor(app), event.x(), event.y(), event.button())) {
+            return true;
+        }
         return super.mouseClicked(event, doubleClick);
+    }
+
+    public boolean handleCharTyped(CharacterEvent event) {
+        if (handleNoteChar(event)) {
+            return true;
+        }
+        SignalOsApp app = activeApp(SignalOsContentRegistry.apps());
+        SignalOsAppRenderer renderer = rendererFor(app);
+        return renderer != null && renderer.charTyped(contextFor(app), event);
     }
 
     @Override
@@ -309,7 +379,7 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
     }
 
     private void drawDesktopApp(GuiGraphicsExtractor graphics, SignalOsApp app, TerminalChapter chapter,
-            int mouseX, int mouseY) {
+            int mouseX, int mouseY, float partialTick) {
         graphics.fill(contentX, contentY, contentX + contentW, contentY + contentH, PANEL_ALT);
         graphics.outline(contentX, contentY, contentW, contentH, 0x4438DFF4);
         if (app == null) {
@@ -338,7 +408,16 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
             }
             case "rewards", "reward_inbox" -> drawRewards(graphics, bodyY, bodyH, mouseX, mouseY);
             case "diagnostics" -> drawDiagnostics(graphics, bodyY, bodyH, mouseX, mouseY);
-            default -> drawUnsupportedApp(graphics, app, bodyY, bodyH);
+            default -> {
+                SignalOsAppRenderer renderer = SignalOsAppRenderers.renderer(app.type());
+                if (renderer != null) {
+                    renderer.render(contextFor(app), graphics, mouseX, mouseY, partialTick);
+                } else if ("records".equals(app.view())) {
+                    drawConfiguredRecordsApp(graphics, app, bodyY, bodyH, mouseX, mouseY);
+                } else {
+                    drawUnsupportedApp(graphics, app, bodyY, bodyH);
+                }
+            }
         }
     }
 
@@ -363,11 +442,21 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
 
     private void drawRecordsApp(GuiGraphicsExtractor graphics, SignalOsApp app, String title, String mode,
             int y, int h, int mouseX, int mouseY) {
-        List<SignalOsDataRecord> records = filteredRecords(mode);
+        drawRecordBrowser(graphics, app, title, filteredRecords(mode), "NO RECORDS AVAILABLE", y, h, mouseX, mouseY);
+    }
+
+    private void drawConfiguredRecordsApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h,
+            int mouseX, int mouseY) {
+        drawRecordBrowser(graphics, app, app.title().toUpperCase(Locale.ROOT), configuredRecords(app),
+                app.emptyText(), y, h, mouseX, mouseY);
+    }
+
+    private void drawRecordBrowser(GuiGraphicsExtractor graphics, SignalOsApp app, String title,
+            List<SignalOsDataRecord> records, String emptyText, int y, int h, int mouseX, int mouseY) {
         sectionHeader(graphics, title, records.size() + " record(s)", contentX + 9, y, contentW - 18,
                 app.accentColor());
         if (records.isEmpty()) {
-            graphics.text(font, "NO RECORDS AVAILABLE", contentX + 12, y + 34, MUTED, false);
+            graphics.text(font, trim(emptyText, contentW - 24), contentX + 12, y + 34, MUTED, false);
             return;
         }
         normalizeRecordSelection(records);
@@ -407,12 +496,58 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
     }
 
     private void drawNotesApp(GuiGraphicsExtractor graphics, SignalOsApp app, int y, int h, int mouseX, int mouseY) {
-        drawRecordsApp(graphics, app, "NOTES", "note", y, h, mouseX, mouseY);
+        List<SignalOsDataRecord> notes = filteredRecords("note");
+        sectionHeader(graphics, "NOTES", notes.size() + " note(s)", contentX + 9, y, contentW - 18,
+                app.accentColor());
+        normalizeNoteDraft(notes);
+        boolean split = contentW >= 272;
+        int listW = split ? Math.min(124, contentW / 3) : contentW - 18;
+        int listX = contentX + 8;
+        int rowY = y + 28;
+        for (SignalOsDataRecord note : notes) {
+            if (rowY + 25 > y + h - 34) {
+                break;
+            }
+            boolean selected = note.id().equals(selectedRecordId);
+            boolean hovered = inside(mouseX, mouseY, listX, rowY, listW, 23);
+            graphics.fill(listX, rowY, listX + listW, rowY + 23, selected ? 0xD0152B38 : hovered ? ROW_HOVER : ROW);
+            graphics.outline(listX, rowY, listW, 23, selected ? app.accentColor() : 0x3338DFF4);
+            graphics.text(font, trim(note.title(), listW - 14), listX + 7, rowY + 7, selected ? TEXT : MUTED, false);
+            hitBoxes.add(new HitBox(HitKind.RECORD, note.id(), null, "", listX, rowY, listW, 23));
+            rowY += 25;
+        }
+        if (notes.isEmpty()) {
+            graphics.text(font, "No saved notes", listX + 4, rowY + 4, MUTED, false);
+        }
+
+        int editorX = split ? listX + listW + 8 : listX;
+        int editorY = split ? y + 28 : Math.min(y + h - 92, rowY + 6);
+        int editorW = split ? contentX + contentW - editorX - 8 : listW;
+        int editorH = Math.max(72, y + h - editorY - 34);
+        graphics.fill(editorX, editorY, editorX + editorW, editorY + editorH, 0xAA071017);
+        graphics.outline(editorX, editorY, editorW, editorH, 0x5538DFF4);
+        drawInput(graphics, "TITLE", noteTitleDraft, activeNoteField == NoteField.TITLE, editorX + 8, editorY + 10,
+                editorW - 16, HitKind.NOTE_TITLE);
+        int bodyY = editorY + 36;
+        graphics.text(font, "BODY", editorX + 8, bodyY - 9, MUTED, false);
+        graphics.fill(editorX + 8, bodyY, editorX + editorW - 8, editorY + editorH - 8,
+                activeNoteField == NoteField.BODY ? 0xFF183743 : 0xFF112430);
+        graphics.outline(editorX + 8, bodyY, editorW - 16, editorH - 44,
+                activeNoteField == NoteField.BODY ? app.accentColor() : 0x5538DFF4);
+        drawWrapped(graphics, noteBodyDraft + (activeNoteField == NoteField.BODY ? "_" : ""), editorX + 12,
+                bodyY + 7, editorW - 24, TEXT, Math.max(1, (editorH - 52) / 10));
+        hitBoxes.add(new HitBox(HitKind.NOTE_BODY, null, null, "", editorX + 8, bodyY, editorW - 16,
+                editorH - 44));
+
         int buttonY = contentY + contentH - 24;
-        drawActionButton(graphics, mouseX, mouseY, "NEW NOTE", contentX + 12, buttonY, 78, app.accentColor(),
-                SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.SAVE_NOTE,
-                "Operator Note\nCreated from SignalOS at client tick " + ticks + ".");
-        drawActionButton(graphics, mouseX, mouseY, "CLEAR", contentX + 96, buttonY, 58, RED,
+        drawLocalButton(graphics, mouseX, mouseY, "NEW", contentX + 12, buttonY, 44, app.accentColor(),
+                HitKind.NOTE_NEW, null, null, "");
+        drawActionButton(graphics, mouseX, mouseY, "SAVE", contentX + 62, buttonY, 50, GREEN,
+                SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.SAVE_NOTE, notePayload());
+        drawActionButton(graphics, mouseX, mouseY, "DELETE", contentX + 118, buttonY, 58, RED,
+                SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.DELETE_NOTE,
+                draftNoteId == null ? "" : draftNoteId.toString());
+        drawActionButton(graphics, mouseX, mouseY, "CLEAR", contentX + 182, buttonY, 54, RED,
                 SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.CLEAR_NOTES, "");
     }
 
@@ -774,6 +909,24 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         hitBoxes.add(new HitBox(HitKind.ACTION, actionId, pageId, payload == null ? "" : payload, x, y, w, 16));
     }
 
+    private void drawLocalButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY, String label, int x, int y,
+            int w, int accent, HitKind kind, Identifier id, Identifier pageId, String payload) {
+        boolean hovered = inside(mouseX, mouseY, x, y, w, 16);
+        graphics.fill(x, y, x + w, y + 16, hovered ? 0xFF183743 : 0xFF112430);
+        graphics.outline(x, y, w, 16, accent);
+        graphics.centeredText(font, trim(label, w - 8), x + w / 2, y + 5, TEXT);
+        hitBoxes.add(new HitBox(kind, id, pageId, payload == null ? "" : payload, x, y, w, 16));
+    }
+
+    private void drawInput(GuiGraphicsExtractor graphics, String label, String value, boolean focused, int x, int y,
+            int w, HitKind kind) {
+        graphics.text(font, label, x, y - 9, MUTED, false);
+        graphics.fill(x, y, x + w, y + 16, focused ? 0xFF183743 : 0xFF112430);
+        graphics.outline(x, y, w, 16, focused ? CYAN : 0x5538DFF4);
+        graphics.text(font, trim(value + (focused ? "_" : ""), w - 8), x + 4, y + 5, TEXT, false);
+        hitBoxes.add(new HitBox(kind, null, null, "", x, y, w, 16));
+    }
+
     private List<SignalOsDataRecord> filteredRecords(String mode) {
         String filter = mode == null ? "" : mode;
         return SignalOsClientState.dataRecords().stream()
@@ -786,6 +939,16 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                     case "log" -> !"note".equals(record.type());
                     default -> true;
                 })
+                .toList();
+    }
+
+    private List<SignalOsDataRecord> configuredRecords(SignalOsApp app) {
+        return SignalOsClientState.dataRecords().stream()
+                .filter(record -> app.includeArchived() || !record.archived())
+                .filter(record -> app.recordTypes().isEmpty()
+                        || app.recordTypes().contains(record.type().toLowerCase(Locale.ROOT)))
+                .filter(record -> app.recordSources().isEmpty()
+                        || app.recordSources().contains(record.source().toLowerCase(Locale.ROOT)))
                 .toList();
     }
 
@@ -810,6 +973,101 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                 .orElse(records.getFirst());
     }
 
+    private void normalizeNoteDraft(List<SignalOsDataRecord> notes) {
+        if (selectedRecordId != null && notes.stream().noneMatch(note -> note.id().equals(selectedRecordId))) {
+            selectedRecordId = null;
+            draftNoteId = null;
+        }
+        if (selectedRecordId == null && !notes.isEmpty() && draftNoteId == null && noteBodyDraft.isBlank()) {
+            selectedRecordId = notes.getFirst().id();
+        }
+        if (activeNoteField == NoteField.NONE && selectedRecordId != null && !selectedRecordId.equals(draftNoteId)) {
+            loadSelectedNoteDraft(notes);
+        }
+        if (draftNoteId == null && noteTitleDraft.isBlank()) {
+            noteTitleDraft = "Operator Note";
+        }
+    }
+
+    private void loadSelectedNoteDraft() {
+        loadSelectedNoteDraft(filteredRecords("note"));
+    }
+
+    private void loadSelectedNoteDraft(List<SignalOsDataRecord> notes) {
+        if (selectedRecordId == null) {
+            return;
+        }
+        for (SignalOsDataRecord note : notes) {
+            if (note.id().equals(selectedRecordId)) {
+                draftNoteId = note.id();
+                noteTitleDraft = note.title();
+                noteBodyDraft = note.body();
+                return;
+            }
+        }
+    }
+
+    private boolean handleNoteKey(KeyEvent event) {
+        if (activeNoteField == NoteField.NONE || !isNotesApp(activeApp(SignalOsContentRegistry.apps()))) {
+            return false;
+        }
+        if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+            if (activeNoteField == NoteField.TITLE && !noteTitleDraft.isEmpty()) {
+                noteTitleDraft = noteTitleDraft.substring(0, noteTitleDraft.length() - 1);
+                return true;
+            }
+            if (activeNoteField == NoteField.BODY && !noteBodyDraft.isEmpty()) {
+                noteBodyDraft = noteBodyDraft.substring(0, noteBodyDraft.length() - 1);
+                return true;
+            }
+        }
+        if (event.key() == GLFW.GLFW_KEY_DELETE) {
+            if (activeNoteField == NoteField.TITLE) {
+                noteTitleDraft = "";
+            } else if (activeNoteField == NoteField.BODY) {
+                noteBodyDraft = "";
+            }
+            return true;
+        }
+        if (event.key() == GLFW.GLFW_KEY_ENTER) {
+            send(SignalOsBuiltinActions.PAGE_NOTES, SignalOsBuiltinActions.SAVE_NOTE, notePayload());
+            activeNoteField = NoteField.NONE;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleNoteChar(CharacterEvent event) {
+        if (activeNoteField == NoteField.NONE || event == null || !event.isAllowedChatCharacter()
+                || !isNotesApp(activeApp(SignalOsContentRegistry.apps()))) {
+            return false;
+        }
+        String typed = event.codepointAsString();
+        if (typed == null || typed.isBlank()) {
+            return false;
+        }
+        if (activeNoteField == NoteField.TITLE) {
+            if (noteTitleDraft.length() >= 80) {
+                return false;
+            }
+            noteTitleDraft += typed;
+        } else if (activeNoteField == NoteField.BODY) {
+            if (noteBodyDraft.length() >= 2000) {
+                return false;
+            }
+            noteBodyDraft += typed;
+        }
+        return true;
+    }
+
+    private String notePayload() {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", draftNoteId == null ? "" : draftNoteId.toString());
+        json.addProperty("title", noteTitleDraft);
+        json.addProperty("body", noteBodyDraft);
+        return json.toString();
+    }
+
     private void normalizeAppSelection(List<SignalOsApp> apps) {
         if (apps == null || apps.isEmpty()) {
             selectedAppId = null;
@@ -830,6 +1088,27 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
                 .orElse(apps.getFirst());
     }
 
+    private SignalOsAppRenderer rendererFor(SignalOsApp app) {
+        return app == null || isBuiltInAppType(app.type()) ? null : SignalOsAppRenderers.renderer(app.type());
+    }
+
+    private SignalOsAppRenderContext contextFor(SignalOsApp app) {
+        return new SignalOsAppRenderContext(app, contentX + 8, contentY + 8,
+                Math.max(1, contentW - 16), Math.max(1, contentH - 16));
+    }
+
+    private static boolean isNotesApp(SignalOsApp app) {
+        return app != null && "notes".equals(app.type());
+    }
+
+    private static boolean isBuiltInAppType(String type) {
+        return switch (type == null ? "" : type) {
+            case "home", "files", "notes", "logs", "network", "settings", "data_vault", "echo_link",
+                    "missions", "archives", "rewards", "reward_inbox", "diagnostics" -> true;
+            default -> false;
+        };
+    }
+
     private boolean cycleApp(int direction) {
         List<SignalOsApp> apps = SignalOsContentRegistry.apps();
         if (apps.isEmpty()) {
@@ -847,6 +1126,7 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         selectedMissionId = null;
         selectedArchiveId = null;
         selectedRecordId = null;
+        activeNoteField = NoteField.NONE;
         playClick();
         return true;
     }
@@ -923,14 +1203,61 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
 
     private void send(Identifier pageId, Identifier actionId, String payload) {
         playClick();
-        ClientPacketDistributor.sendToServer(new SignalOsActionPacket(pageId, actionId, payload == null ? "" : payload));
+        EchoNetClientActions.sendServerboundAction(new SignalOsActionPacket(pageId, actionId, payload == null ? "" : payload));
     }
 
     private void playClick() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getSoundManager() != null) {
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SignalOsThemedSounds.click(), 1.0F));
         }
+    }
+
+    private static void applyThemeCoreColors() {
+        try {
+            Player player = Minecraft.getInstance().player;
+            if (player == null) {
+                resetThemeColors();
+                return;
+            }
+            Class<?> api = Class.forName("com.knoxhack.echothemecore.api.EchoThemeApi");
+            Object colors = api.getMethod("getColors", Player.class).invoke(null, player);
+            BG = color(colors, "background", DEFAULT_BG);
+            PANEL = color(colors, "panel", DEFAULT_PANEL);
+            PANEL_ALT = color(colors, "panelAlt", DEFAULT_PANEL_ALT);
+            ROW = alpha(color(colors, "glass", DEFAULT_ROW), 0x94);
+            ROW_HOVER = alpha(color(colors, "selection", DEFAULT_ROW_HOVER), 0xD0);
+            TEXT = color(colors, "text", DEFAULT_TEXT);
+            MUTED = color(colors, "mutedText", DEFAULT_MUTED);
+            CYAN = color(colors, "primary", DEFAULT_CYAN);
+            GREEN = color(colors, "success", DEFAULT_GREEN);
+            WARN = color(colors, "warning", DEFAULT_WARN);
+            RED = color(colors, "error", DEFAULT_RED);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            resetThemeColors();
+        }
+    }
+
+    private static void resetThemeColors() {
+        BG = DEFAULT_BG;
+        PANEL = DEFAULT_PANEL;
+        PANEL_ALT = DEFAULT_PANEL_ALT;
+        ROW = DEFAULT_ROW;
+        ROW_HOVER = DEFAULT_ROW_HOVER;
+        TEXT = DEFAULT_TEXT;
+        MUTED = DEFAULT_MUTED;
+        CYAN = DEFAULT_CYAN;
+        GREEN = DEFAULT_GREEN;
+        WARN = DEFAULT_WARN;
+        RED = DEFAULT_RED;
+    }
+
+    private static int color(Object colors, String method, int fallback) throws ReflectiveOperationException {
+        return ((Integer) colors.getClass().getMethod(method).invoke(colors)).intValue();
+    }
+
+    private static int alpha(int color, int alpha) {
+        return ((alpha & 0xFF) << 24) | (color & 0x00FFFFFF);
     }
 
     private ItemStack itemStack(Identifier id, Item fallback) {
@@ -1032,6 +1359,15 @@ public class SignalOsTerminalScreen extends AbstractContainerScreen<SignalOsTerm
         MISSION,
         ARCHIVE,
         RECORD,
+        NOTE_TITLE,
+        NOTE_BODY,
+        NOTE_NEW,
         ACTION
+    }
+
+    private enum NoteField {
+        NONE,
+        TITLE,
+        BODY
     }
 }

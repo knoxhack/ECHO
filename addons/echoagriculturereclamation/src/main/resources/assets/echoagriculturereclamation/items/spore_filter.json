@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echoagriculturereclamation:block/spore_filter"
+    "model": "echoagriculturereclamation:item/spore_filter"
   }
 }

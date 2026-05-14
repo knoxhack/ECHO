@@ -2,7 +2,7 @@
 
 Earth made its choice below. Orbit still calls it quarantine.
 
-This guide describes the current `1.5.0` terminal-led progression path for ECHO: Orbital Remnants.
+This guide describes the current `1.0.0` terminal-led progression path for ECHO: Orbital Remnants.
 
 ## Lore Spine
 
@@ -23,7 +23,7 @@ ECHO: Orbital Remnants is an optional post-Nexus chapter in the modular ECHO sta
 
 The first Earth orbital calibration stays locked until the player makes any ECHO: Ashfall Protocol Nexus choice: Restore, Destroy, or Control. After that, ECHO-7 progression behaves normally because the quarantine has a field fact to answer. The main ECHO terminal displays Orbital Remnants mission progress, archive logs, codex references, route flags, suit telemetry, station power, and faction standings.
 
-With ECHO: Terminal installed, Orbital Remnants registers shared terminal surfaces for Orbital Command, Orbital Survey, and Orbital ECHO mission records. It also publishes ECHO Core route records, What Now diagnostics, hazard telemetry, Faction Atlas standing, and once-only utility support caches through the shared Terminal reward service. These surfaces never replace Orbital's standalone ECHO-7 item, scan authority, route rewards, encounter rewards, or faction contract progression.
+With ECHO: Terminal installed, Orbital Remnants registers shared terminal surfaces for Orbital Command, Orbital Survey, and Orbital ECHO mission records. It also publishes ECHO Core route records, What Now diagnostics, hazard telemetry, Faction Atlas standing, and once-only utility support caches through the shared Terminal reward service. These surfaces never replace Orbital's standalone ECHO-7 item, scan authority, route rewards, encounter rewards, or outpost charter progression.
 
 ## Quick Start
 
@@ -44,7 +44,7 @@ With ECHO: Terminal installed, Orbital Remnants registers shared terminal surfac
 15. Pressurize three Titan Methane Pumps with Titan Methane Cells, then use Titan telemetry to unlock Deep Space Protocol.
 16. Build the Nexus Drive Vessel, enter the Nexus Anomaly Belt, and resolve ECHO-0.
 17. Explore Living Route Worlds, complete three survey logs in each current dimension, and stabilize three distinct Nexus Anchor/Growth sites after ECHO-0.
-18. Complete three faction contracts and press SCAN to seal the final survey network.
+18. Complete the Crashbreak, Radwarden, and Sporebound Tier I outpost charters and press SCAN to seal the final survey network.
 
 ## ECHO-7 Terminal
 
@@ -62,15 +62,15 @@ The terminal shows:
 - Route locks and saved return vectors
 - ECHO memory fragments
 - Faction standings
-- Active faction contract and requirement
+- Outpost charter status and requirement
 - Shared Terminal mission cache claim status when ECHO: Terminal is installed
-- ECHO NOTE reminders for blocked scans, surveys, contracts, and final completion
+- ECHO NOTE reminders for blocked scans, surveys, outpost charters, and final completion
 - Lunar Signal and Deep Space Protocol state
 - A dedicated SURVEY tab with each route's repair chain, scan hook, local hazard, reward, and completion state
 
 If an older save already resolved ECHO-0, scanning with the terminal syncs the ECHO-0 Resolved advancement.
 
-Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Saturn Ring Fragment, Saturn Relay Lens, Titan Methane Cell, Titan Survey Core, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Faction contracts use the same SCAN loop and show their current proof item or location in the ECHO tab. The ECHO NOTE line keeps the route practical: Europa thermal work unlocks Saturn, Saturn relay work unlocks Titan, Titan methane telemetry unlocks Deep Space Protocol, SURVEY checks the post-ECHO-0 network, Signal Analyzer shard recovery helps if Nexus landmarks are hard to find, and faction pledges feed the final three-contract loop.
+Mission guidance is intentionally direct: failed scans name the missing route hook, such as Station Life Support Core, Helium-3 Cell, Martian Silica, Cryo Crystal, Saturn Ring Fragment, Saturn Relay Lens, Titan Methane Cell, Titan Survey Core, Signal Relay, Thermal Vent, Nexus Anchor/Growth, or Nexus Stabilizer Shard. Duplicate survey scans tell you to find another landmark or spend the matching survey item. Outpost charters use NPC dialogue at Saturn, Titan, and Nexus faction hubs; the ECHO tab shows which Tier I charter is still missing. The ECHO NOTE line keeps the route practical: Europa thermal work unlocks Saturn, Saturn relay work unlocks Titan, Titan methane telemetry unlocks Deep Space Protocol, SURVEY checks the post-ECHO-0 network, Signal Analyzer shard recovery helps if Nexus landmarks are hard to find, and outpost support feeds the final three-charter loop.
 
 ## Earth Recovery Sites
 
@@ -137,13 +137,13 @@ Feature-heavy zones can attract ambient threats when `events.featureThreatsEnabl
 
 Balance controls include `balance.arrivalCacheSupportMultiplier`, `balance.hazardDrainMultiplier`, `balance.deepSiteThreatChance`, `events.orbitalEventFrequency`, `machines.baseDuration`, and `machines.chargeRegenTicks` for quick pack tuning across the longer Saturn/Titan route arc. The Adventure preset should feel recoverable but tense: first-arrival and deep-site caches include progression value, crafting support, and oxygen/seal recovery; route hazards remain dangerous without forcing emergency recovery every minute; route surveys reduce local pressure once a dimension is mapped.
 
-Release promise: Orbital Remnants is currently a route survival adventure with deterministic hubs, compact faction contracts, and support/barter kiosks. It is intentionally not a full planetary RPG or NPC settlement expansion yet.
+Release promise: Orbital Remnants is currently a route survival adventure with deterministic hubs, NPC-driven faction outposts, Tier I charters, and support/barter services. It is intentionally not a full planetary RPG, large settlement system, or new-planet expansion yet.
 
 ## After ECHO-0: Stabilizing the Survey Network
 
 Resolving ECHO-0 opens the aftermath survey state. Return to the Nexus Anomaly Belt, find three distinct Nexus Anchor/Growth sites, and scan each site from the terminal SURVEY tab. Nexus Stabilizer Shards can substitute for a landmark scan when you need a recovery path; Signal Analyzer processing can turn Nexus Dust into shards, and survival scans spend one shard per log.
 
-Completing Nexus stabilization grants the Nexus Stabilized advancement, a Stabilized ECHO Core, and Nexus supplies. The full finale then requires faction pledge support and three completed ECHO-tab contracts; pressing SCAN after the survey network and contracts are complete seals the final network once, grants the Orbital Remnants Complete advancement, and mirrors the completed state into ECHO: Ashfall Protocol. The point is not that orbit becomes safe. The point is that orbit stops being quarantine command.
+Completing Nexus stabilization grants the Nexus Stabilized advancement, a Stabilized ECHO Core, and Nexus supplies. The full finale then requires Tier I support from Crashbreak in Saturn, Radwarden on Titan, and Sporebound in Nexus; pressing SCAN after the survey network and outpost charters are complete seals the final network once, grants the Orbital Remnants Complete advancement, and mirrors the completed state into ECHO: Ashfall Protocol when present. The point is not that orbit becomes safe. The point is that orbit stops being quarantine command.
 
 ## Launch Readiness
 
@@ -392,17 +392,17 @@ Weapons are active right-click tools with cooldown and durability use.
 
 ## Factions
 
-Faction pledge items are consumable alignment contracts. After pledging, the ECHO tab assigns lightweight faction contracts. Saturn/Titan deep sites can include Faction Vendor Kiosks and Faction Relay Hubs; in this beta they are deterministic support/barter caches and contract relays, not full NPC shops or settlements. Contracts are completed with SCAN, persist in the terminal progress data, and use a short cooldown so one scan cannot double-grant rewards. Blocked reports distinguish no pledge, already-serviced hubs, active contract chains, authorized cache rewards, wrong dimension, missing proof item, Sporebound anomaly interpretation before ECHO-0, and cooldown states.
+Faction pledge items remain consumable alignment flavor with useful support rewards, but the final seal no longer depends on pledging to one side. Saturn, Titan, and Nexus deep hubs now spawn Orbital Faction Contact NPCs with a custom ECHO dialogue screen. Their actions cover Talk, Request Service, Barter, Accept Charter, and Complete Charter. Services use faction cooldowns, barters consume proof items, and charter completion persists in the terminal progress data.
 
 In the full ECHO stack, Orbital lane standing mirrors into Radwarden Compact, Crashbreak Salvage, and Sporebound Sanctum so the shared Faction Atlas shows one global three-faction model across Ashfall and orbit.
 
-| Faction Item | Alignment | Pledge Reward | Contract Proof | Contract Reward Style |
+| Faction Item | Alignment | Pledge Reward | Tier I Charter Proof | Charter Reward Style |
 |---|---|---|---|---|
-| Radwarden Orbital Badge | Radwarden Compact | Oxygen Booster and suit sealant support | Low Orbit Signal Relay or Orbit Survey Data | oxygen, canisters, and sealant |
-| Crashbreak Salvage Marker | Crashbreak Salvage | Orbital alloy, vacuum circuits, and cargo upgrade materials | orbital salvage scan or Orbital Alloy plus Vacuum Circuit | machine inputs and navigation parts |
-| Sporebound Anomaly Sigil | Sporebound Sanctum | Nexus dust and risky endgame pulse weapon access | post-ECHO-0 Nexus Anchor/Growth or Nexus Stabilizer Shard | Nexus dust, cryo support, and emergency oxygen |
+| Radwarden Orbital Badge | Radwarden Compact | Oxygen Booster and suit sealant support | Titan Methane Pump scan or Titan Methane Cell plus Suit Sealant Patch | oxygen, canisters, and sealant |
+| Crashbreak Salvage Marker | Crashbreak Salvage | Orbital alloy, vacuum circuits, and cargo upgrade materials | Saturn Ring Relay scan or Saturn Ring Fragment plus Vacuum Circuit | alloy, hull repair, and navigation parts |
+| Sporebound Anomaly Sigil | Sporebound Sanctum | Nexus dust and risky endgame pulse weapon access | post-ECHO-0 Nexus Anchor/Growth scan or Nexus Stabilizer Shard | Nexus dust, cryo support, and stabilization |
 
-The Sporebound anomaly contract is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any faction contract grants the Faction Contract Complete advancement; the final network seal requires three completed faction contracts.
+The Sporebound Nexus Anchor Charter is locked behind ECHO-0 because it depends on post-ECHO-0 anchor readings. Completing any Tier I outpost charter grants the Outpost Charter Complete advancement while preserving the existing advancement id; the final network seal requires all three Tier I outpost charters.
 
 Inside ECHO: Ashfall Protocol, orbital containment maps to Radwarden recovery notes, orbital salvage maps to Crashbreak route manifests, and anomaly interpretation maps to Sporebound endgame archive/intel about dangerous post-ECHO-0 anchor readings.
 
@@ -437,7 +437,7 @@ Advancements mirror major milestones, but the terminal remains the main progress
 - Saturn Deep Site
 - Titan Deep Site
 - Nexus Deep Site
-- Faction Contract Complete
+- Outpost Charter Complete
 
 ## Texture Generator
 
@@ -458,8 +458,8 @@ The generator creates deterministic pixel-art textures, item model definitions, 
 - Make a Nexus choice and confirm Earth calibration opens.
 - Confirm What Now, Route Records, Vitals, Faction Atlas, and Reward Inbox mirror Orbital state without replacing standalone ECHO-7 progression.
 - Progress through orbit, Moon, Mars, Europa, Saturn, Titan, Deep Space Protocol, and ECHO-0.
-- Complete three faction contracts from the ECHO tab and beta faction relay hubs.
+- Complete three Tier I outpost charters through the Saturn, Titan, and Nexus NPC hubs.
 - For each route, spend 3-5 minutes exploring, repair one objective, open one cache, and confirm Adventure pacing stays tense without chaining emergency recovery.
 - Confirm route vessels give sound/particle/action-bar feedback, reusable route keys are not consumed unexpectedly, objective scans visibly pulse, and Saturn/Titan feel distinct before public upload.
 - Seal the final survey network and confirm Orbital Remnants Complete appears in the ECHO tab.
-- Confirm terminal missions, archives, codex, status, faction standing, and faction contract state update in the addon and main terminal integration.
+- Confirm terminal missions, archives, codex, status, faction standing, and outpost charter state update in the addon and main terminal integration.

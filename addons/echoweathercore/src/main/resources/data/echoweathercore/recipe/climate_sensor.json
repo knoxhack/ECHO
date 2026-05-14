@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "igi",
+    "iri",
+    "isi"
+  ],
+  "key": {
+    "i": { "item": "minecraft:iron_ingot" },
+    "g": { "item": "minecraft:glass_pane" },
+    "r": { "item": "minecraft:redstone" },
+    "s": { "item": "minecraft:stone" }
+  },
+  "result": {
+    "id": "echoweathercore:climate_sensor"
+  }
+}

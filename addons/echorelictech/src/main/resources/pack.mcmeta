@@ -1,6 +1,13 @@
 {
   "pack": {
     "description": "ECHO: RelicTech resources",
-    "pack_format": 18
+    "min_format": [
+      101,
+      1
+    ],
+    "max_format": [
+      101,
+      1
+    ]
   }
 }

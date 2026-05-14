@@ -22,11 +22,16 @@ public final class OverlayRenderLayer {
 
    public static <S extends EntityRenderState> void submit(EntityModel<S> model, S state, PoseStack poseStack,
          SubmitNodeCollector collector, Identifier texture, int order, int color) {
+      submit(model, state, poseStack, collector, texture, order, color, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
+   }
+
+   public static <S extends EntityRenderState> void submit(EntityModel<S> model, S state, PoseStack poseStack,
+         SubmitNodeCollector collector, Identifier texture, int order, int color, int light, int overlay, int outlineColor) {
       if (texture == null || state.isInvisible) {
          return;
       }
       OrderedSubmitNodeCollector ordered = collector.order(order);
-      ordered.submitModel(model, state, poseStack, RenderTypes.eyes(texture), state.lightCoords, OverlayTexture.NO_OVERLAY,
-         color == 0 ? OVERLAY_COLOR : color, null, state.outlineColor, null);
+      ordered.submitModel(model, state, poseStack, RenderTypes.eyes(texture), light, overlay,
+         color == 0 ? OVERLAY_COLOR : color, null, outlineColor, null);
    }
 }

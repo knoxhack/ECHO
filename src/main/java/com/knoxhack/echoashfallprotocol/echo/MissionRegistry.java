@@ -187,8 +187,8 @@ public class MissionRegistry {
                 "stockpile_rations",
                 "[ECHO-7] Do not scout hungry. Keep 4 Emergency Rations or 12 Wild Berries at shelter before the next push.",
                 "Confirm Ration Buffer + Turn In",
-                "[ECHO-7] Food buffer established. Emergency bedroll released; keep it at shelter so night travel stays optional.",
-                List.of(new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1), new ItemStack(ModItems.BANDAGE.get(), 1), new ItemStack(Items.WHITE_BED, 1)),
+                "[ECHO-7] Food buffer established. Emergency bunk released; keep it at shelter so night travel stays optional.",
+                List.of(new ItemStack(ModItems.CLEAN_WATER_BOTTLE.get(), 1), new ItemStack(ModItems.BANDAGE.get(), 1), new ItemStack(ModBlocks.EMERGENCY_BUNK_ITEM.get(), 1)),
                 player -> hasRationStockpile(player),
                 Collections.emptyList(),
                 null,
@@ -200,7 +200,7 @@ public class MissionRegistry {
         ));
         phase05.add(new Mission(
                 "secure_sleep_shelter",
-                "[ECHO-7] Night movement is optional if shelter exists. Carry or place the bed and keep it near your crash outpost.",
+                "[ECHO-7] Night movement is optional if shelter exists. Carry or place the bunk and keep it near your crash outpost.",
                 "Secure Sleep Shelter",
                 "[ECHO-7] Rest point confirmed. Organic tool materials released; craft the knife, spear, and hide wrap before scouting.",
                 List.of(new ItemStack(Items.TORCH, 12), new ItemStack(ModItems.EMERGENCY_RATION.get(), 2), new ItemStack(ModItems.ANIMAL_BONE.get(), 2), new ItemStack(ModItems.ANIMAL_HIDE.get(), 4)),

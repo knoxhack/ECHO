@@ -1,6 +1,7 @@
 package com.knoxhack.echoashfallprotocol.worldgen;
 
 import com.knoxhack.echoashfallprotocol.EchoAshfallProtocol;
+import com.knoxhack.echoashfallprotocol.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
@@ -8,14 +9,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
@@ -460,32 +460,26 @@ public class POIStructureSpawner {
                 if (!level.getBlockState(chestPos).isAir()) continue;
                 if (!level.getFluidState(chestPos).isEmpty()) continue;
 
-                // Place chest
-                BlockState chestState = Blocks.CHEST.defaultBlockState();
-                level.setBlock(chestPos, chestState, 2);
-
-                // Ensure block entity is created - fix race condition by creating if null
+                // Place Echo cache
+                BlockState cacheState = ModBlocks.STRUCTURE_CACHE.get().defaultBlockState();
+                level.setBlock(chestPos, cacheState, 2);
                 BlockEntity blockEntity = level.getBlockEntity(chestPos);
-                if (blockEntity == null) {
-                    blockEntity = new ChestBlockEntity(chestPos, chestState);
-                    level.setBlockEntity(blockEntity);
-                }
 
-                if (blockEntity instanceof ChestBlockEntity chest) {
-                    chest.setLootTable(lootTable, random.nextLong());
-                    chest.setChanged();
-                    level.sendBlockUpdated(chestPos, chest.getBlockState(), chest.getBlockState(), 2);
+                if (blockEntity instanceof RandomizableContainerBlockEntity cache) {
+                    cache.setLootTable(lootTable, random.nextLong());
+                    cache.setChanged();
+                    level.sendBlockUpdated(chestPos, cacheState, cacheState, 2);
                     placedChests++;
-                    EchoAshfallProtocol.LOGGER.info("Placed loot chest at {} for {} with loot table {}", chestPos, category, lootTable);
+                    EchoAshfallProtocol.LOGGER.info("Placed loot cache at {} for {} with loot table {}", chestPos, category, lootTable);
                 } else {
-                    EchoAshfallProtocol.LOGGER.warn("Failed to create chest block entity at {}", chestPos);
+                    EchoAshfallProtocol.LOGGER.warn("Failed to create loot-capable cache block entity at {}", chestPos);
                 }
-                break; // Successfully placed or failed, move to next chest
+                break; // Successfully placed or failed, move to next cache
             }
         }
 
         if (placedChests > 0) {
-            EchoAshfallProtocol.LOGGER.info("Placed {} loot chest(s) for {} POI", placedChests, category);
+            EchoAshfallProtocol.LOGGER.info("Placed {} loot cache(s) for {} POI", placedChests, category);
         }
     }
 

@@ -19,11 +19,41 @@ SignalOS loads datapack JSON from each namespace under:
   "order": 25,
   "accentColor": 6737151,
   "icon": "minecraft:compass",
-  "permission": "user"
+  "permission": "user",
+  "view": "",
+  "recordTypes": [],
+  "recordSources": [],
+  "includeArchived": false,
+  "emptyText": "NO RECORDS AVAILABLE"
 }
 ```
 
-Known V1 app types include `home`, `files`, `notes`, `logs`, `network`, `settings`, `data_vault`, `echo_link`, `missions`, `archives`, `rewards`, and `diagnostics`. Unknown types can appear as app metadata but do not receive a rich built-in renderer yet.
+Known built-in app types include `home`, `files`, `notes`, `logs`, `network`, `settings`, `data_vault`, `echo_link`, `missions`, `archives`, `rewards`, and `diagnostics`.
+
+Terminal app rendering resolves in this order:
+
+1. Built-in app `type`.
+2. Client Java renderer registered with `SignalOsAppRenderers.register(type, renderer)`.
+3. Config record view when `view` is `"records"`.
+4. Unsupported metadata view.
+
+Set `view` to `"records"` for a JSON-only record browser. `recordTypes` filters record `type` values, `recordSources` filters record `source` values, `includeArchived` controls whether archived records are visible, and `emptyText` replaces the default empty-state text.
+
+```json
+{
+  "title": "Field Records",
+  "type": "field_records",
+  "summary": "Focused records from field modules.",
+  "order": 40,
+  "accentColor": 6737151,
+  "icon": "minecraft:writable_book",
+  "view": "records",
+  "recordTypes": ["record", "diagnostic"],
+  "recordSources": ["Example Module"],
+  "includeArchived": false,
+  "emptyText": "NO FIELD RECORDS"
+}
+```
 
 ## Data Record
 
@@ -62,6 +92,8 @@ Known V1 app types include `home`, `files`, `notes`, `logs`, `network`, `setting
 ```
 
 Drive template records use the same fields as data records. Each embedded record can provide an explicit `id`; if omitted, SignalOS derives one from the template id and record index.
+
+Rack player actions apply templates through the server-rack menu and cap player-edited drives at 64 records. Addon code can still construct drive data directly through `SignalOsDriveData` helper methods when it needs a custom workflow.
 
 ## Chapter
 

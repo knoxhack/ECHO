@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echostationfall:block/pressure_door"
+    "model": "echostationfall:item/pressure_door"
   }
 }

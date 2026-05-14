@@ -320,6 +320,10 @@ public final class SignalOsContentRegistry {
         return jsonContent.driveTemplates().values().stream().toList();
     }
 
+    public static Map<Identifier, SignalOsDriveData> driveTemplateEntries() {
+        return jsonContent.driveTemplates();
+    }
+
     public static void clearForTests() {
         JAVA_CHAPTERS.clear();
         JAVA_PAGES.clear();

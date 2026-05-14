@@ -2,11 +2,13 @@ package com.knoxhack.echolens.client;
 
 import com.knoxhack.echolens.EchoLensClient;
 import com.knoxhack.echolens.api.LensAccessPolicy;
+import com.knoxhack.echolens.api.LensAction;
 import com.knoxhack.echolens.api.LensContext;
 import com.knoxhack.echolens.api.LensInfoRow;
 import com.knoxhack.echolens.api.LensInfoSection;
 import com.knoxhack.echolens.api.LensReport;
 import com.knoxhack.echolens.api.LensScanMode;
+import com.knoxhack.echolens.api.LensTargetKind;
 import com.knoxhack.echolens.config.LensConfig;
 import com.knoxhack.echolens.registry.LensInspectionService;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,8 +29,12 @@ import net.minecraft.world.phys.HitResult;
 import org.lwjgl.glfw.GLFW;
 
 public final class LensHudOverlay {
+    private static final int REPORT_CACHE_TICKS = 5;
     private static ItemStack currentTargetStack = ItemStack.EMPTY;
     private static float visibleProgress;
+    private static ReportCacheKey cachedReportKey;
+    private static LensReport cachedReport;
+    private static long cachedReportTick = Long.MIN_VALUE;
 
     private LensHudOverlay() {
     }
@@ -37,20 +44,29 @@ public final class LensHudOverlay {
         if (!LensConfig.bool(LensConfig.HUD_ENABLED, true) || minecraft.player == null || minecraft.level == null
                 || minecraft.options.hideGui || minecraft.screen != null) {
             currentTargetStack = ItemStack.EMPTY;
+            clearReportCache();
             visibleProgress = approach(visibleProgress, 0.0F, partialTick);
             return;
         }
         LensContext context = contextFromHit(minecraft);
         if (context == null) {
             currentTargetStack = ItemStack.EMPTY;
+            clearReportCache();
             visibleProgress = approach(visibleProgress, 0.0F, partialTick);
             return;
         }
-        LensReport report = LensInspectionService.INSTANCE.inspect(context);
+        LensReport report = cachedInspect(context, minecraft.level.getGameTime());
         if (report.isEmpty()) {
             currentTargetStack = ItemStack.EMPTY;
+            LensServerScanClientState.update(null);
             visibleProgress = approach(visibleProgress, 0.0F, partialTick);
             return;
+        }
+        if (context.scanMode() == LensScanMode.DEEP) {
+            LensServerScanClientState.update(context);
+            report = withServerSections(report);
+        } else {
+            LensServerScanClientState.update(null);
         }
         currentTargetStack = report.icon();
         visibleProgress = approach(visibleProgress, 1.0F, partialTick);
@@ -90,6 +106,26 @@ public final class LensHudOverlay {
         return null;
     }
 
+    private static LensReport cachedInspect(LensContext context, long gameTime) {
+        ReportCacheKey key = ReportCacheKey.from(context);
+        if (key.equals(cachedReportKey)
+                && cachedReport != null
+                && gameTime - cachedReportTick < REPORT_CACHE_TICKS) {
+            return cachedReport;
+        }
+        LensReport report = LensInspectionService.INSTANCE.inspect(context);
+        cachedReportKey = key;
+        cachedReport = report;
+        cachedReportTick = gameTime;
+        return report;
+    }
+
+    private static void clearReportCache() {
+        cachedReportKey = null;
+        cachedReport = null;
+        cachedReportTick = Long.MIN_VALUE;
+    }
+
     private static void drawReport(GuiGraphicsExtractor graphics, Font font, LensReport report,
             LensScanMode mode, float progress) {
         LensTheme theme = LensTheme.current();
@@ -98,8 +134,11 @@ public final class LensHudOverlay {
                 || !LensConfig.bool(LensConfig.ANIMATION, true) ? 1.0F : progress);
         int width = panelWidth(mode);
         List<RenderedRow> rows = flatten(report, mode);
-        int actionHeight = report.actions().isEmpty() ? 0 : 18;
-        int height = Math.min(panelHeight(mode), 34 + rows.size() * 12 + actionHeight + 12);
+        LensHudLayout.ActionStrip actionStrip = actionStrip(font, width, report.actions());
+        int height = Math.min(panelHeight(mode), desiredHeight(rows, mode, actionStrip.height()));
+        while (!rows.isEmpty() && desiredHeight(rows, mode, actionStrip.height()) > height) {
+            rows.remove(rows.size() - 1);
+        }
         int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
         int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         int x = panelX(screenW, width);
@@ -107,6 +146,11 @@ public final class LensHudOverlay {
         if (LensConfig.bool(LensConfig.ANIMATION, true) && !LensConfig.bool(LensConfig.REDUCED_MOTION, false)) {
             y -= Math.round((1.0F - progress) * 8.0F);
         }
+        LensHudLayout.Bounds bounds = LensHudLayout.clampPanel(x, y, width, height, screenW, screenH);
+        x = bounds.x();
+        y = bounds.y();
+        width = bounds.width();
+        height = bounds.height();
         graphics.fill(x, y, x + width, y + height, theme.alpha(theme.panel(), opacity));
         graphics.fill(x, y, x + width, y + 24, theme.alpha(theme.header(), opacity));
         graphics.outline(x, y, width, height, theme.alpha(theme.border(), opacity));
@@ -115,9 +159,17 @@ public final class LensHudOverlay {
         if (!report.icon().isEmpty()) {
             graphics.item(report.icon(), x + 7, y + 5);
         }
-        graphics.text(font, fit(font, report.title().getString(), width - 42), x + 28, y + 5,
+        String badge = modeBadge(report, mode, rows);
+        int badgeW = Math.min(Math.max(48, font.width(badge) + 10), Math.max(48, width / 2));
+        int badgeX = x + width - badgeW - 7;
+        graphics.fill(badgeX, y + 6, badgeX + badgeW, y + 18, theme.alpha(0x3326D9EF, opacity));
+        graphics.outline(badgeX, y + 6, badgeW, 12, theme.alpha(theme.border(), opacity));
+        graphics.text(font, fit(font, badge, badgeW - 8), badgeX + 4, y + 8,
+                theme.alpha(theme.echo(), opacity), false);
+        int textWidth = Math.max(36, badgeX - x - 34);
+        graphics.text(font, fit(font, report.title().getString(), textWidth), x + 28, y + 5,
                 theme.alpha(theme.text(), opacity), false);
-        graphics.text(font, fit(font, report.subtitle().getString(), width - 42), x + 28, y + 15,
+        graphics.text(font, fit(font, report.subtitle().getString(), textWidth), x + 28, y + 15,
                 theme.alpha(theme.muted(), opacity), false);
         int rowY = y + 30;
         String lastSection = "";
@@ -136,19 +188,87 @@ public final class LensHudOverlay {
             rowY += 12;
         }
         if (!report.actions().isEmpty() && LensConfig.bool(LensConfig.SHOW_ACTIONS, true)) {
-            int actionY = y + height - 17;
-            int actionX = x + 8;
-            for (var action : report.actions()) {
-                int chipW = Math.max(46, font.width(action.icon() + " " + action.label().getString()) + 12);
+            int actionTop = y + height - actionStrip.height() - 6;
+            for (LensHudLayout.ActionChip chip : actionStrip.chips()) {
+                LensAction action = report.actions().get(chip.index());
+                int actionX = x + chip.x();
+                int actionY = actionTop + chip.y();
+                int chipW = chip.width();
                 graphics.fill(actionX, actionY, actionX + chipW, actionY + 12,
                         theme.alpha(action.available() ? 0x3316E0FF : 0x22111111, opacity));
                 graphics.outline(actionX, actionY, chipW, 12,
                         theme.alpha(action.available() ? theme.border() : theme.muted(), opacity));
-                graphics.text(font, action.icon() + " " + action.label().getString(), actionX + 5, actionY + 2,
+                graphics.text(font, fit(font, action.icon() + " " + action.label().getString(), chipW - 8),
+                        actionX + 5, actionY + 2,
                         theme.alpha(theme.tone(action.tone()), opacity), false);
-                actionX += chipW + 5;
             }
         }
+        renderCoreFrame(graphics, x, y, width, height);
+    }
+
+    private static int desiredHeight(List<RenderedRow> rows, LensScanMode mode, int actionStripHeight) {
+        int actionHeight = actionStripHeight <= 0 ? 0 : actionStripHeight + 10;
+        return 42 + rowBlockHeight(rows, mode) + actionHeight;
+    }
+
+    private static int rowBlockHeight(List<RenderedRow> rows, LensScanMode mode) {
+        int height = 0;
+        String lastSection = "";
+        for (RenderedRow row : rows) {
+            if (mode == LensScanMode.DEEP && !row.sectionTitle().equals(lastSection)) {
+                height += 11;
+                lastSection = row.sectionTitle();
+            }
+            height += 12;
+        }
+        return height;
+    }
+
+    private static LensHudLayout.ActionStrip actionStrip(Font font, int width, List<LensAction> actions) {
+        if (actions.isEmpty() || !LensConfig.bool(LensConfig.SHOW_ACTIONS, true)) {
+            return new LensHudLayout.ActionStrip(List.of(), 0);
+        }
+        int[] widths = new int[actions.size()];
+        for (int index = 0; index < actions.size(); index++) {
+            LensAction action = actions.get(index);
+            widths[index] = Math.max(46, font.width(action.icon() + " " + action.label().getString()) + 12);
+        }
+        return LensHudLayout.actionStrip(width, widths, 12, 5, 8);
+    }
+
+    private static String modeBadge(LensReport report, LensScanMode mode, List<RenderedRow> rows) {
+        String modeText = switch (mode) {
+            case COMPACT -> Component.translatable("echolens.overlay.mode.compact").getString();
+            case EXPANDED -> Component.translatable("echolens.overlay.mode.expanded").getString();
+            case DEEP -> Component.translatable("echolens.overlay.mode.deep").getString();
+        };
+        String namespace = report.sourceModId() == null || report.sourceModId().isBlank()
+                ? "minecraft"
+                : report.sourceModId();
+        if (mode == LensScanMode.DEEP) {
+            String sections = Component.translatable("echolens.overlay.badge.sections", sectionCount(rows)).getString();
+            if (LensConfig.bool(LensConfig.SHOW_SERVER_SCAN_STATUS, true)) {
+                return namespace + " / " + modeText + " / "
+                        + LensServerScanClientState.statusLabel() + " / " + sections;
+            }
+            return namespace + " / " + modeText + " / " + sections;
+        }
+        return namespace + " / " + modeText;
+    }
+
+    private static LensReport withServerSections(LensReport report) {
+        List<LensInfoSection> serverSections = LensServerScanClientState.sections();
+        if (serverSections.isEmpty()) {
+            return report;
+        }
+        List<LensInfoSection> sections = new ArrayList<>(report.sections());
+        sections.addAll(serverSections);
+        return new LensReport(report.title(), report.subtitle(), report.icon(), report.targetKind(), report.targetId(),
+                report.sourceModId(), sections, report.actions());
+    }
+
+    private static int sectionCount(List<RenderedRow> rows) {
+        return (int) rows.stream().map(RenderedRow::sectionTitle).distinct().count();
     }
 
     private static List<RenderedRow> flatten(LensReport report, LensScanMode mode) {
@@ -241,6 +361,55 @@ public final class LensHudOverlay {
         return trimmed + ellipsis;
     }
 
+    private static void renderCoreFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        try {
+            Class.forName("com.knoxhack.echolens.integration.LensRenderCoreScreenIntegration")
+                    .getMethod("drawLensFrame", GuiGraphicsExtractor.class, int.class, int.class, int.class, int.class)
+                    .invoke(null, graphics, x, y, width, height);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+        }
+    }
+
     private record RenderedRow(String sectionTitle, String sectionIcon, LensInfoRow row) {
+    }
+
+    private record ReportCacheKey(
+            LensTargetKind targetKind,
+            LensScanMode scanMode,
+            LensAccessPolicy accessPolicy,
+            String dimension,
+            long blockPos,
+            int entityId,
+            int stateHash,
+            int fluidHash,
+            int configHash) {
+        private static ReportCacheKey from(LensContext context) {
+            String dimension = context.level() == null
+                    ? ""
+                    : context.level().dimension().identifier().toString();
+            long blockPos = context.blockPos() == null ? Long.MIN_VALUE : context.blockPos().asLong();
+            int entityId = context.hasEntity() ? context.entity().getId() : -1;
+            int stateHash = context.blockState() == null ? 0 : context.blockState().hashCode();
+            int fluidHash = context.fluidState() == null ? 0 : context.fluidState().hashCode();
+            return new ReportCacheKey(context.targetKind(), context.scanMode(), context.accessPolicy(),
+                    dimension, blockPos, entityId, stateHash, fluidHash, calculateConfigHash());
+        }
+
+        private static int calculateConfigHash() {
+            int hash = 17;
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_IDENTITY, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_BLOCK, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_ENTITY, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_FLUID, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_MACHINE, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_INVENTORY, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_INTEGRATION, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.BEGINNER_HINTS, true));
+            hash = 31 * hash + Boolean.hashCode(LensConfig.bool(LensConfig.SHOW_ACTIONS, true));
+            hash = 31 * hash + LensConfig.integer(LensConfig.COMPACT_ROW_LIMIT, 4);
+            hash = 31 * hash + LensConfig.integer(LensConfig.EXPANDED_ROW_LIMIT, 12);
+            hash = 31 * hash + LensConfig.integer(LensConfig.DEEP_ROW_LIMIT, 40);
+            return hash;
+        }
     }
 }

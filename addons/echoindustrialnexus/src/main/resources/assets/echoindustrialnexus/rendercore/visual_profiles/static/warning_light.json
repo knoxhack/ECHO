@@ -1,0 +1,18 @@
+{
+  "schema_version": 11,
+  "base_texture": "echoindustrialnexus:textures/block/warning_light.png",
+  "particle_profile": "echoindustrialnexus:static/warning_light",
+  "default_state": "ACTIVE",
+  "effect": {
+    "preset": "energy_field",
+    "glow_intensity": 1.0,
+    "pulse_speed": 1.8,
+    "pulse_min_alpha": 0.45,
+    "pulse_max_alpha": 1.0,
+    "target_scope": "block"
+  },
+  "anchors": {
+    "light": { "offset": [0.0, 0.6, 0.0] },
+    "core": { "offset": [0.0, 0.5, 0.0] }
+  }
+}

@@ -5,14 +5,23 @@ import com.knoxhack.echoindustrialnexus.block.entity.IndustrialFluidPipeBlockEnt
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialFluxDuctBlockEntity;
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialItemDuctBlockEntity;
 import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMachineBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMultiblockControllerBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialMultiblockCrateBlockEntity;
+import com.knoxhack.echoindustrialnexus.block.entity.IndustrialRoboticArmMountBlockEntity;
 import com.knoxhack.echoindustrialnexus.entity.FurnaceWardenEntity;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialCompat;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialCoreIntegration;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialMissionProvider;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialMultiblockIntegrationProvider;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialRenderCoreVisuals;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialTerminalCommonIntegration;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialTerminalIds;
 import com.knoxhack.echoindustrialnexus.integration.IndustrialTerminalRecipeProvider;
+import com.knoxhack.echoindustrialnexus.integration.IndustrialLensIntegration;
 import com.knoxhack.echoindustrialnexus.menu.IndustrialMachineMenu;
+import com.knoxhack.echoindustrialnexus.menu.IndustrialMultiblockControllerMenu;
+import com.knoxhack.echoindustrialnexus.multiblock.IndustrialMultiblockTasks;
+import com.knoxhack.echoindustrialnexus.network.IndustrialFactorySnapshotPacket;
 import com.knoxhack.echoindustrialnexus.progress.IndustrialProgress;
 import com.knoxhack.echoindustrialnexus.registry.ModBlocks;
 import com.knoxhack.echoindustrialnexus.registry.ModEntities;
@@ -23,6 +32,17 @@ import com.knoxhack.echoindustrialnexus.worldgen.IndustrialPoiType;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echomultiblockcore.api.MultiblockAutomationRecipe;
+import com.knoxhack.echomultiblockcore.api.AutomationRecipeRegistry;
+import com.knoxhack.echomultiblockcore.api.MultiblockDefinition;
+import com.knoxhack.echomultiblockcore.api.MultiblockIntegrationServices;
+import com.knoxhack.echomultiblockcore.api.MultiblockMapMarkerSnapshot;
+import com.knoxhack.echomultiblockcore.api.RobotToolType;
+import com.knoxhack.echomultiblockcore.api.ValidationResult;
+import com.knoxhack.echomultiblockcore.api.WorkcellType;
+import com.knoxhack.echomultiblockcore.content.MultiblockContent;
+import com.knoxhack.echolens.registry.LensProviderRegistry;
+import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
@@ -127,6 +147,20 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("nexus_pressure_compat", () -> ModGameTests::nexusPressureCompat);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> RENDERCORE_VISUAL_STATES =
       TEST_FUNCTIONS.register("rendercore_visual_states", () -> ModGameTests::renderCoreVisualStates);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INDUSTRIAL_MULTIBLOCK_DEFINITIONS =
+      TEST_FUNCTIONS.register("industrial_multiblock_definitions", () -> ModGameTests::industrialMultiblockDefinitions);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSEMBLY_LINE_ROBOTIC_TASK =
+      TEST_FUNCTIONS.register("assembly_line_robotic_task", () -> ModGameTests::assemblyLineRoboticTask);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSEMBLY_LINE_GUI_QUEUE =
+      TEST_FUNCTIONS.register("assembly_line_gui_queue", () -> ModGameTests::assemblyLineGuiQueue);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSEMBLY_LINE_BATCH_QUEUE =
+      TEST_FUNCTIONS.register("assembly_line_batch_queue", () -> ModGameTests::assemblyLineBatchQueue);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTORY_COMMAND_TERMINAL_ACTIONS =
+      TEST_FUNCTIONS.register("factory_command_terminal_actions", () -> ModGameTests::factoryCommandTerminalActions);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> FACTORY_COMMAND_PROVIDER_SNAPSHOTS =
+      TEST_FUNCTIONS.register("factory_command_provider_snapshots", () -> ModGameTests::factoryCommandProviderSnapshots);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INDUSTRIAL_LENS_PROVIDER =
+      TEST_FUNCTIONS.register("industrial_lens_provider_registration", () -> ModGameTests::industrialLensProviderRegistration);
 
    private ModGameTests() {
    }
@@ -165,6 +199,13 @@ public final class ModGameTests {
       register(event, environment, "cross_compat_component_output", CROSS_COMPAT_OUTPUT.getId());
       register(event, environment, "nexus_pressure_compat", NEXUS_PRESSURE_COMPAT.getId());
       register(event, environment, "rendercore_visual_states", RENDERCORE_VISUAL_STATES.getId());
+      register(event, environment, "industrial_multiblock_definitions", INDUSTRIAL_MULTIBLOCK_DEFINITIONS.getId());
+      register(event, environment, "assembly_line_robotic_task", ASSEMBLY_LINE_ROBOTIC_TASK.getId());
+      register(event, environment, "assembly_line_gui_queue", ASSEMBLY_LINE_GUI_QUEUE.getId());
+      register(event, environment, "assembly_line_batch_queue", ASSEMBLY_LINE_BATCH_QUEUE.getId());
+      register(event, environment, "factory_command_terminal_actions", FACTORY_COMMAND_TERMINAL_ACTIONS.getId());
+      register(event, environment, "factory_command_provider_snapshots", FACTORY_COMMAND_PROVIDER_SNAPSHOTS.getId());
+      register(event, environment, "industrial_lens_provider_registration", INDUSTRIAL_LENS_PROVIDER.getId());
    }
 
    private static void machineRecipeProcessing(GameTestHelper helper) {
@@ -200,6 +241,177 @@ public final class ModGameTests {
          "Completed work should map to COMPLETE.");
       helper.assertTrue(Math.abs(IndustrialRenderCoreVisuals.progress(50, 100, 0, 0) - 0.5F) < 0.001F,
          "RenderCore progress should prefer processing progress.");
+      helper.succeed();
+   }
+
+   private static void industrialMultiblockDefinitions(GameTestHelper helper) {
+      List<Identifier> ids = List.of(
+         id("industrial_assembly_line"),
+         id("scrap_processor"),
+         id("plate_press"),
+         id("circuit_fabricator"),
+         id("recipe_matrix_core"),
+         id("nexus_furnace_array")
+      );
+      for (Identifier definitionId : ids) {
+         helper.assertTrue(MultiblockContent.definition(definitionId).isPresent(), "Missing Industrial multiblock definition: " + definitionId);
+      }
+      MultiblockDefinition assembly = MultiblockContent.definition(id("industrial_assembly_line")).orElseThrow();
+      helper.assertTrue(assembly.workcells().stream().anyMatch(workcell -> workcell.type() == WorkcellType.ASSEMBLY),
+         "Assembly Line should expose an Assembly workcell.");
+      helper.assertTrue(assembly.roboticsRequirements().stream().anyMatch(requirement -> requirement.minArms() >= 1
+            && requirement.requiredTools().contains(RobotToolType.WELDER)),
+         "Assembly Line should require a welder-capable robotic arm.");
+      MultiblockAutomationRecipe task = AutomationRecipeRegistry.byId(id("weld_reinforced_machine_frame")).orElseThrow();
+      helper.assertTrue(task.consumeInputsOnStart(), "Industrial tasks should consume inputs when work starts.");
+      helper.assertTrue(task.requiredWorkcell() == WorkcellType.ASSEMBLY, "Frame welding should target the Assembly workcell.");
+      helper.assertTrue(task.outputs().stream().anyMatch(output -> output.itemId().equals(EchoIndustrialNexus.id("reinforced_machine_frame"))),
+         "Frame welding should output a reinforced machine frame.");
+      helper.succeed();
+   }
+
+   private static void assemblyLineRoboticTask(GameTestHelper helper) {
+      IndustrialMultiblockTasks.register();
+      BuildAssemblyLine built = buildAssemblyLine(helper);
+      ValidationResult result = built.controller().validateStructure(true);
+      helper.assertTrue(result.valid(), "Industrial Assembly Line should validate when all required blocks are present: " + validationDebug(result));
+      built.controller().onStructureFormed();
+      built.input().setItem(0, new ItemStack((ItemLike)ModItems.REFINED_PLATE.get(), 4));
+      built.input().setItem(1, new ItemStack((ItemLike)ModItems.SERVO_MOTOR.get()));
+      built.input().setItem(2, new ItemStack((ItemLike)ModItems.INDUSTRIAL_CIRCUIT.get()));
+      helper.assertTrue(built.controller().queueTask(id("weld_reinforced_machine_frame"), null),
+         "Assembly task should accept a blocked queue entry before a welder head is installed.");
+      helper.assertTrue(built.controller().diagnosticLines().stream().anyMatch(line -> line.contains("Required robotic tool missing")),
+         "Blocked diagnostics should name the missing robotic tool.");
+      helper.assertTrue(built.input().countItem(ModItems.REFINED_PLATE.get()) == 4,
+         "Blocked assembly task should not consume inputs before a compatible robotic tool is installed.");
+      built.controller().clearQueue(null);
+      built.arm().installTool(new ItemStack((ItemLike)ModItems.INDUSTRIAL_WELDER_HEAD.get()), null);
+      helper.assertTrue(built.controller().queueTask(id("weld_reinforced_machine_frame"), null),
+         "Assembly task should start once the welder head is installed.");
+      helper.assertTrue(built.input().countItem(ModItems.REFINED_PLATE.get()) == 0,
+         "Assembly task should consume plates when the task starts.");
+      for (int i = 0; i < 260; i++) {
+         IndustrialMultiblockControllerBlockEntity.tick(helper.getLevel(), built.controller().getBlockPos(), built.controller().getBlockState(), built.controller());
+         IndustrialRoboticArmMountBlockEntity.tick(helper.getLevel(), built.arm().getBlockPos(), built.arm().getBlockState(), built.arm());
+      }
+      helper.assertTrue(built.output().countItem(ModItems.REINFORCED_MACHINE_FRAME.get()) == 1,
+         "Completed assembly task should place the reinforced machine frame in the output crate.");
+      helper.succeed();
+   }
+
+   private static void assemblyLineGuiQueue(GameTestHelper helper) {
+      BuildAssemblyLine built = buildAssemblyLine(helper);
+      ValidationResult result = built.controller().validateStructure(true);
+      helper.assertTrue(result.valid(), "Industrial Assembly Line should validate before GUI queue test: " + validationDebug(result));
+      built.controller().onStructureFormed();
+      built.arm().installTool(new ItemStack((ItemLike)ModItems.INDUSTRIAL_WELDER_HEAD.get()), null);
+      built.input().setItem(0, new ItemStack((ItemLike)ModItems.REFINED_PLATE.get(), 4));
+      built.input().setItem(1, new ItemStack((ItemLike)ModItems.SERVO_MOTOR.get()));
+      built.input().setItem(2, new ItemStack((ItemLike)ModItems.INDUSTRIAL_CIRCUIT.get()));
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      int recipeIndex = recipeButtonIndex(built.controller(), id("weld_reinforced_machine_frame"));
+      helper.assertTrue(recipeIndex >= 0, "Assembly Line controller menu should expose the welding automation recipe.");
+      helper.assertTrue(built.controller().handleMenuButton(player, IndustrialMultiblockControllerMenu.BUTTON_QUEUE_TASK_BASE + recipeIndex),
+         "Assembly Line controller menu should accept the welding recipe queue button.");
+      helper.assertTrue(built.controller().handleMenuButton(player, IndustrialMultiblockControllerMenu.BUTTON_TOGGLE_LOGISTICS_RESTOCK),
+         "Assembly Line controller menu should accept the Logistics auto-restock toggle.");
+      helper.assertTrue(built.controller().logisticsAutoRestockEnabled(),
+         "Assembly Line controller should persist Logistics auto-restock enabled state.");
+      helper.assertTrue(built.controller().handleMenuButton(player, IndustrialMultiblockControllerMenu.BUTTON_CYCLE_LOGISTICS_RESTOCK_TARGET)
+            && built.controller().logisticsRestockTargetRuns() == 5,
+         "Assembly Line controller should cycle Logistics auto-restock target from x3 to x5.");
+      helper.assertTrue(built.controller().taskSnapshots().stream().anyMatch(snapshot -> snapshot.taskId().equals(id("weld_reinforced_machine_frame"))),
+         "Assembly Line controller menu should queue the welding automation recipe.");
+      helper.succeed();
+   }
+
+   private static void assemblyLineBatchQueue(GameTestHelper helper) {
+      IndustrialMultiblockTasks.register();
+      BuildAssemblyLine built = buildAssemblyLine(helper);
+      ValidationResult result = built.controller().validateStructure(true);
+      helper.assertTrue(result.valid(), "Industrial Assembly Line should validate before batch queue test: " + validationDebug(result));
+      built.controller().onStructureFormed();
+      built.arm().installTool(new ItemStack((ItemLike)ModItems.INDUSTRIAL_WELDER_HEAD.get()), null);
+      built.input().setItem(0, new ItemStack((ItemLike)ModItems.REFINED_PLATE.get(), 12));
+      built.input().setItem(1, new ItemStack((ItemLike)ModItems.SERVO_MOTOR.get(), 3));
+      built.input().setItem(2, new ItemStack((ItemLike)ModItems.INDUSTRIAL_CIRCUIT.get(), 3));
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      int recipeIndex = recipeButtonIndex(built.controller(), id("weld_reinforced_machine_frame"));
+      helper.assertTrue(recipeIndex >= 0, "Assembly Line controller menu should expose the welding automation recipe.");
+      helper.assertTrue(built.controller().handleMenuButton(player,
+            IndustrialMultiblockControllerMenu.BUTTON_QUEUE_TASK_X3_BASE + recipeIndex),
+         "Assembly Line controller menu should accept a x3 batch queue button.");
+      helper.assertTrue(built.controller().taskSnapshots().size() == 3,
+         "Batch queue should keep three task snapshots while the first task is active.");
+      tickAssemblyLineUntilOutput(built, 3, 1800);
+      int outputCount = built.output().countItem(ModItems.REINFORCED_MACHINE_FRAME.get());
+      helper.assertTrue(outputCount == 3,
+         "Batch queue should recover from robotic cooling pauses and produce three reinforced machine frames; output="
+            + outputCount + " tasks=" + built.controller().taskSnapshots() + " diagnostics=" + built.controller().diagnosticLines()
+            + " arm=" + built.arm().getRobotState() + " heat=" + built.arm().getHeat());
+      helper.succeed();
+   }
+
+   private static void factoryCommandTerminalActions(GameTestHelper helper) {
+      IndustrialMultiblockTasks.register();
+      IndustrialTerminalCommonIntegration.register();
+      BuildAssemblyLine built = buildAssemblyLine(helper);
+      built.controller().onStructureFormed();
+      built.arm().installTool(new ItemStack((ItemLike)ModItems.INDUSTRIAL_WELDER_HEAD.get()), null);
+      built.input().setItem(0, new ItemStack((ItemLike)ModItems.REFINED_PLATE.get(), 8));
+      built.input().setItem(1, new ItemStack((ItemLike)ModItems.SERVO_MOTOR.get(), 2));
+      built.input().setItem(2, new ItemStack((ItemLike)ModItems.INDUSTRIAL_CIRCUIT.get(), 2));
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      String payload = terminalPayload(helper.getLevel(), built.controller().getBlockPos(),
+         id("weld_reinforced_machine_frame"), 2);
+      helper.assertTrue(TerminalActionRegistry.handle(player, IndustrialTerminalIds.ECHO_TAB,
+            IndustrialTerminalIds.FACTORY_QUEUE_TASK, payload),
+         "Factory Command Terminal queue action should route through TerminalActionRegistry.");
+      helper.assertTrue(built.controller().taskSnapshots().size() == 2,
+         "Factory Command Terminal queue action should enqueue the requested batch quantity.");
+      helper.assertTrue(TerminalActionRegistry.handle(player, IndustrialTerminalIds.ECHO_TAB,
+            IndustrialTerminalIds.FACTORY_CLEAR_QUEUE,
+            terminalPayload(helper.getLevel(), built.controller().getBlockPos(), null, 1)),
+         "Factory Command Terminal clear action should route through TerminalActionRegistry.");
+      helper.assertTrue(built.controller().taskQueueSize() == 0,
+         "Factory Command Terminal clear action should clear the controller queue.");
+      helper.assertTrue(TerminalActionRegistry.handle(player, IndustrialTerminalIds.ECHO_TAB,
+            IndustrialTerminalIds.FACTORY_TOGGLE_LOGISTICS_RESTOCK,
+            terminalPayload(helper.getLevel(), built.controller().getBlockPos(), null, 1)),
+         "Factory Command Terminal restock toggle should route through TerminalActionRegistry.");
+      helper.assertTrue(built.controller().logisticsAutoRestockEnabled(),
+         "Factory Command Terminal restock toggle should enable controller auto-restock.");
+      helper.assertTrue(TerminalActionRegistry.handle(player, IndustrialTerminalIds.ECHO_TAB,
+            IndustrialTerminalIds.FACTORY_SET_LOGISTICS_RESTOCK_TARGET,
+            terminalPayload(helper.getLevel(), built.controller().getBlockPos(), null, 5)),
+         "Factory Command Terminal restock target should route through TerminalActionRegistry.");
+      helper.assertTrue(built.controller().logisticsRestockTargetRuns() == 5,
+         "Factory Command Terminal restock target should persist x5 on the controller.");
+      helper.succeed();
+   }
+
+   private static void factoryCommandProviderSnapshots(GameTestHelper helper) {
+      IndustrialMultiblockTasks.register();
+      IndustrialMultiblockIntegrationProvider.register();
+      BuildAssemblyLine built = buildAssemblyLine(helper);
+      built.controller().onStructureFormed();
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      IndustrialFactorySnapshotPacket packet = IndustrialFactorySnapshotPacket.current(player);
+      helper.assertTrue(packet.entries().stream().anyMatch(entry -> entry.definitionId().equals(id("industrial_assembly_line"))),
+         "Factory Command snapshot packet should include a formed Industrial Assembly Line.");
+      List<MultiblockMapMarkerSnapshot> markers = MultiblockIntegrationServices.mapMarkers(player);
+      helper.assertTrue(markers.stream().anyMatch(marker -> marker.definitionId().equals(id("industrial_assembly_line"))
+            && marker.summary().contains("integrity")),
+         "Industrial HoloMap-ready marker should expose state-colored facility summary text.");
+      helper.succeed();
+   }
+
+   private static void industrialLensProviderRegistration(GameTestHelper helper) {
+      IndustrialLensIntegration.register();
+      helper.assertTrue(LensProviderRegistry.serverProviders().stream()
+            .anyMatch(provider -> provider.id().equals(id("industrial_factory_deep_scan"))),
+         "Industrial Lens integration should register a server-safe factory Deep Scan provider.");
       helper.succeed();
    }
 
@@ -320,7 +532,7 @@ public final class ModGameTests {
 
    private static void terminalMissionSnapshots(GameTestHelper helper) {
       List<TerminalMissionDefinition> missions = IndustrialMissionProvider.INSTANCE.missions(helper.makeMockPlayer(GameType.CREATIVE));
-      helper.assertTrue(missions.size() == 10, "Industrial Terminal chapter should expose all 10 missions");
+      helper.assertTrue(missions.size() == 16, "Industrial Terminal chapter should expose all 16 missions");
       TerminalMissionSnapshot snapshot = IndustrialMissionProvider.INSTANCE.snapshot(null, IndustrialTerminalIds.id("mission/reclaim_power"));
       helper.assertTrue(snapshot.status() == TerminalMissionStatus.UNLOCKED, "Industrial mission snapshots should be stable without player progress");
       helper.assertTrue(snapshot.actions().stream().anyMatch(action -> action.id().equals("poi_hint") && action.label().equals("POI HINT")),
@@ -406,7 +618,7 @@ public final class ModGameTests {
       List<EchoRouteRecord> records = EchoCoreServices.routeRecords(helper.makeMockPlayer(GameType.CREATIVE)).stream()
          .filter(record -> IndustrialCoreIntegration.CHAPTER_ID.equals(record.chapterId()))
          .toList();
-      helper.assertTrue(records.size() == 10, "Industrial core route records should expose all 10 missions");
+      helper.assertTrue(records.size() == 16, "Industrial core route records should expose all 16 missions");
       helper.succeed();
    }
 
@@ -619,6 +831,96 @@ public final class ModGameTests {
       IndustrialCompat.recordStaticFluidLeak(level, absolute, IndustrialMachineBlockEntity.FLUID_STATIC, 500);
       helper.assertTrue(true, "Industrial Nexus thermal/static hooks should remain soft-linked");
       helper.succeed();
+   }
+
+   private static BuildAssemblyLine buildAssemblyLine(GameTestHelper helper) {
+      clearAssemblyLineEnvelope(helper);
+      set(helper, 1, 1, 2, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 2, 1, 2, ModBlocks.INPUT_DEPOT_CRATE.get());
+      set(helper, 3, 1, 2, ModBlocks.INDUSTRIAL_POWER_BUS.get());
+      set(helper, 4, 1, 2, ModBlocks.OUTPUT_DEPOT_CRATE.get());
+      set(helper, 5, 1, 2, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 1, 1, 3, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 3, 1, 3, ModBlocks.INDUSTRIAL_ASSEMBLY_LINE_CONTROLLER.get());
+      set(helper, 4, 1, 3, ModBlocks.ROBOTIC_ARM_MOUNT.get());
+      set(helper, 5, 1, 3, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 1, 1, 4, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 2, 1, 4, ModBlocks.INDUSTRIAL_DATA_BUS.get());
+      set(helper, 3, 1, 4, ModBlocks.INDUSTRIAL_WORKCELL_FRAME.get());
+      set(helper, 4, 1, 4, ModBlocks.INDUSTRIAL_DATA_BUS.get());
+      set(helper, 5, 1, 4, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 3, 2, 2, ModBlocks.INDUSTRIAL_POWER_BUS.get());
+      set(helper, 3, 2, 3, ModBlocks.ASSEMBLY_GANTRY_RAIL.get());
+      set(helper, 3, 2, 4, ModBlocks.WARNING_LIGHT.get());
+      IndustrialMultiblockControllerBlockEntity controller = helper.getBlockEntity(new BlockPos(3, 1, 3), IndustrialMultiblockControllerBlockEntity.class);
+      IndustrialMultiblockCrateBlockEntity input = helper.getBlockEntity(new BlockPos(2, 1, 2), IndustrialMultiblockCrateBlockEntity.class);
+      IndustrialMultiblockCrateBlockEntity output = helper.getBlockEntity(new BlockPos(4, 1, 2), IndustrialMultiblockCrateBlockEntity.class);
+      IndustrialRoboticArmMountBlockEntity arm = helper.getBlockEntity(new BlockPos(4, 1, 3), IndustrialRoboticArmMountBlockEntity.class);
+      return new BuildAssemblyLine(controller, input, output, arm);
+   }
+
+   private static void clearAssemblyLineEnvelope(GameTestHelper helper) {
+      for (int x = 0; x <= 8; x++) {
+         for (int y = 1; y <= 3; y++) {
+            for (int z = 0; z <= 6; z++) {
+               helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+            }
+         }
+      }
+   }
+
+   private static void tickAssemblyLineUntilOutput(BuildAssemblyLine built, int expectedOutput, int maxTicks) {
+      for (int i = 0; i < maxTicks && built.output().countItem(ModItems.REINFORCED_MACHINE_FRAME.get()) < expectedOutput; i++) {
+         IndustrialMultiblockControllerBlockEntity.tick(built.controller().getLevel(), built.controller().getBlockPos(), built.controller().getBlockState(), built.controller());
+         IndustrialRoboticArmMountBlockEntity.tick(built.arm().getLevel(), built.arm().getBlockPos(), built.arm().getBlockState(), built.arm());
+         if (i % 40 == 39) {
+            built.controller().resumeQueue(null);
+            built.controller().retryBlocked(null);
+         }
+      }
+   }
+
+   private static void set(GameTestHelper helper, int x, int y, int z, Block block) {
+      helper.setBlock(new BlockPos(x, y, z), block);
+   }
+
+   private static String validationDebug(ValidationResult result) {
+      return result.summaryLine()
+         + " rotation=" + result.matchedRotation()
+         + " origin=" + result.matchedOrigin().toShortString()
+         + " missing=" + result.missingBlocks()
+         + " wrong=" + result.wrongBlocks()
+         + " errors=" + result.errors();
+   }
+
+   private static int recipeButtonIndex(IndustrialMultiblockControllerBlockEntity controller, Identifier recipeId) {
+      List<MultiblockAutomationRecipe> recipes = controller.availableAutomationRecipes();
+      for (int i = 0; i < recipes.size(); i++) {
+         if (recipes.get(i).id().equals(recipeId)) {
+            return i;
+         }
+      }
+      return -1;
+   }
+
+   private static String terminalPayload(ServerLevel level, BlockPos controllerPos, Identifier recipeId, int quantity) {
+      StringBuilder builder = new StringBuilder();
+      builder.append('{')
+         .append("\"dimension\":\"").append(level.dimension().identifier()).append("\",")
+         .append("\"controller_pos\":").append(controllerPos.asLong()).append(',')
+         .append("\"quantity\":").append(quantity);
+      if (recipeId != null) {
+         builder.append(',').append("\"recipe_id\":\"").append(recipeId).append('"');
+      }
+      return builder.append('}').toString();
+   }
+
+   private record BuildAssemblyLine(
+      IndustrialMultiblockControllerBlockEntity controller,
+      IndustrialMultiblockCrateBlockEntity input,
+      IndustrialMultiblockCrateBlockEntity output,
+      IndustrialRoboticArmMountBlockEntity arm
+   ) {
    }
 
    private static int countDroppedItems(GameTestHelper helper, BlockPos local, ItemLike itemLike) {

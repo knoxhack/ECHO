@@ -2,28 +2,28 @@
   "id": "echorelictech:echo_mirror",
   "entries": [
     {
-      "severity": "MINOR",
+      "severity": "minor",
       "weight": 50,
       "message": "Echo projection decayed early.",
-      "effects": ["FIZZLE"]
+      "effects": ["fizzle"]
     },
     {
-      "severity": "MEDIUM",
+      "severity": "medium",
       "weight": 30,
       "message": "Mirror reflected a hostile echo.",
-      "effects": ["HOSTILE_SIGNAL", "ADD_DEBUFF"]
+      "effects": ["hostile_signal", "add_debuff"]
     },
     {
-      "severity": "MAJOR",
+      "severity": "major",
       "weight": 15,
       "message": "The mirror cracked. Instability spiked.",
-      "effects": ["ADD_INSTABILITY", "DAMAGE_ITEM"]
+      "effects": ["add_instability", "damage_item"]
     },
     {
-      "severity": "CRITICAL",
+      "severity": "critical",
       "weight": 5,
       "message": "The mirror screamed. Forced cooldown.",
-      "effects": ["FORCE_COOLDOWN", "ADD_INSTABILITY"]
+      "effects": ["force_cooldown", "add_instability"]
     }
   ]
 }

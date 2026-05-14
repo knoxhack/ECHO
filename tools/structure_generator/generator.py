@@ -16,11 +16,17 @@ import json
 import shutil
 from collections import Counter
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from nbt_writer import write_structure_nbt
+from echo_blockwork import (
+    ECHO_LOOT_CONTAINER_BLOCKS,
+    loot_container_block_entity_id,
+    sanitize_blocks,
+    vanilla_structure_blocks,
+)
 from shapes import SHAPE_REGISTRY
 from theme_polish import apply_theme_polish
 from detail_pass import (
@@ -181,34 +187,43 @@ FORBIDDEN_GENERATED_BLOCKS = {
 
 CATEGORY_SIGNATURE_BLOCKS = {
     "crash_zone_wasteland": {
+        "echoblockworks:charred_concrete_rebar",
+        "echoblockworks:orbital_hull_damaged_hull",
+        "echoblockworks:sparking_cable_panel",
         "echoashfallprotocol:cable_bundle",
         "echoashfallprotocol:drop_pod_hull",
         "echoashfallprotocol:power_cable",
         "echoashfallprotocol:rusted_metal_debris",
     },
     "cryogenic_ruins": {
+        "echoblockworks:orbital_hull_lit_strip",
+        "echoblockworks:orbital_hull_thermal_tile",
         "echoashfallprotocol:blue_ice_crystal",
         "echoashfallprotocol:frozen_conduit",
         "echoashfallprotocol:thermal_array",
-        "minecraft:blue_ice",
-        "minecraft:packed_ice",
     },
     "faction": {
         "echoashfallprotocol:bio_processing_station",
         "echoashfallprotocol:map_table",
         "echoashfallprotocol:power_node",
         "echoashfallprotocol:spore_garden",
+        "echoashfallprotocol:structure_cache",
         "echoashfallprotocol:supply_crate",
         "echoashfallprotocol:trade_counter",
         "echoashfallprotocol:weapon_rack",
     },
     "global": {
+        "echoblockworks:echo_strip_light",
+        "echoblockworks:rubble_pile",
         "echoashfallprotocol:rain_collector",
         "echoashfallprotocol:rusted_metal_debris",
+        "echoashfallprotocol:structure_cache",
         "echoashfallprotocol:supply_crate",
-        "minecraft:campfire",
     },
     "industrial_ruins": {
+        "echoblockworks:reinforced_metal_grate",
+        "echoblockworks:reinforced_metal_hazard_stripe",
+        "echoblockworks:steam_vent",
         "echoashfallprotocol:battery_bank",
         "echoashfallprotocol:factory_controller",
         "echoashfallprotocol:item_pipe",
@@ -216,19 +231,23 @@ CATEGORY_SIGNATURE_BLOCKS = {
         "echoashfallprotocol:scrap_press",
     },
     "nexus_scar": {
+        "echoblockworks:nexus_crystal_glowing_crystal",
+        "echoblockworks:nexus_crystal_rift_panel",
         "echoashfallprotocol:echo_crystal",
         "echoashfallprotocol:energized_fissure",
         "echoashfallprotocol:riftstone",
-        "minecraft:crying_obsidian",
     },
     "radiation_zone": {
         "echoashfallprotocol:fallout_dust",
         "echoashfallprotocol:radiation_block",
         "echoashfallprotocol:toxic_waste_barrel",
         "echoashfallprotocol:uranium_crystal",
-        "minecraft:redstone_torch",
+        "echoblockworks:flickering_warning_light",
     },
     "ruined_cityscape": {
+        "echoblockworks:ashstone_cracked_brick",
+        "echoblockworks:charred_concrete_rebar",
+        "echoblockworks:rubble_pile",
         "echoashfallprotocol:concrete_rubble",
         "echoashfallprotocol:oil_stained_concrete",
         "echoashfallprotocol:power_cable",
@@ -236,11 +255,12 @@ CATEGORY_SIGNATURE_BLOCKS = {
         "echoashfallprotocol:signal_scanner",
     },
     "ruined_plains": {
+        "echoblockworks:warning_beacon",
         "echoashfallprotocol:charred_wood_log",
         "echoashfallprotocol:rain_collector",
+        "echoashfallprotocol:structure_cache",
         "echoashfallprotocol:supply_crate",
         "echoashfallprotocol:wild_berry_bush",
-        "minecraft:campfire",
     },
     "toxic_swamp": {
         "echoashfallprotocol:acidic_sludge",
@@ -344,22 +364,21 @@ EXPLAINED_OVERHANG_TEMPLATES = {
 }
 
 QUALITY_CACHE_BLOCKS = {
-    "minecraft:barrel",
-    "minecraft:chest",
-    "minecraft:trapped_chest",
+    "echoashfallprotocol:echo_cache",
+    "echoashfallprotocol:echo_crate",
+    "echoashfallprotocol:structure_cache",
     "echoashfallprotocol:supply_crate",
 }
 
 QUALITY_PATH_BLOCKS = {
-    "minecraft:coarse_dirt",
-    "minecraft:dirt_path",
-    "minecraft:gravel",
-    "minecraft:moss_block",
-    "minecraft:oak_planks",
-    "minecraft:smooth_stone",
-    "minecraft:snow_block",
+    "echoblockworks:ashstone_raw",
+    "echoblockworks:ashstone_smooth",
+    "echoblockworks:charred_concrete_road_plate",
+    "echoblockworks:charred_concrete_smooth",
+    "echoblockworks:rubble_pile",
     "echoashfallprotocol:acid_mud",
     "echoashfallprotocol:burnt_wasteland_soil",
+    "echoashfallprotocol:cracked_asphalt",
     "echoashfallprotocol:fallout_dust",
     "echoashfallprotocol:frozen_soil",
     "echoashfallprotocol:permafrost",
@@ -369,17 +388,59 @@ QUALITY_PATH_BLOCKS = {
 }
 
 QUALITY_HAZARD_BLOCKS = {
-    "minecraft:magma_block",
-    "minecraft:powder_snow",
+    "echoblockworks:flickering_warning_light",
+    "echoblockworks:orbital_hull_lit_strip",
+    "echoblockworks:orbital_hull_thermal_tile",
+    "echoblockworks:reinforced_metal_hazard_stripe",
+    "echoblockworks:sparking_cable_panel",
+    "echoblockworks:warning_beacon",
     "echoashfallprotocol:acidic_sludge",
+    "echoashfallprotocol:blue_ice_crystal",
     "echoashfallprotocol:energized_fissure",
     "echoashfallprotocol:fallout_dust",
+    "echoashfallprotocol:frozen_conduit",
     "echoashfallprotocol:oil_stained_concrete",
+    "echoashfallprotocol:permafrost",
     "echoashfallprotocol:radiation_block",
     "echoashfallprotocol:riftstone",
     "echoashfallprotocol:rusted_metal_debris",
     "echoashfallprotocol:toxic_puddle",
     "echoashfallprotocol:toxic_waste_barrel",
+}
+
+CATEGORY_LOOT_TABLES = {
+    "crash_zone_wasteland": "echoashfallprotocol:chests/crash_zone_wasteland_cache",
+    "cryogenic_ruins": "echoashfallprotocol:chests/cryogenic_ruins_cache",
+    "global": "echoashfallprotocol:chests/survivor_cache",
+    "industrial_ruins": "echoashfallprotocol:chests/industrial_factory_cache",
+    "nexus_scar": "echoashfallprotocol:chests/data_center_cache",
+    "radiation_zone": "echoashfallprotocol:chests/reactor_ruin_cache",
+    "ruined_cityscape": "echoashfallprotocol:chests/data_center_cache",
+    "ruined_plains": "echoashfallprotocol:chests/crashbreak_salvage_yard_cache",
+    "toxic_swamp": "echoashfallprotocol:chests/bio_lab_cache",
+}
+
+TEMPLATE_LOOT_TABLES = {
+    "bio_lab": "echoashfallprotocol:chests/bio_lab_cache",
+    "cryogenic_ruins/frozen_cache": "echoashfallprotocol:chests/cryogenic_ruins_cache",
+    "data_center_ruin": "echoashfallprotocol:chests/data_center_cache",
+    "drop_pod": "echoashfallprotocol:chests/crashed_satellite_cache",
+    "faction/crashbreak_salvage/market_plaza": "echoashfallprotocol:chests/crashbreak_salvage_yard_cache",
+    "faction/crashbreak_salvage/warehouse": "echoashfallprotocol:chests/crashbreak_salvage_yard_cache",
+    "faction/radwarden_outpost/armory": "echoashfallprotocol:chests/radwarden_outpost_cache",
+    "faction/radwarden_outpost/barracks": "echoashfallprotocol:chests/radwarden_outpost_cache",
+    "faction/radwarden_outpost/command_bunker": "echoashfallprotocol:chests/radwarden_outpost_cache",
+    "faction/radwarden_outpost/guard_post": "echoashfallprotocol:chests/radwarden_outpost_cache",
+    "faction/radwarden_outpost/supply_depot": "echoashfallprotocol:chests/radwarden_outpost_cache",
+    "faction/sporebound_sanctum/biodome_hub": "echoashfallprotocol:chests/sporebound_sanctum_cache",
+    "faction/sporebound_sanctum/processing_hut": "echoashfallprotocol:chests/sporebound_sanctum_cache",
+    "military_vault": "echoashfallprotocol:chests/military_vault_cache",
+    "reactor_ruin": "echoashfallprotocol:chests/reactor_ruin_cache",
+    "ruined_cityscape/military_vault": "echoashfallprotocol:chests/military_vault_cache",
+    "ruined_plains/nomad_camp": "echoashfallprotocol:chests/scavenger_camp_cache",
+    "ruined_plains/scavenger_camp": "echoashfallprotocol:chests/scavenger_camp_cache",
+    "ruined_plains/supply_drop": "echoashfallprotocol:chests/scavenger_camp_cache",
+    "subway_station": "echoashfallprotocol:chests/subway_station_cache",
 }
 
 
@@ -498,6 +559,34 @@ def category_name_from_ref(ref: str) -> tuple[str | None, str]:
     return CATEGORY_MAP.get(name), name
 
 
+def default_loot_table_for_template(category: str | None, name: str) -> str:
+    normalized_name = name.replace("\\", "/")
+    if category == "faction":
+        ref_key = f"faction/{normalized_name}"
+    elif category in {"global", None}:
+        ref_key = normalized_name
+    else:
+        ref_key = f"{category}/{normalized_name}"
+
+    for key in (ref_key, normalized_name):
+        if key in TEMPLATE_LOOT_TABLES:
+            return TEMPLATE_LOOT_TABLES[key]
+    if category == "faction":
+        if normalized_name.startswith("radwarden_outpost/"):
+            return "echoashfallprotocol:chests/radwarden_outpost_cache"
+        if normalized_name.startswith("crashbreak_salvage/"):
+            return "echoashfallprotocol:chests/crashbreak_salvage_yard_cache"
+        if normalized_name.startswith("sporebound_sanctum/"):
+            return "echoashfallprotocol:chests/sporebound_sanctum_cache"
+    if category == "ruined_cityscape" and "subway" in normalized_name:
+        return "echoashfallprotocol:chests/subway_station_cache"
+    if category == "ruined_cityscape" and "military" in normalized_name:
+        return "echoashfallprotocol:chests/military_vault_cache"
+    if category == "ruined_plains" and any(token in normalized_name for token in ("nomad", "scavenger", "supply")):
+        return "echoashfallprotocol:chests/scavenger_camp_cache"
+    return CATEGORY_LOOT_TABLES.get(category or "global", CATEGORY_LOOT_TABLES["global"])
+
+
 def is_generated_ref(ref: str, selected_set: set[str]) -> bool:
     _, name = category_name_from_ref(ref)
     return name in selected_set
@@ -524,8 +613,6 @@ def selected_shape_names(args: argparse.Namespace) -> list[str]:
     for name in SHAPE_REGISTRY:
         category = CATEGORY_MAP.get(name)
         if category is None:
-            continue
-        if not requested and name in CURATED_TEMPLATE_NAMES:
             continue
         if args.category != "all" and category != args.category:
             continue
@@ -591,9 +678,12 @@ def _is_architectural_overhang(block_name: str) -> bool:
             "concrete",
             "fence",
             "glass",
+            "grate",
             "hull",
             "log",
+            "metal",
             "obsidian",
+            "panel",
             "planks",
             "slab",
             "stairs",
@@ -637,7 +727,7 @@ def validate_support_audit(
         unsupported.append(item)
         if is_support_sensitive_block(block_name):
             support_sensitive.append(item)
-        if y <= 3:
+        if y <= 3 and not _is_architectural_overhang(block_name):
             low_mass.append(item)
 
     if support_sensitive:
@@ -802,6 +892,9 @@ def validate_visual_nbt(
     forbidden = sorted(set(block_names) & FORBIDDEN_GENERATED_BLOCKS)
     if forbidden:
         errors.append(f"VISUAL_FORBIDDEN_BLOCK {path}: {', '.join(forbidden)}")
+    vanilla_blocks = vanilla_structure_blocks(block_names)
+    if vanilla_blocks:
+        errors.append(f"VANILLA_STRUCTURE_BLOCK {path}: {', '.join(vanilla_blocks)}")
 
     if name in CURATED_TEMPLATE_NAMES:
         return
@@ -908,6 +1001,140 @@ def validate_nbt_file(
     validate_visual_nbt(path, nbt, errors, warnings, landmark, category, name)
 
 
+def iter_full_stack_structure_roots(project_root: Path) -> list[Path]:
+    candidates = [
+        project_root / "src/main/resources/data/echoashfallprotocol/structure",
+        project_root / "src/main/resources/data/echoashfallprotocol/structures",
+        project_root / "addons/echonexusprotocol/src/main/resources/data/echonexusprotocol/structure",
+        project_root / "addons/echonexusprotocol/src/main/resources/data/echonexusprotocol/structures",
+        project_root / "addons/echoconvoyprotocol/src/main/resources/data/echoconvoyprotocol/structure",
+        project_root / "addons/echoconvoyprotocol/src/main/resources/data/echoconvoyprotocol/structures",
+        project_root / "addons/echoblockworks/src/main/resources/data/echoblockworks/structure",
+        project_root / "addons/echoblockworks/src/main/resources/data/echoblockworks/structures",
+    ]
+    return [path for path in candidates if path.exists()]
+
+
+def audit_structure_root_vanilla_blocks(project_root: Path, errors: list[str]) -> int:
+    checked = 0
+    try:
+        import nbtlib
+    except Exception as exc:  # noqa: BLE001 - make missing dependency explicit.
+        errors.append(f"BAD_NBT_AUDIT_IMPORT nbtlib: {exc}")
+        return checked
+
+    for root in iter_full_stack_structure_roots(project_root):
+        for path in sorted(root.rglob("*.nbt")):
+            checked += 1
+            try:
+                nbt = nbtlib.load(str(path))
+            except Exception as exc:  # noqa: BLE001 - report precise template failures.
+                errors.append(f"BAD_NBT {path}: {exc}")
+                continue
+            if "palette" not in nbt:
+                errors.append(f"BAD_NBT {path}: missing palette")
+                continue
+            vanilla_blocks = vanilla_structure_blocks(_palette_names(nbt))
+            if vanilla_blocks:
+                errors.append(f"VANILLA_STRUCTURE_BLOCK {path}: {', '.join(vanilla_blocks)}")
+    return checked
+
+
+def audit_structure_cache_loot(project_root: Path, errors: list[str]) -> tuple[int, int]:
+    checked_files = 0
+    checked_caches = 0
+    try:
+        import nbtlib
+    except Exception as exc:  # noqa: BLE001 - make missing dependency explicit.
+        errors.append(f"BAD_NBT_AUDIT_IMPORT nbtlib: {exc}")
+        return checked_files, checked_caches
+
+    for root in iter_full_stack_structure_roots(project_root):
+        for path in sorted(root.rglob("*.nbt")):
+            try:
+                nbt = nbtlib.load(str(path))
+            except Exception as exc:  # noqa: BLE001 - report precise template failures.
+                errors.append(f"BAD_NBT {path}: {exc}")
+                continue
+            if "palette" not in nbt or "blocks" not in nbt:
+                continue
+            checked_files += 1
+            palette = _palette_names(nbt)
+            missing: list[str] = []
+            bad_ids: list[str] = []
+            for block in nbt["blocks"]:
+                block_id = palette[int(block["state"])]
+                if block_id not in ECHO_LOOT_CONTAINER_BLOCKS:
+                    continue
+                checked_caches += 1
+                pos = tuple(int(part) for part in block["pos"])
+                block_nbt = block.get("nbt")
+                if not isinstance(block_nbt, dict) or not str(block_nbt.get("LootTable", "")):
+                    missing.append(f"{pos}:{block_id}")
+                    continue
+                expected_be = loot_container_block_entity_id(block_id)
+                actual_be = str(block_nbt.get("id", ""))
+                if expected_be and actual_be and actual_be != expected_be:
+                    bad_ids.append(f"{pos}:{actual_be}->{expected_be}")
+            if missing:
+                errors.append(
+                    f"EMPTY_STRUCTURE_CACHE {path}: {len(missing)} cache blocks missing LootTable "
+                    f"(first {', '.join(missing[:5])})"
+                )
+            if bad_ids:
+                errors.append(
+                    f"BAD_STRUCTURE_CACHE_BE {path}: {len(bad_ids)} cache block entities have wrong id "
+                    f"(first {', '.join(bad_ids[:5])})"
+                )
+    return checked_files, checked_caches
+
+
+def iter_structure_json_audit_roots(project_root: Path) -> list[Path]:
+    candidates = [
+        project_root / "src/main/resources/data/echoashfallprotocol/worldgen/processor_list",
+        project_root / "src/main/resources/data/echoashfallprotocol/worldgen/template_pool",
+        project_root / "addons/echonexusprotocol/src/main/resources/data/echonexusprotocol/worldgen/processor_list",
+        project_root / "addons/echonexusprotocol/src/main/resources/data/echonexusprotocol/worldgen/template_pool",
+        project_root / "addons/echoconvoyprotocol/src/main/resources/data/echoconvoyprotocol/worldgen/processor_list",
+        project_root / "addons/echoconvoyprotocol/src/main/resources/data/echoconvoyprotocol/worldgen/template_pool",
+        project_root / "addons/echoblockworks/src/main/resources/data/echoblockworks/worldgen/processor_list",
+        project_root / "addons/echoblockworks/src/main/resources/data/echoblockworks/worldgen/template_pool",
+    ]
+    return [path for path in candidates if path.exists()]
+
+
+def _audit_json_block_state_value(path: Path, pointer: str, key: str, value: str, errors: list[str]) -> None:
+    if key in {"Name", "block"} and value.startswith("minecraft:") and value != "minecraft:air":
+        errors.append(f"VANILLA_STRUCTURE_JSON_BLOCK {path}{pointer}/{key}: {value}")
+
+
+def _audit_json_block_states(path: Path, value: Any, errors: list[str], pointer: str = "") -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_pointer = f"{pointer}/{key}"
+            if isinstance(child, str):
+                _audit_json_block_state_value(path, pointer, str(key), child, errors)
+            else:
+                _audit_json_block_states(path, child, errors, child_pointer)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            _audit_json_block_states(path, child, errors, f"{pointer}/{index}")
+
+
+def audit_structure_json_vanilla_blocks(project_root: Path, errors: list[str]) -> int:
+    checked = 0
+    for root in iter_structure_json_audit_roots(project_root):
+        for path in sorted(root.rglob("*.json")):
+            checked += 1
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001 - report precise datapack JSON failures.
+                errors.append(f"BAD_STRUCTURE_JSON {path}: {exc}")
+                continue
+            _audit_json_block_states(path, data, errors)
+    return checked
+
+
 def check_outputs(project_root: Path, selected_names: list[str], output_roots: list[Path]) -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -941,7 +1168,13 @@ def check_outputs(project_root: Path, selected_names: list[str], output_roots: l
         if category:
             category_counts[category] += 1
 
+    nbt_audit_count = audit_structure_root_vanilla_blocks(project_root, errors)
+    cache_audit_count, cache_block_count = audit_structure_cache_loot(project_root, errors)
+    json_audit_count = audit_structure_json_vanilla_blocks(project_root, errors)
+
     print(f"Checked {len(refs)} template-pool refs and {len(selected_set)} selected generators")
+    print(f"Full-stack vanilla audit: nbt={nbt_audit_count}, structure_json={json_audit_count}")
+    print(f"Full-stack cache loot audit: nbt={cache_audit_count}, cache_blocks={cache_block_count}")
     print(
         "POI audit coverage: "
         + ", ".join(f"{category}={count}" for category, count in sorted(category_counts.items()))
@@ -962,7 +1195,17 @@ def check_outputs(project_root: Path, selected_names: list[str], output_roots: l
     return 0
 
 
-def load_structure_blocks(path: Path) -> list[tuple[int, int, int, str, dict[str, str] | None]]:
+def _plain_nbt(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _plain_nbt(child) for key, child in value.items()}
+    if isinstance(value, list):
+        return [_plain_nbt(child) for child in value]
+    if hasattr(value, "unpack"):
+        return value.unpack()
+    return value
+
+
+def load_structure_blocks(path: Path):
     import nbtlib
 
     nbt = nbtlib.load(str(path))
@@ -973,15 +1216,17 @@ def load_structure_blocks(path: Path) -> list[tuple[int, int, int, str, dict[str
             props = {str(key): str(value) for key, value in entry["Properties"].items()}
         palette.append((str(entry["Name"]), props))
 
-    blocks: list[tuple[int, int, int, str, dict[str, str] | None]] = []
+    blocks = []
     for block in nbt["blocks"]:
-        if "nbt" in block:
-            raise ValueError(f"{path} has block-entity NBT; static grounding repair must preserve it explicitly")
         state = int(block["state"])
         block_name, props = palette[state]
         pos = [int(v) for v in block["pos"]]
-        blocks.append((pos[0], pos[1], pos[2], block_name, props))
-    return blocks
+        block_nbt = _plain_nbt(block["nbt"]) if "nbt" in block else None
+        if block_nbt:
+            blocks.append((pos[0], pos[1], pos[2], block_name, props, block_nbt))
+        else:
+            blocks.append((pos[0], pos[1], pos[2], block_name, props))
+    return sanitize_blocks(blocks)
 
 
 def repair_referenced_static_templates(
@@ -1009,8 +1254,11 @@ def repair_referenced_static_templates(
                 continue
             blocks = load_structure_blocks(path)
             seed = stable_seed(ref)
-            grounded = apply_grounding_pass(blocks, category, seed, name, soften_outline=False)
-            write_structure_nbt(grounded, path)
+            if any(len(entry) == 6 for entry in blocks):
+                grounded = blocks
+            else:
+                grounded = apply_grounding_pass(blocks, category, seed, name, soften_outline=False)
+            write_structure_nbt(grounded, path, default_loot_table_for_template(category, name))
             print(f"  Repaired static: {path} ({len(grounded)} blocks)")
             repaired += 1
     return repaired
@@ -1092,8 +1340,9 @@ def main() -> int:
             continue
 
         output_files = list(iter_output_files(output_roots, category, name))
+        default_loot_table = default_loot_table_for_template(category, name)
         for output_file in output_files:
-            write_structure_nbt(blocks, output_file)
+            write_structure_nbt(blocks, output_file, default_loot_table)
             print(f"  Generated: {output_file} ({len(blocks)} blocks)")
             files_written += 1
         generated += 1

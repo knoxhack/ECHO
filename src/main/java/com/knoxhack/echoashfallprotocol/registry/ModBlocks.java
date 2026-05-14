@@ -668,6 +668,38 @@ public class ModBlocks {
                     .lightLevel(s -> 4));
     public static final DeferredItem<BlockItem> DROP_POD_GLASS_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("drop_pod_glass", DROP_POD_GLASS);
 
+    public static final DeferredBlock<Block> EMERGENCY_BUNK = registerCustomBlock("emergency_bunk",
+            EmergencyBunkBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(1.4f)
+                    .sound(SoundType.WOOL)
+                    .noOcclusion());
+    public static final DeferredItem<BlockItem> EMERGENCY_BUNK_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("emergency_bunk", EMERGENCY_BUNK);
+
+    public static final DeferredBlock<Block> STRUCTURE_CACHE = registerCustomBlock("structure_cache",
+            StructureCacheBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BROWN)
+                    .strength(2.0f, 3.0f)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion());
+    public static final DeferredItem<BlockItem> STRUCTURE_CACHE_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("structure_cache", STRUCTURE_CACHE);
+
+    public static final DeferredBlock<Block> ECHO_CACHE = registerCustomBlock("echo_cache",
+            EchoContainerBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.0f, 4.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+    public static final DeferredItem<BlockItem> ECHO_CACHE_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("echo_cache", ECHO_CACHE);
+
+    public static final DeferredBlock<Block> ECHO_CRATE = registerCustomBlock("echo_crate",
+            EchoContainerBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.0f, 4.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+    public static final DeferredItem<BlockItem> ECHO_CRATE_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("echo_crate", ECHO_CRATE);
+
     // === MACHINES ===
     public static final DeferredBlock<Block> HAND_RECYCLER = registerCustomBlock("hand_recycler",
             HandRecyclerBlock::new, BlockBehaviour.Properties.of()
@@ -973,8 +1005,12 @@ public class ModBlocks {
             MapColor.COLOR_BLUE, SoundType.METAL);
     public static final DeferredItem<BlockItem> WEAPON_RACK_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("weapon_rack", WEAPON_RACK);
 
-    public static final DeferredBlock<Block> SUPPLY_CRATE = registerSimpleProfessionBlock("supply_crate",
-            MapColor.COLOR_LIGHT_BLUE, SoundType.WOOD);
+    public static final DeferredBlock<Block> SUPPLY_CRATE = registerCustomBlock("supply_crate",
+            EchoContainerBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(2.0f, 4.0f)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion());
     public static final DeferredItem<BlockItem> SUPPLY_CRATE_ITEM = BLOCK_ITEMS.registerSimpleBlockItem("supply_crate", SUPPLY_CRATE);
 
     // Crashbreak workstations

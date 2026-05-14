@@ -115,7 +115,9 @@ configurations {
 dependencies {
     implementation project(":echocore")
     compileOnly project(":echoterminal")
+    compileOnly project(":echorendercore")
     localRuntime project(":echoterminal")
+    localRuntime project(":echorendercore")
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

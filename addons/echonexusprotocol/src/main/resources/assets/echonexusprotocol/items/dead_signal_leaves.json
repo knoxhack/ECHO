@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/dead_signal_leaves"
+    "model": "echonexusprotocol:item/dead_signal_leaves"
   }
 }

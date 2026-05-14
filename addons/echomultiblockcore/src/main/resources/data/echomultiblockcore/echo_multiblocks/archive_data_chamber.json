@@ -1,0 +1,27 @@
+{
+  "id": "echomultiblockcore:archive_data_chamber",
+  "display_name": "Archive Data Chamber",
+  "translation_key": "multiblock.echomultiblockcore.archive_data_chamber",
+  "role": "ARCHIVE",
+  "category": "archive",
+  "size": [3, 2, 3],
+  "controller": "echomultiblockcore:multiblock_controller",
+  "allowed_rotations": true,
+  "mirrorable": true,
+  "layers": [["FIF","SCR","FOF"],[".P.",".D.",".A."]],
+  "palette": {
+    "F": { "tag": "echomultiblockcore:reinforced_frames" },
+    "I": { "block": "echomultiblockcore:input_crate", "component": true },
+    "O": { "block": "echomultiblockcore:output_crate", "component": true },
+    "S": { "block": "echomultiblockcore:signal_conduit", "component": true },
+    "D": { "block": "echomultiblockcore:data_bus", "component": true },
+    "P": { "block": "echomultiblockcore:power_bus", "component": true },
+    "R": { "block": "echomultiblockcore:robotic_arm", "robotics": true },
+    "A": { "block": "echomultiblockcore:auto_builder", "component": true, "optional": true },
+    "C": { "block": "echomultiblockcore:multiblock_controller", "controller": true },
+    ".": { "air": true }
+  },
+  "capabilities": ["echo:terminal_tab","echo:research_station","echo:map_marker"],
+  "workcells": [{"id":"echomultiblockcore:archive_data_chamber/archive","type":"ARCHIVE","pos":[1,1,1],"size":[1,1,1]}],
+  "preview": {"color":"9fe8ff"}
+}

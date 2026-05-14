@@ -13,8 +13,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
 
 public class NullBatteryDockBlock extends Block implements EntityBlock {
     public NullBatteryDockBlock(Properties props) {
@@ -24,32 +27,72 @@ public class NullBatteryDockBlock extends Block implements EntityBlock {
     @Override
     public InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
-        if (stack.is(ModItems.NULL_BATTERY.get())) {
-            int charge = stack.getOrDefault(ModDataComponents.NULL_CHARGE.get(), 0);
-            int max = RelicTechConfig.NULL_BATTERY_MAX_CHARGE.get();
-            if (charge < max && player.getInventory().contains(new ItemStack(ModItems.NULL_CELL.get()))) {
-                consumeCell(player);
-                stack.set(ModDataComponents.NULL_CHARGE.get(), Math.min(max, charge + 2));
-                player.sendSystemMessage(Component.literal("Null Battery Dock // Charge increased to " + stack.getOrDefault(ModDataComponents.NULL_CHARGE.get(), 0) + "/" + max));
-            } else if (charge >= max) {
-                player.sendSystemMessage(Component.literal("Null Battery Dock // Battery already full."));
-            } else {
-                player.sendSystemMessage(Component.literal("Null Battery Dock // Requires Null Cell to charge."));
+        if (level.getBlockEntity(pos) instanceof NullBatteryDockBlockEntity be) {
+            if (stack.is(ModItems.NULL_BATTERY.get())) {
+                if (be.insertBattery(stack)) {
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.inserted"));
+                } else {
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.full"));
+                }
+                return InteractionResult.SUCCESS;
             }
-            return InteractionResult.SUCCESS;
+            if (stack.is(ModItems.NULL_CELL.get())) {
+                if (be.insertCell(stack)) {
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.cell_inserted"));
+                } else {
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.cell_full"));
+                }
+                return InteractionResult.SUCCESS;
+            }
+            // If empty hand, try to remove battery
+            if (stack.isEmpty()) {
+                ItemStack battery = be.removeBattery();
+                if (!battery.isEmpty()) {
+                    if (!player.getInventory().add(battery)) {
+                        player.drop(battery, false);
+                    }
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.removed"));
+                    return InteractionResult.SUCCESS;
+                }
+                ItemStack cell = be.removeCell();
+                if (!cell.isEmpty()) {
+                    if (!player.getInventory().add(cell)) {
+                        player.drop(cell, false);
+                    }
+                    player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.cell_removed"));
+                    return InteractionResult.SUCCESS;
+                }
+            }
         }
-        player.sendSystemMessage(Component.literal("Null Battery Dock // Insert Null Battery to charge."));
+        player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.hint"));
         return InteractionResult.SUCCESS;
     }
 
-    private void consumeCell(Player player) {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack s = player.getInventory().getItem(i);
-            if (s.is(ModItems.NULL_CELL.get())) {
-                s.shrink(1);
-                return;
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (level.getBlockEntity(pos) instanceof NullBatteryDockBlockEntity be) {
+            ItemStack battery = be.getBattery();
+            if (!battery.isEmpty()) {
+                int charge = battery.getOrDefault(ModDataComponents.NULL_CHARGE.get(), 0);
+                int max = RelicTechConfig.NULL_BATTERY_MAX_CHARGE.get();
+                player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.status", charge, max));
+            } else {
+                player.sendSystemMessage(Component.translatable("block.echorelictech.null_battery_dock.empty"));
             }
         }
+        return InteractionResult.SUCCESS;
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        if (level.isClientSide()) return null;
+        return (lvl, pos, st, be) -> {
+            if (be instanceof NullBatteryDockBlockEntity dock) {
+                NullBatteryDockBlockEntity.tick(lvl, pos, st, dock);
+            }
+        };
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.knoxhack.echoblackboxprotocol.progression;
 
+import com.knoxhack.echoblackboxprotocol.integration.BlackboxMissionHooks;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import net.minecraft.nbt.CompoundTag;
@@ -12,13 +13,18 @@ public final class BlackboxProgress {
    private final Player player;
    private final CompoundTag root;
 
+   private BlackboxProgress() {
+      this.player = null;
+      this.root = new CompoundTag();
+   }
+
    private BlackboxProgress(Player player) {
       this.player = player;
       this.root = player.getPersistentData().getCompoundOrEmpty("echoblackboxprotocol_progress");
    }
 
    public static BlackboxProgress get(Player player) {
-      return new BlackboxProgress(player);
+      return player == null ? new BlackboxProgress() : new BlackboxProgress(player);
    }
 
    public boolean decode(Player serverPlayer, MemoryType type) {
@@ -27,6 +33,7 @@ public final class BlackboxProgress {
       this.stability(Math.max(0, this.stability() - (type == MemoryType.DELETED ? 12 : 4)));
       this.falseSignals(this.falseSignalCount() + (type == MemoryType.DELETED ? 2 : 1));
       this.save();
+      BlackboxMissionHooks.recordMemory(serverPlayer, type);
       return previous == 0;
    }
 
@@ -59,6 +66,7 @@ public final class BlackboxProgress {
    public void completeDungeon(BlackboxDungeon dungeon) {
       this.root.putBoolean("dungeon_" + dungeon.getSerializedName(), true);
       this.save();
+      BlackboxMissionHooks.recordDungeon(this.player, dungeon);
    }
 
    public boolean bossDefeated(String id) {
@@ -72,6 +80,7 @@ public final class BlackboxProgress {
       } else {
          this.root.putBoolean(key, true);
          this.save();
+         BlackboxMissionHooks.recordBoss(this.player, id);
          return true;
       }
    }
@@ -103,6 +112,7 @@ public final class BlackboxProgress {
    public void markNexusCoreAccessKey() {
       this.root.putBoolean("nexus_core_access_key", true);
       this.save();
+      BlackboxMissionHooks.recordCoreKey(this.player);
    }
 
    public int stability() {
@@ -132,6 +142,7 @@ public final class BlackboxProgress {
          this.root.putString("ending", ending.getSerializedName());
          this.applyEndingState(ending);
          this.save();
+         BlackboxMissionHooks.recordEnding(this.player, ending.getSerializedName());
          return true;
       } else {
          return false;

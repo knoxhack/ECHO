@@ -61,12 +61,12 @@ Guardian mode adds a biome-specific surface landmark, themed descent route, and 
 - **Features:** Glowing core, radiation hazards
 
 ### 5. Drop Pod
-- **Template size:** `20x10x20`
+- **Template size:** `16x9x16`
 - **Main body:** roughly `12x12` with chamfered/clipped corners inside the 20-block site
 - **Rooms:** 1 compact starter bay with wall zones
 - **Biomes:** Crash Zone
-- **Features:** armored sci-fi shell, slimmer landing struts, south-facing door/ramp, side windows, roof hatch, beacon posts, pipe/cable runs, labeled lockers, bed nook, ECHO control core, embedded lights, and reduced landing debris
-- **Contracts:** player spawn at template `(9, 3, 12)`; white bed foot/head at `(5, 3, 10)` and `(5, 3, 11)`; mirrored NBTs must stay byte-equivalent by generated palette signature under both `structure/drop_pod.nbt` and `structure/global/drop_pod.nbt`
+- **Features:** Blockworks orbital hull shell, compact landing struts, south hatch/ramp, side windows, roof beacons, pipe/cable runs, Echo crates/cache, emergency bunk, ECHO control core, embedded lights, and reduced landing debris
+- **Contracts:** player spawn at template `(8, 3, 10)`; emergency bunk foot/head at `(4, 3, 7)` and `(4, 3, 8)`; four `echoashfallprotocol:echo_crate` lockers and one `echoashfallprotocol:echo_cache`; no visible vanilla blocks; mirrored NBTs must stay byte-equivalent by generated palette signature under both `structure/drop_pod.nbt` and `structure/global/drop_pod.nbt`
 
 ## POI Field Atlas Catalog
 
@@ -155,7 +155,7 @@ python tools\structure_generator\generator.py --check --target drop_pod
 python tools\validate_gameplay_data.py
 ```
 
-The drop pod check expects a compact `20x10x20` template, the spawn/bed contract above, visible locker/container coverage, mirrored `structure` and `structures` outputs, and only the reviewed foundation warnings from hidden deepslate support.
+The drop pod check expects a compact `16x9x16` template, the spawn/bunk/cache contract above, visible Blockworks hull coverage, mirrored `structure` and `structures` outputs, and no visible vanilla blocks.
 
 ```
 # Teleport to nearest bio lab

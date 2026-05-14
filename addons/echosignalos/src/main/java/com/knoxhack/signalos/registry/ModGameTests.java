@@ -7,10 +7,17 @@ import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoServiceRegistry;
 import com.knoxhack.echocore.api.TerminalPlacementService;
 import com.knoxhack.echocore.api.TerminalRewardService;
+import com.knoxhack.echocore.api.mission.InMemoryMissionRegistry;
+import com.knoxhack.echocore.api.mission.MissionDefinition;
+import com.knoxhack.echocore.api.mission.MissionHookTargets;
+import com.knoxhack.echocore.api.mission.MissionKind;
+import com.knoxhack.echocore.api.mission.MissionObjectiveType;
 import com.knoxhack.signalos.SignalOS;
 import com.knoxhack.signalos.api.SignalOsApp;
 import com.knoxhack.signalos.api.SignalOsDataRecord;
 import com.knoxhack.signalos.api.SignalOsDriveData;
+import com.knoxhack.signalos.api.SignalOsDataProvider;
+import com.knoxhack.signalos.api.TerminalActionRegistry;
 import com.knoxhack.signalos.api.TerminalArchiveRecord;
 import com.knoxhack.signalos.api.TerminalChapter;
 import com.knoxhack.signalos.api.TerminalMission;
@@ -18,13 +25,18 @@ import com.knoxhack.signalos.block.entity.SignalOsServerRackBlockEntity;
 import com.knoxhack.signalos.block.entity.SignalOsTerminalBlockEntity;
 import com.knoxhack.signalos.content.SignalOsContentRegistry;
 import com.knoxhack.signalos.content.SignalOsJsonContentLoader;
+import com.knoxhack.signalos.item.SignalOsDataDriveItem;
 import com.knoxhack.signalos.kubejs.SignalOSKubeBridge;
 import com.knoxhack.signalos.kubejs.SignalOSEvents;
+import com.knoxhack.signalos.integration.SignalOsMissionCoreIntegration;
+import com.knoxhack.signalos.menu.SignalOsServerRackMenu;
 import com.knoxhack.signalos.menu.SignalOsTerminalMenu;
+import com.knoxhack.signalos.network.SignalOsRackActionPacket;
 import com.knoxhack.signalos.network.SignalOsTerminalStatePacket;
 import com.knoxhack.signalos.service.SignalOsBuiltinActions;
 import com.knoxhack.signalos.service.SignalOsComputerNetworkService;
 import com.knoxhack.signalos.service.SignalOsPlayerData;
+import com.knoxhack.signalos.service.SignalOsRackActions;
 import com.knoxhack.signalos.service.SignalOsTerminalServices;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +52,7 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
@@ -90,6 +103,14 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("data_drive_component_flow", () -> ModGameTests::dataDriveComponentFlow);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> COMPUTER_NETWORK_DISCOVERY =
             TEST_FUNCTIONS.register("computer_network_discovery", () -> ModGameTests::computerNetworkDiscovery);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NOTE_EDITING_FLOW =
+            TEST_FUNCTIONS.register("note_editing_flow", () -> ModGameTests::noteEditingFlow);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SERVER_RACK_MENU_ACTIONS =
+            TEST_FUNCTIONS.register("server_rack_menu_actions", () -> ModGameTests::serverRackMenuActions);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CUSTOM_APP_RECORD_VIEW =
+            TEST_FUNCTIONS.register("custom_app_record_view", () -> ModGameTests::customAppRecordView);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
+            TEST_FUNCTIONS.register("missioncore_content_registration", () -> ModGameTests::missionCoreContentRegistration);
 
     private ModGameTests() {
     }
@@ -116,6 +137,10 @@ public final class ModGameTests {
         register(event, environment, "app_registry_and_data", APP_REGISTRY_AND_DATA.getId());
         register(event, environment, "data_drive_component_flow", DATA_DRIVE_COMPONENT_FLOW.getId());
         register(event, environment, "computer_network_discovery", COMPUTER_NETWORK_DISCOVERY.getId());
+        register(event, environment, "note_editing_flow", NOTE_EDITING_FLOW.getId());
+        register(event, environment, "server_rack_menu_actions", SERVER_RACK_MENU_ACTIONS.getId());
+        register(event, environment, "custom_app_record_view", CUSTOM_APP_RECORD_VIEW.getId());
+        register(event, environment, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
     }
 
     private static void registrySorting(GameTestHelper helper) {
@@ -645,6 +670,201 @@ public final class ModGameTests {
         helper.assertTrue(snapshot.records().stream().anyMatch(record -> record.id().equals(recordId)),
                 "Network scan should expose records from installed rack drives.");
         helper.succeed();
+    }
+
+    private static void noteEditingFlow(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        SignalOsBuiltinActions.register();
+        JsonObject payload = new JsonObject();
+        payload.addProperty("title", "Field Note");
+        payload.addProperty("body", "Initial body");
+        helper.assertTrue(TerminalActionRegistry.handle(player, SignalOsBuiltinActions.PAGE_NOTES,
+                        SignalOsBuiltinActions.SAVE_NOTE, payload.toString()),
+                "JSON note save action should be registered and accepted.");
+        List<SignalOsDataRecord> notes = SignalOsPlayerData.notes(player);
+        helper.assertTrue(notes.size() == 1, "JSON note save should create a note.");
+        Identifier noteId = notes.getFirst().id();
+
+        JsonObject update = new JsonObject();
+        update.addProperty("id", noteId.toString());
+        update.addProperty("title", "Updated Field Note");
+        update.addProperty("body", "Updated body");
+        helper.assertTrue(TerminalActionRegistry.handle(player, SignalOsBuiltinActions.PAGE_NOTES,
+                        SignalOsBuiltinActions.SAVE_NOTE, update.toString()),
+                "JSON note save should update an existing note by id.");
+        List<SignalOsDataRecord> updated = SignalOsPlayerData.notes(player);
+        helper.assertTrue(updated.size() == 1 && "Updated Field Note".equals(updated.getFirst().title()),
+                "Note update should preserve one note and replace title/body.");
+
+        helper.assertTrue(TerminalActionRegistry.handle(player, SignalOsBuiltinActions.PAGE_NOTES,
+                        SignalOsBuiltinActions.SAVE_NOTE, "Legacy Title\nLegacy body"),
+                "Legacy newline note payload should remain accepted.");
+        helper.assertTrue(SignalOsPlayerData.notes(player).size() == 2,
+                "Legacy note payload should create a second note.");
+        helper.assertTrue(TerminalActionRegistry.handle(player, SignalOsBuiltinActions.PAGE_NOTES,
+                        SignalOsBuiltinActions.DELETE_NOTE, noteId.toString()),
+                "Delete note action should be accepted.");
+        helper.assertFalse(SignalOsPlayerData.notes(player).stream().anyMatch(note -> note.id().equals(noteId)),
+                "Deleted note should be removed from player data.");
+        TerminalActionRegistry.handle(player, SignalOsBuiltinActions.PAGE_NOTES,
+                SignalOsBuiltinActions.CLEAR_NOTES, "");
+        helper.assertTrue(SignalOsPlayerData.notes(player).isEmpty(), "Clear notes action should remove all notes.");
+        helper.succeed();
+    }
+
+    private static void serverRackMenuActions(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        BlockPos workstation = new BlockPos(1, 1, 1);
+        BlockPos rackPos = new BlockPos(3, 1, 1);
+        helper.setBlock(workstation, ModBlocks.WORKSTATION.get());
+        helper.setBlock(rackPos, ModBlocks.SERVER_RACK.get());
+        BlockPos workstationAbsolute = helper.absolutePos(workstation);
+        if (helper.getLevel().getBlockEntity(workstationAbsolute) instanceof SignalOsTerminalBlockEntity terminal) {
+            terminal.setOwnerIfMissing(player);
+            SignalOsTerminalServices.rememberTerminal(player, workstationAbsolute);
+        }
+        SignalOsServerRackBlockEntity rack =
+                (SignalOsServerRackBlockEntity) helper.getLevel().getBlockEntity(helper.absolutePos(rackPos));
+        helper.assertTrue(rack != null, "Server rack should create a rack block entity.");
+        BlockPos rackAbsolute = helper.absolutePos(rackPos);
+        player.setPos(rackAbsolute.getX() + 0.5D, rackAbsolute.getY() + 0.5D, rackAbsolute.getZ() + 0.5D);
+
+        ItemStack playerDrive = new ItemStack(ModBlocks.DATA_DRIVE.get());
+        player.getInventory().setItem(0, playerDrive);
+        SignalOsServerRackMenu menu = new SignalOsServerRackMenu(1, player.getInventory(), rack);
+        int playerDriveMenuSlot = -1;
+        for (int i = SignalOsServerRackMenu.DRIVE_SLOT_COUNT; i < menu.slots.size(); i++) {
+            if (menu.slots.get(i).getItem().is(ModBlocks.DATA_DRIVE.get())) {
+                playerDriveMenuSlot = i;
+                break;
+            }
+        }
+        helper.assertTrue(playerDriveMenuSlot >= 0, "Rack menu should expose player inventory drive slots.");
+        helper.assertTrue(!menu.quickMoveStack(player, playerDriveMenuSlot).isEmpty(),
+                "Quick-moving a data drive from player inventory should succeed.");
+        helper.assertTrue(rack.drives().getItem(0).is(ModBlocks.DATA_DRIVE.get()),
+                "Quick-moved data drive should land in the rack drive bays.");
+        player.getInventory().setItem(1, new ItemStack(Items.DIRT));
+        int dirtMenuSlot = -1;
+        for (int i = SignalOsServerRackMenu.DRIVE_SLOT_COUNT; i < menu.slots.size(); i++) {
+            if (menu.slots.get(i).getItem().is(Items.DIRT)) {
+                dirtMenuSlot = i;
+                break;
+            }
+        }
+        helper.assertTrue(menu.quickMoveStack(player, dirtMenuSlot).isEmpty(),
+                "Quick-moving non-drive items into rack bays should be rejected.");
+
+        Identifier recordId = testId("rack/source_record");
+        Identifier templateId = testId("template/field");
+        SignalOsContentRegistry.withClearedForTests(() -> {
+            SignalOsContentRegistry.registerDataProvider(new SignalOsDataProvider() {
+                @Override
+                public Identifier id() {
+                    return testId("rack_provider");
+                }
+
+                @Override
+                public List<SignalOsDataRecord> records(Player ignored) {
+                    return List.of(new SignalOsDataRecord(recordId, "Source Record", "record", "test",
+                            "copy me", 0, false));
+                }
+            });
+            SignalOsContentRegistry.replaceJsonContent(new SignalOsContentRegistry.LoadedContent(
+                    Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+                    Map.of(templateId, new SignalOsDriveData("Template Drive", List.of(
+                            new SignalOsDataRecord(testId("template/record"), "Template Record", "record",
+                                    "template", "templated", 0, false)))),
+                    SignalOsContentRegistry.LoadReport.empty()));
+
+            player.containerMenu = menu;
+            helper.assertTrue(SignalOsRackActions.handle(player,
+                            new SignalOsRackActionPacket(helper.absolutePos(rackPos), 0,
+                                    SignalOsRackActions.COPY_RECORD, recordId.toString())),
+                    "Rack copy action should write a selected network record to the selected drive.");
+            helper.assertTrue(SignalOsDataDriveItem.data(rack.drives().getItem(0)).records().stream()
+                            .anyMatch(record -> record.id().equals(recordId)),
+                    "Copied network record should persist on the data drive component.");
+            helper.assertTrue(SignalOsRackActions.handle(player,
+                            new SignalOsRackActionPacket(helper.absolutePos(rackPos), 0,
+                                    SignalOsRackActions.APPLY_TEMPLATE, templateId.toString())),
+                    "Rack template action should merge loaded drive template records.");
+            helper.assertTrue(SignalOsDataDriveItem.data(rack.drives().getItem(0)).records().stream()
+                            .anyMatch(record -> record.id().equals(testId("template/record"))),
+                    "Applied template record should persist on the data drive.");
+            helper.assertTrue(SignalOsRackActions.handle(player,
+                            new SignalOsRackActionPacket(helper.absolutePos(rackPos), 0,
+                                    SignalOsRackActions.REMOVE_RECORD, recordId.toString())),
+                    "Rack remove action should delete a selected drive record.");
+            helper.assertFalse(SignalOsDataDriveItem.data(rack.drives().getItem(0)).records().stream()
+                            .anyMatch(record -> record.id().equals(recordId)),
+                    "Removed record should no longer be present on the drive.");
+            helper.assertTrue(SignalOsRackActions.handle(player,
+                            new SignalOsRackActionPacket(helper.absolutePos(rackPos), 0,
+                                    SignalOsRackActions.RENAME_DRIVE, "Renamed Drive")),
+                    "Rack rename action should update the drive label.");
+            helper.assertTrue("Renamed Drive".equals(SignalOsDataDriveItem.data(rack.drives().getItem(0)).label()),
+                    "Renamed drive label should persist on the component.");
+            helper.assertTrue(SignalOsRackActions.handle(player,
+                            new SignalOsRackActionPacket(helper.absolutePos(rackPos), 0,
+                                    SignalOsRackActions.CLEAR_DRIVE, "")),
+                    "Rack clear action should be accepted.");
+            helper.assertTrue(SignalOsDataDriveItem.data(rack.drives().getItem(0)).records().isEmpty(),
+                    "Clear action should remove drive records.");
+        });
+        helper.succeed();
+    }
+
+    private static void customAppRecordView(GameTestHelper helper) {
+        JsonObject json = new JsonObject();
+        json.addProperty("title", "Filtered Records");
+        json.addProperty("type", "field_records");
+        json.addProperty("view", "records");
+        JsonArray types = new JsonArray();
+        types.add("record");
+        json.add("recordTypes", types);
+        JsonArray sources = new JsonArray();
+        sources.add("SignalOS Core");
+        json.add("recordSources", sources);
+        json.addProperty("includeArchived", true);
+        json.addProperty("emptyText", "No filtered records");
+        SignalOsApp app = SignalOsJsonContentLoader.parseAppForTests(testId("filtered_app"), json);
+        helper.assertTrue("records".equals(app.view()), "Custom app JSON should parse record view mode.");
+        helper.assertTrue(app.recordTypes().contains("record"), "Custom app JSON should parse record type filters.");
+        helper.assertTrue(app.recordSources().contains("signalos core"),
+                "Custom app JSON should parse source filters case-insensitively.");
+        helper.assertTrue(app.includeArchived(), "Custom app JSON should parse includeArchived.");
+        helper.assertTrue("No filtered records".equals(app.emptyText()),
+                "Custom app JSON should parse empty view text.");
+        helper.succeed();
+    }
+
+    private static void missionCoreContentRegistration(GameTestHelper helper) {
+        InMemoryMissionRegistry registry = new InMemoryMissionRegistry();
+        SignalOsMissionCoreIntegration.registerContent(registry);
+        helper.assertTrue(registry.chapter(id("signalos")).isPresent(), "SignalOS MissionCore chapter should be owned by SignalOS.");
+        assertMission(helper, registry, "boot_terminal", "boot", MissionObjectiveType.SCAN_BLOCK);
+        assertMission(helper, registry, "rack_network_online", "rack", MissionObjectiveType.ESTABLISH_ROUTE);
+        assertMission(helper, registry, "drive_record_flow", "record", MissionObjectiveType.UNLOCK_RESEARCH);
+        helper.succeed();
+    }
+
+    private static void assertMission(
+            GameTestHelper helper,
+            InMemoryMissionRegistry registry,
+            String missionPath,
+            String objectiveKey,
+            MissionObjectiveType type) {
+        Identifier missionId = id(missionPath);
+        MissionDefinition mission = registry.missionDefinition(missionId)
+                .orElseThrow(() -> new AssertionError("Missing MissionCore mission: " + missionId));
+        helper.assertTrue(mission.kind() == MissionKind.SIDE_OP, "SignalOS MissionCore missions should be side ops.");
+        helper.assertTrue(!mission.rewards().isEmpty(), "SignalOS MissionCore mission should have a claimable reward: " + missionId);
+        helper.assertTrue(mission.objectives().size() == 1, "SignalOS MissionCore mission should have one direct objective: " + missionId);
+        helper.assertTrue(mission.objectives().getFirst().type() == type, "SignalOS objective type should stay stable: " + missionId);
+        String target = mission.objectives().getFirst().criteria().get("target");
+        helper.assertTrue(MissionHookTargets.objectiveTarget(SignalOS.MODID, missionId, objectiveKey).toString().equals(target),
+                "SignalOS MissionCore objective target should use MissionHookTargets: " + missionId);
     }
 
     private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment,

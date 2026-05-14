@@ -1,6 +1,7 @@
 package com.knoxhack.signalos.block.entity;
 
 import com.knoxhack.signalos.registry.ModBlockEntities;
+import com.knoxhack.signalos.service.SignalOsComputerNetworkService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -230,5 +231,11 @@ public class SignalOsTerminalBlockEntity extends BlockEntity {
                 }
             }
         }
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        SignalOsComputerNetworkService.invalidateCache();
     }
 }

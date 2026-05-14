@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0 - Faction Outposts
+
+- Added the persistent `echoorbitalremnants:orbital_faction_npc` contact with synced faction and role identity.
+- Added Orbital-native faction dialogue/action packets and a custom ECHO outpost dialogue screen for Talk, Request Service, Barter, Accept Charter, and Complete Charter.
+- Added server-side outpost NPC spawning near Saturn Crashbreak, Titan Radwarden, and Nexus Sporebound hub hooks with nearby caps and per-site seeding.
+- Replaced the final-seal faction gate with required Tier I outpost charters for Crashbreak, Radwarden, and Sporebound.
+- Extended ECHO-7 progress with outpost tiers, active/completed outpost charters, service cooldowns, and migration for old saves with completed legacy faction contracts or already sealed final networks.
+- Kept Ashfall optional by using only Orbital/ECHO Core paths while preserving the existing Radwarden, Crashbreak, and Sporebound standing mirror.
+- Added GameTest coverage for outpost NPC identity, final-seal gating, legacy migration, and server-side action rejection.
+
 ## 1.5.0 - Orbital Cohesion Polish
 
 - Expanded the release route arc through Saturn Ring Graveyard and Titan Methane Shelf before the Nexus finale.

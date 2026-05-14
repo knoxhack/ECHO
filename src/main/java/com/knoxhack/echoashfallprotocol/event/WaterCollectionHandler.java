@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -35,7 +36,7 @@ public final class WaterCollectionHandler {
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
+        if (!(event.getEntity() instanceof Player player)) {
             return;
         }
 
@@ -50,14 +51,16 @@ public final class WaterCollectionHandler {
             return;
         }
 
-        fillDirtyWater(level, player, event.getHand(), event.getPos());
-        event.setCancellationResult(InteractionResult.SUCCESS_SERVER);
+        if (player instanceof ServerPlayer serverPlayer) {
+            fillDirtyWater(level, serverPlayer, event.getHand(), event.getPos());
+        }
+        event.setCancellationResult(level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER);
         event.setCanceled(true);
     }
 
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
+        if (!(event.getEntity() instanceof Player player)) {
             return;
         }
 
@@ -72,8 +75,10 @@ public final class WaterCollectionHandler {
             return;
         }
 
-        fillDirtyWater(level, player, event.getHand(), hit.getBlockPos());
-        event.setCancellationResult(InteractionResult.SUCCESS_SERVER);
+        if (player instanceof ServerPlayer serverPlayer) {
+            fillDirtyWater(level, serverPlayer, event.getHand(), hit.getBlockPos());
+        }
+        event.setCancellationResult(level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER);
         event.setCanceled(true);
     }
 
@@ -87,7 +92,7 @@ public final class WaterCollectionHandler {
         player.sendSystemMessage(Component.translatable("message.EchoAshfallProtocol.water.collect_dirty"));
     }
 
-    private static BlockHitResult getWaterSourceHit(Level level, ServerPlayer player) {
+    private static BlockHitResult getWaterSourceHit(Level level, Player player) {
         Vec3 from = player.getEyePosition();
         Vec3 look = player.getViewVector(1.0F);
         double reach = player.blockInteractionRange();

@@ -8,6 +8,7 @@ import com.knoxhack.echologisticsnetwork.content.RemoteRequestSelection;
 import com.knoxhack.echologisticsnetwork.content.RouteManifestSelection;
 import com.knoxhack.echologisticsnetwork.content.SupplyCategory;
 import com.knoxhack.echologisticsnetwork.content.SupplyTagSelection;
+import com.knoxhack.echologisticsnetwork.integration.LogisticsMissionHooks;
 import com.knoxhack.echologisticsnetwork.registry.ModDataComponents;
 import com.knoxhack.echologisticsnetwork.service.LogisticsNetworkService;
 import java.util.List;
@@ -187,6 +188,7 @@ public class LogisticsToolItem extends Item {
          stack.set(ModDataComponents.SUPPLY_TAG_SELECTION.get(), selection);
       }
       logistics.setCategoryId(selection.categoryId(), player);
+      LogisticsMissionHooks.recordLabelSupplies(player, selection.categoryId());
       return InteractionResult.SUCCESS_SERVER;
    }
 

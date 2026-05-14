@@ -19,7 +19,7 @@ public class NullBatteryItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
         int charge = stack.getOrDefault(ModDataComponents.NULL_CHARGE.get(), 0);
         int max = RelicTechConfig.NULL_BATTERY_MAX_CHARGE.get();
-        tooltip.accept(Component.literal("Null Charge: " + charge + "/" + max));
-        tooltip.accept(Component.literal("Accepted by relic devices. Unsafe discharge warning."));
+        tooltip.accept(Component.translatable("item.echorelictech.null_battery.charge", charge, max));
+        tooltip.accept(Component.translatable("item.echorelictech.null_battery.warning"));
     }
 }

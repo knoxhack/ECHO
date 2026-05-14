@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "echopowergrid:block/hand_crank_generator",
+    "down": "echopowergrid:block/hand_crank_generator",
+    "up": "echopowergrid:block/hand_crank_generator",
+    "north": "echopowergrid:block/hand_crank_generator",
+    "south": "echopowergrid:block/hand_crank_generator",
+    "west": "echopowergrid:block/hand_crank_generator",
+    "east": "echopowergrid:block/hand_crank_generator"
+  }
+}

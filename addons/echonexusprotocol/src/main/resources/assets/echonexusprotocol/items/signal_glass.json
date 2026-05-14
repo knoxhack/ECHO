@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "echonexusprotocol:block/signal_glass"
+    "model": "echonexusprotocol:item/signal_glass"
   }
 }

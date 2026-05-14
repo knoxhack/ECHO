@@ -1,0 +1,12 @@
+{
+  "id": "echotutorialcore:cold_without_thermal",
+  "type": "DANGER",
+  "category": "HAZARDS",
+  "title": "Cryogenic Cold Detected",
+  "message": "Extreme cold detected. Thermal insulation not found.",
+  "details": "Wear thermal gear or carry heat packs to prevent rapid freezing.",
+  "cooldownTicks": 6000,
+  "guideModes": ["MINIMAL", "NORMAL", "ASSISTED"],
+  "priority": 90,
+  "dismissible": true
+}
