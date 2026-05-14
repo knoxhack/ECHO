@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "echorelictech:phase_anchor",
+    "echorelictech:null_battery",
+    "echorelictech:guardian_lens",
+    "echorelictech:echo_mirror",
+    "echorelictech:matter_stitcher",
+    "echorelictech:unidentified_relic"
+  ]
+}

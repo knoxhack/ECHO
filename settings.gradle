@@ -14,11 +14,11 @@ project(':echocore').projectDir = file('core/echocore')
 def echoAddonSet = (gradle.startParameter.projectProperties.get('echoAddonSet') ?: 'all')
         .toString()
         .toLowerCase(Locale.ROOT)
-def echoBetaAddons = ['echonetcore', 'echoterminal', 'echomissioncore', 'echodatacore', 'echosignalos', 'signalosexample', 'echoorbitalremnants', 'echonexusprotocol', 'echoagriculturereclamation', 'echoworldcore']
-def echoReleaseAddons = ['echostationfall', 'echoblackboxprotocol', 'echorendercore', 'echoindustrialnexus', 'echologisticsnetwork', 'echoconvoyprotocol', 'echoholomap', 'echoindex', 'echoarmory', 'echolens']
+def echoBetaAddons = ['echonetcore', 'echoterminal', 'echomissioncore', 'echodatacore', 'echomultiblockcore', 'echoruntimeguard', 'echosignalos', 'signalosexample', 'echorendercore', 'echoorbitalremnants', 'echonexusprotocol', 'echoagriculturereclamation', 'echoworldcore', 'echoblockworks', 'echothemecore', 'echoplayercore', 'echopowergrid', 'echosoundcore', 'echotutorialcore', 'echorelictech', 'echoweathercore']
+def echoReleaseAddons = ['echostationfall', 'echoblackboxprotocol', 'echoindustrialnexus', 'echologisticsnetwork', 'echoconvoyprotocol', 'echoholomap', 'echoindex', 'echoarmory', 'echolens']
 
 if (!['beta', 'all'].contains(echoAddonSet)) {
-    throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
+    throw new RuntimeException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
 }
 
 def echoAddonProjects = echoAddonSet == 'all' ? echoBetaAddons + echoReleaseAddons : echoBetaAddons
@@ -26,7 +26,7 @@ echoAddonProjects.each { addonName ->
     def addonDir = file("addons/${addonName}")
     if (!addonDir.isDirectory()) {
         if (echoBetaAddons.contains(addonName)) {
-            throw new GradleException("Required beta addon '${addonName}' is missing at ${addonDir}.")
+            throw new RuntimeException("Required beta addon '${addonName}' is missing at ${addonDir}.")
         }
         return
     }

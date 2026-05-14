@@ -1,0 +1,26 @@
+{
+  "id": "echorelictech:null_battery",
+  "tier": "PROTOTYPE",
+  "category": "POWER",
+  "origin": "Pre-Gridfall Energy Cell",
+  "defaultCondition": "STABILIZED",
+  "cooldownTicks": 0,
+  "instabilityCost": 0,
+  "nullChargeCost": 0,
+  "riskTypes": [
+    "BATTERY_DRAIN",
+    "POWERGRID_OVERLOAD"
+  ],
+  "failureTable": "echorelictech:generic_relic",
+  "terminal": {
+    "summary": "Stores Null Charge used by relic devices.",
+    "warning": "Unsafe discharge may trigger overload."
+  },
+  "lens": {
+    "compact": "Portable null-energy reservoir.",
+    "deepScan": [
+      "Cell integrity: acceptable.",
+      "Recommended use: relic power source only."
+    ]
+  }
+}

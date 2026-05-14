@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " R ",
+    "ICI",
+    " I "
+  ],
+  "key": {
+    "R": { "item": "minecraft:redstone" },
+    "I": { "item": "minecraft:iron_nugget" },
+    "C": { "item": "echorelictech:null_cell" }
+  },
+  "result": {
+    "id": "echorelictech:null_battery"
+  }
+}

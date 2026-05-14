@@ -1,0 +1,34 @@
+{
+  "id": "echorelictech:guardian_lens",
+  "tier": "PROTOTYPE",
+  "category": "SCANNER",
+  "origin": "Guardian Interface Prototype",
+  "defaultCondition": "DAMAGED",
+  "cooldownTicks": 1200,
+  "instabilityCost": 5,
+  "nullChargeCost": 0,
+  "riskTypes": [
+    "FALSE_GUIDANCE",
+    "HOSTILE_SIGNAL_ATTRACTION",
+    "NEXUS_INSTABILITY"
+  ],
+  "failureTable": "echorelictech:guardian_lens",
+  "terminal": {
+    "summary": "Performs deep scans for relic traces and vault signatures.",
+    "warning": "False signals possible at high instability."
+  },
+  "lens": {
+    "compact": "Damaged guardian scanner.",
+    "deepScan": [
+      "Optical feed: degraded.",
+      "Trace sensitivity: 64 blocks.",
+      "ECHO warning: verify all positive reads."
+    ]
+  },
+  "repair": {
+    "materials": [
+      { "item": "echorelictech:relic_shard", "count": 2 },
+      { "item": "echorelictech:guardian_alloy", "count": 1 }
+    ]
+  }
+}

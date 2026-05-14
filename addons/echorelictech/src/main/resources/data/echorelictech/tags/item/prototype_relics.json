@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "echorelictech:phase_anchor",
+    "echorelictech:null_battery",
+    "echorelictech:guardian_lens"
+  ]
+}
