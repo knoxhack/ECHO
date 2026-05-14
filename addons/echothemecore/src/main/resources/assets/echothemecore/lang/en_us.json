@@ -1,0 +1,7 @@
+{
+  "mod.echothemecore": "ECHO ThemeCore",
+  "commands.echo_theme.current": "Current ECHO theme",
+  "commands.echo_theme.list": "Loaded ECHO themes",
+  "theme.echothemecore.cyberglass": "CyberGlass",
+  "theme.echothemecore.nexus": "Nexus"
+}
