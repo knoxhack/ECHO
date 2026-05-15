@@ -25,12 +25,14 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -185,6 +187,26 @@ public final class StationfallTerminalCommonIntegration {
         }
 
         @Override
+        public Optional<TerminalMissionRoutePlacement> routePlacement(
+                Player player,
+                TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot,
+                TerminalMissionRole role) {
+            Mission mission = Mission.by(definition == null ? null : definition.id());
+            if (mission == null) {
+                return Optional.empty();
+            }
+            int phase = switch (mission) {
+                case BOARD -> 3;
+                case POWER, LOGS, STABILIZE -> 6;
+                case OVERRIDE, MOTHER -> 7;
+                case BLACKBOX -> 8;
+            };
+            return Optional.of(TerminalMissionRoutePlacement.main(
+                    phase, mission.phaseOrder * 100 + mission.order));
+        }
+
+        @Override
         public boolean handleAction(ServerPlayer player, Identifier missionId, String action) {
             Mission mission = Mission.by(missionId);
             if (mission == null) {
@@ -315,7 +337,7 @@ public final class StationfallTerminalCommonIntegration {
 
     private static String hint(Player player, TerminalMissionStatus status) {
         return status == TerminalMissionStatus.CLAIMABLE
-                ? "Mission complete. Claim optional support cache."
+                ? "Claim the optional support cache."
                 : StationfallRouteTracker.status(player);
     }
 

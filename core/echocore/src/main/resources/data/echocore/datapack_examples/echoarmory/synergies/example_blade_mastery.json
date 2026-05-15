@@ -1,0 +1,8 @@
+{
+  "id": "echocore:example_blade_mastery",
+  "title": "Blade Mastery",
+  "requiredTags": ["blade", "sharp", "balanced"],
+  "effect": "status",
+  "potency": 2,
+  "terminalHint": "Equip three blade-tagged items to activate Blade Mastery."
+}

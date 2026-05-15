@@ -12,11 +12,13 @@ import com.knoxhack.echomultiblockcore.api.AutomationTaskHandler;
 import com.knoxhack.echomultiblockcore.api.AutomationTaskHandlers;
 import com.knoxhack.echomultiblockcore.api.AutoBuilderPlan;
 import com.knoxhack.echomultiblockcore.api.AutoBuilderResult;
+import com.knoxhack.echomultiblockcore.api.CapabilityRequirement;
 import com.knoxhack.echomultiblockcore.api.InstalledMultiblockUpgrade;
 import com.knoxhack.echomultiblockcore.api.MultiblockCapability;
 import com.knoxhack.echomultiblockcore.api.MultiblockCapabilityRuntime;
 import com.knoxhack.echomultiblockcore.api.MultiblockAutomationRecipe;
 import com.knoxhack.echomultiblockcore.api.MultiblockDefinition;
+import com.knoxhack.echomultiblockcore.api.MultiblockIntegrationServices;
 import com.knoxhack.echomultiblockcore.api.MultiblockProgressionDefinition;
 import com.knoxhack.echomultiblockcore.api.MultiblockProgressionRegistry;
 import com.knoxhack.echomultiblockcore.api.MultiblockRuntime;
@@ -116,7 +118,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
         super(type, pos, blockState);
         multiblockId = blockState.getBlock() instanceof MultiblockControllerBlock controller
                 ? controller.defaultDefinitionId()
-                : EchoMultiblockCore.id("industrial_assembly_line_demo");
+                : EchoMultiblockCore.id("industrial_assembly_line");
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MultiblockControllerBlockEntity controller) {
@@ -327,7 +329,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
             openControllerUi(player);
             return;
         }
-        if (isFormed() && multiblockId.equals(EchoMultiblockCore.id("industrial_assembly_line_demo"))) {
+        if (isFormed() && multiblockId.equals(EchoMultiblockCore.id("industrial_assembly_line"))) {
             queueTask(EchoMultiblockCore.id("assemble_reinforced_machine_frame"), player);
             return;
         }
@@ -812,6 +814,9 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
         if (!handleRuntimeEffectResult(serverLevel, queued, tickEffect)) {
             return;
         }
+        if (!drawActiveTaskPower(serverLevel, queued, recipe.get())) {
+            return;
+        }
         queued.incrementProgress();
         if (queued.progressTicks() % 20 == 0 && serverLevel.getBlockEntity(queued.robotPos()) instanceof RoboticArmBlockEntity arm) {
             arm.addHeat(recipe.get().heatPerSecond());
@@ -899,6 +904,9 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
                     .findFirst()
                     .map(com.knoxhack.echomultiblockcore.api.CapabilityDiagnostic::message)
                     .orElse("Required capability is unavailable."), player);
+            return false;
+        }
+        if (!hasPowerForStart(serverLevel, queued, recipe.get(), player)) {
             return false;
         }
         TaskStart start = prepareTask(recipe.get(), null, queued.inputsConsumed());
@@ -1227,6 +1235,59 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
         return evaluated;
     }
 
+    private boolean hasPowerForStart(ServerLevel serverLevel, QueuedMultiblockTask queued,
+            MultiblockAutomationRecipe recipe, Player player) {
+        long epPerTick = powerCostPerTick(recipe);
+        if (epPerTick <= 0L) {
+            return true;
+        }
+        long available = MultiblockIntegrationServices.availablePower(serverLevel, worldPosition);
+        if (available >= epPerTick) {
+            return true;
+        }
+        blockTask(serverLevel, queued,
+                "Power-starved: requires " + epPerTick + " EP/t from echo:power_input; available "
+                        + available + " EP.",
+                player);
+        return false;
+    }
+
+    private boolean drawActiveTaskPower(ServerLevel serverLevel, QueuedMultiblockTask queued,
+            MultiblockAutomationRecipe recipe) {
+        long epPerTick = powerCostPerTick(recipe);
+        if (epPerTick <= 0L) {
+            return true;
+        }
+        long drawn = MultiblockIntegrationServices.drawPower(serverLevel, worldPosition, epPerTick, false);
+        if (drawn >= epPerTick) {
+            return true;
+        }
+        String reason = "Power-starved: drew " + drawn + "/" + epPerTick
+                + " EP this tick from echo:power_input.";
+        queued.pause(reason);
+        state = MultiblockState.JAMMED;
+        postBlocked(serverLevel, queued, reason);
+        syncBlock();
+        return false;
+    }
+
+    private long powerCostPerTick(MultiblockAutomationRecipe recipe) {
+        if (recipe == null || recipe.capabilityCosts().isEmpty()) {
+            return 0L;
+        }
+        long total = 0L;
+        for (CapabilityRequirement requirement : recipe.capabilityCosts()) {
+            if (requirement == null || !MultiblockCapability.POWER_INPUT.id().equals(requirement.capabilityId())) {
+                continue;
+            }
+            long cost = requirement.throughput() > 0 ? requirement.throughput() : requirement.amount();
+            if (cost > 0L) {
+                total = saturatedAdd(total, cost);
+            }
+        }
+        return total;
+    }
+
     private boolean hasRequiredUpgrades(MultiblockAutomationRecipe recipe) {
         if (recipe == null || recipe.requiredUpgrades().isEmpty()) {
             return true;
@@ -1265,6 +1326,19 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
                     .sum();
         }
         return total;
+    }
+
+    private static long saturatedAdd(long left, long right) {
+        if (left <= 0L) {
+            return Math.max(0L, right);
+        }
+        if (right <= 0L) {
+            return left;
+        }
+        if (left > Long.MAX_VALUE - right) {
+            return Long.MAX_VALUE;
+        }
+        return left + right;
     }
 
     private List<String> repairActions() {
@@ -1504,7 +1578,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity implements Echo
         int schemaVersion = input.getIntOr("runtime_schema_version", 1);
         multiblockId = Identifier.tryParse(input.getStringOr("multiblock_id", multiblockId.toString()));
         if (multiblockId == null) {
-            multiblockId = EchoMultiblockCore.id("industrial_assembly_line_demo");
+            multiblockId = EchoMultiblockCore.id("industrial_assembly_line");
         }
         state = enumOr(MultiblockState.class, input.getStringOr("state", MultiblockState.UNBUILT.name()), MultiblockState.UNBUILT);
         integrity = input.getFloatOr("integrity", 0.0F);

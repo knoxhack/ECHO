@@ -1,5 +1,5 @@
 {
-  "parent": "echomultiblockcore:multiblock/industrial_assembly_line_demo_recipe",
+  "parent": "echomultiblockcore:multiblock/industrial_assembly_line_recipe",
   "display": {
     "icon": {
       "id": "echomultiblockcore:vehicle_repair_gantry_blueprint"

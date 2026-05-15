@@ -67,7 +67,9 @@ public final class EchoMultiblockCore {
             MultiblockIntegrationServices.registerDefaultProviders();
             EchoCoreServices.registerMapDataProvider(MultiblockMapDataProvider.INSTANCE);
             EchoCoreServices.registerIndexRecipeProvider(MultiblockIndexProvider.INSTANCE);
-            MultiblockMissionCoreIntegration.register();
+            if (ModList.get().isLoaded("echomissioncore")) {
+                MultiblockMissionCoreIntegration.register();
+            }
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalBridge();
             }

@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echorelictech"
-version="0.2.0-beta"
+version="1.2.0"
 displayName="ECHO: RelicTech"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"

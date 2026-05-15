@@ -2,6 +2,7 @@ package com.knoxhack.echoarmory.content;
 
 import com.knoxhack.echoarmory.EchoArmory;
 import com.knoxhack.echoarmory.item.ArmoryGearItem;
+import com.knoxhack.echoarmory.item.ArmoryData;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -203,9 +204,9 @@ public final class ArmoryContent {
       synergy("veilbreaker", "Veilbreaker", List.of("veil", "blade", "shield"), "fracture_immunity", 3, "Veil armor and a Veil blade temporarily suppress fracture exposure.");
       synergy("construct_command", "Construct Command", List.of("construct", "drone"), "drone_scaling", 2, "Construct gauntlets and drone armor increase repair and shield output.");
 
-      loadout("toxic_breach_kit", "Toxic Breach Kit", 0, "echoarmory:veil_resistant_helm", "echoarmory:alloy_sword", List.of("echoarmory:veil_resistant_helm", "echoarmory:thermal_chestplate"), List.of("echoarmory:gas_mask_filter"), 1, 40, "echoarmory:toxic_breach_kit");
-      loadout("fracture_guardian_kit", "Fracture Guardian Kit", 20, "echoarmory:veil_sabre", "echoarmory:veil_sabre", List.of("echoarmory:veil_resistant_helm", "echoarmory:construct_harness"), List.of("echoarmory:veil_shield", "echoarmory:void_core"), 3, 60, "echoarmory:fracture_guardian_kit");
-      loadout("orbital_assault_kit", "Orbital Assault Kit", 40, "echoarmory:energy_rifle", "echoarmory:energy_rifle", List.of("echoarmory:thermal_chestplate", "echoarmory:orbital_boots"), List.of("echoarmory:stability_rune", "echoarmory:mobility_servo"), 3, 45, "echoarmory:orbital_assault_kit");
+      loadout("toxic_breach_kit", "Toxic Breach Kit", 0, "echoarmory:gas_mask_filter", "echoarmory:alloy_sword", List.of("echoarmory:thermal_chestplate"), List.of("echoarmory:gas_mask_filter"), 1, 40, Map.of(ArmoryData.ProtectionType.TOXIC, 55), "echoarmory:toxic_breach_kit");
+      loadout("fracture_guardian_kit", "Fracture Guardian Kit", 20, "echoarmory:veil_sabre", "echoarmory:veil_sabre", List.of("echoarmory:veil_resistant_helm", "echoarmory:construct_harness"), List.of("echoarmory:veil_shield", "echoarmory:void_core"), 3, 60, Map.of(ArmoryData.ProtectionType.FRACTURE, 60), "echoarmory:fracture_guardian_kit");
+      loadout("orbital_assault_kit", "Orbital Assault Kit", 40, "echoarmory:energy_rifle", "echoarmory:energy_rifle", List.of("echoarmory:thermal_chestplate", "echoarmory:orbital_boots"), List.of("echoarmory:stability_rune", "echoarmory:mobility_servo", "echoarmory:thermal_regulator"), 3, 45, Map.of(ArmoryData.ProtectionType.COLD, 40, ArmoryData.ProtectionType.HEAT, 40), "echoarmory:orbital_assault_kit");
 
       factionUnlock("salvager_energy_weapons", "echoashfallprotocol:crashbreak_salvage", 35, "energy_rifle", "Energy Rifle fabrication");
       factionUnlock("remnant_veil_armor", "echoashfallprotocol:radwarden_compact", 35, "veil_resistant_helm", "Veil-resistant armor");
@@ -230,9 +231,21 @@ public final class ArmoryContent {
       DEFAULT_SYNERGIES.put(id, new SynergyDefinition(id, title, tags, effect, potency, hint));
    }
 
-   private static void loadout(String path, String title, int order, String icon, String weapon, List<String> armor, List<String> modules, int minTier, int minProtection, String logisticsPreset) {
+   private static void loadout(
+      String path,
+      String title,
+      int order,
+      String icon,
+      String weapon,
+      List<String> armor,
+      List<String> modules,
+      int minTier,
+      int minProtection,
+      Map<ArmoryData.ProtectionType, Integer> requiredProtections,
+      String logisticsPreset
+   ) {
       Identifier id = id(path);
-      DEFAULT_LOADOUTS.put(id, new ArmoryLoadoutDefinition(id, title, order, Identifier.parse(icon), weapon, armor, modules, minTier, minProtection, logisticsPreset));
+      DEFAULT_LOADOUTS.put(id, new ArmoryLoadoutDefinition(id, title, order, Identifier.parse(icon), weapon, armor, modules, minTier, minProtection, requiredProtections, logisticsPreset));
    }
 
    private static void factionUnlock(String path, String factionId, int minReputation, String unlockId, String title) {

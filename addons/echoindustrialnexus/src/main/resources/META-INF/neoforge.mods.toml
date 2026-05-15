@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echoindustrialnexus"
-version="1.1.0"
+version="1.2.0"
 displayName="ECHO: Industrial Nexus"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"
@@ -39,6 +39,14 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.echoindustrialnexus]]
+modId="echonetcore"
+type="required"
+reason="Provides shared ECHO packet registration, sync, action validation, and rate limiting."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoindustrialnexus]]
 modId="echomultiblockcore"
 type="required"
 reason="Provides shared ECHO multiblock validation, robotics, blueprints, diagnostics, task queues, and facility runtime APIs."
@@ -49,8 +57,8 @@ side="BOTH"
 [[dependencies.echoindustrialnexus]]
 modId="echoterminal"
 type="optional"
-reason="Allows Industrial Nexus records, missions, and Factory Command dashboards to appear inside the modular ECHO Terminal."
-versionRange="[1.0.0,)"
+reason="Allows Industrial Nexus records, missions, route placement, and Factory Command dashboards to appear inside the modular ECHO Terminal."
+versionRange="[1.2.0,)"
 ordering="AFTER"
 side="BOTH"
 

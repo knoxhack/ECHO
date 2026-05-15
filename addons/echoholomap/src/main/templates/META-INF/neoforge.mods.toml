@@ -38,8 +38,17 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="echoruntimeguard"
+type="optional"
+reason="Enables performance budget diagnostics for HoloMap render passes when present."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
+reason="Adds HoloMap terminal pages, map controls, and waypoint actions when Terminal is present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
@@ -47,6 +56,15 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echorendercore"
 type="optional"
+reason="Uses RenderCore V18 screen chrome and visual profiles for HoloMap surfaces when present."
+versionRange="[1.2.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echomissioncore"
+type="optional"
+reason="Registers HoloMap discovery and waypoint side-op missions when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

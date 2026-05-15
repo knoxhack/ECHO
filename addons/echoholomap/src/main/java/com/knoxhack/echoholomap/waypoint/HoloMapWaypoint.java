@@ -25,6 +25,7 @@ public record HoloMapWaypoint(
     public static final int MAX_TITLE = 64;
     public static final int MAX_ICON = 48;
     public static final UUID NO_OWNER = new UUID(0L, 0L);
+    public static final String DEATHPOINT_ICON = "deathpoint";
 
     public static final Codec<HoloMapWaypoint> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("id").forGetter(waypoint -> waypoint.id().toString()),
@@ -72,6 +73,11 @@ public record HoloMapWaypoint(
     public HoloMapWaypoint withUpdatedTime(long time) {
         return new HoloMapWaypoint(id, owner, scope, dimension, x, y, z, title, color, icon,
                 visible, createdTime, Math.max(createdTime, time));
+    }
+
+    public boolean isDeathpoint() {
+        return DEATHPOINT_ICON.equals(icon)
+                || id.getPath().startsWith("deathpoint/");
     }
 
     public boolean inDimension(String dimensionId) {

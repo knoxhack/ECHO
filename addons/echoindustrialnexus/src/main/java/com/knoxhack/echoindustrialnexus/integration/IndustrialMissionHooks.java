@@ -33,6 +33,7 @@ public final class IndustrialMissionHooks {
                 "plate_press",
                 "circuit_fabricator",
                 "recipe_matrix_encoding",
+                "nexus_furnace_array",
                 "logistics_auto_restock",
                 "production_survived"
         }) {
@@ -106,6 +107,7 @@ public final class IndustrialMissionHooks {
             case "refined_plate", "reinforced_plate" -> "plate_press";
             case "precision_circuit", "industrial_circuit" -> "circuit_fabricator";
             case "recipe_matrix_shard" -> "recipe_matrix_encoding";
+            case "core_key_assembly", "protocol_extractor_coil" -> "nexus_furnace_array";
             default -> "";
         };
         if (mission.isBlank()) {
@@ -126,6 +128,7 @@ public final class IndustrialMissionHooks {
             case "press_scrap_plate_into_refined_plate" -> "plate_press";
             case "assemble_precision_circuit" -> "circuit_fabricator";
             case "encode_recipe_matrix_shard" -> "recipe_matrix_encoding";
+            case "stabilize_hybrid_thermal_core", "forge_core_key_assembly" -> "nexus_furnace_array";
             default -> "";
         };
     }

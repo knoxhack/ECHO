@@ -8,7 +8,8 @@ public enum TransitionStyle {
     GLASS_FADE,
     GLITCH_SWAP,
     HOLOGRAM_BOOT,
-    NEXUS_PHASE;
+    NEXUS_PHASE,
+    GLITCH_CUT;
 
     public static TransitionStyle byName(String value, TransitionStyle fallback) {
         if (value == null || value.isBlank()) {

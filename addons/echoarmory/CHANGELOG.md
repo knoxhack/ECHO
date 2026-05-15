@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 - Route Kit Readiness
+
+- Added shared route-kit readiness reports for Armory loadouts with `READY`, `STAGED`, `MISSING`, and `LOCKED` states.
+- Extended Armory loadout JSON with optional `requiredProtections` for toxic, radiation, cold, heat, and fracture thresholds while preserving legacy `minProtection` as a fracture fallback.
+- Updated bundled Toxic Breach, Fracture Guardian, and Orbital Assault kits to use per-hazard readiness requirements.
+- Reworked Core route records, diagnostics, hazard telemetry, Terminal actions, Loadout Terminal binding, and Logistics dispatch paths to use the shared readiness model.
+- Added MissionCore side ops for preparing and dispatching route kits.
+- Expanded GameTests for required-protection parsing, route-kit readiness states, and MissionCore route-kit registration.
+
 ## 0.1.0 - First Playable Release
 
 - Completed the v1 survival loop: craft Armory Alloy Plate, craft Armory Bench, craft first gear, craft Module Upgrade Table, install modules, recharge energy gear with real fuel, and inspect readiness through Terminal/Core diagnostics.

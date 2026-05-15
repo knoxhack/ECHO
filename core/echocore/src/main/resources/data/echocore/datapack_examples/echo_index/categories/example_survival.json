@@ -1,0 +1,8 @@
+{
+  "id": "echocore:example_survival",
+  "title": "echoindex.category.example_survival",
+  "description": "Survival guides and field manuals.",
+  "icon": "minecraft:campfire",
+  "sort_order": 10,
+  "source_mod": "echocore"
+}

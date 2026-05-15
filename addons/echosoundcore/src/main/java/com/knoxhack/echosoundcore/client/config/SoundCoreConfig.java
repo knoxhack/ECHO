@@ -6,6 +6,7 @@ public final class SoundCoreConfig {
     public static final ModConfigSpec CLIENT_SPEC;
 
     public static final ModConfigSpec.BooleanValue ENABLE_ADAPTIVE_MUSIC;
+    public static final ModConfigSpec.BooleanValue REPLACE_VANILLA_MUSIC_WITH_SOUNDCORE;
     public static final ModConfigSpec.BooleanValue ENABLE_MENU_MUSIC;
     public static final ModConfigSpec.BooleanValue ENABLE_BIOME_MUSIC;
     public static final ModConfigSpec.BooleanValue ENABLE_COMBAT_MUSIC;
@@ -41,6 +42,7 @@ public final class SoundCoreConfig {
 
         builder.push("toggles");
         ENABLE_ADAPTIVE_MUSIC = builder.comment("Enable adaptive music system.").define("enableAdaptiveMusic", true);
+        REPLACE_VANILLA_MUSIC_WITH_SOUNDCORE = builder.comment("Cancel vanilla Minecraft music while SoundCore adaptive music can provide a track.").define("replaceVanillaMusicWithSoundCore", true);
         ENABLE_MENU_MUSIC = builder.comment("Enable custom menu music.").define("enableMenuMusic", true);
         ENABLE_BIOME_MUSIC = builder.comment("Enable biome music.").define("enableBiomeMusic", true);
         ENABLE_COMBAT_MUSIC = builder.comment("Enable combat music.").define("enableCombatMusic", true);

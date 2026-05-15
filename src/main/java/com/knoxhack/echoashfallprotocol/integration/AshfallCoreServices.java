@@ -179,7 +179,7 @@ public final class AshfallCoreServices {
             } else if (quest.getLastTerminalInteraction() <= 0L && quest.getCurrentPhase() <= 1) {
                 blockers.add(blocker("ashfall_terminal_unopened", EchoDiagnosticBlocker.Severity.INFO,
                         "Terminal not yet opened", "The shared terminal has not recorded an early Ashfall interaction.",
-                        "Open the ECHO Terminal and review Command Deck, What Now, and Mission Graph."));
+                        "Open the ECHO Terminal and review Command Deck, What Now, and Route Sources."));
             }
             if (survival.getHydration() <= 25) {
                 blockers.add(blocker("ashfall_low_hydration", EchoDiagnosticBlocker.Severity.WARNING,

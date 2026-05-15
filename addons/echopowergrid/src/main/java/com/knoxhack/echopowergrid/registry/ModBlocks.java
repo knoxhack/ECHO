@@ -1,6 +1,7 @@
 package com.knoxhack.echopowergrid.registry;
 
 import com.knoxhack.echopowergrid.EchoPowerGrid;
+import com.knoxhack.echopowergrid.api.GeneratorType;
 import com.knoxhack.echopowergrid.block.BatteryBlock;
 import com.knoxhack.echopowergrid.block.BreakerBlock;
 import com.knoxhack.echopowergrid.block.CableBlock;
@@ -23,10 +24,10 @@ public final class ModBlocks {
     private static final List<DeferredBlock<Block>> BLOCK_ITEMS = new ArrayList<>();
 
     // Generators
-    public static final DeferredBlock<Block> HAND_CRANK_GENERATOR = registerGenerator("hand_crank_generator", 5, 0, false);
-    public static final DeferredBlock<Block> SCRAP_BURNER_GENERATOR = registerGenerator("scrap_burner_generator", 40, 2000, true);
-    public static final DeferredBlock<Block> SOLAR_PANEL = registerGenerator("solar_panel", 10, 0, false);
-    public static final DeferredBlock<Block> CREATIVE_POWER_SOURCE = registerGenerator("creative_power_source", Long.MAX_VALUE / 4, Long.MAX_VALUE / 4, false);
+    public static final DeferredBlock<Block> HAND_CRANK_GENERATOR = registerGenerator("hand_crank_generator", 5, 100, GeneratorType.HAND_CRANK);
+    public static final DeferredBlock<Block> SCRAP_BURNER_GENERATOR = registerGenerator("scrap_burner_generator", 40, 2000, GeneratorType.FUEL_BURNER);
+    public static final DeferredBlock<Block> SOLAR_PANEL = registerGenerator("solar_panel", 10, 200, GeneratorType.SOLAR);
+    public static final DeferredBlock<Block> CREATIVE_POWER_SOURCE = registerGenerator("creative_power_source", Long.MAX_VALUE / 4, Long.MAX_VALUE / 4, GeneratorType.CREATIVE);
 
     // Storage
     public static final DeferredBlock<Block> SMALL_BATTERY_BANK = registerStorage("small_battery_bank", 20000, 100, 100);
@@ -73,8 +74,8 @@ public final class ModBlocks {
         return Long.MAX_VALUE; // Generators, batteries, meters have no cable-like transfer limit
     }
 
-    private static DeferredBlock<Block> registerGenerator(String name, long genRate, long buffer, boolean fuel) {
-        return tracked(BLOCKS.registerBlock(name, p -> new GeneratorBlock(genRate, buffer, fuel, p), defaultProps()));
+    private static DeferredBlock<Block> registerGenerator(String name, long genRate, long buffer, GeneratorType type) {
+        return tracked(BLOCKS.registerBlock(name, p -> new GeneratorBlock(genRate, buffer, type, p), defaultProps()));
     }
 
     private static DeferredBlock<Block> registerStorage(String name, long capacity, long maxIn, long maxOut) {

@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echoarmory"
-version="1.1.0"
+version="1.2.0"
 displayName="ECHO: Armory"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"
@@ -87,6 +87,14 @@ side="BOTH"
 modId="echoblackboxprotocol"
 type="optional"
 reason="Adds blackbox material context for endgame armory upgrades."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echoarmory]]
+modId="echomissioncore"
+type="optional"
+reason="Registers Armory combat and loadout side-op missions when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

@@ -74,6 +74,24 @@ public final class TutorialCommands {
                         .requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                         .executes(TutorialCommands::reload))
         );
+
+        // Simple player-facing /tutorial alias
+        dispatcher.register(Commands.literal("tutorial")
+                .executes(ctx -> quickProgress(ctx.getSource().getPlayerOrException()))
+                .then(Commands.literal("cards")
+                        .executes(TutorialCommands::listCards))
+                .then(Commands.literal("hints")
+                        .executes(TutorialCommands::listHints)));
+    }
+
+    private static int quickProgress(ServerPlayer player) {
+        TutorialPlayerData data = TutorialPlayerData.get(player);
+        player.sendSystemMessage(Component.literal("ECHO Tutorial // " + player.getScoreboardName()));
+        player.sendSystemMessage(Component.literal("  Guide Mode: " + data.guideMode()));
+        player.sendSystemMessage(Component.literal("  Unlocked Cards: " + data.unlockedCardIds().size()));
+        player.sendSystemMessage(Component.literal("  Completed Flows: " + data.completedFlowIds().size()));
+        player.sendSystemMessage(Component.literal("  Use /tutorial cards or /tutorial hints to browse."));
+        return 1;
     }
 
     private static int setGuideMode(CommandContext<CommandSourceStack> ctx, ServerPlayer player) {

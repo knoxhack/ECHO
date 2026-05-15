@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/soundcore_music_profile.schema.json",
+  "title": "ECHO SoundCore Music Profile",
+  "description": "Music track profile for SoundCore.",
+  "type": "object",
+  "required": ["id", "sound"],
+  "properties": {
+    "id": { "type": "string", "description": "Profile identifier, e.g. 'mypack:wasteland_theme'" },
+    "sound": { "type": "string", "description": "Sound event identifier, e.g. 'mypack:music.wasteland_theme'" },
+    "priority": { "type": "string", "default": "IDLE", "description": "Audio priority: IDLE, AMBIENT, COMBAT, CRITICAL, OVERRIDE." },
+    "category": { "type": "string", "default": "general" },
+    "chapter": { "type": "string", "default": "UNKNOWN", "description": "Narrative chapter tag: ASHFALL, UNKNOWN, etc." },
+    "biome": { "type": "string", "description": "Optional biome filter identifier." },
+    "region": { "type": "string", "description": "Optional region filter identifier." },
+    "structure": { "type": "string", "description": "Optional structure filter identifier." },
+    "faction": { "type": "string", "description": "Optional faction filter identifier." },
+    "combatIntensity": { "type": "string", "default": "NONE", "description": "Combat intensity filter: NONE, LIGHT, MEDIUM, HEAVY, BOSS." },
+    "boss": { "type": "string", "description": "Optional boss entity filter identifier." },
+    "minDelay": { "type": "integer", "default": 0, "minimum": 0, "description": "Minimum ticks between plays." },
+    "maxDelay": { "type": "integer", "default": 0, "minimum": 0, "description": "Maximum ticks between plays." },
+    "fadeIn": { "type": "number", "default": 0.0, "minimum": 0 },
+    "fadeOut": { "type": "number", "default": 0.0, "minimum": 0 },
+    "weight": { "type": "number", "default": 1.0, "minimum": 0 },
+    "conditions": { "type": "boolean", "default": true, "description": "Whether conditional logic is enabled." }
+  },
+  "additionalProperties": true
+}

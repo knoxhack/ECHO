@@ -225,7 +225,7 @@ Automation recipes live at `data/<namespace>/echo_multiblock_tasks/*.json`.
   "id": "echomultiblockcore:assemble_reinforced_machine_frame",
   "display_name": "Assemble Reinforced Machine Frame",
   "category": "assembly",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line"],
   "required_workcell": "ASSEMBLY",
   "required_tools": ["WELDER", "ASSEMBLER"],
   "duration_ticks": 200,
@@ -304,7 +304,7 @@ List<MultiblockMapMarkerSnapshot> markers = MultiblockIntegrationServices.mapMar
 ## Examples
 
 - `echomultiblockcore:signal_tower_tier_1` demonstrates JSON validation, formed state, diagnostics, blueprint metadata, scanner/map/terminal capability flags, and break/reform behavior.
-- `echomultiblockcore:industrial_assembly_line_demo` demonstrates matched-position runtime discovery, workcells, input/output crates, robotic arm tool installation, persisted queue state, task transactions, and animation packets.
+- `echomultiblockcore:industrial_assembly_line` demonstrates matched-position runtime discovery, workcells, input/output crates, robotic arm tool installation, persisted queue state, task transactions, and animation packets.
 
 ## Optional Terminal Bridge
 

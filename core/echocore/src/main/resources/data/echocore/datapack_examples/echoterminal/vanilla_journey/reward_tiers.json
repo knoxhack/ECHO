@@ -1,0 +1,19 @@
+{
+  "tiers": {
+    "task": {
+      "label": "Task Reward",
+      "claimable": true,
+      "rewards": [
+        {"item": "minecraft:iron_ingot", "count": 2}
+      ]
+    },
+    "goal": {
+      "label": "Goal Reward",
+      "claimable": true,
+      "rewards": [
+        {"item": "minecraft:diamond", "count": 1},
+        {"item": "minecraft:experience_bottle", "count": 4}
+      ]
+    }
+  }
+}

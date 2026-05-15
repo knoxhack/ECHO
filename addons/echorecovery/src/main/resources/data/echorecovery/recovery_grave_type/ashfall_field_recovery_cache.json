@@ -1,0 +1,10 @@
+{
+  "id": "echorecovery:ashfall_field_recovery_cache",
+  "display_name": "Field Recovery Cache",
+  "texture": "minecraft:block cracked_stone_bricks",
+  "sounds": {
+    "created": "minecraft:block.stone_bricks.place",
+    "opened": "minecraft:block.iron_trapdoor.open",
+    "recovered": "minecraft:block.beacon.power_select"
+  }
+}

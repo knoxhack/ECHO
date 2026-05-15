@@ -47,7 +47,9 @@ public class EchoArmory {
       event.enqueueWork(() -> {
          ArmoryCoreIntegration.registerAddonChapter();
          ArmoryIndexProvider.register();
-         ArmoryMissionCoreIntegration.register();
+         if (ModList.get().isLoaded("echomissioncore")) {
+            ArmoryMissionCoreIntegration.register();
+         }
          if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalIntegration();
          }

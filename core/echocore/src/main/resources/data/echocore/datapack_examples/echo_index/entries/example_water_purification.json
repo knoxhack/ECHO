@@ -1,0 +1,13 @@
+{
+  "id": "echocore:example_water_purification",
+  "category": "echocore:example_survival",
+  "title": "echoindex.entry.example_water_purification",
+  "subtitle": "echoindex.entry.example_water_purification.subtitle",
+  "summary": "echoindex.entry.example_water_purification.summary",
+  "body": "echoindex.entry.example_water_purification.body",
+  "icon": "minecraft:water_bucket",
+  "tags": ["survival", "crafting", "hazard"],
+  "source_mod": "echocore",
+  "default_state": "discovered",
+  "sort_order": 0
+}

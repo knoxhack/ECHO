@@ -17,10 +17,12 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionVisuals;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -60,7 +62,7 @@ public final class MissionCoreTerminalProvider implements TerminalMissionProvide
                         TerminalMissionStatus.LOCKED,
                         0.0F,
                         "Missing",
-                        "MissionCore record not found.",
+                        "Mission record not found.",
                         "Reload the terminal after content registration finishes.",
                         List.of()));
     }
@@ -99,6 +101,23 @@ public final class MissionCoreTerminalProvider implements TerminalMissionProvide
                         ? TerminalMissionRole.MAIN
                         : TerminalMissionRole.OPTIONAL)
                 .orElseGet(() -> TerminalMissionRole.fallback(definition, snapshot));
+    }
+
+    @Override
+    public Optional<TerminalMissionRoutePlacement> routePlacement(
+            Player player,
+            TerminalMissionDefinition definition,
+            TerminalMissionSnapshot snapshot,
+            TerminalMissionRole role) {
+        if (definition == null) {
+            return Optional.empty();
+        }
+        TerminalMissionRole safeRole = role == null ? TerminalMissionRole.fallback(definition, snapshot) : role;
+        return Optional.of(new TerminalMissionRoutePlacement(
+                routePhase(definition, safeRole),
+                definition.phaseOrder() * 100 + definition.missionOrder(),
+                safeRole,
+                true));
     }
 
     @Override
@@ -173,7 +192,54 @@ public final class MissionCoreTerminalProvider implements TerminalMissionProvide
     }
 
     private static String phaseTitle(MissionDefinition definition) {
-        String source = definition.chapterId().getNamespace() + ":" + definition.chapterId().getPath();
-        return definition.phaseTitle().isBlank() ? source : definition.phaseTitle() + " / " + source;
+        if (!definition.phaseTitle().isBlank()) {
+            return definition.phaseTitle();
+        }
+        return readableId(definition.chapterId().getPath());
+    }
+
+    private static String readableId(String path) {
+        if (path == null || path.isBlank()) {
+            return "Mission Route";
+        }
+        StringBuilder label = new StringBuilder();
+        for (String word : path.replace('/', '_').split("_")) {
+            if (word.isBlank()) {
+                continue;
+            }
+            if (label.length() > 0) {
+                label.append(' ');
+            }
+            label.append(Character.toUpperCase(word.charAt(0)));
+            if (word.length() > 1) {
+                label.append(word.substring(1));
+            }
+        }
+        return label.length() == 0 ? "Mission Route" : label.toString();
+    }
+
+    private static int routePhase(TerminalMissionDefinition definition, TerminalMissionRole role) {
+        String namespace = definition.id().getNamespace();
+        if (role == TerminalMissionRole.OPTIONAL) {
+            return 2;
+        }
+        return switch (namespace) {
+            case "echoashfallprotocol" -> Math.max(0, Math.min(8, definition.phaseOrder()));
+            case "echoindustrialnexus", "echoconvoyprotocol", "echoagriculturereclamation" -> 2;
+            case "echostationfall" -> definition.phaseOrder() <= 0 ? 3
+                    : definition.phaseOrder() >= 3 ? 7 : 6;
+            case "echoorbitalremnants" -> {
+                String path = definition.id().getPath();
+                if ("echo_zero".equals(path)) {
+                    yield 8;
+                }
+                if (definition.phaseOrder() >= 8) {
+                    yield 9;
+                }
+                yield definition.phaseOrder() >= 2 ? 7 : 6;
+            }
+            case "echonexusprotocol", "echoblackboxprotocol" -> definition.phaseOrder() >= 5 ? 8 : 7;
+            default -> 9;
+        };
     }
 }

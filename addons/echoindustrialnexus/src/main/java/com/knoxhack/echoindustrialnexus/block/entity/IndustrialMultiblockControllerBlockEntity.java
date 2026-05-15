@@ -29,7 +29,9 @@ public class IndustrialMultiblockControllerBlockEntity extends MultiblockControl
       EchoIndustrialNexus.id("press_scrap_plate_into_refined_plate"), "echologisticsnetwork:industrial_plate_press",
       EchoIndustrialNexus.id("weld_reinforced_machine_frame"), "echologisticsnetwork:industrial_frame_welding",
       EchoIndustrialNexus.id("assemble_precision_circuit"), "echologisticsnetwork:industrial_precision_circuit",
-      EchoIndustrialNexus.id("encode_recipe_matrix_shard"), "echologisticsnetwork:industrial_matrix_encoding"
+      EchoIndustrialNexus.id("encode_recipe_matrix_shard"), "echologisticsnetwork:industrial_matrix_encoding",
+      EchoIndustrialNexus.id("stabilize_hybrid_thermal_core"), "echologisticsnetwork:industrial_hybrid_core_stabilization",
+      EchoIndustrialNexus.id("forge_core_key_assembly"), "echologisticsnetwork:industrial_core_key_forging"
    );
    private boolean logisticsAutoRestockEnabled;
    private int logisticsRestockTargetRuns = 3;

@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echotutorialcore"
-version="0.1.0"
+version="1.2.0"
 displayName="ECHO: TutorialCore"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"

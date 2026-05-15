@@ -10,6 +10,7 @@ import com.knoxhack.echoarmory.data.EnergyState;
 import com.knoxhack.echoarmory.item.ArmoryData;
 import com.knoxhack.echoarmory.registry.ModDataComponents;
 import com.knoxhack.echoarmory.registry.ModItems;
+import com.knoxhack.echoarmory.service.ArmoryReadinessService;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
@@ -53,14 +54,14 @@ public final class ArmoryTerminalCommonIntegration {
       if (player == null) {
          return;
       }
-      int modules = ArmoryData.modules(player.getMainHandItem()).modules().size();
-      for (ItemStack armor : ArmoryData.armorStacks(player)) {
-         modules += ArmoryData.modules(armor).modules().size();
+      ArmoryReadinessService.Report report = selectedReport(player, payload).orElse(null);
+      if (report == null) {
+         player.sendSystemMessage(Component.literal("ECHO ARMORY // Scan complete. No Armory loadouts are published."));
+         return;
       }
-      player.sendSystemMessage(Component.literal("ECHO ARMORY // Scan complete. Modules " + modules
-         + " | fracture " + ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE)
-         + " | radiation " + ArmoryData.protection(player, ArmoryData.ProtectionType.RADIATION)
-         + " | toxic " + ArmoryData.protection(player, ArmoryData.ProtectionType.TOXIC) + "."));
+      recordReadyReport(player, report);
+      player.sendSystemMessage(Component.literal("ECHO ARMORY // " + report.loadout().title() + " readiness: " + report.summaryLine()
+         + " | Logistics " + (report.logisticsAvailable() ? "available" : "unavailable") + "."));
       EchoCoreServices.discoverVisibleRouteRecords(player);
    }
 
@@ -68,12 +69,12 @@ public final class ArmoryTerminalCommonIntegration {
       if (player == null) {
          return;
       }
-      Optional<ArmoryLoadoutDefinition> selected = selectedLoadout(player, payload);
+      Optional<ArmoryReadinessService.Report> selected = selectedReport(player, payload);
       if (selected.isEmpty()) {
          player.sendSystemMessage(Component.literal("ECHO ARMORY // No Armory loadout definition is available."));
          return;
       }
-      ArmoryLoadoutDefinition loadout = selected.get();
+      ArmoryLoadoutDefinition loadout = selected.get().loadout();
       int equipped = 0;
       int missing = 0;
       if (!loadout.weapon().isBlank()) {
@@ -91,8 +92,11 @@ public final class ArmoryTerminalCommonIntegration {
          missing += result.equipped() ? 0 : 1;
       }
       markEquippedLoadout(player, loadout);
+      ArmoryReadinessService.Report updated = ArmoryReadinessService.report(player, loadout);
+      recordReadyReport(player, updated);
       player.sendSystemMessage(Component.literal("ECHO ARMORY // " + loadout.title() + " equip pass: " + equipped + " equipped"
-         + (missing > 0 ? ", " + missing + " missing or locked." : ".")));
+         + (missing > 0 ? ", " + missing + " missing or locked. " : ". ")
+         + updated.state() + ": " + updated.firstBlocker()));
       EchoCoreServices.discoverVisibleRouteRecords(player);
    }
 
@@ -120,6 +124,7 @@ public final class ArmoryTerminalCommonIntegration {
             }
             if (ArmoryData.installModule(player, target, module)) {
                player.sendSystemMessage(Component.literal("ECHO ARMORY // Installed " + moduleId + " into " + target.getHoverName().getString() + "."));
+               ArmoryReadinessService.bestReport(player).ifPresent(report -> recordReadyReport(player, report));
                return;
             }
          }
@@ -150,6 +155,7 @@ public final class ArmoryTerminalCommonIntegration {
       }
       if (rechargeFromInventory(player, target)) {
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Main-hand energy core recharged using inventory reserve."));
+         ArmoryReadinessService.bestReport(player).ifPresent(report -> recordReadyReport(player, report));
       } else {
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Recharge requires energy gear that is not full and one Veil Crystal or Resonance Shard."));
       }
@@ -159,10 +165,15 @@ public final class ArmoryTerminalCommonIntegration {
       if (player == null) {
          return;
       }
-      selectedBoss(payload).ifPresentOrElse(recommendation -> player.sendSystemMessage(Component.literal(
-         "ECHO ARMORY // " + recommendation.bossName() + " recommends tier " + recommendation.minTier()
-            + ", fracture " + recommendation.fractureProtection() + ". Current fracture "
-            + ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE) + ".")),
+      selectedBoss(payload).ifPresentOrElse(recommendation -> {
+         String kit = ArmoryReadinessService.bestReport(player)
+            .map(report -> " Best kit " + report.loadout().title() + " is " + report.state() + ": " + report.firstBlocker())
+            .orElse("");
+         player.sendSystemMessage(Component.literal(
+            "ECHO ARMORY // " + recommendation.bossName() + " recommends tier " + recommendation.minTier()
+               + ", fracture " + recommendation.fractureProtection() + ". Current fracture "
+               + ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE) + "." + kit));
+      },
          () -> player.sendSystemMessage(Component.literal("ECHO ARMORY // No boss recommendation selected.")));
    }
 
@@ -170,39 +181,40 @@ public final class ArmoryTerminalCommonIntegration {
       if (player == null) {
          return;
       }
-      Optional<ArmoryLoadoutDefinition> selected = selectedLoadout(player, payload);
+      Optional<ArmoryReadinessService.Report> selected = selectedReport(player, payload);
       if (selected.isEmpty()) {
          player.sendSystemMessage(Component.literal("ECHO ARMORY // No Armory loadout selected for Logistics dispatch."));
          return;
       }
-      ArmoryLoadoutDefinition loadout = selected.get();
+      ArmoryReadinessService.Report report = selected.get();
+      ArmoryLoadoutDefinition loadout = report.loadout();
       if (loadout.logisticsPreset().isBlank()) {
          player.sendSystemMessage(Component.literal("ECHO ARMORY // " + loadout.title() + " has no Logistics preset."));
+         return;
+      }
+      if (report.state() == ArmoryReadinessService.State.LOCKED) {
+         player.sendSystemMessage(Component.literal("ECHO ARMORY // Logistics blocked by readiness lock: " + report.firstBlocker()));
          return;
       }
       requestLogisticsBridge(player, loadout.logisticsPreset());
    }
 
    private static Optional<ArmoryLoadoutDefinition> selectedLoadout(ServerPlayer player, String payload) {
+      return selectedReport(player, payload).map(ArmoryReadinessService.Report::loadout);
+   }
+
+   private static Optional<ArmoryReadinessService.Report> selectedReport(ServerPlayer player, String payload) {
       String selected = payload == null ? "" : payload.strip();
       if (selected.isBlank()) {
          selected = player.getMainHandItem().getOrDefault(ModDataComponents.ARMORY_LOADOUT.get(), com.knoxhack.echoarmory.data.ArmoryLoadout.EMPTY).loadoutId();
       }
       if (!selected.isBlank()) {
-         String selectedId = selected;
-         Optional<ArmoryLoadoutDefinition> match = ArmoryContent.loadouts().stream()
-            .filter(loadout -> loadout.id().toString().equals(selectedId) || loadout.id().getPath().equals(selectedId))
-            .findFirst();
+         Optional<ArmoryReadinessService.Report> match = ArmoryReadinessService.report(player, selected);
          if (match.isPresent()) {
             return match;
          }
       }
-      int tier = equippedTier(player);
-      int fracture = ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE);
-      return ArmoryContent.loadouts().stream()
-         .filter(loadout -> tier >= loadout.minTier() && fracture >= loadout.minProtection())
-         .reduce((first, second) -> second)
-         .or(() -> ArmoryContent.loadouts().stream().findFirst());
+      return ArmoryReadinessService.bestReport(player);
    }
 
    private static Optional<BossRecommendationDefinition> selectedBoss(String payload) {
@@ -318,12 +330,21 @@ public final class ArmoryTerminalCommonIntegration {
          Object result = bridge.getMethod("requestNearestLoadout", ServerPlayer.class, String.class).invoke(null, player, logisticsPreset);
          boolean dispatched = (boolean)result.getClass().getMethod("dispatched").invoke(result);
          String message = String.valueOf(result.getClass().getMethod("message").invoke(result));
+         if (dispatched) {
+            ArmoryMissionHooks.recordDispatchRouteKit(player, logisticsPreset);
+         }
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Logistics " + (dispatched ? "dispatch queued: " : "dispatch blocked: ") + message));
       } catch (ClassNotFoundException exception) {
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Logistics Network is not loaded; mission kit dispatch is unavailable."));
       } catch (ReflectiveOperationException | RuntimeException exception) {
          EchoArmory.LOGGER.warn("Armory Logistics dispatch failed for preset {}.", logisticsPreset, exception);
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Logistics dispatch failed. Check network endpoints and loaded integrations."));
+      }
+   }
+
+   private static void recordReadyReport(ServerPlayer player, ArmoryReadinessService.Report report) {
+      if (report != null && report.ready()) {
+         ArmoryMissionHooks.recordPrepareRouteKit(player, report.loadout().id().toString());
       }
    }
 

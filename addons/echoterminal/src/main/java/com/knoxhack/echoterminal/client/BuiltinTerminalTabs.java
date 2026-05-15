@@ -187,7 +187,7 @@ public final class BuiltinTerminalTabs {
                 new BuiltinTabRegistration(new DiagnosticsTab(), TerminalNavigationProfile.command(80)),
                 new BuiltinTabRegistration(new MainSurvivalRouteTab(), TerminalNavigationProfile.progress(0)),
                 new BuiltinTabRegistration(new BaselineTab(), TerminalNavigationProfile.progress(50)),
-                new BuiltinTabRegistration(new MissionGraphTab(), TerminalNavigationProfile.progress(120)),
+                new BuiltinTabRegistration(new MissionGraphTab(), TerminalNavigationProfile.intel(124)),
                 new BuiltinTabRegistration(new AddonsTab(), TerminalNavigationProfile.progress(150)),
                 new BuiltinTabRegistration(new RouteRecordsTab(), TerminalNavigationProfile.intel(125)),
                 new BuiltinTabRegistration(new DiscoveryGridTab(), TerminalNavigationProfile.intel(126)),
@@ -403,7 +403,7 @@ public final class BuiltinTerminalTabs {
             return guide;
         }
         return TerminalAddonGuide.optional(9000, "Addon content",
-                "This addon is installed, but it has not published chapter guide metadata yet.",
+                "This addon is installed, but it has not published mod route metadata yet.",
                 List.of(
                         "Check its status and availability below.",
                         "Open linked terminal pages if they are registered.",
@@ -415,12 +415,13 @@ public final class BuiltinTerminalTabs {
         if (title.regionMatches(true, 0, "ECHO:", 0, 5)) {
             title = title.substring(5).strip();
         }
-        return title.isBlank() ? "ECHO Chapter" : title;
+        title = title.replaceFirst("(?i)^optional\\s*:\\s*", "");
+        title = title.replaceFirst("(?i)^chapter\\s+\\d+\\s*:\\s*", "");
+        return title.isBlank() ? "ECHO Mod" : title;
     }
 
     private static String chapterGuideHeading(EchoAddonChapter chapter, TerminalAddonGuide guide) {
-        String label = guide == null || guide.label().isBlank() ? "Optional" : guide.label();
-        return label + ": " + chapterGuideTitle(chapter);
+        return chapterGuideTitle(chapter);
     }
 
     private static String cleanKey(String value) {
@@ -449,10 +450,10 @@ public final class BuiltinTerminalTabs {
     private static String chapterDisplayName(EchoAddonChapter chapter) {
         try {
             String displayName = chapter == null ? "" : chapter.displayName();
-            return displayName == null || displayName.isBlank() ? "ECHO Chapter" : displayName;
+            return displayName == null || displayName.isBlank() ? "ECHO Mod" : displayName;
         } catch (RuntimeException exception) {
             EchoTerminal.LOGGER.warn("Terminal chapter display name failed; using fallback title.", exception);
-            return "ECHO Chapter";
+            return "ECHO Mod";
         }
     }
 
@@ -981,8 +982,8 @@ public final class BuiltinTerminalTabs {
                     "Review the full survival roadmap and pick the next mission.", TerminalUi.GREEN,
                     MainSurvivalQuestProvider.TAB_ID));
             if (chapterCount > 0) {
-                addUnique(actions, navigateAction(context, "Chapter Guide", "Linked",
-                        "Check installed chapter order, status, and linked terminal pages.", TerminalUi.CYAN, ADDONS));
+                addUnique(actions, navigateAction(context, "Mods", "Linked",
+                        "Check installed mod routes, status, and linked terminal pages.", TerminalUi.CYAN, ADDONS));
             }
             return actions.stream().limit(4).toList();
         }
@@ -997,8 +998,8 @@ public final class BuiltinTerminalTabs {
                 addUnique(commands, navigateAction(context, "What Now", "Clear",
                         "Review blockers and unlock hints when progression stalls.", TerminalUi.AMBER, DIAGNOSTICS));
             }
-            addUnique(commands, navigateAction(context, "Progress", chapterCount > 0 ? chapterCount + " chapters" : "Route",
-                    "Open the survival route and chapter roadmap.", TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
+            addUnique(commands, navigateAction(context, "Active Route", chapterCount > 0 ? chapterCount + " routes" : "Route",
+                    "Open the next field objective and mod route map.", TerminalUi.GREEN, MainSurvivalQuestProvider.TAB_ID));
             addUnique(commands, navigateAction(context, "Intel", routeSummary(routes),
                     "Open shared route records and world intel.", TerminalUi.CYAN, ROUTE_RECORDS));
             if (pendingRewards > 0) {
@@ -1310,7 +1311,6 @@ public final class BuiltinTerminalTabs {
             int cy = TerminalUi.sectionHeader(context, graphics,
                     "INTERFACE SETTINGS", "Client-only", x, y, w, descriptor.accentColor());
             cy = drawNavigationOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
-            cy = drawMissionOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
             cy = drawInterfaceDensityOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
             cy = drawTerminalZoomOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
             cy = drawHudNoticeOptions(context, graphics, x, cy, w, mouseX, mouseY) + 10;
@@ -1339,7 +1339,7 @@ public final class BuiltinTerminalTabs {
 
         @Override
         public int contentHeight(TerminalRenderContext context) {
-            return Math.max(context.contentHeight(), context.contentWidth() < 420 ? 484 : 416);
+            return Math.max(context.contentHeight(), context.contentWidth() < 420 ? 430 : 366);
         }
 
         private int drawNavigationOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -1351,17 +1351,6 @@ public final class BuiltinTerminalTabs {
                         () -> TerminalClientOptions.selectNavigationStyle(style)));
             }
             return drawOptionSection(context, graphics, "NAVIGATION", x, y, w, mouseX, mouseY, options);
-        }
-
-        private int drawMissionOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
-                int x, int y, int w, int mouseX, int mouseY) {
-            List<SettingsOption> options = new ArrayList<>();
-            for (TerminalClientOptions.MissionView view : TerminalClientOptions.MissionView.values()) {
-                options.add(new SettingsOption(label(view.name()),
-                        TerminalClientOptions.missionView == view,
-                        () -> TerminalClientOptions.selectMissionView(view)));
-            }
-            return drawOptionSection(context, graphics, "MISSION VIEW", x, y, w, mouseX, mouseY, options);
         }
 
         private int drawInterfaceDensityOptions(TerminalRenderContext context, GuiGraphicsExtractor graphics,
@@ -1452,10 +1441,10 @@ public final class BuiltinTerminalTabs {
         private static final int ROW_HEIGHT = 52;
         private static final int LINK_HEIGHT = 34;
         private final TerminalTabDescriptor descriptor =
-                new TerminalTabDescriptor(ADDONS, "CHAPTER GUIDE", 150, 0xFFFFD166);
+                new TerminalTabDescriptor(ADDONS, "MODS", 150, 0xFFFFD166);
         private final TerminalTabChrome chrome =
-                TerminalTabChrome.of("Chapter Guide", TerminalTabChrome.GROUP_CORE, "CH",
-                        "Numbered chapter guide", 150);
+                TerminalTabChrome.of("Mods", TerminalTabChrome.GROUP_CORE, "MD",
+                        "Installed mod order", 150);
         private final List<AddonLinkHitbox> linkHitboxes = new ArrayList<>();
         private final List<ConfigHitbox> configHitboxes = new ArrayList<>();
         private String selectedChapterId = "";
@@ -1498,10 +1487,10 @@ public final class BuiltinTerminalTabs {
             List<AddonChapterEntry> entries = addonChapterEntries(context);
             if (entries.isEmpty()) {
                 TerminalUi.flatDataPanel(context, graphics,
-                        x, y, w, Math.min(150, Math.max(96, h / 4)), "CHAPTER GUIDE", "",
+                        x, y, w, Math.min(150, Math.max(96, h / 4)), "MODS", "",
                         descriptor.accentColor());
                 TerminalUi.wrap(context, graphics,
-                        "No addon chapters detected. Installed ECHO chapter guidance appears here after core chapter metadata registers.",
+                        "No mod routes detected. Installed ECHO mod guidance appears here after route metadata registers.",
                         x + 14, y + 44, w - 28, TerminalUi.MUTED);
                 return;
             }
@@ -1519,8 +1508,8 @@ public final class BuiltinTerminalTabs {
             long optionalCount = entries.size() - mainlineCount;
 
             int cy = TerminalUi.flatDataPanel(context, graphics,
-                    x, y, listW - 8, boardH, "CHAPTER GUIDE",
-                    mainlineCount + " story / " + optionalCount + " optional", descriptor.accentColor()) + 6;
+                    x, y, listW - 8, boardH, "MODS",
+                    mainlineCount + " story / " + optionalCount + " side", descriptor.accentColor()) + 6;
             lastListX = x;
             lastListY = cy;
             lastListW = listW - 8;
@@ -1565,7 +1554,7 @@ public final class BuiltinTerminalTabs {
                             addonDetailHeight(context, selected, info, guide, metrics, sections, links, detailW - 8))
                     : addonDetailHeight(context, selected, info, guide, metrics, sections, links, detailW - 8);
             int dy = TerminalUi.flatDataPanel(selectedContext, graphics,
-                    detailX, detailY, detailW - 8, detailPanelH, "CHAPTER DETAIL", "",
+                    detailX, detailY, detailW - 8, detailPanelH, "MOD DETAIL", "",
                     color) + 2;
             Identifier banner = TerminalUi.chapterBanner(selectedContext);
             if (TerminalClientOptions.useVisualAssets() && banner != null && detailW > 340) {
@@ -2504,10 +2493,10 @@ public final class BuiltinTerminalTabs {
 
     private static final class MissionGraphTab implements TerminalTab {
         private final TerminalTabDescriptor descriptor =
-                new TerminalTabDescriptor(id("mission_graph"), "MISSION GRAPH", 120, 0xFF92F7A6);
+                new TerminalTabDescriptor(id("mission_graph"), "ROUTE SOURCES", 120, 0xFF92F7A6);
         private final TerminalTabChrome chrome =
-                TerminalTabChrome.of("Mission Graph", TerminalTabChrome.GROUP_PROTOCOL, "MG",
-                        "Shared campaign route", 120);
+                TerminalTabChrome.of("Route Sources", TerminalTabChrome.GROUP_PROTOCOL, "RS",
+                        "Shared route diagnostics", 120);
 
         @Override
         public TerminalTabDescriptor descriptor() {

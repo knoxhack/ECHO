@@ -395,9 +395,9 @@ public class EchoTerminalScreen extends AbstractContainerScreen<EchoTerminalMenu
         if (compact || chapter == null) {
             return "";
         }
-        String title = chapter.title() == null ? "" : chapter.title();
+        String title = chapter.rawTitle() == null ? "" : chapter.rawTitle();
         if (title.startsWith("Chapter ")) {
-            return "Story chapter";
+            return "Story route";
         }
         if (title.startsWith("Optional:")) {
             return "Side route";

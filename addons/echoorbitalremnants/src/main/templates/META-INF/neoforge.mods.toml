@@ -51,7 +51,15 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
-reason="Allows Orbital records and actions to appear inside the modular ECHO Terminal."
+reason="Allows Orbital records, actions, and explicit route placement to appear inside the modular ECHO Terminal."
+versionRange="[1.2.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echorendercore"
+type="optional"
+reason="Enables RenderCore visual profiles, particles, and orbital event render helpers when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

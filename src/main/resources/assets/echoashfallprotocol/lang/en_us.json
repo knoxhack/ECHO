@@ -470,7 +470,7 @@
   "screen.EchoAshfallProtocol.welcome.card.shelter.line2": "Secure cover before dark",
   "screen.EchoAshfallProtocol.welcome.modpack.title": "MODPACK BRIEFING",
   "screen.EchoAshfallProtocol.welcome.modpack.name": "ECHO: ASHFALL PROTOCOL: post-apocalyptic survival overhaul",
-  "screen.EchoAshfallProtocol.welcome.modpack.version": "v1.2.0 Full Endgame / Minecraft 26.1.2 / NeoForge 26.1.2.29-beta",
+  "screen.EchoAshfallProtocol.welcome.modpack.version": "v1.2.0 RenderCore + Terminal / Minecraft 26.1.2 / NeoForge 26.1.2.29-beta",
   "screen.EchoAshfallProtocol.welcome.modpack.pillar.survival": "Plan expeditions around water, toxic pockets, radiation, and mutations.",
   "screen.EchoAshfallProtocol.welcome.modpack.pillar.echo": "Use ECHO-7 missions, HUD goals, and the Terminal when installed to track recovery.",
   "screen.EchoAshfallProtocol.welcome.modpack.pillar.scrap": "Scavenge scrap, build machines, power networks, and automate.",

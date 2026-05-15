@@ -35,6 +35,7 @@ import com.knoxhack.echoholomap.world.HoloMapWaypointSavedData;
 import com.mojang.serialization.JsonOps;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -80,6 +81,10 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("waypoint_mutation_rules", () -> ModGameTests::waypointMutationRules);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> WAYPOINT_CLIENT_MERGE =
             TEST_FUNCTIONS.register("waypoint_client_merge", () -> ModGameTests::waypointClientMerge);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DEATHPOINT_PERSONAL_VISIBILITY =
+            TEST_FUNCTIONS.register("deathpoint_personal_visibility", () -> ModGameTests::deathpointPersonalVisibility);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DEATHPOINT_CODEC_AND_RETENTION =
+            TEST_FUNCTIONS.register("deathpoint_codec_and_retention", () -> ModGameTests::deathpointCodecAndRetention);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
             TEST_FUNCTIONS.register("missioncore_content_registration", () -> ModGameTests::missionCoreContentRegistration);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> THEME_CORE_STYLE_FALLBACK =
@@ -105,6 +110,8 @@ public final class ModGameTests {
         register(event, environment, "waypoint_saved_data_codec", WAYPOINT_SAVED_DATA_CODEC.getId());
         register(event, environment, "waypoint_mutation_rules", WAYPOINT_MUTATION_RULES.getId());
         register(event, environment, "waypoint_client_merge", WAYPOINT_CLIENT_MERGE.getId());
+        register(event, environment, "deathpoint_personal_visibility", DEATHPOINT_PERSONAL_VISIBILITY.getId());
+        register(event, environment, "deathpoint_codec_and_retention", DEATHPOINT_CODEC_AND_RETENTION.getId());
         register(event, environment, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
         register(event, environment, "theme_core_style_fallback", THEME_CORE_STYLE_FALLBACK.getId());
     }
@@ -433,15 +440,67 @@ public final class ModGameTests {
         HoloMapWaypoint personal = HoloMapWaypoint.create(Scope.PERSONAL, java.util.UUID.randomUUID(),
                 Level.OVERWORLD.identifier().toString(), 2.0D, 64.0D, 2.0D,
                 "Personal", 0xFF92F7A6, 2L);
+        HoloMapWaypoint deathpoint = new HoloMapWaypoint(id("deathpoint/test/client"), UUID.randomUUID(),
+                Scope.PERSONAL, Level.OVERWORLD.identifier().toString(), 3.0D, 64.0D, 3.0D,
+                "Deathpoint", 0xFFFF6688, HoloMapWaypoint.DEATHPOINT_ICON, true, 3L, 3L);
         HoloMapWaypointClientState.setLocalWaypoints(List.of(local));
-        HoloMapWaypointClientState.apply(new HoloMapWaypointSyncPacket(List.of(personal), 42L));
+        HoloMapWaypointClientState.apply(new HoloMapWaypointSyncPacket(List.of(personal, deathpoint), 42L));
         List<HoloMapWaypoint> merged = HoloMapWaypointClientState.waypoints();
-        helper.assertTrue(merged.size() == 2, "Client waypoint cache should merge local and server waypoints");
+        helper.assertTrue(merged.size() == 3, "Client waypoint cache should merge local, server, and deathpoint waypoints");
         helper.assertTrue(merged.getFirst().scope() == Scope.LOCAL,
                 "Local waypoints should sort before synced server waypoints");
+        helper.assertTrue(merged.get(1).isDeathpoint(),
+                "Deathpoints should sort ahead of normal personal synced waypoints");
+        helper.assertTrue(merged.stream().anyMatch(HoloMapWaypoint::isDeathpoint),
+                "Client waypoint cache should preserve synced deathpoints");
         helper.assertTrue(HoloMapWaypointClientState.lastSyncGameTime() == 42L,
                 "Waypoint sync packet should update client sync time");
         HoloMapWaypointClientState.clearForTests();
+        helper.succeed();
+    }
+
+    private static void deathpointPersonalVisibility(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        HoloMapWaypointSavedData data = new HoloMapWaypointSavedData();
+        HoloMapWaypoint deathpoint = data.recordDeathpoint(player, 10);
+        helper.assertTrue(deathpoint != null && deathpoint.isDeathpoint(),
+                "Deathpoint recording should create a deathpoint waypoint");
+        helper.assertTrue(deathpoint.scope() == Scope.PERSONAL,
+                "Deathpoints should be personal waypoints");
+        helper.assertTrue(deathpoint.owner().equals(player.getUUID()),
+                "Deathpoint owner should be the player that died");
+        helper.assertTrue(data.waypointsFor(player.getUUID(), 16).stream()
+                        .anyMatch(waypoint -> waypoint.id().equals(deathpoint.id())),
+                "Deathpoint should be visible to its owner");
+        helper.assertTrue(data.waypointsFor(UUID.randomUUID(), 16).stream()
+                        .noneMatch(HoloMapWaypoint::isDeathpoint),
+                "Deathpoint should not be visible to other players");
+        helper.succeed();
+    }
+
+    private static void deathpointCodecAndRetention(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        HoloMapWaypointSavedData data = new HoloMapWaypointSavedData();
+        HoloMapWaypoint normal = HoloMapWaypoint.create(Scope.PERSONAL, player.getUUID(),
+                Level.OVERWORLD.identifier().toString(), 8.0D, 64.0D, 8.0D,
+                "Normal Personal", 0xFF92F7A6, 1L);
+        data.putForTests(normal);
+        for (int i = 0; i < 5; i++) {
+            data.recordDeathpoint(player, 2);
+        }
+        List<HoloMapWaypoint> retained = data.waypointsFor(player.getUUID(), 16);
+        helper.assertTrue(retained.stream().filter(HoloMapWaypoint::isDeathpoint).count() == 2L,
+                "Deathpoint retention should keep only the newest configured deathpoints");
+        helper.assertTrue(retained.stream().anyMatch(waypoint -> waypoint.id().equals(normal.id())),
+                "Deathpoint retention should not evict normal personal waypoints");
+
+        JsonElement encoded = HoloMapWaypointSavedData.CODEC.encodeStart(JsonOps.INSTANCE, data).result().orElseThrow();
+        HoloMapWaypointSavedData decoded = HoloMapWaypointSavedData.CODEC.parse(JsonOps.INSTANCE, encoded).result().orElseThrow();
+        List<HoloMapWaypoint> decodedWaypoints = decoded.waypointsFor(player.getUUID(), 16);
+        helper.assertTrue(decodedWaypoints.stream().filter(HoloMapWaypoint::isDeathpoint).count() == 2L,
+                "Deathpoints should survive codec save/load");
+        helper.assertTrue(decodedWaypoints.stream().anyMatch(waypoint -> waypoint.id().equals(normal.id())),
+                "Normal personal waypoints should survive codec save/load with deathpoints");
         helper.succeed();
     }
 

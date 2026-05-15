@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/world_region.schema.json",
+  "title": "ECHO World Region",
+  "description": "World region / zone definition for WorldCore.",
+  "type": "object",
+  "required": ["displayName"],
+  "properties": {
+    "id": { "type": "string", "description": "Region identifier. Inferred from file path if omitted." },
+    "type": { "type": "string", "default": "ANOMALY_ZONE", "description": "Region type enum: ANOMALY_ZONE, CRASH_ZONE, RUINS, NEXUS_SCAR, etc." },
+    "displayName": { "type": "string", "description": "Human-readable region name." },
+    "name": { "type": "string", "description": "Legacy alias for displayName." },
+    "summary": { "type": "string" },
+    "biomeIds": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Biome identifiers that compose this region."
+    },
+    "biomeTags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Biome tag identifiers."
+    },
+    "structureIds": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Structure identifiers present in this region."
+    },
+    "hazardIds": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Hazard identifiers active in this region."
+    },
+    "discoveryId": { "type": "string", "description": "Discovery unlock identifier." },
+    "radius": { "type": "integer", "minimum": 16, "default": 96, "description": "Region radius in blocks." },
+    "renderProfileId": { "type": "string", "description": "Optional RenderCore visual profile identifier." },
+    "audioProfileId": { "type": "string", "description": "Optional SoundCore audio profile identifier." },
+    "sortOrder": { "type": "integer", "default": 0 }
+  },
+  "additionalProperties": true
+}

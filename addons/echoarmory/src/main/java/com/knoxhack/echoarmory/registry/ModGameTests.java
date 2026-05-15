@@ -28,8 +28,10 @@ import com.knoxhack.echoarmory.integration.ArmoryTerminalCommonIntegration;
 import com.knoxhack.echoarmory.integration.ArmoryTerminalIds;
 import com.knoxhack.echoarmory.item.ArmoryData;
 import com.knoxhack.echoarmory.menu.ArmoryStationMenu;
+import com.knoxhack.echoarmory.service.ArmoryReadinessService;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -100,6 +102,10 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("terminal_selected_action_paths", () -> ModGameTests::terminalSelectedActionPaths);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
       TEST_FUNCTIONS.register("missioncore_content_registration", () -> ModGameTests::missionCoreContentRegistration);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> REQUIRED_PROTECTION_PARSER =
+      TEST_FUNCTIONS.register("required_protection_parser", () -> ModGameTests::requiredProtectionParser);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> LOADOUT_READINESS_STATES =
+      TEST_FUNCTIONS.register("loadout_readiness_states", () -> ModGameTests::loadoutReadinessStates);
 
    private ModGameTests() {
    }
@@ -128,6 +134,8 @@ public final class ModGameTests {
       register(event, "station_slot_and_transfer_safety", STATION_SLOT_SAFETY.getId());
       register(event, "terminal_selected_action_paths", TERMINAL_SELECTED_ACTIONS.getId());
       register(event, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
+      register(event, "required_protection_parser", REQUIRED_PROTECTION_PARSER.getId());
+      register(event, "loadout_readiness_states", LOADOUT_READINESS_STATES.getId());
    }
 
    private static void moduleRegistration(GameTestHelper helper) {
@@ -160,7 +168,63 @@ public final class ModGameTests {
       ArmoryLoadoutDefinition loadout = ArmoryJsonReloadListener.parseLoadoutForTests(id("parser_kit"),
          JsonParser.parseString("{\"title\":\"Parser Kit\",\"order\":5,\"icon\":\"echoarmory:frost_blade\",\"weapon\":\"echoarmory:frost_blade\",\"armor\":[\"echoarmory:thermal_chestplate\"],\"modules\":[\"echoarmory:frost_core\"],\"minTier\":2,\"minProtection\":30,\"logisticsPreset\":\"echoarmory:parser_kit\"}").getAsJsonObject());
       helper.assertTrue(loadout.minTier() == 2 && loadout.modules().size() == 1, "Loadout parser should load readiness and module data");
+      helper.assertTrue(loadout.requiredProtection(ArmoryData.ProtectionType.FRACTURE) == 30,
+         "Legacy minProtection should map to fracture when requiredProtections is absent");
       helper.assertTrue(ArmoryContent.validationErrors().isEmpty(), "Bundled Armory gameplay data should validate cleanly: " + ArmoryContent.validationErrors());
+      helper.succeed();
+   }
+
+   private static void requiredProtectionParser(GameTestHelper helper) {
+      ArmoryLoadoutDefinition loadout = ArmoryJsonReloadListener.parseLoadoutForTests(id("hazard_parser_kit"),
+         JsonParser.parseString("{\"title\":\"Hazard Parser Kit\",\"weapon\":\"echoarmory:alloy_sword\",\"requiredProtections\":{\"toxic\":55,\"heat\":40},\"minProtection\":30}").getAsJsonObject());
+      helper.assertTrue(loadout.requiredProtection(ArmoryData.ProtectionType.TOXIC) == 55, "Loadout parser should load toxic protection");
+      helper.assertTrue(loadout.requiredProtection(ArmoryData.ProtectionType.HEAT) == 40, "Loadout parser should load heat protection");
+      helper.assertTrue(loadout.requiredProtection(ArmoryData.ProtectionType.FRACTURE) == 0,
+         "Explicit requiredProtections should replace the legacy fracture fallback");
+      helper.succeed();
+   }
+
+   private static void loadoutReadinessStates(GameTestHelper helper) {
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      player.getAbilities().instabuild = false;
+      ArmoryLoadoutDefinition toxicRoute = new ArmoryLoadoutDefinition(
+         id("test_toxic_route"),
+         "Test Toxic Route",
+         0,
+         id("gas_mask_filter"),
+         "echoarmory:alloy_sword",
+         java.util.List.of("echoarmory:thermal_chestplate"),
+         java.util.List.of("echoarmory:gas_mask_filter"),
+         1,
+         0,
+         Map.of(ArmoryData.ProtectionType.TOXIC, 55),
+         ""
+      );
+
+      ArmoryReadinessService.Report missing = ArmoryReadinessService.report(player, toxicRoute);
+      helper.assertTrue(missing.state() == ArmoryReadinessService.State.MISSING, "Empty operator should miss the toxic route kit");
+
+      player.getInventory().add(new ItemStack(ModItems.ALLOY_SWORD.get()));
+      player.getInventory().add(new ItemStack(ModItems.THERMAL_CHESTPLATE.get()));
+      player.getInventory().add(new ItemStack(ModItems.GAS_MASK_FILTER.get()));
+      ArmoryReadinessService.Report staged = ArmoryReadinessService.report(player, toxicRoute);
+      helper.assertTrue(staged.state() == ArmoryReadinessService.State.STAGED, "Inventory-only toxic kit should be staged");
+
+      player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.ALLOY_SWORD.get()));
+      ItemStack chest = new ItemStack(ModItems.THERMAL_CHESTPLATE.get());
+      ItemStack filter = new ItemStack(ModItems.GAS_MASK_FILTER.get());
+      ArmoryData.initialize(chest);
+      helper.assertTrue(ArmoryData.installModule(player, chest, filter), "Gas Mask Module should install into Thermal Chestplate");
+      player.setItemSlot(EquipmentSlot.CHEST, chest);
+      ArmoryReadinessService.Report ready = ArmoryReadinessService.report(player, toxicRoute);
+      helper.assertTrue(ready.state() == ArmoryReadinessService.State.READY, "Equipped filtered toxic kit should be ready");
+
+      ArmoryLoadoutDefinition fractureGuardian = ArmoryContent.loadouts().stream()
+         .filter(loadout -> "fracture_guardian_kit".equals(loadout.id().getPath()))
+         .findFirst()
+         .orElseThrow(() -> new AssertionError("Missing bundled Fracture Guardian Kit"));
+      ArmoryReadinessService.Report locked = ArmoryReadinessService.report(player, fractureGuardian);
+      helper.assertTrue(locked.state() == ArmoryReadinessService.State.LOCKED, "Faction-gated guardian kit should report locked without reputation");
       helper.succeed();
    }
 
@@ -505,6 +569,8 @@ public final class ModGameTests {
       assertMission(helper, registry, "install_module", "module", MissionObjectiveType.REPAIR_MACHINE);
       assertMission(helper, registry, "recharge_core", "recharge", MissionObjectiveType.REPAIR_MACHINE);
       assertMission(helper, registry, "bind_loadout", "bind", MissionObjectiveType.SCAN_ENTITY);
+      assertMission(helper, registry, "prepare_route_kit", "prepare", MissionObjectiveType.CUSTOM);
+      assertMission(helper, registry, "dispatch_route_kit", "dispatch", MissionObjectiveType.ESTABLISH_ROUTE);
       helper.succeed();
    }
 

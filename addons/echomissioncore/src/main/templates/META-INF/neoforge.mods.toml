@@ -36,7 +36,15 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
-reason="Displays MissionCore chapters and actions in the ECHO Terminal."
+reason="Displays MissionCore chapters, actions, and explicit route placement in the ECHO Terminal."
+versionRange="[1.2.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echoworldcore"
+type="optional"
+reason="Bridges WorldCore region, hazard, and marker events into mission objectives when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

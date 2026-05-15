@@ -6,6 +6,7 @@ import com.knoxhack.echothemecore.api.EchoTheme;
 import com.knoxhack.echothemecore.api.EchoThemeSoundKey;
 import com.knoxhack.echothemecore.api.EchoThemeTextureKey;
 import com.knoxhack.echothemecore.api.ThemeVisualSettings;
+import com.knoxhack.echothemecore.config.ThemeCoreConfig;
 import com.knoxhack.echothemecore.content.ThemeJsonReloadListener;
 import com.knoxhack.echothemecore.content.ThemeRegistry;
 import com.knoxhack.echothemecore.integration.ThemeCoreTerminalBridge;
@@ -130,6 +131,30 @@ public final class ModGameTests {
         helper.assertTrue(parsed.colors().primary() == builtin.colors().primary(), "Builtin CyberGlass primary color should match JSON.");
         helper.assertTrue(parsed.soundProfile().sound(EchoThemeSoundKey.UI_CLICK).isPresent(), "CyberGlass should expose themed UI click sound.");
         helper.assertFalse(builtin.blockPalette().recommendedBlocks().isEmpty(), "Builtin CyberGlass should expose block palette data.");
+        helper.assertTrue("echothemecore:cyberglass".equals(ThemeCoreConfig.string(ThemeCoreConfig.DEFAULT_THEME)),
+            "ThemeCore default theme config should default to CyberGlass.");
+        helper.assertTrue("echothemecore:cyberglass".equals(ThemeCoreConfig.string(ThemeCoreConfig.FALLBACK_THEME)),
+            "ThemeCore fallback theme config should default to CyberGlass.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.THEME_AFFECTS_MAIN_MENU),
+            "ThemeCore main menu theming should default on.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.THEME_AFFECTS_TERMINAL),
+            "ThemeCore Terminal theming should default on.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.THEME_AFFECTS_HOLOMAP),
+            "ThemeCore HoloMap theming should default on.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.THEME_AFFECTS_LENS),
+            "ThemeCore Lens theming should default on.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.THEME_AFFECTS_RENDERCORE),
+            "ThemeCore RenderCore theming should default on.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.THEME_AFFECTS_SOUNDCORE),
+            "ThemeCore SoundCore theming should default on.");
+        helper.assertTrue(ThemeCoreConfig.vanillaUiEnabled(), "ThemeCore vanilla UI theming should default on.");
+        helper.assertFalse(ThemeCoreConfig.vanillaSafeMode(), "ThemeCore vanilla UI safe mode should default off.");
+        helper.assertFalse(ThemeCoreConfig.disableNoise(), "ThemeCore CyberGlass noise should default on.");
+        helper.assertTrue(ThemeCoreConfig.disableUnknownScreens(), "ThemeCore unknown-screen protection should stay enabled.");
+        helper.assertTrue(ThemeCoreConfig.bool(ThemeCoreConfig.DO_NOT_MODIFY_SLOT_POSITIONS),
+            "ThemeCore slot-position protection should stay enabled.");
+        helper.assertTrue(ThemeCoreConfig.preserveTextContrast(),
+            "ThemeCore text contrast preservation should stay enabled.");
         for (EchoThemeTextureKey key : new EchoThemeTextureKey[] {
             EchoThemeTextureKey.HOLOMAP_MARKER_NEXUS,
             EchoThemeTextureKey.HOLOMAP_MARKER_RECLAIMED,
@@ -159,11 +184,14 @@ public final class ModGameTests {
             Class<?> registry = Class.forName("com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry");
             boolean contains = ((Boolean) registry.getMethod("contains", Identifier.class)
                 .invoke(null, ThemeRegistry.CYBERGLASS_ID)).booleanValue();
+            Object defaultId = registry.getMethod("defaultThemeId").invoke(null);
             Object theme = registry.getMethod("byId", Identifier.class).invoke(null, ThemeRegistry.CYBERGLASS_ID);
             Object tokens = theme.getClass().getMethod("tokens").invoke(theme);
             Object assets = tokens.getClass().getMethod("assets").invoke(tokens);
             Object icons = theme.getClass().getMethod("icons").invoke(theme);
             helper.assertTrue(contains, "Terminal should register the CyberGlass ThemeCore theme when loaded.");
+            helper.assertTrue(ThemeRegistry.CYBERGLASS_ID.equals(defaultId),
+                "Terminal should use CyberGlass as the active default when ThemeCore bridge is loaded.");
             helper.assertTrue(assets != null, "CyberGlass Terminal theme should expose asset tokens.");
             helper.assertTrue(icons != null, "CyberGlass Terminal theme should expose icons.");
         } catch (ReflectiveOperationException exception) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Stack 1.2.0 - Orbital Terminal Polish
+
+- Published Orbital mission route placement for the shared Survival Route: Earth/launch/orbit in Phase 06, route worlds and Deep Space Protocol in Phase 07, ECHO-0 in Phase 08, and surveys/outposts/final seal in Phase 09.
+- Preserved Orbital as the owner of gameplay state, actions, rewards, packets, saves, recipes, dimensions, and schemas while letting ECHO Terminal and MissionCore project the route consistently.
+- Kept RenderCore optional with the existing visual-profile path and tinted renderer fallback.
+- Added GameTest coverage for Orbital route placement, shared Survival Route projection, and child mission action preservation.
+
 ## 1.6.0 - Faction Outposts
 
 - Added the persistent `echoorbitalremnants:orbital_faction_npc` contact with synced faction and role identity.

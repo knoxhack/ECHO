@@ -2,7 +2,7 @@
   "id": "echomultiblockcore:fabricate_signal_circuit",
   "display_name": "Fabricate Signal Circuit",
   "category": "assembly",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line"],
   "required_workcell": "ASSEMBLY",
   "required_tools": ["ASSEMBLER", "SCANNER"],
   "duration_ticks": 160,

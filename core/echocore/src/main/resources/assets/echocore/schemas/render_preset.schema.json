@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/render_preset.schema.json",
+  "title": "ECHO Render Preset",
+  "description": "Theme-linked render preset used by ThemeCore and RenderCore.",
+  "type": "object",
+  "required": ["id", "theme", "type"],
+  "properties": {
+    "id": { "type": "string", "description": "Preset identifier, e.g. 'mypack:data_stream_pulse'" },
+    "theme": { "type": "string", "description": "Linked theme identifier, e.g. 'echothemecore:cyberglass'" },
+    "type": { "type": "string", "description": "Preset kind: data_stream, terminal_boot, hologram_sweep, etc." },
+    "colors": {
+      "type": "object",
+      "description": "Named color overrides for this preset.",
+      "additionalProperties": { "type": "string" }
+    },
+    "effects": {
+      "type": "array",
+      "description": "Ordered list of visual effects.",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string", "description": "Effect type key." },
+          "duration_ticks": { "type": "integer", "minimum": 0 },
+          "strength": { "type": "string", "description": "Theme token or numeric value as string." },
+          "count": { "type": "integer", "minimum": 0 },
+          "particle_style": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

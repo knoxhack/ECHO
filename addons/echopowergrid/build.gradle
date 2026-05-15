@@ -39,22 +39,14 @@ def optionalProject = { String path, String configuration ->
 
 dependencies {
     implementation project(":echocore")
+    implementation project(":echonetcore")
     optionalProject(":echoterminal", "compileOnly")
-    optionalProject(":echoterminal", "localRuntime")
     optionalProject(":echorendercore", "compileOnly")
-    optionalProject(":echorendercore", "localRuntime")
     optionalProject(":echoruntimeguard", "compileOnly")
-    optionalProject(":echoruntimeguard", "localRuntime")
     optionalProject(":echolens", "compileOnly")
-    optionalProject(":echolens", "localRuntime")
-    optionalProject(":echoholomap", "compileOnly")
-    optionalProject(":echoholomap", "localRuntime")
     optionalProject(":echomultiblockcore", "compileOnly")
-    optionalProject(":echomultiblockcore", "localRuntime")
     optionalProject(":echoindustrialnexus", "compileOnly")
-    optionalProject(":echoindustrialnexus", "localRuntime")
     optionalProject(":echoworldcore", "compileOnly")
-    optionalProject(":echoworldcore", "localRuntime")
 }
 
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }

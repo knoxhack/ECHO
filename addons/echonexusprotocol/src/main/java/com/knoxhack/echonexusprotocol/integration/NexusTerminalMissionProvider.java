@@ -13,11 +13,13 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -97,6 +99,22 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
 
    public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
       return TerminalMissionRole.MAIN;
+   }
+
+   @Override
+   public Optional<TerminalMissionRoutePlacement> routePlacement(
+      Player player,
+      TerminalMissionDefinition definition,
+      TerminalMissionSnapshot snapshot,
+      TerminalMissionRole role
+   ) {
+      NexusMission mission = mission(definition == null ? null : definition.id());
+      if (mission == null) {
+         return Optional.empty();
+      }
+      int phase = mission.phaseOrder() >= 5 ? 8 : 7;
+      return Optional.of(TerminalMissionRoutePlacement.main(
+         phase, mission.phaseOrder() * 100 + mission.order()));
    }
 
    public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
@@ -364,10 +382,10 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
 
    private static String lockedReason(Player player, NexusPlayerData data, NexusTerminalMissionProvider.NexusMission mission) {
       if (mission == NexusTerminalMissionProvider.NexusMission.SIGNAL_BENEATH) {
-         return "Recover Stationfall's blackbox milestone (`" + NexusProgression.STATIONFALL_GATE + "`) or enable the Nexus development unlock before starting Chapter IV.";
+         return "Recover Stationfall's blackbox handoff or enable the Nexus development unlock before starting Chapter IV.";
       } else {
          NexusTerminalMissionProvider.NexusMission previous = mission.previous();
-         return previous == null ? "Nexus mission locked." : "Complete " + previous.title() + " first: " + previous.guide();
+         return previous == null ? "Unlock the Nexus route first." : "Complete " + previous.title() + " first.";
       }
    }
 
@@ -377,9 +395,9 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
       if (!available) {
          return lockedReason(player, data, mission);
       } else if (complete) {
-         return claimed ? "Cache claimed. Continue to the next Nexus objective." : "Mission complete. Claim the support cache before moving on.";
+         return claimed ? "Continue to the next Nexus objective." : "Claim the support cache before moving on.";
       } else if (mission == NexusTerminalMissionProvider.NexusMission.REBUILDS_WORLD && data.guardianDefeated() && !data.hasEndingPath()) {
-         return "Choose exactly one final Core path. This decision is permanent for the save.";
+         return "Guardian proof accepted. Choose exactly one final Core path; Restore, Control, Destroy, and Merge permanently alter the save.";
       } else {
          return mission.guide();
       }
@@ -427,13 +445,13 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
       return switch (mission) {
          case SIGNAL_BENEATH -> stacks(stack((ItemLike)ModItems.NEXUS_SHARD.get(), 2), stack((ItemLike)ModItems.SIGNAL_WIRE.get(), 2));
          case DIRTY_CHARGE -> stacks(stack((ItemLike)ModItems.FILTER_MEMBRANE.get(), 1), stack((ItemLike)ModItems.FIELD_MEMBRANE.get(), 1));
-         case STABILIZE_CAMP -> stacks(stack((ItemLike)ModItems.PURITY_CHARGE.get(), 2), stack((ItemLike)ModItems.WHITE_SIGNAL_BARK.get(), 2));
+         case STABILIZE_CAMP -> stacks(stack((ItemLike)ModItems.PURITY_CHARGE.get(), 2), stack((ItemLike)ModItems.STABILIZED_PURITY_CHARGE.get(), 1));
          case TOWER_SPEAKS -> stacks(stack((ItemLike)ModItems.MEMORY_SHARD.get(), 2), stack((ItemLike)ModItems.DATA_FRAGMENT.get(), 3));
          case DELETED_HISTORY -> stacks(stack((ItemLike)ModItems.BLACKBOX_FRAGMENT.get(), 1), stack((ItemLike)ModItems.REALITY_DUST.get(), 1));
-         case QUARANTINE_FAILED -> stacks(stack((ItemLike)ModItems.CORRUPTED_FERRITE.get(), 3), stack((ItemLike)ModItems.NEXUS_GEL.get(), 2));
+         case QUARANTINE_FAILED -> stacks(stack((ItemLike)ModItems.CORRUPTED_FERRITE.get(), 3), stack((ItemLike)ModItems.FIELD_ANCHOR.get(), 1));
          case MONOLITH_REMEMBERS -> stacks(stack((ItemLike)ModItems.CORE_ACCESS_KEY.get(), 1));
          case REALITY_FORGE -> stacks(stack((ItemLike)ModItems.STABILIZED_ALLOY.get(), 3), stack((ItemLike)ModItems.CORE_GLASS.get(), 2));
-         case CORE_DOOR -> stacks(stack((ItemLike)ModItems.PURITY_CHARGE.get(), 4), stack((ItemLike)ModItems.COLLAPSE_CHARGE.get(), 2));
+         case CORE_DOOR -> stacks(stack((ItemLike)ModItems.STABILIZED_PURITY_CHARGE.get(), 2), stack((ItemLike)ModItems.COLLAPSE_CHARGE.get(), 2));
          case REBUILDS_WORLD -> stacks(stack((ItemLike)ModItems.STABLE_NEXUS_CORE.get(), 1), stack((ItemLike)ModItems.REALITY_DUST.get(), 4));
       };
    }
@@ -512,7 +530,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          1,
          "Dirty Charge",
          "Build a Nexus Recycler and process a charge source so ECHO-7 can classify stable charge versus contamination.",
-         "Place a Nexus Recycler, insert salvage or a Nexus Shard, and let one recipe finish. Check the Nexus Field tab afterward.",
+         "Place a Nexus Recycler, insert salvage or a Nexus Shard, and let one recipe finish. If it stalls, check charge, output, and the machine status line.",
          "Machine",
          "Containment"
       ),
@@ -523,7 +541,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          0,
          "Stabilize the Camp",
          "Turn the first unsafe lab into a survivable base chunk.",
-         "Run a Nexus Field Stabilizer and a Corruption Filter near your machines. Add a Charge Tank if the Recycler overflows.",
+         "Run a Nexus Field Stabilizer and a Corruption Filter near your machines. Use the Field Map to pick the safest adjacent work chunk before dirty processing.",
          "Field",
          "Containment"
       ),
@@ -534,7 +552,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          0,
          "The Tower Still Speaks",
          "Use old-world relay traces to find the first real memory route.",
-         "Find or repair a Signal Relay Tower, then run a Memory Decoder recipe to unlock Memory Recovery progress.",
+         "Find or repair a Signal Relay Tower, then run a Memory Decoder recipe. Data Vault loot is the most reliable fragment route.",
          "Memory",
          "Route"
       ),
@@ -545,7 +563,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          1,
          "Deleted History",
          "Data Vaults hold the missing records ECHO-7 was not supposed to remember.",
-         "Recover and decode three Blackbox Fragments from Data Vaults, containment labs, or Nexus boss loot.",
+         "Recover and decode three Blackbox Fragments from Data Vaults, containment labs, or Warden support loot. Claim caches before the Monolith route.",
          "Memory",
          "Story"
       ),
@@ -556,7 +574,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          0,
          "Quarantine Failed",
          "Enter a Corruption Containment Lab and end the failed quarantine protocol.",
-         "Bring Purity Charges and Nexus armor if possible, defeat the Corruption Warden, and recover its Reactor Core.",
+         "Bring Purity Charges, a Field Anchor, and Nexus armor if possible. The Warden telegraphs pressure pulses before Static Crawlers join the fight.",
          "Boss",
          "Danger"
       ),
@@ -578,7 +596,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          0,
          "Reality Forge",
          "Build the Reality Forge and prove matter rewriting can be contained.",
-         "Complete one Reality Forge recipe in a stabilized chunk. Do not run it in a Critical or Collapsed field.",
+         "Complete one Reality Forge recipe in a stabilized chunk. Do not run it in a Critical or Collapsed field; recover the map target first.",
          "Crafting",
          "Endgame"
       ),
@@ -589,7 +607,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          0,
          "The Core Door",
          "Assemble the Core Access Key route and cross into the Nexus dimension.",
-         "Use the Core Access Key or Core Key Assembly. From the Nexus, use it again to return to your saved overworld position.",
+         "Use the Core Access Key or Core Key Assembly. From the Nexus, use it again to return to your saved overworld position before the Guardian push.",
          "Route",
          "Finale"
       ),
@@ -600,7 +618,7 @@ public final class NexusTerminalMissionProvider implements TerminalMissionProvid
          0,
          "What Rebuilds the World",
          "Defeat the Nexus Guardian, then decide what kind of world survives the Core.",
-         "After Guardian defeat, choose exactly one path: Restore, Control, Destroy, or Merge.",
+         "After Guardian defeat, choose exactly one path: Restore, Control, Destroy, or Merge. The Terminal will not allow a second interpretation.",
          "Story",
          "Complete"
       );

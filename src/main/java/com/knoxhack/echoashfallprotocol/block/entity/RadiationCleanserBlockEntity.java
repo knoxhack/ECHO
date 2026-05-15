@@ -59,6 +59,10 @@ public class RadiationCleanserBlockEntity extends BlockEntity implements MenuPro
         DECONTAMINATION_MAP.put(ModItems.CONTAMINATED_LAPIS.get(), Items.LAPIS_LAZULI);
     }
 
+    public static java.util.Map<Item, Item> getDecontaminationMap() {
+        return DECONTAMINATION_MAP;
+    }
+
     public final ContainerData data = new ContainerData() {
         @Override
         public int get(int i) {

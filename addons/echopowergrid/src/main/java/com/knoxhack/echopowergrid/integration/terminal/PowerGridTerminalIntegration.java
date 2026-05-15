@@ -1,16 +1,14 @@
 package com.knoxhack.echopowergrid.integration.terminal;
 
 import com.knoxhack.echopowergrid.EchoPowerGrid;
-import com.knoxhack.echopowergrid.api.EchoPowerGridApi;
-import com.knoxhack.echopowergrid.api.PowerGridSnapshot;
+import com.knoxhack.echopowergrid.network.PowerGridNetworkSummaryPacket;
+import com.knoxhack.echonetcore.api.EchoNetSend;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
 import com.knoxhack.echoterminal.api.TerminalArchiveEntry;
 import com.knoxhack.echoterminal.api.TerminalArchiveRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionActions;
 import java.util.List;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.fml.ModList;
 
 public final class PowerGridTerminalIntegration {
     private static boolean registered;
@@ -32,13 +30,7 @@ public final class PowerGridTerminalIntegration {
     private static void registerActions() {
         TerminalActionRegistry.register(PowerGridTerminalIds.TAB, PowerGridTerminalIds.STATUS_ACTION, (player, payload) -> {
             if (player instanceof ServerPlayer serverPlayer) {
-                PowerGridSnapshot snap = EchoPowerGridApi.getSnapshot(serverPlayer.level(), serverPlayer.blockPosition());
-                serverPlayer.sendSystemMessage(Component.literal("ECHO GRID // Terminal Status"));
-                serverPlayer.sendSystemMessage(Component.literal("  Generation: " + snap.totalGeneration() + " EP/t"));
-                serverPlayer.sendSystemMessage(Component.literal("  Demand: " + snap.totalDemand() + " EP/t"));
-                serverPlayer.sendSystemMessage(Component.literal("  Stored: " + snap.totalStored() + "/" + snap.totalCapacity()));
-                serverPlayer.sendSystemMessage(Component.literal("  State: " + snap.state()));
-                serverPlayer.sendSystemMessage(Component.literal("  Nodes: " + snap.nodeCount()));
+                EchoNetSend.toPlayer(serverPlayer, PowerGridNetworkSummaryPacket.current(serverPlayer));
             }
         });
     }

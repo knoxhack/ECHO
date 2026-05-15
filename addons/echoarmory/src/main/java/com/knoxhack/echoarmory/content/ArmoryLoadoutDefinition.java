@@ -1,6 +1,8 @@
 package com.knoxhack.echoarmory.content;
 
+import com.knoxhack.echoarmory.item.ArmoryData;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.resources.Identifier;
 
 public record ArmoryLoadoutDefinition(
@@ -13,6 +15,7 @@ public record ArmoryLoadoutDefinition(
    List<String> modules,
    int minTier,
    int minProtection,
+   Map<ArmoryData.ProtectionType, Integer> requiredProtections,
    String logisticsPreset
 ) {
    public ArmoryLoadoutDefinition {
@@ -26,6 +29,29 @@ public record ArmoryLoadoutDefinition(
       modules = List.copyOf(modules == null ? List.of() : modules);
       minTier = Math.max(1, Math.min(4, minTier));
       minProtection = Math.max(0, minProtection);
+      requiredProtections = sanitizeProtections(requiredProtections, minProtection);
       logisticsPreset = logisticsPreset == null ? "" : logisticsPreset.strip();
+   }
+
+   private static Map<ArmoryData.ProtectionType, Integer> sanitizeProtections(
+      Map<ArmoryData.ProtectionType, Integer> requirements,
+      int fallbackFracture
+   ) {
+      if (requirements == null) {
+         return fallbackFracture <= 0
+            ? Map.of()
+            : Map.of(ArmoryData.ProtectionType.FRACTURE, Math.max(0, fallbackFracture));
+      }
+      java.util.EnumMap<ArmoryData.ProtectionType, Integer> sanitized = new java.util.EnumMap<>(ArmoryData.ProtectionType.class);
+      for (Map.Entry<ArmoryData.ProtectionType, Integer> entry : requirements.entrySet()) {
+         if (entry.getKey() != null && entry.getValue() != null && entry.getValue() > 0) {
+            sanitized.put(entry.getKey(), entry.getValue());
+         }
+      }
+      return Map.copyOf(sanitized);
+   }
+
+   public int requiredProtection(ArmoryData.ProtectionType type) {
+      return requiredProtections.getOrDefault(type, 0);
    }
 }

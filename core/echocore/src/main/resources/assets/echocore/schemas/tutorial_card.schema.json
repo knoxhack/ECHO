@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/tutorial_card.schema.json",
+  "title": "ECHO Tutorial Card",
+  "description": "Data-driven tutorial card for TutorialCore.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "description": "Card identifier, e.g. 'mypack:intro_card'" },
+    "category": { "type": "string", "description": "Category enum string (START_HERE, TERMINAL, COMBAT, etc.) or custom." },
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "body": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paragraph strings displayed in the card body."
+    },
+    "steps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ordered actionable steps."
+    },
+    "commonMistakes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Common mistakes to avoid."
+    },
+    "related": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Related tutorial card identifiers."
+    },
+    "unlockTriggers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Trigger keys that unlock this card."
+    },
+    "defaultUnlocked": { "type": "boolean", "default": false },
+    "addonOwnerId": { "type": "string", "description": "Namespace that owns this card." },
+    "priority": { "type": "integer", "default": 0, "description": "Display priority (higher = earlier)." }
+  },
+  "additionalProperties": true
+}

@@ -7,7 +7,9 @@ public enum DistortionStyle {
     LIGHT_STATIC,
     GLITCH,
     PHASE_WARP,
-    NEXUS_RIPPLE;
+    NEXUS_RIPPLE,
+    CRT_SCANLINE,
+    NOISE_STATIC;
 
     public static DistortionStyle byName(String value, DistortionStyle fallback) {
         if (value == null || value.isBlank()) {

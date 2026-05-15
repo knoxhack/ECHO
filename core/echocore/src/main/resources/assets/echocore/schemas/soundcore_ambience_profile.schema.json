@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/soundcore_ambience_profile.schema.json",
+  "title": "ECHO SoundCore Ambience Profile",
+  "description": "Ambient sound loop profile for SoundCore.",
+  "type": "object",
+  "required": ["id", "sound"],
+  "properties": {
+    "id": { "type": "string", "description": "Profile identifier, e.g. 'mypack:toxic_caves_loop'" },
+    "sound": { "type": "string", "description": "Sound event identifier, e.g. 'mypack:ambience.toxic_caves'" },
+    "layer": { "type": "string", "default": "default", "description": "Audio layer: default, hazard, biome, structure, faction." },
+    "chapter": { "type": "string", "default": "UNKNOWN" },
+    "biome": { "type": "string", "description": "Optional biome filter identifier." },
+    "hazard": { "type": "string", "default": "", "description": "Optional hazard name filter." },
+    "structure": { "type": "string", "description": "Optional structure filter identifier." },
+    "faction": { "type": "string", "description": "Optional faction filter identifier." },
+    "loop": { "type": "boolean", "default": true },
+    "fadeIn": { "type": "number", "default": 0.0, "minimum": 0 },
+    "fadeOut": { "type": "number", "default": 0.0, "minimum": 0 },
+    "volume": { "type": "number", "default": 1.0, "minimum": 0 },
+    "pitch": { "type": "number", "default": 1.0, "minimum": 0 }
+  },
+  "additionalProperties": true
+}

@@ -412,9 +412,14 @@ public final class ModGameTests {
       ReclamationProgress.discoverSeed(player, CropSpec.byPath("ash_wheat"));
       ReclamationProgress.max(player, "crop_stability", 100);
       ReclamationProgress.max(player, "food_security", 30);
-      String status = terminalSnapshotStatus(player, firstTerminalMissionId());
+      Identifier seedMission = firstTerminalMissionId();
+      String status = terminalSnapshotStatus(player, seedMission);
       helper.assertTrue("CLAIMABLE".equals(status) || "UNLOCKED".equals(status),
          "Terminal mission snapshot should render seed recovery state");
+      helper.assertTrue("OPTIONAL".equals(terminalMissionRole(player, seedMission)),
+         "Agriculture missions should be optional side-route records in the aggregate Terminal route");
+      helper.assertTrue("2:0:OPTIONAL:true".equals(terminalRoutePlacement(player, seedMission)),
+         "Agriculture missions should publish explicit Phase 02 optional route placement");
       ReclamationMetrics metrics = ReclamationProgress.metrics(player);
       helper.assertTrue(metrics.knownSeeds() >= 1, "Terminal metrics should include known seeds");
       String greenhouseDetail = terminalSnapshotDetail(player, ReclamationTerminalIds.id("mission/greenhouse_online"));
@@ -938,6 +943,55 @@ public final class ModGameTests {
       } catch (ReflectiveOperationException exception) {
          throw new AssertionError("Unable to inspect Agriculture terminal snapshot detail.", exception);
       }
+   }
+
+   private static String terminalMissionRole(Player player, Identifier missionId) {
+      try {
+         Class<?> providerClass = Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider");
+         Object provider = providerClass.getField("INSTANCE").get(null);
+         Object definition = terminalDefinition(providerClass, provider, player, missionId);
+         Object snapshot = providerClass.getMethod("snapshot", Player.class, Identifier.class).invoke(provider, player, missionId);
+         Object role = providerClass.getMethod("role", Player.class, definition.getClass(), snapshot.getClass())
+            .invoke(provider, player, definition, snapshot);
+         return role instanceof Enum<?> value ? value.name() : String.valueOf(role);
+      } catch (ReflectiveOperationException exception) {
+         throw new AssertionError("Unable to inspect Agriculture terminal mission role.", exception);
+      }
+   }
+
+   private static String terminalRoutePlacement(Player player, Identifier missionId) {
+      try {
+         Class<?> providerClass = Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationMissionProvider");
+         Object provider = providerClass.getField("INSTANCE").get(null);
+         Object definition = terminalDefinition(providerClass, provider, player, missionId);
+         Object snapshot = providerClass.getMethod("snapshot", Player.class, Identifier.class).invoke(provider, player, missionId);
+         Object role = providerClass.getMethod("role", Player.class, definition.getClass(), snapshot.getClass())
+            .invoke(provider, player, definition, snapshot);
+         Object placement = providerClass.getMethod("routePlacement", Player.class, definition.getClass(), snapshot.getClass(), role.getClass())
+            .invoke(provider, player, definition, snapshot, role);
+         if (!(placement instanceof java.util.Optional<?> optional) || optional.isEmpty()) {
+            return "";
+         }
+         Object value = optional.get();
+         return value.getClass().getMethod("phaseOrder").invoke(value)
+            + ":" + value.getClass().getMethod("missionOrder").invoke(value)
+            + ":" + value.getClass().getMethod("role").invoke(value)
+            + ":" + value.getClass().getMethod("includeInSurvivalRoute").invoke(value);
+      } catch (ReflectiveOperationException exception) {
+         throw new AssertionError("Unable to inspect Agriculture terminal route placement.", exception);
+      }
+   }
+
+   private static Object terminalDefinition(Class<?> providerClass, Object provider, Player player, Identifier missionId)
+      throws ReflectiveOperationException {
+      List<?> definitions = (List<?>)providerClass.getMethod("missions", Player.class).invoke(provider, player);
+      for (Object definition : definitions) {
+         Object id = definition.getClass().getMethod("id").invoke(definition);
+         if (missionId.equals(id)) {
+            return definition;
+         }
+      }
+      throw new NoSuchMethodException("Missing Agriculture terminal mission definition " + missionId);
    }
 
    private static boolean invokeTerminalAction(ServerPlayer player, Identifier missionId, String actionId) {

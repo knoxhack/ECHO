@@ -1,0 +1,14 @@
+{
+  "id": "echocore:example_survival_knife",
+  "title": "Survival Knife",
+  "baseType": "weapon",
+  "tier": 1,
+  "moduleSlots": 1,
+  "baseDamage": 5.0,
+  "baseDefense": 0,
+  "energyCapacity": 0,
+  "craftingStage": "Tier 1",
+  "factionGate": "",
+  "allowedSlots": ["mainhand"],
+  "tags": ["melee", "survival", "starter"]
+}

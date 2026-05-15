@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/mission_chapter.schema.json",
+  "title": "ECHO Mission Chapter",
+  "description": "Mission chapter / phase definition for MissionCore.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "description": "Chapter identifier, e.g. 'mypack:chapter_1'" },
+    "title": { "type": "string", "default": "Inferred from id path" },
+    "summary": { "type": "string", "description": "Legacy alias for description." },
+    "description": { "type": "string", "default": "" },
+    "order": { "type": "integer", "default": 0, "description": "Display order among chapters." },
+    "accentColor": { "type": ["string", "integer"], "default": "0x55FFDD", "description": "Chapter accent color." }
+  },
+  "additionalProperties": true
+}

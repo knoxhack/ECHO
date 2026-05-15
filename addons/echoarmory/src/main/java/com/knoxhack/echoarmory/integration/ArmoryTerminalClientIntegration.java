@@ -5,6 +5,7 @@ import com.knoxhack.echoarmory.content.ArmoryLoadoutDefinition;
 import com.knoxhack.echoarmory.content.BossRecommendationDefinition;
 import com.knoxhack.echoarmory.content.ModuleDefinition;
 import com.knoxhack.echoarmory.item.ArmoryData;
+import com.knoxhack.echoarmory.service.ArmoryReadinessService;
 import com.knoxhack.echoterminal.api.TerminalAddonGuide;
 import com.knoxhack.echoterminal.api.TerminalAddonInfo;
 import com.knoxhack.echoterminal.api.TerminalAddonInfoProvider;
@@ -55,15 +56,16 @@ public final class ArmoryTerminalClientIntegration {
       public TerminalAddonInfo info(Player player) {
          int modules = player == null ? 0 : ArmoryData.modules(player.getMainHandItem()).modules().size();
          int fracture = player == null ? 0 : ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE);
+         ArmoryReadinessService.Report report = player == null ? null : ArmoryReadinessService.bestReport(player).orElse(null);
          return new TerminalAddonInfo(
             "Modular combat loadouts, energy weapons, faction gear, and hazard protection planning.",
             List.of(
                new TerminalAddonMetric("Modules", String.valueOf(modules), "main-hand installed", ACCENT),
                new TerminalAddonMetric("Fracture", fracture + "%", "equipped mitigation", fracture >= 45 ? TerminalUi.GREEN : TerminalUi.AMBER),
-               new TerminalAddonMetric("Loadouts", String.valueOf(ArmoryContent.loadouts().size()), "published kits", TerminalUi.CYAN)),
+               new TerminalAddonMetric("Kit", report == null ? "NONE" : report.state().name(), report == null ? "no report" : report.loadout().title(), report == null ? TerminalUi.CYAN : colorForState(report.state()))),
             List.of(new TerminalAddonSection("Armory Feed", List.of(
                player == null ? "Open Armory with player telemetry available." : "Main hand: " + player.getMainHandItem().getHoverName().getString(),
-               "Boss recommendations: " + ArmoryContent.bossRecommendations().size(),
+               report == null ? "Route-kit readiness unavailable." : report.firstBlocker(),
                "Faction unlocks: " + ArmoryContent.factionUnlocks().size()))),
             List.of(new TerminalAddonLink(ArmoryTerminalIds.ARMORY_TAB, "Armory", "Mission-ready gear", ACCENT)),
             TerminalAddonGuide.optional(610, "Combat route",
@@ -127,17 +129,20 @@ public final class ArmoryTerminalClientIntegration {
          selectedLoadoutPayload = ensureSelection(selectedLoadoutPayload, loadouts.stream().map(loadout -> loadout.id().toString()).toList());
          selectedModulePayload = ensureSelection(selectedModulePayload, moduleDefinitions.stream().map(module -> module.id().toString()).toList());
          selectedBossPayload = ensureSelection(selectedBossPayload, recommendations.stream().map(recommendation -> recommendation.id().toString()).toList());
+         ArmoryReadinessService.Report selectedReport = selectedReport(player, selectedLoadoutPayload);
 
          y = TerminalUi.sectionHeader(context, graphics, "ARMORY READINESS", "SYSTEM", x, y, w, ACCENT);
-         TerminalUi.flatHudPanel(context, graphics, x, y, w, 92, ACCENT);
+         TerminalUi.flatHudPanel(context, graphics, x, y, w, 112, ACCENT);
          TerminalUi.line(context, graphics, "Main hand: " + (player == null ? "telemetry offline" : player.getMainHandItem().getHoverName().getString()), x + 14, y + 14, w - 28, TerminalUi.text(context));
          TerminalUi.line(context, graphics, "Installed modules: " + modules, x + 14, y + 34, 160, modules > 0 ? TerminalUi.success(context) : TerminalUi.warning(context));
          TerminalUi.line(context, graphics, "Protection T/R/C/H/F " + toxic + "/" + radiation + "/" + cold + "/" + heat + "/" + fracture,
             x + 14, y + 54, w - 28, fracture >= 45 ? TerminalUi.success(context) : TerminalUi.warning(context));
-         TerminalUi.line(context, graphics, "Loadouts " + ArmoryContent.loadouts().size() + " | Modules " + ArmoryContent.modules().size()
-            + " | Gear " + ArmoryContent.gear().size(), x + 14, y + 74, w - 28, TerminalUi.muted(context));
+         TerminalUi.line(context, graphics, selectedReport == null ? "Selected kit: unavailable" : selectedReport.loadout().title() + " // " + selectedReport.state() + " // " + selectedReport.firstBlocker(),
+            x + 14, y + 74, w - 28, selectedReport == null ? TerminalUi.muted(context) : colorForState(selectedReport.state()));
+         TerminalUi.line(context, graphics, selectedReport == null ? "Logistics unavailable" : "Logistics " + (selectedReport.logisticsAvailable() ? "available" : "unavailable")
+            + " | Loadouts " + ArmoryContent.loadouts().size() + " | Gear " + ArmoryContent.gear().size(), x + 14, y + 94, w - 28, TerminalUi.muted(context));
 
-         int cy = y + 110;
+         int cy = y + 130;
          TerminalUi.section(context, graphics, "MISSION KITS", x, cy, ACCENT);
          cy += 16;
          loadoutRowX = x;
@@ -146,16 +151,17 @@ public final class ArmoryTerminalClientIntegration {
          loadoutRowCount = Math.min(4, loadouts.size());
          for (int i = 0; i < loadoutRowCount; i++) {
             ArmoryLoadoutDefinition loadout = loadouts.get(i);
+            ArmoryReadinessService.Report report = player == null ? null : ArmoryReadinessService.report(player, loadout);
             boolean selected = loadout.id().toString().equals(selectedLoadoutPayload);
             boolean hover = TerminalUi.inside(mouseX, mouseY, x, cy, w, 28);
-            int rowColor = selected ? ACCENT : TerminalUi.muted(context);
+            int rowColor = selected ? ACCENT : report == null ? TerminalUi.muted(context) : colorForState(report.state());
             TerminalUi.densePanel(context, graphics, x, cy, w, 28, rowColor);
             if (selected || hover) {
                graphics.outline(x, cy, w, 28, selected ? ACCENT : TerminalUi.accent(context));
             }
             TerminalUi.line(context, graphics, loadout.title(), x + 8, cy + 6, w / 2, selected ? TerminalUi.text(context) : ACCENT);
-            TerminalUi.line(context, graphics, "Tier " + loadout.minTier() + " | protection " + loadout.minProtection(), x + w / 2, cy + 6, w / 2 - 14, TerminalUi.muted(context));
-            TerminalUi.line(context, graphics, loadout.logisticsPreset().isBlank() ? "Manual kit" : "Logistics " + loadout.logisticsPreset(), x + 8, cy + 17, w - 16, TerminalUi.muted(context));
+            TerminalUi.line(context, graphics, report == null ? "No report" : report.state() + " | Tier " + loadout.minTier(), x + w / 2, cy + 6, w / 2 - 14, TerminalUi.muted(context));
+            TerminalUi.line(context, graphics, report == null ? "No readiness detail" : report.firstBlocker(), x + 8, cy + 17, w - 16, TerminalUi.muted(context));
             cy += 32;
          }
 
@@ -226,6 +232,15 @@ public final class ArmoryTerminalClientIntegration {
             return current;
          }
          return ids.getFirst();
+      }
+
+      private static ArmoryReadinessService.Report selectedReport(Player player, String selectedLoadoutPayload) {
+         if (player == null) {
+            return null;
+         }
+         return ArmoryReadinessService.report(player, selectedLoadoutPayload)
+            .or(() -> ArmoryReadinessService.bestReport(player))
+            .orElse(null);
       }
 
       @Override
@@ -302,5 +317,14 @@ public final class ArmoryTerminalClientIntegration {
       public int contentHeight(TerminalRenderContext context) {
          return 680;
       }
+   }
+
+   private static int colorForState(ArmoryReadinessService.State state) {
+      return switch (state) {
+         case READY -> TerminalUi.GREEN;
+         case STAGED -> TerminalUi.CYAN;
+         case MISSING -> TerminalUi.AMBER;
+         case LOCKED -> TerminalUi.RED;
+      };
    }
 }

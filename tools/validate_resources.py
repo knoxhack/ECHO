@@ -187,6 +187,8 @@ BETA_MOD_IDS = {
     "signalos",
     "signalosexample",
     "echorendercore",
+    "echoholomap",
+    "echolens",
     "echoashfallprotocol",
     "echoorbitalremnants",
     "echonexusprotocol",
@@ -194,7 +196,22 @@ BETA_MOD_IDS = {
     "echoworldcore",
     "echomultiblockcore",
     "echoblockworks",
+    "echopowergrid",
+    "echosoundcore",
+    "echotutorialcore",
+    "echorelictech",
+    "echoweathercore",
 }
+RELEASE_MOD_IDS = {
+    "echoarmory",
+    "echoblackboxprotocol",
+    "echoconvoyprotocol",
+    "echoindex",
+    "echoindustrialnexus",
+    "echologisticsnetwork",
+    "echostationfall",
+}
+ALL_MOD_IDS = BETA_MOD_IDS | RELEASE_MOD_IDS
 ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
 ADDON_DIR_TO_MODID = {
     "echosignalos": "signalos",
@@ -543,11 +560,7 @@ def configure_addon_set(addon_set: str) -> None:
     global MODS
     global RELEASE_POLISH_SCAN_ROOTS
 
-    if addon_set == "all":
-        ACTIVE_MOD_IDS = {modid for modid, _, _ in MODS}
-        return
-
-    ACTIVE_MOD_IDS = set(BETA_MOD_IDS)
+    ACTIVE_MOD_IDS = set(ALL_MOD_IDS if addon_set == "all" else BETA_MOD_IDS)
     MODS = tuple(mod for mod in MODS if mod[0] in ACTIVE_MOD_IDS)
     RELEASE_POLISH_SCAN_ROOTS = tuple(
         root for root in RELEASE_POLISH_SCAN_ROOTS
@@ -1219,22 +1232,22 @@ def expected_terminal_mission_ids() -> set[tuple[str, str]]:
     expected: list[tuple[str, str]] = []
 
     ashfall = ROOT / "src/main/java/com/knoxhack/echoashfallprotocol/echo/MissionRegistry.java"
-    if ashfall.exists():
+    if "echoashfallprotocol" in ACTIVE_MOD_IDS and ashfall.exists():
         text = ashfall.read_text(encoding="utf-8", errors="ignore")
         expected.extend(("echoashfallprotocol", path) for path in re.findall(r'new Mission\(\s*"([^"]+)"', text))
 
     ashfall_terminal = ROOT / "src/main/java/com/knoxhack/echoashfallprotocol/integration/AshfallTerminalIntegration.java"
-    if ashfall_terminal.exists():
+    if "echoashfallprotocol" in ACTIVE_MOD_IDS and ashfall_terminal.exists():
         text = ashfall_terminal.read_text(encoding="utf-8", errors="ignore")
         expected.extend(("echoashfallprotocol", path) for path in re.findall(r'new SideOp\(\s*"([^"]+)"', text))
 
     vanilla = ROOT / "addons/echoterminal/src/main/java/com/knoxhack/echoterminal/mission/VanillaJourneyProvider.java"
-    if vanilla.exists():
+    if "echoterminal" in ACTIVE_MOD_IDS and vanilla.exists():
         text = vanilla.read_text(encoding="utf-8", errors="ignore")
         expected.extend(("minecraft", path) for path in re.findall(r'(?:root|task|goal|challenge)\(\s*"([^"]+)"', text))
 
     industrial = ROOT / "addons/echoindustrialnexus/src/main/java/com/knoxhack/echoindustrialnexus/integration/IndustrialMissionProvider.java"
-    if industrial.exists():
+    if "echoindustrialnexus" in ACTIVE_MOD_IDS and industrial.exists():
         text = industrial.read_text(encoding="utf-8", errors="ignore")
         expected.extend(
             ("echoindustrialnexus", "mission/" + path)
@@ -1242,7 +1255,7 @@ def expected_terminal_mission_ids() -> set[tuple[str, str]]:
         )
 
     agriculture = ROOT / "addons/echoagriculturereclamation/src/main/java/com/knoxhack/echoagriculturereclamation/integration/ReclamationMissionProvider.java"
-    if agriculture.exists():
+    if "echoagriculturereclamation" in ACTIVE_MOD_IDS and agriculture.exists():
         text = agriculture.read_text(encoding="utf-8", errors="ignore")
         expected.extend(
             ("echoagriculturereclamation", "mission/" + path)
@@ -1260,7 +1273,7 @@ def expected_terminal_mission_ids() -> set[tuple[str, str]]:
         ),
     )
     for namespace, path in enum_providers:
-        if path.exists():
+        if namespace in ACTIVE_MOD_IDS and path.exists():
             text = path.read_text(encoding="utf-8", errors="ignore")
             expected.extend(
                 (namespace, mission_path)
@@ -1272,7 +1285,7 @@ def expected_terminal_mission_ids() -> set[tuple[str, str]]:
         ("echoorbitalremnants", ROOT / "addons/echoorbitalremnants/src/main/java"),
     )
     for namespace, java_root in folder_providers:
-        if not java_root.exists():
+        if namespace not in ACTIVE_MOD_IDS or not java_root.exists():
             continue
         for path in java_root.rglob("*.java"):
             text = path.read_text(encoding="utf-8", errors="ignore")

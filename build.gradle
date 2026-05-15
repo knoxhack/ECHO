@@ -150,7 +150,11 @@ def echoAddonSet = (project.findProperty('echoAddonSet') ?: 'all').toString().to
 if (!['beta', 'all'].contains(echoAddonSet)) {
     throw new GradleException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
 }
-def echoBetaAddonPaths = [':echonetcore', ':echoterminal', ':echomissioncore', ':echodatacore', ':echomultiblockcore', ':echoruntimeguard', ':echosignalos', ':signalosexample', ':echorendercore', ':echoorbitalremnants', ':echonexusprotocol', ':echoagriculturereclamation', ':echoworldcore', ':echoblockworks', ':echothemecore', ':echoplayercore', ':echopowergrid', ':echosoundcore', ':echotutorialcore', ':echorelictech', ':echoweathercore'] as Set
+def echoBetaAddonPaths = [':echonetcore', ':echoterminal', ':echomissioncore', ':echodatacore', ':echomultiblockcore', ':echoruntimeguard', ':echosignalos', ':signalosexample', ':echorendercore', ':echoholomap', ':echolens', ':echoorbitalremnants', ':echonexusprotocol', ':echoagriculturereclamation', ':echoworldcore', ':echoblockworks', ':echothemecore', ':echoplayercore', ':echopowergrid', ':echosoundcore', ':echotutorialcore', ':echorelictech', ':echoweathercore', ':echorecovery'] as Set
+def echoReleaseAddonPaths = [':echoarmory', ':echoblackboxprotocol', ':echoconvoyprotocol', ':echoindex', ':echoindustrialnexus', ':echologisticsnetwork', ':echostationfall'] as Set
+def echoAddonPaths = echoAddonSet == 'all'
+        ? (echoBetaAddonPaths + echoReleaseAddonPaths) as Set
+        : echoBetaAddonPaths
 
 def echoIncludedAddonProjects = {
     rootProject.subprojects
@@ -158,7 +162,7 @@ def echoIncludedAddonProjects = {
                 def addonRoot = rootProject.file('addons').toPath().toAbsolutePath().normalize()
                 def projectDir = candidate.projectDir.toPath().toAbsolutePath().normalize()
                 projectDir.parent == addonRoot
-                        && (echoAddonSet == 'all' || echoBetaAddonPaths.contains(candidate.path))
+                        && echoAddonPaths.contains(candidate.path)
             }
             .sort { left, right -> left.path <=> right.path }
 }
@@ -169,10 +173,21 @@ def echoExpectedReleaseProjects = {
     expected.unique { it.path }.sort { left, right -> left.path <=> right.path }
 }
 
+def echoReleaseArtifacts = echoExpectedReleaseProjects().collect { expectedProject ->
+    def artifactBaseName = expectedProject.findProperty('mod_id')?.toString() ?: expectedProject.name
+    def artifactVersion = expectedProject.findProperty('mod_version')?.toString() ?: expectedProject.version.toString()
+    [
+            path    : expectedProject.path,
+            baseName: artifactBaseName,
+            version : artifactVersion,
+            jarFile : expectedProject.layout.buildDirectory.file("libs/${artifactBaseName}-${artifactVersion}.jar").get().asFile,
+    ]
+}
+
 dependencies {
     implementation project(':echocore')
     implementation project(':echonetcore')
-    implementation project(':echoterminal')
+    compileOnly project(':echoterminal')
     compileOnly project(':echorendercore')
     echoIncludedAddonProjects().each { addonProject ->
         localRuntime addonProject
@@ -264,14 +279,10 @@ tasks.register('buildEchoWorkspace') {
 tasks.register('printReleaseManifest') {
     group = 'release'
     description = 'Prints the release module manifest (module path, artifact, version, jar path).'
-    dependsOn echoExpectedReleaseProjects().collect { expectedProject ->
-        "${expectedProject.path}:jar"
-    }
+    dependsOn echoReleaseArtifacts.collect { artifact -> "${artifact.path}:jar" }
     doLast {
-        echoExpectedReleaseProjects().each { expectedProject ->
-            def jarTask = expectedProject.tasks.named('jar').get()
-            def jarFile = jarTask.archiveFile.get().asFile
-            println "${expectedProject.path}|${jarTask.archiveBaseName.get()}|${expectedProject.version}|${jarFile.absolutePath}"
+        echoReleaseArtifacts.each { artifact ->
+            println "${artifact.path}|${artifact.baseName}|${artifact.version}|${artifact.jarFile.absolutePath}"
         }
     }
 }
@@ -279,16 +290,12 @@ tasks.register('printReleaseManifest') {
 tasks.register('validateReleaseArtifacts') {
     group = 'verification'
     description = 'Fails when an expected release module did not produce a jar artifact.'
-    dependsOn echoExpectedReleaseProjects().collect { expectedProject ->
-        "${expectedProject.path}:jar"
-    }
+    dependsOn echoReleaseArtifacts.collect { artifact -> "${artifact.path}:jar" }
     doLast {
         def missingArtifacts = []
-        echoExpectedReleaseProjects().each { expectedProject ->
-            def jarTask = expectedProject.tasks.named('jar').get()
-            def jarFile = jarTask.archiveFile.get().asFile
-            if (!jarFile.isFile()) {
-                missingArtifacts << "${expectedProject.path} -> ${jarFile.absolutePath}"
+        echoReleaseArtifacts.each { artifact ->
+            if (!artifact.jarFile.isFile()) {
+                missingArtifacts << "${artifact.path} -> ${artifact.jarFile.absolutePath}"
             }
         }
         if (!missingArtifacts.isEmpty()) {
@@ -364,7 +371,6 @@ tasks.register('verifyEchoRelease') {
     dependsOn tasks.named('validateEchoMobRenderCoreAssets')
     dependsOn tasks.named('validateEchoGameplayData')
     dependsOn tasks.named('checkEchoPoiStructures')
-    dependsOn 'checkEchoModJarSet'
     dependsOn tasks.named('checkEchoRuntimeLogs')
     dependsOn tasks.named('buildEchoWorkspace')
     dependsOn ':echocore:runGameTestServer'
@@ -389,16 +395,23 @@ def echoForbiddenModJarPrefixes = [
 ] as Set
 def echoExpectedModJarNames = echoExpectedModJars.collect { "${it.mod}-${it.version}.jar".toString() } as Set
 def echoExpectedModJarPrefixes = echoExpectedModJars.collect { it.mod.toString().toLowerCase(java.util.Locale.ROOT) } as Set
-def echoSanityModsDir = project.findProperty('echoModpackModsDir')
-        ? file(project.property('echoModpackModsDir'))
-        : file('C:/Users/Ivan/curseforge/minecraft/Instances/Axes of Tomorrow/mods')
+def echoModpackModsDirValue = project.findProperty('echoModpackModsDir')?.toString()?.trim()
+def echoModpackModsDir = echoModpackModsDirValue
+        ? file(echoModpackModsDirValue)
+        : layout.buildDirectory.dir('missing-echoModpackModsDir').get().asFile
+def requireEchoModpackModsDir = { taskName ->
+    if (!echoModpackModsDirValue) {
+        throw new GradleException("${taskName} requires -PechoModpackModsDir=<mods path>. Point it at the Ashfall modpack profile's mods folder.")
+    }
+    return echoModpackModsDir
+}
 
 tasks.register('checkEchoModJarSet') {
     group = 'verification'
     description = "Verifies the release modpack folder contains exactly one current jar for every ${echoAddonSet} ECHO module."
 
     doLast {
-        def modsDir = echoSanityModsDir
+        def modsDir = requireEchoModpackModsDir('checkEchoModJarSet')
         if (!modsDir.exists()) {
             throw new GradleException("Release modpack mods folder not found: ${modsDir}. Create it, run copyEchoJarsToModpack, or pass -PechoModpackModsDir=<path>.")
         }
@@ -425,7 +438,7 @@ tasks.register('checkEchoModJarSet') {
         echoExpectedModJars.each { spec ->
             def matches = echoJars.findAll { it.name.toLowerCase(java.util.Locale.ROOT).startsWith("${spec.mod}-") }
             if (matches.size() != 1) {
-                throw new GradleException("Expected exactly one ${spec.mod} jar in ${modsDir}, found ${matches*.name}. Run copyEchoJarsToModpack before verifyEchoRelease.")
+                throw new GradleException("Expected exactly one ${spec.mod} jar in ${modsDir}, found ${matches*.name}. Run copyEchoJarsToModpack before verifyEchoModpackProfile.")
             }
             def expectedName = "${spec.mod}-${spec.version}.jar"
             if (matches[0].name != expectedName) {
@@ -441,15 +454,18 @@ tasks.register('checkEchoModJarSet') {
     }
 }
 
+tasks.register('verifyEchoModpackProfile') {
+    group = 'verification'
+    description = "Verifies the explicit Ashfall modpack profile contains exactly the ${echoAddonSet} ECHO release jars."
+    dependsOn tasks.named('checkEchoModJarSet')
+}
+
 tasks.register('copyEchoJarsToModpack', Copy) {
     group = 'distribution'
-    description = "Builds and copies ${echoAddonSet} public ECHO release jars into the Axes of Tomorrow CurseForge mods folder."
+    description = "Builds and copies ${echoAddonSet} public ECHO release jars into the explicit Ashfall modpack mods folder."
 
     def coreProject = project(':echocore')
     def addonProjects = echoIncludedAddonProjects()
-    def modpackModsDir = project.findProperty('echoModpackModsDir')
-            ? file(project.property('echoModpackModsDir'))
-            : echoSanityModsDir
 
     dependsOn ':echocore:build'
     dependsOn tasks.named('build')
@@ -461,13 +477,14 @@ tasks.register('copyEchoJarsToModpack', Copy) {
     addonProjects.each { addonProject ->
         from(addonProject.layout.buildDirectory.file("libs/${addonProject.mod_id}-${addonProject.mod_version}.jar"))
     }
-    into modpackModsDir
+    into echoModpackModsDir
 
     doFirst {
-        if (!modpackModsDir.exists()) {
-            throw new GradleException("Release modpack mods folder not found: ${modpackModsDir}. Create it or pass -PechoModpackModsDir=<path>.")
+        def configuredModsDir = requireEchoModpackModsDir('copyEchoJarsToModpack')
+        if (!configuredModsDir.exists()) {
+            throw new GradleException("Release modpack mods folder not found: ${configuredModsDir}. Create it or pass -PechoModpackModsDir=<path>.")
         }
-        def stale = (modpackModsDir.listFiles() ?: [] as File[]).findAll { jar ->
+        def stale = (configuredModsDir.listFiles() ?: [] as File[]).findAll { jar ->
             jar.isFile()
                     && jar.name.endsWith('.jar')
                     && (echoExpectedModJars.any { spec ->
@@ -482,7 +499,15 @@ tasks.register('copyEchoJarsToModpack', Copy) {
                     })
         }
         if (!stale.isEmpty()) {
-            throw new GradleException("Stale ECHO jars in ${modpackModsDir}: ${stale*.name}. Remove them before copying release jars.")
+            throw new GradleException("Stale ECHO jars in ${configuredModsDir}: ${stale*.name}. Remove them before copying release jars.")
         }
     }
+}
+
+tasks.named('checkEchoModJarSet') {
+    mustRunAfter tasks.named('copyEchoJarsToModpack')
+}
+
+tasks.named('verifyEchoModpackProfile') {
+    mustRunAfter tasks.named('copyEchoJarsToModpack')
 }

@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echologisticsnetwork"
-version="1.1.0"
+version="1.2.0"
 displayName="ECHO: Logistics Network"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"
@@ -43,6 +43,14 @@ side="BOTH"
 modId="echoterminal"
 type="optional"
 reason="Adds the SYSTEM > Logistics command surface and terminal action routing."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echologisticsnetwork]]
+modId="echomissioncore"
+type="optional"
+reason="Registers logistics delivery and supply side-op missions when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

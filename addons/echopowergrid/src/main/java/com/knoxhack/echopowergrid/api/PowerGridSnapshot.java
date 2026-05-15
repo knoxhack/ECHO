@@ -16,7 +16,11 @@ public record PowerGridSnapshot(
         return state != EchoGridState.OFFLINE && state != EchoGridState.TRIPPED && state != EchoGridState.EMERGENCY;
     }
 
+    /**
+     * Returns the total drawable power from this network right now:
+     * surplus generation per tick plus all stored energy in batteries and generator buffers.
+     */
     public long availablePower() {
-        return Math.max(0, totalGeneration - totalDemand);
+        return Math.max(0, totalGeneration - totalDemand + totalStored);
     }
 }

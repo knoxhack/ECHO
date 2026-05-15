@@ -1,7 +1,7 @@
 # ECHO: PowerGrid
 
-**Mod ID:** `echopowergrid`  
-**Version:** 0.1.0  
+**Mod ID:** `echopowergrid`<br>
+**Version:** 1.2.0<br>
 **Tagline:** Restore the grid. Power the signal.
 
 ## What is ECHO PowerGrid?
@@ -62,9 +62,16 @@ ECHO PowerGrid is the shared first-party power generation, storage, cable, subst
 - **Overload**: Flow exceeds cable/transfer limits. If enabled, breakers trip. Network state becomes `OVERLOADED`.
 - **Breaker Reset**: Right-click a tripped Emergency Breaker to restore the circuit.
 
+## Integration APIs
+
+- `PowerGridSnapshot` remains the stable lightweight status view.
+- `PowerGridNetworkSummary` exposes loaded network id, dimension, anchor, state, quality, generation, demand, drawable EP, storage, node count, and transfer limit for UI/map/debug surfaces.
+- `EchoPowerGridApi.drawPower(level, pos, ep, simulate)` simulates or commits real EP draws from generator buffers and batteries.
+- `EchoPowerGridApi.loadedNetworkSummaries(serverLevel)` returns loaded network summaries for Terminal, HoloMap, and diagnostics.
+
 ## FE Compatibility
 
-FE bridge is scaffolded in the config (`enableFeBridge`, `feToEpRatio`, `epToFeRatio`). A full FE adapter is planned for the next pass.
+The FE bridge is active when `enableFeBridge` is true and honors NeoForge transaction rollback for insert/extract probes.
 
 ## Commands
 
@@ -88,23 +95,17 @@ See `echopowergrid-common.toml`:
 
 ## Optional Integrations
 
-- **Terminal** - Future power dashboard
-- **Lens** - Future power scan data
-- **HoloMap** - Future power overlay
-- **MultiblockCore** - Future facility power API
-- **Industrial Nexus** - Future machine power consumption
+- **Terminal** - Synced PowerGrid dashboard tab plus addon guide metadata
+- **Lens** - Power node and network scan data
+- **HoloMap** - `Power Networks` layer with one marker per loaded network
+- **MultiblockCore** - Registers PowerGrid as a soft `echo:power_input` provider
+- **Industrial Nexus** - Higher-tier multiblock tasks draw EP through MultiblockCore capability costs
 - **WorldCore** - Solar weather hooks
 - **RuntimeGuard** - Tick budget respect
 
 ## Future Roadmap
 
 - Advanced substations with priority routing
-- Terminal power dashboard widgets
-- Lens scan support for power nodes
-- HoloMap power overlay
-- FE bridge polish
-- MultiblockCore consumer integration
-- Industrial Nexus power conversion
 - Nexus power quality expansion
 - Advanced cable path loss
 - Power meter GUI

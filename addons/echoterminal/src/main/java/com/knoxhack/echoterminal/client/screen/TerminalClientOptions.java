@@ -1,7 +1,6 @@
 package com.knoxhack.echoterminal.client.screen;
 
 import com.knoxhack.echoterminal.EchoTerminal;
-import com.knoxhack.echoterminal.api.theme.BuiltinTerminalThemes;
 import com.knoxhack.echoterminal.api.theme.TerminalTheme;
 import com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry;
 import java.io.IOException;
@@ -18,10 +17,13 @@ import net.minecraft.resources.Identifier;
  * additive and do not affect server-side mission or action authority.
  */
 public final class TerminalClientOptions {
+    private static final InterfaceDensity DEFAULT_INTERFACE_DENSITY = InterfaceDensity.COMFORTABLE;
+    private static final TerminalZoom DEFAULT_TERMINAL_ZOOM = TerminalZoom.ZOOM_90;
+
     public static NavigationStyle navigationStyle = NavigationStyle.APP_HUB;
-    public static MissionView missionView = MissionView.VISUAL_QUEST_HUB;
-    public static InterfaceDensity interfaceDensity = InterfaceDensity.BALANCED;
-    public static TerminalZoom terminalZoom = TerminalZoom.ZOOM_100;
+    public static MissionView missionView = MissionView.GUIDED;
+    public static InterfaceDensity interfaceDensity = DEFAULT_INTERFACE_DENSITY;
+    public static TerminalZoom terminalZoom = DEFAULT_TERMINAL_ZOOM;
     public static VisualLevel visualLevel = VisualLevel.BALANCED;
     public static boolean reducedMotion = false;
     public static boolean missionHudNotifications = true;
@@ -34,7 +36,7 @@ public final class TerminalClientOptions {
     private static final String VISUAL_LEVEL_KEY = "visualLevel";
     private static final String REDUCED_MOTION_KEY = "reducedMotion";
     private static final String MISSION_HUD_NOTIFICATIONS_KEY = "missionHudNotifications";
-    private static Identifier selectedTheme = BuiltinTerminalThemes.ECHO_CONSOLE;
+    private static Identifier selectedTheme;
     private static boolean loaded;
 
     private TerminalClientOptions() {
@@ -94,19 +96,23 @@ public final class TerminalClientOptions {
 
     public static void selectMissionView(MissionView view) {
         ensureLoaded();
-        missionView = view == null ? MissionView.VISUAL_QUEST_HUB : view;
+        missionView = normalizeMissionView(view);
         save();
+    }
+
+    public static MissionView normalizeMissionView(MissionView view) {
+        return MissionView.GUIDED;
     }
 
     public static void selectInterfaceDensity(InterfaceDensity density) {
         ensureLoaded();
-        interfaceDensity = density == null ? InterfaceDensity.BALANCED : density;
+        interfaceDensity = density == null ? DEFAULT_INTERFACE_DENSITY : density;
         save();
     }
 
     public static void selectTerminalZoom(TerminalZoom zoom) {
         ensureLoaded();
-        terminalZoom = zoom == null ? TerminalZoom.ZOOM_100 : zoom;
+        terminalZoom = zoom == null ? DEFAULT_TERMINAL_ZOOM : zoom;
         save();
     }
 
@@ -152,30 +158,30 @@ public final class TerminalClientOptions {
         loaded = true;
         Path path = configPath();
         if (path == null || !Files.isRegularFile(path)) {
-            selectedTheme = TerminalThemeRegistry.defaultThemeId();
+            selectedTheme = null;
             return;
         }
         Properties properties = new Properties();
         try (InputStream in = Files.newInputStream(path)) {
             properties.load(in);
-            Identifier parsed = Identifier.tryParse(properties.getProperty(THEME_KEY, ""));
-            selectedTheme = TerminalThemeRegistry.contains(parsed) ? parsed : TerminalThemeRegistry.defaultThemeId();
+            String themeValue = properties.getProperty(THEME_KEY);
+            selectedTheme = themeValue == null || themeValue.isBlank() ? null : Identifier.tryParse(themeValue);
             navigationStyle = enumValue(
                     NavigationStyle.class,
                     properties.getProperty(NAVIGATION_STYLE_KEY),
                     NavigationStyle.APP_HUB);
-            missionView = enumValue(
+            missionView = normalizeMissionView(enumValue(
                     MissionView.class,
                     properties.getProperty(MISSION_VIEW_KEY),
-                    MissionView.VISUAL_QUEST_HUB);
+                    MissionView.GUIDED));
             interfaceDensity = enumValue(
                     InterfaceDensity.class,
                     properties.getProperty(INTERFACE_DENSITY_KEY),
-                    InterfaceDensity.BALANCED);
+                    DEFAULT_INTERFACE_DENSITY);
             terminalZoom = enumValue(
                     TerminalZoom.class,
                     properties.getProperty(TERMINAL_ZOOM_KEY),
-                    TerminalZoom.ZOOM_100);
+                    DEFAULT_TERMINAL_ZOOM);
             visualLevel = enumValue(
                     VisualLevel.class,
                     properties.getProperty(VISUAL_LEVEL_KEY),
@@ -186,13 +192,18 @@ public final class TerminalClientOptions {
                     properties.getProperty(MISSION_HUD_NOTIFICATIONS_KEY, "true"));
         } catch (IOException | RuntimeException exception) {
             EchoTerminal.LOGGER.warn("Failed to load ECHO terminal client options; using defaults.", exception);
-            selectedTheme = TerminalThemeRegistry.defaultThemeId();
+            selectedTheme = null;
         }
     }
 
     public static void resetThemeForTests(Identifier themeId) {
         loaded = true;
-        selectedTheme = TerminalThemeRegistry.contains(themeId) ? themeId : TerminalThemeRegistry.defaultThemeId();
+        selectedTheme = themeId;
+    }
+
+    public static void resetMissionViewForTests(MissionView view) {
+        loaded = true;
+        missionView = normalizeMissionView(view);
     }
 
     private static void ensureLoaded() {

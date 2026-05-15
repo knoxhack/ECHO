@@ -166,10 +166,10 @@
   "preview": {
     "title": "scrap_bike RenderCore mob visual",
     "notes": "scrap bike vehicle; exposed engine, side cargo, orange dust lights",
-    "artifact": "art_sources/echo_mob_rendercore/source_sheets/echo_rendercore_entity_atlas_sheet.png",
+    "artifact": "art_sources/echoconvoyprotocol/convoy_vehicle_visual_repair_atlas_sheet.png",
     "screenshot": {
       "enabled": false,
-      "reason": "Generated atlas coverage asset; in-game screenshot pass is manual."
+      "reason": "Convoy repair atlas is the deterministic source; final in-game screenshots are manual."
     }
   }
 }

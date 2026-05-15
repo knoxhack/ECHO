@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echoweathercore"
-version="1.1.0"
+version="1.2.0"
 displayName="ECHO: WeatherCore"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"

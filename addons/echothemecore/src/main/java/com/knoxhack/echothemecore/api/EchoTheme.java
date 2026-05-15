@@ -21,7 +21,9 @@ public record EchoTheme(
 ) {
     public EchoTheme {
         metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
-        moduleTextures = moduleTextures == null ? Map.of() : Collections.unmodifiableMap(new EnumMap<>(moduleTextures));
+        moduleTextures = moduleTextures == null || moduleTextures.isEmpty()
+            ? Map.of()
+            : Collections.unmodifiableMap(new EnumMap<>(moduleTextures));
         if (vanillaUiProfile == null) {
             vanillaUiProfile = EchoThemeVanillaUiProfile.fromParts(colors, uiAssets, renderProfile);
         }

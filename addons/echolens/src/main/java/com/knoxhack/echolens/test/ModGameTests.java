@@ -34,10 +34,13 @@ import com.knoxhack.echolens.network.LensServerScanStatus;
 import com.knoxhack.echolens.provider.BlockStatsProvider;
 import com.knoxhack.echolens.provider.EntityStatsProvider;
 import com.knoxhack.echolens.provider.IntegrationStatusProvider;
+import com.knoxhack.echolens.provider.ServerBlockEntityProvider;
 import com.knoxhack.echolens.provider.ServerPrivacyProvider;
+import com.knoxhack.echolens.provider.ServerProgressionProvider;
 import com.knoxhack.echolens.provider.SafeInventoryProvider;
 import com.knoxhack.echolens.registry.LensInspectionService;
 import com.knoxhack.echolens.registry.LensProviderRegistry;
+import com.knoxhack.echolens.registry.LensServerScanService;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import java.util.function.Consumer;
@@ -93,6 +96,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("server_scan_packet_codec", () -> ModGameTests::serverScanPacketCodec);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SERVER_PROVIDER_ORDERING =
             TEST_FUNCTIONS.register("server_provider_ordering", () -> ModGameTests::serverProviderOrdering);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SERVER_PROVIDER_SIGNALS =
+            TEST_FUNCTIONS.register("server_provider_deep_scan_signals", () -> ModGameTests::serverProviderDeepScanSignals);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SERVER_RESPONSE_STATUS =
             TEST_FUNCTIONS.register("server_response_status", () -> ModGameTests::serverResponseStatus);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MISSION_CORE_CONTENT =
@@ -126,6 +131,7 @@ public final class ModGameTests {
         register(event, "hud_layout_bounds", HUD_LAYOUT_BOUNDS.getId());
         register(event, "server_scan_packet_codec", PACKET_CODEC.getId());
         register(event, "server_provider_ordering", SERVER_PROVIDER_ORDERING.getId());
+        register(event, "server_provider_deep_scan_signals", SERVER_PROVIDER_SIGNALS.getId());
         register(event, "server_response_status", SERVER_RESPONSE_STATUS.getId());
         register(event, "missioncore_content_registration", MISSION_CORE_CONTENT.getId());
         register(event, "theme_color_fallback", THEME_COLOR_FALLBACK.getId());
@@ -326,6 +332,26 @@ public final class ModGameTests {
         helper.assertTrue(strip.height() > 12, "Action strip should wrap overflowing actions.");
         helper.assertTrue(strip.chips().stream().allMatch(chip -> chip.x() + chip.width() <= 120 - 8),
                 "Action chips should stay inside panel padding.");
+        LensHudLayout.HeaderLayout header = LensHudLayout.headerLayout(150, true, 200);
+        helper.assertTrue(header.titleX() == 28, "HUD header should reserve icon space when an icon is present.");
+        helper.assertTrue(header.titleWidth() >= 52, "HUD header should preserve readable title space.");
+        helper.assertTrue(header.badgeX() > header.titleX() + header.titleWidth(),
+                "HUD badge should not overlap the title area.");
+        helper.assertTrue(header.badgeX() + header.badgeWidth() <= 150,
+                "HUD badge should stay inside the panel.");
+        String badge = LensHudLayout.firstFitting(List.of(
+                "echoashfallprotocol / Deep Scan / Verified / 12 sections",
+                "echoashf... / Deep Scan / Verified",
+                "Deep Scan / Verified"), 24, String::length);
+        helper.assertTrue(badge.equals("Deep Scan / Verified"),
+                "HUD badge fallback should prefer mode/status when source text is too wide.");
+        LensHudLayout.RowColumns columns = LensHudLayout.rowColumns(150);
+        helper.assertTrue(columns.labelWidth() >= 32, "HUD row labels should keep a readable minimum width.");
+        helper.assertTrue(columns.valueWidth() >= 32, "HUD row values should keep a readable minimum width.");
+        helper.assertTrue(columns.labelX() + columns.labelWidth() < columns.valueX(),
+                "HUD row labels and values should not overlap.");
+        helper.assertTrue(columns.valueX() + columns.valueWidth() <= 150,
+                "HUD row values should stay inside the panel.");
         helper.succeed();
     }
 
@@ -363,6 +389,65 @@ public final class ModGameTests {
             helper.assertTrue(providers.size() == 2, "Only ServerLensProvider instances should be returned.");
             helper.assertTrue(providers.get(0).id().equals(id("server_first")),
                     "Server providers should preserve priority order.");
+        });
+        helper.succeed();
+    }
+
+    private static void serverProviderDeepScanSignals(GameTestHelper helper) {
+        BlockPos local = new BlockPos(1, 1, 1);
+        helper.setBlock(local, Blocks.CHEST);
+        LensContext context = blockContext(helper, Blocks.CHEST.defaultBlockState());
+        ServerLensProvider legacyProvider = serverProvider("legacy_server", 1);
+        helper.assertTrue(legacyProvider.deepScanSignals(context).isEmpty(),
+                "Existing ServerLensProvider implementations should not need to define Deep Scan signals.");
+        ServerLensProvider signalProvider = new ServerLensProvider() {
+            @Override
+            public Identifier id() {
+                return ModGameTests.id("signal_provider");
+            }
+
+            @Override
+            public int priority() {
+                return 2;
+            }
+
+            @Override
+            public List<LensInfoRow> deepScanSignals(LensContext context) {
+                return List.of(LensInfoRow.of("Custom", "Signal", "*", LensTone.INFO, LensVisibility.DEEP));
+            }
+
+            @Override
+            public List<LensInfoSection> inspect(LensContext context) {
+                return List.of(LensInfoSection.of(ModGameTests.id("section/signal_provider_detail"),
+                        LensDataCategory.INTEGRATION, "Signal Detail", "S", LensTone.INFO, LensVisibility.DEEP,
+                        List.of(LensInfoRow.of("Detail", "Present", "D", LensTone.INFO, LensVisibility.DEEP))));
+            }
+        };
+        LensProviderRegistry.withClearedForTests(() -> {
+            LensProviderRegistry.registerAll(List.of(legacyProvider, signalProvider, ServerPrivacyProvider.INSTANCE,
+                    ServerBlockEntityProvider.INSTANCE, ServerProgressionProvider.INSTANCE));
+            List<LensInfoSection> sections = collectServerProviderSections(context, 8);
+            int signalIndex = sectionIndex(sections, id("section/server_scan_signals"));
+            int detailIndex = sectionIndex(sections, id("section/signal_provider_detail"));
+            helper.assertTrue(signalIndex >= 0, "Server scan should synthesize a Scan Signals section.");
+            helper.assertTrue(detailIndex > signalIndex, "Scan Signals should appear before provider detail sections.");
+            LensInfoSection signals = sections.get(signalIndex);
+            helper.assertTrue(signals.rows().stream().anyMatch(row -> row.label().getString().equals("Custom")
+                            && row.value().getString().equals("Signal")),
+                    "Provider Deep Scan signal should appear in the synthesized section.");
+            helper.assertTrue(signals.rows().stream().anyMatch(row -> row.label().getString().equals("Privacy")
+                            && row.value().getString().equals("Redacted") && row.tone() == LensTone.WARNING),
+                    "Chest privacy signal should report redaction without exposing contents.");
+            helper.assertTrue(signals.rows().stream().anyMatch(row -> row.label().getString().equals("Block Entity")
+                            && row.value().getString().equals("Verified") && row.tone() == LensTone.GOOD),
+                    "Chest block entity signal should report server verification.");
+            helper.assertTrue(signals.rows().stream().anyMatch(row -> row.label().getString().equals("Progression")
+                            && ((row.value().getString().equals("Public baseline only") && row.tone() == LensTone.MUTED)
+                            || (row.value().getString().equals("ECHO context available") && row.tone() == LensTone.GOOD))),
+                    "Progression signal should use the expected tone for available or baseline ECHO context.");
+            helper.assertTrue(signals.rows().stream()
+                            .noneMatch(row -> row.value().getString().toLowerCase(java.util.Locale.ROOT).contains("diamond")),
+                    "Deep Scan signals should not expose private inventory contents.");
         });
         helper.succeed();
     }
@@ -426,6 +511,27 @@ public final class ModGameTests {
                         List.of(LensInfoRow.of("Provider", path, "S", LensTone.INFO, LensVisibility.DEEP))));
             }
         };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<LensInfoSection> collectServerProviderSections(LensContext context, int providerBudget) {
+        try {
+            java.lang.reflect.Method method = LensServerScanService.class.getDeclaredMethod(
+                    "collectProviderSections", LensContext.class, int.class);
+            method.setAccessible(true);
+            return (List<LensInfoSection>) method.invoke(null, context, providerBudget);
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Unable to invoke Lens server provider section collector.", exception);
+        }
+    }
+
+    private static int sectionIndex(List<LensInfoSection> sections, Identifier id) {
+        for (int index = 0; index < sections.size(); index++) {
+            if (sections.get(index).id().equals(id)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private static void register(RegisterGameTestsEvent event, String testName, Identifier functionId) {

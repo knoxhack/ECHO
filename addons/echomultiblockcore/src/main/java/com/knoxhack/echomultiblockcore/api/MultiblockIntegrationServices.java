@@ -20,6 +20,7 @@ public final class MultiblockIntegrationServices {
     private static final List<MultiblockScanProvider> SCAN_PROVIDERS = new CopyOnWriteArrayList<>();
     private static final List<MultiblockDataCoreProvider> DATA_CORE_PROVIDERS = new CopyOnWriteArrayList<>();
     private static final List<MultiblockMapMarkerProvider> MAP_MARKER_PROVIDERS = new CopyOnWriteArrayList<>();
+    private static final List<MultiblockPowerProvider> POWER_PROVIDERS = new CopyOnWriteArrayList<>();
 
     private MultiblockIntegrationServices() {
     }
@@ -45,6 +46,10 @@ public final class MultiblockIntegrationServices {
 
     public static boolean registerMapMarkerProvider(MultiblockMapMarkerProvider provider) {
         return register(MAP_MARKER_PROVIDERS, provider, provider == null ? null : provider.providerId(), "map marker");
+    }
+
+    public static boolean registerPowerProvider(MultiblockPowerProvider provider) {
+        return register(POWER_PROVIDERS, provider, provider == null ? null : provider.providerId(), "power");
     }
 
     public static List<MultiblockStatusSnapshot> terminalSnapshots(Player player) {
@@ -112,6 +117,42 @@ public final class MultiblockIntegrationServices {
         return refreshed;
     }
 
+    public static long availablePower(Level level, BlockPos controllerPos) {
+        if (level == null || controllerPos == null) {
+            return 0L;
+        }
+        long available = 0L;
+        for (MultiblockPowerProvider provider : POWER_PROVIDERS) {
+            try {
+                available = saturatedAdd(available, Math.max(0L, provider.availablePower(level, controllerPos)));
+            } catch (RuntimeException exception) {
+                warn("power availability", provider, exception);
+            }
+        }
+        return available;
+    }
+
+    public static long drawPower(Level level, BlockPos controllerPos, long ep, boolean simulate) {
+        if (level == null || controllerPos == null || ep <= 0L) {
+            return 0L;
+        }
+        long remaining = ep;
+        long drawn = 0L;
+        for (MultiblockPowerProvider provider : POWER_PROVIDERS) {
+            if (remaining <= 0L) {
+                break;
+            }
+            try {
+                long providerDrawn = Math.max(0L, provider.drawPower(level, controllerPos, remaining, simulate));
+                drawn = saturatedAdd(drawn, providerDrawn);
+                remaining = Math.max(0L, remaining - providerDrawn);
+            } catch (RuntimeException exception) {
+                warn("power draw", provider, exception);
+            }
+        }
+        return Math.min(ep, drawn);
+    }
+
     public static int terminalProviderCount() {
         return TERMINAL_PROVIDERS.size();
     }
@@ -128,6 +169,10 @@ public final class MultiblockIntegrationServices {
         return MAP_MARKER_PROVIDERS.size();
     }
 
+    public static int powerProviderCount() {
+        return POWER_PROVIDERS.size();
+    }
+
     public static Identifier generatedProviderId(Object provider, String surface) {
         String type = provider == null ? "noop" : provider.getClass().getName();
         String safeSurface = surface == null || surface.isBlank() ? "provider" : surface;
@@ -139,10 +184,12 @@ public final class MultiblockIntegrationServices {
         List<MultiblockScanProvider> scan = new ArrayList<>(SCAN_PROVIDERS);
         List<MultiblockDataCoreProvider> data = new ArrayList<>(DATA_CORE_PROVIDERS);
         List<MultiblockMapMarkerProvider> map = new ArrayList<>(MAP_MARKER_PROVIDERS);
+        List<MultiblockPowerProvider> power = new ArrayList<>(POWER_PROVIDERS);
         TERMINAL_PROVIDERS.clear();
         SCAN_PROVIDERS.clear();
         DATA_CORE_PROVIDERS.clear();
         MAP_MARKER_PROVIDERS.clear();
+        POWER_PROVIDERS.clear();
         try {
             body.run();
         } finally {
@@ -150,10 +197,12 @@ public final class MultiblockIntegrationServices {
             SCAN_PROVIDERS.clear();
             DATA_CORE_PROVIDERS.clear();
             MAP_MARKER_PROVIDERS.clear();
+            POWER_PROVIDERS.clear();
             TERMINAL_PROVIDERS.addAll(terminal);
             SCAN_PROVIDERS.addAll(scan);
             DATA_CORE_PROVIDERS.addAll(data);
             MAP_MARKER_PROVIDERS.addAll(map);
+            POWER_PROVIDERS.addAll(power);
         }
     }
 
@@ -187,6 +236,9 @@ public final class MultiblockIntegrationServices {
         }
         if (provider instanceof MultiblockMapMarkerProvider marker) {
             return marker.providerId();
+        }
+        if (provider instanceof MultiblockPowerProvider power) {
+            return power.providerId();
         }
         return null;
     }
@@ -243,6 +295,19 @@ public final class MultiblockIntegrationServices {
             value = "provider";
         }
         return value;
+    }
+
+    private static long saturatedAdd(long left, long right) {
+        if (left <= 0L) {
+            return Math.max(0L, right);
+        }
+        if (right <= 0L) {
+            return left;
+        }
+        if (left > Long.MAX_VALUE - right) {
+            return Long.MAX_VALUE;
+        }
+        return left + right;
     }
 
     private static void warn(String surface, Object provider, RuntimeException exception) {

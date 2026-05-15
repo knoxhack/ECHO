@@ -143,6 +143,7 @@ public final class ModItems {
    public static final DeferredItem<Item> PLATE_PRESS_BLUEPRINT = blueprint("plate_press_blueprint", "plate_press");
    public static final DeferredItem<Item> CIRCUIT_FABRICATOR_BLUEPRINT = blueprint("circuit_fabricator_blueprint", "circuit_fabricator");
    public static final DeferredItem<Item> RECIPE_MATRIX_BLUEPRINT = blueprint("recipe_matrix_blueprint", "recipe_matrix_core");
+   public static final DeferredItem<Item> NEXUS_FURNACE_ARRAY_BLUEPRINT = blueprint("nexus_furnace_array_blueprint", "nexus_furnace_array");
    public static final DeferredItem<Item> INDUSTRIAL_WELDER_HEAD = toolHead("industrial_welder_head", RobotToolType.WELDER);
    public static final DeferredItem<Item> PRECISION_ASSEMBLER_HEAD = toolHead("precision_assembler_head", RobotToolType.ASSEMBLER);
    public static final DeferredItem<Item> PLASMA_CUTTER_HEAD = toolHead("plasma_cutter_head", RobotToolType.CUTTER);

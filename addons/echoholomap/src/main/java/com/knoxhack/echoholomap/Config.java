@@ -65,6 +65,14 @@ public final class Config {
             .comment("Maximum personal/shared HoloMap waypoints sent to one client sync packet.")
             .defineInRange("waypoints.syncLimit", 256, 16, 2048);
 
+    public static final ModConfigSpec.BooleanValue DEATHPOINTS_ENABLED = BUILDER
+            .comment("Creates personal HoloMap deathpoints when players die.")
+            .define("deathpoints.enabled", true);
+
+    public static final ModConfigSpec.IntValue DEATHPOINTS_MAX_PER_PLAYER = BUILDER
+            .comment("Maximum personal deathpoints retained per player.")
+            .defineInRange("deathpoints.maxPerPlayer", 10, 0, 128);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     public static final ModConfigSpec.BooleanValue MINIMAP_ENABLED = CLIENT_BUILDER
@@ -208,6 +216,15 @@ public final class Config {
                                 EchoConfigEntry.intSpec("waypoint_sync", "Waypoint Sync",
                                         "Maximum personal/shared waypoints sent to one client sync packet.",
                                         EchoConfigSide.COMMON, WAYPOINT_SYNC_LIMIT, 16, 2048,
+                                        true, false, false))),
+                        new EchoConfigCategory("deathpoints", "Deathpoints", List.of(
+                                EchoConfigEntry.booleanSpec("enabled", "Enabled",
+                                        "Creates personal HoloMap deathpoints when players die.",
+                                        EchoConfigSide.COMMON, DEATHPOINTS_ENABLED,
+                                        true, false, false),
+                                EchoConfigEntry.intSpec("max_per_player", "Max Per Player",
+                                        "Maximum personal deathpoints retained per player.",
+                                        EchoConfigSide.COMMON, DEATHPOINTS_MAX_PER_PLAYER, 0, 128,
                                         true, false, false))),
                         new EchoConfigCategory("minimap", "Minimap", List.of(
                                 EchoConfigEntry.booleanSpec("enabled", "Enabled",

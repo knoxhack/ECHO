@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/world_hazard.schema.json",
+  "title": "ECHO World Hazard",
+  "description": "Environmental hazard definition for WorldCore.",
+  "type": "object",
+  "required": ["displayName"],
+  "properties": {
+    "id": { "type": "string", "description": "Hazard identifier. Inferred from file path if omitted." },
+    "displayName": { "type": "string", "description": "Human-readable hazard name." },
+    "name": { "type": "string", "description": "Legacy alias for displayName." },
+    "summary": { "type": "string", "description": "Short description of the hazard." },
+    "defaultSeverity": { "type": "integer", "minimum": 0, "maximum": 100, "default": 0, "description": "Base severity from 0 to 100." },
+    "severity": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Legacy alias for defaultSeverity." },
+    "ticking": { "type": "boolean", "default": false, "description": "Whether the hazard applies continuous tick-based effects." }
+  },
+  "additionalProperties": true
+}

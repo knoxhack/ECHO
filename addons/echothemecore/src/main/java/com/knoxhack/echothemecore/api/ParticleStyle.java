@@ -9,7 +9,8 @@ public enum ParticleStyle {
     ASH_EMBERS,
     ORBITAL_DUST,
     BLACKBOX_GLYPHS,
-    RECLAMATION_SPORES;
+    RECLAMATION_SPORES,
+    NONE;
 
     public static ParticleStyle byName(String value, ParticleStyle fallback) {
         if (value == null || value.isBlank()) {

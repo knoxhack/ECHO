@@ -2,7 +2,7 @@
   "id": "echomultiblockcore:weld_power_bus",
   "display_name": "Weld Power Bus",
   "category": "welding",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line"],
   "required_workcell": "WELDING",
   "required_tools": ["WELDER"],
   "duration_ticks": 160,

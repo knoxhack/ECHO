@@ -1,0 +1,17 @@
+{
+  "id": "echocore:example_serrated_edge",
+  "title": "Serrated Edge",
+  "slotType": "weapon",
+  "effectType": "damage",
+  "damageBonus": 2.0,
+  "defenseBonus": 0,
+  "energyCost": 0,
+  "instability": 1,
+  "toxicProtection": 0,
+  "radiationProtection": 0,
+  "coldProtection": 0,
+  "heatProtection": 0,
+  "fractureProtection": 0,
+  "compatibleTypes": ["melee"],
+  "synergyTags": ["blade", "sharp"]
+}

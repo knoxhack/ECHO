@@ -45,6 +45,11 @@ public final class EchoCoreServices {
     private static final INetworkService DEFAULT_NETWORK_SERVICE = NoOpNetworkService.INSTANCE;
     private static final IMissionService DEFAULT_MISSION_SERVICE = NoOpMissionService.INSTANCE;
     private static final IIndexService DEFAULT_INDEX_SERVICE = NoOpIndexService.INSTANCE;
+    private static final ITerminalService DEFAULT_TERMINAL_SERVICE = NoOpTerminalService.INSTANCE;
+    private static final IThemeService DEFAULT_THEME_SERVICE = NoOpThemeService.INSTANCE;
+    private static final ISoundService DEFAULT_SOUND_SERVICE = NoOpSoundService.INSTANCE;
+    private static final IRuntimeBudgetService DEFAULT_RUNTIME_BUDGET_SERVICE = NoOpRuntimeBudgetService.INSTANCE;
+    private static final ILensService DEFAULT_LENS_SERVICE = NoOpLensService.INSTANCE;
     private static final List<EchoRouteRecordService> ROUTE_RECORD_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoDiagnosticService> DIAGNOSTIC_SERVICES = new CopyOnWriteArrayList<>();
     private static final List<EchoHazardTelemetryService> HAZARD_TELEMETRY_SERVICES = new CopyOnWriteArrayList<>();
@@ -70,6 +75,24 @@ public final class EchoCoreServices {
                     "Shared world regions, markers, hazards, discoveries, and world event contracts."),
             new ExpectedEchoModule("echoterminal", "ECHO: Terminal", "addons/echoterminal",
                     "Player-facing terminal shell, mission graph, archives, rewards, route records, and recipe index."),
+            new ExpectedEchoModule("echothemecore", "ECHO: ThemeCore", "addons/echothemecore",
+                    "Shared theme registry, JSON reload listener, and visual token system."),
+            new ExpectedEchoModule("echoruntimeguard", "ECHO: RuntimeGuard", "addons/echoruntimeguard",
+                    "Profiling, runtime budget, diagnostics, and module guard logic."),
+            new ExpectedEchoModule("echosoundcore", "ECHO: SoundCore", "addons/echosoundcore",
+                    "Shared audio identity, adaptive music, ambience, stingers, UI sounds, and generated-music pipeline."),
+            new ExpectedEchoModule("echoweathercore", "ECHO: WeatherCore", "addons/echoweathercore",
+                    "Weather event engine and hazard profile integrations."),
+            new ExpectedEchoModule("echotutorialcore", "ECHO: TutorialCore", "addons/echotutorialcore",
+                    "Tutorial APIs, data loading, and contextual guide system."),
+            new ExpectedEchoModule("echoplayercore", "ECHO: PlayerCore", "addons/echoplayercore",
+                    "Homes, teleport, player APIs, and travel services."),
+            new ExpectedEchoModule("echopowergrid", "ECHO: PowerGrid", "addons/echopowergrid",
+                    "Power APIs, grid logic, machines, and energy distribution."),
+            new ExpectedEchoModule("echorelictech", "ECHO: RelicTech", "addons/echorelictech",
+                    "Relic APIs, relic behavior, scans, and analyzer systems."),
+            new ExpectedEchoModule("echomultiblockcore", "ECHO: MultiblockCore", "addons/echomultiblockcore",
+                    "Multiblock APIs, controller logic, automation, blueprints, and build-assist."),
             new ExpectedEchoModule("signalos", "SignalOS", "addons/echosignalos",
                     "Reusable chapter, mission, archive, reward, diagnostics, JSON, and KubeJS-friendly framework."),
             new ExpectedEchoModule("signalosexample", "SignalOS Example Addon", "addons/signalosexample",
@@ -108,6 +131,13 @@ public final class EchoCoreServices {
             Identifier.fromNamespaceAndPath(EchoCore.MODID, "complete_contract");
 
     private EchoCoreServices() {
+    }
+
+    /**
+     * Returns a fresh snapshot of which ECHO modules are present.
+     */
+    public static EchoIntegrations integrations() {
+        return EchoIntegrations.current();
     }
 
     public static void registerMissionService(IMissionService service) {
@@ -343,6 +373,101 @@ public final class EchoCoreServices {
             return indexService().available();
         } catch (RuntimeException exception) {
             warnProviderFailure("index service availability", indexService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerTerminalService(ITerminalService service) {
+        if (service != null) {
+            EchoServiceRegistry.register(ITerminalService.class, service);
+        }
+    }
+
+    public static ITerminalService terminalService() {
+        return EchoServiceRegistry.getOrDefault(ITerminalService.class, DEFAULT_TERMINAL_SERVICE);
+    }
+
+    public static boolean terminalAvailable() {
+        try {
+            return terminalService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("terminal service availability", terminalService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerThemeService(IThemeService service) {
+        if (service != null) {
+            EchoServiceRegistry.register(IThemeService.class, service);
+        }
+    }
+
+    public static IThemeService themeService() {
+        return EchoServiceRegistry.getOrDefault(IThemeService.class, DEFAULT_THEME_SERVICE);
+    }
+
+    public static boolean themeCoreAvailable() {
+        try {
+            return themeService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("theme service availability", themeService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerSoundService(ISoundService service) {
+        if (service != null) {
+            EchoServiceRegistry.register(ISoundService.class, service);
+        }
+    }
+
+    public static ISoundService soundService() {
+        return EchoServiceRegistry.getOrDefault(ISoundService.class, DEFAULT_SOUND_SERVICE);
+    }
+
+    public static boolean soundCoreAvailable() {
+        try {
+            return soundService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("sound service availability", soundService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerRuntimeBudgetService(IRuntimeBudgetService service) {
+        if (service != null) {
+            EchoServiceRegistry.register(IRuntimeBudgetService.class, service);
+        }
+    }
+
+    public static IRuntimeBudgetService runtimeBudgetService() {
+        return EchoServiceRegistry.getOrDefault(IRuntimeBudgetService.class, DEFAULT_RUNTIME_BUDGET_SERVICE);
+    }
+
+    public static boolean runtimeGuardAvailable() {
+        try {
+            return runtimeBudgetService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("runtime budget service availability", runtimeBudgetService(), exception);
+            return false;
+        }
+    }
+
+    public static void registerLensService(ILensService service) {
+        if (service != null) {
+            EchoServiceRegistry.register(ILensService.class, service);
+        }
+    }
+
+    public static ILensService lensService() {
+        return EchoServiceRegistry.getOrDefault(ILensService.class, DEFAULT_LENS_SERVICE);
+    }
+
+    public static boolean lensAvailable() {
+        try {
+            return lensService().available();
+        } catch (RuntimeException exception) {
+            warnProviderFailure("lens service availability", lensService(), exception);
             return false;
         }
     }

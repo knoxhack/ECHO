@@ -49,7 +49,7 @@ public final class ModItems {
             p -> p.stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> INDUSTRIAL_ASSEMBLY_LINE_BLUEPRINT = tracked(ITEMS.registerItem(
             "industrial_assembly_line_blueprint",
-            properties -> new BlueprintItem(EchoMultiblockCore.id("industrial_assembly_line_demo"), properties),
+            properties -> new BlueprintItem(EchoMultiblockCore.id("industrial_assembly_line"), properties),
             p -> p.stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> LOGISTICS_DEPOT_BLUEPRINT = blueprint("logistics_depot_blueprint", "logistics_depot");
     public static final DeferredItem<Item> SCANNER_ARRAY_BLUEPRINT = blueprint("scanner_array_blueprint", "scanner_array");

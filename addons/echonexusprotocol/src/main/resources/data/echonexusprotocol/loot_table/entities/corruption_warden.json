@@ -31,6 +31,14 @@
         { "type": "minecraft:item", "name": "echonexusprotocol:reality_dust", "weight": 1 },
         { "type": "minecraft:empty", "weight": 2 }
       ]
+    },
+    {
+      "rolls": 1.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "echonexusprotocol:field_membrane", "weight": 1 },
+        { "type": "minecraft:item", "name": "echonexusprotocol:purity_charge", "weight": 1 },
+        { "type": "minecraft:empty", "weight": 2 }
+      ]
     }
   ],
   "random_sequence": "echonexusprotocol:entities/corruption_warden"

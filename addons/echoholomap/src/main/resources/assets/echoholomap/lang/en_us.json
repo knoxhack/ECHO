@@ -8,10 +8,12 @@
   "command.echoholomap.terrain_dump": "ECHO HoloMap // Terrain tiles %s in %s. %s",
   "key.categories.echoholomap.holomap": "ECHO: HoloMap",
   "key.echoholomap.toggle_minimap": "Toggle HoloMap Minimap",
+  "key.echoholomap.open_map": "Open HoloMap",
   "key.echoholomap.minimap_zoom_in": "HoloMap Minimap Zoom In",
   "key.echoholomap.minimap_zoom_out": "HoloMap Minimap Zoom Out",
   "key.echoholomap.minimap_cycle_corner": "Cycle HoloMap Minimap Corner",
   "text.echoholomap.tab": "HOLOMAP",
   "text.echoholomap.refresh": "SYNC",
-  "text.echoholomap.add_test_marker": "TEST"
+  "text.echoholomap.add_test_marker": "TEST",
+  "screen.echoholomap.fullscreen": "ECHO HoloMap"
 }

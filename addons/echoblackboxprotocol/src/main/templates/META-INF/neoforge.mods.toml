@@ -39,8 +39,8 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
-reason="Mirrors Blackbox missions, archive entries, and actions into the modular ECHO Terminal."
-versionRange="[1.0.0,)"
+reason="Mirrors Blackbox missions, route placement, archive entries, and actions into the modular ECHO Terminal."
+versionRange="[1.2.0,)"
 ordering="AFTER"
 side="BOTH"
 

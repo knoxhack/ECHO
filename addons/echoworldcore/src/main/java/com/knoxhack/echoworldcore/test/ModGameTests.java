@@ -78,10 +78,10 @@ public final class ModGameTests {
     private static void worldcoreRegistry(GameTestHelper helper) {
         WorldRegionService service = new WorldRegionService();
         WorldCoreBuiltins.register(service);
-        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.CRASH_ZONE).isPresent(),
-                "WorldCore should register the Ashfall crash zone region");
-        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.CRASH_ZONE).orElseThrow().type() == WorldRegionType.CRASH_ZONE,
-                "Crash zone should keep the crash-zone region type");
+        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD).isPresent(),
+                "WorldCore should register cross-chapter regions");
+        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD).orElseThrow().type() == WorldRegionType.ORBITAL_DEBRIS_FIELD,
+                "Orbital debris field should keep the orbital-debris-field region type");
         helper.assertTrue(service.hazardDefinitions().size() >= 4,
                 "WorldCore should register shared hazard definitions");
         helper.assertTrue(service.validateMarkers(null).isEmpty(),
@@ -135,7 +135,7 @@ public final class ModGameTests {
 
     private static void worldcoreSavedData(GameTestHelper helper) {
         WorldRegionSavedData data = new WorldRegionSavedData();
-        Identifier regionId = WorldCoreBuiltins.CRASH_ZONE;
+        Identifier regionId = WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD;
         Identifier markerId = id("marker/test");
         UUID playerId = UUID.randomUUID();
         data.saveMarker(new WorldMarker(markerId, regionId, WorldMarkerType.CRASH_SITE,
@@ -162,9 +162,9 @@ public final class ModGameTests {
         EchoWorldRuntimeBus.onRegionScanned(event -> scanned.incrementAndGet());
         EchoWorldRuntimeBus.onMarkerRevealed(event -> marker.incrementAndGet());
         EchoWorldRuntimeBus.onHazardChanged(event -> hazard.incrementAndGet());
-        WorldRegionInstance region = new WorldRegionInstance(id("instance/test"), WorldCoreBuiltins.CRASH_ZONE,
-                WorldRegionType.CRASH_ZONE, "Test Region", Level.OVERWORLD, BlockPos.ZERO, 32, java.util.List.of(), true);
-        WorldMarker worldMarker = new WorldMarker(id("marker/runtime"), WorldCoreBuiltins.CRASH_ZONE,
+        WorldRegionInstance region = new WorldRegionInstance(id("instance/test"), WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD,
+                WorldRegionType.ORBITAL_DEBRIS_FIELD, "Test Region", Level.OVERWORLD, BlockPos.ZERO, 32, java.util.List.of(), true);
+        WorldMarker worldMarker = new WorldMarker(id("marker/runtime"), WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD,
                 WorldMarkerType.REGION_CENTER, "Runtime Marker", "", Level.OVERWORLD, BlockPos.ZERO, 32, true, 1L);
         EchoWorldRuntimeBus.fireRegionEntered(new EchoWorldRuntimeBus.RegionEntered(null, region));
         EchoWorldRuntimeBus.fireRegionDiscovered(new EchoWorldRuntimeBus.RegionDiscovered(
@@ -173,7 +173,7 @@ public final class ModGameTests {
         EchoWorldRuntimeBus.fireMarkerRevealed(new EchoWorldRuntimeBus.MarkerRevealed(null, worldMarker));
         EchoWorldRuntimeBus.fireHazardChanged(new EchoWorldRuntimeBus.HazardChanged(
                 null, com.knoxhack.echocore.api.WorldHazardSnapshot.nominal(),
-                new com.knoxhack.echocore.api.WorldHazardSnapshot(java.util.List.of(WorldCoreBuiltins.CRASH_ZONE),
+                new com.knoxhack.echocore.api.WorldHazardSnapshot(java.util.List.of(WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD),
                         java.util.List.of(id("hazard/test")), 25, false, "test")));
         helper.assertTrue(entered.get() == 1 && discovered.get() == 1 && scanned.get() == 1
                 && marker.get() == 1 && hazard.get() == 1, "Runtime bus should deliver each world event");
@@ -196,12 +196,12 @@ public final class ModGameTests {
     private static void worldcoreReleaseGuards(GameTestHelper helper) {
         WorldRegionService service = new WorldRegionService();
         WorldCoreBuiltins.register(service);
-        helper.assertTrue(service.regionDefinitions().size() == 10,
-                "WorldCore v0.2 should keep the ten built-in framework region definitions");
+        helper.assertTrue(service.regionDefinitions().size() == 3,
+                "WorldCore v0.2 should keep three built-in framework region definitions");
         helper.assertTrue(service.hazardDefinitions().size() == 8,
                 "WorldCore v0.2 should keep the eight built-in framework hazard definitions");
-        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.CRASH_ZONE).isPresent(),
-                "WorldCore v0.2 should keep echoashfallprotocol:crash_zone_wasteland");
+        helper.assertTrue(service.regionDefinition(WorldCoreBuiltins.ORBITAL_DEBRIS_FIELD).isPresent(),
+                "WorldCore v0.2 should keep echoorbitalremnants:orbital_debris_field");
         helper.assertTrue(service.regionDefinitions().stream()
                         .allMatch(definition -> definition.renderProfileId() != null && definition.audioProfileId() != null),
                 "Built-in regions should expose RenderCore and AudioCore profile identifiers");

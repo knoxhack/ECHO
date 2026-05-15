@@ -11,6 +11,8 @@ import net.minecraft.resources.Identifier;
 
 public final class MultiblockContent {
     private static volatile Map<Identifier, MultiblockDefinition> definitions = Map.of();
+    private static final Map<Identifier, Identifier> ALIASES = java.util.Map.of(
+            EchoMultiblockCore.id("industrial_assembly_line_demo"), EchoMultiblockCore.id("industrial_assembly_line"));
 
     private MultiblockContent() {
     }
@@ -27,7 +29,17 @@ public final class MultiblockContent {
     }
 
     public static Optional<MultiblockDefinition> definition(Identifier id) {
-        return Optional.ofNullable(id == null ? null : definitions.get(id));
+        if (id == null) {
+            return Optional.empty();
+        }
+        MultiblockDefinition def = definitions.get(id);
+        if (def == null) {
+            Identifier alias = ALIASES.get(id);
+            if (alias != null) {
+                def = definitions.get(alias);
+            }
+        }
+        return Optional.ofNullable(def);
     }
 
     public static Map<Identifier, MultiblockDefinition> snapshot() {

@@ -1,8 +1,10 @@
 package com.knoxhack.echopowergrid.api;
 
 import com.knoxhack.echopowergrid.grid.PowerNetworkManager;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 public final class EchoPowerGridApi {
@@ -29,6 +31,20 @@ public final class EchoPowerGridApi {
     public static boolean requestPower(Level level, BlockPos pos, long epPerTick) {
         if (level == null || pos == null) return false;
         return PowerNetworkManager.get(level).requestPower(pos, epPerTick);
+    }
+
+    public static PowerGridDrawResult drawPower(Level level, BlockPos pos, long ep, boolean simulate) {
+        if (level == null || pos == null || ep <= 0) {
+            return PowerGridDrawResult.empty(ep, simulate);
+        }
+        return PowerNetworkManager.get(level).drawPower(pos, ep, simulate);
+    }
+
+    public static List<PowerGridNetworkSummary> loadedNetworkSummaries(ServerLevel level) {
+        if (level == null) {
+            return List.of();
+        }
+        return PowerNetworkManager.get(level).loadedNetworkSummaries();
     }
 
     public static void markNetworkDirty(Level level, BlockPos pos) {

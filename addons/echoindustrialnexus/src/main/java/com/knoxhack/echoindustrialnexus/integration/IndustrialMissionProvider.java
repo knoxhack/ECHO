@@ -8,9 +8,12 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -40,8 +43,9 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
       mission("plate_press", "Plate Press", "Press Scrap Plates into Refined Plates for durable factory frames.", "Stage 6", 11, "plate_press_controller", 4, rewards("plate_press_blueprint", 1, "refined_plate", 8)),
       mission("circuit_fabricator", "Circuit Fabricator", "Assemble Precision Circuits through robotic factory automation.", "Stage 7", 12, "circuit_fabricator_controller", 1, rewards("circuit_fabricator_blueprint", 1, "precision_circuit", 2)),
       mission("recipe_matrix_encoding", "Recipe Matrix Encoding", "Encode a Recipe Matrix Shard for advanced factory routing.", "Stage 7", 13, "recipe_matrix_core", 1, rewards("recipe_matrix_blueprint", 1, "recipe_matrix_shard", 1)),
-      mission("logistics_auto_restock", "Logistics Auto-Restock", "Connect Logistics to an Industrial controller and dispatch an auto-restock.", "Stage 7", 14, "factory_link_chip", 1, rewards("factory_link_chip", 2, "smart_duct", 8)),
-      mission("production_survived", "Production Survived", "Locate a Thermal Plant, defeat the Furnace Warden, and recover its core.", "Stage 8", 15, "warden_thermal_core", 1, rewards("warden_thermal_core", 1, "overclock_core", 1))
+      mission("nexus_furnace_array", "Nexus Furnace Array", "Form the Nexus Furnace Array and forge a Core Key Assembly through unstable factory automation.", "Stage 8", 14, "nexus_furnace_array_controller", 1, rewards("nexus_stabilizer_upgrade", 1, "field_relay", 2)),
+      mission("logistics_auto_restock", "Logistics Auto-Restock", "Connect Logistics to an Industrial controller and dispatch an auto-restock.", "Stage 8", 15, "factory_link_chip", 1, rewards("factory_link_chip", 2, "smart_duct", 8)),
+      mission("production_survived", "Production Survived", "Locate a Thermal Plant, defeat the Furnace Warden, and recover its core.", "Stage 9", 16, "warden_thermal_core", 1, rewards("warden_thermal_core", 1, "overclock_core", 1))
    );
 
    private IndustrialMissionProvider() {
@@ -85,7 +89,23 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
          claimed ? TerminalMissionAction.disabled(ACTION_CLAIM, "CLAIM CACHE", "Reward cache already claimed.") : complete ? TerminalMissionAction.enabled(ACTION_CLAIM, "CLAIM CACHE") : TerminalMissionAction.disabled(ACTION_CLAIM, "CLAIM CACHE", "Complete mission objectives first.")
       );
       return new TerminalMissionSnapshot(mission.id(), status, progress, claimed ? "CLAIMED" : complete ? "CACHE READY" : "ACTIVE", detail,
-         complete ? "Industrial cache ready. Claiming is idempotent and stored in Industrial world progress." : "Use SCAN FACTORY near your machines to update mission telemetry.", actions);
+         complete ? "Claim the Industrial support cache." : "Use SCAN FACTORY near your machines to update mission telemetry.", actions);
+   }
+
+   @Override
+   public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+      return TerminalMissionRole.OPTIONAL;
+   }
+
+   @Override
+   public Optional<TerminalMissionRoutePlacement> routePlacement(
+      Player player,
+      TerminalMissionDefinition definition,
+      TerminalMissionSnapshot snapshot,
+      TerminalMissionRole role
+   ) {
+      int order = definition == null ? 0 : definition.missionOrder();
+      return Optional.of(TerminalMissionRoutePlacement.optional(2, order));
    }
 
    public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
@@ -164,6 +184,7 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
             case "plate_press" -> "Plate press completions: " + IndustrialProgress.value(player, "task_press_scrap_plate_into_refined_plate") + "/" + need + ".";
             case "circuit_fabricator" -> "Circuit fabrication completions: " + IndustrialProgress.value(player, "task_assemble_precision_circuit") + "/" + need + ".";
             case "recipe_matrix_encoding" -> IndustrialProgress.flag(player, "task_encode_recipe_matrix_shard_complete") ? "Recipe Matrix Shard encoded." : "Awaiting matrix encoding completion.";
+            case "nexus_furnace_array" -> IndustrialProgress.flag(player, "task_forge_core_key_assembly_complete") ? "Core Key Assembly forged through the Nexus Furnace Array." : "Awaiting Nexus Furnace Array unstable processing completion.";
             case "logistics_auto_restock" -> IndustrialProgress.flag(player, "logistics_auto_restock_requested") ? "Logistics auto-restock dispatched." : "No auto-restock dispatch recorded.";
             default -> title + " telemetry: " + pct + "%.";
          };
@@ -174,6 +195,7 @@ public final class IndustrialMissionProvider implements TerminalMissionProvider 
             case "production_survived" -> "Abandoned Thermal Plants contain the Warden arena and wake-core caches.";
             case "reactor_waste" -> "Reactor Cooling Stations favor radiation zones and shielded pipe fragments.";
             case "hybrid_warning" -> "Nexus Heat Exchanger Ruins carry purple-blue conduits and static fluid leaks.";
+            case "nexus_furnace_array" -> "Use the Nexus Furnace Array blueprint after matrix encoding; it converts stabilized Nexus cores into late-game key assemblies.";
             case "factory_controller" -> "Rusted Factory Complexes contain controller schematics and duct caches.";
             case "assembly_line" -> "Industrial Assembly Line blueprints teach the first MultiblockCore factory loop.";
             case "logistics_auto_restock" -> "Enable auto-restock from a formed Industrial controller once Logistics routes are online.";

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/tutorial_flow.schema.json",
+  "title": "ECHO Tutorial Flow",
+  "description": "Step-by-step tutorial flow for TutorialCore.",
+  "type": "object",
+  "required": ["id", "steps"],
+  "properties": {
+    "id": { "type": "string", "description": "Flow identifier, e.g. 'mypack:first_hour'" },
+    "title": { "type": "string" },
+    "category": { "type": "string", "default": "START_HERE" },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string", "description": "Step local identifier." },
+          "type": { "type": "string", "default": "CUSTOM", "description": "Trigger type: CUSTOM, ADVANCEMENT, INTERACT, CRAFT, etc." },
+          "target": { "type": "string", "description": "Target identifier (item, block, advancement, etc.)." },
+          "text": { "type": "string", "description": "Instructional text for this step." },
+          "optional": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": true
+      }
+    },
+    "unlockCards": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tutorial cards unlocked when this flow completes."
+    },
+    "defaultUnlocked": { "type": "boolean", "default": false }
+  },
+  "additionalProperties": true
+}

@@ -1,11 +1,13 @@
 package com.knoxhack.echoindustrialnexus.integration;
 
+import com.knoxhack.echocore.client.model.EchoMobFamily;
+import com.knoxhack.echorendercore.client.EchoRenderCoreMobFamilyRenderer;
+import com.knoxhack.echoindustrialnexus.EchoIndustrialNexus;
 import com.knoxhack.echoindustrialnexus.client.IndustrialRenderCoreMachineRenderer;
-import com.knoxhack.echoindustrialnexus.client.IndustrialFurnaceModel;
-import com.knoxhack.echoindustrialnexus.client.IndustrialRenderCoreFurnaceRenderer;
 import com.knoxhack.echoindustrialnexus.registry.ModBlockEntities;
 import com.knoxhack.echoindustrialnexus.registry.ModEntities;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.entity.Mob;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 public final class IndustrialRenderCoreClientIntegration {
@@ -17,11 +19,14 @@ public final class IndustrialRenderCoreClientIntegration {
    }
 
    public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-      event.registerEntityRenderer((EntityType)ModEntities.FURNACE_WARDEN.get(),
-         context -> new IndustrialRenderCoreFurnaceRenderer(context, IndustrialFurnaceModel.WARDEN_LAYER_LOCATION,
-            "furnace_warden", 0xFFFF7A28, 1.08F, 0.9F));
-      event.registerEntityRenderer((EntityType)ModEntities.FURNACE_DRONE.get(),
-         context -> new IndustrialRenderCoreFurnaceRenderer(context, IndustrialFurnaceModel.DRONE_LAYER_LOCATION,
-            "furnace_drone", 0xFFFF9C3D, 0.82F, 0.5F));
+      event.registerEntityRenderer(ModEntities.FURNACE_WARDEN.get(),
+         renderer("furnace_warden", EchoMobFamily.INDUSTRIAL_CONSTRUCT, 1.08F, 0.9F));
+      event.registerEntityRenderer(ModEntities.FURNACE_DRONE.get(),
+         renderer("furnace_drone", EchoMobFamily.INDUSTRIAL_CONSTRUCT, 0.82F, 0.5F));
+   }
+
+   private static <T extends Mob> EntityRendererProvider<T> renderer(String entityName, EchoMobFamily family,
+         float scale, float shadow) {
+      return context -> new EchoRenderCoreMobFamilyRenderer<>(context, EchoIndustrialNexus.MODID, entityName, family, scale, shadow);
    }
 }

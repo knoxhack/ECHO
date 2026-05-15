@@ -26,6 +26,16 @@ public final class HoloMapCommands {
     }
 
     public static void register(RegisterCommandsEvent event) {
+        // Player-facing subcommands
+        event.getDispatcher().register(Commands.literal("echoholomap")
+                .then(Commands.literal("status")
+                        .executes(context -> status(context.getSource().getPlayerOrException())))
+                .then(Commands.literal("markers")
+                        .executes(context -> playerMarkers(context.getSource().getPlayerOrException())))
+                .then(Commands.literal("waypoints")
+                        .executes(context -> waypoints(context.getSource().getPlayerOrException()))));
+
+        // Gamemaster debug subcommands
         event.getDispatcher().register(Commands.literal("echoholomap")
                 .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                 .then(Commands.literal("debug")
@@ -51,6 +61,46 @@ public final class HoloMapCommands {
                                 .executes(context -> dumpTerrain(context.getSource().getPlayerOrException())))
                         .then(Commands.literal("dump")
                                 .executes(context -> dump(context.getSource().getPlayerOrException())))));
+    }
+
+    private static int status(ServerPlayer player) {
+        int layers = EchoCoreServices.mapLayers(player).size();
+        int markers = EchoCoreServices.mapMarkers(player).size();
+        int providers = EchoCoreServices.mapMarkerService().providerCount();
+        player.sendSystemMessage(Component.literal("ECHO HoloMap // Status"));
+        player.sendSystemMessage(Component.literal("  Map layers: " + layers));
+        player.sendSystemMessage(Component.literal("  Visible markers: " + markers));
+        player.sendSystemMessage(Component.literal("  Marker providers: " + providers));
+        player.sendSystemMessage(Component.literal("  Minimap: press [J] to toggle"));
+        return markers;
+    }
+
+    private static int playerMarkers(ServerPlayer player) {
+        var markers = EchoCoreServices.mapMarkers(player);
+        if (markers.isEmpty()) {
+            player.sendSystemMessage(Component.literal("ECHO HoloMap // No visible markers."));
+            return 0;
+        }
+        player.sendSystemMessage(Component.literal("ECHO HoloMap // Visible markers (" + markers.size() + "):"));
+        for (var marker : markers) {
+            player.sendSystemMessage(Component.literal("  - " + marker.title()
+                    + " [" + marker.kind().name().toLowerCase() + "] at (" + (int)marker.x() + ", " + (int)marker.y() + ", " + (int)marker.z() + ")"));
+        }
+        return markers.size();
+    }
+
+    private static int waypoints(ServerPlayer player) {
+        var waypoints = com.knoxhack.echoholomap.network.HoloMapWaypointClientState.waypoints();
+        if (waypoints.isEmpty()) {
+            player.sendSystemMessage(Component.literal("ECHO HoloMap // No personal waypoints set."));
+            return 0;
+        }
+        player.sendSystemMessage(Component.literal("ECHO HoloMap // Personal waypoints (" + waypoints.size() + "):"));
+        for (var wp : waypoints) {
+            player.sendSystemMessage(Component.literal("  - " + wp.title()
+                    + " at (" + (int)wp.x() + ", " + (int)wp.y() + ", " + (int)wp.z() + ")"));
+        }
+        return waypoints.size();
     }
 
     private static int addMarker(ServerPlayer player, String layerInput) {

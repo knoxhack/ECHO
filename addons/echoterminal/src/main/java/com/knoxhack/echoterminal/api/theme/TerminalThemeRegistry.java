@@ -39,7 +39,17 @@ public final class TerminalThemeRegistry {
     }
 
     public static Identifier defaultThemeId() {
+        bootstrap();
         return defaultThemeId;
+    }
+
+    public static boolean setDefaultTheme(Identifier id) {
+        bootstrap();
+        if (id == null || !THEMES.containsKey(id)) {
+            return false;
+        }
+        defaultThemeId = id;
+        return true;
     }
 
     public static List<TerminalTheme> all() {

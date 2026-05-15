@@ -5,8 +5,8 @@
   "effect": {
     "preset": "terminal_hud",
     "glow_intensity": 0.78,
-    "pulse_speed": 0.5,
-    "scanline_strength": 0.0,
+    "pulse_speed": 0.42,
+    "bloom_tint": "#FF8EEBFF",
     "target_scope": "profile"
   },
   "anchors": { "screen": { "offset": [0.0, 0.0, 0.0] } }

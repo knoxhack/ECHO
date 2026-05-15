@@ -12,9 +12,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
 public class EmergencyRocketRenderer extends EntityRenderer<EmergencyRocketEntity, EmergencyRocketRenderState> {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
-            EchoOrbitalRemnants.MODID, "textures/entity/emergency_rocket_vehicle.png");
-    private final EmergencyRocketModel model;
+    protected static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
+            EchoOrbitalRemnants.MODID, "textures/entity/rendercore_echo_mobs/emergency_rocket_vehicle.png");
+    protected final EmergencyRocketModel model;
 
     public EmergencyRocketRenderer(EntityRendererProvider.Context context) {
         super(context);

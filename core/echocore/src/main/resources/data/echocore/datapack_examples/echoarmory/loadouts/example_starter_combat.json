@@ -1,0 +1,12 @@
+{
+  "id": "echocore:example_starter_combat",
+  "title": "Starter Combat Kit",
+  "order": 0,
+  "icon": "minecraft:iron_sword",
+  "weapon": "echocore:example_survival_knife",
+  "armor": ["minecraft:leather_helmet", "minecraft:leather_chestplate", "minecraft:leather_leggings", "minecraft:leather_boots"],
+  "modules": ["echocore:example_serrated_edge"],
+  "minTier": 1,
+  "minProtection": 0,
+  "logisticsPreset": ""
+}

@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echonexusprotocol"
-version="1.1.0"
+version="1.2.0"
 displayName="ECHO: Nexus Protocol"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"
@@ -32,15 +32,15 @@ side="BOTH"
 modId="echocore"
 type="required"
 reason="Provides shared ECHO chapter, progress, and Nexus service APIs."
-versionRange="[1.1.0,)"
+versionRange="[1.1.3,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.echonexusprotocol]]
 modId="echoterminal"
 type="optional"
-reason="Adds Nexus research, mission, and scan surfaces to the modular ECHO Terminal."
-versionRange="[1.0.0,)"
+reason="Adds Nexus research, mission, route placement, and scan surfaces to the modular ECHO Terminal."
+versionRange="[1.2.0,)"
 ordering="AFTER"
 side="BOTH"
 

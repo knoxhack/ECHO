@@ -17,5 +17,5 @@
   "outputs": [
     { "item": "echomultiblockcore:nexus_field_coil", "count": 1 }
   ],
-  "notes": ["Produces a safe placeholder coil for Nexus-side facilities."]
+  "notes": ["Produces a stabilized nexus field coil for high-energy containment and signal relay."]
 }

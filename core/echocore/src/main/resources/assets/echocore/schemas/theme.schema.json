@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/theme.schema.json",
+  "title": "ECHO Theme",
+  "description": "Data-driven ECHO theme definition for ThemeCore.",
+  "type": "object",
+  "required": ["id", "colors"],
+  "properties": {
+    "id": { "type": "string", "description": "Theme identifier, e.g. 'mypack:dark_teal'" },
+    "display_name": { "type": "string", "description": "Human-readable theme name." },
+    "description": { "type": "string", "description": "Short description of the theme." },
+    "colors": {
+      "type": "object",
+      "description": "Core theme color palette.",
+      "properties": {
+        "primary": { "type": ["string", "integer"], "description": "Primary theme color (hex string or integer)." },
+        "secondary": { "type": ["string", "integer"], "description": "Secondary accent color." },
+        "accent": { "type": ["string", "integer"], "description": "Highlight / call-to-action color." },
+        "background": { "type": ["string", "integer"], "description": "Deep background color." },
+        "panel": { "type": ["string", "integer"], "description": "Panel / card background color." },
+        "panel_alt": { "type": ["string", "integer"], "description": "Alternate panel background." },
+        "glass": { "type": ["string", "integer"], "description": "Glass / translucent surface color." },
+        "border": { "type": ["string", "integer"], "description": "Active border color." },
+        "border_soft": { "type": ["string", "integer"], "description": "Inactive / subtle border color." },
+        "text": { "type": ["string", "integer"], "description": "Primary text color." },
+        "muted_text": { "type": ["string", "integer"], "description": "Secondary / muted text color." },
+        "success": { "type": ["string", "integer"], "description": "Success state color." },
+        "warning": { "type": ["string", "integer"], "description": "Warning state color." },
+        "error": { "type": ["string", "integer"], "description": "Error / danger state color." },
+        "locked": { "type": ["string", "integer"], "description": "Locked / disabled state color." },
+        "glow": { "type": ["string", "integer"], "description": "Glow / emissive color." },
+        "selection": { "type": ["string", "integer"], "description": "Selection highlight color." }
+      },
+      "additionalProperties": true
+    },
+    "ui": {
+      "type": "object",
+      "description": "UI texture asset overrides.",
+      "properties": {
+        "background_texture": { "type": "string" },
+        "panel_texture": { "type": "string" },
+        "panel_alt_texture": { "type": "string" },
+        "button_texture": { "type": "string" },
+        "button_hover_texture": { "type": "string" },
+        "tab_texture": { "type": "string" },
+        "tab_active_texture": { "type": "string" },
+        "mission_card_texture": { "type": "string" },
+        "mission_card_selected_texture": { "type": "string" },
+        "status_chip_texture": { "type": "string" },
+        "progress_bar_texture": { "type": "string" },
+        "scrollbar_texture": { "type": "string" },
+        "icon_pack": { "type": "string" },
+        "hologram_overlay": { "type": "string" },
+        "energy_overlay": { "type": "string" },
+        "edge_glow": { "type": "string" },
+        "particle_glints": { "type": "string" },
+        "locked_overlay": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "render": {
+      "type": "object",
+      "description": "Render effect overrides.",
+      "properties": {
+        "hologram_color": { "type": ["string", "integer"] },
+        "hologram_secondary": { "type": ["string", "integer"] },
+        "particle_primary": { "type": ["string", "integer"] },
+        "particle_secondary": { "type": ["string", "integer"] },
+        "emissive_primary": { "type": ["string", "integer"] },
+        "emissive_secondary": { "type": ["string", "integer"] },
+        "edge_glow_color": { "type": ["string", "integer"] },
+        "warning_glow_color": { "type": ["string", "integer"] },
+        "success_glow_color": { "type": ["string", "integer"] },
+        "error_glow_color": { "type": ["string", "integer"] },
+        "distortion_color": { "type": ["string", "integer"] },
+        "glow_intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "emissive_intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hologram_opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "glass_opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "noise_strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "distortion_strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "edge_glow_strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hologram_pulse_strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "energy_pattern_strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "particle_intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "animation_intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "pulse_speed": { "type": "number", "minimum": 0 },
+        "transition_duration": { "type": "integer", "minimum": 0 },
+        "hologram_style": { "type": "string" },
+        "particle_style": { "type": "string" },
+        "distortion_style": { "type": "string" },
+        "transition_style": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "sound": {
+      "type": "object",
+      "description": "Theme sound profile.",
+      "properties": {
+        "ui_open": { "type": "string" },
+        "ui_close": { "type": "string" },
+        "ui_click": { "type": "string" },
+        "ui_hover": { "type": "string" },
+        "ui_scroll": { "type": "string" },
+        "ui_back": { "type": "string" },
+        "tab_switch": { "type": "string" },
+        "mission_select": { "type": "string" },
+        "reward_claim": { "type": "string" },
+        "error_deny": { "type": "string" },
+        "hologram_ambience": { "type": "string" },
+        "scan_ping": { "type": "string" },
+        "discovery_chime": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "block_palette": {
+      "type": "object",
+      "description": "Optional block palette for build themes.",
+      "properties": {
+        "primary": { "type": "string" },
+        "secondary": { "type": "string" },
+        "accent": { "type": "string" },
+        "glass": { "type": "string" },
+        "light": { "type": "string" },
+        "floor": { "type": "string" },
+        "wall": { "type": "string" },
+        "ceiling": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "vanilla_ui": {
+      "type": "object",
+      "description": "Vanilla UI overrides.",
+      "properties": {
+        "book_text_color": { "type": ["string", "integer"] },
+        "inventory_title_color": { "type": ["string", "integer"] },
+        "tooltip_border": { "type": ["string", "integer"] },
+        "tooltip_background": { "type": ["string", "integer"] },
+        "boss_bar_color": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "module_assets": {
+      "type": "object",
+      "description": "Per-module texture overrides.",
+      "additionalProperties": { "type": "string" }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Custom metadata key-value pairs.",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

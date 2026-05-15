@@ -29,7 +29,7 @@ Optional Terminal/Lens/HoloMap runtime companions are not loaded by default for 
 
 ## Industrial Assembly Line
 
-1. Build the shape from `industrial_assembly_line_demo.json`.
+1. Build the shape from `industrial_assembly_line.json`.
 2. Install a Welder Head or Assembler Head into the Robotic Arm.
 3. Put 4 Reinforced Frame blocks and 1 Signal Conduit into the Input Crate.
 4. Run `/echo_multiblock recipes` and confirm the Assembly Suite recipes are listed.

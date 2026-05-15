@@ -9,6 +9,9 @@
   "heat_per_second": 2,
   "animation": "assemble",
   "consume_inputs_on_start": true,
+  "capability_costs": [
+    { "capability": "echo:power_input", "amount": 120, "throughput": 24, "unit": "EP/t" }
+  ],
   "inputs": [
     { "item": "echoindustrialnexus:copper_wire", "count": 2, "label": "Copper Wire" },
     { "item": "minecraft:redstone", "count": 2, "label": "Redstone" },

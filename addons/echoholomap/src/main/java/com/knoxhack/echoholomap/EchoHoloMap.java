@@ -9,6 +9,7 @@ import com.knoxhack.echoholomap.map.HoloMapService;
 import com.knoxhack.echoholomap.map.HoloMapTerrainScanner;
 import com.knoxhack.echoholomap.network.ModNetwork;
 import com.knoxhack.echoholomap.test.ModGameTests;
+import com.knoxhack.echoholomap.world.HoloMapDeathpointEvents;
 import com.mojang.logging.LogUtils;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
@@ -36,6 +37,9 @@ public final class EchoHoloMap {
         Config.registerEchoConfig();
         NeoForge.EVENT_BUS.addListener(HoloMapCommands::register);
         NeoForge.EVENT_BUS.addListener(HoloMapTerrainScanner::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(HoloMapDeathpointEvents::onPlayerDeath);
+        NeoForge.EVENT_BUS.addListener(HoloMapDeathpointEvents::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(HoloMapDeathpointEvents::onPlayerRespawn);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -43,7 +47,9 @@ public final class EchoHoloMap {
             HoloMapService.INSTANCE.registerBuiltins();
             EchoCoreServices.registerMapMarkerService(HoloMapService.INSTANCE);
             registerAddonChapter();
-            HoloMapMissionCoreIntegration.register();
+            if (ModList.get().isLoaded("echomissioncore")) {
+                HoloMapMissionCoreIntegration.register();
+            }
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();
             }

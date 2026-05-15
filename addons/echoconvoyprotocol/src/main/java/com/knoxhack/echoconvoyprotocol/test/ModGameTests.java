@@ -273,10 +273,10 @@ public final class ModGameTests {
    }
 
    private static void vehicleDimensions(GameTestHelper helper) {
-      assertVehicleFootprint(helper, ModEntities.SCRAP_BIKE.get(), ConvoyVehicleKind.SCRAP_BIKE, 1.2D, 1.1D, 0.8D);
-      assertVehicleFootprint(helper, ModEntities.WASTELAND_ROVER.get(), ConvoyVehicleKind.WASTELAND_ROVER, 2.2D, 1.7D, 1.3D);
-      assertVehicleFootprint(helper, ModEntities.CARGO_CRAWLER.get(), ConvoyVehicleKind.CARGO_CRAWLER, 3.0D, 2.0D, 1.55D);
-      assertVehicleFootprint(helper, ModEntities.ARMORED_RELAY_TRUCK.get(), ConvoyVehicleKind.ARMORED_RELAY_TRUCK, 2.85D, 2.05D, 1.55D);
+      assertVehicleFootprint(helper, ModEntities.SCRAP_BIKE.get(), ConvoyVehicleKind.SCRAP_BIKE, 0.95D, 1.35D, 0.95D);
+      assertVehicleFootprint(helper, ModEntities.WASTELAND_ROVER.get(), ConvoyVehicleKind.WASTELAND_ROVER, 2.25D, 1.75D, 1.35D);
+      assertVehicleFootprint(helper, ModEntities.CARGO_CRAWLER.get(), ConvoyVehicleKind.CARGO_CRAWLER, 3.05D, 1.85D, 1.45D);
+      assertVehicleFootprint(helper, ModEntities.ARMORED_RELAY_TRUCK.get(), ConvoyVehicleKind.ARMORED_RELAY_TRUCK, 3.10D, 2.15D, 1.65D);
       helper.succeed();
    }
 

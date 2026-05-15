@@ -5,8 +5,8 @@
   "effect": {
     "preset": "hologram",
     "glow_intensity": 0.8,
-    "pulse_speed": 0.4,
-    "scanline_strength": 0.0,
+    "pulse_speed": 0.32,
+    "bloom_tint": "#FF52FFCB",
     "target_scope": "profile"
   },
   "anchors": { "screen": { "offset": [0.0, 0.0, 0.0] } }

@@ -13,10 +13,13 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -80,6 +83,27 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
             actions
          );
       }
+   }
+
+   @Override
+   public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+      return TerminalMissionRole.MAIN;
+   }
+
+   @Override
+   public Optional<TerminalMissionRoutePlacement> routePlacement(
+      Player player,
+      TerminalMissionDefinition definition,
+      TerminalMissionSnapshot snapshot,
+      TerminalMissionRole role
+   ) {
+      Mission mission = mission(definition == null ? null : definition.id());
+      if (mission == null) {
+         return Optional.empty();
+      }
+      int phase = mission.phaseOrder >= 2 ? 8 : 7;
+      return Optional.of(TerminalMissionRoutePlacement.main(
+         phase, mission.phaseOrder * 100 + mission.order));
    }
 
    public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
@@ -349,7 +373,7 @@ public final class BlackboxMissionProvider implements TerminalMissionProvider {
       }
 
       String actionHint(BlackboxProgress progress) {
-         return this.complete(progress) ? "Route record complete. Claim optional support cache." : this.guide;
+         return this.complete(progress) ? "Claim the optional support cache." : this.guide;
       }
 
       List<TerminalMissionRequirement> requirements(BlackboxProgress progress) {

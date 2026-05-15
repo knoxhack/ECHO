@@ -208,7 +208,8 @@ final class TerminalNavigationModel {
             List<ChapterGroup> chapters = buildersByGroup.getOrDefault(group, Map.of()).values().stream()
                     .map(ChapterBuilder::build)
                     .sorted(Comparator
-                            .comparingInt(ChapterGroup::order)
+                            .comparingInt(TerminalNavigationModel::chapterRailPriority)
+                            .thenComparingInt(ChapterGroup::order)
                             .thenComparing(ChapterGroup::title)
                             .thenComparing(ChapterGroup::id))
                     .toList();
@@ -243,24 +244,60 @@ final class TerminalNavigationModel {
     }
 
     private static String chapterLabel(TerminalNavigationProfile profile) {
-        return profile.chapterTitle().isBlank() ? profile.chapterId() : profile.chapterTitle();
+        String label = profile.chapterTitle().isBlank() ? profile.chapterId() : profile.chapterTitle();
+        return progressChapterTitle(profile.chapterId(), label);
+    }
+
+    private static int chapterRailPriority(ChapterGroup chapter) {
+        return isAshfallChapter(chapter == null ? "" : chapter.id(), chapter == null ? "" : chapter.title()) ? 0 : 1;
+    }
+
+    private static String progressChapterTitle(String chapterId, String title) {
+        String cleaned = title == null ? "" : title.strip();
+        cleaned = cleaned.replaceFirst("(?i)^optional\\s*:\\s*", "");
+        cleaned = cleaned.replaceFirst("(?i)^chapter\\s+\\d+\\s*:\\s*", "");
+        if (cleaned.isBlank() && isAshfallChapter(chapterId, cleaned)) {
+            return "Ashfall Protocol";
+        }
+        return cleaned.isBlank() ? cleanChapterId(chapterId) : cleaned;
+    }
+
+    private static boolean isAshfallChapter(String chapterId, String title) {
+        String key = cleanChapterId(chapterId);
+        String name = title == null ? "" : title.strip().toLowerCase(Locale.ROOT);
+        return key.equals("ashfall")
+                || key.equals("ashfall_protocol")
+                || key.equals("echoashfallprotocol")
+                || name.equals("ashfall")
+                || name.equals("ashfall protocol");
+    }
+
+    private static String cleanChapterId(String chapterId) {
+        String cleaned = chapterId == null ? "" : chapterId.strip().toLowerCase(Locale.ROOT);
+        int namespaceSeparator = cleaned.indexOf(':');
+        if (namespaceSeparator >= 0 && namespaceSeparator + 1 < cleaned.length()) {
+            cleaned = cleaned.substring(namespaceSeparator + 1);
+        }
+        return cleaned;
     }
 
     record IndexedTab(int index, TerminalTab tab, TerminalNavigationProfile profile) {
     }
 
-    record ChapterGroup(String id, String title, String iconLabel, int order, int accent, List<IndexedTab> tabs) {
+    record ChapterGroup(String id, String title, String rawTitle, String iconLabel, int order, int accent, List<IndexedTab> tabs) {
     }
 
     private static final class ChapterBuilder {
         private final String id;
         private final String title;
+        private final String rawTitle;
         private final String iconLabel;
         private final int order;
         private final List<IndexedTab> tabs = new ArrayList<>();
 
         private ChapterBuilder(TerminalNavigationProfile profile) {
             this.id = profile.chapterId();
+            this.rawTitle = profile.chapterTitle().isBlank() ? profile.chapterId() : profile.chapterTitle();
             this.title = chapterLabel(profile);
             this.iconLabel = profile.chapterIcon().isBlank() ? fallbackIcon(title) : profile.chapterIcon();
             this.order = profile.order();
@@ -273,7 +310,7 @@ final class TerminalNavigationModel {
         private ChapterGroup build() {
             List<IndexedTab> sortedTabs = sortedEntries(tabs);
             int accent = sortedTabs.isEmpty() ? 0xFF66D9FF : sortedTabs.get(0).tab().descriptor().accentColor();
-            return new ChapterGroup(id, title, iconLabel, order, accent, List.copyOf(sortedTabs));
+            return new ChapterGroup(id, title, rawTitle, iconLabel, order, accent, List.copyOf(sortedTabs));
         }
     }
 

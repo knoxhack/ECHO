@@ -17,7 +17,7 @@ ECHO: Agriculture Reclamation is the field recovery chapter for players who want
 
 The addon is built for the ECHO stack but stays focused on local recovery. It does not rewrite entire biomes or hand the player a clean world. Instead, progress is earned block by block and chunk by chunk through seed capsules, purification enzymes, Bio-Gel, greenhouse control, and crop utility chains.
 
-With ECHO Terminal installed, Agriculture Reclamation publishes FIELD > Reclamation records, diagnostics, milestones, and support-cache hooks so the ecology route feels like a first-class chapter beside Ashfall, Orbital, Nexus, and Industrial systems.
+With ECHO Terminal installed, Agriculture Reclamation publishes FIELD > Reclamation records, diagnostics, milestones, support-cache hooks, and optional Survival Route side leads so the ecology route feels like a first-class chapter beside Ashfall, Orbital, Nexus, and Industrial systems.
 
 ## Main Features
 
@@ -38,11 +38,11 @@ With ECHO Terminal installed, Agriculture Reclamation publishes FIELD > Reclamat
 - Minecraft 26.1.2
 - NeoForge 26.1.2.29-beta or newer
 - Java 25+
-- ECHO: Core 1.0.0 or newer
+- ECHO: Core 1.1.0 or newer
 
 ## Recommended Pairings
 
-- ECHO: Terminal for missions, records, diagnostics, and support caches
+- ECHO: Terminal 1.0.0 or newer for missions, records, diagnostics, and support caches; Terminal 1.2.0 or newer is recommended for explicit Survival Route placement
 - ECHO: Ashfall Protocol for ruined soils and survival context
 - ECHO: Industrial Nexus for infrastructure support
 
@@ -64,14 +64,14 @@ With ECHO Terminal installed, Agriculture Reclamation publishes FIELD > Reclamat
 
 # ECHO: Agriculture Reclamation
 
-Agriculture Reclamation is the ECHO field recovery chapter for ruined-world farming. It is a standalone NeoForge addon with mod id `echoagriculturereclamation`, package `com.knoxhack.echoagriculturereclamation`, and version `1.0.0`.
+Agriculture Reclamation is the ECHO field recovery chapter for ruined-world farming. It is a standalone NeoForge addon with mod id `echoagriculturereclamation`, package `com.knoxhack.echoagriculturereclamation`, and version `1.2.0`.
 
 ## Production Status
 
 - Build and resources are wired into the beta and full ECHO stacks.
 - The player route is usable in survival: recover a profiled seed, purify soil or use a Hydroponic Tray, grow and harvest crops, produce Bio-Gel or nutrient mix, stabilize genes, scan greenhouse safety, and raise chunk-local restoration pressure.
 - Restoration stays local to blocks and chunks. It does not rewrite biome ids or restore vanilla ecology for free.
-- Terminal and Core integration publish FIELD > Reclamation metrics, route records, diagnostics, recovery cache support, and six route milestones.
+- Terminal and Core integration publish FIELD > Reclamation metrics, route records, diagnostics, recovery cache support, six route milestones, and optional Terminal Survival Route placement when the current Terminal API is present.
 - Cross-addon compatibility is optional and registry-id based for Ashfall ruined soils, Restoration Project-style soils, Nexus restore alignment, and ECHO faction preferences.
 
 ## Player Smoke Route
@@ -100,8 +100,12 @@ Run from the workspace root:
 ```powershell
 .\gradlew.bat :echoagriculturereclamation:build --warning-mode all
 .\gradlew.bat :echoagriculturereclamation:runGameTestServer --warning-mode all
+.\gradlew.bat :echoterminal:build --warning-mode all
+.\gradlew.bat :echoterminal:runGameTestServer --warning-mode all
 .\gradlew.bat -PechoAddonSet=beta validateEchoResources buildEchoWorkspace --warning-mode all
 .\gradlew.bat -PechoAddonSet=all validateEchoResources buildEchoWorkspace --warning-mode all
+.\gradlew.bat -PechoAddonSet=all validateReleaseArtifacts printReleaseManifest --warning-mode all
+.\gradlew.bat -PechoAddonSet=all verifyEchoRelease --warning-mode all
 ```
 
 If Python is not on `PATH`, pass `-PechoPythonExecutable="C:/path/to/python.exe"` to the Gradle validation commands.
@@ -114,7 +118,8 @@ If Python is not on `PATH`, pass `-PechoPythonExecutable="C:/path/to/python.exe"
 - Global seed and gene recovery injections live under NeoForge `data/echoagriculturereclamation/loot_modifiers`.
 - Mature crop loot is conservative: immature crops do not drop produce.
 - Generic seed items must carry the `seed_profile` data component before planting or tray growth.
-- 0.1.1 development adds modest utility outputs for harvested non-food crops without changing Terminal, milestone, or biome-restoration behavior.
-- Post-0.1.1 greenhouse polish adds sealed-envelope scoring and clearer Pollinator Dock diagnostics without adding new entities.
+- 1.2.0 focuses on Terminal Survival Route placement and release readiness, not new Agriculture gameplay.
+- Agriculture remains the owner of FIELD > Reclamation actions, rewards, support caches, and detailed diagnostics.
+- No blocks, items, entities, recipes, save fields, data components, datapack schemas, or gameplay migrations are added in 1.2.0.
 
-The 0.1.0 release PR draft, changelog, and final jar staging checklist live in `docs/releases/agriculture_reclamation_0.1.0.md`; the 0.1.1 crop utility draft notes live in `docs/releases/agriculture_reclamation_0.1.1.md`.
+The 1.2.0 release note lives in the root docs at `../../docs/releases/agriculture_reclamation_1.2.0.md`.

@@ -11,6 +11,7 @@ import com.knoxhack.echothemecore.integration.ThemeCoreRenderCoreBridge;
 import com.knoxhack.echothemecore.integration.ThemeCoreTerminalBridge;
 import com.knoxhack.echothemecore.network.ModNetwork;
 import com.knoxhack.echothemecore.network.ThemeCoreServerSync;
+import com.knoxhack.echothemecore.service.ThemeCoreService;
 import com.knoxhack.echothemecore.test.ModGameTests;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.Identifier;
@@ -51,13 +52,14 @@ public final class EchoThemeCore {
     private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             registerAddonChapter();
+            EchoCoreServices.registerThemeService(ThemeCoreService.INSTANCE);
             ThemeRegistry.setGlobalThemeChangeListener(ThemeCoreServerSync::broadcastGlobalTheme);
             ThemeRegistry.setPlayerThemeChangeListener(ThemeCoreServerSync::sendPlayerTheme);
             if (ThemeCoreRenderCoreBridge.registerIfAvailable()) {
                 LOGGER.info("ECHO ThemeCore found RenderCore; theme provider bridge is available.");
             }
             ThemeCoreTerminalBridge.registerIfAvailable();
-            LOGGER.info("ECHO ThemeCore 0.2.0 online. {} loaded theme(s). {}",
+            LOGGER.info("ECHO ThemeCore 1.2.0 online. {} loaded theme(s). {}",
                 ThemeRegistry.listThemes().size(),
                 EchoCoreServices.platformProviderSummary());
         });

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/armory_gear.schema.json",
+  "title": "ECHO Armory Gear Definition",
+  "description": "Gear blueprint for EchoArmory.",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "id": { "type": "string", "description": "Gear identifier. Inferred from file path if omitted." },
+    "title": { "type": "string" },
+    "baseType": { "type": "string", "default": "utility", "description": "Gear family: weapon, armor, utility, tool, drone." },
+    "tier": { "type": "integer", "default": 1, "minimum": 1 },
+    "moduleSlots": { "type": "integer", "default": 0, "minimum": 0 },
+    "baseDamage": { "type": "number", "default": 0.0 },
+    "baseDefense": { "type": "integer", "default": 0 },
+    "energyCapacity": { "type": "integer", "default": 0 },
+    "craftingStage": { "type": "string", "default": "Tier 1" },
+    "factionGate": { "type": "string", "default": "", "description": "Required faction identifier or empty." },
+    "allowedSlots": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

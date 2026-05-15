@@ -6,9 +6,11 @@ const root = process.cwd();
 const seedPath = path.join(root, "src", "shared", "seed-data.json");
 const packagePath = path.join(root, "package.json");
 const serverPath = path.join(root, "src", "server", "index.ts");
+const settingsPath = path.resolve(root, "..", "..", "settings.gradle");
 const seed = JSON.parse(fs.readFileSync(seedPath, "utf-8"));
 const pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
 const server = fs.readFileSync(serverPath, "utf-8");
+const settings = fs.readFileSync(settingsPath, "utf-8");
 
 const requiredRoutes = [
   "/api/health",
@@ -49,35 +51,20 @@ const expectedCommands = [
   "remove-stale-jars",
   "generate-release-notes"
 ];
-const expectedProjects = [
-  "echo",
-  "echocore",
-  "echonetcore",
-  "echodatacore",
-  "echomissioncore",
-  "echomultiblockcore",
-  "echoruntimeguard",
-  "echoashfallprotocol",
-  "echoterminal",
-  "echosignalos",
-  "signalosexample",
-  "echoorbitalremnants",
-  "echonexusprotocol",
-  "echoagriculturereclamation",
-  "echoworldcore",
-  "echostationfall",
-  "echoblackboxprotocol",
-  "echoindustrialnexus",
-  "echologisticsnetwork",
-  "echorendercore",
-  "echoconvoyprotocol",
-  "echoholomap",
-  "echoindex",
-  "echoarmory",
-  "echolens",
-  "echoblockworks",
-  "arcana"
-];
+
+function readGradleList(name) {
+  const match = settings.match(new RegExp(`def ${name} = \\[(.*?)\\]`, "s"));
+  assert.ok(match, `${name} missing from settings.gradle`);
+  return [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]);
+}
+
+function sorted(values) {
+  return [...values].sort();
+}
+
+const echoAddonProjects = [...readGradleList("echoBetaAddons"), ...readGradleList("echoReleaseAddons")];
+const expectedEchoModulePaths = ["core/echocore", ".", ...echoAddonProjects.map((addon) => `addons/${addon}`)];
+const expectedProjects = ["echo", "echocore", "echoashfallprotocol", ...echoAddonProjects, "arcana"];
 
 assert.equal(pkg.scripts.dev.includes("vite"), true, "dev script should run Vite");
 assert.equal(pkg.scripts.dev.includes("src/server/index.ts"), true, "dev script should run backend");
@@ -92,8 +79,9 @@ for (const route of requiredRoutes) {
 
 const echo = seed.projects.find((project) => project.slug === "echo");
 assert.ok(echo, "ECHO project must be seeded");
-assert.deepEqual(seed.projects.map((project) => project.slug), expectedProjects, "Project cards must map to real workspace modules only");
-assert.equal(echo.modules.length, 25, "ECHO should seed the full real workspace release module set");
+assert.deepEqual(sorted(seed.projects.map((project) => project.slug)), sorted(expectedProjects), "Project cards must map to real workspace modules only");
+assert.equal(echo.modules.length, expectedEchoModulePaths.length, "ECHO should seed the full real workspace release module set");
+assert.deepEqual(sorted(echo.modules.map((module) => module.path)), sorted(expectedEchoModulePaths), "ECHO module paths must mirror settings.gradle");
 
 const actionIds = seed.releaseActions.filter((action) => action.projectSlug === "echo").map((action) => action.commandId);
 assert.deepEqual(actionIds, expectedCommands, "Release action allowlist changed unexpectedly");

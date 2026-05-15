@@ -20,21 +20,32 @@ public final class ThemeCoreTerminalBridge {
     }
 
     public static void registerIfAvailable() {
-        if (!isTerminalLoaded() || registered) {
+        if (!isTerminalLoaded()) {
             return;
         }
         try {
-            registerCyberGlassTerminalTheme();
-            registered = true;
-            EchoThemeCore.LOGGER.info("ECHO ThemeCore registered CyberGlass TerminalTheme adapter.");
+            boolean created = registerCyberGlassTerminalTheme();
+            Identifier previousDefault = com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry.defaultThemeId();
+            boolean defaulted = com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry.setDefaultTheme(ThemeRegistry.CYBERGLASS_ID);
+            if (created && !registered) {
+                registered = true;
+                EchoThemeCore.LOGGER.info("ECHO ThemeCore registered CyberGlass TerminalTheme adapter.");
+            }
+            if (defaulted && !ThemeRegistry.CYBERGLASS_ID.equals(previousDefault)) {
+                EchoThemeCore.LOGGER.info("ECHO ThemeCore set CyberGlass as the Terminal default theme.");
+            }
         } catch (Exception e) {
             EchoThemeCore.LOGGER.warn("Could not register CyberGlass TerminalTheme adapter: {}", e.getMessage());
         }
     }
 
-    private static void registerCyberGlassTerminalTheme() {
+    private static boolean registerCyberGlassTerminalTheme() {
         // Use reflection-free classloading through the known API surface
+        if (com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry.contains(ThemeRegistry.CYBERGLASS_ID)) {
+            return false;
+        }
         com.knoxhack.echoterminal.api.theme.TerminalThemeRegistry.register(buildTheme());
+        return true;
     }
 
     private static com.knoxhack.echoterminal.api.theme.TerminalTheme buildTheme() {
@@ -88,7 +99,7 @@ public final class ThemeCoreTerminalBridge {
             );
         com.knoxhack.echoterminal.api.theme.TerminalIconSet icons = cyberGlassIcons();
         return com.knoxhack.echoterminal.api.theme.TerminalTheme.builder(
-                Identifier.fromNamespaceAndPath(EchoThemeCore.MODID, "cyberglass"),
+                ThemeRegistry.CYBERGLASS_ID,
                 "CyberGlass"
             )
             .tokens(tokens)

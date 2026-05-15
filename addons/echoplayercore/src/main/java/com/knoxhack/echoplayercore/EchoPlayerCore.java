@@ -25,6 +25,7 @@ public final class EchoPlayerCore {
         NeoForge.EVENT_BUS.addListener(PlayerCoreCommands::onPlayerRespawn);
         ModGameTests.register(modEventBus);
         modEventBus.addListener(ModGameTests::registerTests);
+        PlayerCoreCommands.registerEchoSubcommands();
         PlayerCoreIntegrations.logIntegrationStatus();
         LOGGER.info("ECHO PlayerCore initialized.");
     }

@@ -1,11 +1,13 @@
 package com.knoxhack.echonexusprotocol;
 
+import com.knoxhack.echocore.client.model.EchoMobFamily;
+import com.knoxhack.echocore.client.model.EchoMobFamilyRenderer;
 import com.knoxhack.echonexusprotocol.client.NexusMachineScreen;
-import com.knoxhack.echonexusprotocol.client.TintedNexusZombieRenderer;
 import com.knoxhack.echonexusprotocol.integration.NexusTerminalIntegration;
 import com.knoxhack.echonexusprotocol.registry.ModEntities;
 import com.knoxhack.echonexusprotocol.registry.ModMenus;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.entity.Mob;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -43,13 +45,13 @@ public class EchoNexusProtocolClient {
    }
 
    public static void registerTintedEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-      event.registerEntityRenderer(ModEntities.NEXUS_HUSK.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("nexus_husk"), 0xFFD9A4FF, 1.0F, 0.55F));
-      event.registerEntityRenderer(ModEntities.DATA_WRAITH.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("data_wraith"), 0xFF9FE8FF, 0.9F, 0.25F));
-      event.registerEntityRenderer(ModEntities.STATIC_CRAWLER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("static_crawler"), 0xFFB85CFF, 0.72F, 0.25F));
-      event.registerEntityRenderer(ModEntities.CORE_SOLDIER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("core_soldier"), 0xFF7C8EAA, 1.08F, 0.62F));
-      event.registerEntityRenderer(ModEntities.ARCHIVE_SEEKER.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("archive_seeker"), 0xFFE8F8FF, 1.18F, 0.45F));
-      event.registerEntityRenderer(ModEntities.CORRUPTION_WARDEN.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("corruption_warden"), 0xFFFF62D6, 1.35F, 0.95F));
-      event.registerEntityRenderer(ModEntities.NEXUS_GUARDIAN.get(), context -> new TintedNexusZombieRenderer(context, entityTexture("nexus_guardian"), 0xFF66E8FF, 1.65F, 1.1F));
+      event.registerEntityRenderer(ModEntities.NEXUS_HUSK.get(), renderer("nexus_husk", EchoMobFamily.HUMANOID, 1.0F, 0.55F));
+      event.registerEntityRenderer(ModEntities.DATA_WRAITH.get(), renderer("data_wraith", EchoMobFamily.WRAITH, 0.9F, 0.25F));
+      event.registerEntityRenderer(ModEntities.STATIC_CRAWLER.get(), renderer("static_crawler", EchoMobFamily.CRAWLER, 0.72F, 0.25F));
+      event.registerEntityRenderer(ModEntities.CORE_SOLDIER.get(), renderer("core_soldier", EchoMobFamily.HUMANOID, 1.08F, 0.62F));
+      event.registerEntityRenderer(ModEntities.ARCHIVE_SEEKER.get(), renderer("archive_seeker", EchoMobFamily.HUMANOID, 1.18F, 0.45F));
+      event.registerEntityRenderer(ModEntities.CORRUPTION_WARDEN.get(), renderer("corruption_warden", EchoMobFamily.HEAVY_BOSS, 1.35F, 0.95F));
+      event.registerEntityRenderer(ModEntities.NEXUS_GUARDIAN.get(), renderer("nexus_guardian", EchoMobFamily.HEAVY_BOSS, 1.65F, 1.1F));
    }
 
    private static boolean registerRenderCoreEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -64,5 +66,8 @@ public class EchoNexusProtocolClient {
       }
    }
 
-   private static Identifier entityTexture(String name) { return Identifier.fromNamespaceAndPath(EchoNexusProtocol.MODID, "textures/entity/" + name + ".png"); }
+   private static <T extends Mob> EntityRendererProvider<T> renderer(String entityName, EchoMobFamily family,
+         float scale, float shadow) {
+      return context -> new EchoMobFamilyRenderer<>(context, EchoNexusProtocol.MODID, entityName, family, scale, shadow);
+   }
 }

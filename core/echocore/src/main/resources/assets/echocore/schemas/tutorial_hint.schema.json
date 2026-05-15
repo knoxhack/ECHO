@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/tutorial_hint.schema.json",
+  "title": "ECHO Tutorial Hint",
+  "description": "Data-driven contextual hint for TutorialCore.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "description": "Hint identifier, e.g. 'mypack:low_health_hint'" },
+    "type": { "type": "string", "default": "INFO", "description": "Hint severity: INFO, WARNING, TIP, ERROR." },
+    "category": { "type": "string", "default": "START_HERE" },
+    "title": { "type": "string" },
+    "message": { "type": "string", "description": "Short hint message." },
+    "details": { "type": "string", "description": "Extended details shown on expand." },
+    "actionLabel": { "type": "string", "description": "Label for the action button." },
+    "actionCardId": { "type": "string", "description": "Tutorial card to open when action is clicked." },
+    "cooldownTicks": { "type": "integer", "default": 6000, "description": "Cooldown before this hint can re-appear." },
+    "guideModes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["FULL", "COMPACT", "MINIMAL", "OFF"] },
+      "description": "Guide modes in which this hint is active."
+    },
+    "priority": { "type": "integer", "default": 0 },
+    "dismissible": { "type": "boolean", "default": true },
+    "conditions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Condition strings evaluated by the hint engine."
+    }
+  },
+  "additionalProperties": true
+}

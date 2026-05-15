@@ -132,6 +132,9 @@ public final class ModBlocks {
    public static final DeferredBlock<Block> RECIPE_MATRIX_CORE = industrialController(
       "recipe_matrix_core", "recipe_matrix_core", IndustrialMultiblockTasks.ENCODE_RECIPE_MATRIX_SHARD
    );
+   public static final DeferredBlock<Block> NEXUS_FURNACE_ARRAY_CONTROLLER = industrialController(
+      "nexus_furnace_array_controller", "nexus_furnace_array", IndustrialMultiblockTasks.STABILIZE_HYBRID_THERMAL_CORE
+   );
    public static final DeferredBlock<Block> SCRAP_PROCESSOR_CONTROLLER = industrialController(
       "scrap_processor_controller", "scrap_processor", IndustrialMultiblockTasks.PROCESS_SCRAP_INTO_SCRAP_PLATE
    );
@@ -245,6 +248,7 @@ public final class ModBlocks {
       INDUSTRIAL_CONTROLLER,
       INDUSTRIAL_ASSEMBLY_LINE_CONTROLLER,
       RECIPE_MATRIX_CORE,
+      NEXUS_FURNACE_ARRAY_CONTROLLER,
       SCRAP_PROCESSOR_CONTROLLER,
       PLATE_PRESS_CONTROLLER,
       CIRCUIT_FABRICATOR_CONTROLLER,

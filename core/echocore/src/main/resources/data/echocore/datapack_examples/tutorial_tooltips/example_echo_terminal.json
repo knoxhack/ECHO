@@ -1,0 +1,9 @@
+{
+  "targetItem": "echoterminal:echo_terminal",
+  "lines": [
+    "Hold to open the ECHO Terminal.",
+    "Tracks missions, routes, vitals, factions, and rewards."
+  ],
+  "requireShift": false,
+  "priority": 10
+}

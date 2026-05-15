@@ -45,7 +45,9 @@ public class EchoBlockworks {
    private void commonSetup(FMLCommonSetupEvent event) {
       event.enqueueWork(() -> {
          BlockworksCoreIntegration.registerAddonChapter();
-         BlockworksMissionCoreIntegration.register();
+         if (ModList.get().isLoaded("echomissioncore")) {
+            BlockworksMissionCoreIntegration.register();
+         }
          if (ModList.get().isLoaded("echoindex")) {
             BlockworksIndexProvider.register();
          }

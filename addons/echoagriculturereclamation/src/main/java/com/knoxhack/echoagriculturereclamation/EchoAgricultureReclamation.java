@@ -50,7 +50,7 @@ public class EchoAgricultureReclamation {
          Class.forName("com.knoxhack.echoagriculturereclamation.integration.ReclamationTerminalCommonIntegration")
             .getMethod("register")
             .invoke(null);
-      } catch (ReflectiveOperationException exception) {
+      } catch (ReflectiveOperationException | LinkageError exception) {
          LOGGER.warn("ECHO Agriculture Reclamation terminal integration could not be registered.", exception);
       }
    }

@@ -7,15 +7,18 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.Identifier;
@@ -101,12 +104,12 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         TerminalMissionSnapshot childSnapshot = usableSnapshot(snapshot, record);
         TerminalMissionPresentation child = safePresentation(record.provider(), player, record.definition(), childSnapshot);
         List<String> tags = new ArrayList<>(child.tags());
-        tags.add("Source: " + record.chapter().title());
+        tags.add("From " + record.chapter().title());
         return new TerminalMissionPresentation(
                 child.shortTitle(),
                 child.objectiveSummary(),
                 guideHint(record, childSnapshot),
-                "Source: " + record.chapter().title(),
+                record.chapter().title(),
                 child.statusTone(),
                 tags,
                 child.relatedIntelKey());
@@ -120,7 +123,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         SourceRecord record = routeSnapshot(player).sourceById().get(definition == null ? null : definition.id());
         return record == null
                 ? TerminalMissionRole.REFERENCE
-                : safeRole(record.provider(), player, record.definition(), usableSnapshot(snapshot, record));
+                : record.role();
     }
 
     @Override
@@ -156,7 +159,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
                 phase.id(),
                 phase.title(),
                 phase.order(),
-                record.order(),
+                record.routeOrder(),
                 child.title(),
                 child.briefing(),
                 child.fieldGuide(),
@@ -223,7 +226,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         List<SourceCandidate> selected = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         for (SourceCandidate candidate : candidates) {
-            RoutePhase phase = authoredPhase(candidate);
+            RoutePhase phase = explicitPhase(candidate).orElseGet(() -> authoredPhase(candidate));
             if (phase != null && seen.add(candidate.key())) {
                 selected.add(candidate.withPhase(phase));
             }
@@ -237,11 +240,18 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         Map<RoutePhase, Integer> phaseCounts = new EnumMap<>(RoutePhase.class);
         List<SourceRecord> records = new ArrayList<>();
         for (SourceCandidate candidate : selected) {
-            int order = phaseCounts.merge(candidate.phase(), 1, Integer::sum);
+            int order = candidate.placement()
+                    .map(TerminalMissionRoutePlacement::missionOrder)
+                    .orElseGet(() -> phaseCounts.merge(candidate.phase(), 1, Integer::sum));
             records.add(new SourceRecord(candidate.provider(), candidate.chapter(), candidate.definition(),
                     candidate.snapshot(), candidate.presentation(), candidate.role(), candidate.phase(), order));
         }
-        return List.copyOf(records);
+        return records.stream()
+                .sorted(Comparator
+                        .comparingInt((SourceRecord record) -> record.phase().order())
+                        .thenComparingInt(SourceRecord::routeOrder)
+                        .thenComparing(record -> record.definition().id().toString()))
+                .toList();
     }
 
     private static TerminalMissionDefinition overflowDefinition(int overflowCount) {
@@ -289,10 +299,18 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
                 if (definition == null) {
                     continue;
                 }
-                TerminalMissionSnapshot snapshot = lightweightSnapshot(definition);
-                TerminalMissionRole role = TerminalMissionRole.fallback(definition, snapshot);
-                TerminalMissionPresentation presentation = TerminalMissionPresentation.fallback(definition, snapshot);
-                candidates.add(new SourceCandidate(provider, chapter, definition, snapshot, presentation, role, null));
+                TerminalMissionSnapshot snapshot = safeSnapshot(provider, player, definition);
+                TerminalMissionRole role = safeRole(provider, player, definition, snapshot);
+                Optional<TerminalMissionRoutePlacement> placement =
+                        safeRoutePlacement(provider, player, definition, snapshot, role);
+                if (placement.isPresent()) {
+                    if (!placement.get().includeInSurvivalRoute()) {
+                        continue;
+                    }
+                    role = placement.get().role();
+                }
+                TerminalMissionPresentation presentation = safePresentation(provider, player, definition, snapshot);
+                candidates.add(new SourceCandidate(provider, chapter, definition, snapshot, presentation, role, placement, null));
             }
         }
         return candidates;
@@ -382,6 +400,10 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         return null;
     }
 
+    private static Optional<RoutePhase> explicitPhase(SourceCandidate candidate) {
+        return candidate.placement().map(placement -> RoutePhase.byOrder(placement.phaseOrder()));
+    }
+
     private static boolean containsAny(String value, String... needles) {
         for (String needle : needles) {
             if (value.contains(needle)) {
@@ -397,9 +419,9 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
 
     private static String guideHint(SourceRecord record, TerminalMissionSnapshot snapshot) {
         String childHint = snapshot == null ? "" : snapshot.actionHint();
-        String source = "Source: " + record.chapter().title()
-                + ". Survival Route forwards available mission commands.";
-        return childHint == null || childHint.isBlank() ? source : childHint + " " + source;
+        return childHint == null || childHint.isBlank()
+                ? "Open " + record.chapter().title() + " for this route record."
+                : childHint;
     }
 
     private static TerminalMissionSnapshot usableSnapshot(TerminalMissionSnapshot snapshot, SourceRecord record) {
@@ -471,6 +493,22 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         }
     }
 
+    private static Optional<TerminalMissionRoutePlacement> safeRoutePlacement(
+            TerminalMissionProvider provider,
+            Player player,
+            TerminalMissionDefinition definition,
+            TerminalMissionSnapshot snapshot,
+            TerminalMissionRole role) {
+        try {
+            Optional<TerminalMissionRoutePlacement> placement =
+                    provider.routePlacement(player, definition, snapshot, role);
+            return placement == null ? Optional.empty() : placement;
+        } catch (RuntimeException exception) {
+            EchoTerminal.LOGGER.debug("Survival route used fallback route placement for a mission.", exception);
+            return Optional.empty();
+        }
+    }
+
     private enum RoutePhase {
         PHASE_00("phase_00", "Phase 00", 0),
         PHASE_01("phase_01", "Phase 01", 1),
@@ -504,6 +542,15 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
         int order() {
             return order;
         }
+
+        static RoutePhase byOrder(int order) {
+            for (RoutePhase phase : values()) {
+                if (phase.order == order) {
+                    return phase;
+                }
+            }
+            return values()[Math.max(0, Math.min(values().length - 1, order))];
+        }
     }
 
     private record SourceCandidate(
@@ -513,13 +560,14 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
             TerminalMissionSnapshot snapshot,
             TerminalMissionPresentation presentation,
             TerminalMissionRole role,
+            Optional<TerminalMissionRoutePlacement> placement,
             RoutePhase phase) {
         String key() {
             return chapter.id() + "|" + definition.id();
         }
 
         SourceCandidate withPhase(RoutePhase phase) {
-            return new SourceCandidate(provider, chapter, definition, snapshot, presentation, role, phase);
+            return new SourceCandidate(provider, chapter, definition, snapshot, presentation, role, placement, phase);
         }
     }
 
@@ -531,7 +579,7 @@ public final class MainSurvivalQuestProvider implements TerminalMissionProvider 
             TerminalMissionPresentation presentation,
             TerminalMissionRole role,
             RoutePhase phase,
-            int order) {
+            int routeOrder) {
     }
 
     private record RouteCacheKey(UUID playerId, long refreshBucket, String providerFingerprint) {

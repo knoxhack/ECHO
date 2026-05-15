@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/weather_profile.schema.json",
+  "title": "ECHO Weather Profile",
+  "description": "Data-driven weather event profile for WeatherCore.",
+  "type": "object",
+  "required": ["id", "type", "defaultSeverity", "scope"],
+  "properties": {
+    "id": { "type": "string", "description": "Profile identifier, e.g. 'mypack:acid_rain'" },
+    "displayName": { "type": "string", "default": "Inferred from id" },
+    "type": { "type": "string", "description": "Weather type enum value." },
+    "defaultSeverity": { "type": "string", "description": "Default severity enum: CLEAR, LIGHT, MODERATE, SEVERE, EXTREME." },
+    "scope": { "type": "string", "description": "Scope enum: GLOBAL, REGIONAL, LOCAL, STRUCTURE." },
+    "durationTicks": { "type": "integer", "default": 12000, "minimum": 0 },
+    "warningTicks": { "type": "integer", "default": 2400, "minimum": 0 },
+    "weight": { "type": "integer", "default": 10, "minimum": 0, "description": "Selection weight during random roll." },
+    "cooldownTicks": { "type": "integer", "default": 24000, "minimum": 0 },
+    "allowedDimensions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Dimension identifiers where this weather can occur."
+    },
+    "allowedBiomes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Biome identifiers where this weather can occur."
+    },
+    "allowedRegionTags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Region tags where this weather can occur."
+    },
+    "disallowedBiomes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Biome identifiers where this weather is blocked."
+    },
+    "minimumProgression": { "type": "integer", "default": 0, "minimum": 0 },
+    "earliestGameDay": { "type": "integer", "default": 0, "minimum": 0 },
+    "effects": {
+      "type": "object",
+      "description": "Gameplay effect multipliers.",
+      "properties": {
+        "visibilityMultiplier": { "type": "number", "default": 1.0 },
+        "scannerRangeMultiplier": { "type": "number", "default": 1.0 },
+        "scannerReliabilityMultiplier": { "type": "number", "default": 1.0 },
+        "holomapReliabilityMultiplier": { "type": "number", "default": 1.0 },
+        "filterDrainMultiplier": { "type": "number", "default": 1.0 },
+        "radiationExposureMultiplier": { "type": "number", "default": 1.0 },
+        "toxicExposureMultiplier": { "type": "number", "default": 1.0 },
+        "coldExposureMultiplier": { "type": "number", "default": 1.0 },
+        "heatExposureMultiplier": { "type": "number", "default": 1.0 },
+        "hydrationDrainMultiplier": { "type": "number", "default": 1.0 },
+        "solarPowerMultiplier": { "type": "number", "default": 1.0 },
+        "powerGridInstabilityMultiplier": { "type": "number", "default": 1.0 },
+        "batteryEfficiencyMultiplier": { "type": "number", "default": 1.0 },
+        "machineHeatMultiplier": { "type": "number", "default": 1.0 },
+        "droneScoutReliability": { "type": "number", "default": 1.0 },
+        "droneRecallRisk": { "type": "number", "default": 1.0 },
+        "mobSightMultiplier": { "type": "number", "default": 1.0 },
+        "mobAggressionMultiplier": { "type": "number", "default": 1.0 },
+        "factionPatrolActivityMultiplier": { "type": "number", "default": 1.0 },
+        "routeRiskModifier": { "type": "number", "default": 1.0 }
+      },
+      "additionalProperties": { "type": "number" }
+    },
+    "recommendedGear": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Item identifiers recommended during this weather."
+    },
+    "possibleResources": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Item identifiers that may become available."
+    },
+    "terminalWarning": { "type": "string", "default": "" },
+    "echoLines": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "ECHO terminal narrative lines shown during the event."
+    },
+    "holomapOverlayMetadata": { "type": "string", "default": "" },
+    "lensScanText": { "type": "string", "default": "" },
+    "soundCoreAmbienceId": { "type": "string", "default": "" },
+    "particleVisualProfileId": { "type": "string", "default": "" },
+    "enabled": { "type": "boolean", "default": true }
+  },
+  "additionalProperties": true
+}

@@ -91,6 +91,7 @@ public final class HoloMapWaypointClientState {
     private static List<HoloMapWaypoint> sorted(List<HoloMapWaypoint> waypoints) {
         return waypoints.stream()
                 .sorted(Comparator.comparing(HoloMapWaypoint::scope)
+                        .thenComparing(waypoint -> !waypoint.isDeathpoint())
                         .thenComparing(HoloMapWaypoint::title, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(waypoint -> waypoint.id().toString()))
                 .toList();

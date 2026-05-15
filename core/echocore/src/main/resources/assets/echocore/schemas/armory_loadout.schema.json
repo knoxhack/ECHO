@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/armory_loadout.schema.json",
+  "title": "ECHO Armory Loadout Definition",
+  "description": "Recommended gear loadout for EchoArmory.",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "id": { "type": "string", "description": "Loadout identifier. Inferred from file path if omitted." },
+    "title": { "type": "string" },
+    "order": { "type": "integer", "default": 0 },
+    "icon": { "type": "string", "default": "minecraft:chest", "description": "Item identifier for the loadout icon." },
+    "weapon": { "type": "string", "default": "", "description": "Recommended weapon identifier." },
+    "armor": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Recommended armor piece identifiers."
+    },
+    "modules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Recommended module identifiers."
+    },
+    "minTier": { "type": "integer", "default": 1, "minimum": 1 },
+    "minProtection": { "type": "integer", "default": 0 },
+    "logisticsPreset": { "type": "string", "default": "" }
+  },
+  "additionalProperties": true
+}

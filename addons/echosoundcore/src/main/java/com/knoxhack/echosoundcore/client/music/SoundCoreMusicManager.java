@@ -88,11 +88,27 @@ public final class SoundCoreMusicManager {
         return currentPriority;
     }
 
+    public static boolean shouldSuppressVanillaMusic() {
+        if (!SoundCoreConfig.ENABLE_ADAPTIVE_MUSIC.get() || !SoundCoreConfig.REPLACE_VANILLA_MUSIC_WITH_SOUNDCORE.get()) {
+            return false;
+        }
+        if (MC.player == null || MC.level == null) {
+            return false;
+        }
+        if (currentInstance != null && MC.getSoundManager().isActive(currentInstance)) {
+            return true;
+        }
+
+        DesiredTrack desired = selectDesiredTrack(SoundCoreContextStack.current());
+        return desired != null && desired.sound() != null;
+    }
+
     private static void playTrack(DesiredTrack desired, long now) {
         stopControlled();
         SoundEvent sound = desired.sound();
         if (sound == null) return;
 
+        MC.getMusicManager().stopPlaying();
         float volume = getVolumeMultiplier(desired.priority());
         currentInstance = createMusicInstance(sound, volume);
         MC.getSoundManager().play(currentInstance);

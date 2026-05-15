@@ -1,6 +1,7 @@
 package com.knoxhack.echoholomap;
 
 import com.knoxhack.echoholomap.client.HoloMapMiniMapOverlay;
+import com.knoxhack.echoholomap.client.HoloMapFullScreenMapScreen;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -25,6 +26,11 @@ public final class EchoHoloMapClient {
             KeyMapping.Category.register(Identifier.fromNamespaceAndPath(EchoHoloMap.MODID, "holomap"));
     public static final KeyMapping TOGGLE_MINIMAP_KEY = new KeyMapping(
             "key.echoholomap.toggle_minimap",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_K,
+            KEY_CATEGORY);
+    public static final KeyMapping OPEN_MAP_KEY = new KeyMapping(
+            "key.echoholomap.open_map",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_J,
             KEY_CATEGORY);
@@ -61,6 +67,8 @@ public final class EchoHoloMapClient {
         }
         if (TOGGLE_MINIMAP_KEY.matches(event.getKeyEvent())) {
             HoloMapMiniMapOverlay.toggle();
+        } else if (OPEN_MAP_KEY.matches(event.getKeyEvent())) {
+            minecraft.setScreen(new HoloMapFullScreenMapScreen());
         } else if (MINIMAP_ZOOM_IN_KEY.matches(event.getKeyEvent())) {
             HoloMapMiniMapOverlay.zoomIn();
         } else if (MINIMAP_ZOOM_OUT_KEY.matches(event.getKeyEvent())) {
@@ -89,6 +97,7 @@ public final class EchoHoloMapClient {
         static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
             event.registerCategory(KEY_CATEGORY);
             event.register(TOGGLE_MINIMAP_KEY);
+            event.register(OPEN_MAP_KEY);
             event.register(MINIMAP_ZOOM_IN_KEY);
             event.register(MINIMAP_ZOOM_OUT_KEY);
             event.register(MINIMAP_CYCLE_CORNER_KEY);

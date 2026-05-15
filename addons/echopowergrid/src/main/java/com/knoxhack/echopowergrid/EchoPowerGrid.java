@@ -4,6 +4,7 @@ import com.knoxhack.echopowergrid.commands.EchoPowerCommands;
 import com.knoxhack.echopowergrid.config.PowerGridConfig;
 import com.knoxhack.echopowergrid.grid.PowerNetworkManager;
 import com.knoxhack.echopowergrid.integration.PowerGridCoreIntegration;
+import com.knoxhack.echopowergrid.network.ModNetwork;
 import com.knoxhack.echopowergrid.registry.ModBlockEntities;
 import com.knoxhack.echopowergrid.registry.ModBlocks;
 import com.knoxhack.echopowergrid.registry.ModCapabilities;
@@ -35,6 +36,7 @@ public class EchoPowerGrid {
         ModMenus.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(ModNetwork::registerPayloads);
         modEventBus.addListener(ModCapabilities::register);
         modEventBus.addListener(PowerGridGameTests::registerTests);
         PowerGridGameTests.register(modEventBus);
@@ -74,6 +76,9 @@ public class EchoPowerGrid {
         }
         if (ModList.get().isLoaded("echoindustrialnexus")) {
             tryInvoke("com.knoxhack.echopowergrid.integration.industrial.PowerGridIndustrialIntegration");
+        }
+        if (ModList.get().isLoaded("echoholomap")) {
+            tryInvoke("com.knoxhack.echopowergrid.integration.holomap.PowerGridHoloMapIntegration");
         }
     }
 

@@ -300,6 +300,9 @@ def command_validate(args):
         print(f"Missing assets reported: {len(set(missing))}")
     if missing_generated:
         print(f"Missing generated assets reported: {len(set(missing_generated))}")
+    if getattr(args, "strict", False) and (missing or missing_generated or warnings):
+        print("Strict validation failed.")
+        return 1
     return 0
 
 
@@ -399,6 +402,7 @@ def main():
     sub.add_parser("prompts")
     validate_parser = sub.add_parser("validate")
     validate_parser.add_argument("--theme", help="Validate only one configured theme id")
+    validate_parser.add_argument("--strict", action="store_true", help="Fail when selected themes have missing assets or warnings")
     apply_parser = sub.add_parser("apply")
     apply_parser.add_argument("--force", action="store_true", help="Overwrite existing resources instead of creating backups and skipping")
     apply_parser.add_argument("--theme", help="Apply only one configured theme id")

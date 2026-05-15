@@ -1,6 +1,7 @@
 package com.knoxhack.echoterminal.api.mission;
 
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -31,6 +32,14 @@ public interface TerminalMissionProvider {
             TerminalMissionDefinition definition,
             TerminalMissionSnapshot snapshot) {
         return TerminalMissionRole.fallback(definition, snapshot);
+    }
+
+    default Optional<TerminalMissionRoutePlacement> routePlacement(
+            Player player,
+            TerminalMissionDefinition definition,
+            TerminalMissionSnapshot snapshot,
+            TerminalMissionRole role) {
+        return Optional.empty();
     }
 
     default boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {

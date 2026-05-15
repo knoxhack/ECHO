@@ -1,7 +1,6 @@
 package com.knoxhack.echoblackboxprotocol;
 
 import com.knoxhack.echoblackboxprotocol.client.BlackboxMachineScreen;
-import com.knoxhack.echoblackboxprotocol.client.TintedZombieRenderer;
 import com.knoxhack.echoblackboxprotocol.integration.BlackboxMissionProvider;
 import com.knoxhack.echoblackboxprotocol.integration.BlackboxTerminalIds;
 import com.knoxhack.echoblackboxprotocol.progression.BlackboxDungeon;
@@ -27,13 +26,16 @@ import com.knoxhack.echoterminal.api.TerminalTabDescriptor;
 import com.knoxhack.echoterminal.api.TerminalTabRegistry;
 import com.knoxhack.echoterminal.api.TerminalUi;
 import com.knoxhack.echoterminal.client.mission.TerminalMissionBrowser;
+import com.knoxhack.echocore.client.model.EchoMobFamily;
+import com.knoxhack.echocore.client.model.EchoMobFamilyRenderer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.neoforged.api.distmarker.Dist;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -45,8 +47,6 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 @Mod(value = EchoBlackboxProtocol.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = EchoBlackboxProtocol.MODID, value = Dist.CLIENT)
 public class EchoBlackboxProtocolClient {
-   private static final Identifier ZOMBIE_TEXTURE = Identifier.withDefaultNamespace("textures/entity/zombie/zombie.png");
-
    public EchoBlackboxProtocolClient() {
       if (ModList.get().isLoaded("echoterminal")) {
          BlackboxClientTabs.register();
@@ -55,24 +55,48 @@ public class EchoBlackboxProtocolClient {
 
    @SubscribeEvent
    static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      if (ModList.get().isLoaded("echorendercore") && registerRenderCoreEntityRenderers(event)) {
+         return;
+      }
+      registerFallbackEntityRenderers(event);
+   }
+
+   private static void registerFallbackEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
       event.registerEntityRenderer(ModEntities.ARCHIVE_HUSK.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFF6FB9D8, 1.0F, 0.5F));
+         renderer("archive_husk", EchoMobFamily.HUMANOID, 1.0F, 0.5F));
       event.registerEntityRenderer(ModEntities.SECURITY_ECHO.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFFFF7A7A, 1.03F, 0.52F));
+         renderer("security_echo", EchoMobFamily.HUMANOID, 1.03F, 0.52F));
       event.registerEntityRenderer(ModEntities.MEMORY_PARASITE.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFF9D77FF, 0.72F, 0.28F));
+         renderer("memory_parasite", EchoMobFamily.CRAWLER, 0.72F, 0.28F));
       event.registerEntityRenderer(ModEntities.FALSE_ECHO_MINION.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFFB87BFF, 1.0F, 0.5F));
+         renderer("false_echo_minion", EchoMobFamily.HUMANOID, 1.0F, 0.5F));
       event.registerEntityRenderer(ModEntities.COMMAND_REMNANT_MINION.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFFFF5959, 1.05F, 0.55F));
+         renderer("command_remnant_minion", EchoMobFamily.HUMANOID, 1.05F, 0.55F));
       event.registerEntityRenderer(ModEntities.BLACKBOX_SENTINEL.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFF2F3A46, 1.25F, 0.72F));
+         renderer("blackbox_sentinel", EchoMobFamily.HEAVY_BOSS, 1.25F, 0.72F));
       event.registerEntityRenderer(ModEntities.FALSE_ECHO.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFFD86BFF, 1.16F, 0.65F));
+         renderer("false_echo", EchoMobFamily.HEAVY_BOSS, 1.16F, 0.65F));
       event.registerEntityRenderer(ModEntities.COMMAND_REMNANT.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFFFF3F3F, 1.25F, 0.75F));
+         renderer("command_remnant", EchoMobFamily.HEAVY_BOSS, 1.25F, 0.75F));
       event.registerEntityRenderer(ModEntities.NEXUS_GUARDIAN.get(),
-         context -> new TintedZombieRenderer(context, ZOMBIE_TEXTURE, 0xFF74C7FF, 1.38F, 0.88F));
+         renderer("nexus_guardian", EchoMobFamily.HEAVY_BOSS, 1.38F, 0.88F));
+   }
+
+   private static boolean registerRenderCoreEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+      try {
+         Class.forName("com.knoxhack.echoblackboxprotocol.integration.BlackboxRenderCoreClientIntegration")
+            .getMethod("registerEntityRenderers", EntityRenderersEvent.RegisterRenderers.class)
+            .invoke(null, event);
+         return true;
+      } catch (ReflectiveOperationException | LinkageError exception) {
+         EchoBlackboxProtocol.LOGGER.warn("ECHO Blackbox Protocol RenderCore entity renderer integration unavailable; using generated fallback renderers.", exception);
+         return false;
+      }
+   }
+
+   private static <T extends Mob> EntityRendererProvider<T> renderer(String entityName, EchoMobFamily family,
+         float scale, float shadow) {
+      return context -> new EchoMobFamilyRenderer<>(context, EchoBlackboxProtocol.MODID, entityName, family, scale, shadow);
    }
 
    @SubscribeEvent

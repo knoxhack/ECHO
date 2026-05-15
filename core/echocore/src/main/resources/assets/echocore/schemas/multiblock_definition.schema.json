@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/multiblock_definition.schema.json",
+  "title": "ECHO Multiblock Definition",
+  "description": "Multiblock structure blueprint for EchoMultiblockCore.",
+  "type": "object",
+  "required": ["size", "palette", "layers"],
+  "properties": {
+    "id": { "type": "string", "description": "Definition identifier. Inferred from file path if omitted." },
+    "display_name": { "type": "string", "description": "Human-readable name." },
+    "displayName": { "type": "string", "description": "Legacy alias for display_name." },
+    "translation_key": { "type": "string", "default": "" },
+    "category": { "type": "string", "default": "general" },
+    "role": { "type": "string", "default": "INFRASTRUCTURE", "description": "Role enum: INFRASTRUCTURE, PROCESSING, ENERGY, STORAGE, ROBOTICS." },
+    "size": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "integer", "minimum": 1 },
+      "description": "[width, height, depth] of the multiblock structure."
+    },
+    "controller": { "type": "string", "description": "Block identifier for the controller block." },
+    "palette": {
+      "type": "object",
+      "description": "Character-to-block mapping used in layers.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "block": { "type": "string", "description": "Exact block identifier." },
+          "blocks": { "type": "array", "items": { "type": "string" }, "description": "List of acceptable block identifiers." },
+          "tag": { "type": "string", "description": "Block tag identifier." },
+          "air": { "type": "boolean", "default": false },
+          "wildcard": { "type": "boolean", "default": false },
+          "optional": { "type": "boolean", "default": false },
+          "controller": { "type": "boolean", "default": false },
+          "robotics": { "type": "boolean", "default": false },
+          "component": { "type": "boolean", "default": false },
+          "upgrade": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": true
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Y-ordered layer string arrays. Each string is a row; each character is a palette key.",
+      "items": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "allowed_rotations": { "type": "boolean", "default": true },
+    "mirrorable": { "type": "boolean", "default": false },
+    "requires_foundation": { "type": "boolean", "default": false },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Capability identifiers provided by this multiblock."
+    },
+    "optional_tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "upgrade_rules": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "preview": {
+      "type": "object",
+      "properties": {
+        "color": { "type": ["string", "integer"] },
+        "tint": { "type": ["string", "integer"] }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "max": { "type": "integer" },
+        "decayPerTick": { "type": "integer" }
+      }
+    },
+    "workcells": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "slot": { "type": "string" },
+          "count": { "type": "integer" }
+        }
+      }
+    },
+    "robotics": {
+      "type": "object",
+      "properties": {
+        "requiresRobotAccess": { "type": "boolean" },
+        "toolType": { "type": "string" }
+      }
+    },
+    "capability_requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "capability": { "type": "string" },
+          "minLevel": { "type": "integer" }
+        }
+      }
+    },
+    "upgrade_slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": { "type": "string" },
+          "max": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/mission_definition.schema.json",
+  "title": "ECHO Mission Definition",
+  "description": "Data-driven mission definition for MissionCore.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "description": "Mission identifier, e.g. 'mypack:rescue_op'" },
+    "chapter": { "type": "string", "description": "Chapter id. Legacy alias for chapterId." },
+    "chapterId": { "type": "string", "description": "Owning chapter identifier." },
+    "phase": { "type": "string", "default": "phase_0", "description": "Phase id string." },
+    "phaseId": { "type": "string", "description": "Legacy alias for phase." },
+    "phaseTitle": { "type": "string", "default": "Missions" },
+    "phaseOrder": { "type": "integer", "default": 0 },
+    "order": { "type": "integer", "default": 0, "description": "Display order within the chapter." },
+    "missionOrder": { "type": "integer", "description": "Legacy alias for order." },
+    "title": { "type": "string", "default": "Inferred from id path" },
+    "briefing": { "type": "string", "description": "Mission briefing text. Legacy alias for description." },
+    "description": { "type": "string", "description": "Legacy alias for briefing." },
+    "fieldGuide": { "type": "string", "default": "" },
+    "category": { "type": "string", "default": "" },
+    "difficulty": { "type": "string", "default": "" },
+    "icon": { "type": "string", "description": "Item identifier for the mission icon stack." },
+    "kind": { "type": "string", "default": "main", "description": "Mission kind: main, side, daily, event, tutorial." },
+    "repeatable": { "type": "boolean", "default": false },
+    "hidden": { "type": "boolean", "default": false },
+    "prerequisites": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Mission ids that must be completed first."
+    },
+    "objectives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Objective identifier. Auto-generated if omitted." },
+          "type": { "type": "string", "default": "custom", "description": "Objective type enum." },
+          "label": { "type": "string" },
+          "detail": { "type": "string" },
+          "icon": { "type": "string", "description": "Item identifier for objective icon." },
+          "required": { "type": "integer", "default": 1, "description": "Completion threshold." },
+          "count": { "type": "integer", "description": "Legacy alias for required." },
+          "hidden": { "type": "boolean", "default": false },
+          "target": { "type": "string", "description": "Target entity/block/item identifier." },
+          "criteria": {
+            "type": "object",
+            "description": "Key-value criteria map.",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Reward identifier. Auto-generated if omitted." },
+          "item": { "type": "string", "description": "Item identifier." },
+          "count": { "type": "integer", "default": 1, "minimum": 1 },
+          "xp": { "type": "integer", "default": 0 },
+          "reputation": { "type": "integer", "default": 0 },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

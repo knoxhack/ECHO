@@ -2,7 +2,7 @@
   "id": "echomultiblockcore:assemble_machine_casing",
   "display_name": "Assemble Machine Casing",
   "category": "assembly",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line"],
   "required_workcell": "ASSEMBLY",
   "required_tools": ["ASSEMBLER", "WELDER"],
   "duration_ticks": 220,

@@ -8,8 +8,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -28,6 +30,14 @@ public class EchoTerminalBlock extends Block implements EntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new EchoTerminalBlockEntity(pos, state);
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal && placer instanceof Player player) {
+            terminal.setOwnerIfMissing(player);
+        }
     }
 
     @Override

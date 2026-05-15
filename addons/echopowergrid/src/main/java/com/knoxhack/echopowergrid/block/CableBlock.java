@@ -4,6 +4,7 @@ import com.knoxhack.echopowergrid.grid.PowerNetworkManager;
 import com.knoxhack.echopowergrid.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -12,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -69,19 +71,33 @@ public class CableBlock extends Block {
         return calculateConnections(level, pos);
     }
 
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!level.isClientSide()) {
-            BlockState newState = calculateConnections(level, pos);
-            if (newState != state) {
-                level.setBlock(pos, newState, 2);
-            }
+            refreshConnections(state, level, pos);
             PowerNetworkManager.get(level).onBlockPlaced(pos);
         }
     }
 
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            PowerNetworkManager.get(level).onBlockRemoved(pos);
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, Orientation orientation, boolean movedByPiston) {
+        if (!level.isClientSide()) {
+            refreshConnections(state, level, pos);
+            PowerNetworkManager.get(level).onBlockPlaced(pos);
+        }
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        PowerNetworkManager.get(level).onBlockRemoved(pos);
+    }
+
+    private void refreshConnections(BlockState state, Level level, BlockPos pos) {
+        BlockState newState = calculateConnections(level, pos);
+        if (!newState.equals(state)) {
+            level.setBlock(pos, newState, 2);
         }
     }
 

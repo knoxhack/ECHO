@@ -9,7 +9,8 @@ import java.util.List;
 import net.minecraft.resources.Identifier;
 
 public final class WorldCoreBuiltins {
-    public static final Identifier CRASH_ZONE = ashfall("crash_zone_wasteland");
+    public static final Identifier ORBITAL_DEBRIS_FIELD =
+            Identifier.fromNamespaceAndPath("echoorbitalremnants", "orbital_debris_field");
 
     private WorldCoreBuiltins() {
     }
@@ -39,53 +40,7 @@ public final class WorldCoreBuiltins {
     }
 
     private static void registerRegions(WorldRegionService service) {
-        service.registerRegionDefinition(region(ashfall("crash_zone_wasteland"), WorldRegionType.CRASH_ZONE,
-                "Crash Zone Wasteland",
-                "Impact-scattered wreckage fields and Ashfall crash debris.",
-                List.of(ashfall("crash_zone_wasteland")),
-                List.of(ashfall("common_wasteland_biomes"), ashfall("has_structure/crash_zone_wasteland")),
-                List.of(ashfall("crash_zone_wasteland"), ashfall("crash_zone_landmarks"), ashfall("drop_pod")),
-                List.of(id("hazard/salvage_debris")), 10));
-        service.registerRegionDefinition(region(ashfall("ruined_cityscape"), WorldRegionType.RUINED_CITY,
-                "Ruined Cityscape",
-                "Collapsed urban grid, data ruins, and buried transit signals.",
-                List.of(ashfall("ruined_cityscape")),
-                List.of(ashfall("rare_wasteland_biomes"), ashfall("has_structure/ruined_cityscape")),
-                List.of(ashfall("ruined_cityscape"), ashfall("ruined_city_landmarks"), ashfall("data_center_ruin"),
-                        ashfall("subway_station"), ashfall("military_vault")),
-                List.of(id("hazard/salvage_debris")), 20));
-        service.registerRegionDefinition(region(ashfall("toxic_swamp"), WorldRegionType.TOXIC_SWAMP,
-                "Toxic Swamp",
-                "Corroded wetlands, chemical runoff, bio-lab remains, and spore exposure.",
-                List.of(ashfall("toxic_swamp")),
-                List.of(ashfall("toxic_air_biomes"), ashfall("hazardous_wasteland_biomes"),
-                        ashfall("has_structure/toxic_swamp")),
-                List.of(ashfall("toxic_swamp"), ashfall("toxic_swamp_landmarks"), ashfall("bio_lab"),
-                        ashfall("sporebound_sanctum")),
-                List.of(id("hazard/toxic_air")), 30));
-        service.registerRegionDefinition(region(ashfall("radiation_zone"), WorldRegionType.RADIATION_ZONE,
-                "Radiation Zone",
-                "Fallout-heavy terrain around reactor ruins and exposed radiation pockets.",
-                List.of(ashfall("radiation_zone")),
-                List.of(ashfall("radiation_biomes"), ashfall("hazardous_wasteland_biomes"),
-                        ashfall("has_structure/radiation_zone")),
-                List.of(ashfall("radiation_zone"), ashfall("radiation_zone_landmarks"), ashfall("reactor_ruin")),
-                List.of(id("hazard/radiation")), 40));
-        service.registerRegionDefinition(region(ashfall("cryogenic_ruins"), WorldRegionType.CRYOGENIC_RUINS,
-                "Cryogenic Ruins",
-                "Frozen laboratories, shattered cryo tanks, and cold-storage wreckage.",
-                List.of(ashfall("cryogenic_ruins")),
-                List.of(ashfall("cryogenic_biomes"), ashfall("has_structure/cryogenic_ruins")),
-                List.of(ashfall("cryogenic_ruins"), ashfall("cryogenic_ruins_landmarks")),
-                List.of(id("hazard/cryo_cold")), 50));
-        service.registerRegionDefinition(region(ashfall("nexus_scar"), WorldRegionType.NEXUS_SCAR,
-                "Nexus Scar",
-                "Corrupted rift terrain where Ashfall and Nexus field logic overlap.",
-                List.of(ashfall("nexus_scar")),
-                List.of(ashfall("nexus_anomaly_biomes"), ashfall("has_structure/nexus_scar")),
-                List.of(ashfall("nexus_scar"), ashfall("nexus_scar_landmarks")),
-                List.of(id("hazard/nexus_anomaly"), id("hazard/radiation")), 60));
-        service.registerRegionDefinition(region(Identifier.fromNamespaceAndPath("echoorbitalremnants", "orbital_debris_field"),
+        service.registerRegionDefinition(region(ORBITAL_DEBRIS_FIELD,
                 WorldRegionType.ORBITAL_DEBRIS_FIELD,
                 "Orbital Debris Field",
                 "Station ECHO wreckage, docking debris, and broken orbital relay fields.",
@@ -101,12 +56,6 @@ public final class WorldCoreBuiltins {
                 List.of(Identifier.fromNamespaceAndPath("echoconvoyprotocol", "convoy_route"),
                         Identifier.fromNamespaceAndPath("echoconvoyprotocol", "roadside_signal")),
                 List.of(id("hazard/convoy_threat")), 80));
-        service.registerRegionDefinition(region(ashfall("radwarden_outpost"), WorldRegionType.SECURE_OUTPOST,
-                "Secure Outpost",
-                "Faction or recovery foothold with stabilized field infrastructure.",
-                List.of(), List.of(),
-                List.of(ashfall("radwarden_outpost"), ashfall("crashbreak_salvage_yard"), ashfall("scavenger_camp")),
-                List.of(id("hazard/secure_zone")), 90));
         service.registerRegionDefinition(region(Identifier.fromNamespaceAndPath("echonexusprotocol", "anomaly_zone"),
                 WorldRegionType.ANOMALY_ZONE,
                 "Anomaly Zone",
@@ -127,9 +76,5 @@ public final class WorldCoreBuiltins {
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(EchoWorldCore.MODID, path);
-    }
-
-    private static Identifier ashfall(String path) {
-        return Identifier.fromNamespaceAndPath("echoashfallprotocol", path);
     }
 }

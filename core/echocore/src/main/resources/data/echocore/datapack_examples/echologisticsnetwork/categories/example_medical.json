@@ -1,0 +1,7 @@
+{
+  "id": "echocore:example_medical",
+  "title": "Medical Supplies",
+  "order": 5,
+  "accentColor": "0xFF4D6D",
+  "tagId": "echocore:echo_logistics/medical"
+}

@@ -15,6 +15,7 @@ import com.knoxhack.echorendercore.animation.Easing;
 import com.knoxhack.echorendercore.animation.ModelPose;
 import com.knoxhack.echorendercore.api.VisualState;
 import com.knoxhack.echorendercore.api.VisualVariant;
+import com.knoxhack.echorendercore.client.RenderCoreScreenChromeStyle;
 import com.knoxhack.echorendercore.client.RenderCoreScreenFrameOptions;
 import com.knoxhack.echorendercore.client.RenderCoreScreenVisuals;
 import com.knoxhack.echorendercore.profile.AnimationProfile;
@@ -48,6 +49,7 @@ import com.knoxhack.echorendercore.profile.RenderCoreProfileMigration;
 import com.knoxhack.echorendercore.profile.RenderCoreProfilePreviewer;
 import com.knoxhack.echorendercore.profile.RenderCoreProfileValidator;
 import com.knoxhack.echorendercore.profile.RenderCoreProfiles;
+import com.knoxhack.echorendercore.profile.RenderCoreScreenChromeQaCatalog;
 import com.knoxhack.echorendercore.profile.RenderCoreVector;
 import com.knoxhack.echorendercore.profile.VisualLayerKind;
 import com.knoxhack.echorendercore.profile.VisualLayerProfile;
@@ -129,6 +131,8 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("v16_machine_screen_visuals", () -> ModGameTests::v16MachineScreenVisuals);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> V17_SCREEN_FRAME_OPTIONS =
       TEST_FUNCTIONS.register("v17_screen_frame_options", () -> ModGameTests::v17ScreenFrameOptions);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> V19_SCREEN_CHROME_EVIDENCE =
+      TEST_FUNCTIONS.register("v19_screen_chrome_evidence", () -> ModGameTests::v19ScreenChromeEvidence);
 
    private ModGameTests() {
    }
@@ -161,6 +165,7 @@ public final class ModGameTests {
       register(event, environment, "v15_real_render_mod", V15_REAL_RENDER_MOD.getId());
       register(event, environment, "v16_machine_screen_visuals", V16_MACHINE_SCREEN_VISUALS.getId());
       register(event, environment, "v17_screen_frame_options", V17_SCREEN_FRAME_OPTIONS.getId());
+      register(event, environment, "v19_screen_chrome_evidence", V19_SCREEN_CHROME_EVIDENCE.getId());
    }
 
    private static void profileParsers(GameTestHelper helper) {
@@ -1650,8 +1655,8 @@ public final class ModGameTests {
    private static void v16MachineScreenVisuals(GameTestHelper helper) {
       helper.assertTrue(VisualProfile.CURRENT_SCHEMA_VERSION == 11,
          "V16 must keep runtime visual profiles pinned to V11.");
-      helper.assertTrue(CreatorPackManifest.CREATOR_PACK_VERSION == 16,
-         "V16 should advance creator/export tooling metadata only.");
+      helper.assertTrue(CreatorPackManifest.CREATOR_PACK_VERSION >= 16,
+         "V16 and later should advance creator/export tooling metadata only.");
 
       VisualProfile profile = RenderCoreJsonParsers.parseRuntimeVisualProfile(id("v16_machine_screen_surface"), object("""
          {
@@ -1750,9 +1755,9 @@ public final class ModGameTests {
       );
       JsonObject json = export.toJson();
       JsonObject surface = json.getAsJsonObject("surface_integration");
-      helper.assertTrue(json.getAsJsonObject("manifest").get("schema_version").getAsInt() == 16
+      helper.assertTrue(json.getAsJsonObject("manifest").get("schema_version").getAsInt() >= 16
             && json.getAsJsonObject("manifest").get("target_schema_version").getAsInt() == 11,
-         "V16 creator exports should bump tooling metadata while preserving runtime schema 11.");
+         "V16 and later creator exports should bump tooling metadata while preserving runtime schema 11.");
       helper.assertTrue(surface.get("world_surface_count").getAsInt() >= 6
             && surface.get("screen_surface_count").getAsInt() >= 6
             && surface.get("particle_only_static_surface_count").getAsInt() >= 8
@@ -1778,10 +1783,18 @@ public final class ModGameTests {
       helper.assertTrue(indexOptions.label().isEmpty()
             && !indexOptions.drawLabel()
             && indexOptions.drawScanlines()
+            && indexOptions.scanlines()
             && indexOptions.scanlinesBehindContent()
             && indexOptions.accentBars()
-            && indexOptions.quietFallback(),
-         "V17 Index frame options should allow RenderCore chrome without a RenderCore-owned title.");
+            && indexOptions.quietFallback()
+            && indexOptions.style() == RenderCoreScreenChromeStyle.CYBERGLASS
+            && !indexOptions.backdrop()
+            && indexOptions.edgeGlow()
+            && indexOptions.cornerBrackets()
+            && indexOptions.accentRails()
+            && indexOptions.glassGlints()
+            && indexOptions.chromaticEdge(),
+          "V17 Index frame options should allow RenderCore chrome without a RenderCore-owned title.");
 
       RenderCoreScreenFrameOptions legacyOptions = RenderCoreScreenFrameOptions.legacy("Legacy Label");
       helper.assertTrue("Legacy Label".equals(legacyOptions.label())
@@ -1789,8 +1802,13 @@ public final class ModGameTests {
             && legacyOptions.drawScanlines()
             && !legacyOptions.scanlinesBehindContent()
             && legacyOptions.accentBars()
-            && !legacyOptions.quietFallback(),
-         "V17 legacy frame options should preserve the old labeled frame behavior.");
+            && !legacyOptions.quietFallback()
+            && legacyOptions.style() == RenderCoreScreenChromeStyle.CYBERGLASS
+            && !legacyOptions.backdrop()
+            && legacyOptions.edgeGlow()
+            && legacyOptions.glassGlints()
+            && legacyOptions.chromaticEdge(),
+          "V17 legacy frame options should preserve the old labeled frame behavior.");
 
       RenderCoreScreenFrameOptions quietOptions = RenderCoreScreenFrameOptions.quiet();
       helper.assertTrue(quietOptions.label().isEmpty()
@@ -1798,14 +1816,160 @@ public final class ModGameTests {
             && !quietOptions.drawScanlines()
             && quietOptions.scanlinesBehindContent()
             && !quietOptions.accentBars()
-            && quietOptions.quietFallback(),
-         "V17 quiet frame options should provide a low-noise fallback surface.");
+            && quietOptions.quietFallback()
+            && quietOptions.style() == RenderCoreScreenChromeStyle.MINIMAL
+            && !quietOptions.backdrop()
+            && !quietOptions.edgeGlow()
+            && !quietOptions.cornerBrackets()
+            && !quietOptions.glassGlints()
+            && !quietOptions.chromaticEdge(),
+          "V17 quiet frame options should provide a low-noise fallback surface.");
+
+      RenderCoreScreenFrameOptions builderOptions = RenderCoreScreenFrameOptions.builder()
+         .label(" Cyberglass ")
+         .scanlines(true)
+         .quietFallback(true)
+         .build();
+      helper.assertTrue("Cyberglass".equals(builderOptions.label())
+            && builderOptions.drawLabel()
+            && builderOptions.drawScanlines()
+            && builderOptions.style() == RenderCoreScreenChromeStyle.CYBERGLASS
+            && builderOptions.backdrop()
+            && builderOptions.edgeGlow()
+            && builderOptions.cornerBrackets()
+            && builderOptions.accentRails()
+            && builderOptions.glassGlints()
+            && builderOptions.chromaticEdge()
+            && builderOptions.quietFallback(),
+         "V17 builder options should default to cyberglass chrome with explicit controls.");
+
+      RenderCoreScreenFrameOptions terminalOptions = RenderCoreScreenFrameOptions.terminal(" Terminal ").build();
+      helper.assertTrue("Terminal".equals(terminalOptions.label())
+            && terminalOptions.style() == RenderCoreScreenChromeStyle.TERMINAL
+            && terminalOptions.drawLabel()
+            && !terminalOptions.drawScanlines()
+            && terminalOptions.accentRails()
+            && !terminalOptions.backdrop()
+            && !terminalOptions.glassGlints()
+            && terminalOptions.chromaticEdge(),
+         "V18 terminal convenience options should produce clean glass screen chrome without scanlines.");
+
+      RenderCoreScreenFrameOptions hologramOptions = RenderCoreScreenFrameOptions.hologram("").build();
+      helper.assertTrue(hologramOptions.style() == RenderCoreScreenChromeStyle.HOLOGRAM
+            && !hologramOptions.drawLabel()
+            && !hologramOptions.drawScanlines()
+            && !hologramOptions.backdrop()
+            && hologramOptions.glassGlints()
+            && hologramOptions.chromaticEdge(),
+         "V18 hologram convenience options should produce light glass chrome without labels by default.");
+
+      RenderCoreScreenFrameOptions minimalOptions = RenderCoreScreenFrameOptions.minimal().build();
+      helper.assertTrue(minimalOptions.style() == RenderCoreScreenChromeStyle.MINIMAL
+            && !minimalOptions.drawLabel()
+            && !minimalOptions.drawScanlines()
+            && !minimalOptions.accentRails()
+            && !minimalOptions.edgeGlow()
+            && !minimalOptions.quietFallback(),
+         "V18 minimal convenience options should stay visual-only without forcing fallback behavior.");
 
       RenderCoreScreenVisuals.ScreenVisualData fallback = RenderCoreScreenVisuals.resolve(null);
       helper.assertTrue(fallback.accentColor() == 0xFF66E8FF
             && fallback.panelColor() == 0xEE061018
             && fallback.borderColor() == 0xAA38DFF4,
          "V17 screen visuals should preserve fallback colors when no host or ThemeCore theme is available.");
+      helper.succeed();
+   }
+
+   private static void v19ScreenChromeEvidence(GameTestHelper helper) {
+      List<RenderCoreScreenChromeQaCatalog.ScreenChromeSurface> surfaces =
+         RenderCoreScreenChromeQaCatalog.requiredSurfaces();
+      Set<String> surfaceIds = surfaces.stream()
+         .map(RenderCoreScreenChromeQaCatalog.ScreenChromeSurface::surfaceId)
+         .collect(java.util.stream.Collectors.toSet());
+      Set<String> styles = surfaces.stream()
+         .map(RenderCoreScreenChromeQaCatalog.ScreenChromeSurface::chromeStyle)
+         .collect(java.util.stream.Collectors.toSet());
+
+      helper.assertTrue(CreatorPackManifest.CREATOR_PACK_VERSION == 19,
+         "V19 should advance creator/export tooling metadata while preserving runtime schema 11.");
+      helper.assertTrue(surfaces.size() == 8
+            && surfaceIds.containsAll(List.of(
+               "echo_terminal",
+               "echo_terminal_reduced_motion",
+               "signalos_terminal",
+               "signalos_rack",
+               "holomap_minimap",
+               "index_overlay",
+               "lens_overlay",
+               "rendercore_cyberglass_example"
+            )),
+         "V19 screen chrome QA catalog should cover every cyberglass adoption surface.");
+      helper.assertTrue(styles.containsAll(List.of("TERMINAL", "CYBERGLASS", "HOLOGRAM")),
+         "V19 screen chrome QA catalog should distinguish terminal, cyberglass, and hologram surfaces.");
+
+      RenderCoreScreenChromeQaCatalog.ScreenChromeSurface reducedTerminal =
+         RenderCoreScreenChromeQaCatalog.surface("echo_terminal_reduced_motion");
+      helper.assertTrue(reducedTerminal != null
+            && reducedTerminal.reducedMotion()
+            && "TERMINAL".equals(reducedTerminal.chromeStyle())
+            && "echoterminal:screen/terminal_hud".equals(reducedTerminal.profileId().toString()),
+         "V19 terminal reduced-motion evidence should keep the terminal profile and reduced-motion flag.");
+
+      CreatorVisualQaReport pendingReport =
+         CreatorVisualQaReport.fromAddonIntegrations(CreatorAddonShowcaseCatalog.echoVisionCoverage());
+      helper.assertTrue(pendingReport.screenChromeEvidence().size() == surfaces.size()
+            && pendingReport.screenChromeBlockers().size() == surfaces.size()
+            && pendingReport.screenChromeBlockers().contains("echo_terminal_screen_chrome_evidence_missing"),
+         "V19 pending screen chrome QA should expose deterministic blockers before screenshots are captured.");
+
+      List<CreatorVisualQaReport.ScreenChromeEvidence> captured = surfaces.stream()
+         .map(surface -> surface.evidence(
+            "pass",
+            "visual_qa/screenshots/screen_chrome/" + surface.surfaceId() + ".png",
+            "manual visual pass"
+         ))
+         .toList();
+      CreatorVisualQaReport report = CreatorVisualQaReport.fromSnapshots(
+         List.of(),
+         CreatorAddonShowcaseCatalog.echoVisionCoverage(),
+         captured
+      );
+      JsonObject json = report.toJson();
+      helper.assertTrue(report.screenChromeEvidenceCount() == surfaces.size()
+            && report.screenChromeBlockers().isEmpty()
+            && report.totalBlockerCount() == report.remainingBlockers().size(),
+         "V19 screen chrome QA should clear screen blockers when every required surface has screenshot evidence.");
+      helper.assertTrue(json.get("screen_chrome_surface_count").getAsInt() == surfaces.size()
+            && json.get("screen_chrome_evidence_count").getAsInt() == surfaces.size()
+            && json.getAsJsonArray("screen_chrome_evidence").size() == surfaces.size()
+            && json.getAsJsonArray("screen_chrome_evidence").get(0).getAsJsonObject().has("chrome_style"),
+         "V19 visual QA JSON should serialize screen chrome surface metadata.");
+
+      CreatorVisualQaReport terminalOnly = report.forNamespace("echoterminal", CreatorAddonShowcaseCatalog.echoVisionCoverage());
+      helper.assertTrue(terminalOnly.screenChromeEvidence().size() == 2
+            && terminalOnly.screenChromeBlockers().isEmpty()
+            && terminalOnly.screenChromeEvidence().stream().allMatch(evidence -> "echoterminal".equals(evidence.addonId())),
+         "V19 namespace filtering should keep only matching screen chrome evidence entries.");
+
+      CreatorVisualQaReport absolutePathReport = CreatorVisualQaReport.fromSnapshots(
+         List.of(),
+         CreatorAddonShowcaseCatalog.echoVisionCoverage(),
+         List.of(reducedTerminal.evidence("pass", "C:/tmp/terminal.png", "machine-local path"))
+      );
+      CreatorVisualQaReport.ScreenChromeEvidence sanitized = absolutePathReport.screenChromeEvidence().stream()
+         .filter(evidence -> "echo_terminal_reduced_motion".equals(evidence.surfaceId()))
+         .findFirst()
+         .orElseThrow();
+      helper.assertTrue(sanitized.screenshotPath().isBlank()
+            && absolutePathReport.screenChromeBlockers().contains("echo_terminal_reduced_motion_screen_chrome_evidence_missing"),
+         "V19 screen chrome evidence should reject machine-local absolute screenshot paths.");
+
+      VisualProfile example = parseExampleVisualProfile(helper, "v18_cyberglass_screen.visual_profile.json");
+      helper.assertTrue(example.schemaVersion() == VisualProfile.CURRENT_SCHEMA_VERSION
+            && example.effect().bloomTint() != null
+            && example.effect().scanlineStrength() == 0.0F,
+         "V19 screen QA should keep the generic V18 cyberglass example parseable, tint-aware, and scanline-free.");
+      assertSchemaResource(helper, "creator_pack.schema.json");
       helper.succeed();
    }
 

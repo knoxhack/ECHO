@@ -1,12 +1,13 @@
 package com.knoxhack.echoindustrialnexus;
 
-import com.knoxhack.echoindustrialnexus.client.IndustrialFurnaceModel;
-import com.knoxhack.echoindustrialnexus.client.IndustrialFurnaceRenderer;
+import com.knoxhack.echocore.client.model.EchoMobFamily;
+import com.knoxhack.echocore.client.model.EchoMobFamilyRenderer;
 import com.knoxhack.echoindustrialnexus.client.IndustrialMachineScreen;
 import com.knoxhack.echoindustrialnexus.client.IndustrialMultiblockControllerScreen;
 import com.knoxhack.echoindustrialnexus.registry.ModEntities;
 import com.knoxhack.echoindustrialnexus.registry.ModMenus;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.entity.Mob;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -26,12 +27,6 @@ public class EchoIndustrialNexusClient {
    }
 
    @SubscribeEvent
-   static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-      event.registerLayerDefinition(IndustrialFurnaceModel.WARDEN_LAYER_LOCATION, IndustrialFurnaceModel::createWardenLayer);
-      event.registerLayerDefinition(IndustrialFurnaceModel.DRONE_LAYER_LOCATION, IndustrialFurnaceModel::createDroneLayer);
-   }
-
-   @SubscribeEvent
    static void registerEntityRenderers(RegisterRenderers event) {
       boolean renderCoreLoaded = ModList.get().isLoaded("echorendercore");
       boolean renderCoreEntities = renderCoreLoaded && registerRenderCoreEntityRenderers(event);
@@ -44,10 +39,10 @@ public class EchoIndustrialNexusClient {
    }
 
    private static void registerFallbackEntityRenderers(RegisterRenderers event) {
-      event.registerEntityRenderer((EntityType)ModEntities.FURNACE_WARDEN.get(),
-         context -> new IndustrialFurnaceRenderer(context, IndustrialFurnaceModel.WARDEN_LAYER_LOCATION, "furnace_warden", 0xFFFF7A28, 1.08F, 0.9F));
-      event.registerEntityRenderer((EntityType)ModEntities.FURNACE_DRONE.get(),
-         context -> new IndustrialFurnaceRenderer(context, IndustrialFurnaceModel.DRONE_LAYER_LOCATION, "furnace_drone", 0xFFFF9C3D, 0.82F, 0.5F));
+      event.registerEntityRenderer(ModEntities.FURNACE_WARDEN.get(),
+         renderer("furnace_warden", EchoMobFamily.INDUSTRIAL_CONSTRUCT, 1.08F, 0.9F));
+      event.registerEntityRenderer(ModEntities.FURNACE_DRONE.get(),
+         renderer("furnace_drone", EchoMobFamily.INDUSTRIAL_CONSTRUCT, 0.82F, 0.5F));
    }
 
    @SubscribeEvent
@@ -86,5 +81,10 @@ public class EchoIndustrialNexusClient {
          EchoIndustrialNexus.LOGGER.warn("ECHO Industrial Nexus RenderCore entity renderer integration unavailable; using furnace fallback renderers.", exception);
          return false;
       }
+   }
+
+   private static <T extends Mob> EntityRendererProvider<T> renderer(String entityName, EchoMobFamily family,
+         float scale, float shadow) {
+      return context -> new EchoMobFamilyRenderer<>(context, EchoIndustrialNexus.MODID, entityName, family, scale, shadow);
    }
 }

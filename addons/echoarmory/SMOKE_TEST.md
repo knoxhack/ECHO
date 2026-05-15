@@ -40,8 +40,18 @@ Run these in a survival world with ECHO Core and Armory loaded. Terminal and Log
 
 1. Open `SYSTEM > Armory`.
 2. Click a mission kit row, augment row, and boss row.
-3. Use `EQUIP`, `INSTALL`, `RECHARGE`, and `PREVIEW`.
-4. Confirm actions report missing, locked, duplicate, incompatible, no fuel, or readiness status without consuming items on failure.
+3. Confirm the selected mission kit reports `READY`, `STAGED`, `MISSING`, or `LOCKED` with a first blocker.
+4. Use `EQUIP`, `INSTALL`, `RECHARGE`, and `PREVIEW`.
+5. Confirm actions report missing, locked, duplicate, incompatible, no fuel, or readiness status without consuming items on failure.
+
+## Route Kit Readiness Loop
+
+1. Equip `alloy_sword` and `thermal_chestplate`.
+2. Install `gas_mask_filter` into the chestplate.
+3. Open `SYSTEM > Armory` and select `Toxic Breach Kit`.
+4. Confirm Toxic Breach reports ready once toxic protection reaches the required threshold.
+5. Select `Fracture Guardian Kit` without the required reputation.
+6. Confirm it reports locked instead of requesting or equipping gated gear.
 
 ## Logistics Delivery Loop
 
@@ -49,6 +59,7 @@ Run these in a survival world with ECHO Core and Armory loaded. Terminal and Log
 2. Select an Armory loadout with a Logistics preset.
 3. Click `LOGISTICS`.
 4. Confirm dispatch is queued or a clear unavailable/blocked message is shown.
+5. Confirm successful dispatch advances the Armory route-kit MissionCore side op when MissionCore is loaded.
 
 ## Reload Persistence
 
@@ -62,6 +73,7 @@ Automated coverage: `stack_component_round_trip_persists_armory_state` and `stat
 ## Safety Proof Coverage
 
 The GameTest server also covers protected station slot rules, active-operation extraction blocking, selected Terminal recharge/preview/logistics action paths, duplicate/incompatible/full module install rejection, no-target ranged shots, ammo-before-energy ranged consumption, faction lock safety, and fuel-costed recharge.
+Armory 1.2.0 adds GameTest coverage for required-protection parsing, readiness state transitions, and route-kit MissionCore content.
 
 ## Release Commands
 

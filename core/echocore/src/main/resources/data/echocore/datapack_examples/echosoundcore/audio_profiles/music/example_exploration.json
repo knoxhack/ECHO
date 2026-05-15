@@ -1,0 +1,14 @@
+{
+  "id": "echocore:example_exploration",
+  "sound": "echocore:music.exploration",
+  "priority": "IDLE",
+  "category": "exploration",
+  "chapter": "ASHFALL",
+  "combatIntensity": "NONE",
+  "minDelay": 6000,
+  "maxDelay": 12000,
+  "fadeIn": 3.0,
+  "fadeOut": 3.0,
+  "weight": 1.0,
+  "conditions": true
+}

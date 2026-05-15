@@ -215,9 +215,10 @@ test("runJarPromotion records promote history", () => {
   const store = new CommandCenterStore(path.join(dbDir, "command-center.sqlite"));
   try {
     fs.mkdirSync(modsDir);
-    write(path.join(buildRoot, "echostationfall", "libs", "echostationfall-1.0.0.jar"), "station-current");
     const project = store.getProject("echostationfall");
     assert.ok(project);
+    const stationfallVersion = project.modules[0]?.version ?? "1.1.1";
+    write(path.join(buildRoot, "echostationfall", "libs", `echostationfall-${stationfallVersion}.jar`), "station-current");
     const settings = store.updateSettings({ echoRoot: root, modpackModsDir: modsDir });
 
     const result = runJarPromotion(store, project, settings, { buildRoot });

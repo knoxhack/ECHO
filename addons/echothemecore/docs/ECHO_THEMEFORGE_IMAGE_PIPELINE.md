@@ -1,6 +1,6 @@
 # ECHO ThemeForge Image Pipeline
 
-ThemeForge is the development-time art pipeline for ECHO ThemeCore 0.2.0. It organizes prompts and generated PNG assets for CyberGlass, Nexus, RenderCore references, vanilla UI skin assets, icons, Blockworks palettes, and publishing art.
+ThemeForge is the development-time art pipeline for ECHO ThemeCore 1.2.0. It organizes prompts and generated PNG assets for CyberGlass, Nexus, RenderCore references, vanilla UI skin assets, icons, Blockworks palettes, and publishing art.
 
 The Minecraft mod must not call image-generation APIs at runtime. Keep generated PNGs in resources and ship them like normal mod assets.
 
@@ -21,7 +21,9 @@ addons/echothemecore/src/main/resources/assets/echothemecore/textures/gui/themes
 ```powershell
 python tools/echo-themeforge/themeforge.py prompts
 python tools/echo-themeforge/themeforge.py validate
+python tools/echo-themeforge/themeforge.py validate --theme cyberglass --strict
 python tools/echo-themeforge/themeforge.py report
+python tools/echo-themeforge/themeforge.py report --theme cyberglass
 python tools/echo-themeforge/themeforge.py apply
 ```
 
@@ -62,7 +64,7 @@ Generate reference sheets under `generated/assets/<theme>/rendercore/`, review t
 
 ## Vanilla UI Workflow
 
-Generate frame, tooltip, toast, boss-bar, hotbar, and widget-outline assets for each theme. ThemeCore 0.2.0 uses overlays and accents only. Do not replace vanilla screens or mutate slot/widget behavior.
+Generate frame, tooltip, toast, boss-bar, hotbar, and widget-outline assets for each theme. ThemeCore 1.2.0 uses overlays and accents only. Do not replace vanilla screens or mutate slot/widget behavior.
 
 ## Publishing Art Workflow
 

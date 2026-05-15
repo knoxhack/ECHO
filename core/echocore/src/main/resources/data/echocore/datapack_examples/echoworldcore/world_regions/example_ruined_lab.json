@@ -1,0 +1,15 @@
+{
+  "id": "echocore:example_ruined_lab",
+  "type": "RUINS",
+  "displayName": "Ruined Laboratory",
+  "summary": "A collapsed research facility with scattered data cores and environmental hazards.",
+  "biomeIds": ["echoashfallprotocol:ruined_cityscape"],
+  "biomeTags": ["echoashfallprotocol:has_structure/ruined_lab"],
+  "structureIds": ["echoashfallprotocol:ruined_lab"],
+  "hazardIds": ["echoworldcore:hazard/radiation"],
+  "discoveryId": "echocore:example_ruined_lab",
+  "radius": 128,
+  "renderProfileId": "echorendercore:ruins/ruined_lab",
+  "audioProfileId": "echosoundcore:ambience/ruined_lab",
+  "sortOrder": 20
+}

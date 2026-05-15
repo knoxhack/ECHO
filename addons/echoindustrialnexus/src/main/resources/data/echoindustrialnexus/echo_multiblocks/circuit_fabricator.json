@@ -39,6 +39,7 @@
     "echo:workcell",
     "echo:item_input",
     "echo:item_output",
+    "echo:power_input",
     "echo:terminal_tab",
     "echo:scanner_target",
     "echo:map_marker"

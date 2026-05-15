@@ -19,6 +19,7 @@ import com.knoxhack.echorendercore.profile.ProfileValidationIssue;
 import com.knoxhack.echorendercore.profile.RenderCoreCreatorPackExporter;
 import com.knoxhack.echorendercore.profile.RenderCoreProfileMigration;
 import com.knoxhack.echorendercore.profile.RenderCoreProfiles;
+import com.knoxhack.echorendercore.profile.RenderCoreScreenChromeQaCatalog;
 import com.knoxhack.echorendercore.profile.VisualProfile;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -129,6 +130,22 @@ public final class RenderCoreClientCommands {
                         .executes(context -> advancedFxEvidenceReset())))
                   .then(Commands.argument("enabled", BoolArgumentType.bool())
                      .executes(context -> advancedFx(BoolArgumentType.getBool(context, "enabled")))))
+               .then(Commands.literal("screenchrome")
+                  .executes(context -> screenChromeEvidenceStatus())
+                  .then(Commands.literal("status")
+                     .executes(context -> screenChromeEvidenceStatus()))
+                  .then(Commands.literal("evidence")
+                     .then(Commands.literal("start")
+                        .executes(context -> screenChromeEvidenceStart()))
+                     .then(Commands.literal("capture")
+                        .then(Commands.argument("surface", StringArgumentType.word())
+                           .executes(context -> screenChromeEvidenceCapture(StringArgumentType.getString(context, "surface")))))
+                     .then(Commands.literal("status")
+                        .executes(context -> screenChromeEvidenceStatus()))
+                     .then(Commands.literal("export")
+                        .executes(context -> screenChromeEvidenceExport()))
+                     .then(Commands.literal("reset")
+                        .executes(context -> screenChromeEvidenceReset()))))
                .then(Commands.literal("blockparts")
                   .executes(context -> blockParts())))
       );
@@ -201,7 +218,7 @@ public final class RenderCoreClientCommands {
       long screenshots = export.cards().stream().filter(CreatorProfileCard::screenshotAvailable).count();
       message("RenderCore Creator Workbench: profiles " + export.cards().size()
          + ", certification " + export.certification().status().id()
-         + ", visual QA blockers " + export.visualQa().remainingBlockers().size()
+         + ", visual QA blockers " + export.visualQa().totalBlockerCount()
          + ", migration required " + migrationRequired
          + ", screenshots " + screenshots
          + ", addon coverage " + export.addonIntegrations().size()
@@ -280,6 +297,7 @@ public final class RenderCoreClientCommands {
          Files.createDirectories(root);
          writeJson(root.resolve("index.creator.json"), export.toJson());
          writeJson(root.resolve("visual_qa").resolve("advancedfx.evidence.json"), export.visualQa().toJson());
+         writeJson(root.resolve("visual_qa").resolve("screenchrome.evidence.json"), export.visualQa().toJson());
          for (var artifact : export.artifacts()) {
             Path path = root.resolve("assets")
                .resolve(artifact.id().getNamespace())
@@ -298,7 +316,7 @@ public final class RenderCoreClientCommands {
          + " artifact(s) and index for " + normalizeNamespace(namespace)
          + " to " + root
          + " with certification " + export.certification().status().id()
-         + " and " + export.visualQa().remainingBlockers().size() + " visual QA blocker(s).");
+         + " and " + export.visualQa().totalBlockerCount() + " visual QA blocker(s).");
       return 1;
    }
 
@@ -435,13 +453,78 @@ public final class RenderCoreClientCommands {
       return 1;
    }
 
+   private static int screenChromeEvidenceStart() {
+      RenderCoreScreenChromeQaEvidence.start();
+      message("RenderCore screen chrome evidence started for " + RenderCoreScreenChromeQaCatalog.requiredSurfaces().size()
+         + " surface(s): " + RenderCoreScreenChromeQaCatalog.surfaceIds() + ".");
+      return 1;
+   }
+
+   private static int screenChromeEvidenceCapture(String surfaceId) {
+      if (RenderCoreScreenChromeQaCatalog.surface(surfaceId) == null) {
+         message("Unknown RenderCore screen chrome surface '" + surfaceId + "'. Known surfaces: "
+            + RenderCoreScreenChromeQaCatalog.surfaceIds() + ".");
+         return 0;
+      }
+      String screenshotPath = captureScreenChromeEvidenceScreenshot(surfaceId);
+      CreatorVisualQaReport.ScreenChromeEvidence evidence = RenderCoreScreenChromeQaEvidence.capture(surfaceId, screenshotPath);
+      if (evidence == null) {
+         message("RenderCore screen chrome evidence capture failed for " + surfaceId + ".");
+         return 0;
+      }
+      message("RenderCore screen chrome evidence captured: " + evidence.surfaceId()
+         + " / " + evidence.chromeStyle()
+         + " / " + evidence.qaStatus()
+         + (evidence.screenshotPath().isBlank() ? "" : " / screenshot " + evidence.screenshotPath())
+         + ".");
+      return evidence.passed() ? 1 : 0;
+   }
+
+   private static int screenChromeEvidenceStatus() {
+      CreatorVisualQaReport report = RenderCoreVisualQaEvidence.report();
+      message("RenderCore screen chrome evidence: surfaces " + report.screenChromeEvidence().size()
+         + ", screenshots " + report.screenChromeEvidenceCount()
+         + ", blockers " + report.screenChromeBlockers()
+         + ".");
+      return report.screenChromeBlockers().isEmpty() ? 1 : 0;
+   }
+
+   private static int screenChromeEvidenceExport() {
+      CreatorVisualQaReport report = RenderCoreVisualQaEvidence.report();
+      Path path = creatorRoot("all").resolve("visual_qa").resolve("screenchrome.evidence.json");
+      try {
+         writeJson(path, report.toJson());
+      } catch (IOException exception) {
+         message("RenderCore screen chrome evidence export failed: " + exception.getMessage());
+         EchoRenderCore.LOGGER.warn("RenderCore screen chrome evidence export failed", exception);
+         return 0;
+      }
+      message("RenderCore screen chrome evidence exported to " + path
+         + " with " + report.screenChromeBlockers().size() + " blocker(s).");
+      return 1;
+   }
+
+   private static int screenChromeEvidenceReset() {
+      RenderCoreScreenChromeQaEvidence.reset();
+      message("RenderCore screen chrome evidence reset.");
+      return 1;
+   }
+
    private static String captureEvidenceScreenshot(String label) {
+      return captureEvidenceScreenshot(Path.of("visual_qa", "screenshots"), label, "advanced FX");
+   }
+
+   private static String captureScreenChromeEvidenceScreenshot(String surfaceId) {
+      return captureEvidenceScreenshot(Path.of("visual_qa", "screenshots", "screen_chrome"), surfaceId, "screen chrome");
+   }
+
+   private static String captureEvidenceScreenshot(Path relativeDirectory, String label, String evidenceType) {
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft.getMainRenderTarget() == null) {
          return "";
       }
       String safeLabel = safeEvidenceLabel(label);
-      Path relative = Path.of("visual_qa", "screenshots", safeLabel + ".png");
+      Path relative = relativeDirectory.resolve(safeLabel + ".png");
       Path absolute = creatorRoot("all").resolve(relative);
       try {
          Files.createDirectories(absolute.getParent());
@@ -450,11 +533,11 @@ public final class RenderCoreClientCommands {
             absolute.getFileName().toString(),
             minecraft.getMainRenderTarget(),
             1,
-            component -> EchoRenderCore.LOGGER.info("RenderCore advanced FX evidence screenshot {}: {}", safeLabel, component.getString())
+            component -> EchoRenderCore.LOGGER.info("RenderCore {} evidence screenshot {}: {}", evidenceType, safeLabel, component.getString())
          );
          return relative.toString().replace('\\', '/');
       } catch (IOException | RuntimeException exception) {
-         EchoRenderCore.LOGGER.warn("RenderCore advanced FX evidence screenshot failed for {}", safeLabel, exception);
+         EchoRenderCore.LOGGER.warn("RenderCore {} evidence screenshot failed for {}", evidenceType, safeLabel, exception);
          return "";
       }
    }

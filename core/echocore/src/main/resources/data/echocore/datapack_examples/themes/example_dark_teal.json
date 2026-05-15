@@ -1,0 +1,44 @@
+{
+  "id": "echocore:example_dark_teal",
+  "display_name": "Dark Teal Example",
+  "description": "A minimal example theme showing the full ThemeCore schema.",
+  "colors": {
+    "primary": "#FF00E5FF",
+    "secondary": "#FFB44CFF",
+    "accent": "#FFFF2BD6",
+    "background": "#FF030711",
+    "panel": "#CC08111F",
+    "panel_alt": "#CC0D1A2E",
+    "glass": "#8810243A",
+    "border": "#FF2BEAFF",
+    "border_soft": "#FF1A6F8A",
+    "text": "#FFEAFBFF",
+    "muted_text": "#FF8AAFC2",
+    "success": "#FF45FFB0",
+    "warning": "#FFFFD166",
+    "error": "#FFFF4D6D",
+    "locked": "#FF3B4652",
+    "glow": "#FF00E5FF",
+    "selection": "#FFB44CFF"
+  },
+  "ui": {
+    "background_texture": "echocore:example/background",
+    "panel_texture": "echocore:example/glass_panel",
+    "button_texture": "echocore:example/glass_button",
+    "icon_pack": "echocore:example/icons/icon_theme"
+  },
+  "render": {
+    "hologram_color": "theme:primary",
+    "edge_glow_strength": 0.75,
+    "glow_intensity": 0.85,
+    "particle_style": "cyberglass"
+  },
+  "sound": {
+    "ui_open": "echocore:ui.open",
+    "ui_close": "echocore:ui.close"
+  },
+  "metadata": {
+    "author": "ECHO Datapack Examples",
+    "version": "1.0"
+  }
+}

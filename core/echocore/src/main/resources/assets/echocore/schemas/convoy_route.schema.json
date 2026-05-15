@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/convoy_route.schema.json",
+  "title": "ECHO Convoy Route",
+  "description": "Convoy route definition for EchoConvoyProtocol.",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "id": { "type": "string", "description": "Route identifier. Inferred from file path if omitted." },
+    "title": { "type": "string" },
+    "summary": { "type": "string", "default": "" },
+    "order": { "type": "integer", "default": 0 },
+    "requiredVehicle": { "type": "string", "default": "any", "description": "Required vehicle kind or 'any'." },
+    "minFuel": { "type": "integer", "default": 0, "minimum": 0 },
+    "requiredCargo": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "count"],
+        "properties": {
+          "item": { "type": "string" },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "count"],
+        "properties": {
+          "item": { "type": "string" },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "threatLevel": { "type": "integer", "default": 0, "minimum": 0, "maximum": 5 },
+    "threat": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "entity": { "type": "string" },
+        "count": { "type": "integer", "minimum": 0 },
+        "minCount": { "type": "integer", "minimum": 0 },
+        "maxCount": { "type": "integer", "minimum": 0 },
+        "chanceOneIn": { "type": "integer", "minimum": 0 },
+        "chance": { "type": "integer", "description": "Legacy alias for chanceOneIn." },
+        "cooldownTicks": { "type": "integer", "minimum": 1 },
+        "vehicleDamage": { "type": "integer", "minimum": 0 },
+        "spawnRadius": { "type": "number", "minimum": 0 },
+        "warning": { "type": "string" }
+      }
+    },
+    "checkpointFactionId": { "type": "string" },
+    "checkpoint": {
+      "type": "object",
+      "properties": {
+        "factionId": { "type": "string" },
+        "minReputation": { "type": "integer", "default": 0 },
+        "label": { "type": "string" },
+        "checkpointLabel": { "type": "string" },
+        "warning": { "type": "string" },
+        "checkpointWarning": { "type": "string" },
+        "clearedMessage": { "type": "string" },
+        "checkpointClearedMessage": { "type": "string" }
+      }
+    },
+    "minReputation": { "type": "integer", "default": 0 },
+    "destinationHint": { "type": "string", "default": "Overworld roadside corridor" },
+    "requiredSignalMarkers": { "type": "integer", "minimum": 1 },
+    "minDistanceFromStart": { "type": "integer", "minimum": 0 },
+    "legs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "minDistanceFromStart": { "type": "integer", "minimum": 0 },
+          "requiresCheckpoint": { "type": "boolean", "default": false },
+          "roadsideStructure": { "type": "string" }
+        }
+      }
+    },
+    "missionType": { "type": "string", "default": "delivery" },
+    "distance": { "type": "integer", "minimum": 0 },
+    "biomeTheme": { "type": "string", "default": "ruined_highway" },
+    "theme": { "type": "string", "description": "Legacy alias for biomeTheme." },
+    "fuelCost": { "type": "integer", "minimum": 0 },
+    "cargoCapacityRecommendation": { "type": "integer", "minimum": 0 },
+    "requiredReadiness": { "type": "integer", "minimum": 0, "maximum": 100, "default": 50 },
+    "possibleHazards": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "holomapIcon": { "type": "string" },
+    "holomapColor": { "type": ["string", "integer"] },
+    "unlockRequirement": { "type": "string", "default": "" },
+    "logisticsNetworkId": { "type": "string", "default": "global" },
+    "logisticsLoadoutId": { "type": "string" },
+    "autoRequestCargo": { "type": "boolean", "default": false },
+    "holomapLayer": { "type": "string" }
+  },
+  "additionalProperties": true
+}

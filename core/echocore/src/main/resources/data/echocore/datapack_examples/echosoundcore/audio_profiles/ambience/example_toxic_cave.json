@@ -1,0 +1,13 @@
+{
+  "id": "echocore:example_toxic_cave",
+  "sound": "echocore:ambience.toxic_cave",
+  "layer": "hazard",
+  "chapter": "ASHFALL",
+  "biome": "echoashfallprotocol:toxic_cave",
+  "hazard": "toxic_air",
+  "loop": true,
+  "fadeIn": 4.0,
+  "fadeOut": 4.0,
+  "volume": 0.65,
+  "pitch": 0.95
+}

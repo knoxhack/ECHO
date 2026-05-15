@@ -1,5 +1,7 @@
 package com.knoxhack.echoterminal.test;
 
+import com.knoxhack.echorendercore.client.RenderCoreScreenChromeStyle;
+import com.knoxhack.echorendercore.client.RenderCoreScreenFrameOptions;
 import com.knoxhack.echoterminal.EchoTerminal;
 import com.knoxhack.echoterminal.BuiltinTerminalCommonIntegration;
 import com.knoxhack.echoterminal.api.TerminalActionRegistry;
@@ -38,6 +40,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.recipe.TerminalRecipeCategory;
@@ -97,6 +100,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -645,7 +649,7 @@ public final class ModGameTests {
             TerminalNavigationProfile chapterStatus = TerminalNavigationProfiles.profile(addons).orElse(null);
             helper.assertTrue(chapterStatus != null
                             && chapterStatus.section() == TerminalNavigationSection.CHAPTERS,
-                    "Chapter Guide should live in the Progress section while preserving the addons tab id");
+                    "Mods should live in the Progress section while preserving the addons tab id");
 
             Map<Identifier, TerminalNavigationProfile> builtinProfiles =
                     BuiltinTerminalTabs.builtinNavigationProfilesForTests();
@@ -660,15 +664,15 @@ public final class ModGameTests {
             helper.assertTrue(builtinProfiles.get(VanillaJourneyProvider.TAB_ID)
                             .section() == TerminalNavigationSection.CHAPTERS,
                     "Baseline should expose the standalone vanilla route in Progress");
-            helper.assertTrue(builtinProfiles.get(id("mission_graph")).section() == TerminalNavigationSection.CHAPTERS,
-                    "Mission Graph should live in Progress");
+            helper.assertTrue(builtinProfiles.get(id("mission_graph")).section() == TerminalNavigationSection.INTEL,
+                    "Mission Graph should be demoted to Intel as a route source diagnostic");
             helper.assertTrue(builtinProfiles.get(MainSurvivalQuestProvider.TAB_ID).order()
                             < builtinProfiles.get(VanillaJourneyProvider.TAB_ID).order()
                             && builtinProfiles.get(VanillaJourneyProvider.TAB_ID).order()
-                            < builtinProfiles.get(id("mission_graph")).order(),
-                    "Baseline should sit between the aggregate Survival Route and Mission Graph");
+                            < builtinProfiles.get(id("addons")).order(),
+                    "Baseline should sit between the aggregate Survival Route and Mods");
             helper.assertTrue(builtinProfiles.get(id("addons")).section() == TerminalNavigationSection.CHAPTERS,
-                    "Chapter Guide should live in Progress");
+                    "Mods should live in Progress");
             helper.assertTrue(builtinProfiles.get(id("route_records")).section() == TerminalNavigationSection.INTEL,
                     "Route Records should live in Intel");
             helper.assertTrue(builtinProfiles.get(DiscoveryGridTab.TAB_ID).section() == TerminalNavigationSection.INTEL,
@@ -695,7 +699,7 @@ public final class ModGameTests {
             TerminalNavigationProfile stationProfile = TerminalNavigationProfiles.profile(stationfall).orElse(null);
             helper.assertTrue(stationProfile != null, "Registered navigation profiles should be discoverable");
             helper.assertTrue(stationProfile.section() == TerminalNavigationSection.CHAPTERS,
-                    "Addon profiles should live in the Chapters section");
+                    "Addon profiles should live in the Progress mod section");
             helper.assertTrue("stationfall".equals(stationProfile.chapterId()),
                     "Addon profiles should keep their chapter workspace id");
             helper.assertTrue("Chapter 3: Stationfall".equals(stationProfile.chapterTitle()),
@@ -826,11 +830,22 @@ public final class ModGameTests {
     }
 
     private static void terminalThemeRegistry(GameTestHelper helper) {
+        TerminalThemeRegistry.setDefaultTheme(BuiltinTerminalThemes.ECHO_CONSOLE);
         helper.assertTrue(TerminalThemeRegistry.byId(null).id().equals(BuiltinTerminalThemes.ECHO_CONSOLE),
                 "Theme registry should fall back to the default ECHO console theme");
         helper.assertTrue(TerminalThemeRegistry.byId(BuiltinTerminalThemes.NEXUS_MODPACK).displayName()
                         .equals("Nexus Modpack"),
                 "Built-in Nexus Modpack theme should be registered");
+        helper.assertFalse(TerminalThemeRegistry.setDefaultTheme(id("missing_theme")),
+                "Theme registry should reject unregistered default theme ids");
+        helper.assertTrue(TerminalThemeRegistry.setDefaultTheme(BuiltinTerminalThemes.NEXUS_MODPACK),
+                "Theme registry should accept a registered default theme id");
+        helper.assertTrue(TerminalThemeRegistry.defaultThemeId().equals(BuiltinTerminalThemes.NEXUS_MODPACK),
+                "Theme registry should expose the active default theme id");
+        helper.assertTrue(TerminalThemeRegistry.byId(null).id().equals(BuiltinTerminalThemes.NEXUS_MODPACK),
+                "Theme registry should resolve null theme ids to the active default theme");
+        helper.assertTrue(TerminalThemeRegistry.setDefaultTheme(BuiltinTerminalThemes.ECHO_CONSOLE),
+                "Theme registry should allow restoring the built-in ECHO console default");
         boolean duplicateRejected = false;
         try {
             TerminalThemeRegistry.register(BuiltinTerminalThemes.echoConsole());
@@ -939,12 +954,22 @@ public final class ModGameTests {
     }
 
     private static void terminalThemeSelection(GameTestHelper helper) {
+        helper.assertTrue(TerminalThemeRegistry.setDefaultTheme(BuiltinTerminalThemes.NEXUS_MODPACK),
+                "Theme registry should allow tests to switch the active default theme");
+        TerminalClientOptions.resetThemeForTests(null);
+        helper.assertTrue(TerminalClientOptions.selectedThemeId().equals(BuiltinTerminalThemes.NEXUS_MODPACK),
+                "Missing client theme selections should resolve dynamically to the active registry default");
+        TerminalClientOptions.resetThemeForTests(BuiltinTerminalThemes.ECHO_CONSOLE);
+        helper.assertTrue(TerminalClientOptions.selectedThemeId().equals(BuiltinTerminalThemes.ECHO_CONSOLE),
+                "Valid saved client theme selections should be preserved");
         TerminalClientOptions.resetThemeForTests(BuiltinTerminalThemes.NEXUS_MODPACK);
         helper.assertTrue(TerminalClientOptions.selectedThemeId().equals(BuiltinTerminalThemes.NEXUS_MODPACK),
                 "Client theme selection should accept registered theme ids");
         TerminalClientOptions.resetThemeForTests(id("missing_theme"));
         helper.assertTrue(TerminalClientOptions.selectedThemeId().equals(TerminalThemeRegistry.defaultThemeId()),
                 "Client theme selection should fall back when the stored theme id is missing");
+        helper.assertTrue(TerminalThemeRegistry.setDefaultTheme(BuiltinTerminalThemes.ECHO_CONSOLE),
+                "Theme registry should allow tests to restore the built-in default theme");
         helper.succeed();
     }
 
@@ -1065,6 +1090,21 @@ public final class ModGameTests {
             TerminalClientOptions.visualLevel = TerminalClientOptions.VisualLevel.BALANCED;
             helper.assertTrue(TerminalRenderCoreClientIntegration.shouldRenderScreenAccentForTests(),
                     "Balanced terminal visuals should allow the subtle RenderCore screen accent");
+            RenderCoreScreenFrameOptions normalFrame =
+                    TerminalRenderCoreClientIntegration.screenFrameOptionsForTests(false);
+            helper.assertTrue(normalFrame.style() == RenderCoreScreenChromeStyle.TERMINAL
+                            && !normalFrame.drawScanlines()
+                            && normalFrame.chromaticEdge()
+                            && !normalFrame.glassGlints(),
+                    "Balanced terminal RenderCore chrome should use the terminal cyberglass preset with clean glass and no scanlines");
+            RenderCoreScreenFrameOptions reducedFrame =
+                    TerminalRenderCoreClientIntegration.screenFrameOptionsForTests(true);
+            helper.assertTrue(reducedFrame.style() == RenderCoreScreenChromeStyle.TERMINAL
+                            && !reducedFrame.drawScanlines()
+                            && !reducedFrame.edgeGlow()
+                            && !reducedFrame.glassGlints()
+                            && !reducedFrame.chromaticEdge(),
+                    "Reduced-motion terminal RenderCore chrome should disable animated glass accents");
         } finally {
             TerminalClientOptions.visualLevel = previousVisualLevel;
             TerminalClientOptions.reducedMotion = previousReducedMotion;
@@ -1203,6 +1243,8 @@ public final class ModGameTests {
             TerminalMissionRegistry.register(MainSurvivalQuestProvider.INSTANCE);
             Identifier reclaimPowerId = Identifier.fromNamespaceAndPath("echoindustrialnexus", "mission/reclaim_power");
             Identifier lockedFutureId = Identifier.fromNamespaceAndPath("echoindustrialnexus", "mission/locked_future");
+            Identifier agricultureRouteId = Identifier.fromNamespaceAndPath("echoagriculturereclamation", "mission/recover_seed");
+            Identifier hiddenRouteId = Identifier.fromNamespaceAndPath("echoagriculturereclamation", "mission/internal_hidden");
             TerminalMissionRegistry.register(new ConfigurableMissionProvider(
                     VanillaJourneyProvider.CHAPTER_ID,
                     "Baseline",
@@ -1252,7 +1294,32 @@ public final class ModGameTests {
                             TerminalMissionRole.REFERENCE,
                             TerminalMissionStatus.VIEW_ONLY,
                             List.of()))));
-            TerminalMissionRegistry.register(new ThrowingMissionsProvider(id("throwing_missions"), 4));
+            TerminalMissionRegistry.register(new PlacedMissionProvider(
+                    Identifier.fromNamespaceAndPath("echoagriculturereclamation", "field_reclamation"),
+                    "FIELD > Reclamation",
+                    4,
+                    List.of(new ConfiguredMission(
+                            agricultureRouteId,
+                            "Recover Seed",
+                            "Unsorted Local Phase",
+                            "Field",
+                            "Seed",
+                            TerminalMissionRole.MAIN,
+                            TerminalMissionStatus.UNLOCKED,
+                            List.of(TerminalMissionAction.enabled("field_report", "FIELD REPORT"))),
+                            new ConfiguredMission(
+                                    hiddenRouteId,
+                                    "Internal Hidden",
+                                    "Unsorted Local Phase",
+                                    "Field",
+                                    "Hidden",
+                                    TerminalMissionRole.MAIN,
+                                    TerminalMissionStatus.UNLOCKED,
+                                    List.of())),
+                    Map.of(
+                            agricultureRouteId, TerminalMissionRoutePlacement.optional(2, 42),
+                            hiddenRouteId, TerminalMissionRoutePlacement.hidden())));
+            TerminalMissionRegistry.register(new ThrowingMissionsProvider(id("throwing_missions"), 5));
 
             List<TerminalMissionDefinition> missions = MainSurvivalQuestProvider.INSTANCE.missions(null);
             helper.assertTrue(missions.stream()
@@ -1268,6 +1335,34 @@ public final class ModGameTests {
             helper.assertTrue(missions.stream().anyMatch(definition -> "Phase 02".equals(definition.phaseTitle())
                             && "Reclaim Power".equals(definition.title())),
                     "Industrial salvage records should land on Phase 02");
+            TerminalMissionDefinition agricultureRoute = missions.stream()
+                    .filter(definition -> definition.id().equals(agricultureRouteId))
+                    .findFirst()
+                    .orElseThrow();
+            helper.assertTrue(agricultureRoute.phaseOrder() == 2
+                            && "Phase 02".equals(agricultureRoute.phaseTitle())
+                            && agricultureRoute.missionOrder() == 42,
+                    "Explicit route placement should override local phase/order metadata");
+            TerminalMissionSnapshot agricultureSnapshot =
+                    MainSurvivalQuestProvider.INSTANCE.snapshot(null, agricultureRouteId);
+            helper.assertTrue(MainSurvivalQuestProvider.INSTANCE.role(null, agricultureRoute, agricultureSnapshot)
+                            == TerminalMissionRole.OPTIONAL,
+                    "Explicit route placement should override the source role for aggregate gating");
+            TerminalMissionPresentation agriculturePresentation =
+                    MainSurvivalQuestProvider.INSTANCE.presentation(null, agricultureRoute, agricultureSnapshot);
+            String aggregateCopy = String.join(" ",
+                    agricultureSnapshot.actionHint(),
+                    agricultureSnapshot.unlockReason(),
+                    agriculturePresentation.nextStep(),
+                    agriculturePresentation.objectiveSummary(),
+                    agriculturePresentation.routeHint(),
+                    String.join(" ", agriculturePresentation.tags()));
+            String noisySourceLabel = "Source:";
+            String legacyCommandHint = "Command unlocks " + "after";
+            helper.assertFalse(aggregateCopy.contains(noisySourceLabel) || aggregateCopy.contains(legacyCommandHint),
+                    "Aggregate Survival Route player copy should hide provider/source noise");
+            helper.assertFalse(missions.stream().anyMatch(definition -> definition.id().equals(hiddenRouteId)),
+                    "Hidden explicit route placement should omit internal records from the aggregate Survival Route");
             helper.assertTrue(missions.stream().anyMatch(definition -> "Phase 09".equals(definition.phaseTitle())
                             && "Field Reference".equals(definition.title())),
                     "Survival route should include remaining MAIN/REFERENCE records in Phase 09");
@@ -1601,6 +1696,14 @@ public final class ModGameTests {
         browser.contentHeight(context);
         helper.assertTrue(provider.snapshotCalls.get() == provider.missionCount(),
                 "Repeated contentHeight in the same refresh window should reuse cached mission state");
+        for (TerminalClientOptions.MissionView legacyView : TerminalClientOptions.MissionView.values()) {
+            TerminalClientOptions.resetMissionViewForTests(legacyView);
+            helper.assertTrue(TerminalClientOptions.missionView == TerminalClientOptions.MissionView.GUIDED,
+                    "Legacy mission view config values should normalize to GUIDED");
+            browser.contentHeight(context);
+            helper.assertTrue(provider.snapshotCalls.get() == provider.missionCount(),
+                    "Legacy mission view aliases should not invalidate the guided-only browser cache");
+        }
 
         TerminalRenderContext widerContext = new TerminalRenderContext(null, player,
                 800, 600, 0, 0, 960, 240, 0, null, null);
@@ -1639,10 +1742,16 @@ public final class ModGameTests {
         TerminalRenderContext context = new TerminalRenderContext(null, player,
                 800, 600, 0, 0, 640, 260, 0, null, null);
 
+        TerminalClientOptions.resetMissionViewForTests(TerminalClientOptions.MissionView.VISUAL_RPG);
         browser.onSelected(context);
         List<String> phases = browser.phaseDebugRowsForTests(context);
         helper.assertTrue(browser.visibleMissionCountForTests(context) == browser.allMissionCountForTests(context),
                 "Mission browser should keep every record visible now that roadmap filters are removed");
+        helper.assertTrue("ACTIONS".equals(browser.stickyActionsTitleForTests()),
+                "Mission details should label the sticky footer as ACTIONS");
+        helper.assertFalse(browser.emptyRequirementsCopyForTests().contains("COMMAND")
+                        || browser.metRequirementsCopyForTests().contains("COMMAND"),
+                "Requirement helper copy should not point players back to a Command footer");
         int compactTreeHeight = browser.treePaneHeightForTests(context, 180);
         int wideTreeHeight = browser.treePaneHeightForTests(context, 640);
         helper.assertTrue(compactTreeHeight == wideTreeHeight,
@@ -1676,9 +1785,27 @@ public final class ModGameTests {
         helper.assertTrue(phase00Main.equals(browser.focusMissionIdForTests(context))
                         && phase00Main.equals(browser.selectedMissionIdForTests(context)),
                 "Mission browser should auto-focus the current ready mission by default");
+        int focusViewportHeight = 80;
+        int focusRowOffset = browser.selectedRowOffsetForTests(context);
+        int maxTreeScroll = browser.treeMaxScrollForTests(context, focusViewportHeight);
+        helper.assertTrue(maxTreeScroll > focusRowOffset,
+                "Mission browser test setup should allow the selected full-roadmap row to top-align");
+        helper.assertTrue(browser.applyTreeFocusForTests(context, focusViewportHeight) == focusRowOffset,
+                "Opening the mission browser should top-align the current ready mission in the full roadmap");
+        helper.assertTrue(browser.keyCodeForTests(context, GLFW.GLFW_KEY_DOWN),
+                "Down arrow should move from the ready mission to the next visible mission");
+        helper.assertTrue(phase00Optional.equals(browser.selectedMissionIdForTests(context)),
+                "Down arrow should select the next mission in the expanded roadmap");
+        int scrollBeforeNavigationFocus = browser.treeScrollForTests();
+        int navigatedRowOffset = browser.selectedRowOffsetForTests(context);
+        int scrollAfterNavigationFocus = browser.applyTreeFocusForTests(context, focusViewportHeight);
+        helper.assertTrue(scrollAfterNavigationFocus == scrollBeforeNavigationFocus,
+                "Keyboard navigation should keep an already visible selected mission in place");
+        helper.assertFalse(scrollAfterNavigationFocus == navigatedRowOffset,
+                "Keyboard navigation should not top-align every newly selected mission");
         int headerHeight = browser.detailHeaderHeightForTests(context, phase02Main);
-        helper.assertTrue(headerHeight >= 104 && headerHeight <= 128,
-                "Mission browser detail hero should keep a stable V2 height");
+        helper.assertTrue(headerHeight >= 92 && headerHeight <= 104,
+                "Guided mission browser detail header should stay compact for next-step-first scanning");
         helper.assertTrue(browser.selectMissionForTests(context, phase02Main),
                 "Locked future missions should remain selectable for preview");
         helper.assertTrue(browser.phaseExpandedForTests(context, "Phase 02"),
@@ -2285,6 +2412,56 @@ public final class ModGameTests {
                     .filter(candidate -> candidate.id().equals(missionId))
                     .flatMap(candidate -> candidate.actions().stream())
                     .anyMatch(action -> action.enabled() && action.id().equals(actionId));
+        }
+    }
+
+    private static final class PlacedMissionProvider implements TerminalMissionProvider {
+        private final ConfigurableMissionProvider delegate;
+        private final Map<Identifier, TerminalMissionRoutePlacement> placements;
+
+        private PlacedMissionProvider(
+                Identifier chapterId,
+                String title,
+                int order,
+                List<ConfiguredMission> configuredMissions,
+                Map<Identifier, TerminalMissionRoutePlacement> placements) {
+            this.delegate = new ConfigurableMissionProvider(chapterId, title, order, configuredMissions);
+            this.placements = Map.copyOf(placements);
+        }
+
+        @Override
+        public TerminalMissionChapter chapter() {
+            return delegate.chapter();
+        }
+
+        @Override
+        public List<TerminalMissionDefinition> missions(Player player) {
+            return delegate.missions(player);
+        }
+
+        @Override
+        public TerminalMissionSnapshot snapshot(Player player, Identifier missionId) {
+            return delegate.snapshot(player, missionId);
+        }
+
+        @Override
+        public TerminalMissionRole role(
+                Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+            return delegate.role(player, definition, snapshot);
+        }
+
+        @Override
+        public Optional<TerminalMissionRoutePlacement> routePlacement(
+                Player player,
+                TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot,
+                TerminalMissionRole role) {
+            return definition == null ? Optional.empty() : Optional.ofNullable(placements.get(definition.id()));
+        }
+
+        @Override
+        public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
+            return delegate.handleAction(player, missionId, actionId);
         }
     }
 

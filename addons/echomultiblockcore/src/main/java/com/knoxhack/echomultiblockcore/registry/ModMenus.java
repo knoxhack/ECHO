@@ -2,6 +2,7 @@ package com.knoxhack.echomultiblockcore.registry;
 
 import com.knoxhack.echomultiblockcore.EchoMultiblockCore;
 import com.knoxhack.echomultiblockcore.menu.MultiblockControllerMenu;
+import com.knoxhack.echomultiblockcore.menu.MultiblockCrateMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -14,6 +15,8 @@ public final class ModMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<MultiblockControllerMenu>> CONTROLLER =
             MENUS.register("controller", () -> IMenuTypeExtension.create(MultiblockControllerMenu::fromNetwork));
+    public static final DeferredHolder<MenuType<?>, MenuType<MultiblockCrateMenu>> CRATE =
+            MENUS.register("crate", () -> IMenuTypeExtension.create(MultiblockCrateMenu::fromNetwork));
 
     private ModMenus() {
     }

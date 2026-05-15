@@ -1,0 +1,48 @@
+{
+  "id": "echocore:example_supply_run",
+  "title": "Supply Run Alpha",
+  "summary": "A low-risk route between outposts for basic material transfer.",
+  "order": 0,
+  "requiredVehicle": "any",
+  "minFuel": 10,
+  "requiredCargo": [
+    {"item": "minecraft:iron_ingot", "count": 8}
+  ],
+  "rewards": [
+    {"item": "minecraft:emerald", "count": 2},
+    {"item": "minecraft:experience_bottle", "count": 4}
+  ],
+  "threatLevel": 1,
+  "threat": {
+    "label": "Minor Roadblock",
+    "entity": "minecraft:zombie",
+    "minCount": 2,
+    "maxCount": 4,
+    "chanceOneIn": 3,
+    "cooldownTicks": 1200,
+    "vehicleDamage": 0,
+    "spawnRadius": 8.0,
+    "warning": "Hostiles detected on the roadside."
+  },
+  "checkpointFactionId": "echoashfallprotocol:scavenger_guild",
+  "checkpoint": {
+    "minReputation": 0,
+    "label": "Outpost Checkpoint",
+    "warning": "Approaching faction checkpoint."
+  },
+  "destinationHint": "Overworld ruined highway corridor",
+  "requiredSignalMarkers": 2,
+  "legs": [
+    {"id": "alpha", "title": "Departure Gate", "minDistanceFromStart": 0, "requiresCheckpoint": false},
+    {"id": "beta", "title": "Midway Relay", "minDistanceFromStart": 200, "requiresCheckpoint": true}
+  ],
+  "missionType": "delivery",
+  "distance": 400,
+  "biomeTheme": "ruined_highway",
+  "fuelCost": 20,
+  "cargoCapacityRecommendation": 16,
+  "requiredReadiness": 30,
+  "possibleHazards": ["echoworldcore:hazard/salvage_debris"],
+  "logisticsNetworkId": "global",
+  "autoRequestCargo": false
+}

@@ -1,0 +1,41 @@
+{
+  "id": "echocore:example_rescue_op",
+  "chapterId": "echocore:example_chapter_1",
+  "phase": "phase_0",
+  "phaseTitle": "First Steps",
+  "phaseOrder": 0,
+  "order": 0,
+  "title": "Rescue Beacon",
+  "briefing": "A distress beacon was detected in the debris field. Investigate and recover any survivors.",
+  "fieldGuide": "Bring hazard protection. The crash zone contains radiation pockets and unstable wreckage.",
+  "category": "combat",
+  "difficulty": "moderate",
+  "icon": "minecraft:beacon",
+  "kind": "main",
+  "repeatable": false,
+  "hidden": false,
+  "prerequisites": [],
+  "objectives": [
+    {
+      "id": "echocore:example_rescue_op/reach_beacon",
+      "type": "custom",
+      "label": "Reach the distress beacon",
+      "detail": "Navigate to the marked location on your HoloMap.",
+      "icon": "minecraft:compass",
+      "required": 1,
+      "hidden": false
+    },
+    {
+      "id": "echocore:example_rescue_op/defend_zone",
+      "type": "custom",
+      "label": "Defend the recovery zone",
+      "detail": "Hold position for 60 seconds while the signal stabilizes.",
+      "icon": "minecraft:iron_sword",
+      "required": 1,
+      "hidden": false
+    }
+  ],
+  "rewards": [
+    {"item": "minecraft:diamond", "count": 2, "xp": 150, "reputation": 10}
+  ]
+}

@@ -6,7 +6,7 @@ import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
-public class EpEnergyHandler extends SnapshotJournal<Integer> implements EnergyHandler {
+public class EpEnergyHandler extends SnapshotJournal<Long> implements EnergyHandler {
     private final EchoEnergyStorage storage;
     private final Runnable onChanged;
 
@@ -19,22 +19,30 @@ public class EpEnergyHandler extends SnapshotJournal<Integer> implements EnergyH
     public int insert(int amount, TransactionContext transaction) {
         if (!PowerGridConfig.ENABLE_FE_BRIDGE.get() || !storage.canReceive() || amount <= 0) return 0;
         long epAmount = (long) (amount * PowerGridConfig.FE_TO_EP_RATIO.get());
-        int received = (int) Math.min(Integer.MAX_VALUE, storage.receiveEnergy(epAmount, false));
-        if (received > 0 && onChanged != null) {
-            onChanged.run();
+        long receivedEp = storage.receiveEnergy(epAmount, true);
+        int received = (int) Math.min(Integer.MAX_VALUE, receivedEp / PowerGridConfig.FE_TO_EP_RATIO.get());
+        if (received > 0) {
+            if (transaction != null) {
+                updateSnapshots(transaction);
+            }
+            storage.receiveEnergy((long) (received * PowerGridConfig.FE_TO_EP_RATIO.get()), false);
         }
-        return (int) (received / PowerGridConfig.FE_TO_EP_RATIO.get());
+        return received;
     }
 
     @Override
     public int extract(int amount, TransactionContext transaction) {
         if (!PowerGridConfig.ENABLE_FE_BRIDGE.get() || !storage.canExtract() || amount <= 0) return 0;
         long epAmount = (long) (amount * PowerGridConfig.FE_TO_EP_RATIO.get());
-        int extracted = (int) Math.min(Integer.MAX_VALUE, storage.extractEnergy(epAmount, false));
-        if (extracted > 0 && onChanged != null) {
-            onChanged.run();
+        long extractedEp = storage.extractEnergy(epAmount, true);
+        int extracted = (int) Math.min(Integer.MAX_VALUE, extractedEp / PowerGridConfig.FE_TO_EP_RATIO.get());
+        if (extracted > 0) {
+            if (transaction != null) {
+                updateSnapshots(transaction);
+            }
+            storage.extractEnergy((long) (extracted * PowerGridConfig.FE_TO_EP_RATIO.get()), false);
         }
-        return (int) (extracted / PowerGridConfig.FE_TO_EP_RATIO.get());
+        return extracted;
     }
 
     public int getEnergyStored() {
@@ -52,16 +60,46 @@ public class EpEnergyHandler extends SnapshotJournal<Integer> implements EnergyH
     }
 
     @Override
-    protected Integer createSnapshot() {
-        return getEnergyStored();
+    protected Long createSnapshot() {
+        return storage.getEnergyStored();
     }
 
     @Override
-    protected void revertToSnapshot(Integer snapshot) {
-        // Energy is managed by underlying storage
+    protected void revertToSnapshot(Long snapshot) {
+        long target = Math.max(0L, Math.min(storage.getMaxEnergyStored(), snapshot == null ? 0L : snapshot));
+        long current = storage.getEnergyStored();
+        if (current > target) {
+            drainDirect(current - target);
+        } else if (current < target) {
+            fillDirect(target - current);
+        }
     }
 
-    protected void onRootCommit(Integer snapshot) {
+    protected void onRootCommit(Long snapshot) {
         if (onChanged != null) onChanged.run();
+    }
+
+    private void drainDirect(long amount) {
+        long remaining = amount;
+        int guard = 0;
+        while (remaining > 0L && guard++ < 1024) {
+            long extracted = storage.extractEnergy(remaining, false);
+            if (extracted <= 0L) {
+                break;
+            }
+            remaining -= extracted;
+        }
+    }
+
+    private void fillDirect(long amount) {
+        long remaining = amount;
+        int guard = 0;
+        while (remaining > 0L && guard++ < 1024) {
+            long received = storage.receiveEnergy(remaining, false);
+            if (received <= 0L) {
+                break;
+            }
+            remaining -= received;
+        }
     }
 }

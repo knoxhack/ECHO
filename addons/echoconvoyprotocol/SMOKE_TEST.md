@@ -52,3 +52,17 @@
    ```
 
 Convoy should add no missing asset, recipe, tag, route, incident profile, or data issues.
+
+## 1.2.0 Vehicle Visual Polish Checks
+
+Run these checks with RenderCore installed, then repeat after temporarily removing RenderCore so the fallback renderer is exercised:
+
+- Spawn Scrap Bike, Wasteland Rover, Cargo Crawler, and Armored Relay Truck from their kits and from `/summon`.
+- Confirm entity dimensions feel aligned with the final silhouettes: Scrap Bike `0.95 x 1.35`, Wasteland Rover `2.25 x 1.75`, Cargo Crawler `3.05 x 1.85`, Armored Relay Truck `3.10 x 2.15`.
+- Mount each vehicle and check rider placement: Scrap Bike `0.95`, Wasteland Rover `1.35`, Cargo Crawler `1.45`, Armored Relay Truck `1.65` passenger height.
+- Inspect side, front three-quarter, and rear three-quarter views for all four vehicles.
+- Confirm Scrap Bike reads as a narrow two-wheel field bike, Wasteland Rover has clear tires/cab/scanner hardware, Cargo Crawler sits lower on readable tracks, and Armored Relay Truck reads as a six-wheel signal vehicle.
+- Drive each vehicle long enough to see wheel motion and active RenderCore overlays.
+- Force or inflict damage, then confirm damage plates/heat overlays appear without hiding the base vehicle material.
+- Check low-power/offline states, docked clamps, cargo-loaded markers, and shielding plates where that vehicle supports them.
+- Confirm no purple/black missing texture, no severe rider clipping, no severe collision mismatch, and no regression in Route Beacon pairing or field-station deployment.

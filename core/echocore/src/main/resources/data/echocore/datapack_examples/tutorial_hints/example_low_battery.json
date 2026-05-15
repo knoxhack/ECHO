@@ -1,0 +1,14 @@
+{
+  "id": "echocore:example_low_battery",
+  "type": "WARNING",
+  "category": "TERMINAL",
+  "title": "Low Power",
+  "message": "Your suit battery is below 20%.",
+  "details": "Find a charging station or swap in a fresh cell before exploring hazardous zones.",
+  "actionLabel": "Open Power",
+  "cooldownTicks": 12000,
+  "guideModes": ["FULL", "COMPACT"],
+  "priority": 80,
+  "dismissible": true,
+  "conditions": ["battery_percent < 20"]
+}

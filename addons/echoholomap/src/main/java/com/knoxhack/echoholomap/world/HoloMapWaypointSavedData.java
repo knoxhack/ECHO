@@ -106,6 +106,53 @@ public final class HoloMapWaypointSavedData extends SavedData {
         return true;
     }
 
+    public HoloMapWaypoint recordDeathpoint(ServerPlayer player, int maxDeathpoints) {
+        if (player == null) {
+            return null;
+        }
+        long now = player.level().getGameTime();
+        Identifier id = Identifier.fromNamespaceAndPath(EchoHoloMap.MODID,
+                "deathpoint/" + player.getUUID() + "/" + UUID.randomUUID());
+        HoloMapWaypoint waypoint = new HoloMapWaypoint(
+                id,
+                player.getUUID(),
+                Scope.PERSONAL,
+                player.level().dimension().identifier().toString(),
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                "Deathpoint " + player.blockPosition().getX() + ", " + player.blockPosition().getZ(),
+                0xFFFF6688,
+                HoloMapWaypoint.DEATHPOINT_ICON,
+                true,
+                now,
+                now);
+        waypoints.put(waypoint.id().toString(), waypoint);
+        evictDeathpoints(player.getUUID(), maxDeathpoints);
+        setDirty();
+        return waypoint;
+    }
+
+    public int evictDeathpoints(UUID owner, int maxDeathpoints) {
+        if (owner == null) {
+            return 0;
+        }
+        List<HoloMapWaypoint> deathpoints = waypoints.values().stream()
+                .filter(waypoint -> waypoint.scope() == Scope.PERSONAL)
+                .filter(waypoint -> waypoint.owner().equals(owner))
+                .filter(HoloMapWaypoint::isDeathpoint)
+                .sorted(Comparator.comparingLong(HoloMapWaypoint::updatedTime))
+                .toList();
+        int remove = deathpoints.size() - Math.max(0, maxDeathpoints);
+        for (int i = 0; i < remove; i++) {
+            waypoints.remove(deathpoints.get(i).id().toString());
+        }
+        if (remove > 0) {
+            setDirty();
+        }
+        return Math.max(0, remove);
+    }
+
     public List<HoloMapWaypoint> waypointsFor(ServerPlayer player, int limit) {
         if (player == null || limit <= 0) {
             return List.of();
@@ -123,6 +170,7 @@ public final class HoloMapWaypointSavedData extends SavedData {
                 .filter(waypoint -> waypoint.scope() == Scope.SHARED
                         || (waypoint.scope() == Scope.PERSONAL && waypoint.owner().equals(playerId)))
                 .sorted(Comparator.comparing(HoloMapWaypoint::scope)
+                        .thenComparing(waypoint -> !waypoint.isDeathpoint())
                         .thenComparing(HoloMapWaypoint::title, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(waypoint -> waypoint.id().toString()))
                 .limit(safeLimit)

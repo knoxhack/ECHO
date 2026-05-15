@@ -19,12 +19,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class MultiblockCapabilityService {
     private static final Identifier NODE_DATA = MultiblockCapability.DATA.id();
+    private static final TagKey<Block> POWER_BUS_NODES = TagKey.create(Registries.BLOCK,
+            Identifier.fromNamespaceAndPath(EchoMultiblockCore.MODID, "power_bus_nodes"));
 
     private MultiblockCapabilityService() {
     }
@@ -85,8 +90,8 @@ public final class MultiblockCapabilityService {
             if (!level.hasChunkAt(pos)) {
                 continue;
             }
-            Block block = level.getBlockState(pos).getBlock();
-            CapabilityNode node = nodeFor(block, pos);
+            BlockState state = level.getBlockState(pos);
+            CapabilityNode node = nodeFor(state, pos);
             if (node != null) {
                 nodes.add(node);
             }
@@ -104,8 +109,9 @@ public final class MultiblockCapabilityService {
                 .orElse("No capability costs");
     }
 
-    private static CapabilityNode nodeFor(Block block, BlockPos pos) {
-        if (block == ModBlocks.POWER_BUS.get()) {
+    private static CapabilityNode nodeFor(BlockState state, BlockPos pos) {
+        Block block = state.getBlock();
+        if (block == ModBlocks.POWER_BUS.get() || state.is(POWER_BUS_NODES)) {
             return node(pos, MultiblockCapability.POWER_INPUT.id(), 1000, 128);
         }
         if (block == ModBlocks.DATA_BUS.get()) {

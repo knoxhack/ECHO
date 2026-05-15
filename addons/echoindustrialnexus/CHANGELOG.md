@@ -1,6 +1,17 @@
 # Changelog
 
-## 0.1.0 - Priority Fix RC
+## 1.2.0 - Playable Nexus Furnace Array
+
+- Added the dedicated `nexus_furnace_array_controller` block and `nexus_furnace_array_blueprint` so players can form the array without commands.
+- Promoted `echoindustrialnexus:nexus_furnace_array` into a playable late-game MultiblockCore route with explicit Matrix Processing task permissions.
+- Added data-driven Stabilize Hybrid Thermal Core and Forge Core Key Assembly automation tasks.
+- Added the `nexus_array_pressure` soft automation effect so Nexus thermal pressure records locally and calls Nexus Protocol only when that optional chapter is loaded.
+- Added the Terminal/Core `nexus_furnace_array` mission between Recipe Matrix Encoding and Production Survived, completed by Core Key Assembly forging.
+- Added optional Logistics loadouts for both Nexus Furnace Array tasks while preserving safe behavior when Logistics is absent.
+- Added GameTest coverage for definition loading, controller formation, blocked tool-head behavior, task outputs, Terminal mission progress, soft Nexus pressure, and Factory Command/HoloMap/Lens provider snapshots.
+- Updated smoke and release notes for the 1.2.0 stack-minor release path.
+
+## 1.1.3 - Priority Fix RC
 
 - Fixed NeoForge fluid capability transaction semantics for Industrial machines and fluid pipes with snapshot rollback behavior.
 - Added data-driven tank fluid recipes for Water Purifier and Fluid Refiner and decoded fluid fields in `IndustrialProcessingRecipe` JSON.
@@ -11,7 +22,7 @@
 - Added POI terrain/biome/loaded-footprint safety checks and Warden phase telegraphs, Furnace Drone minions, and marked cooling objectives.
 - Added focused regression coverage for fluid transaction rollback, mixed-fluid rejection, pipe filtering, and Smart Duct filtering.
 
-## 0.1.0 - Production Completion
+## 1.1.0 - Production Completion
 
 - Promoted Industrial Nexus into the default included addon set.
 - Added registered Industrial fluids and NeoForge fluid capabilities for machine tanks.
@@ -23,7 +34,7 @@
 - Updated Terminal mission metadata from Functional V1 to Production Complete.
 - Documented release jar path, dependencies, validation commands, and manual smoke checklist.
 
-## 0.1.0 - Gameplay Polish Baseline
+## Pre-1.1 - Gameplay Polish Baseline
 
 - Added custom Industrial machine menus/screens.
 - Added progression storage, mission snapshots, reward idempotency, procedural POIs, Furnace Warden progression, and focused GameTests.

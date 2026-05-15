@@ -1,5 +1,6 @@
 package com.knoxhack.echoplayercore.command;
 
+import com.knoxhack.echocore.command.EchoCommandRegistry;
 import com.knoxhack.echoplayercore.api.EchoPlayerCoreApi;
 import com.knoxhack.echoplayercore.config.PlayerCoreConfig;
 import com.knoxhack.echoplayercore.event.PlayerBackTeleportEvent;
@@ -80,66 +81,66 @@ public final class PlayerCoreCommands {
                     .then(Commands.argument("name", StringArgumentType.word())
                             .executes(ctx -> delWarp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
         }
-        if (PlayerCoreConfig.echoNamespaceCommandsEnabled()) {
-            event.getDispatcher().register(Commands.literal("echo")
-                    .then(Commands.literal("sethome")
-                            .executes(ctx -> setHome(ctx.getSource().getPlayerOrException(), PlayerCoreConfig.defaultHomeName()))
-                            .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> setHome(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))))
-                    .then(Commands.literal("home")
-                            .executes(ctx -> home(ctx.getSource().getPlayerOrException(), PlayerCoreConfig.defaultHomeName()))
-                            .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> home(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))))
-                    .then(Commands.literal("delhome")
-                            .executes(ctx -> delHome(ctx.getSource().getPlayerOrException(), PlayerCoreConfig.defaultHomeName()))
-                            .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> delHome(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))))
-                    .then(Commands.literal("homes").executes(ctx -> listHomes(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("back").executes(ctx -> back(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("rtp").executes(ctx -> rtp(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("spawn").executes(ctx -> spawn(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("tpa")
-                            .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
-                                    .executes(ctx -> tpa(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player"), false))))
-                    .then(Commands.literal("tpahere")
-                            .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
-                                    .executes(ctx -> tpa(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player"), true))))
-                    .then(Commands.literal("tpaccept").executes(ctx -> tpaccept(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("tpdeny").executes(ctx -> tpdeny(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("warp")
-                            .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> warp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))))
-                    .then(Commands.literal("warps").executes(ctx -> listWarps(ctx.getSource().getPlayerOrException())))
-                    .then(Commands.literal("setwarp")
-                            .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
-                            .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> setWarp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))))
-                    .then(Commands.literal("delwarp")
-                            .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
-                            .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> delWarp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))))
-                    .then(Commands.literal("playercore")
-                            .then(Commands.literal("reload")
-                                    .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
-                                    .executes(ctx -> {
-                                        tell(ctx.getSource().getPlayerOrException(), "Config reload requires a server restart in this version.", ChatFormatting.YELLOW);
-                                        return Command.SINGLE_SUCCESS;
-                                    }))
-                            .then(Commands.literal("stats")
-                                    .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
-                                    .executes(ctx -> showStats(ctx.getSource().getPlayerOrException())))
-                            .then(Commands.literal("debug")
-                                    .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
-                                    .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
-                                            .executes(ctx -> debugPlayer(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player")))))
-                            .then(Commands.literal("clearcooldown")
-                                    .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
-                                    .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
-                                            .then(Commands.argument("action", StringArgumentType.word())
-                                                    .executes(ctx -> clearCooldown(ctx.getSource().getPlayerOrException(),
-                                                            net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player"),
-                                                            StringArgumentType.getString(ctx, "action"))))))));
-        }
+    }
+
+    public static void registerEchoSubcommands() {
+        EchoCommandRegistry.register(Commands.literal("sethome")
+                .executes(ctx -> setHome(ctx.getSource().getPlayerOrException(), PlayerCoreConfig.defaultHomeName()))
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .executes(ctx -> setHome(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
+        EchoCommandRegistry.register(Commands.literal("home")
+                .executes(ctx -> home(ctx.getSource().getPlayerOrException(), PlayerCoreConfig.defaultHomeName()))
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .executes(ctx -> home(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
+        EchoCommandRegistry.register(Commands.literal("delhome")
+                .executes(ctx -> delHome(ctx.getSource().getPlayerOrException(), PlayerCoreConfig.defaultHomeName()))
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .executes(ctx -> delHome(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
+        EchoCommandRegistry.register(Commands.literal("homes").executes(ctx -> listHomes(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("back").executes(ctx -> back(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("rtp").executes(ctx -> rtp(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("spawn").executes(ctx -> spawn(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("tpa")
+                .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
+                        .executes(ctx -> tpa(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player"), false))));
+        EchoCommandRegistry.register(Commands.literal("tpahere")
+                .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
+                        .executes(ctx -> tpa(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player"), true))));
+        EchoCommandRegistry.register(Commands.literal("tpaccept").executes(ctx -> tpaccept(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("tpdeny").executes(ctx -> tpdeny(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("warp")
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .executes(ctx -> warp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
+        EchoCommandRegistry.register(Commands.literal("warps").executes(ctx -> listWarps(ctx.getSource().getPlayerOrException())));
+        EchoCommandRegistry.register(Commands.literal("setwarp")
+                .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .executes(ctx -> setWarp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
+        EchoCommandRegistry.register(Commands.literal("delwarp")
+                .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .executes(ctx -> delWarp(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")))));
+        EchoCommandRegistry.register(Commands.literal("playercore")
+                .then(Commands.literal("reload")
+                        .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+                        .executes(ctx -> {
+                            tell(ctx.getSource().getPlayerOrException(), "Config reload requires a server restart in this version.", ChatFormatting.YELLOW);
+                            return Command.SINGLE_SUCCESS;
+                        }))
+                .then(Commands.literal("stats")
+                        .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+                        .executes(ctx -> showStats(ctx.getSource().getPlayerOrException())))
+                .then(Commands.literal("debug")
+                        .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+                        .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
+                                .executes(ctx -> debugPlayer(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player")))))
+                .then(Commands.literal("clearcooldown")
+                        .requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+                        .then(Commands.argument("player", net.minecraft.commands.arguments.EntityArgument.player())
+                                .then(Commands.argument("action", StringArgumentType.word())
+                                        .executes(ctx -> clearCooldown(ctx.getSource().getPlayerOrException(),
+                                                net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player"),
+                                                StringArgumentType.getString(ctx, "action")))))));
     }
 
     private static void registerAlias(RegisterCommandsEvent event, String name, com.mojang.brigadier.Command<net.minecraft.commands.CommandSourceStack> executor) {

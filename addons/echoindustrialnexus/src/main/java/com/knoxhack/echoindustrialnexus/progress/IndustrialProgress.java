@@ -336,6 +336,8 @@ public final class IndustrialProgress {
             || count(player, (Item)ModItems.PRECISION_CIRCUIT.get()) > 0 ? 1.0F : 0.0F;
          case "recipe_matrix_encoding" -> data.getBoolean("task_encode_recipe_matrix_shard_complete").orElse(false)
             || count(player, (Item)ModItems.RECIPE_MATRIX_SHARD.get()) > 0 ? 1.0F : 0.0F;
+         case "nexus_furnace_array" -> data.getBoolean("task_forge_core_key_assembly_complete").orElse(false)
+            || data.getIntOr("task_forge_core_key_assembly", 0) > 0 ? 1.0F : 0.0F;
          case "logistics_auto_restock" -> data.getBoolean("logistics_auto_restock_requested").orElse(false) ? 1.0F : 0.0F;
          case "production_survived" -> data.getBoolean("furnace_warden_defeated").orElse(false) ? 1.0F : 0.0F;
          default -> 0.0F;
@@ -355,10 +357,15 @@ public final class IndustrialProgress {
       data.putInt("task_press_scrap_plate_into_refined_plate", Math.max(data.getIntOr("task_press_scrap_plate_into_refined_plate", 0), (int)world.playerStat(player.getUUID(), "task_press_scrap_plate_into_refined_plate")));
       data.putInt("task_assemble_precision_circuit", Math.max(data.getIntOr("task_assemble_precision_circuit", 0), (int)world.playerStat(player.getUUID(), "task_assemble_precision_circuit")));
       data.putInt("task_weld_reinforced_machine_frame", Math.max(data.getIntOr("task_weld_reinforced_machine_frame", 0), (int)world.playerStat(player.getUUID(), "task_weld_reinforced_machine_frame")));
+      data.putInt("task_stabilize_hybrid_thermal_core", Math.max(data.getIntOr("task_stabilize_hybrid_thermal_core", 0), (int)world.playerStat(player.getUUID(), "task_stabilize_hybrid_thermal_core")));
+      data.putInt("task_forge_core_key_assembly", Math.max(data.getIntOr("task_forge_core_key_assembly", 0), (int)world.playerStat(player.getUUID(), "task_forge_core_key_assembly")));
       data.putBoolean("safe_zone", data.getBoolean("safe_zone").orElse(false) || world.playerFlag(player.getUUID(), "safe_zone"));
       data.putBoolean("nexus_thermal_warning", data.getBoolean("nexus_thermal_warning").orElse(false) || world.playerFlag(player.getUUID(), "nexus_thermal_warning"));
       data.putBoolean("formed_industrial_assembly_line", data.getBoolean("formed_industrial_assembly_line").orElse(false) || world.playerFlag(player.getUUID(), "formed_industrial_assembly_line"));
+      data.putBoolean("formed_nexus_furnace_array", data.getBoolean("formed_nexus_furnace_array").orElse(false) || world.playerFlag(player.getUUID(), "formed_nexus_furnace_array"));
       data.putBoolean("task_encode_recipe_matrix_shard_complete", data.getBoolean("task_encode_recipe_matrix_shard_complete").orElse(false) || world.playerFlag(player.getUUID(), "task_encode_recipe_matrix_shard_complete"));
+      data.putBoolean("task_stabilize_hybrid_thermal_core_complete", data.getBoolean("task_stabilize_hybrid_thermal_core_complete").orElse(false) || world.playerFlag(player.getUUID(), "task_stabilize_hybrid_thermal_core_complete"));
+      data.putBoolean("task_forge_core_key_assembly_complete", data.getBoolean("task_forge_core_key_assembly_complete").orElse(false) || world.playerFlag(player.getUUID(), "task_forge_core_key_assembly_complete"));
       data.putBoolean("logistics_auto_restock_requested", data.getBoolean("logistics_auto_restock_requested").orElse(false) || world.playerFlag(player.getUUID(), "logistics_auto_restock_requested"));
       data.putBoolean("furnace_warden_defeated", data.getBoolean("furnace_warden_defeated").orElse(false) || world.playerFlag(player.getUUID(), "furnace_warden_defeated"));
    }

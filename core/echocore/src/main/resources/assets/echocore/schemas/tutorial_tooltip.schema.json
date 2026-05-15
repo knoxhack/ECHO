@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/tutorial_tooltip.schema.json",
+  "title": "ECHO Tutorial Tooltip",
+  "description": "Item tooltip extension for TutorialCore.",
+  "type": "object",
+  "required": ["targetItem"],
+  "properties": {
+    "targetItem": { "type": "string", "description": "Item identifier this tooltip applies to, e.g. 'minecraft:diamond_pickaxe'" },
+    "lines": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tooltip lines to append."
+    },
+    "requireShift": { "type": "boolean", "default": false, "description": "Only show when Shift is held." },
+    "priority": { "type": "integer", "default": 0 }
+  },
+  "additionalProperties": true
+}

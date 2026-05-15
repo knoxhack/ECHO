@@ -1,10 +1,12 @@
 package com.knoxhack.echologisticsnetwork;
 
-import com.knoxhack.echologisticsnetwork.client.CourierDroneRenderer;
-import com.knoxhack.echologisticsnetwork.client.CourierDroneModel;
+import com.knoxhack.echocore.client.model.EchoMobFamily;
+import com.knoxhack.echocore.client.model.EchoMobFamilyRenderer;
 import com.knoxhack.echologisticsnetwork.client.LogisticsScreen;
 import com.knoxhack.echologisticsnetwork.registry.ModEntities;
 import com.knoxhack.echologisticsnetwork.registry.ModMenus;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.entity.Mob;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -28,16 +30,12 @@ public class EchoLogisticsNetworkClient {
    }
 
    @SubscribeEvent
-   static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-      event.registerLayerDefinition(CourierDroneModel.LAYER_LOCATION, CourierDroneModel::createBodyLayer);
-   }
-
-   @SubscribeEvent
    static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
       if (ModList.get().isLoaded("echorendercore") && registerRenderCoreEntityRenderers(event)) {
          return;
       }
-      event.registerEntityRenderer(ModEntities.COURIER_DRONE.get(), CourierDroneRenderer::new);
+      event.registerEntityRenderer(ModEntities.COURIER_DRONE.get(),
+         renderer("courier_drone", EchoMobFamily.DRONE, 1.0F, 0.35F));
    }
 
    private static void registerTerminalClientIntegration() {
@@ -60,5 +58,10 @@ public class EchoLogisticsNetworkClient {
          EchoLogisticsNetwork.LOGGER.warn("ECHO Logistics Network RenderCore entity renderer integration unavailable; using courier drone fallback renderer.", exception);
          return false;
       }
+   }
+
+   private static <T extends Mob> EntityRendererProvider<T> renderer(String entityName, EchoMobFamily family,
+         float scale, float shadow) {
+      return context -> new EchoMobFamilyRenderer<>(context, EchoLogisticsNetwork.MODID, entityName, family, scale, shadow);
    }
 }

@@ -46,6 +46,16 @@ public enum ServerProgressionProvider implements ServerLensProvider {
                 LensDataCategory.INTEGRATION, "Server Relevance", "S", LensTone.ECHO, LensVisibility.DEEP, rows));
     }
 
+    @Override
+    public List<LensInfoRow> deepScanSignals(LensContext context) {
+        boolean relevant = EchoCoreServices.missionCoreAvailable()
+                || dataCoreAvailable()
+                || ModList.get().isLoaded("echoashfallprotocol");
+        return List.of(LensInfoRow.of("Progression",
+                relevant ? "ECHO context available" : "Public baseline only",
+                "E", relevant ? LensTone.GOOD : LensTone.MUTED, LensVisibility.DEEP));
+    }
+
     private static LensInfoRow serviceRow(String label, boolean available) {
         return LensInfoRow.of(label, available ? "Available" : "No service",
                 available ? "+" : "-", available ? LensTone.GOOD : LensTone.MUTED, LensVisibility.DEEP);

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://echo/rendercore/creator_pack.schema.json",
-  "title": "ECHO RenderCore V16 Creator Pack Export",
+  "title": "ECHO RenderCore V19 Creator Pack Export",
   "type": "object",
   "additionalProperties": true,
   "properties": {
@@ -11,7 +11,7 @@
       "properties": {
         "generator": { "type": "string" },
         "namespace": { "type": "string" },
-        "schema_version": { "type": "integer", "const": 16 },
+        "schema_version": { "type": "integer", "const": 19 },
         "target_schema_version": { "type": "integer", "const": 11 },
         "profile_count": { "type": "integer", "minimum": 0 },
         "migration_required_count": { "type": "integer", "minimum": 0 },
@@ -66,6 +66,28 @@
         "tested_fallback_modes": { "type": "array", "items": { "type": "string" } },
         "tested_addon_namespaces": { "type": "array", "items": { "type": "string" } },
         "remaining_blockers": { "type": "array", "items": { "type": "string" } },
+        "screen_chrome_surface_count": { "type": "integer", "minimum": 0 },
+        "screen_chrome_evidence_count": { "type": "integer", "minimum": 0 },
+        "screen_chrome_blockers": { "type": "array", "items": { "type": "string" } },
+        "screen_chrome_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "addon_id": { "type": "string" },
+              "surface_id": { "type": "string" },
+              "display_name": { "type": "string" },
+              "chrome_style": { "type": "string", "enum": ["CYBERGLASS", "TERMINAL", "HOLOGRAM", "NEON", "MINIMAL"] },
+              "label_policy": { "type": "string" },
+              "profile_id": { "type": "string" },
+              "reduced_motion": { "type": "boolean" },
+              "qa_status": { "type": "string", "enum": ["pending", "pass", "fail"] },
+              "notes": { "type": "string" },
+              "screenshot_path": { "type": "string" }
+            }
+          }
+        },
         "snapshots": {
           "type": "array",
           "items": {

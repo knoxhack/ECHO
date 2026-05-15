@@ -1807,11 +1807,11 @@ public final class TerminalUi {
             graphics.fill(x + 10, y + h - 11, x + w - 10, y + h - 10, tokens.dividers().gridLine());
         }
         if (tokens.effects().grid() && w > 140 && h > 100) {
-            for (int gx = x + 32; gx < x + w - 16; gx += 48) {
-                graphics.fill(gx, y + 18, gx + 1, y + h - 12, tokens.dividers().gridLine());
+            for (int gx = x + 64; gx < x + w - 32; gx += 96) {
+                graphics.fill(gx, y + 18, gx + 1, y + h - 12, withAlpha(tokens.dividers().gridLine(), 0x55));
             }
-            for (int gy = y + 38; gy < y + h - 16; gy += 34) {
-                graphics.fill(x + 10, gy, x + w - 10, gy + 1, tokens.dividers().gridLine());
+            for (int gy = y + 56; gy < y + h - 32; gy += 56) {
+                graphics.fill(x + 10, gy, x + w - 10, gy + 1, withAlpha(tokens.dividers().gridLine(), 0x55));
             }
         }
     }
@@ -1914,6 +1914,68 @@ public final class TerminalUi {
         graphics.outline(x, y, w, 42, tokens(context).borders().subtle());
         itemSlot(context, graphics, stack, x + 6, y + 6, color, inside(mouseX, mouseY, x + 6, y + 6, 20, 20));
         line(context, graphics, label, x + 32, y + 11, w - 38, text(context));
+    }
+
+    public static void phaseAccordionRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, String phaseNumber, String phaseTitle, String progressCount,
+            boolean expanded, boolean hovered, int color) {
+        TerminalThemeTokens tokens = tokens(context);
+        int bg = hovered ? tokens.panels().hoverFill() : tokens.colors().row();
+        graphics.fill(x, y, x + w, y + h, bg);
+        graphics.outline(x, y, w, h, hovered ? tokens.borders().normal() : tokens.borders().subtle());
+        graphics.fill(x, y, x + 3, y + h, opaque(color));
+        int numberW = font(context).width(phaseNumber);
+        line(context, graphics, phaseNumber, x + 10, y + Math.max(5, (h - 8) / 2), numberW + 8, color);
+        int titleX = x + numberW + 18;
+        int titleW = Math.max(24, w - (titleX - x) - 78);
+        line(context, graphics, phaseTitle.toUpperCase(Locale.ROOT), titleX, y + Math.max(5, (h - 8) / 2), titleW, text(context));
+        int countW = font(context).width(progressCount) + 8;
+        line(context, graphics, progressCount, x + w - countW - 28, y + Math.max(5, (h - 8) / 2), countW, muted(context));
+        int chevronX = x + w - 16;
+        int chevronY = y + h / 2;
+        int chevronColor = hovered ? opaque(color) : tokens.colors().muted();
+        if (expanded) {
+            graphics.fill(chevronX - 3, chevronY - 1, chevronX - 1, chevronY + 1, chevronColor);
+            graphics.fill(chevronX - 1, chevronY + 1, chevronX + 1, chevronY + 3, chevronColor);
+            graphics.fill(chevronX + 1, chevronY + 3, chevronX + 3, chevronY + 5, chevronColor);
+            graphics.fill(chevronX - 1, chevronY - 3, chevronX + 1, chevronY - 1, chevronColor);
+            graphics.fill(chevronX - 3, chevronY - 5, chevronX - 1, chevronY - 3, chevronColor);
+        } else {
+            graphics.fill(chevronX + 1, chevronY - 5, chevronX + 3, chevronY - 3, chevronColor);
+            graphics.fill(chevronX - 1, chevronY - 3, chevronX + 1, chevronY - 1, chevronColor);
+            graphics.fill(chevronX - 3, chevronY - 1, chevronX - 1, chevronY + 1, chevronColor);
+            graphics.fill(chevronX - 1, chevronY + 1, chevronX + 1, chevronY + 3, chevronColor);
+            graphics.fill(chevronX + 1, chevronY + 3, chevronX + 3, chevronY + 5, chevronColor);
+        }
+    }
+
+    public static void subduedMissionRow(TerminalRenderContext context, GuiGraphicsExtractor graphics,
+            int x, int y, int w, int h, TerminalIcon icon, String title, String statusLabel,
+            float progressValue, int color, boolean selected, boolean hovered) {
+        TerminalThemeTokens tokens = tokens(context);
+        int bg = selected ? tokens.panels().selectedFill()
+                : hovered ? withAlpha(tokens.panels().hoverFill(), 0xC0) : tokens.colors().row();
+        graphics.fill(x, y, x + w, y + h, bg);
+        if (selected) {
+            graphics.outline(x, y, w, h, opaque(color));
+            graphics.fill(x, y, x + 3, y + h, opaque(color));
+        } else {
+            graphics.outline(x, y, w, h, tokens.borders().subtle());
+        }
+        int iconSize = Math.min(18, h - 8);
+        int iconY = y + Math.max(3, (h - iconSize) / 2);
+        iconBadge(context, graphics, icon, x + 6, iconY, iconSize, color, selected);
+        int chipW = Math.max(50, Math.min(80, statusBadgeWidth(context, statusLabel)));
+        int chipX = x + w - chipW - 6;
+        int textX = x + iconSize + 14;
+        int textW = Math.max(24, chipX - textX - 8);
+        int titleColor = selected ? text(context) : muted(context);
+        line(context, graphics, title, textX, y + Math.max(4, (h - 8) / 2), textW, titleColor);
+        miniStatusPill(context, graphics, statusLabel, chipX, y + Math.max(3, (h - 14) / 2), chipW, color, false);
+        int barW = textW;
+        if (barW > 36) {
+            progress(context, graphics, textX, y + h - 8, barW, 3, progressValue, color);
+        }
     }
 
     public static void missionCard(TerminalRenderContext context, GuiGraphicsExtractor graphics,

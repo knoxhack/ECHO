@@ -2,7 +2,7 @@
   "id": "echomultiblockcore:calibrate_data_bus",
   "display_name": "Calibrate Data Bus",
   "category": "calibration",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line"],
   "required_workcell": "SCANNING",
   "required_tools": ["SCANNER", "CALIBRATOR"],
   "duration_ticks": 180,

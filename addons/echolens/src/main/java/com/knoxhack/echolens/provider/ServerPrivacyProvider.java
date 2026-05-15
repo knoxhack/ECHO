@@ -53,6 +53,19 @@ public enum ServerPrivacyProvider implements ServerLensProvider {
                                 "R", LensTone.INFO, LensVisibility.DEEP))));
     }
 
+    @Override
+    public List<LensInfoRow> deepScanSignals(LensContext context) {
+        LensAccessPolicy policy = LensConfig.value(LensConfig.INVENTORY_ACCESS_POLICY, LensAccessPolicy.PUBLIC_ONLY);
+        boolean privateTarget = privateContainer(context);
+        if (!privateTarget) {
+            return List.of(LensInfoRow.of("Privacy", "Public target", "P", LensTone.GOOD, LensVisibility.DEEP));
+        }
+        boolean redacted = policy == LensAccessPolicy.PUBLIC_ONLY
+                && LensConfig.bool(LensConfig.SERVER_REDACT_PROTECTED_TARGETS, true);
+        return List.of(LensInfoRow.of("Privacy", redacted ? "Redacted" : "Protected",
+                "P", redacted ? LensTone.WARNING : LensTone.INFO, LensVisibility.DEEP));
+    }
+
     private static boolean privateContainer(LensContext context) {
         if (context.hasBlock()) {
             BlockEntity blockEntity = context.level().getBlockEntity(context.blockPos());

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/armory_module.schema.json",
+  "title": "ECHO Armory Module Definition",
+  "description": "Equipment module blueprint for EchoArmory.",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "id": { "type": "string", "description": "Module identifier. Inferred from file path if omitted." },
+    "title": { "type": "string" },
+    "slotType": { "type": "string", "default": "utility", "description": "Slot type: weapon, armor, utility, drone." },
+    "effectType": { "type": "string", "default": "utility" },
+    "damageBonus": { "type": "number", "default": 0.0 },
+    "defenseBonus": { "type": "integer", "default": 0 },
+    "energyCost": { "type": "integer", "default": 0 },
+    "instability": { "type": "integer", "default": 0 },
+    "toxicProtection": { "type": "integer", "default": 0 },
+    "radiationProtection": { "type": "integer", "default": 0 },
+    "coldProtection": { "type": "integer", "default": 0 },
+    "heatProtection": { "type": "integer", "default": 0 },
+    "fractureProtection": { "type": "integer", "default": 0 },
+    "compatibleTypes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "synergyTags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

@@ -35,7 +35,9 @@ public class EchoLens {
         event.enqueueWork(() -> {
             LensBuiltins.register();
             LensCoreIntegration.register();
-            LensMissionCoreIntegration.register();
+            if (ModList.get().isLoaded("echomissioncore")) {
+                LensMissionCoreIntegration.register();
+            }
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();
             }

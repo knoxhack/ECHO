@@ -45,9 +45,17 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="echoruntimeguard"
+type="optional"
+reason="Enables performance budget diagnostics for multiblock validation and facility runtime."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
-reason="Future dashboard tabs can consume MultiblockCore status snapshots."
+reason="Adds MultiblockCore status, recipe, and action tabs to the Terminal dashboard."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
@@ -72,6 +80,14 @@ side="BOTH"
 modId="echorendercore"
 type="optional"
 reason="Enables RenderCore V16 multiblock controller and robotic arm visual anchors."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echomissioncore"
+type="optional"
+reason="Registers multiblock construction and automation missions when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

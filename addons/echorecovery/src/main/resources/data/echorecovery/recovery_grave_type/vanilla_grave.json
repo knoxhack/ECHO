@@ -1,0 +1,10 @@
+{
+  "id": "echorecovery:vanilla_grave",
+  "display_name": "Stone Grave",
+  "texture": "minecraft:block/stone",
+  "sounds": {
+    "created": "minecraft:block.stone.place",
+    "opened": "minecraft:block.chest.open",
+    "recovered": "minecraft:entity.player.levelup"
+  }
+}

@@ -18,7 +18,7 @@ public final class ModBlocks {
 
     public static final DeferredBlock<Block> MULTIBLOCK_CONTROLLER = BLOCKS.registerBlock(
             "multiblock_controller",
-            properties -> new MultiblockControllerBlock(EchoMultiblockCore.id("industrial_assembly_line_demo"), properties),
+            properties -> new MultiblockControllerBlock(EchoMultiblockCore.id("industrial_assembly_line"), properties),
             p -> p.mapColor(MapColor.COLOR_CYAN).strength(4.0F, 8.0F).sound(SoundType.METAL).noOcclusion());
     public static final DeferredBlock<Block> SIGNAL_TOWER_CORE = BLOCKS.registerBlock(
             "signal_tower_core",
@@ -71,7 +71,7 @@ public final class ModBlocks {
         if (block instanceof MultiblockControllerBlock controller) {
             return controller.defaultDefinitionId();
         }
-        return EchoMultiblockCore.id("industrial_assembly_line_demo");
+        return EchoMultiblockCore.id("industrial_assembly_line");
     }
 
     private static DeferredBlock<Block> metal(String name, MapColor color) {

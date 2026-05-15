@@ -46,6 +46,10 @@
     "echo:map_marker",
     "echo:terminal_tab"
   ],
+  "capability_requirements": [
+    { "capability": "echo:power_input", "amount": 50, "throughput": 16, "unit": "FE/t" },
+    { "capability": "echo:data", "amount": 20, "throughput": 8, "unit": "data/t" }
+  ],
   "integrity": {
     "max": 100,
     "damageable": true

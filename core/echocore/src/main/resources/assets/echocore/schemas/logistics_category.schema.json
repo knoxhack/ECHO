@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/logistics_category.schema.json",
+  "title": "ECHO Logistics Supply Category",
+  "description": "Supply category for EchoLogisticsNetwork.",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "id": { "type": "string", "description": "Category identifier. Inferred from file path if omitted." },
+    "title": { "type": "string" },
+    "order": { "type": "integer", "default": 0 },
+    "accentColor": { "type": ["string", "integer"], "default": "0x66E8FF" },
+    "tagId": { "type": "string", "description": "Item tag identifier used for category grouping. Auto-generated if omitted." }
+  },
+  "additionalProperties": true
+}

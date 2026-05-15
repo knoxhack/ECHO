@@ -1,6 +1,7 @@
 package com.knoxhack.echopowergrid.registry;
 
 import com.knoxhack.echopowergrid.EchoPowerGrid;
+import com.knoxhack.echopowergrid.menu.PowerNodeMenu;
 import com.knoxhack.echopowergrid.menu.SubstationMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -15,6 +16,9 @@ public final class ModMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<SubstationMenu>> SUBSTATION =
         MENUS.register("substation", () -> IMenuTypeExtension.create(SubstationMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PowerNodeMenu>> POWER_NODE =
+        MENUS.register("power_node", () -> IMenuTypeExtension.create(PowerNodeMenu::new));
 
     private ModMenus() {}
 

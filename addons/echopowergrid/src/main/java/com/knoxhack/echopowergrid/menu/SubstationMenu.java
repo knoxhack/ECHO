@@ -32,6 +32,7 @@ public class SubstationMenu extends AbstractContainerMenu {
         super(ModMenus.SUBSTATION.get(), containerId);
         checkContainerDataCount(data, DATA_COUNT);
         this.data = data;
+        addDataSlots(data);
     }
 
     public long getGeneration() { return Integer.toUnsignedLong(data.get(DATA_GENERATION)); }

@@ -47,7 +47,9 @@ public class EchoLogisticsNetwork {
       LOGGER.info("ECHO Logistics Network online. Supply chaos is now a routing problem.");
       event.enqueueWork(() -> {
          LogisticsCoreIntegration.registerAddonChapter();
-         LogisticsMissionCoreIntegration.register();
+         if (ModList.get().isLoaded("echomissioncore")) {
+            LogisticsMissionCoreIntegration.register();
+         }
          if (ModList.get().isLoaded("echoterminal")) {
             registerTerminalIntegration();
          }

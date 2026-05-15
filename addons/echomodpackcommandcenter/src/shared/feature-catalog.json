@@ -20,9 +20,9 @@
       "evidence": [
         {
           "kind": "seed",
-          "label": "Command Center seeds 13 expected ECHO jars",
+          "label": "Command Center seeds 33 expected ECHO jars",
           "path": "src/shared/seed-data.json",
-          "detail": "The echo project module list drives full-stack release and jar actions."
+          "detail": "The echo project module list drives full-stack release and jar actions for every addon in settings.gradle."
         }
       ],
       "order": 1
@@ -1168,8 +1168,8 @@
       "status": "partial",
       "playerPromise": "Unify ECHO networking, persistent data, missions, facility multiblocks, runtime performance, world telemetry, and render state behind shared addon services.",
       "loreContext": "The ECHO command stack becomes more believable when every chapter reports through common infrastructure instead of isolated systems.",
-      "implementationSummary": "NetCore, DataCore, MissionCore, MultiblockCore, RuntimeGuard, WorldCore, and RenderCore now have Gradle modules and module metadata; each still needs scoped scans and GameTest evidence before being called release complete.",
-      "nextAction": "Run scoped quick scans and module GameTests for the shared service modules, including MultiblockCore and RuntimeGuard.",
+      "implementationSummary": "NetCore, DataCore, MissionCore, MultiblockCore, RuntimeGuard, WorldCore, RenderCore, ThemeCore, PlayerCore, SoundCore, TutorialCore, and WeatherCore now have Gradle modules and Command Center project coverage; each still needs scoped scans and GameTest or smoke evidence before release promotion.",
+      "nextAction": "Run scoped quick scans, module GameTests, and smoke checks for the shared service modules.",
       "sources": [
         {
           "label": "ECHO settings.gradle",
@@ -1202,7 +1202,7 @@
           "kind": "build-config",
           "label": "Gradle workspace includes the shared service modules",
           "path": "C:/Github/Echo/settings.gradle",
-          "detail": "The current beta and release addon sets include NetCore, DataCore, MissionCore, MultiblockCore, RuntimeGuard, WorldCore, and RenderCore."
+          "detail": "The beta addon set includes the shared service modules as part of the full-stack build target."
         }
       ],
       "order": 30
@@ -1215,8 +1215,8 @@
       "status": "partial",
       "playerPromise": "Give players a HoloMap, shared Index archive, Armory readiness surface, Lens scanner HUD, and Blockworks structural palette inside the ECHO command/build layer.",
       "loreContext": "Maps, archives, and combat loadouts turn scattered survival data into actionable ECHO field intelligence.",
-      "implementationSummary": "HoloMap, Index, Armory, Lens, and Blockworks have build modules and concrete terminal/scanner/resource evidence; release confidence still depends on scoped validation and a clean promoted jar set.",
-      "nextAction": "Build, promote, and scan HoloMap, Index, Armory, Lens, and Blockworks through the Modpack pipeline after Minecraft releases the mods folder locks.",
+      "implementationSummary": "HoloMap, Index, Armory, Lens, Blockworks, PowerGrid, RelicTech, WeatherCore, SoundCore, TutorialCore, ThemeCore, and PlayerCore have build modules and concrete source or documentation evidence; release confidence still depends on scoped validation and a clean promoted jar set.",
+      "nextAction": "Run scoped scans and jar promotion for the expanded addon surface.",
       "sources": [
         {
           "label": "HoloMap README",
@@ -1688,6 +1688,350 @@
           "label": "Smoke notes cover Blockworks release validation",
           "path": "C:/Github/Echo/addons/echoblockworks/SMOKE_TEST.md",
           "detail": "The smoke test document backs scoped QA and release acceptance."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echothemecore",
+      "id": "themecore-cyberglass-service",
+      "title": "CyberGlass Theme Service",
+      "category": "Visual Identity",
+      "status": "implemented",
+      "playerPromise": "Apply a consistent ECHO visual language to Terminal, SignalOS, HoloMap, Lens, SoundCore, Blockworks, RenderCore, and safe vanilla UI accents.",
+      "loreContext": "ThemeCore is the recovered presentation layer that lets every ECHO interface feel like part of the same command stack.",
+      "implementationSummary": "ThemeCore documentation describes datapack themes, CyberGlass and Nexus defaults, config groups, commands, optional provider APIs, Terminal defaulting, and vanilla UI safety behavior.",
+      "nextAction": "Run ThemeCore scoped scan, GameTests, and the CyberGlass smoke test before release promotion.",
+      "sources": [
+        {
+          "label": "ThemeCore README",
+          "path": "C:/Github/Echo/addons/echothemecore/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "ThemeCore smoke test",
+          "path": "C:/Github/Echo/addons/echothemecore/SMOKE_TEST.md",
+          "section": "CyberGlass default smoke test"
+        },
+        {
+          "label": "ThemeCore metadata",
+          "path": "C:/Github/Echo/addons/echothemecore/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "label": "README documents theme loading, commands, provider APIs, and vanilla UI skinning",
+          "path": "C:/Github/Echo/addons/echothemecore/README.md",
+          "detail": "The module exposes shared theme tokens and optional-safe integrations for first-party UI and visual systems."
+        },
+        {
+          "kind": "test",
+          "label": "GameTests exist for ThemeCore",
+          "path": "C:/Github/Echo/addons/echothemecore/src/main/java/com/knoxhack/echothemecore/test/ModGameTests.java",
+          "detail": "The module has source-level GameTest coverage for release validation."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echoplayercore",
+      "id": "playercore-travel-utility",
+      "title": "Player Travel Utility Layer",
+      "category": "Player Services",
+      "status": "implemented",
+      "playerPromise": "Use homes, back, random teleport, spawn, cooldowns, and ECHO command aliases without depending on a specific chapter addon.",
+      "loreContext": "PlayerCore handles the practical operator movement tools that keep long ECHO expeditions readable and recoverable.",
+      "implementationSummary": "PlayerCore documentation and source define homes, teleport history, death return, RTP safety, persistent saved data, command aliases, config, and optional integration hooks.",
+      "nextAction": "Run PlayerCore scoped scan, GameTests, and smoke test before promoting the jar.",
+      "sources": [
+        {
+          "label": "PlayerCore README",
+          "path": "C:/Github/Echo/addons/echoplayercore/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "PlayerCore smoke test",
+          "path": "C:/Github/Echo/addons/echoplayercore/SMOKE_TEST.md",
+          "section": "Smoke coverage"
+        },
+        {
+          "label": "PlayerCore commands",
+          "path": "C:/Github/Echo/addons/echoplayercore/src/main/java/com/knoxhack/echoplayercore/command/PlayerCoreCommands.java",
+          "section": "Commands"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Travel commands and saved data exist in source",
+          "path": "C:/Github/Echo/addons/echoplayercore/src/main/java/com/knoxhack/echoplayercore",
+          "detail": "Source includes home, warp, back, spawn, RTP, TPA, events, config, and saved-data classes."
+        },
+        {
+          "kind": "test",
+          "label": "GameTests exist for PlayerCore",
+          "path": "C:/Github/Echo/addons/echoplayercore/src/main/java/com/knoxhack/echoplayercore/test/ModGameTests.java",
+          "detail": "The smoke and GameTest paths cover persistence and command behavior."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echopowergrid",
+      "id": "powergrid-ep-network",
+      "title": "EP Power Network",
+      "category": "Power Systems",
+      "status": "implemented",
+      "playerPromise": "Build generators, batteries, cables, substations, breakers, meters, and consumers that power ECHO facilities with visible brownout and overload states.",
+      "loreContext": "PowerGrid turns post-Gridfall recovery into a literal restoration of energy infrastructure for terminals, launchpads, machines, and outposts.",
+      "implementationSummary": "PowerGrid documentation and source define EP storage, generators, batteries, cables, network state, brownout/overload behavior, drawPower APIs, network summary sync packets, Terminal dashboard wiring, HoloMap markers, MultiblockCore provider registration, diagnostics, commands, blocks, items, and GameTests.",
+      "nextAction": "Resolve dev-runtime optional-mod ordering/file-lock interruptions, then rerun PowerGrid GameTests and the grid smoke test before promoting the jar.",
+      "sources": [
+        {
+          "label": "PowerGrid README",
+          "path": "C:/Github/Echo/addons/echopowergrid/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "PowerGrid smoke test",
+          "path": "C:/Github/Echo/addons/echopowergrid/SMOKE_TEST.md",
+          "section": "Basic Grid"
+        },
+        {
+          "label": "PowerGrid API source",
+          "path": "C:/Github/Echo/addons/echopowergrid/src/main/java/com/knoxhack/echopowergrid/api",
+          "section": "EP network API"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Power API, blocks, block entities, and commands exist in source",
+          "path": "C:/Github/Echo/addons/echopowergrid/src/main/java/com/knoxhack/echopowergrid",
+          "detail": "Source includes EchoPowerGridApi draw and summary APIs, generators, batteries, cables, consumers, substations, meters, breakers, config, network management, sync packets, Terminal/HoloMap providers, and commands."
+        },
+        {
+          "kind": "test",
+          "label": "PowerGrid GameTests exist",
+          "path": "C:/Github/Echo/addons/echopowergrid/src/main/java/com/knoxhack/echopowergrid/test/PowerGridGameTests.java",
+          "detail": "GameTests cover network flow, drawPower simulation/commit behavior, FE transaction rollback, Terminal packet creation, and HoloMap marker output."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echosoundcore",
+      "id": "soundcore-adaptive-audio",
+      "title": "Adaptive Audio Framework",
+      "category": "Audio",
+      "status": "implemented",
+      "playerPromise": "Hear adaptive music, ambience, mission stingers, chapter themes, and UI sound cues that respond to ECHO context.",
+      "loreContext": "SoundCore gives each ruined route, faction pressure, and command surface an audible identity inside the same ecosystem.",
+      "implementationSummary": "SoundCore documentation and source define adaptive music managers, ambience layers, sound events, profile reload listeners, public APIs, context stacks, commands, and optional integrations.",
+      "nextAction": "Run SoundCore scoped scan and add smoke/GameTest evidence before promoting the jar.",
+      "sources": [
+        {
+          "label": "SoundCore README",
+          "path": "C:/Github/Echo/addons/echosoundcore/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "SoundCore API source",
+          "path": "C:/Github/Echo/addons/echosoundcore/src/main/java/com/knoxhack/echosoundcore/api",
+          "section": "Audio APIs"
+        },
+        {
+          "label": "SoundCore metadata",
+          "path": "C:/Github/Echo/addons/echosoundcore/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Adaptive music, ambience, data reload, and integration source exists",
+          "path": "C:/Github/Echo/addons/echosoundcore/src/main/java/com/knoxhack/echosoundcore",
+          "detail": "Source includes SoundCoreApi, SoundCoreClientApi, music and ambience managers, profile reload listeners, commands, and optional module integrations."
+        },
+        {
+          "kind": "resource",
+          "label": "Sound resources are defined under the SoundCore namespace",
+          "path": "C:/Github/Echo/addons/echosoundcore/src/main/resources/assets/echosoundcore",
+          "detail": "The module owns first-party sound definitions and expected audio resource paths."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echotutorialcore",
+      "id": "tutorialcore-contextual-guidance",
+      "title": "Contextual Guidance System",
+      "category": "Onboarding",
+      "status": "implemented",
+      "playerPromise": "Receive guide cards, contextual hints, mistake feedback, beginner modes, and Terminal help that make deep ECHO systems readable.",
+      "loreContext": "TutorialCore is ECHO-7 translating dangerous field procedures into timely operator guidance instead of detached documentation.",
+      "implementationSummary": "TutorialCore documentation and source define guide modes, tutorial cards, hints, mistake detection, data reloads, command controls, client display, player data, and Terminal-style help surfaces.",
+      "nextAction": "Run TutorialCore scoped scan and smoke test, then add GameTest evidence when available.",
+      "sources": [
+        {
+          "label": "TutorialCore README",
+          "path": "C:/Github/Echo/addons/echotutorialcore/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "TutorialCore smoke test",
+          "path": "C:/Github/Echo/addons/echotutorialcore/SMOKE_TEST.md",
+          "section": "Smoke coverage"
+        },
+        {
+          "label": "TutorialCore API source",
+          "path": "C:/Github/Echo/addons/echotutorialcore/src/main/java/com/knoxhack/echotutorialcore/api",
+          "section": "Guide APIs"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Guide cards, hints, flows, player data, commands, and integrations exist in source",
+          "path": "C:/Github/Echo/addons/echotutorialcore/src/main/java/com/knoxhack/echotutorialcore",
+          "detail": "Source includes TutorialCoreApi, card/hint/flow APIs, config, reload listeners, commands, client display, and integration classes."
+        },
+        {
+          "kind": "doc",
+          "label": "Smoke test covers load, reload, command, and Terminal guide behavior",
+          "path": "C:/Github/Echo/addons/echotutorialcore/SMOKE_TEST.md",
+          "detail": "The module has a documented release verification path."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echorelictech",
+      "id": "relictech-prototype-loot",
+      "title": "Prototype Relic Loot Loop",
+      "category": "Progression Loot",
+      "status": "implemented",
+      "playerPromise": "Recover old-world prototype relics, identify them, repair or stabilize them, and decide when their instability risk is worth using.",
+      "loreContext": "RelicTech turns pre-Gridfall experiments and Nexus-corrupted prototypes into powerful but dangerous artifacts of the collapse.",
+      "implementationSummary": "RelicTech documentation and source define relic categories, tiers, conditions, instability, failure tables, analyzers, workbenches, containment, null batteries, APIs, and GameTests.",
+      "nextAction": "Run RelicTech scoped scan, GameTests, and add smoke notes before promoting the jar.",
+      "sources": [
+        {
+          "label": "RelicTech README",
+          "path": "C:/Github/Echo/addons/echorelictech/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "RelicTech API source",
+          "path": "C:/Github/Echo/addons/echorelictech/src/main/java/com/knoxhack/echorelictech/api",
+          "section": "Relic APIs"
+        },
+        {
+          "label": "RelicTech metadata",
+          "path": "C:/Github/Echo/addons/echorelictech/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Relic APIs, machine blocks, failure tables, and item systems exist in source",
+          "path": "C:/Github/Echo/addons/echorelictech/src/main/java/com/knoxhack/echorelictech",
+          "detail": "Source includes RelicTechApi, relic data, failure tables, analyzer/workbench/containment blocks, null battery systems, commands, and client screens."
+        },
+        {
+          "kind": "test",
+          "label": "RelicTech GameTests exist",
+          "path": "C:/Github/Echo/addons/echorelictech/src/main/java/com/knoxhack/echorelictech/test/RelicTechGameTests.java",
+          "detail": "GameTests back the relic release path."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echoweathercore",
+      "id": "weathercore-atmospheric-hazards",
+      "title": "Atmospheric Hazard Framework",
+      "category": "Weather",
+      "status": "implemented",
+      "playerPromise": "Plan expeditions around ash storms, toxic rain, radiation storms, cryo fronts, heat surges, Nexus signal storms, debris showers, and blackouts.",
+      "loreContext": "WeatherCore makes the broken atmosphere part of the Gridfall aftermath, turning forecasts and shelter into survival decisions.",
+      "implementationSummary": "WeatherCore documentation and source define weather types, phases, severities, scopes, forecasts, route risk, stations, sensors, sirens, route posts, commands, and client config.",
+      "nextAction": "Run WeatherCore scoped scan and add smoke/GameTest evidence before promoting the jar.",
+      "sources": [
+        {
+          "label": "WeatherCore README",
+          "path": "C:/Github/Echo/addons/echoweathercore/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "WeatherCore API source",
+          "path": "C:/Github/Echo/addons/echoweathercore/src/main/java/com/knoxhack/echoweathercore/api",
+          "section": "Weather APIs"
+        },
+        {
+          "label": "WeatherCore metadata",
+          "path": "C:/Github/Echo/addons/echoweathercore/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Weather API, station blocks, commands, and client config exist in source",
+          "path": "C:/Github/Echo/addons/echoweathercore/src/main/java/com/knoxhack/echoweathercore",
+          "detail": "Source includes WeatherCoreApi, weather events, forecasts, route risk, station blocks, warning devices, commands, config, and client classes."
+        },
+        {
+          "kind": "resource",
+          "label": "WeatherCore resources exist under the module namespace",
+          "path": "C:/Github/Echo/addons/echoweathercore/src/main/resources",
+          "detail": "The module has first-party resources for weather blocks, items, recipes, loot, tags, and data."
+        }
+      ],
+      "order": 1
+    },
+    {
+      "projectSlug": "echorecovery",
+      "id": "recovery-grave-system",
+      "title": "Grave Recovery System",
+      "category": "Player Recovery",
+      "status": "implemented",
+      "playerPromise": "Recover inventory, armor, and offhand items from graves, use keys and compasses to locate lost gear, and manage death history through commands and UI.",
+      "loreContext": "Recovery turns dangerous ECHO deaths into field recovery operations, with Ashfall naming graves as caches and optional addon hooks adding routes, hazards, records, and extraction support.",
+      "implementationSummary": "Recovery documentation and source define standalone grave creation, grave storage, recover-all networking, commands, config, world data, grave UI, sounds, recipes, advancements, datapack grave types, and optional integrations across the ECHO stack.",
+      "nextAction": "Run Recovery scoped scan, GameTests, and promote echorecovery-1.3.0.jar in the next clean modpack update.",
+      "sources": [
+        {
+          "label": "Recovery README",
+          "path": "C:/Github/Echo/addons/echorecovery/docs/README.md",
+          "section": "Overview"
+        },
+        {
+          "label": "Recovery integrations",
+          "path": "C:/Github/Echo/addons/echorecovery/docs/INTEGRATIONS.md",
+          "section": "Optional Module Hooks"
+        },
+        {
+          "label": "Recovery metadata",
+          "path": "C:/Github/Echo/addons/echorecovery/gradle.properties",
+          "section": "Version"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "label": "Grave, command, config, packet, data, registry, and integration source exists",
+          "path": "C:/Github/Echo/addons/echorecovery/src/main/java/com/knoxhack/echorecovery",
+          "detail": "Source includes the mod entrypoint, death handler, grave manager, commands, config, world data, recover-all packet, client screen, registries, and optional integration dispatcher/classes."
+        },
+        {
+          "kind": "resource",
+          "label": "Recovery resources exist under the module namespace",
+          "path": "C:/Github/Echo/addons/echorecovery/src/main/resources",
+          "detail": "Resources include sounds, blockstates, models, lang, loot, recipes, advancements, item tags, and data-driven recovery grave types."
         }
       ],
       "order": 1

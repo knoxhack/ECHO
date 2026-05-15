@@ -7,6 +7,7 @@ import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventProfiles;
 import com.knoxhack.echoashfallprotocol.event.EnvironmentalEventType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.player.Player;
@@ -39,11 +40,12 @@ public final class EnvironmentalVisualController {
         if (orbitalTicksRemaining > 0) {
             orbitalTicksRemaining--;
         }
+        float exposureScale = weatherExposureScale(minecraft, minecraft.player, type);
         float target = profile == null
                 ? (orbitalTicksRemaining > 0 ? orbitalIntensity : 0.0F)
-                : Math.max(0.0F, HudState.getEnvEventIntensity());
+                : Math.max(0.0F, HudState.getEnvEventIntensity()) * exposureScale;
         easedIntensity = approach(easedIntensity, target, 0.035F);
-        if (profile != null && easedIntensity > 0.05F) {
+        if (profile != null && exposureScale > 0.0F && easedIntensity > 0.05F) {
             spawnWeatherParticles(minecraft, minecraft.player, profile);
         } else if (orbitalTicksRemaining > 0 && easedIntensity > 0.05F) {
             spawnOrbitalParticles(minecraft, minecraft.player);
@@ -63,6 +65,10 @@ public final class EnvironmentalVisualController {
         if (easedIntensity <= 0.01F) {
             return;
         }
+        float visualIntensity = easedIntensity * weatherExposureScale(minecraft, minecraft.player, type);
+        if (visualIntensity <= 0.01F) {
+            return;
+        }
 
         float visualScale = Math.max(0.0F, Config.WEATHER_VISUAL_INTENSITY.get().floatValue());
         if (visualScale <= 0.0F) {
@@ -72,7 +78,7 @@ public final class EnvironmentalVisualController {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
         int overlayColor = profile == null ? orbitalOverlayColor : profile.overlayColor();
-        int alpha = Math.min(overlayAlphaCap(type), Math.round(((overlayColor >>> 24) & 0xFF) * easedIntensity * visualScale));
+        int alpha = Math.min(overlayAlphaCap(type), Math.round(((overlayColor >>> 24) & 0xFF) * visualIntensity * visualScale));
         if (type == EnvironmentalEventType.BLACKOUT) {
             alpha = Math.min(180, alpha + ((localTicks / 7 + HudState.getEnvEventSeed()) % 3 == 0 ? 24 : 0));
         }
@@ -131,6 +137,47 @@ public final class EnvironmentalVisualController {
             double z = player.getZ() + Math.sin(phase) * radius;
             minecraft.level.addParticle(particle, x, y, z, 0.0D, 0.015D, 0.0D);
         }
+    }
+
+    private static float weatherExposureScale(Minecraft minecraft, Player player, EnvironmentalEventType type) {
+        if (!requiresOutdoorExposure(type)) {
+            return 1.0F;
+        }
+        return isShelteredFromWeather(minecraft, player) ? 0.0F : 1.0F;
+    }
+
+    private static boolean requiresOutdoorExposure(EnvironmentalEventType type) {
+        return switch (type) {
+            case RADIATION_STORM, TOXIC_STORM, ASH_STORM, CRYO_FRONT -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isShelteredFromWeather(Minecraft minecraft, Player player) {
+        if (minecraft.level == null) {
+            return true;
+        }
+        BlockPos pos = player.blockPosition();
+        if (pos.getY() < 50) {
+            return true;
+        }
+        BlockPos headPos = pos.above(2);
+        if (!minecraft.level.canSeeSky(headPos)) {
+            return true;
+        }
+
+        int coverCount = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) {
+                    continue;
+                }
+                if (!minecraft.level.isEmptyBlock(headPos.offset(dx, 0, dz))) {
+                    coverCount++;
+                }
+            }
+        }
+        return coverCount >= 5;
     }
 
     private static ParticleOptions particleFor(EnvironmentalEventType type) {

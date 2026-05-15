@@ -3,6 +3,7 @@ package com.knoxhack.signalos.integration;
 import com.knoxhack.echorendercore.api.RenderCoreBlockVisualHost;
 import com.knoxhack.echorendercore.api.VisualState;
 import com.knoxhack.echorendercore.client.RenderCoreBlockEntityRenderer;
+import com.knoxhack.echorendercore.client.RenderCoreScreenFrameOptions;
 import com.knoxhack.echorendercore.client.RenderCoreScreenVisuals;
 import com.knoxhack.signalos.SignalOS;
 import com.knoxhack.signalos.block.entity.SignalOsServerRackBlockEntity;
@@ -21,6 +22,16 @@ public final class SignalOsRenderCoreClientIntegration {
    private static final Identifier RACK_PROFILE = Identifier.fromNamespaceAndPath(SignalOS.MODID, "server_rack");
    private static final Identifier TERMINAL_SCREEN_PROFILE = Identifier.fromNamespaceAndPath(SignalOS.MODID, "screen/terminal_hud");
    private static final Identifier RACK_SCREEN_PROFILE = Identifier.fromNamespaceAndPath(SignalOS.MODID, "screen/server_rack");
+   private static final RenderCoreScreenFrameOptions TERMINAL_SCREEN_OPTIONS =
+      RenderCoreScreenFrameOptions.terminal("SIGNALOS TERMINAL").build();
+   private static final RenderCoreScreenFrameOptions RACK_SCREEN_OPTIONS =
+      RenderCoreScreenFrameOptions.cyberglass("SIGNALOS RACK")
+         .backdrop(false)
+         .scanlines(false)
+         .glassGlints(false)
+         .chromaticEdge(true)
+         .quietFallback(false)
+         .build();
    private static boolean screenRegistered;
 
    private SignalOsRenderCoreClientIntegration() {
@@ -81,13 +92,13 @@ public final class SignalOsRenderCoreClientIntegration {
 
    private static void renderScreenFrame(ScreenEvent.Render.Post event) {
       Identifier profile = null;
-      String label = "";
+      RenderCoreScreenFrameOptions options = null;
       if (event.getScreen() instanceof SignalOsTerminalScreen) {
          profile = TERMINAL_SCREEN_PROFILE;
-         label = "SIGNALOS TERMINAL";
+         options = TERMINAL_SCREEN_OPTIONS;
       } else if (event.getScreen() instanceof SignalOsServerRackScreen) {
          profile = RACK_SCREEN_PROFILE;
-         label = "SIGNALOS RACK";
+         options = RACK_SCREEN_OPTIONS;
       }
       if (profile == null) {
          return;
@@ -98,10 +109,10 @@ public final class SignalOsRenderCoreClientIntegration {
          Minecraft.getInstance().font,
          () -> finalProfile,
          6,
-         6,
-         Math.max(1, event.getScreen().width - 12),
-         Math.max(1, event.getScreen().height - 12),
-         label
-      );
+          6,
+          Math.max(1, event.getScreen().width - 12),
+          Math.max(1, event.getScreen().height - 12),
+          options
+       );
    }
 }

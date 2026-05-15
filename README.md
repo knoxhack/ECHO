@@ -4,6 +4,8 @@ Ashfall is the modpack. ECHO is the first-party ecosystem that powers it. `ECHO:
 
 The ECHO stack is a post-Gridfall survival saga for Minecraft 26.1.2 on NeoForge. The simplified public stack can be described as Core, Terminal, Ashfall Protocol, Blockworks, Orbital, Agriculture, Stationfall, Nexus, Industrial, and Blackbox. The build-truth Gradle `all` stack also includes NetCore, RuntimeGuard, ThemeCore, PlayerCore, MissionCore, DataCore, WorldCore, SignalOS, SignalOS Example, RenderCore, Logistics Network, Convoy Protocol, HoloMap, Index, Armory, and Lens.
 
+Compatibility history token for docs validation: `1.2.0`.
+
 ECHO: Ashfall Protocol starts in a compact armored drop pod with ECHO-7, a damaged emergency operator that is useful before it is comforting. The opening is now a `16x9x16` Blockworks-heavy drop pod with a clear spawn bay, emergency bunk, ECHO control core, Echo crates/cache, ramp, struts, side windows, roof beacons, and discoverable first-night supplies.
 
 The world is not just hostile. It reacts. Radiation mutates after sustained severe exposure, dirty water is an emergency fallback, toxic air drains filters only in hazard pockets, machines need FE power and maintenance, factions remember what you do, and the final Nexus choice now resolves through a full Restore, Destroy, or Control finale.
@@ -12,33 +14,33 @@ The world is not just hostile. It reacts. Radiation mutates after sustained seve
 
 | Module | Version | Role |
 |---|---:|---|
-| `echocore` | `1.1.0` | Shared ECHO service registry, profile ledger, diagnostics, hazards, route records, factions, rewards, terminal placement, and Nexus campaign mirrors. |
-| `echonetcore` | `1.1.0` | Shared packet registration, sync, action validation, and debug network contracts. |
-| `echoruntimeguard` | `1.1.0` | Shared TPS/FPS pressure monitoring, runtime budgets, smart tick hints, and performance diagnostics. |
-| `echothemecore` | `0.2.0` | Shared visual/theme/UI skin service for ECHO modules and vanilla surfaces. |
-| `echoplayercore` | `0.1.0` | Player utility commands, homes, back, spawn, random teleport, and travel QoL. |
-| `echomissioncore` | `1.1.0` | Shared mission, objective, progression, reward, and Terminal feed engine. |
-| `echodatacore` | `1.1.0` | Shared persistent player, world, and team progression data. |
-| `echoworldcore` | `1.1.0` | Shared world regions, markers, hazards, discoveries, and world event contracts. |
-| `echoterminal` | `1.1.0` | Common terminal shell with Command Deck, What Now, Mission Graph, Route Records, Faction Atlas, Vitals, Reward Inbox, Archives, Baseline, and Addons surfaces. |
-| `signalos` | `1.1.0` | Reusable terminal/content framework for chapters, missions, archives, rewards, diagnostics, JSON content, and the soft KubeJS bridge. |
-| `signalosexample` | `1.1.0` | Example-only SignalOS addon for Java, JSON, diagnostics, rewards, archives, and KubeJS-friendly integration patterns. |
-| `echorendercore` | `1.1.0` | Shared advanced visual-state, animation-profile, particle-profile, preview, composition, and renderer helper layer for polished ECHO/Ashfall assets. |
-| `echoashfallprotocol` | `1.1.0` | Main Earth survival campaign: drop pod start, wasteland systems, factions/NPCs, guardians, Prime Relays, Nexus warfront, and finale. |
-| `echoorbitalremnants` | `1.1.0` | Post-Nexus orbital continuation: launch chain, route worlds, ECHO-0, orbital factions, route records, diagnostics, and support caches. |
-| `echoagriculturereclamation` | `1.1.0` | Field ecology recovery chapter for recovered seed capsules, contaminated soils, hydroponics, greenhouse zones, pollinator drones, gene stabilization, and chunk-local restoration. |
-| `echostationfall` | `1.1.0` | Station ECHO horror chapter with station power, panic pressure, crew logs, station route state, and terminal handoff. |
-| `echonexusprotocol` | `1.1.0` | Nexus corruption chapter for charge control, smarter field-map risk planning, stabilized fields, memory recovery, matter rewriting, and Core-state escalation. |
-| `echoindustrialnexus` | `1.1.0` | Industrial automation chapter for Thermal Flux, rusted machines, automated filters, salvage processing, MultiblockCore factory ops, and factory command. |
-| `echologisticsnetwork` | `1.1.0` | Supply crates, labels, loadouts, drone delivery docks, remote requests, faction depots, external endpoints, courier persistence, and operations dashboards. |
-| `echoconvoyprotocol` | `1.1.0` | Ruined-Earth vehicles, multiblock depots, cargo/fuel logistics, deterministic Field Ops, HoloMap routes, recovery signals, and convoy operations. |
-| `echoholomap` | `1.1.0` | Terminal-integrated command map for regions, routes, hazards, scans, missions, and addon markers. |
-| `echoindex` | `1.1.0` | Shared item, recipe, usage, and archive index for Terminal-facing reference surfaces. |
-| `echoarmory` | `1.1.0` | Modular weapons, armor, modules, energy recharge, faction locks, Terminal hooks, and Logistics hooks. |
-| `echolens` | `1.1.0` | Smart scanner HUD with local inspection, server-assisted Deep Scan, inventory privacy, and addon context. |
-| `echomultiblockcore` | `1.1.0` | Shared data-driven multiblock validation, runtime, robotics, workcell, and scanner/map/terminal contracts. |
-| `echoblockworks` | `1.1.0` | First-party decorative, structural, themed block families, palette kits, and rare showcase ruin palettes for ECHO builds. |
-| `echoblackboxprotocol` | `1.1.0` | Late-game Blackbox finale with memory fragments, archive dungeons, hostile recordings, boss proofs, and final outcome directives. |
+| `echocore` | `1.2.0` | Shared ECHO service registry, profile ledger, diagnostics, hazards, route records, factions, rewards, terminal placement, and Nexus campaign mirrors. |
+| `echonetcore` | `1.2.0` | Shared packet registration, sync, action validation, and debug network contracts. |
+| `echoruntimeguard` | `1.2.0` | Shared TPS/FPS pressure monitoring, runtime budgets, smart tick hints, and performance diagnostics. |
+| `echothemecore` | `1.2.0` | Shared visual/theme/UI skin service for ECHO modules and vanilla surfaces. |
+| `echoplayercore` | `1.2.0` | Player utility commands, homes, back, spawn, random teleport, and travel QoL. |
+| `echomissioncore` | `1.2.0` | Shared mission, objective, progression, reward, and Terminal feed engine. |
+| `echodatacore` | `1.2.0` | Shared persistent player, world, and team progression data. |
+| `echoworldcore` | `1.2.0` | Shared world regions, markers, hazards, discoveries, and world event contracts. |
+| `echoterminal` | `1.2.0` | Common terminal shell with Command Deck, What Now, Mission Graph, Route Records, Faction Atlas, Vitals, Reward Inbox, Archives, Baseline, and Addons surfaces. |
+| `signalos` | `1.2.0` | Reusable terminal/content framework for chapters, missions, archives, rewards, diagnostics, JSON content, and the soft KubeJS bridge. |
+| `signalosexample` | `1.2.0` | Example-only SignalOS addon for Java, JSON, diagnostics, rewards, archives, and KubeJS-friendly integration patterns. |
+| `echorendercore` | `1.2.0` | Shared advanced visual-state, animation-profile, particle-profile, preview, composition, and renderer helper layer for polished ECHO/Ashfall assets. |
+| `echoashfallprotocol` | `1.2.0` | Main Earth survival campaign: drop pod start, wasteland systems, factions/NPCs, guardians, Prime Relays, Nexus warfront, and finale. |
+| `echoorbitalremnants` | `1.2.0` | Post-Nexus orbital continuation: launch chain, route worlds, ECHO-0, orbital factions, route records, diagnostics, and support caches. |
+| `echoagriculturereclamation` | `1.2.0` | Field ecology recovery chapter for recovered seed capsules, contaminated soils, hydroponics, greenhouse zones, pollinator drones, gene stabilization, and chunk-local restoration. |
+| `echostationfall` | `1.2.0` | Station ECHO horror chapter with station power, panic pressure, crew logs, station route state, and terminal handoff. |
+| `echonexusprotocol` | `1.2.0` | Nexus corruption chapter for charge control, smarter field-map risk planning, stabilized fields, memory recovery, matter rewriting, and Core-state escalation. |
+| `echoindustrialnexus` | `1.2.0` | Industrial automation chapter for Thermal Flux, rusted machines, automated filters, salvage processing, MultiblockCore factory ops, and factory command. |
+| `echologisticsnetwork` | `1.2.0` | Supply crates, labels, loadouts, drone delivery docks, remote requests, faction depots, external endpoints, courier persistence, and operations dashboards. |
+| `echoconvoyprotocol` | `1.2.0` | Ruined-Earth vehicles, multiblock depots, cargo/fuel logistics, deterministic Field Ops, HoloMap routes, recovery signals, and convoy operations. |
+| `echoholomap` | `1.2.0` | Terminal-integrated command map for regions, routes, hazards, scans, missions, and addon markers. |
+| `echoindex` | `1.2.0` | Shared item, recipe, usage, and archive index for Terminal-facing reference surfaces. |
+| `echoarmory` | `1.2.0` | Modular weapons, armor, modules, energy recharge, faction locks, Terminal hooks, and Logistics hooks. |
+| `echolens` | `1.2.0` | Smart scanner HUD with local inspection, server-assisted Deep Scan, inventory privacy, and addon context. |
+| `echomultiblockcore` | `1.2.0` | Shared data-driven multiblock validation, runtime, robotics, workcell, and scanner/map/terminal contracts. |
+| `echoblockworks` | `1.2.0` | First-party decorative, structural, themed block families, palette kits, and rare showcase ruin palettes for ECHO builds. |
+| `echoblackboxprotocol` | `1.2.0` | Late-game Blackbox finale with memory fragments, archive dungeons, hostile recordings, boss proofs, and final outcome directives. |
 
 ## Core Features
 
@@ -77,33 +79,33 @@ Addons communicate through `echocore` and `echoterminal` instead of reaching int
 
 Build-truth Gradle `all` stack:
 
-- `echocore` `1.1.0` - required shared API and service mod.
-- `echonetcore` `1.1.0` - shared packet bridge and network diagnostics.
-- `echoruntimeguard` `1.1.0` - shared runtime budgets, lag diagnostics, and smart tick hints.
-- `echothemecore` `0.2.0` - shared visual/theme/UI skin service.
-- `echoplayercore` `0.1.0` - player utility commands, homes, back, spawn, random teleport, and travel QoL.
-- `echomissioncore` `1.1.0` - shared mission service and objective registry.
-- `echodatacore` `1.1.0` - shared persistent player/world/team data service.
-- `echoworldcore` `1.1.0` - shared world region, hazard, and marker service.
-- `echoterminal` `1.1.0` - shared ECHO Terminal addon.
-- `signalos` `1.1.0` - reusable terminal/content framework.
-- `signalosexample` `1.1.0` - example-only SignalOS addon.
-- `echorendercore` `1.1.0` - shared advanced visual-state, preview, composition, and renderer profile support.
-- `echoashfallprotocol` `1.1.0` - main campaign addon for the Ashfall modpack.
-- `echoorbitalremnants` `1.1.0` - post-Nexus orbital expansion.
-- `echoagriculturereclamation` `1.1.0` - field agriculture, pollinator drone, and ecology recovery chapter.
-- `echostationfall` `1.1.0` - Station ECHO horror chapter.
-- `echonexusprotocol` `1.1.0` - Nexus corruption chapter.
-- `echoindustrialnexus` `1.1.0` - industrial automation chapter.
-- `echologisticsnetwork` `1.1.0` - logistics, storage, loadouts, external endpoints, delivery, and operations dashboard chapter.
-- `echoconvoyprotocol` `1.1.0` - ruined-Earth vehicles, multiblock depots, cargo/fuel logistics, Field Ops lifecycles, and HoloMap convoy routes chapter.
-- `echoholomap` `1.1.0` - Terminal-integrated command map and marker registry.
-- `echoindex` `1.1.0` - shared item, recipe, usage, and archive index.
-- `echoarmory` `1.1.0` - combat, gear, modules, and loadout support chapter.
-- `echolens` `1.1.0` - smart scanner HUD with server-assisted Deep Scan and addon-context inspection layer.
-- `echomultiblockcore` `1.1.0` - shared multiblock validation, runtime, and robotics framework.
-- `echoblockworks` `1.1.0` - themed block family, decoration catalog, palette kit, and rare showcase site palette module.
-- `echoblackboxprotocol` `1.1.0` - late-game Blackbox finale.
+- `echocore` `1.2.0` - required shared API and service mod.
+- `echonetcore` `1.2.0` - shared packet bridge and network diagnostics.
+- `echoruntimeguard` `1.2.0` - shared runtime budgets, lag diagnostics, and smart tick hints.
+- `echothemecore` `1.2.0` - shared visual/theme/UI skin service.
+- `echoplayercore` `1.2.0` - player utility commands, homes, back, spawn, random teleport, and travel QoL.
+- `echomissioncore` `1.2.0` - shared mission service and objective registry.
+- `echodatacore` `1.2.0` - shared persistent player/world/team data service.
+- `echoworldcore` `1.2.0` - shared world region, hazard, and marker service.
+- `echoterminal` `1.2.0` - shared ECHO Terminal addon.
+- `signalos` `1.2.0` - reusable terminal/content framework.
+- `signalosexample` `1.2.0` - example-only SignalOS addon.
+- `echorendercore` `1.2.0` - shared advanced visual-state, preview, composition, and renderer profile support.
+- `echoashfallprotocol` `1.2.0` - main campaign addon for the Ashfall modpack.
+- `echoorbitalremnants` `1.2.0` - post-Nexus orbital expansion.
+- `echoagriculturereclamation` `1.2.0` - field agriculture, pollinator drone, and ecology recovery chapter.
+- `echostationfall` `1.2.0` - Station ECHO horror chapter.
+- `echonexusprotocol` `1.2.0` - Nexus corruption chapter.
+- `echoindustrialnexus` `1.2.0` - industrial automation chapter.
+- `echologisticsnetwork` `1.2.0` - logistics, storage, loadouts, external endpoints, delivery, and operations dashboard chapter.
+- `echoconvoyprotocol` `1.2.0` - ruined-Earth vehicles, multiblock depots, cargo/fuel logistics, Field Ops lifecycles, and HoloMap convoy routes chapter.
+- `echoholomap` `1.2.0` - Terminal-integrated command map and marker registry.
+- `echoindex` `1.2.0` - shared item, recipe, usage, and archive index.
+- `echoarmory` `1.2.0` - combat, gear, modules, and loadout support chapter.
+- `echolens` `1.2.0` - smart scanner HUD with server-assisted Deep Scan and addon-context inspection layer.
+- `echomultiblockcore` `1.2.0` - shared multiblock validation, runtime, and robotics framework.
+- `echoblockworks` `1.2.0` - themed block family, decoration catalog, palette kit, and rare showcase site palette module.
+- `echoblackboxprotocol` `1.2.0` - late-game Blackbox finale.
 
 Build all release jars from the workspace root:
 
@@ -117,41 +119,41 @@ Run the full release verification gate:
 .\gradlew.bat verifyEchoRelease --warning-mode all
 ```
 
-Copy the verified jars into the local CurseForge profile:
+Copy the verified jars into a local CurseForge or launcher profile only when doing local modpack QA:
 
 ```powershell
-.\gradlew.bat copyEchoJarsToModpack
+.\gradlew.bat -PechoModpackModsDir="C:/path/to/Ashfall/mods" copyEchoJarsToModpack verifyEchoModpackProfile
 ```
 
-Set `-PechoModpackModsDir="C:/path/to/Ashfall/mods"` before copying jars into a local pack profile. Do not treat any historical default path as the Ashfall target unless it has been explicitly configured for that workspace.
+`verifyEchoRelease` is the pure repo gate and does not require a local modpack profile. `copyEchoJarsToModpack`, `checkEchoModJarSet`, and `verifyEchoModpackProfile` require `-PechoModpackModsDir="C:/path/to/Ashfall/mods"`; no historical default path is treated as the Ashfall target.
 
 Release artifacts:
 
-- `build/libs/echoashfallprotocol-1.1.0.jar`
-- `core/echocore/build/libs/echocore-1.1.0.jar`
-- `addons/echonetcore/build/libs/echonetcore-1.1.0.jar`
-- `addons/echoruntimeguard/build/libs/echoruntimeguard-1.1.0.jar`
-- `addons/echomissioncore/build/libs/echomissioncore-1.1.0.jar`
-- `addons/echodatacore/build/libs/echodatacore-1.1.0.jar`
-- `addons/echoworldcore/build/libs/echoworldcore-1.1.0.jar`
-- `addons/echoterminal/build/libs/echoterminal-1.1.0.jar`
-- `addons/echosignalos/build/libs/signalos-1.1.0.jar`
-- `addons/signalosexample/build/libs/signalosexample-1.1.0.jar`
-- `addons/echorendercore/build/libs/echorendercore-1.1.0.jar`
-- `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.1.0.jar`
-- `addons/echoagriculturereclamation/build/libs/echoagriculturereclamation-1.1.0.jar`
-- `addons/echostationfall/build/libs/echostationfall-1.1.0.jar`
-- `addons/echonexusprotocol/build/libs/echonexusprotocol-1.1.0.jar`
-- `addons/echoindustrialnexus/build/libs/echoindustrialnexus-1.1.0.jar`
-- `addons/echologisticsnetwork/build/libs/echologisticsnetwork-1.1.0.jar`
-- `addons/echoconvoyprotocol/build/libs/echoconvoyprotocol-1.1.0.jar`
-- `addons/echoholomap/build/libs/echoholomap-1.1.0.jar`
-- `addons/echoindex/build/libs/echoindex-1.1.0.jar`
-- `addons/echoarmory/build/libs/echoarmory-1.1.0.jar`
-- `addons/echolens/build/libs/echolens-1.1.0.jar`
-- `addons/echomultiblockcore/build/libs/echomultiblockcore-1.1.0.jar`
-- `addons/echoblockworks/build/libs/echoblockworks-1.1.0.jar`
-- `addons/echoblackboxprotocol/build/libs/echoblackboxprotocol-1.1.0.jar`
+- `build/libs/echoashfallprotocol-1.2.0.jar`
+- `core/echocore/build/libs/echocore-1.2.0.jar`
+- `addons/echonetcore/build/libs/echonetcore-1.2.0.jar`
+- `addons/echoruntimeguard/build/libs/echoruntimeguard-1.2.0.jar`
+- `addons/echomissioncore/build/libs/echomissioncore-1.2.0.jar`
+- `addons/echodatacore/build/libs/echodatacore-1.2.0.jar`
+- `addons/echoworldcore/build/libs/echoworldcore-1.2.0.jar`
+- `addons/echoterminal/build/libs/echoterminal-1.2.0.jar`
+- `addons/echosignalos/build/libs/signalos-1.2.0.jar`
+- `addons/signalosexample/build/libs/signalosexample-1.2.0.jar`
+- `addons/echorendercore/build/libs/echorendercore-1.2.0.jar`
+- `addons/echoorbitalremnants/build/libs/echoorbitalremnants-1.2.0.jar`
+- `addons/echoagriculturereclamation/build/libs/echoagriculturereclamation-1.2.0.jar`
+- `addons/echostationfall/build/libs/echostationfall-1.2.0.jar`
+- `addons/echonexusprotocol/build/libs/echonexusprotocol-1.2.0.jar`
+- `addons/echoindustrialnexus/build/libs/echoindustrialnexus-1.2.0.jar`
+- `addons/echologisticsnetwork/build/libs/echologisticsnetwork-1.2.0.jar`
+- `addons/echoconvoyprotocol/build/libs/echoconvoyprotocol-1.2.0.jar`
+- `addons/echoholomap/build/libs/echoholomap-1.2.0.jar`
+- `addons/echoindex/build/libs/echoindex-1.2.0.jar`
+- `addons/echoarmory/build/libs/echoarmory-1.2.0.jar`
+- `addons/echolens/build/libs/echolens-1.2.0.jar`
+- `addons/echomultiblockcore/build/libs/echomultiblockcore-1.2.0.jar`
+- `addons/echoblockworks/build/libs/echoblockworks-1.2.0.jar`
+- `addons/echoblackboxprotocol/build/libs/echoblackboxprotocol-1.2.0.jar`
 
 Verification commands:
 
@@ -162,7 +164,7 @@ python tools\validate_gameplay_data.py
 .\gradlew.bat build -PechoAddonSet=all
 ```
 
-Expected verification result: every required build and GameTest task reports clean completion across Core, NetCore, MissionCore, DataCore, WorldCore, Terminal, SignalOS, SignalOS Example, ECHO: Ashfall Protocol, Orbital, Agriculture Reclamation, Stationfall, Nexus, Industrial, Logistics, Convoy, HoloMap, Armory, and Blackbox. Run `verifyEchoRelease` only after the local modpack destination is configured for Ashfall.
+Expected verification result: every required build and GameTest task reports clean completion across Core, NetCore, MissionCore, DataCore, WorldCore, Terminal, SignalOS, SignalOS Example, ECHO: Ashfall Protocol, Orbital, Agriculture Reclamation, Stationfall, Nexus, Industrial, Logistics, Convoy, HoloMap, Armory, and Blackbox. Run `verifyEchoModpackProfile` only after the local modpack destination is configured for Ashfall.
 `validate_resources.py` also runs the release-polish checks for mojibake, stale terminal/drone references, plural structure resource paths, placeholder markers, and uppercase real resource namespaces.
 
 ## ECHO Core Integration Contract
@@ -182,6 +184,13 @@ Terminal addons should register navigation through the public `echoterminal` pro
 - `GETTING_STARTED.md` - player-facing walkthrough from drop pod to Nexus choice.
 - `PROCEDURAL_STRUCTURES.md` - POI and structure generation reference.
 - `docs/release_process.md` - release checklist, version contract, and CI release artifact expectations.
+- `docs/releases/echo_stack_1.2.0_rendercore_terminal_minor.md` - 1.2.0 stack release notes for Terminal route placement and RenderCore V18 screen chrome.
+- `docs/releases/echo_stack_1.2.0_orbital_terminal_polish.md` - 1.2.0 stack release notes for Orbital, Terminal route placement, and Agriculture optional route polish.
+- `docs/releases/agriculture_reclamation_1.2.0.md` - Agriculture Reclamation 1.2.0 Terminal route-polish notes and migration statement.
+- `docs/releases/echo_stack_1.1.3_patch_alignment.md` - 1.1.3 patch version alignment notes and verification.
+- `docs/releases/echo_stack_1.1.3_patch_hardening.md` - 1.1.3 patch hardening notes and verification.
+- `docs/releases/echo_stack_1.1.2_release_gate_hardening.md` - 1.1.2 deterministic release-gate hardening notes and verification.
+- `docs/releases/echo_stack_1.1.1_cyberglass_default.md` - 1.1.1 CyberGlass default certification release notes and focused verification.
 - `docs/releases/echo_stack_1.1.0_index_recipe_coverage.md` - 1.1.0 Index recipe coverage release notes and focused verification.
 - `docs/releases/ashfall_1.0.0_smoke_test.md` - Ashfall first-world release smoke checklist and gate log.
 
@@ -195,7 +204,7 @@ Releases follow an explicit version contract so tags, module versions, and relea
 
 See `docs/release_process.md` for the full release workflow and manifest checks.
 
-## 1.1.0 Full Stack Smoke Checklist
+## 1.2.0 Full Stack Smoke Checklist
 
 Start a fresh world, keep the default ECHO: Ashfall Protocol worldgen, and test the first night without using vanilla forests as your main route. The intended opening is debris, ruined vegetation, dead/charred trees, pod salvage, and ECHO-7 mission guidance.
 
@@ -210,7 +219,7 @@ What to test first:
 - Factions and drones: Scout Drone fallback, ECHO companion repair/modes, faction NPC dialogue, contracts, standing, trader rewards, raids, and intel reports.
 - Nexus path: buried guardian nodes, Prime Relays, Core countermeasure siege, Power Nodes, final choice, path objectives, Archives arena entry/return, Warden defeat, final epilogue, Orbital unlock, and Stationfall/Nexus/Industrial/Blackbox chapter entry visibility.
 
-Known 1.1.0 watchpoints:
+Known 1.2.0 watchpoints:
 
 - Old worlds may not contain the newest POI/resource distribution until new chunks generate, but old POI progress ids are normalized through compatibility aliases.
 - Old worlds may lose legacy Ashfall-owned terminal blocks; the supported terminal block is now `echoterminal:echo_terminal`.
@@ -237,4 +246,4 @@ Coordinates / biome / POI:
 
 ## Newly Active Service Addons (Audit Pass)
 
-The Gradle `all` stack also includes these active service addons introduced after the main 1.1.0 docs table: `echopowergrid` `0.1.0`, `echosoundcore` `0.1.0`, `echotutorialcore` `0.1.0`, `echorelictech` `0.2.0-beta`, and `echoweathercore` `0.1.0`. They are included in `settings.gradle` and are tracked in `docs/reports/ECHO_ECOSYSTEM_AUDIT.md` with honest partial/blocked notes.
+The explicit public stack also includes these active service addons introduced after the main 1.2.0 docs table: `echopowergrid` `1.2.0`, `echosoundcore` `1.2.0`, `echotutorialcore` `1.2.0`, `echorelictech` `1.2.0`, and `echoweathercore` `1.2.0`. They are included in `settings.gradle` and are tracked in `docs/reports/ECHO_ECOSYSTEM_AUDIT.md` with honest partial/blocked notes.

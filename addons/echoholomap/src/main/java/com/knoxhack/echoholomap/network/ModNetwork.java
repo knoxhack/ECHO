@@ -26,6 +26,8 @@ public final class ModNetwork {
                 EchoRateLimitPolicy.of(4, "holomap_tiles"), ModNetwork::handleTileRequest);
         EchoNetPayloads.serverboundAction(registrar, HoloMapWaypointActionPacket.TYPE, HoloMapWaypointActionPacket.CODEC,
                 EchoRateLimitPolicy.of(6, "holomap_waypoints"), ModNetwork::handleWaypointAction);
+        EchoNetPayloads.serverboundAction(registrar, HoloMapSyncRequestPacket.TYPE, HoloMapSyncRequestPacket.CODEC,
+                EchoRateLimitPolicy.of(4, "holomap_sync"), ModNetwork::handleSyncRequest);
     }
 
     private static void handleSnapshot(HoloMapSnapshotPacket packet,
@@ -64,5 +66,10 @@ public final class ModNetwork {
             }
         }
         EchoNetSend.toPlayer(player, HoloMapWaypointSyncPacket.from(player), EchoPacketKind.CLIENTBOUND_SYNC);
+    }
+
+    private static void handleSyncRequest(HoloMapSyncRequestPacket packet,
+            net.minecraft.server.level.ServerPlayer player, IPayloadContext context) {
+        HoloMapSync.send(player);
     }
 }

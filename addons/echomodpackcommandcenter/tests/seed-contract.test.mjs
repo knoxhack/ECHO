@@ -6,172 +6,83 @@ import path from "node:path";
 const root = process.cwd();
 const seed = JSON.parse(fs.readFileSync(path.join(root, "src", "shared", "seed-data.json"), "utf-8"));
 const featureCatalog = JSON.parse(fs.readFileSync(path.join(root, "src", "shared", "feature-catalog.json"), "utf-8"));
+const settings = fs.readFileSync(path.resolve(root, "..", "..", "settings.gradle"), "utf-8");
+
+function readGradleList(name) {
+  const match = settings.match(new RegExp(`def ${name} = \\[(.*?)\\]`, "s"));
+  assert.ok(match, `${name} missing from settings.gradle`);
+  return [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]);
+}
+
+function readModuleVersion(modulePath) {
+  const echoRoot = path.resolve(root, "..", "..");
+  const gradlePropertiesPath = modulePath === "."
+    ? path.join(echoRoot, "gradle.properties")
+    : path.join(echoRoot, modulePath, "gradle.properties");
+  const gradleProperties = fs.readFileSync(gradlePropertiesPath, "utf-8");
+  const version = gradleProperties.match(/^mod_version=(.+)$/m)?.[1]?.trim();
+  assert.ok(version, `${gradlePropertiesPath} missing mod_version`);
+  return version;
+}
+
+function sorted(values) {
+  return [...values].sort();
+}
+
+const echoBetaAddons = readGradleList("echoBetaAddons");
+const echoReleaseAddons = readGradleList("echoReleaseAddons");
+const echoAddonProjects = [...echoBetaAddons, ...echoReleaseAddons];
+const echoModulePaths = ["core/echocore", ".", ...echoAddonProjects.map((addon) => `addons/${addon}`)];
 
 test("ECHO project seeds release modules", () => {
   const echo = seed.projects.find((project) => project.slug === "echo");
   assert.ok(echo);
-  assert.equal(echo.modules.length, 25);
+  assert.equal(echo.modules.length, echoModulePaths.length);
   assert.deepEqual(
-    echo.modules.map((module) => module.modId),
-    [
-      "echocore",
-      "echonetcore",
-      "echodatacore",
-      "echomissioncore",
-      "echomultiblockcore",
-      "echoruntimeguard",
-      "echoterminal",
-      "echoashfallprotocol",
-      "signalos",
-      "signalosexample",
-      "echoorbitalremnants",
-      "echonexusprotocol",
-      "echoagriculturereclamation",
-      "echoworldcore",
-      "echostationfall",
-      "echoblackboxprotocol",
-      "echoindustrialnexus",
-      "echologisticsnetwork",
-      "echorendercore",
-      "echoconvoyprotocol",
-      "echoholomap",
-      "echoindex",
-      "echoarmory",
-      "echolens",
-      "echoblockworks"
-    ]
+    sorted(echo.modules.map((module) => module.path)),
+    sorted(echoModulePaths)
   );
 });
 
 test("new ECHO addon projects are seeded as first-class modules", () => {
   const projects = new Map(seed.projects.map((project) => [project.slug, project]));
-  assert.deepEqual(
-    [
-      "echonetcore",
-      "echodatacore",
-      "echomissioncore",
-      "echomultiblockcore",
-      "echoruntimeguard",
-      "echoworldcore",
-      "echorendercore",
-      "echoholomap",
-      "echoindex",
-      "echoarmory",
-      "echolens",
-      "echoblockworks"
-    ].map((slug) => projects.get(slug)?.modules[0]?.modId),
-    [
-      "echonetcore",
-      "echodatacore",
-      "echomissioncore",
-      "echomultiblockcore",
-      "echoruntimeguard",
-      "echoworldcore",
-      "echorendercore",
-      "echoholomap",
-      "echoindex",
-      "echoarmory",
-      "echolens",
-      "echoblockworks"
-    ]
-  );
+  for (const slug of echoAddonProjects) {
+    assert.equal(projects.get(slug)?.modules[0]?.path, `addons/${slug}`, `${slug} missing first-class project seed`);
+  }
 });
 
 test("ECHO modules follow the active Gradle workspace addon set", () => {
   const echo = seed.projects.find((project) => project.slug === "echo");
-  const workspaceModules = new Set(echo.modules.map((module) => module.modId));
-  for (const modId of [
-    "echonetcore",
-      "echodatacore",
-      "echomissioncore",
-      "echomultiblockcore",
-      "echoruntimeguard",
-      "echoworldcore",
-    "echorendercore",
-    "echoholomap",
-    "echoindex",
-    "echoarmory",
-    "echolens",
-    "echoblockworks"
-  ]) {
-    assert.equal(workspaceModules.has(modId), true, `${modId} missing from ECHO full-stack modules`);
+  const workspacePaths = new Set(echo.modules.map((module) => module.path));
+  for (const addon of echoAddonProjects) {
+    assert.equal(workspacePaths.has(`addons/${addon}`), true, `${addon} missing from ECHO full-stack modules`);
   }
 });
 
 test("ECHO full-stack seed mirrors settings.gradle addon paths", () => {
-  const settings = fs.readFileSync(path.resolve(root, "..", "..", "settings.gradle"), "utf-8");
-  const readGradleList = (name) => {
-    const match = settings.match(new RegExp(`def ${name} = \\[(.*?)\\]`, "s"));
-    assert.ok(match, `${name} missing from settings.gradle`);
-    return [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]);
-  };
-  const expectedPaths = [
-    "core/echocore",
-    ".",
-    ...readGradleList("echoBetaAddons").map((addon) => `addons/${addon}`),
-    ...readGradleList("echoReleaseAddons").map((addon) => `addons/${addon}`)
-  ];
   const echo = seed.projects.find((project) => project.slug === "echo");
   const seededPaths = new Set(echo.modules.map((module) => module.path));
-  for (const expectedPath of expectedPaths) {
+  for (const expectedPath of echoModulePaths) {
     assert.equal(seededPaths.has(expectedPath), true, `${expectedPath} missing from ECHO full-stack seed`);
   }
 });
 
 test("ECHO RenderCore uses the current module version", () => {
   const echo = seed.projects.find((project) => project.slug === "echo");
-  assert.equal(echo.modules.find((module) => module.modId === "echorendercore").version, "1.0.0");
+  assert.equal(echo.modules.find((module) => module.modId === "echorendercore").version, readModuleVersion("addons/echorendercore"));
 });
 
 test("ECHO full-stack module versions match Gradle metadata", () => {
-  const echoRoot = path.resolve(root, "..", "..");
-  const readVersion = (modulePath) => {
-    const gradlePropertiesPath = modulePath === "."
-      ? path.join(echoRoot, "gradle.properties")
-      : path.join(echoRoot, modulePath, "gradle.properties");
-    const gradleProperties = fs.readFileSync(gradlePropertiesPath, "utf-8");
-    const version = gradleProperties.match(/^mod_version=(.+)$/m)?.[1]?.trim();
-    assert.ok(version, `${gradlePropertiesPath} missing mod_version`);
-    return version;
-  };
   const echo = seed.projects.find((project) => project.slug === "echo");
   for (const module of echo.modules) {
-    assert.equal(module.version, readVersion(module.path), `${module.modId} version is out of sync`);
+    assert.equal(module.version, readModuleVersion(module.path), `${module.modId} version is out of sync`);
   }
 });
 
 test("project seeds contain real modules only", () => {
   assert.deepEqual(
-    seed.projects.map((project) => project.slug),
-    [
-      "echo",
-      "echocore",
-      "echonetcore",
-      "echodatacore",
-      "echomissioncore",
-      "echomultiblockcore",
-      "echoruntimeguard",
-      "echoashfallprotocol",
-      "echoterminal",
-      "echosignalos",
-      "signalosexample",
-      "echoorbitalremnants",
-      "echonexusprotocol",
-      "echoagriculturereclamation",
-      "echoworldcore",
-      "echostationfall",
-      "echoblackboxprotocol",
-      "echoindustrialnexus",
-      "echologisticsnetwork",
-      "echorendercore",
-      "echoconvoyprotocol",
-      "echoholomap",
-      "echoindex",
-      "echoarmory",
-      "echolens",
-      "echoblockworks",
-      "arcana"
-    ]
+    sorted(seed.projects.map((project) => project.slug)),
+    sorted(["echo", "echocore", "echoashfallprotocol", ...echoAddonProjects, "arcana"])
   );
 });
 

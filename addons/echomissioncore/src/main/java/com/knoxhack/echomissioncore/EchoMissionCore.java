@@ -36,7 +36,9 @@ public final class EchoMissionCore {
             EchoCoreServices.registerMissionService(MissionCoreService.INSTANCE);
             MissionCoreService.INSTANCE.registerBuiltInContent();
             EchoCoreServices.registerIndexRecipeProvider(MissionCoreIndexProvider.INSTANCE);
-            MissionCoreWorldCoreConsumer.register();
+            if (ModList.get().isLoaded("echoworldcore")) {
+                MissionCoreWorldCoreConsumer.register();
+            }
             if (ModList.get().isLoaded("echoterminal")) {
                 MissionCoreTerminalIntegration.register();
             }

@@ -3,17 +3,17 @@
 
 ![ECHO: Industrial Nexus banner](docs/curseforge/echoindustrialnexus-banner.png)
 
-**Rebuild factory power with Thermal Flux, machines, fluids, scrubbers, POIs, and the Furnace Warden.**
+**Rebuild factory power with Thermal Flux, machines, fluids, scrubbers, MultiblockCore factories, POIs, and the Furnace Warden.**
 
 ![ECHO: Industrial Nexus feature overview](docs/curseforge/echoindustrialnexus-features.png)
 
 ## CurseForge Summary
 
-Industrial automation chapter with Thermal Flux, machines, ducts, fluids, heat, scrubber safe zones, POIs, and boss progression.
+Industrial automation chapter with Thermal Flux, machines, ducts, fluids, heat, scrubber safe zones, playable MultiblockCore factories, POIs, and boss progression.
 
 ## Overview
 
-ECHO: Industrial Nexus turns Ashfall survival into infrastructure recovery. It adds Thermal Flux power, recipe-driven machines, sided automation, item ducts, Flux ducts, NeoForge fluid tanks and pipes, machine heat, Industrial Scrubbers, procedural industrial POIs, and Furnace Warden progression.
+ECHO: Industrial Nexus turns Ashfall survival into infrastructure recovery. It adds Thermal Flux power, recipe-driven machines, sided automation, item ducts, Flux ducts, NeoForge fluid tanks and pipes, machine heat, Industrial Scrubbers, playable MultiblockCore factory routes, procedural industrial POIs, and Furnace Warden progression.
 
 The addon is built to support the rest of the ECHO stack. It can manufacture survival filters, pressure parts, launch components, station repairs, blackbox machinery pieces, Core key support, and late-game factory materials while still owning its own machine and safety loop.
 
@@ -24,6 +24,8 @@ With ECHO Terminal installed, Industrial Nexus registers missions, records, supp
 - Thermal Flux generators, capacitor banks, ducts, storage, controller scans, and generation stats.
 - Recipe-driven machines with inputs, catalysts, outputs, byproducts, fluids, duration, heat, and TF cost or generation.
 - NeoForge fluid tanks, cells, bucket workflows, tiered fluid pipes, filtering, transfer rates, loss, and hazardous leaks.
+- Industrial multiblocks with blueprints, depot crates, robotic tool heads, task queues, Factory Command controls, and Logistics-ready loadouts.
+- Nexus Furnace Array late-game automation for Hybrid Thermal Cores and Core Key Assemblies, with optional Nexus Protocol pressure telemetry.
 - Industrial Scrubber modes for air, radiation, blight, station support, and cooling safe zones.
 - Procedural Abandoned Thermal Plants, Rusted Factory Complexes, Geothermal Drill Sites, Reactor Cooling Stations, and Nexus Heat Exchanger Ruins.
 - Furnace Warden activation, phased fight state, participant reward credit, and once-only Terminal reward eligibility.
@@ -38,7 +40,7 @@ With ECHO Terminal installed, Industrial Nexus registers missions, records, supp
 - Minecraft 26.1.2
 - NeoForge 26.1.2.29-beta or newer
 - Java 25+
-- ECHO: Core 1.0.0 or newer
+- ECHO: Core 1.1.0 or newer
 - ECHO: MultiblockCore 1.0.0 or newer
 
 ## Recommended Pairings
@@ -64,7 +66,7 @@ With ECHO Terminal installed, Industrial Nexus registers missions, records, supp
 
 # ECHO: Industrial Nexus
 
-Factory Auto-Restock Ops 1.0.0 is the Logistics-powered facility operations expansion for the ECHO mod family.
+Industrial Nexus 1.2.0 makes the Nexus Furnace Array the headline late-game factory route for the ECHO mod family.
 
 Industrial Nexus turns Ashfall survival into midgame infrastructure: Thermal Flux generators, recipe-driven machines, sided automation, item ducts, Flux ducts, NeoForge fluid tanks and pipes, overheating, scrubber safe zones, procedural industrial POIs, Furnace Warden progression, and soft ECHO Terminal missions.
 
@@ -75,7 +77,7 @@ Production Completion pass.
 - Canonical source: `addons/echoindustrialnexus`
 - Gradle project: `:echoindustrialnexus`
 - Mod id: `echoindustrialnexus`
-- Release jar: `addons/echoindustrialnexus/build/libs/echoindustrialnexus-1.0.0.jar`
+- Release jar: `addons/echoindustrialnexus/build/libs/echoindustrialnexus-1.2.0.jar`
 - Required compile/runtime dependencies: `echocore`, `echomultiblockcore`
 - Optional soft integrations: `echoterminal`, Ashfall Protocol, Nexus Protocol, Orbital Remnants, Stationfall, Blackbox Protocol
 
@@ -92,7 +94,7 @@ Added Industrial multiblocks:
 - Plate Press: presses scrap plates into refined plates.
 - Circuit Fabricator: assembles precision circuits with inspection support.
 - Recipe Matrix Core: late-game factory command structure for matrix shard encoding.
-- Nexus Furnace Array: optional unstable-processing definition with Nexus-safe hooks, documented as future gameplay content.
+- Nexus Furnace Array: unstable late-game factory route for Hybrid Thermal Cores and Core Key Assemblies, with soft Nexus-safe pressure hooks.
 
 The playable MVP loop is the Industrial Assembly Line. Build the structure, install an Industrial Welder Head in the Robotic Arm Mount, load the Input Depot Crate with 4 Refined Plates, 1 Servo Motor, and 1 Industrial Circuit, then right-click the formed controller to queue `Weld Reinforced Machine Frame`. Inputs are consumed when the task starts, the robotic arm animates through MultiblockCore, and the Reinforced Machine Frame is placed into the Output Depot Crate when complete.
 
@@ -103,6 +105,10 @@ Industrial tasks are JSON automation recipes under `data/echoindustrialnexus/ech
 - Weld Reinforced Machine Frame, 240 ticks, Industrial Assembly Line, Welder or Assembler/Assembly workcell.
 - Assemble Precision Circuit, 200 ticks, Circuit Fabricator, Assembler or Scanner/Assembly workcell.
 - Encode Recipe Matrix Shard, 320 ticks, Recipe Matrix Core, Scanner or Injector/Matrix Processing workcell.
+- Stabilize Hybrid Thermal Core, 360 ticks, Nexus Furnace Array, Injector or Scanner/Matrix Processing workcell.
+- Forge Core Key Assembly, 480 ticks, Nexus Furnace Array, Injector or Scanner/Matrix Processing workcell.
+
+The Nexus Furnace Array is formed from its dedicated controller and blueprint. Build the array, install an Injector or Scanner-compatible robotic head, load a Stable Nexus Core, Recipe Matrix Shard, coolant, and Flux Crystals to stabilize a Hybrid Thermal Core, then forge a Core Key Assembly from the hybrid core, another matrix shard, Stabilized Alloy Plates, and Field Relays. The tasks record Nexus Furnace Array mission progress through MultiblockCore completion events; Nexus Protocol pressure telemetry is called only when that optional chapter is installed.
 
 Right-clicking an incomplete controller validates or forms the structure. Right-clicking a formed Industrial controller opens the Factory Command GUI with status, integrity, completion, active task progress, blocked reason, robot/workcell summary, task queue buttons, x1/x3/x5 batch queue controls, clear queue, retry blocked, revalidate, optional Logistics request controls, and per-controller Logistics auto-restock toggles. Sneak-right-click and the Factory Diagnostic Tool keep the full chat diagnostic path.
 
@@ -126,7 +132,7 @@ Blueprints and the Factory Diagnostic Tool provide guidance outside the GUI. Ter
 From the repository root:
 
 ```powershell
-python tools\validate_resources.py
+python tools\validate_resources.py --addon-set all
 .\gradlew.bat :echomultiblockcore:compileJava --no-daemon --no-configuration-cache
 .\gradlew.bat :echorendercore:compileJava --no-daemon --no-configuration-cache
 .\gradlew.bat :echoterminal:compileJava :echolens:compileJava :echoholomap:compileJava --no-daemon --no-configuration-cache
@@ -149,6 +155,8 @@ Manual smoke checklist after the client launches:
 - Use ECHO Terminal Industrial Nexus actions: scan factory, view POI hint, claim cache once.
 - Open the ECHO Terminal Recipe Index and confirm Industrial machine categories show JSON-driven processing recipes, fluid notes, heat, Thermal Flux, catalysts, and byproducts.
 - Build an Industrial Assembly Line from its blueprint, install an Industrial Welder Head into the Robotic Arm Mount, open the formed controller GUI, press 1/3/5 for Weld Reinforced Machine Frame, and confirm the Output Depot Crate receives the matching number of frames as the queue advances.
+- Build the Recipe Matrix Core, encode a Recipe Matrix Shard, craft the Nexus Furnace Array controller and blueprint, form the array, then run Stabilize Hybrid Thermal Core and Forge Core Key Assembly from the controller GUI.
+- Confirm the Nexus Furnace Array Terminal mission becomes claimable only after the Core Key Assembly task completes, not after older single-block machine recipes.
 - Open ECHO Terminal, select Industrial Nexus, confirm Factory Command lists loaded facilities, then use revalidate, queue, clear, retry, refresh, and Logistics controls from the dashboard.
 - With ECHO Lens present, run a Deep Scan against an Industrial controller, Robotic Arm Mount, and depot crate and confirm server-verified status/robot/tool/queue/inventory summaries appear.
 - With ECHO HoloMap present, sync the map and confirm formed Industrial facilities appear on the Multiblocks layer with alert/integrity summaries.
@@ -159,13 +167,14 @@ Manual smoke checklist after the client launches:
 
 ## Release Checklist
 
-- Release jar: `addons/echoindustrialnexus/build/libs/echoindustrialnexus-1.0.0.jar`
-- Required validation: JSON parse, `python tools\validate_resources.py`, `:echomultiblockcore:compileJava`, `:echorendercore:compileJava`, `:echoindustrialnexus:compileJava`, `:echologisticsnetwork:compileJava`, `:echoindustrialnexus:build`, and `:echoindustrialnexus:runGameTestServer`.
+- Release jar: `addons/echoindustrialnexus/build/libs/echoindustrialnexus-1.2.0.jar`
+- Required validation: JSON parse, `python tools\validate_resources.py --addon-set all`, `:echomultiblockcore:compileJava`, `:echorendercore:compileJava`, `:echoindustrialnexus:compileJava`, `:echologisticsnetwork:compileJava`, `:echoindustrialnexus:build`, and `:echoindustrialnexus:runGameTestServer`.
 - Current RC note: Industrial JSON/resource validation, compile, build, and the shared `runGameTestServer` suite pass in this checkout.
 - Optional compat matrix: Terminal, Lens, HoloMap, Logistics, Nexus, Orbital, Stationfall, and Blackbox present/absent paths.
 - Ashfall source is not included under `addons`; Industrial keeps soft hooks for `ToxicAirHelper.cleanAirAround` and `RadiationHelper.reduceRadiationAround`.
-- Known RC limitation: final manual balance numbers and client UX sign-off still depend on a human playthrough of the full factory-to-Warden route.
+- Publication note: ship this as part of the next public stack minor release; do not publish an addon-only public 1.2.0 unless the stack release process explicitly changes.
+- Known RC note: final manual balance numbers and client UX sign-off still depend on a human playthrough of the full factory-to-Warden route.
 
 ## Release Notes
 
-See `CHANGELOG.md` for the production completion pass details.
+See `CHANGELOG.md` and `docs/release_notes_1.2.0.md` for the playable Nexus Furnace Array release notes.

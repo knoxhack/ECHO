@@ -40,6 +40,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
+reason="Surfaces world region and hazard data inside the Terminal when present."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
@@ -47,34 +48,39 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echoashfallprotocol"
 type="optional"
+reason="Receives Ashfall-specific world regions, hazards, and markers at runtime."
 versionRange="[1.0.0,)"
-ordering="AFTER"
+ordering="NONE"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echoorbitalremnants"
 type="optional"
+reason="Receives orbital-specific world regions and markers at runtime."
 versionRange="[1.0.0,)"
-ordering="AFTER"
+ordering="NONE"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echoconvoyprotocol"
 type="optional"
+reason="Receives convoy route world regions and markers at runtime."
 versionRange="[1.0.0,)"
-ordering="AFTER"
+ordering="NONE"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echonexusprotocol"
 type="optional"
+reason="Receives Nexus anomaly world regions and markers at runtime."
 versionRange="[1.0.0,)"
-ordering="AFTER"
+ordering="NONE"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="echorendercore"
 type="optional"
+reason="Enables render profile overrides for world region discovery UI."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

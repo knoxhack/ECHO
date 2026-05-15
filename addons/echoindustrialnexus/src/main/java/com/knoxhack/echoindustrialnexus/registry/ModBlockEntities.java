@@ -111,6 +111,7 @@ public final class ModBlockEntities {
       return Set.of(
          (Block)ModBlocks.INDUSTRIAL_CONTROLLER.get(),
          (Block)ModBlocks.INDUSTRIAL_ASSEMBLY_LINE_CONTROLLER.get(),
+         (Block)ModBlocks.NEXUS_FURNACE_ARRAY_CONTROLLER.get(),
          (Block)ModBlocks.RECIPE_MATRIX_CORE.get(),
          (Block)ModBlocks.SCRAP_PROCESSOR_CONTROLLER.get(),
          (Block)ModBlocks.PLATE_PRESS_CONTROLLER.get(),

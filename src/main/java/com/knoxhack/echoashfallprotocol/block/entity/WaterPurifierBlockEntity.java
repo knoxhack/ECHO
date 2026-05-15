@@ -87,6 +87,10 @@ public class WaterPurifierBlockEntity extends BlockEntity implements MenuProvide
             ModItems.CONTAMINATED_LAPIS.get(), Items.LAPIS_LAZULI
     );
 
+    public static Map<Item, Item> getContaminatedPurify() {
+        return CONTAMINATED_PURIFY;
+    }
+
     public WaterPurifierBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WATER_PURIFIER.get(), pos, state);
     }

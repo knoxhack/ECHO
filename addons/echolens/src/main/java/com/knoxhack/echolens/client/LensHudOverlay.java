@@ -13,6 +13,7 @@ import com.knoxhack.echolens.config.LensConfig;
 import com.knoxhack.echolens.registry.LensInspectionService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.ToIntFunction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -153,37 +154,39 @@ public final class LensHudOverlay {
         height = bounds.height();
         graphics.fill(x, y, x + width, y + height, theme.alpha(theme.panel(), opacity));
         graphics.fill(x, y, x + width, y + 24, theme.alpha(theme.header(), opacity));
-        graphics.outline(x, y, width, height, theme.alpha(theme.border(), opacity));
-        graphics.fill(x, y, x + Math.max(32, width / 5), y + 2, theme.alpha(theme.echo(), opacity));
-        graphics.fill(x, y + height - 2, x + Math.max(28, width / 7), y + height, theme.alpha(theme.glow(), opacity));
-        if (!report.icon().isEmpty()) {
+        boolean hasIcon = !report.icon().isEmpty();
+        if (hasIcon) {
             graphics.item(report.icon(), x + 7, y + 5);
         }
-        String badge = modeBadge(report, mode, rows);
-        int badgeW = Math.min(Math.max(48, font.width(badge) + 10), Math.max(48, width / 2));
-        int badgeX = x + width - badgeW - 7;
-        graphics.fill(badgeX, y + 6, badgeX + badgeW, y + 18, theme.alpha(0x3326D9EF, opacity));
-        graphics.outline(badgeX, y + 6, badgeW, 12, theme.alpha(theme.border(), opacity));
-        graphics.text(font, fit(font, badge, badgeW - 8), badgeX + 4, y + 8,
+        LensHudLayout.HeaderLayout maximumHeader = LensHudLayout.headerLayout(width, hasIcon, Integer.MAX_VALUE);
+        String badge = modeBadge(report, mode, rows, maximumHeader.badgeWidth() - 8, text -> font.width(text));
+        LensHudLayout.HeaderLayout header = LensHudLayout.headerLayout(width, hasIcon, font.width(badge) + 10);
+        int badgeX = x + header.badgeX();
+        graphics.fill(badgeX, y + 6, badgeX + header.badgeWidth(), y + 18, theme.alpha(0x3326D9EF, opacity));
+        graphics.outline(badgeX, y + 6, header.badgeWidth(), 12, theme.alpha(theme.border(), opacity));
+        graphics.text(font, fit(font, badge, header.badgeWidth() - 8), badgeX + 4, y + 8,
                 theme.alpha(theme.echo(), opacity), false);
-        int textWidth = Math.max(36, badgeX - x - 34);
-        graphics.text(font, fit(font, report.title().getString(), textWidth), x + 28, y + 5,
+        graphics.text(font, fit(font, report.title().getString(), header.titleWidth()), x + header.titleX(), y + 5,
                 theme.alpha(theme.text(), opacity), false);
-        graphics.text(font, fit(font, report.subtitle().getString(), textWidth), x + 28, y + 15,
+        graphics.text(font, fit(font, report.subtitle().getString(), header.titleWidth()), x + header.titleX(), y + 15,
                 theme.alpha(theme.muted(), opacity), false);
         int rowY = y + 30;
         String lastSection = "";
+        LensHudLayout.RowColumns rowColumns = LensHudLayout.rowColumns(width);
         for (RenderedRow row : rows) {
             if (mode == LensScanMode.DEEP && !row.sectionTitle().equals(lastSection)) {
-                graphics.text(font, row.sectionIcon() + " " + row.sectionTitle(), x + 9, rowY,
+                graphics.text(font, fit(font, row.sectionIcon() + " " + row.sectionTitle(), width - 18), x + 9, rowY,
                         theme.alpha(theme.echo(), opacity), false);
                 rowY += 11;
                 lastSection = row.sectionTitle();
             }
-            graphics.text(font, row.row().icon(), x + 10, rowY, theme.alpha(theme.tone(row.row().tone()), opacity), false);
-            graphics.text(font, fit(font, row.row().label().getString(), 76), x + 24, rowY,
+            graphics.text(font, row.row().icon(), x + rowColumns.iconX(), rowY,
+                    theme.alpha(theme.tone(row.row().tone()), opacity), false);
+            graphics.text(font, fit(font, row.row().label().getString(), rowColumns.labelWidth()),
+                    x + rowColumns.labelX(), rowY,
                     theme.alpha(theme.muted(), opacity), false);
-            graphics.text(font, fit(font, row.row().value().getString(), width - 108), x + 100, rowY,
+            graphics.text(font, fit(font, row.row().value().getString(), rowColumns.valueWidth()),
+                    x + rowColumns.valueX(), rowY,
                     theme.alpha(theme.tone(row.row().tone()), opacity), false);
             rowY += 12;
         }
@@ -203,7 +206,7 @@ public final class LensHudOverlay {
                         theme.alpha(theme.tone(action.tone()), opacity), false);
             }
         }
-        renderCoreFrame(graphics, x, y, width, height);
+        drawFrameChrome(graphics, theme, opacity, x, y, width, height);
     }
 
     private static int desiredHeight(List<RenderedRow> rows, LensScanMode mode, int actionStripHeight) {
@@ -236,7 +239,8 @@ public final class LensHudOverlay {
         return LensHudLayout.actionStrip(width, widths, 12, 5, 8);
     }
 
-    private static String modeBadge(LensReport report, LensScanMode mode, List<RenderedRow> rows) {
+    private static String modeBadge(LensReport report, LensScanMode mode, List<RenderedRow> rows,
+            int maxWidth, ToIntFunction<String> textWidth) {
         String modeText = switch (mode) {
             case COMPACT -> Component.translatable("echolens.overlay.mode.compact").getString();
             case EXPANDED -> Component.translatable("echolens.overlay.mode.expanded").getString();
@@ -248,12 +252,28 @@ public final class LensHudOverlay {
         if (mode == LensScanMode.DEEP) {
             String sections = Component.translatable("echolens.overlay.badge.sections", sectionCount(rows)).getString();
             if (LensConfig.bool(LensConfig.SHOW_SERVER_SCAN_STATUS, true)) {
-                return namespace + " / " + modeText + " / "
-                        + LensServerScanClientState.statusLabel() + " / " + sections;
+                String status = LensServerScanClientState.statusLabel();
+                return LensHudLayout.firstFitting(List.of(
+                        namespace + " / " + modeText + " / " + status + " / " + sections,
+                        compactSource(namespace) + " / " + modeText + " / " + status,
+                        modeText + " / " + status), maxWidth, textWidth);
             }
-            return namespace + " / " + modeText + " / " + sections;
+            return LensHudLayout.firstFitting(List.of(
+                    namespace + " / " + modeText + " / " + sections,
+                    compactSource(namespace) + " / " + modeText,
+                    modeText), maxWidth, textWidth);
         }
-        return namespace + " / " + modeText;
+        return LensHudLayout.firstFitting(List.of(
+                namespace + " / " + modeText,
+                compactSource(namespace) + " / " + modeText,
+                modeText), maxWidth, textWidth);
+    }
+
+    private static String compactSource(String namespace) {
+        if (namespace == null || namespace.length() <= 12) {
+            return namespace == null ? "" : namespace;
+        }
+        return namespace.substring(0, 9) + "...";
     }
 
     private static LensReport withServerSections(LensReport report) {
@@ -361,12 +381,27 @@ public final class LensHudOverlay {
         return trimmed + ellipsis;
     }
 
-    private static void renderCoreFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+    private static void drawFrameChrome(GuiGraphicsExtractor graphics, LensTheme theme, float opacity,
+            int x, int y, int width, int height) {
+        if (!renderCoreFrame(graphics, x, y, width, height)) {
+            graphics.outline(x, y, width, height, theme.alpha(theme.border(), opacity));
+            graphics.fill(x, y, x + Math.max(32, width / 5), y + 2, theme.alpha(theme.echo(), opacity));
+            graphics.fill(x, y + height - 2, x + Math.max(28, width / 7), y + height,
+                    theme.alpha(theme.glow(), opacity));
+        }
+    }
+
+    private static boolean renderCoreFrame(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         try {
-            Class.forName("com.knoxhack.echolens.integration.LensRenderCoreScreenIntegration")
+            Object rendered = Class.forName("com.knoxhack.echolens.integration.LensRenderCoreScreenIntegration")
                     .getMethod("drawLensFrame", GuiGraphicsExtractor.class, int.class, int.class, int.class, int.class)
                     .invoke(null, graphics, x, y, width, height);
-        } catch (ReflectiveOperationException | LinkageError ignored) {
+            if (rendered instanceof Boolean) {
+                return ((Boolean) rendered).booleanValue();
+            }
+            return true;
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
         }
     }
 

@@ -14,13 +14,13 @@ public final class ModEntities {
    public static final Entities ENTITIES = DeferredRegister.createEntities(EchoConvoyProtocol.MODID);
 
    public static final DeferredHolder<EntityType<?>, EntityType<ConvoyVehicleEntity>> SCRAP_BIKE =
-      vehicle(ConvoyVehicleKind.SCRAP_BIKE, 1.2F, 1.1F);
+      vehicle(ConvoyVehicleKind.SCRAP_BIKE, 0.95F, 1.35F);
    public static final DeferredHolder<EntityType<?>, EntityType<ConvoyVehicleEntity>> WASTELAND_ROVER =
-      vehicle(ConvoyVehicleKind.WASTELAND_ROVER, 2.2F, 1.7F);
+      vehicle(ConvoyVehicleKind.WASTELAND_ROVER, 2.25F, 1.75F);
    public static final DeferredHolder<EntityType<?>, EntityType<ConvoyVehicleEntity>> CARGO_CRAWLER =
-      vehicle(ConvoyVehicleKind.CARGO_CRAWLER, 3.0F, 2.0F);
+      vehicle(ConvoyVehicleKind.CARGO_CRAWLER, 3.05F, 1.85F);
    public static final DeferredHolder<EntityType<?>, EntityType<ConvoyVehicleEntity>> ARMORED_RELAY_TRUCK =
-      vehicle(ConvoyVehicleKind.ARMORED_RELAY_TRUCK, 2.85F, 2.05F);
+      vehicle(ConvoyVehicleKind.ARMORED_RELAY_TRUCK, 3.10F, 2.15F);
 
    private ModEntities() {
    }

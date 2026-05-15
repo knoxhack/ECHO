@@ -61,6 +61,16 @@ public final class ArmoryMissionCoreIntegration {
                 "Operator field kit signature stored.",
                 new ItemStack(ModBlocks.LOADOUT_TERMINAL.get()), 4,
                 "Bind an operator loadout", new ItemStack(ModItems.ARMORY_ALLOY_PLATE.get(), 2));
+        registerMission(registry, "prepare_route_kit", "prepare", MissionObjectiveType.CUSTOM,
+                "Prepare Route Kit", "Bring an Armory route kit to full readiness.",
+                "Route-kit readiness is now mission tracked.",
+                new ItemStack(ModItems.GAS_MASK_FILTER.get()), 5,
+                "Prepare an Armory route kit", new ItemStack(ModItems.AMMO_CRYSTALS.get(), 8));
+        registerMission(registry, "dispatch_route_kit", "dispatch", MissionObjectiveType.ESTABLISH_ROUTE,
+                "Dispatch Route Kit", "Queue an Armory kit through a Logistics loadout preset.",
+                "Armory and Logistics dispatch lanes are linked.",
+                new ItemStack(ModBlocks.LOADOUT_TERMINAL.get()), 6,
+                "Dispatch an Armory route kit", new ItemStack(ModItems.RESONANCE_SHARD.get(), 1));
     }
 
     private static void registerMission(

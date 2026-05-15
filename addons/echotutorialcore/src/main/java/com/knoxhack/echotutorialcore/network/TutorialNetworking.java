@@ -4,6 +4,7 @@ import com.knoxhack.echotutorialcore.EchoTutorialCore;
 import com.knoxhack.echotutorialcore.api.TutorialGuideMode;
 import com.knoxhack.echotutorialcore.api.hint.TutorialHint;
 import com.knoxhack.echotutorialcore.data.TutorialPlayerData;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
@@ -31,29 +32,42 @@ public final class TutorialNetworking {
 
     public static void sendShowHint(ServerPlayer player, TutorialHint hint) {
         if (hint == null) return;
-        PacketDistributor.sendToPlayer(player, new ShowTutorialHintPacket(
+        sendToPlayer(player, new ShowTutorialHintPacket(
                 hint.id(), hint.title(), hint.message(), hint.details()));
     }
 
     public static void sendShowCard(ServerPlayer player, Identifier cardId) {
         if (cardId == null) return;
-        PacketDistributor.sendToPlayer(player, new ShowTutorialCardPacket(cardId));
+        sendToPlayer(player, new ShowTutorialCardPacket(cardId));
     }
 
     public static void sendSetGuideMode(ServerPlayer player, TutorialGuideMode mode) {
         if (mode == null) return;
-        PacketDistributor.sendToPlayer(player, new SetGuideModePacket(mode.name()));
+        sendToPlayer(player, new SetGuideModePacket(mode.name()));
     }
 
     public static void sendUnlockCard(ServerPlayer player, Identifier cardId) {
         if (cardId == null) return;
-        PacketDistributor.sendToPlayer(player, new UnlockTutorialCardPacket(cardId));
+        sendToPlayer(player, new UnlockTutorialCardPacket(cardId));
     }
 
     public static void sendSyncProgress(ServerPlayer player) {
         TutorialPlayerData data = TutorialPlayerData.get(player);
-        PacketDistributor.sendToPlayer(player, new SyncTutorialProgressPacket(
+        sendToPlayer(player, new SyncTutorialProgressPacket(
                 data.guideMode().name(), new java.util.ArrayList<>(data.progressFlags())));
+    }
+
+    private static void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        if (player == null || payload == null) return;
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (IllegalStateException | UnsupportedOperationException exception) {
+            EchoTutorialCore.LOGGER.debug(
+                    "Skipped TutorialCore client payload {} for {}: {}",
+                    payload.type().id(),
+                    player.getName().getString(),
+                    exception.getMessage());
+        }
     }
 
     // Client-side handlers use reflection so this class stays safe on dedicated server.

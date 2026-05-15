@@ -241,6 +241,20 @@ V11 `effect` may be declared on the profile, a material, or a layer. Layer effec
 
 Advanced FX remains client-only and disabled by default through the client config. `/rendercore debug advancedfx true|false` sets a session override; `/rendercore debug advancedfx reset` returns to config; `/rendercore debug advancedfx status` reports mode, source, mask submissions, skipped submissions, channel count, downscale, pass count, bloom cost, and fallback reason. V14 adds `/rendercore debug advancedfx evidence start|capture|status|export|reset` so release QA can capture deterministic snapshots for isolated bloom, fullscreen fallback, stable fallback, shader unavailable, resize/reload, entity masks, and block masks. The preferred V11 rendering mode is still isolated bloom: RenderCore submits stable geometry as usual, duplicates eligible effect masks into `rendercore:bloom_mask`, and composites the blurred mask back to `minecraft:main`. If the mask target, shaders, or framegraph hooks are unavailable, the status falls back to `effects advanced fullscreen fallback`, `effects stable fallback`, or `effects advanced unavailable` without breaking base rendering.
 
+## Screen Chrome
+
+V18 adds shared cyberglass screen chrome for addon menus and overlays. Existing `RenderCoreScreenVisuals.drawFrame(...)`, `RenderCoreScreenFrameOptions.legacy(...)`, `quiet(...)`, and the six-argument options constructor remain compatible. New integrations should prefer the builder presets:
+
+```java
+RenderCoreScreenFrameOptions.terminal("ECHO TERMINAL").build();
+RenderCoreScreenFrameOptions.cyberglass("").backdrop(false).quietFallback(true).build();
+RenderCoreScreenFrameOptions.hologram("HOLOMAP").scanlines(false).build();
+```
+
+Use `TERMINAL` for dense command surfaces, `CYBERGLASS` for quiet overlays, `HOLOGRAM` for map/lens projections, `NEON` for high-emphasis showcase screens, and `MINIMAL` for reduced or fallback UI. Screen visual profiles can tune the shared chrome with ordinary V11 effect fields such as `bloom_tint`, `pulse_speed`, and `scanline_strength`; no extra schema is required.
+
+V19 adds release evidence for the adopted cyberglass surfaces. Use `/rendercore debug screenchrome evidence start`, then capture each surface with `/rendercore debug screenchrome evidence capture <surface>`, check `/rendercore debug screenchrome evidence status`, and write `rendercore_creator/all/visual_qa/screenchrome.evidence.json` with `/rendercore debug screenchrome evidence export`. The required surface ids are `echo_terminal`, `echo_terminal_reduced_motion`, `signalos_terminal`, `signalos_rack`, `holomap_minimap`, `index_overlay`, `lens_overlay`, and `rendercore_cyberglass_example`. Creator exports also include the screen chrome evidence matrix in `visual_qa`, alongside the advanced-FX release evidence.
+
 `includes` composes visual profiles before rendering. Included profiles are resolved in order, optional state/variant filters narrow inherited layers, and the root profile wins for duplicate material ids and top-level texture/profile references. Missing includes, include cycles, duplicate layers, and duplicate materials warn with stable codes and skip only the invalid include path.
 
 ## Animation Profiles

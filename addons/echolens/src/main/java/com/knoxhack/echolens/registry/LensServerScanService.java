@@ -65,31 +65,8 @@ public final class LensServerScanService {
 
         LensContext context = validation.context();
         List<LensInfoSection> sections = new ArrayList<>(validation.sections());
-        int providerBudget = LensRuntimeGuardHooks.deepScanBudget(player, LensProviderRegistry.serverProviders().size());
-        int inspectedProviders = 0;
-        for (ServerLensProvider provider : LensProviderRegistry.serverProviders()) {
-            if (inspectedProviders >= providerBudget) {
-                break;
-            }
-            inspectedProviders++;
-            try {
-                if (!provider.supports(context)) {
-                    continue;
-                }
-                List<LensInfoSection> provided = provider.inspect(context);
-                if (provided == null) {
-                    continue;
-                }
-                for (LensInfoSection section : provided) {
-                    if (section != null && section.visibleIn(LensScanMode.DEEP)) {
-                        sections.add(serverVisible(section));
-                    }
-                }
-            } catch (RuntimeException exception) {
-                EchoLens.LOGGER.warn("Lens server provider {} failed; continuing without its output.",
-                        provider.id(), exception);
-            }
-        }
+        sections.addAll(collectProviderSections(context,
+                LensRuntimeGuardHooks.deepScanBudget(player, LensProviderRegistry.serverProviders().size())));
         LensServerScanStatus status = validation.redacted()
                 ? LensServerScanStatus.REDACTED
                 : LensServerScanStatus.VERIFIED;
@@ -102,6 +79,49 @@ public final class LensServerScanService {
         }
         return LensScanResponsePacket.of(request.requestId(), status, signature, sections,
                 validation.redacted() ? "Private target data redacted." : "Server scan verified.");
+    }
+
+    private static List<LensInfoSection> collectProviderSections(LensContext context, int providerBudget) {
+        List<LensInfoSection> sections = new ArrayList<>();
+        List<LensInfoRow> signalRows = new ArrayList<>();
+        List<LensInfoSection> providerSections = new ArrayList<>();
+        int inspectedProviders = 0;
+        for (ServerLensProvider provider : LensProviderRegistry.serverProviders()) {
+            if (inspectedProviders >= providerBudget) {
+                break;
+            }
+            inspectedProviders++;
+            try {
+                if (!provider.supports(context)) {
+                    continue;
+                }
+                List<LensInfoRow> signals = provider.deepScanSignals(context);
+                if (signals != null) {
+                    for (LensInfoRow row : signals) {
+                        if (row != null && row.visibleIn(LensScanMode.DEEP)) {
+                            signalRows.add(row);
+                        }
+                    }
+                }
+                List<LensInfoSection> provided = provider.inspect(context);
+                if (provided == null) {
+                    continue;
+                }
+                for (LensInfoSection section : provided) {
+                    if (section != null && section.visibleIn(LensScanMode.DEEP)) {
+                        providerSections.add(serverVisible(section));
+                    }
+                }
+            } catch (RuntimeException exception) {
+                EchoLens.LOGGER.warn("Lens server provider {} failed; continuing without its output.",
+                        provider.id(), exception);
+            }
+        }
+        if (!signalRows.isEmpty()) {
+            sections.add(signalSection(signalRows));
+        }
+        sections.addAll(providerSections);
+        return sections;
     }
 
     private static Validation validate(ServerPlayer player, ServerLevel level, LensScanRequestPacket request) {
@@ -194,6 +214,11 @@ public final class LensServerScanService {
         List<LensInfoRow> rows = LensInspectionService.visibleRows(section, LensScanMode.DEEP);
         return new LensInfoSection(section.id(), section.category(), section.title(), section.icon(), section.tone(),
                 LensVisibility.DEEP, rows);
+    }
+
+    private static LensInfoSection signalSection(List<LensInfoRow> rows) {
+        return LensInfoSection.of(EchoLens.id("section/server_scan_signals"), LensDataCategory.INTEGRATION,
+                "Scan Signals", "S", LensTone.ECHO, LensVisibility.DEEP, rows);
     }
 
     private static LensScanResponsePacket unavailable(int requestId, String signature, String message) {

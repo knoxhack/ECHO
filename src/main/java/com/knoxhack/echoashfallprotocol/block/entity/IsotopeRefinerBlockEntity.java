@@ -59,6 +59,10 @@ public class IsotopeRefinerBlockEntity extends BlockEntity implements MenuProvid
             Items.COAL, new Item[]{Items.LAPIS_LAZULI, ModItems.CONTAMINATED_LAPIS.get()}
     );
 
+    public static Map<Item, Item[]> getRefinerRecipes() {
+        return REFINER_RECIPES;
+    }
+
     public final ContainerData data = new ContainerData() {
         @Override
         public int get(int i) {

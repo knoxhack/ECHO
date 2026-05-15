@@ -13,6 +13,7 @@ import com.knoxhack.echoarmory.menu.ArmoryStationMenu;
 import com.knoxhack.echoarmory.registry.ModBlockEntities;
 import com.knoxhack.echoarmory.registry.ModDataComponents;
 import com.knoxhack.echoarmory.registry.ModItems;
+import com.knoxhack.echoarmory.service.ArmoryReadinessService;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -164,6 +165,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
       if (installed) {
          lastAction = "module install";
          ArmoryMissionHooks.recordInstallModule(player, kind().getSerializedName());
+         recordReadyKit(player);
       }
       return installed;
    }
@@ -172,6 +174,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
       if (ArmoryData.rechargeWithFuel(gear, items.get(AUX_SLOT))) {
          lastAction = "recharge";
          ArmoryMissionHooks.recordRechargeCore(player, kind().getSerializedName());
+         recordReadyKit(player);
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Energy core charged using AUX reserve. " + statusLine()));
          return true;
       }
@@ -205,6 +208,7 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
       if (ArmoryData.upgradeTier(gear, items.get(AUX_SLOT), weaponStation)) {
          lastAction = "tier upgrade";
          ArmoryMissionHooks.recordForgeUpgrade(player, kind().getSerializedName());
+         recordReadyKit(player);
          player.sendSystemMessage(Component.literal("ECHO ARMORY // Gear tier upgraded. " + statusLine()));
          return true;
       }
@@ -222,10 +226,21 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
    }
 
    private boolean bindLoadout(ServerPlayer player, ItemStack gear) {
-      gear.set(ModDataComponents.ARMORY_LOADOUT.get(), new ArmoryLoadout("manual:" + player.getUUID().toString().substring(0, 8), player.getScoreboardName() + " field kit"));
+      java.util.Optional<ArmoryReadinessService.Report> selected = ArmoryReadinessService.bestReport(player);
+      ArmoryLoadout marker = selected
+         .map(report -> new ArmoryLoadout(report.loadout().id().toString(), report.loadout().title()))
+         .orElseGet(() -> new ArmoryLoadout("manual:" + player.getUUID().toString().substring(0, 8), player.getScoreboardName() + " field kit"));
+      gear.set(ModDataComponents.ARMORY_LOADOUT.get(), marker);
       lastAction = "loadout bind";
       ArmoryMissionHooks.recordBindLoadout(player, kind().getSerializedName());
-      player.sendSystemMessage(Component.literal("ECHO ARMORY // Gear bound to current operator loadout."));
+      selected.ifPresent(report -> {
+         if (report.ready()) {
+            ArmoryMissionHooks.recordPrepareRouteKit(player, report.loadout().id().toString());
+         }
+      });
+      player.sendSystemMessage(Component.literal(selected
+         .map(report -> "ECHO ARMORY // Gear bound to " + report.loadout().title() + ". " + report.state() + ": " + report.firstBlocker())
+         .orElse("ECHO ARMORY // Gear bound to current operator loadout.")));
       return true;
    }
 
@@ -246,6 +261,12 @@ public class ArmoryStationBlockEntity extends BaseContainerBlockEntity implement
          + " | energy " + data.get(DATA_ENERGY)
          + " | instability " + data.get(DATA_INSTABILITY)
          + " | last " + lastAction;
+   }
+
+   private static void recordReadyKit(ServerPlayer player) {
+      ArmoryReadinessService.bestReport(player)
+         .filter(ArmoryReadinessService.Report::ready)
+         .ifPresent(report -> ArmoryMissionHooks.recordPrepareRouteKit(player, report.loadout().id().toString()));
    }
 
    @Override

@@ -9,6 +9,7 @@ import com.knoxhack.echoashfallprotocol.integration.AshfallCoreServices;
 import com.knoxhack.echoashfallprotocol.integration.AshfallIndexProvider;
 import com.knoxhack.echoashfallprotocol.integration.AshfallMissionCoreIntegration;
 import com.knoxhack.echoashfallprotocol.integration.AshfallTerminalCommonIntegration;
+import com.knoxhack.echoashfallprotocol.integration.AshfallWorldCoreBuiltins;
 import com.knoxhack.echoashfallprotocol.recipe.ScrapPressRecipe;
 import com.knoxhack.echoashfallprotocol.registry.*;
 import com.knoxhack.echoashfallprotocol.test.ModGameTests;
@@ -81,12 +82,17 @@ public class EchoAshfallProtocol {
 
         event.enqueueWork(() -> {
             AshfallCoreServices.register();
+            if (net.neoforged.fml.ModList.get().isLoaded("echoworldcore")) {
+                AshfallWorldCoreBuiltins.register();
+            }
             if (net.neoforged.fml.ModList.get().isLoaded("echoterminal")) {
                 AshfallTerminalCommonIntegration.register();
             }
             // Register Scrap Press recipes
             registerScrapPressRecipes();
-            AshfallIndexProvider.register();
+            if (net.neoforged.fml.ModList.get().isLoaded("echoindex")) {
+                AshfallIndexProvider.register();
+            }
         });
 
         LOGGER.info("ECHO-7 AI Guide: ONLINE");

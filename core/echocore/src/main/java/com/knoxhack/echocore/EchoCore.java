@@ -1,6 +1,7 @@
 package com.knoxhack.echocore;
 
 import com.knoxhack.echocore.api.EchoCoreServices;
+import com.knoxhack.echocore.command.EchoCommandRegistry;
 import com.knoxhack.echocore.registry.ModAttachments;
 import com.knoxhack.echocore.test.ModGameTests;
 import com.mojang.logging.LogUtils;
@@ -19,6 +20,7 @@ public class EchoCore {
     public EchoCore(IEventBus modEventBus) {
         ModAttachments.register(modEventBus);
         NeoForge.EVENT_BUS.addListener(EchoCore::onPlayerLogin);
+        NeoForge.EVENT_BUS.addListener(EchoCommandRegistry::onRegisterCommands);
         ModGameTests.register(modEventBus);
         modEventBus.addListener(ModGameTests::registerTests);
         LOGGER.info("ECHO: Core API online.");

@@ -14,10 +14,12 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -105,6 +107,26 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
     @Override
     public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
         return TerminalMissionRole.MAIN;
+    }
+
+    @Override
+    public Optional<TerminalMissionRoutePlacement> routePlacement(
+            Player player,
+            TerminalMissionDefinition definition,
+            TerminalMissionSnapshot snapshot,
+            TerminalMissionRole role) {
+        OrbitalMission mission = mission(definition == null ? null : definition.id());
+        if (mission == null) {
+            return Optional.empty();
+        }
+        int phase = switch (mission) {
+            case EARTH_CALIBRATION, LAUNCH_CHAIN, LOW_ORBIT, STATION_NETWORK -> 6;
+            case LUNAR_SIGNAL, MARS_ROUTE, EUROPA_ROUTE, SATURN_ROUTE, TITAN_ROUTE, DEEP_SPACE_PROTOCOL -> 7;
+            case ECHO_ZERO -> 8;
+            case SURVEY_NETWORK, FACTION_CONTRACT, FINAL_SEAL -> 9;
+        };
+        return Optional.of(TerminalMissionRoutePlacement.main(
+                phase, mission.phaseOrder() * 100 + mission.order()));
     }
 
     @Override
@@ -347,8 +369,8 @@ public final class OrbitalMissionProvider implements TerminalMissionProvider {
         }
         if (complete) {
             return claimed
-                    ? "Support cache claimed. Continue from the next active orbital record."
-                    : "Route record complete. Claim the optional support cache before the next vacuum push.";
+                    ? "Continue from the next active orbital record."
+                    : "Claim the optional support cache before the next vacuum push.";
         }
         if (mission == OrbitalMission.SURVEY_NETWORK) {
             return "Use the Survey tab for route counts. " + progress.missionHelpReport();

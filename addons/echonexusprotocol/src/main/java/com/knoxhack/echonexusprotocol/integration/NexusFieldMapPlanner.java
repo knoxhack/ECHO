@@ -8,6 +8,7 @@ import java.util.List;
 public final class NexusFieldMapPlanner {
    public static final int STORM_RISK_PENALTY = 30;
    public static final int TEAR_RISK_PENALTY = 20;
+   public static final int CRITICAL_RECOVERY_RISK = 100;
 
    private NexusFieldMapPlanner() {
    }
@@ -117,6 +118,25 @@ public final class NexusFieldMapPlanner {
       return 4;
    }
 
+   public static String recoveryToolFor(CellRisk cell) {
+      if (cell == null) {
+         return "Refresh Nexus Field telemetry before choosing a recovery tool.";
+      }
+      if (cell.state() == NexusWorldData.FieldState.COLLAPSED || cell.storm() || cell.tears() > 0) {
+         return "Use a Field Anchor first, then a Stabilized Purity Charge from a safer edge.";
+      }
+      if (cell.state() == NexusWorldData.FieldState.CRITICAL || cell.risk() >= CRITICAL_RECOVERY_RISK) {
+         return "Use a Stabilized Purity Charge, then run a Field Stabilizer before resuming machines.";
+      }
+      if (cell.state() == NexusWorldData.FieldState.FRACTURED || cell.corruption() >= 45) {
+         return "Run a Corruption Filter and Field Stabilizer before dirty processing.";
+      }
+      if (cell.corruption() > 0) {
+         return "Run a Corruption Filter before pressure becomes a storm window.";
+      }
+      return "Keep a Field Stabilizer nearby and continue the current Nexus route.";
+   }
+
    public record Analysis(
       List<CellRisk> cells,
       CellRisk center,
@@ -132,6 +152,42 @@ public final class NexusFieldMapPlanner {
 
       public boolean hasHazards() {
          return this.collapsedCells > 0 || this.stormCells > 0 || this.tearCells > 0;
+      }
+
+      public String safestAdjacentGuidance() {
+         if (this.safestAdjacent == null) {
+            return "No adjacent field telemetry is available.";
+         }
+         return "Move "
+            + this.safestAdjacent.directionLabel()
+            + " for the safest work chunk: field "
+            + this.safestAdjacent.field()
+            + "%, corruption "
+            + this.safestAdjacent.corruption()
+            + "%, risk "
+            + this.safestAdjacent.risk()
+            + ". "
+            + recoveryToolFor(this.safestAdjacent);
+      }
+
+      public String priorityRecoveryGuidance() {
+         if (this.highestRisk == null) {
+            return "No recovery target is available.";
+         }
+         return "Stabilize "
+            + offsetLabel(this.highestRisk)
+            + " first: "
+            + this.highestRisk.state().name().toLowerCase(java.util.Locale.ROOT)
+            + ", field "
+            + this.highestRisk.field()
+            + "%, risk "
+            + this.highestRisk.risk()
+            + ". "
+            + recoveryToolFor(this.highestRisk);
+      }
+
+      public String hazardSummary() {
+         return this.collapsedCells + " collapsed, " + this.stormCells + " storming, " + this.tearCells + " tear-marked cells in local map.";
       }
    }
 
@@ -171,5 +227,22 @@ public final class NexusFieldMapPlanner {
          }
          return "current";
       }
+   }
+
+   private static String offsetLabel(CellRisk cell) {
+      if (cell.isCenter()) {
+         return "current chunk";
+      }
+      StringBuilder builder = new StringBuilder();
+      if (cell.dx() != 0) {
+         builder.append(Math.abs(cell.dx())).append(cell.dx() > 0 ? " east" : " west");
+      }
+      if (cell.dz() != 0) {
+         if (!builder.isEmpty()) {
+            builder.append(", ");
+         }
+         builder.append(Math.abs(cell.dz())).append(cell.dz() > 0 ? " south" : " north");
+      }
+      return builder.toString();
    }
 }

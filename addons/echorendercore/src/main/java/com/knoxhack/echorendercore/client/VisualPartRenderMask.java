@@ -1,5 +1,6 @@
 package com.knoxhack.echorendercore.client;
 
+import com.knoxhack.echocore.client.model.EchoNamedModelPartProvider;
 import com.knoxhack.echorendercore.EchoRenderCore;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.Collection;
@@ -28,11 +29,15 @@ public final class VisualPartRenderMask {
       if (partNames == null || partNames.isEmpty()) {
          return false;
       }
-      if (!(model instanceof RenderCorePartProvider provider)) {
+      Map<String, ModelPart> parts;
+      if (model instanceof EchoNamedModelPartProvider provider) {
+         parts = provider.echoNamedModelParts();
+      } else if (model instanceof RenderCorePartProvider provider) {
+         parts = provider.renderCoreParts();
+      } else {
          warn("RenderCore layer mask requested for model {} but it does not expose named parts.", model.getClass().getName());
          return true;
       }
-      Map<String, ModelPart> parts = provider.renderCoreParts();
       if (parts.isEmpty()) {
          warn("RenderCore layer mask requested for model {} but no named parts were provided.", model.getClass().getName());
          return true;

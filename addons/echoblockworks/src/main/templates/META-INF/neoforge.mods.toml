@@ -51,3 +51,11 @@ reason="Enables RenderCore V16 particle-only static block visual surfaces."
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echomissioncore"
+type="optional"
+reason="Registers Blockworks discovery and collection side-op missions when present."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"

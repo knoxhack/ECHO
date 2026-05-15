@@ -1,6 +1,7 @@
 package com.knoxhack.echomultiblockcore.block.entity;
 
 import com.knoxhack.echomultiblockcore.block.MultiblockCrateBlock;
+import com.knoxhack.echomultiblockcore.menu.MultiblockCrateMenu;
 import com.knoxhack.echomultiblockcore.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -211,7 +212,7 @@ public class MultiblockCrateBlockEntity extends BaseContainerBlockEntity impleme
 
     @Override
     protected @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return null;
+        return new MultiblockCrateMenu(containerId, inventory, this);
     }
 
     @Override

@@ -21,6 +21,8 @@ public class EchoPowerNetwork {
     public long transferLimit;
     public boolean dirty = true;
     public int ticksSinceUpdate;
+    public int overloadGraceTicks = 0;
+    public boolean overloaded = false;
 
     public EchoPowerNetwork(UUID networkId, ResourceKey<Level> dimension) {
         this.networkId = networkId;

@@ -31,19 +31,33 @@ This manifest is persisted by CI as `release-manifest.txt` and uploaded as both:
 Expected modules are derived from the same inclusion logic used by `settings.gradle`:
 
 - `echoAddonSet=beta`: beta addon set only
-- `echoAddonSet=all`: beta + release addon sets
+- `echoAddonSet=all`: explicit beta + release addon sets
 
 In all cases, `:echocore` and root `:` (`echoashfallprotocol`) are required.
 
+Release addon sets are intentionally explicit. Local or prototype addon directories under
+`addons/` are not part of public release validation until they are added to the declared
+beta or release lists in `settings.gradle`, root release artifact selection, and
+`tools/validate_resources.py`.
+
 `validateReleaseArtifacts` enforces that every expected module has a built JAR before publishing. If any are missing, the release job fails.
+
+`verifyEchoRelease` is the pure repository release gate. It runs validators, the workspace build, runtime-log scanning, and GameTests without requiring a local CurseForge or launcher profile.
+
+Local modpack-profile checks are explicit:
+
+- `copyEchoJarsToModpack` builds and copies public ECHO jars only when `-PechoModpackModsDir=<mods path>` is supplied.
+- `checkEchoModJarSet` verifies exactly one current ECHO jar per expected module only when `-PechoModpackModsDir=<mods path>` is supplied.
+- `verifyEchoModpackProfile` runs the local profile jar-set check after jars have been copied.
 
 ## Suggested Release Sequence
 
 1. Run resource and gameplay validators.
 2. Build and verify release modules.
 3. Run `validateReleaseArtifacts`.
-4. Run the root Ashfall GameTest server plus full-stack release verification.
-5. Run the Ashfall fresh-world manual smoke pass and record the result in the matching release note.
-6. Generate `release-manifest.txt` via `printReleaseManifest`.
-7. Publish only after checks pass.
-8. Attach module jars plus `release-manifest.txt` to the GitHub release.
+4. Run full-stack release verification with `verifyEchoRelease`.
+5. For local launcher QA, run `copyEchoJarsToModpack` and `verifyEchoModpackProfile` with an explicit `echoModpackModsDir`.
+6. Run the Ashfall fresh-world manual smoke pass and record the result in the matching release note.
+7. Generate `release-manifest.txt` via `printReleaseManifest`.
+8. Publish only after checks pass.
+9. Attach module jars plus `release-manifest.txt` to the GitHub release.

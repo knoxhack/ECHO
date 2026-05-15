@@ -729,7 +729,7 @@ public final class MissionCoreService implements IMissionService {
 
     private static String actionHint(MissionStatus status, MissionDefinition definition, boolean completeNow) {
         return switch (status) {
-            case LOCKED -> "Complete prerequisite missions.";
+            case LOCKED -> unlockReason(definition);
             case UNLOCKED -> completeNow ? "Turn in the completed objective." : "Track this objective.";
             case ACTIVE -> completeNow ? "Turn in the completed objective." : definition.objectives().isEmpty() ? definition.briefing() : definition.objectives().get(0).label();
             case COMPLETED -> "Mission complete.";
@@ -741,9 +741,35 @@ public final class MissionCoreService implements IMissionService {
 
     private static String unlockReason(MissionDefinition definition) {
         if (definition.prerequisites().isEmpty()) {
-            return definition.hidden() ? "Hidden objective." : "Locked.";
+            return definition.hidden() ? "Find the hidden objective in the field." : "Unlock the previous route step.";
         }
-        return "Requires " + definition.prerequisites();
+        Identifier first = definition.prerequisites().get(0);
+        String label = readableId(first.getPath());
+        if (definition.prerequisites().size() == 1) {
+            return "Complete " + label + " first.";
+        }
+        int remaining = definition.prerequisites().size() - 1;
+        return "Complete " + label + " and " + remaining + " other prerequisite" + (remaining == 1 ? "." : "s.");
+    }
+
+    private static String readableId(String path) {
+        if (path == null || path.isBlank()) {
+            return "the previous route step";
+        }
+        StringBuilder label = new StringBuilder();
+        for (String word : path.replace('/', '_').split("_")) {
+            if (word.isBlank()) {
+                continue;
+            }
+            if (label.length() > 0) {
+                label.append(' ');
+            }
+            label.append(Character.toUpperCase(word.charAt(0)));
+            if (word.length() > 1) {
+                label.append(word.substring(1));
+            }
+        }
+        return label.length() == 0 ? "the previous route step" : label.toString();
     }
 
     private static boolean matches(

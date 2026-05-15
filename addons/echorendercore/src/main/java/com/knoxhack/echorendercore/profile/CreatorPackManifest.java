@@ -11,7 +11,7 @@ public record CreatorPackManifest(
    int screenshotAvailableCount,
    ProfileCacheMetrics cacheMetrics
 ) {
-   public static final int CREATOR_PACK_VERSION = 16;
+   public static final int CREATOR_PACK_VERSION = 19;
 
    public CreatorPackManifest {
       generator = generator == null || generator.isBlank() ? "echorendercore" : generator;

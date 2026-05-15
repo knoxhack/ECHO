@@ -20,6 +20,8 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionVisuals;
@@ -153,6 +155,22 @@ public final class ConvoyMissionProvider implements TerminalMissionProvider {
          return new TerminalMissionVisuals(closeTone.categoryArt(), closeTone.trackType(), closeTone.heroVariant(), closeTone.visualTone());
       }
       return TerminalMissionVisuals.fallback(definition, snapshot);
+   }
+
+   @Override
+   public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+      return TerminalMissionRole.OPTIONAL;
+   }
+
+   @Override
+   public Optional<TerminalMissionRoutePlacement> routePlacement(
+      Player player,
+      TerminalMissionDefinition definition,
+      TerminalMissionSnapshot snapshot,
+      TerminalMissionRole role
+   ) {
+      int order = definition == null ? 0 : definition.missionOrder();
+      return Optional.of(TerminalMissionRoutePlacement.optional(2, order));
    }
 
    @Override

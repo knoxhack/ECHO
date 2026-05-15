@@ -1,0 +1,9 @@
+{
+  "id": "echocore:example_iron_trade",
+  "factionId": "echoashfallprotocol:scavenger_guild",
+  "input": {"item": "minecraft:raw_iron", "count": 8},
+  "output": {"item": "minecraft:iron_ingot", "count": 4},
+  "reputationDelta": 2,
+  "minReputation": 0,
+  "cooldownTicks": 2400
+}

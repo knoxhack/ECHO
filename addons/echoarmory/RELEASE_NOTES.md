@@ -1,24 +1,35 @@
-# ECHO: Armory 0.1.0 Release Notes
+# ECHO: Armory 1.2.0 Release Notes
 
-ECHO: Armory 0.1.0 is the first playable release of the modular combat addon. It adds survival-obtainable workstations, modular weapons and armor, ItemStack component state, energy recharge, faction-gated gear, Terminal loadout actions, Logistics dispatch hooks, and Core diagnostics.
+ECHO: Armory 1.2.0 turns the first playable modular gear loop into a route-kit readiness system. Loadouts, boss previews, Core route records, Terminal actions, Logistics dispatch, and MissionCore side ops now agree on whether a kit is ready, staged, missing parts, or faction locked.
 
 ## Player Path
 
-Players can craft Armory Alloy Plate, build the Armory Bench and Module Upgrade Table, craft early gear, install compatible modules, spend and recharge energy, and use Terminal readiness guidance without any optional sibling mod. Terminal and Logistics integrations activate only when those sibling addons are present.
+Players can craft early Armory gear, install protection modules, and open the Armory Terminal to check route-kit readiness before deploying. Toxic Breach now focuses on toxic protection, Fracture Guardian on fracture/Veil mitigation, and Orbital Assault on thermal survival plus mobility support.
+
+## Datapack Compatibility
+
+Loadout JSON may now define `requiredProtections`:
+
+```json
+{
+  "requiredProtections": {
+    "toxic": 55,
+    "fracture": 40
+  }
+}
+```
+
+Existing datapacks that only use `minProtection` still work; Armory treats that value as a fracture requirement when `requiredProtections` is absent.
 
 ## Release Safety
 
-- Module install failures do not consume modules.
-- Ranged weapons do not spend ammo or energy without a valid target.
-- Successful ranged shots spend ammo crystals before stored energy and do not spend both.
-- Recharge consumes `veil_crystal` or `resonance_shard`.
-- Faction-locked gear is not deleted; survival behavior stays locked with visible feedback.
-- Optional Terminal/Logistics/faction paths are guarded.
+- Existing ItemStack components and saves remain compatible.
+- Optional Terminal, Logistics Network, and MissionCore integrations stay guarded.
+- Failed readiness, install, recharge, and Logistics actions do not consume gear, modules, ammo, or fuel.
+- Faction-locked gear reports a lock instead of being deleted or bypassed through readiness checks.
 
 ## Known Limits
 
-- v1 visuals are simple generated JSON models using vanilla textures.
-- Weapon projectiles are server-side targeted energy strikes rather than custom projectile entities.
-- Drone Dock behavior is conservative repair/shield support; no uncontrolled custom drone entities are spawned.
-- Some mid/late gear is intentionally depot-only and depends on faction/Logistics content for normal survival acquisition.
-- GameTests and release manifest tasks should be run with `--no-configuration-cache` until the workspace run/release tasks are made configuration-cache compatible.
+- Readiness reports use existing item/module state and do not add new gear art, entities, or projectiles.
+- Logistics availability depends on an eligible loaded Logistics endpoint near the player.
+- Full all-stack verification can still be blocked by unrelated dirty modules in the workspace.

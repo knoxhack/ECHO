@@ -19,6 +19,23 @@ public final class MissionCoreCommands {
     }
 
     public static void register(RegisterCommandsEvent event) {
+        // Player-facing subcommands (no permission requirements)
+        event.getDispatcher().register(Commands.literal("echomission")
+                .then(Commands.literal("my")
+                        .executes(context -> myMissions(context.getSource().getPlayerOrException())))
+                .then(Commands.literal("status")
+                        .then(Commands.argument("mission", StringArgumentType.string())
+                                .executes(context -> status(
+                                        context.getSource().getPlayerOrException(),
+                                        parse(StringArgumentType.getString(context, "mission"))))))
+                .then(Commands.literal("claim")
+                        .executes(context -> claimAll(context.getSource().getPlayerOrException()))
+                        .then(Commands.argument("mission", StringArgumentType.string())
+                                .executes(context -> claim(
+                                        context.getSource().getPlayerOrException(),
+                                        parse(StringArgumentType.getString(context, "mission")))))));
+
+        // Gamemaster subcommands
         event.getDispatcher().register(Commands.literal("echomission")
                 .requires(MissionCoreCommands::isGamemaster)
                 .then(Commands.literal("list").executes(context -> list(context.getSource())))
@@ -76,6 +93,72 @@ public final class MissionCoreCommands {
                 .orElse("none");
         source.sendSuccess(() -> Component.literal("MissionCore missions: " + missions), false);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static int myMissions(ServerPlayer player) {
+        var missions = MissionCoreService.INSTANCE.missions(player);
+        if (missions.isEmpty()) {
+            tell(player, "No mission progress.");
+            return 0;
+        }
+        int active = 0;
+        for (var m : missions) {
+            if (m.status() == com.knoxhack.echocore.api.mission.MissionStatus.ACTIVE
+                    || m.status() == com.knoxhack.echocore.api.mission.MissionStatus.CLAIMABLE) {
+                active++;
+            }
+        }
+        tell(player, "Your missions (" + missions.size() + " total, " + active + " active/claimable):");
+        for (var m : missions) {
+            String label = m.definition() == null ? m.id().toString() : m.definition().title();
+            String progress = m.status() == com.knoxhack.echocore.api.mission.MissionStatus.ACTIVE
+                    ? " [" + Math.round(m.progress() * 100f) + "%]" : "";
+            tell(player, "  - " + label + " [" + m.status().name().toLowerCase() + "]" + progress);
+        }
+        return missions.size();
+    }
+
+    private static int status(ServerPlayer player, Identifier missionId) {
+        var opt = MissionCoreService.INSTANCE.mission(player, missionId);
+        if (opt.isEmpty()) {
+            tell(player, "Mission not found: " + missionId);
+            return 0;
+        }
+        var m = opt.get();
+        String label = m.definition() == null ? missionId.toString() : m.definition().title();
+        tell(player, "Mission: " + label);
+        tell(player, "  Status: " + m.status().name().toLowerCase());
+        tell(player, "  Progress: " + Math.round(m.progress() * 100f) + "%");
+        if (!m.objectives().isEmpty()) {
+            tell(player, "  Objectives:");
+            for (var obj : m.objectives()) {
+                if (obj.hidden()) continue;
+                tell(player, "    - " + obj.label() + ": " + obj.progress() + "/" + obj.required()
+                        + (obj.complete() ? " [done]" : ""));
+            }
+        }
+        long claimable = m.rewards().stream().filter(r -> r.claimable() && !r.claimed()).count();
+        if (claimable > 0) {
+            tell(player, "  Rewards: " + claimable + " claimable");
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int claimAll(ServerPlayer player) {
+        var missions = MissionCoreService.INSTANCE.missions(player);
+        int claimed = 0;
+        for (var m : missions) {
+            for (var r : m.rewards()) {
+                if (r.claimable() && !r.claimed()) {
+                    if (MissionCoreService.INSTANCE.claimReward(player, m.id())) {
+                        claimed++;
+                        break;
+                    }
+                }
+            }
+        }
+        tell(player, claimed > 0 ? "Claimed rewards for " + claimed + " mission(s)." : "No claimable rewards.");
+        return claimed;
     }
 
     private static int inspect(CommandSourceStack source, Identifier missionId) {

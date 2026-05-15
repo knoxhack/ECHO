@@ -1,0 +1,23 @@
+{
+  "id": "echocore:example_intro",
+  "category": "START_HERE",
+  "title": "Welcome to ECHO",
+  "summary": "An example tutorial card for datapack authors.",
+  "body": [
+    "ECHO is a modular survival command system.",
+    "This card was loaded from a datapack example."
+  ],
+  "steps": [
+    "Open the Terminal with its bound key.",
+    "Browse the mission browser to see your directives.",
+    "Check the reward inbox for completed tasks."
+  ],
+  "commonMistakes": [
+    "Ignoring the Terminal entirely.",
+    "Forgetting to claim rewards before they expire."
+  ],
+  "related": ["echocore:example_advanced"],
+  "unlockTriggers": ["opened_terminal"],
+  "defaultUnlocked": false,
+  "priority": 100
+}

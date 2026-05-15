@@ -8,6 +8,8 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionPresentation;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoagriculturereclamation.content.CropSpec;
@@ -17,6 +19,7 @@ import com.knoxhack.echoagriculturereclamation.progress.ReclamationProgress;
 import com.knoxhack.echoagriculturereclamation.registry.ModBlocks;
 import com.knoxhack.echoagriculturereclamation.registry.ModItems;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -70,7 +73,7 @@ public final class ReclamationMissionProvider implements TerminalMissionProvider
          progress,
          claimed ? "CLAIMED" : complete ? "CACHE READY" : unlocked ? "ACTIVE" : "LOCKED",
          detail,
-         complete ? "Reclamation cache ready." : unlocked ? ReclamationTerminalReport.nextStep(player) : "Complete the previous field milestone to unlock this record.",
+         complete ? "Claim the Reclamation support cache." : unlocked ? ReclamationTerminalReport.nextStep(player) : "Complete the previous field milestone to unlock this record.",
          List.of(
             TerminalMissionAction.enabled(ACTION_SCAN, "SCAN RECLAMATION"),
             TerminalMissionAction.enabled(ACTION_REPORT, "FIELD REPORT"),
@@ -134,6 +137,22 @@ public final class ReclamationMissionProvider implements TerminalMissionProvider
          List.of("FIELD", mission.category()),
          "agriculture_reclamation/" + mission.key()
       );
+   }
+
+   @Override
+   public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
+      return TerminalMissionRole.OPTIONAL;
+   }
+
+   @Override
+   public Optional<TerminalMissionRoutePlacement> routePlacement(
+      Player player,
+      TerminalMissionDefinition definition,
+      TerminalMissionSnapshot snapshot,
+      TerminalMissionRole role
+   ) {
+      int order = definition == null ? 0 : definition.missionOrder();
+      return Optional.of(TerminalMissionRoutePlacement.optional(2, order));
    }
 
    public static List<RouteMission> routeMissions() {

@@ -2,7 +2,7 @@
   "id": "echomultiblockcore:repair_structure_integrity",
   "display_name": "Repair Structure Integrity",
   "category": "repair",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo", "echomultiblockcore:signal_tower_tier_1"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line", "echomultiblockcore:signal_tower_tier_1"],
   "required_workcell": "REPAIR",
   "required_tools": ["WELDER"],
   "duration_ticks": 180,

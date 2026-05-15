@@ -1,0 +1,12 @@
+{
+  "id": "echocore:example_first_hour",
+  "title": "First Hour Survival",
+  "category": "START_HERE",
+  "steps": [
+    {"id": "craft_terminal", "type": "CRAFT", "target": "echoterminal:echo_terminal", "text": "Craft an ECHO Terminal to track objectives.", "optional": false},
+    {"id": "open_terminal", "type": "INTERACT", "target": "echoterminal:echo_terminal", "text": "Open the Terminal and read your first mission.", "optional": false},
+    {"id": "claim_reward", "type": "CUSTOM", "target": "", "text": "Claim your first reward from the inbox.", "optional": true}
+  ],
+  "unlockCards": ["echocore:example_intro"],
+  "defaultUnlocked": true
+}

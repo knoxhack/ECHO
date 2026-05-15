@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/index_entry.schema.json",
+  "title": "ECHO Index Entry",
+  "description": "Index codex article entry for EchoIndex.",
+  "type": "object",
+  "required": ["id", "category"],
+  "properties": {
+    "id": { "type": "string", "description": "Entry identifier. Inferred from file path if omitted." },
+    "category": { "type": "string", "description": "Category identifier this entry belongs to." },
+    "title": { "type": "string", "description": "Display title or translation key." },
+    "subtitle": { "type": "string" },
+    "summary": { "type": "string" },
+    "body": { "type": "string", "description": "Full article body text or translation key." },
+    "icon": { "type": "string", "description": "Item identifier for the entry icon." },
+    "source_mod": { "type": "string", "description": "Owning mod namespace." },
+    "sourceMod": { "type": "string", "description": "Legacy alias for source_mod." },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "default_state": { "type": "string", "default": "VISIBLE", "description": "Initial state: HIDDEN, VISIBLE, DISCOVERED, UNLOCKED, COMPLETED." },
+    "defaultState": { "type": "string", "description": "Legacy alias for default_state." },
+    "related": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Related entry identifiers."
+    },
+    "linked_items": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Linked item identifiers."
+    },
+    "linked_recipes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Linked recipe identifiers."
+    },
+    "sort_order": { "type": "integer", "default": 100, "description": "Display order within the category." },
+    "sortOrder": { "type": "integer", "description": "Legacy alias for sort_order." }
+  },
+  "additionalProperties": true
+}

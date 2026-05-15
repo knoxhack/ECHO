@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/terminal_reward_tier.schema.json",
+  "title": "ECHO Terminal Vanilla Journey Reward Tier",
+  "description": "Reward tier definition inside Terminal vanilla_journey/reward_tiers.json tiers map.",
+  "type": "object",
+  "required": ["label", "rewards"],
+  "properties": {
+    "label": { "type": "string", "description": "Human-readable tier label." },
+    "claimable": { "type": "boolean", "default": true, "description": "Whether rewards in this tier can be claimed." },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "count"],
+        "properties": {
+          "item": { "type": "string", "description": "Item identifier." },
+          "count": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

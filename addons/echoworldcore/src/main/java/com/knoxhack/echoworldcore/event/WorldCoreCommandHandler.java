@@ -31,6 +31,20 @@ public final class WorldCoreCommandHandler {
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
+        // Player-facing subcommands
+        event.getDispatcher().register(
+                Commands.literal("echoworld")
+                        .then(Commands.literal("current")
+                                .executes(ctx -> current(ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("hazard")
+                                .executes(ctx -> playerHazard(ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("nearby")
+                                .executes(ctx -> playerNearby(ctx.getSource().getPlayerOrException(), DEFAULT_RADIUS))
+                                .then(Commands.argument("radius", IntegerArgumentType.integer(16, 4096))
+                                        .executes(ctx -> playerNearby(ctx.getSource().getPlayerOrException(),
+                                                IntegerArgumentType.getInteger(ctx, "radius"))))));
+
+        // Gamemaster debug subcommands
         event.getDispatcher().register(
                 Commands.literal("echoworld")
                         .requires(source -> Config.debugCommandsEnabled()
@@ -58,6 +72,56 @@ public final class WorldCoreCommandHandler {
                                                 IntegerArgumentType.getInteger(ctx, "radius")))))
                         .then(Commands.literal("validate")
                                 .executes(ctx -> validate(ctx.getSource().getPlayerOrException()))));
+    }
+
+    private static int current(ServerPlayer player) {
+        var current = WorldRegionService.INSTANCE.currentRegion(player);
+        if (current.isPresent()) {
+            var region = current.get();
+            tell(player, "Current region: " + region.displayName()
+                    + " [" + region.definitionId() + "]", ChatFormatting.AQUA);
+            if (!region.hazardIds().isEmpty()) {
+                tell(player, "  Hazards: " + region.hazardIds().size(), ChatFormatting.GRAY);
+            }
+        } else {
+            tell(player, "No shared region currently active.", ChatFormatting.YELLOW);
+        }
+        return current.isPresent() ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int playerHazard(ServerPlayer player) {
+        WorldHazardSnapshot snapshot = WorldRegionService.INSTANCE.hazardSnapshot(player);
+        tell(player, "Hazard " + (snapshot.safeZone() ? "NOMINAL" : "SEVERITY " + snapshot.severity()),
+                snapshot.safeZone() ? ChatFormatting.GREEN : ChatFormatting.YELLOW);
+        tell(player, "  Summary: " + snapshot.summary(), ChatFormatting.GRAY);
+        if (!snapshot.regionIds().isEmpty()) {
+            tell(player, "  Affected regions: " + snapshot.regionIds().size(), ChatFormatting.GRAY);
+        }
+        if (!snapshot.hazardIds().isEmpty()) {
+            tell(player, "  Active hazards: " + snapshot.hazardIds(), ChatFormatting.GRAY);
+        }
+        return snapshot.safeZone() ? 0 : Command.SINGLE_SUCCESS;
+    }
+
+    private static int playerNearby(ServerPlayer player, int radius) {
+        List<WorldMarker> markers = WorldRegionService.INSTANCE.nearbyMarkers(player.level(), player.blockPosition(), radius);
+        if (markers.isEmpty()) {
+            tell(player, "No shared world markers nearby.", ChatFormatting.YELLOW);
+        } else {
+            tell(player, "Nearby shared markers (" + markers.size() + "):", ChatFormatting.AQUA);
+            for (WorldMarker marker : markers) {
+                tell(player, "  - " + marker.displayName()
+                        + " [" + marker.type() + "] at " + marker.pos().toShortString(), ChatFormatting.GRAY);
+            }
+        }
+        List<WorldRegionInstance> regions = WorldRegionService.INSTANCE.nearbyRegions(player.level(), player.blockPosition(), radius);
+        if (!regions.isEmpty()) {
+            tell(player, "Nearby regions (" + regions.size() + "):", ChatFormatting.AQUA);
+            for (WorldRegionInstance region : regions) {
+                tell(player, "  - " + region.displayName() + " [" + region.type().displayName() + "]", ChatFormatting.GRAY);
+            }
+        }
+        return markers.size() + regions.size();
     }
 
     private static int nearby(ServerPlayer player, int radius) {

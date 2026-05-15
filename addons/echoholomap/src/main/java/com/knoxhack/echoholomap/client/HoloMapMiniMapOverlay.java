@@ -9,6 +9,8 @@ import com.knoxhack.echoholomap.network.HoloMapClientState;
 import com.knoxhack.echoholomap.network.HoloMapSnapshotPacket;
 import com.knoxhack.echoholomap.network.HoloMapTerrainClientState;
 import com.knoxhack.echoholomap.network.HoloMapTileRequestPacket;
+import com.knoxhack.echoholomap.network.HoloMapWaypointClientState;
+import com.knoxhack.echoholomap.waypoint.HoloMapWaypoint;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.client.DeltaTracker;
@@ -64,6 +66,7 @@ public final class HoloMapMiniMapOverlay {
             case BOTTOM_LEFT, BOTTOM_RIGHT -> screenH - size - margin;
         };
         requestNearbyTiles(player);
+        HoloMapLocalWaypointStore.ensureLoaded();
         int accent = HoloMapVisualStyle.accent(player);
         int panel = HoloMapVisualStyle.withAlpha(HoloMapVisualStyle.panel(player),
                 Math.round(HoloMapVisualStyle.hologramOpacity(player) * 255.0F));
@@ -73,6 +76,7 @@ public final class HoloMapMiniMapOverlay {
         graphics.enableScissor(x, y, x + size, y + size);
         drawTerrain(graphics, player, x, y, size, size, minimapZoom());
         drawMarkers(graphics, player, x, y, size, size, minimapZoom());
+        drawWaypoints(graphics, player, x, y, size, size, minimapZoom());
         drawPlayer(graphics, player, x, y, size);
         graphics.disableScissor();
         drawReadout(graphics, minecraft.font, player, x, y, size);
@@ -159,6 +163,34 @@ public final class HoloMapMiniMapOverlay {
                         return;
                     }
                     HoloMapGlyphRenderer.drawMarker(graphics, marker, mx, my, color, size, false);
+                });
+    }
+
+    private static void drawWaypoints(GuiGraphicsExtractor graphics, Player player,
+            int x, int y, int w, int h, double zoom) {
+        String dimension = player.level().dimension().identifier().toString();
+        double centerX = player.getX();
+        double centerZ = player.getZ();
+        int limit = markerLimit();
+        HoloMapWaypointClientState.waypoints().stream()
+                .filter(HoloMapWaypoint::visible)
+                .filter(waypoint -> waypoint.inDimension(dimension))
+                .sorted(Comparator.comparing(HoloMapWaypoint::isDeathpoint).reversed()
+                        .thenComparingDouble(waypoint -> distance(centerX, centerZ, waypoint.x(), waypoint.z()))
+                        .thenComparing(HoloMapWaypoint::title, String.CASE_INSENSITIVE_ORDER))
+                .limit(limit)
+                .forEach(waypoint -> {
+                    int wx = x + w / 2 + (int) Math.round((waypoint.x() - centerX) * zoom);
+                    int wy = y + h / 2 + (int) Math.round((waypoint.z() - centerZ) * zoom);
+                    int color = waypoint.isDeathpoint() ? HoloMapVisualStyle.danger(player) : waypoint.color();
+                    if (wx < x - 8 || wx > x + w + 8 || wy < y - 8 || wy > y + h + 8) {
+                        HoloMapGlyphRenderer.drawEdgeIndicator(graphics,
+                                Math.max(x + 4, Math.min(x + w - 4, wx)),
+                                Math.max(y + 4, Math.min(y + h - 4, wy)), color);
+                        return;
+                    }
+                    HoloMapGlyphRenderer.drawWaypoint(graphics, waypoint, wx, wy, color,
+                            HoloMapVisualStyle.markerScalePixels(4), false);
                 });
     }
 

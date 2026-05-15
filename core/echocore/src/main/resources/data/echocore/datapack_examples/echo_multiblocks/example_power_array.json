@@ -1,0 +1,32 @@
+{
+  "id": "echocore:example_power_array",
+  "display_name": "Example Power Array",
+  "category": "energy",
+  "role": "ENERGY",
+  "size": [3, 2, 3],
+  "controller": "echocore:example_controller",
+  "palette": {
+    "C": {"block": "echocore:example_controller", "controller": true},
+    "P": {"block": "echocore:example_power_cell"},
+    "G": {"tag": "minecraft:glass", "optional": false},
+    "A": {"air": true}
+  },
+  "layers": [
+    ["PPP", "PCP", "PPP"],
+    ["GAG", "AAA", "GAG"]
+  ],
+  "allowed_rotations": true,
+  "mirrorable": false,
+  "requires_foundation": true,
+  "capabilities": ["echo:energy"],
+  "preview": {
+    "color": "0x66E8FF"
+  },
+  "integrity": {
+    "max": 100,
+    "decayPerTick": 0
+  },
+  "workcells": [
+    {"type": "ASSEMBLY", "slot": "echocore:example_workcell", "count": 1}
+  ]
+}

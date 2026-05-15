@@ -55,7 +55,11 @@ public final class RenderCoreVisualQaEvidence {
    }
 
    public static CreatorVisualQaReport report() {
-      return CreatorVisualQaReport.fromSnapshots(snapshots(), CreatorAddonShowcaseCatalog.echoVisionCoverage());
+      return CreatorVisualQaReport.fromSnapshots(
+         snapshots(),
+         CreatorAddonShowcaseCatalog.echoVisionCoverage(),
+         RenderCoreScreenChromeQaEvidence.evidence()
+      );
    }
 
    public static List<CreatorVisualQaReport.EvidenceSnapshot> snapshots() {

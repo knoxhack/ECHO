@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/armory_synergy.schema.json",
+  "title": "ECHO Armory Synergy Definition",
+  "description": "Gear synergy set definition for EchoArmory.",
+  "type": "object",
+  "required": ["title", "requiredTags"],
+  "properties": {
+    "id": { "type": "string", "description": "Synergy identifier. Inferred from file path if omitted." },
+    "title": { "type": "string" },
+    "requiredTags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tags that must all be present on equipped gear to activate this synergy."
+    },
+    "effect": { "type": "string", "default": "status", "description": "Synergy effect category." },
+    "potency": { "type": "integer", "default": 1 },
+    "terminalHint": { "type": "string", "default": "" }
+  },
+  "additionalProperties": true
+}

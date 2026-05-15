@@ -1,12 +1,13 @@
 package com.knoxhack.echoorbitalremnants;
 
+import com.knoxhack.echocore.client.model.EchoMobFamily;
+import com.knoxhack.echocore.client.model.EchoMobFamilyRenderer;
 import com.knoxhack.echoorbitalremnants.suit.SuitEvents;
 import com.knoxhack.echoorbitalremnants.suit.SuitState;
 import com.knoxhack.echoorbitalremnants.client.EchoTerminalScreen;
 import com.knoxhack.echoorbitalremnants.client.EmergencyRocketModel;
 import com.knoxhack.echoorbitalremnants.client.EmergencyRocketRenderer;
 import com.knoxhack.echoorbitalremnants.client.OrbitalFactionDialogueScreen;
-import com.knoxhack.echoorbitalremnants.client.OrbitalFactionNpcRenderer;
 import com.knoxhack.echoorbitalremnants.client.OrbitalMachineScreen;
 import com.knoxhack.echoorbitalremnants.integration.OrbitalTerminalIntegration;
 import com.knoxhack.echoorbitalremnants.network.OpenEchoTerminalPayload;
@@ -14,13 +15,13 @@ import com.knoxhack.echoorbitalremnants.network.OrbitalEventVisualPayload;
 import com.knoxhack.echoorbitalremnants.network.OrbitalFactionDialogueOpenPayload;
 import com.knoxhack.echoorbitalremnants.registry.ModEntities;
 import com.knoxhack.echoorbitalremnants.registry.ModMenus;
-import com.knoxhack.echoorbitalremnants.client.TintedVexRenderer;
-import com.knoxhack.echoorbitalremnants.client.TintedZombieRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Mob;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -98,42 +99,38 @@ public class EchoOrbitalRemnantsClient {
 
     @SubscribeEvent
     static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(ModEntities.EMERGENCY_ROCKET_VEHICLE.get(), EmergencyRocketRenderer::new);
         if (ModList.get().isLoaded("echorendercore") && registerRenderCoreEntityRenderers(event)) {
-            event.registerEntityRenderer(ModEntities.ORBITAL_FACTION_NPC.get(), OrbitalFactionNpcRenderer::new);
             return;
         }
+        event.registerEntityRenderer(ModEntities.EMERGENCY_ROCKET_VEHICLE.get(), EmergencyRocketRenderer::new);
         registerTintedEntityRenderers(event);
-        event.registerEntityRenderer(ModEntities.ORBITAL_FACTION_NPC.get(), OrbitalFactionNpcRenderer::new);
     }
 
     public static void registerTintedEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ECHO_DEFENSE_DRONE.get(),
-                context -> new TintedVexRenderer(context, entityTexture("echo_defense_drone"), 0xFF82E9FF, 1.0F, 0.34F));
+                renderer("echo_defense_drone", EchoMobFamily.DRONE, 1.0F, 0.34F));
         event.registerEntityRenderer(ModEntities.VACUUM_WRAITH.get(),
-                context -> new TintedVexRenderer(context, entityTexture("vacuum_wraith"), 0xFFD8E2FF, 1.15F, 0.25F));
+                renderer("vacuum_wraith", EchoMobFamily.WRAITH, 1.15F, 0.25F));
         event.registerEntityRenderer(ModEntities.CORRUPTED_DOCKING_AI.get(),
-                context -> new TintedVexRenderer(context, entityTexture("corrupted_docking_ai"), 0xFFFF6868, 1.35F, 0.44F));
+                renderer("corrupted_docking_ai", EchoMobFamily.DRONE, 1.35F, 0.44F));
         event.registerEntityRenderer(ModEntities.BROKEN_ASTRONAUT.get(),
-                context -> new TintedZombieRenderer(context, entityTexture("broken_astronaut"), 0xFFBFD0D6, 1.0F, 0.52F));
+                renderer("broken_astronaut", EchoMobFamily.STATION_SUIT, 1.0F, 0.52F));
         event.registerEntityRenderer(ModEntities.NEXUS_HUSK.get(),
-                context -> new TintedZombieRenderer(context, entityTexture("nexus_husk"), 0xFFD48BFF, 1.05F, 0.56F));
+                renderer("nexus_husk", EchoMobFamily.HUMANOID, 1.05F, 0.56F));
         event.registerEntityRenderer(ModEntities.LUNAR_NEXUS_HUSK.get(),
-                context -> new TintedZombieRenderer(context, entityTexture("lunar_nexus_husk"), 0xFFE09CFF, 1.22F, 0.68F));
+                renderer("lunar_nexus_husk", EchoMobFamily.STATION_SUIT, 1.22F, 0.68F));
         event.registerEntityRenderer(ModEntities.ABANDONED_CAPTAIN.get(),
-                context -> new TintedZombieRenderer(context, entityTexture("abandoned_captain"), 0xFF6D7B88, 1.18F, 0.72F));
+                renderer("abandoned_captain", EchoMobFamily.STATION_SUIT, 1.18F, 0.72F));
         event.registerEntityRenderer(ModEntities.ECHO_ZERO.get(),
-                context -> new TintedZombieRenderer(context, entityTexture("echo_zero"), 0xFFFF5AF7, 1.35F, 0.9F));
+                renderer("echo_zero", EchoMobFamily.HEAVY_BOSS, 1.35F, 0.9F));
         event.registerEntityRenderer(ModEntities.EUROPA_CRYO_WARDEN.get(),
-                context -> new TintedVexRenderer(context, entityTexture("europa_cryo_warden"), 0xFF7FE8FF, 1.45F, 0.58F));
+                renderer("europa_cryo_warden", EchoMobFamily.DRONE, 1.45F, 0.58F));
         event.registerEntityRenderer(ModEntities.SATURN_RELAY_SENTINEL.get(),
-                context -> new TintedVexRenderer(context, entityTexture("saturn_relay_sentinel"), 0xFFFFE2B8, 1.55F, 0.6F));
+                renderer("saturn_relay_sentinel", EchoMobFamily.DRONE, 1.55F, 0.6F));
         event.registerEntityRenderer(ModEntities.TITAN_METHANE_STALKER.get(),
-                context -> new TintedZombieRenderer(context, entityTexture("titan_methane_stalker"), 0xFFE58A45, 1.18F, 0.66F));
-    }
-
-    private static Identifier entityTexture(String name) {
-        return Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, "textures/entity/" + name + ".png");
+                renderer("titan_methane_stalker", EchoMobFamily.HUMANOID, 1.18F, 0.66F));
+        event.registerEntityRenderer(ModEntities.ORBITAL_FACTION_NPC.get(),
+                renderer("orbital_faction_npc", EchoMobFamily.SURVIVOR_NPC, 1.0F, 0.5F));
     }
 
     private static boolean registerRenderCoreEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -146,6 +143,11 @@ public class EchoOrbitalRemnantsClient {
             EchoOrbitalRemnants.LOGGER.warn("ECHO Orbital Remnants RenderCore entity renderer integration unavailable; using tinted fallback renderers.", exception);
             return false;
         }
+    }
+
+    private static <T extends Mob> EntityRendererProvider<T> renderer(String entityName, EchoMobFamily family,
+            float scale, float shadow) {
+        return context -> new EchoMobFamilyRenderer<>(context, EchoOrbitalRemnants.MODID, entityName, family, scale, shadow);
     }
 
     private static void triggerBaseOrbitalPulse(int overlayColor, int particleColor, float intensity, long seed) {

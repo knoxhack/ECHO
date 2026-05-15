@@ -7,6 +7,8 @@ import com.knoxhack.echonexusprotocol.block.entity.NexusMachineBlockEntity;
 import com.knoxhack.echonexusprotocol.Config;
 import com.knoxhack.echonexusprotocol.compat.jei.NexusJeiRecipeCatalog;
 import com.knoxhack.echonexusprotocol.data.NexusPlayerData;
+import com.knoxhack.echonexusprotocol.entity.CorruptionWardenEntity;
+import com.knoxhack.echonexusprotocol.entity.NexusGuardianEntity;
 import com.knoxhack.echonexusprotocol.entity.NexusMobEntity;
 import com.knoxhack.echonexusprotocol.event.NexusArmorEvents;
 import com.knoxhack.echonexusprotocol.event.NexusWorldEvents;
@@ -23,6 +25,7 @@ import com.knoxhack.echonexusprotocol.registry.ModItems;
 import com.knoxhack.echonexusprotocol.world.ModDimensions;
 import com.knoxhack.echonexusprotocol.world.NexusWorldData;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.nbt.CompoundTag;
@@ -158,6 +161,18 @@ public final class ModGameTests {
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> CORE_ACCESS_ROUTE = TEST_FUNCTIONS.register(
       "core_access_key_route", () -> ModGameTests::coreAccessKeyRoute
    );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ROUTE_PLACEMENT = TEST_FUNCTIONS.register(
+      "terminal_route_placement", () -> ModGameTests::terminalRoutePlacement
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MACHINE_STATUS_STATES = TEST_FUNCTIONS.register(
+      "machine_status_polish_states", () -> ModGameTests::machineStatusPolishStates
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> BOSS_TELEGRAPHS = TEST_FUNCTIONS.register(
+      "boss_telegraph_polish", () -> ModGameTests::bossTelegraphPolish
+   );
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> LOOT_POLISH = TEST_FUNCTIONS.register(
+      "route_loot_polish_invariants", () -> ModGameTests::routeLootPolishInvariants
+   );
 
    private ModGameTests() {
    }
@@ -198,6 +213,10 @@ public final class ModGameTests {
       register(event, environment, "nexus_player_data_persistence_round_trip", PLAYER_DATA_PERSISTENCE.getId());
       register(event, environment, "nexus_machine_persistence_round_trip", MACHINE_PERSISTENCE.getId());
       register(event, environment, "core_access_key_route", CORE_ACCESS_ROUTE.getId());
+      register(event, environment, "terminal_route_placement", ROUTE_PLACEMENT.getId());
+      register(event, environment, "machine_status_polish_states", MACHINE_STATUS_STATES.getId());
+      register(event, environment, "boss_telegraph_polish", BOSS_TELEGRAPHS.getId());
+      register(event, environment, "route_loot_polish_invariants", LOOT_POLISH.getId());
    }
 
    private static void energyStorageTransfer(GameTestHelper helper) {
@@ -430,6 +449,26 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void terminalRoutePlacement(GameTestHelper helper) {
+      Player player = helper.makeMockPlayer(GameType.CREATIVE);
+      if (player instanceof ServerPlayer serverPlayer) {
+         NexusProgression.grantDevelopmentUnlock(serverPlayer);
+      }
+
+      var missions = NexusTerminalMissionProvider.INSTANCE.missions(player);
+      helper.assertTrue(missions.size() == 10, "Nexus route placement should cover every Nexus mission");
+      for (var definition : missions) {
+         var snapshot = NexusTerminalMissionProvider.INSTANCE.snapshot(player, definition.id());
+         var role = NexusTerminalMissionProvider.INSTANCE.role(player, definition, snapshot);
+         TerminalMissionRoutePlacement placement = NexusTerminalMissionProvider.INSTANCE.routePlacement(player, definition, snapshot, role).orElse(null);
+         helper.assertTrue(placement != null, "Nexus mission should expose Survival Route placement: " + definition.id());
+         int expectedPhase = definition.id().getPath().equals("the_core_door") || definition.id().getPath().equals("what_rebuilds_the_world") ? 8 : 7;
+         helper.assertTrue(placement.phaseOrder() == expectedPhase, "Nexus mission should map into the expected late shared route phase: " + definition.id());
+         helper.assertTrue(placement.includeInSurvivalRoute(), "Nexus mission should be visible in the shared Survival Route: " + definition.id());
+      }
+      helper.succeed();
+   }
+
    private static void armorEmergencyFieldLock(GameTestHelper helper) {
       Player player = helper.makeMockPlayer(GameType.SURVIVAL);
       if (!(player instanceof ServerPlayer serverPlayer)) {
@@ -512,6 +551,20 @@ public final class ModGameTests {
       helper.succeed();
    }
 
+   private static void bossTelegraphPolish(GameTestHelper helper) {
+      CorruptionWardenEntity warden = helper.spawnWithNoFreeWill(ModEntities.CORRUPTION_WARDEN.get(), new BlockPos(1, 1, 1));
+      NexusGuardianEntity guardian = helper.spawnWithNoFreeWill(ModEntities.NEXUS_GUARDIAN.get(), new BlockPos(4, 1, 1));
+      guardian.setHealth(guardian.getMaxHealth() * 0.2F);
+      helper.runAfterDelay(90L, () -> {
+         helper.assertTrue(warden.pulseCount() > 0, "Corruption Warden should still pulse corruption pressure");
+         helper.assertTrue(warden.telegraphCount() > 0 && warden.lastTelegraphTick() >= 80, "Corruption Warden should telegraph before a major pulse");
+         helper.assertTrue(guardian.lastTelegraphPhase() == 4, "Nexus Guardian should telegraph the current low-health phase");
+         helper.assertTrue(guardian.phaseTelegraphCount() > 0, "Nexus Guardian phase changes should be visibly telegraphed");
+         helper.assertTrue(guardian.lastHazardPulseTick() > 0, "Nexus Guardian should record hazard pulses for phase readability");
+         helper.succeed();
+      });
+   }
+
    private static void fieldChargesRewriteBlocks(GameTestHelper helper) {
       BlockPos pos = new BlockPos(1, 1, 1);
       helper.setBlock(pos, Blocks.DIRT);
@@ -589,6 +642,10 @@ public final class ModGameTests {
       }
    }
 
+   private static NexusMachineBlockEntity.MachineStatus status(NexusMachineBlockEntity machine) {
+      return NexusMachineBlockEntity.MachineStatus.byId(machine.data().get(NexusMachineBlockEntity.DATA_STATUS));
+   }
+
    private static int countItem(Player player, ItemLike item) {
       int count = 0;
       for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
@@ -621,6 +678,37 @@ public final class ModGameTests {
       assertResourcePresent(helper, "assets/echonexusprotocol/textures/entity/nexus_guardian.png");
       assertResourcePresent(helper, "assets/echonexusprotocol/textures/block/blackbox_monolith_core.png");
       helper.succeed();
+   }
+
+   private static void machineStatusPolishStates(GameTestHelper helper) {
+      NexusMachineBlockEntity badInput = placeMachine(helper, new BlockPos(1, 1, 1), (Block)ModBlocks.NEXUS_RECYCLER.get());
+      badInput.setItem(NexusMachineBlockEntity.INPUT_SLOT, new ItemStack(Items.DIRT));
+      tickMachine(helper, badInput, 1);
+      helper.assertTrue(status(badInput) == NexusMachineBlockEntity.MachineStatus.BAD_INPUT, "Invalid machine input should expose BAD_INPUT status");
+
+      NexusMachineBlockEntity noCharge = placeMachine(helper, new BlockPos(3, 1, 1), (Block)ModBlocks.NEXUS_INFUSER.get());
+      noCharge.setItem(NexusMachineBlockEntity.INPUT_SLOT, new ItemStack((ItemLike)ModItems.NEXUS_SHARD.get()));
+      tickMachine(helper, noCharge, 1);
+      helper.assertTrue(status(noCharge) == NexusMachineBlockEntity.MachineStatus.CHARGING, "Charge-gated machine should expose CHARGING status");
+
+      NexusMachineBlockEntity blocked = placeMachine(helper, new BlockPos(5, 1, 1), (Block)ModBlocks.NEXUS_RECYCLER.get());
+      blocked.setItem(NexusMachineBlockEntity.INPUT_SLOT, new ItemStack((ItemLike)ModItems.NEXUS_SHARD.get()));
+      blocked.setItem(NexusMachineBlockEntity.OUTPUT_SLOT, new ItemStack(Items.DIRT));
+      tickMachine(helper, blocked, 1);
+      helper.assertTrue(status(blocked) == NexusMachineBlockEntity.MachineStatus.OUTPUT_BLOCKED, "Blocked machine output should expose OUTPUT_BLOCKED status");
+
+      NexusMachineBlockEntity complete = placeMachine(helper, new BlockPos(7, 1, 1), (Block)ModBlocks.NEXUS_RECYCLER.get());
+      complete.setItem(NexusMachineBlockEntity.INPUT_SLOT, new ItemStack((ItemLike)ModItems.NEXUS_SHARD.get()));
+      int recyclerTicks = Math.max(1, Math.round(120 * (Integer)Config.MACHINE_DURATION_PERCENT.get() / 100.0F));
+      tickMachine(helper, complete, recyclerTicks);
+      helper.assertTrue(status(complete) == NexusMachineBlockEntity.MachineStatus.COMPLETE, "Completed machine cycle should expose COMPLETE status before the next cycle");
+
+      NexusMachineBlockEntity leaking = placeMachine(helper, new BlockPos(9, 1, 1), (Block)ModBlocks.CORRUPTION_FILTER.get());
+      leaking.addContamination(80);
+      helper.runAfterDelay(45L, () -> {
+         helper.assertTrue(status(leaking) == NexusMachineBlockEntity.MachineStatus.LEAKING, "Dirty unpowered filter should expose LEAKING status");
+         helper.succeed();
+      });
    }
 
    private static void fieldMapTelemetrySources(GameTestHelper helper) {
@@ -666,6 +754,14 @@ public final class ModGameTests {
       helper.assertTrue(
          analysis.collapsedCells() >= 1 && analysis.stormCells() == 1 && analysis.tearCells() == 1,
          "Field map planner should summarize collapsed, storm, and tear cells"
+      );
+      helper.assertTrue(
+         analysis.safestAdjacentGuidance().contains("Field Stabilizer"),
+         "Safest adjacent guidance should name a route-safe recovery tool"
+      );
+      helper.assertTrue(
+         analysis.priorityRecoveryGuidance().contains("Field Anchor") && analysis.priorityRecoveryGuidance().contains("Stabilized Purity Charge"),
+         "Priority recovery guidance should name collapsed-chunk recovery tools"
       );
       helper.succeed();
    }
@@ -1225,6 +1321,39 @@ public final class ModGameTests {
       helper.assertTrue(worldData.commitEndingState("restore"), "First ending commit should apply world feedback");
       helper.assertFalse(worldData.commitEndingState("destroy"), "Different ending commits should be rejected after a path is set");
       helper.assertTrue("restore".equals(worldData.endingState()), "World ending should remain the first committed path");
+      helper.succeed();
+   }
+
+   private static void routeLootPolishInvariants(GameTestHelper helper) {
+      String fieldStation = readResource("data/echonexusprotocol/loot_table/chests/field_station_supply.json");
+      helper.assertTrue(
+         fieldStation.contains("echonexusprotocol:signal_wire")
+            && fieldStation.contains("echonexusprotocol:filter_membrane")
+            && fieldStation.contains("echonexusprotocol:field_membrane"),
+         "Field station loot should support early machine and filter setup"
+      );
+
+      String dataVault = readResource("data/echonexusprotocol/loot_table/chests/data_vault_memory.json");
+      helper.assertTrue(
+         dataVault.contains("echonexusprotocol:data_fragment")
+            && dataVault.contains("echonexusprotocol:memory_shard")
+            && dataVault.contains("echonexusprotocol:blackbox_fragment"),
+         "Data vault loot should support memory and Blackbox fragment progress"
+      );
+
+      String containment = readResource("data/echonexusprotocol/loot_table/chests/containment_lab_reactor.json");
+      helper.assertTrue(
+         containment.contains("echonexusprotocol:field_anchor")
+            && containment.contains("echonexusprotocol:stabilized_purity_charge"),
+         "Containment lab loot should support collapsed-field recovery"
+      );
+
+      String wardenLoot = readResource("data/echonexusprotocol/loot_table/entities/corruption_warden.json");
+      String guardianLoot = readResource("data/echonexusprotocol/loot_table/entities/nexus_guardian.json");
+      helper.assertTrue(wardenLoot.contains("echonexusprotocol:field_membrane"), "Warden repeat loot should include route support materials");
+      helper.assertFalse(wardenLoot.contains("echonexusprotocol:reactor_core"), "Warden Reactor Core should remain guarded by one-time defeat code");
+      helper.assertTrue(guardianLoot.contains("echonexusprotocol:stabilized_purity_charge"), "Guardian repeat loot should include final recovery support");
+      helper.assertFalse(guardianLoot.contains("echonexusprotocol:core_key_assembly"), "Guardian Core Key Assembly should remain guarded by one-time defeat code");
       helper.succeed();
    }
 

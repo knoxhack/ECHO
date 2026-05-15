@@ -10,7 +10,11 @@ import net.minecraft.resources.Identifier;
 public final class HoloMapRenderCoreClientIntegration {
    private static final Identifier MINIMAP_PROFILE = Identifier.fromNamespaceAndPath(EchoHoloMap.MODID, "screen/minimap");
    private static final RenderCoreScreenFrameOptions MINIMAP_FRAME_OPTIONS =
-      new RenderCoreScreenFrameOptions("HOLOMAP", true, false, false, true, false);
+      RenderCoreScreenFrameOptions.hologram("HOLOMAP")
+         .backdrop(false)
+         .scanlines(false)
+         .chromaticEdge(true)
+         .build();
 
    private HoloMapRenderCoreClientIntegration() {
    }

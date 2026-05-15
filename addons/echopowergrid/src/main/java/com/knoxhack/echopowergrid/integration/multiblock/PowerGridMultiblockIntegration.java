@@ -3,8 +3,11 @@ package com.knoxhack.echopowergrid.integration.multiblock;
 import com.knoxhack.echopowergrid.EchoPowerGrid;
 import com.knoxhack.echopowergrid.api.EchoPowerGridApi;
 import com.knoxhack.echopowergrid.config.PowerGridConfig;
-import java.util.Optional;
+import com.knoxhack.echomultiblockcore.api.MultiblockIntegrationServices;
+import com.knoxhack.echomultiblockcore.api.MultiblockPowerProvider;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 /**
@@ -15,9 +18,16 @@ import net.minecraft.world.level.Level;
  * or the position is not on a network, the request safely returns zero.
  */
 public final class PowerGridMultiblockIntegration {
+    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
+    private static final long AVAILABILITY_PROBE = Long.MAX_VALUE / 8L;
+
     private PowerGridMultiblockIntegration() {}
 
     public static void register() {
+        if (!REGISTERED.compareAndSet(false, true)) {
+            return;
+        }
+        MultiblockIntegrationServices.registerPowerProvider(Provider.INSTANCE);
         EchoPowerGrid.LOGGER.info("ECHO PowerGrid MultiblockCore bridge registered.");
     }
 
@@ -31,8 +41,7 @@ public final class PowerGridMultiblockIntegration {
      */
     public static long requestPower(Level level, BlockPos pos, long epPerTick) {
         if (!PowerGridConfig.ENABLED.get()) return 0;
-        long available = EchoPowerGridApi.getAvailablePower(level, pos);
-        return Math.min(available, epPerTick);
+        return EchoPowerGridApi.drawPower(level, pos, epPerTick, false).drawn();
     }
 
     /**
@@ -41,5 +50,32 @@ public final class PowerGridMultiblockIntegration {
     public static boolean isPowered(Level level, BlockPos pos) {
         if (!PowerGridConfig.ENABLED.get()) return false;
         return EchoPowerGridApi.isPowered(level, pos);
+    }
+
+    private enum Provider implements MultiblockPowerProvider {
+        INSTANCE;
+
+        private final Identifier providerId = Identifier.fromNamespaceAndPath(EchoPowerGrid.MODID, "provider/multiblock_power");
+
+        @Override
+        public Identifier providerId() {
+            return providerId;
+        }
+
+        @Override
+        public long availablePower(Level level, BlockPos controllerPos) {
+            if (!PowerGridConfig.ENABLED.get()) {
+                return 0L;
+            }
+            return EchoPowerGridApi.drawPower(level, controllerPos, AVAILABILITY_PROBE, true).drawn();
+        }
+
+        @Override
+        public long drawPower(Level level, BlockPos controllerPos, long ep, boolean simulate) {
+            if (!PowerGridConfig.ENABLED.get()) {
+                return 0L;
+            }
+            return EchoPowerGridApi.drawPower(level, controllerPos, ep, simulate).drawn();
+        }
     }
 }

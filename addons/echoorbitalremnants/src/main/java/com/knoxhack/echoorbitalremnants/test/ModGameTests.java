@@ -49,8 +49,12 @@ import com.knoxhack.echoterminal.api.TerminalTabChrome;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfile;
 import com.knoxhack.echoterminal.api.TerminalNavigationProfiles;
 import com.knoxhack.echoterminal.api.TerminalNavigationSection;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionDefinition;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
+import com.knoxhack.echoterminal.mission.MainSurvivalQuestProvider;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.io.IOException;
@@ -102,6 +106,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModGameTests {
+    private static final String ACTION_SCAN = "scan";
+    private static final String ACTION_CLAIM_CACHE = "claim_cache";
     private static final DeferredRegister<Consumer<GameTestHelper>> TEST_FUNCTIONS =
             DeferredRegister.create(Registries.TEST_FUNCTION, EchoOrbitalRemnants.MODID);
 
@@ -1178,6 +1184,40 @@ public final class ModGameTests {
             helper.assertTrue(hasTerminalActionHandler(handlers, id("orbital_echo"),
                             Identifier.fromNamespaceAndPath("echoterminal", "mission_action")),
                     "Orbital ECHO tab should register the shared Terminal mission action");
+
+            var routePlayer = helper.makeMockPlayer(GameType.SURVIVAL);
+            EchoTerminalProgress.reset(routePlayer);
+            markAshfallNexusChoice(helper, routePlayer);
+            List<TerminalMissionDefinition> typedMissions = OrbitalMissionProvider.INSTANCE.missions(routePlayer);
+            assertOrbitalRoutePlacement(helper, routePlayer, typedMissions, "earth_calibration", 6, 0);
+            assertOrbitalRoutePlacement(helper, routePlayer, typedMissions, "station_network", 6, 101);
+            assertOrbitalRoutePlacement(helper, routePlayer, typedMissions, "mars_route", 7, 300);
+            assertOrbitalRoutePlacement(helper, routePlayer, typedMissions, "deep_space_protocol", 7, 700);
+            assertOrbitalRoutePlacement(helper, routePlayer, typedMissions, "echo_zero", 8, 701);
+            assertOrbitalRoutePlacement(helper, routePlayer, typedMissions, "final_seal", 9, 900);
+
+            MainSurvivalQuestProvider.INSTANCE.clearCacheForTests();
+            List<TerminalMissionDefinition> survivalRoute = MainSurvivalQuestProvider.INSTANCE.missions(routePlayer);
+            assertSurvivalRoutePhase(helper, survivalRoute, "earth_calibration", 6);
+            assertSurvivalRoutePhase(helper, survivalRoute, "station_network", 6);
+            assertSurvivalRoutePhase(helper, survivalRoute, "mars_route", 7);
+            assertSurvivalRoutePhase(helper, survivalRoute, "deep_space_protocol", 7);
+            assertSurvivalRoutePhase(helper, survivalRoute, "echo_zero", 8);
+            assertSurvivalRoutePhase(helper, survivalRoute, "survey_network", 9);
+            assertSurvivalRoutePhase(helper, survivalRoute, "faction_contract", 9);
+            assertSurvivalRoutePhase(helper, survivalRoute, "final_seal", 9);
+
+            TerminalMissionSnapshot survivalSnapshot =
+                    MainSurvivalQuestProvider.INSTANCE.snapshot(routePlayer, id("launch_chain"));
+            helper.assertTrue(survivalSnapshot.actions().stream().anyMatch(action -> ACTION_SCAN.equals(action.id())),
+                    "Survival Route should preserve Orbital child scan actions");
+            EchoTerminalProgress.get(routePlayer).markLowOrbitReached(routePlayer);
+            MainSurvivalQuestProvider.INSTANCE.clearCacheForTests();
+            TerminalMissionSnapshot survivalClaimable =
+                    MainSurvivalQuestProvider.INSTANCE.snapshot(routePlayer, id("low_orbit"));
+            helper.assertTrue(survivalClaimable.actions().stream()
+                            .anyMatch(action -> action.enabled() && ACTION_CLAIM_CACHE.equals(action.id())),
+                    "Survival Route should preserve Orbital child claim-cache actions");
             helper.succeed();
         } catch (ClassNotFoundException missingTerminal) {
             helper.succeed();
@@ -1543,7 +1583,7 @@ public final class ModGameTests {
         TerminalNavigationProfile profile = TerminalNavigationProfiles.profile(tabId).orElse(null);
         helper.assertTrue(profile != null, tabId + " should register a Terminal navigation profile");
         helper.assertTrue(profile.section() == TerminalNavigationSection.CHAPTERS,
-                tabId + " should live in the terminal Chapters section");
+                tabId + " should live in the terminal Progress mod section");
         helper.assertTrue(OrbitalTerminalIds.CHAPTER_ID.toString().equals(profile.chapterId()),
                 tabId + " should use the shared Orbital chapter id");
         helper.assertTrue("Orbital Remnants".equals(profile.chapterTitle()),
@@ -2311,6 +2351,44 @@ public final class ModGameTests {
         Identifier routeId = id(path);
         return records.stream()
                 .filter(record -> record.id().equals(routeId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static void assertOrbitalRoutePlacement(GameTestHelper helper,
+            net.minecraft.world.entity.player.Player player,
+            List<TerminalMissionDefinition> missions,
+            String path,
+            int expectedPhase,
+            int expectedOrder) {
+        TerminalMissionDefinition definition = missionDefinition(missions, path);
+        helper.assertTrue(definition != null, "Orbital mission should exist for route placement: " + path);
+        TerminalMissionSnapshot snapshot = OrbitalMissionProvider.INSTANCE.snapshot(player, id(path));
+        TerminalMissionRoutePlacement placement = OrbitalMissionProvider.INSTANCE
+                .routePlacement(player, definition, snapshot, TerminalMissionRole.MAIN)
+                .orElse(null);
+        helper.assertTrue(placement != null, "Orbital mission should publish Survival Route placement: " + path);
+        helper.assertTrue(placement.phaseOrder() == expectedPhase && placement.missionOrder() == expectedOrder
+                        && placement.role() == TerminalMissionRole.MAIN && placement.includeInSurvivalRoute(),
+                "Orbital mission should publish expected Survival Route phase/order: " + path);
+    }
+
+    private static void assertSurvivalRoutePhase(GameTestHelper helper,
+            List<TerminalMissionDefinition> missions,
+            String path,
+            int expectedPhase) {
+        TerminalMissionDefinition definition = missionDefinition(missions, path);
+        helper.assertTrue(definition != null, "Survival Route should include Orbital mission: " + path);
+        helper.assertTrue(definition.phaseOrder() == expectedPhase
+                        && definition.phaseId().equals(String.format(java.util.Locale.ROOT, "phase_%02d", expectedPhase))
+                        && definition.phaseTitle().equals(String.format(java.util.Locale.ROOT, "Phase %02d", expectedPhase)),
+                "Survival Route should place Orbital mission in expected phase: " + path);
+    }
+
+    private static TerminalMissionDefinition missionDefinition(List<TerminalMissionDefinition> missions, String path) {
+        Identifier missionId = id(path);
+        return missions.stream()
+                .filter(definition -> definition.id().equals(missionId))
                 .findFirst()
                 .orElse(null);
     }

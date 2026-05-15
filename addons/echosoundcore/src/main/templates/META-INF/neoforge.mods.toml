@@ -98,7 +98,7 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
-modId="echosignalos"
+modId="signalos"
 type="optional"
 reason="Exposes SignalOS UI sounds when present."
 versionRange="[1.0.0,)"

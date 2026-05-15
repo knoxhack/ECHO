@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/logistics_offer.schema.json",
+  "title": "ECHO Logistics Faction Depot Offer",
+  "description": "Faction trade offer for EchoLogisticsNetwork.",
+  "type": "object",
+  "required": ["input", "output"],
+  "properties": {
+    "id": { "type": "string", "description": "Offer identifier. Inferred from file path if omitted." },
+    "factionId": { "type": "string", "description": "Faction identifier. Defaults to namespace logistics_exchange." },
+    "input": {
+      "type": "object",
+      "required": ["item", "count"],
+      "properties": {
+        "item": { "type": "string", "description": "Item identifier." },
+        "count": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["item", "count"],
+      "properties": {
+        "item": { "type": "string", "description": "Item identifier." },
+        "count": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "reputationDelta": { "type": "integer", "default": 0 },
+    "minReputation": { "type": "integer", "default": 0 },
+    "cooldownTicks": { "type": "integer", "default": 1200 }
+  },
+  "additionalProperties": true
+}

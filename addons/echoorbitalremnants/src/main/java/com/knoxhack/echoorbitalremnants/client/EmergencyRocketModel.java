@@ -2,6 +2,9 @@ package com.knoxhack.echoorbitalremnants.client;
 
 import com.knoxhack.echoorbitalremnants.EchoOrbitalRemnants;
 import com.knoxhack.echoorbitalremnants.entity.EmergencyRocketEntity;
+import com.knoxhack.echocore.client.model.EchoNamedModelPartProvider;
+import com.knoxhack.echocore.client.model.EchoNamedModelParts;
+import java.util.Map;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -14,17 +17,38 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
-public class EmergencyRocketModel extends EntityModel<EmergencyRocketRenderState> {
+public class EmergencyRocketModel extends EntityModel<EmergencyRocketRenderState> implements EchoNamedModelPartProvider {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
             Identifier.fromNamespaceAndPath(EchoOrbitalRemnants.MODID, "emergency_rocket_vehicle"), "main");
 
     private final ModelPart root;
+    private final ModelPart body;
+    private final ModelPart nose;
+    private final ModelPart engine;
     private final ModelPart flame;
+    private final Map<String, ModelPart> namedParts;
 
     public EmergencyRocketModel(ModelPart root) {
         super(root);
         this.root = root;
+        this.body = root.getChild("body");
+        this.nose = root.getChild("nose");
+        this.engine = root.getChild("engine");
         this.flame = root.getChild("flame");
+        this.namedParts = EchoNamedModelParts.builder()
+                .put("root", root)
+                .put("body", body)
+                .put("torso", body)
+                .put("nose", nose)
+                .put("head", nose)
+                .put("engine", engine)
+                .put("core", engine)
+                .put("flame", flame)
+                .put("exhaust", flame)
+                .put("trail", flame)
+                .put("ground", engine)
+                .build()
+                .asMap();
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -100,5 +124,10 @@ public class EmergencyRocketModel extends EntityModel<EmergencyRocketRenderState
         flame.yScale = 1.1F + state.ascentProgress * 1.25F + Mth.sin(state.ageInTicks * 1.3F) * 0.25F;
         flame.xScale = 0.85F + state.ascentProgress * 0.35F;
         flame.zScale = flame.xScale;
+    }
+
+    @Override
+    public Map<String, ModelPart> echoNamedModelParts() {
+        return namedParts;
     }
 }

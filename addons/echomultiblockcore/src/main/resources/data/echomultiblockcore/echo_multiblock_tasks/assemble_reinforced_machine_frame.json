@@ -2,7 +2,7 @@
   "id": "echomultiblockcore:assemble_reinforced_machine_frame",
   "display_name": "Assemble Reinforced Machine Frame",
   "category": "assembly",
-  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line_demo"],
+  "allowed_multiblocks": ["echomultiblockcore:industrial_assembly_line"],
   "required_workcell": "ASSEMBLY",
   "required_tools": ["WELDER", "ASSEMBLER"],
   "duration_ticks": 200,

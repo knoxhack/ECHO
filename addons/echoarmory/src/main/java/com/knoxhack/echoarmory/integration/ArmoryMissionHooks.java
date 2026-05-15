@@ -18,6 +18,8 @@ public final class ArmoryMissionHooks {
         register("install_module", "module");
         register("recharge_core", "recharge");
         register("bind_loadout", "bind");
+        register("prepare_route_kit", "prepare");
+        register("dispatch_route_kit", "dispatch");
     }
 
     public static void recordInspectLoadout(Player player, String station) {
@@ -38,6 +40,14 @@ public final class ArmoryMissionHooks {
 
     public static void recordBindLoadout(Player player, String station) {
         record(player, "bind_loadout", "bind", MissionObjectiveType.SCAN_ENTITY, "station", station);
+    }
+
+    public static void recordPrepareRouteKit(Player player, String loadoutId) {
+        record(player, "prepare_route_kit", "prepare", MissionObjectiveType.CUSTOM, "loadout", loadoutId);
+    }
+
+    public static void recordDispatchRouteKit(Player player, String loadoutId) {
+        record(player, "dispatch_route_kit", "dispatch", MissionObjectiveType.ESTABLISH_ROUTE, "loadout", loadoutId);
     }
 
     private static void register(String missionPath, String objectiveKey) {

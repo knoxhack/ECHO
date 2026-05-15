@@ -14,32 +14,22 @@ project(':echocore').projectDir = file('core/echocore')
 def echoAddonSet = (gradle.startParameter.projectProperties.get('echoAddonSet') ?: 'all')
         .toString()
         .toLowerCase(Locale.ROOT)
-def echoBuildableAddons = file('addons').listFiles()
-        ?.findAll { candidate ->
-            candidate.isDirectory() && new File(candidate, 'build.gradle').isFile()
-        }
-        ?.collect { it.name }
-        ?.sort() ?: []
-def echoBetaAddons = ['echonetcore', 'echoterminal', 'echomissioncore', 'echodatacore', 'echomultiblockcore', 'echoruntimeguard', 'echosignalos', 'signalosexample', 'echorendercore', 'echoorbitalremnants', 'echonexusprotocol', 'echoagriculturereclamation', 'echoworldcore', 'echoblockworks', 'echothemecore', 'echoplayercore', 'echopowergrid', 'echosoundcore', 'echotutorialcore', 'echorelictech', 'echoweathercore']
+def echoBetaAddons = ['echonetcore', 'echoterminal', 'echomissioncore', 'echodatacore', 'echomultiblockcore', 'echoruntimeguard', 'echosignalos', 'signalosexample', 'echorendercore', 'echoholomap', 'echolens', 'echoorbitalremnants', 'echonexusprotocol', 'echoagriculturereclamation', 'echoworldcore', 'echoblockworks', 'echothemecore', 'echoplayercore', 'echopowergrid', 'echosoundcore', 'echotutorialcore', 'echorelictech', 'echoweathercore', 'echorecovery']
+def echoReleaseAddons = ['echoarmory', 'echoblackboxprotocol', 'echoconvoyprotocol', 'echoindex', 'echoindustrialnexus', 'echologisticsnetwork', 'echostationfall']
+def echoAllAddons = (echoBetaAddons + echoReleaseAddons).unique()
 
 if (!['beta', 'all'].contains(echoAddonSet)) {
     throw new RuntimeException("Unsupported echoAddonSet '${echoAddonSet}'. Use 'beta' or 'all'.")
 }
 
-def echoAddonProjects = echoAddonSet == 'all' ? echoBuildableAddons : echoBetaAddons
+def echoAddonProjects = echoAddonSet == 'all' ? echoAllAddons : echoBetaAddons
 echoAddonProjects.each { addonName ->
     def addonDir = file("addons/${addonName}")
     if (!addonDir.isDirectory()) {
-        if (echoBetaAddons.contains(addonName)) {
-            throw new RuntimeException("Required beta addon '${addonName}' is missing at ${addonDir}.")
-        }
-        return
+        throw new RuntimeException("Required ${echoAddonSet} addon '${addonName}' is missing at ${addonDir}.")
     }
     if (!new File(addonDir, 'build.gradle').isFile()) {
-        if (echoBetaAddons.contains(addonName)) {
-            throw new RuntimeException("Required beta addon '${addonName}' is missing a build.gradle at ${addonDir}.")
-        }
-        return
+        throw new RuntimeException("Required ${echoAddonSet} addon '${addonName}' is missing a build.gradle at ${addonDir}.")
     }
     include addonName
     project(":${addonName}").projectDir = addonDir

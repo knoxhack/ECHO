@@ -4,7 +4,7 @@ Run from the repository root with Java 25:
 
 ```powershell
 $env:JAVA_HOME='C:\Users\knox\.jdks\temurin-25'
-python tools\validate_resources.py
+python tools\validate_resources.py --addon-set all
 .\gradlew.bat :echomultiblockcore:compileJava --no-daemon --no-configuration-cache
 .\gradlew.bat :echorendercore:compileJava --no-daemon --no-configuration-cache
 .\gradlew.bat :echoterminal:compileJava :echolens:compileJava :echoholomap:compileJava --no-daemon --no-configuration-cache
@@ -34,15 +34,24 @@ Manual client checklist:
 - With ECHO HoloMap installed, sync the map and verify the Assembly Line marker appears on the Multiblocks layer with alert, integrity, and restock summary text.
 - With ECHO Logistics Network installed, connect a Logistics network, Drone Delivery Dock, stocked storage, and Smart Storage Label to an Input Depot Crate, then press REQ for a recipe and confirm a courier dispatches to the depot.
 - Enable AUTO on the controller, set target x3, select the matching Industrial loadout on an Auto-Restock Station, and confirm Logistics dispatches only when the Input Depot Crate falls below the minimum run threshold.
+- Build the Recipe Matrix Core, encode a Recipe Matrix Shard, and confirm the `recipe_matrix_encoding` Terminal mission completes.
+- Craft the Nexus Furnace Array Controller and Nexus Furnace Array Blueprint.
+- Build the Nexus Furnace Array from `data/echoindustrialnexus/echo_multiblocks/nexus_furnace_array.json`.
+- Queue Stabilize Hybrid Thermal Core with the required inputs and no tool head installed; confirm the task blocks and inputs remain in the Input Depot Crate.
+- Install a Coolant Injector Head or Inspection Scanner Head, retry Stabilize Hybrid Thermal Core, and confirm the Output Depot Crate receives a Hybrid Thermal Core and Rad Slag.
+- Queue Forge Core Key Assembly and confirm the Output Depot Crate receives a Core Key Assembly and Protocol Extractor Coil.
+- Confirm the `nexus_furnace_array` Terminal mission becomes claimable after Forge Core Key Assembly completes.
+- With ECHO Nexus Protocol absent, repeat the two Nexus Furnace Array tasks and confirm the soft pressure effect does not fail the queue.
+- With ECHO Logistics Network present, verify the Nexus Array recipes expose their matching Logistics loadout requests.
 - Try the same task with the tool head removed and confirm the diagnostic says a robotic tool is missing.
 - Remove a required Reinforced Machine Casing and confirm the structure becomes incomplete or damaged.
 - Replace the casing, revalidate the controller, and confirm the facility returns online.
 - Save and reload the world; formed state should safely persist or revalidate.
 - Launch a dedicated GameTest server to catch client-only classloading mistakes.
 
-Known 1.0.0 limitations:
+Known 1.2.0 RC notes:
 
 - The controller GUI is functional but uses a hand-drawn first-pass style rather than final art.
 - Upgrade chips are craftable and tagged, but only effects already supported by MultiblockCore are active.
-- Nexus Furnace Array is a definition and integration hook, not a full Nexus Protocol processing route yet.
 - Logistics Network request and auto-restock routing are optional and only appear when ECHO Logistics Network is present; Factory Command shows controls and status, but Logistics still owns route discovery, stock checks, in-flight caps, and delivery.
+- Publish this as part of the next public stack minor release, not as an addon-only public 1.2.0.

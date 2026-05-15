@@ -1,4 +1,4 @@
-# ECHO ThemeCore 0.2.0
+# ECHO ThemeCore 1.2.0
 
 ECHO ThemeCore is the shared visual, audio, UI, and vanilla Minecraft skin service for the ECHO/Ashfall ecosystem. It is a first-party service/API addon with mod id `echothemecore` and package `com.knoxhack.echothemecore`.
 
@@ -16,6 +16,7 @@ data/<namespace>/themes/*.json
 ```
 
 Bad theme JSON is logged and skipped. Missing selections fall back to CyberGlass.
+When ECHO Terminal is loaded, ThemeCore registers CyberGlass as a Terminal theme and makes it the Terminal default for fresh client configs. Existing valid Terminal theme selections are preserved.
 
 ## Config
 
@@ -96,5 +97,6 @@ Container handling protects slot interiors by drawing only around panel bounds o
 ## ThemeForge
 
 ThemeForge lives at `tools/echo-themeforge/`. It generates development-time prompt packs, validates PNG outputs, creates reports, and safely copies approved generated PNGs into ThemeCore resources. It has no runtime dependency and never belongs in the Minecraft game loop.
+Use `python tools/echo-themeforge/themeforge.py validate --theme cyberglass --strict` for CyberGlass release gates. Full ThemeForge reports may still list Nexus generated assets as future-theme backlog when no packaged runtime theme references are missing.
 
 Visual rule: ThemeCore uses clean futuristic glass, hologram glow, thin neon borders, geometric circuitry, edge pulses, energy overlays, glints, and phase ripples. Legacy CRT line-overlay styling is forbidden for ThemeCore assets and theme data.

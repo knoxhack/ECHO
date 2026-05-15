@@ -93,6 +93,10 @@ public class HandRecyclerBlockEntity extends BlockEntity implements MenuProvider
             ModItems.SCRAP_PLASTIC.get(), ModItems.FILTRATION_MEMBRANE.get()
     );
 
+    public static Map<Item, Item> getRecipes() {
+        return RECIPES;
+    }
+
     public HandRecyclerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.HAND_RECYCLER.get(), pos, state);
         recalculateMaxProgress();

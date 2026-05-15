@@ -1,0 +1,18 @@
+{
+  "id": "echocore:example_medical_drop",
+  "title": "Emergency Medical Drop",
+  "order": 0,
+  "icon": "minecraft:red_dye",
+  "requirements": [
+    {"item": "minecraft:bandage", "count": 4, "optional": false},
+    {"item": "minecraft:splint", "count": 2, "optional": false},
+    {"item": "minecraft:antitoxin", "count": 1, "optional": true}
+  ],
+  "targetBlockTypes": ["echologisticsnetwork:supply_crate"],
+  "deliveryTicks": 300,
+  "factoryTaskId": "echoindustrialnexus:medical_packaging",
+  "restockTargetRuns": 5,
+  "restockMinRuns": 2,
+  "restockMaxInFlight": 2,
+  "restockCooldownTicks": 400
+}

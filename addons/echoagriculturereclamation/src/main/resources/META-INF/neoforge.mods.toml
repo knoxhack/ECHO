@@ -3,7 +3,7 @@ issueTrackerURL="https://github.com/knoxhack/echo/issues"
 
 [[mods]]
 modId="echoagriculturereclamation"
-version="1.1.0"
+version="1.2.0"
 displayName="ECHO: Agriculture Reclamation"
 displayURL="https://github.com/knoxhack/echo"
 authors="KnoxHack"
@@ -41,8 +41,8 @@ side="BOTH"
 [[dependencies.echoagriculturereclamation]]
 modId="echoterminal"
 type="optional"
-reason="Allows Agriculture Reclamation records and missions to appear inside the modular ECHO Terminal."
-versionRange="[1.0.0,)"
+reason="Publishes Agriculture Reclamation records and missions in ECHO Terminal; current Terminal builds also place them as optional Survival Route leads."
+versionRange="[1.2.0,)"
 ordering="AFTER"
 side="BOTH"
 

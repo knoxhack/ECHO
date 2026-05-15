@@ -32,11 +32,15 @@ import com.knoxhack.echoindustrialnexus.worldgen.IndustrialPoiType;
 import com.knoxhack.echocore.api.EchoAddonRegistry;
 import com.knoxhack.echocore.api.EchoCoreServices;
 import com.knoxhack.echocore.api.EchoRouteRecord;
+import com.knoxhack.echomultiblockcore.api.LensMultiblockScan;
+import com.knoxhack.echomultiblockcore.api.MultiblockCapability;
 import com.knoxhack.echomultiblockcore.api.MultiblockAutomationRecipe;
 import com.knoxhack.echomultiblockcore.api.AutomationRecipeRegistry;
 import com.knoxhack.echomultiblockcore.api.MultiblockDefinition;
 import com.knoxhack.echomultiblockcore.api.MultiblockIntegrationServices;
 import com.knoxhack.echomultiblockcore.api.MultiblockMapMarkerSnapshot;
+import com.knoxhack.echomultiblockcore.api.MultiblockPowerProvider;
+import com.knoxhack.echomultiblockcore.api.MultiblockTaskState;
 import com.knoxhack.echomultiblockcore.api.RobotToolType;
 import com.knoxhack.echomultiblockcore.api.ValidationResult;
 import com.knoxhack.echomultiblockcore.api.WorkcellType;
@@ -50,6 +54,7 @@ import com.knoxhack.echoterminal.api.recipe.TerminalRecipeEntry;
 import com.knoxhack.echoterminal.api.recipe.TerminalRecipeSlot;
 import com.google.gson.JsonParser;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -149,6 +154,12 @@ public final class ModGameTests {
       TEST_FUNCTIONS.register("rendercore_visual_states", () -> ModGameTests::renderCoreVisualStates);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INDUSTRIAL_MULTIBLOCK_DEFINITIONS =
       TEST_FUNCTIONS.register("industrial_multiblock_definitions", () -> ModGameTests::industrialMultiblockDefinitions);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_FURNACE_ARRAY_ROBOTIC_TASK =
+      TEST_FUNCTIONS.register("nexus_furnace_array_robotic_task", () -> ModGameTests::nexusFurnaceArrayRoboticTask);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_FURNACE_ARRAY_CORE_KEY_MISSION =
+      TEST_FUNCTIONS.register("nexus_furnace_array_core_key_mission", () -> ModGameTests::nexusFurnaceArrayCoreKeyMission);
+   private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> NEXUS_FURNACE_ARRAY_PROVIDERS =
+      TEST_FUNCTIONS.register("nexus_furnace_array_provider_snapshots", () -> ModGameTests::nexusFurnaceArrayProviderSnapshots);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSEMBLY_LINE_ROBOTIC_TASK =
       TEST_FUNCTIONS.register("assembly_line_robotic_task", () -> ModGameTests::assemblyLineRoboticTask);
    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ASSEMBLY_LINE_GUI_QUEUE =
@@ -200,6 +211,9 @@ public final class ModGameTests {
       register(event, environment, "nexus_pressure_compat", NEXUS_PRESSURE_COMPAT.getId());
       register(event, environment, "rendercore_visual_states", RENDERCORE_VISUAL_STATES.getId());
       register(event, environment, "industrial_multiblock_definitions", INDUSTRIAL_MULTIBLOCK_DEFINITIONS.getId());
+      register(event, environment, "nexus_furnace_array_robotic_task", NEXUS_FURNACE_ARRAY_ROBOTIC_TASK.getId());
+      register(event, environment, "nexus_furnace_array_core_key_mission", NEXUS_FURNACE_ARRAY_CORE_KEY_MISSION.getId());
+      register(event, environment, "nexus_furnace_array_provider_snapshots", NEXUS_FURNACE_ARRAY_PROVIDERS.getId());
       register(event, environment, "assembly_line_robotic_task", ASSEMBLY_LINE_ROBOTIC_TASK.getId());
       register(event, environment, "assembly_line_gui_queue", ASSEMBLY_LINE_GUI_QUEUE.getId());
       register(event, environment, "assembly_line_batch_queue", ASSEMBLY_LINE_BATCH_QUEUE.getId());
@@ -267,6 +281,164 @@ public final class ModGameTests {
       helper.assertTrue(task.requiredWorkcell() == WorkcellType.ASSEMBLY, "Frame welding should target the Assembly workcell.");
       helper.assertTrue(task.outputs().stream().anyMatch(output -> output.itemId().equals(EchoIndustrialNexus.id("reinforced_machine_frame"))),
          "Frame welding should output a reinforced machine frame.");
+      MultiblockDefinition nexus = MultiblockContent.definition(id("nexus_furnace_array")).orElseThrow();
+      MultiblockDefinition circuit = MultiblockContent.definition(id("circuit_fabricator")).orElseThrow();
+      MultiblockDefinition matrix = MultiblockContent.definition(id("recipe_matrix_core")).orElseThrow();
+      helper.assertTrue(circuit.capabilities().contains(MultiblockCapability.POWER_INPUT),
+         "Circuit Fabricator should expose echo:power_input for powered precision work.");
+      helper.assertTrue(matrix.capabilities().contains(MultiblockCapability.POWER_INPUT),
+         "Recipe Matrix Core should expose echo:power_input for shard encoding.");
+      helper.assertTrue(nexus.capabilities().contains(MultiblockCapability.POWER_INPUT),
+         "Nexus Furnace Array should expose echo:power_input for unstable processing.");
+      helper.assertTrue(nexus.controllerBlockId().equals(id("nexus_furnace_array_controller")),
+         "Nexus Furnace Array should use its dedicated controller block.");
+      helper.assertTrue(nexus.workcells().stream().anyMatch(workcell -> workcell.type() == WorkcellType.MATRIX_PROCESSING
+            && workcell.allowedTaskTypes().contains(id("stabilize_hybrid_thermal_core"))
+            && workcell.allowedTaskTypes().contains(id("forge_core_key_assembly"))),
+         "Nexus Furnace Array should expose Matrix Processing for both new automation tasks.");
+      helper.assertTrue(nexus.roboticsRequirements().stream().anyMatch(requirement -> requirement.minArms() >= 1
+            && requirement.requiredTools().contains(RobotToolType.INJECTOR)
+            && requirement.requiredTools().contains(RobotToolType.SCANNER)),
+         "Nexus Furnace Array should document injector and scanner tool requirements.");
+      MultiblockAutomationRecipe stabilize = AutomationRecipeRegistry.byId(id("stabilize_hybrid_thermal_core")).orElseThrow();
+      MultiblockAutomationRecipe forge = AutomationRecipeRegistry.byId(id("forge_core_key_assembly")).orElseThrow();
+      assertPowerCost(helper, AutomationRecipeRegistry.byId(id("assemble_precision_circuit")).orElseThrow(), 24);
+      assertPowerCost(helper, AutomationRecipeRegistry.byId(id("encode_recipe_matrix_shard")).orElseThrow(), 40);
+      assertPowerCost(helper, stabilize, 80);
+      assertPowerCost(helper, forge, 128);
+      assertNexusArrayRecipe(helper, stabilize);
+      assertNexusArrayRecipe(helper, forge);
+      helper.succeed();
+   }
+
+   private static void assertPowerCost(GameTestHelper helper, MultiblockAutomationRecipe recipe, int throughput) {
+      helper.assertTrue(recipe.capabilityCosts().stream().anyMatch(cost ->
+            MultiblockCapability.POWER_INPUT.id().equals(cost.capabilityId())
+               && cost.throughput() == throughput
+               && "EP/t".equals(cost.unit())),
+         recipe.id() + " should declare echo:power_input at " + throughput + " EP/t.");
+   }
+
+   private static void assertNexusArrayRecipe(GameTestHelper helper, MultiblockAutomationRecipe recipe) {
+      helper.assertTrue(recipe.allowsMultiblock(id("nexus_furnace_array")),
+         recipe.id() + " should be allowed on the Nexus Furnace Array.");
+      helper.assertTrue(recipe.requiredWorkcell() == WorkcellType.MATRIX_PROCESSING,
+         recipe.id() + " should target the Matrix Processing workcell.");
+      helper.assertTrue(recipe.requiredTools().contains(RobotToolType.INJECTOR)
+            && recipe.requiredTools().contains(RobotToolType.SCANNER),
+         recipe.id() + " should declare injector/scanner compatible tool heads.");
+      helper.assertTrue(recipe.effects().contains(id("nexus_array_pressure")),
+         recipe.id() + " should record Nexus Array pressure through a soft effect.");
+   }
+
+   private static void nexusFurnaceArrayRoboticTask(GameTestHelper helper) {
+      MultiblockIntegrationServices.withClearedForTests(() -> {
+         AtomicLong availablePower = new AtomicLong(100_000L);
+         MultiblockIntegrationServices.registerPowerProvider(testPowerProvider(availablePower));
+         IndustrialMultiblockTasks.register();
+         BuildNexusFurnaceArray built = buildNexusFurnaceArray(helper);
+         ValidationResult result = built.controller().validateStructure(true);
+         helper.assertTrue(result.valid(), "Nexus Furnace Array should validate with the dedicated controller: " + validationDebug(result));
+         built.controller().onStructureFormed();
+         ServerPlayer observer = helper.makeMockServerPlayerInLevel();
+         observer.setPos(built.controller().getBlockPos().getX() + 0.5D, built.controller().getBlockPos().getY() + 1.0D,
+            built.controller().getBlockPos().getZ() + 0.5D);
+         addStabilizeInputs(built.input());
+         helper.assertTrue(built.controller().queueTask(id("stabilize_hybrid_thermal_core"), null),
+            "Nexus Furnace Array should accept a blocked stabilization queue entry before a compatible tool head is installed.");
+         helper.assertTrue(built.controller().taskSnapshots().stream().anyMatch(snapshot -> snapshot.state() == MultiblockTaskState.BLOCKED
+               && snapshot.blockedReason().contains("Required robotic tool missing")),
+            "Blocked Nexus Array task should explain the missing injector/scanner head.");
+         helper.assertTrue(built.input().countItem(ModItems.STABLE_NEXUS_CORE.get()) == 1
+               && built.input().countItem(ModItems.COOLANT_CELL.get()) == 2,
+            "Blocked Nexus Array task should not consume inputs before a tool head is installed.");
+         built.controller().clearQueue(null);
+         availablePower.set(0L);
+         built.arm().installTool(new ItemStack((ItemLike)ModItems.COOLANT_INJECTOR_HEAD.get()), null);
+         helper.assertTrue(built.controller().queueTask(id("stabilize_hybrid_thermal_core"), null),
+            "Nexus Furnace Array should accept a power-starved queue entry before grid power is registered.");
+         helper.assertTrue(built.controller().taskSnapshots().stream().anyMatch(snapshot -> snapshot.state() == MultiblockTaskState.BLOCKED
+               && snapshot.blockedReason().contains("Power-starved")),
+            "Blocked Nexus Array task should explain missing echo:power_input supply.");
+         helper.assertTrue(built.input().countItem(ModItems.STABLE_NEXUS_CORE.get()) == 1
+               && built.input().countItem(ModItems.COOLANT_CELL.get()) == 2,
+            "Power-starved Nexus Array task should not consume inputs.");
+         built.controller().clearQueue(null);
+         availablePower.set(100_000L);
+         helper.assertTrue(built.controller().queueTask(id("stabilize_hybrid_thermal_core"), null),
+            "Nexus Furnace Array should start stabilization once a compatible tool head and EP provider are available.");
+         helper.assertTrue(built.input().countItem(ModItems.STABLE_NEXUS_CORE.get()) == 0
+               && built.input().countItem(ModItems.RECIPE_MATRIX_SHARD.get()) == 0
+               && built.input().countItem(ModItems.COOLANT_CELL.get()) == 0
+               && built.input().countItem(ModItems.FLUX_CRYSTAL.get()) == 0,
+            "Started Nexus Array task should consume all stabilization inputs.");
+         tickNexusArrayUntilOutput(built, ModItems.HYBRID_THERMAL_CORE.get(), 1, 900);
+         helper.assertTrue(built.output().countItem(ModItems.HYBRID_THERMAL_CORE.get()) == 1,
+            "Stabilization should output one Hybrid Thermal Core.");
+         helper.assertTrue(built.output().countItem(ModItems.RAD_SLAG.get()) == 1,
+            "Stabilization should output Rad Slag as a byproduct.");
+         helper.assertTrue(IndustrialProgress.flag(observer, "nexus_thermal_warning"),
+            "Soft Nexus pressure effect should record local Nexus thermal warning without failing the task.");
+      });
+      helper.succeed();
+   }
+
+   private static void nexusFurnaceArrayCoreKeyMission(GameTestHelper helper) {
+      MultiblockIntegrationServices.withClearedForTests(() -> {
+         MultiblockIntegrationServices.registerPowerProvider(testPowerProvider());
+         IndustrialMultiblockTasks.register();
+         BuildNexusFurnaceArray built = buildNexusFurnaceArray(helper);
+         ValidationResult result = built.controller().validateStructure(true);
+         helper.assertTrue(result.valid(), "Nexus Furnace Array should validate before mission progress test: " + validationDebug(result));
+         built.controller().onStructureFormed();
+         built.arm().installTool(new ItemStack((ItemLike)ModItems.COOLANT_INJECTOR_HEAD.get()), null);
+         ServerPlayer player = helper.makeMockServerPlayerInLevel();
+         player.setPos(built.controller().getBlockPos().getX() + 0.5D, built.controller().getBlockPos().getY() + 1.0D,
+            built.controller().getBlockPos().getZ() + 0.5D);
+         addForgeInputs(built.input());
+         helper.assertTrue(built.controller().queueTask(id("forge_core_key_assembly"), player),
+            "Nexus Furnace Array should queue the Core Key Assembly forging task.");
+         tickNexusArrayUntilOutput(built, ModItems.CORE_KEY_ASSEMBLY.get(), 1, 1100);
+         int outputCount = built.output().countItem(ModItems.CORE_KEY_ASSEMBLY.get());
+         helper.assertTrue(outputCount == 1,
+            "Core Key forging should output a Core Key Assembly; output=" + outputCount
+               + " tasks=" + built.controller().taskSnapshots()
+               + " diagnostics=" + built.controller().diagnosticLines()
+               + " arm=" + built.arm().getRobotState()
+               + " heat=" + built.arm().getHeat());
+         helper.assertTrue(IndustrialProgress.progress(player, "nexus_furnace_array") >= 1.0F,
+            "Core Key forging should complete Nexus Furnace Array mission progress.");
+         TerminalMissionSnapshot snapshot = IndustrialMissionProvider.INSTANCE.snapshot(player,
+            IndustrialTerminalIds.id("mission/nexus_furnace_array"));
+         helper.assertTrue(snapshot.status() == TerminalMissionStatus.CLAIMABLE,
+            "Nexus Furnace Array mission should be claimable after Core Key Assembly forging.");
+      });
+      helper.succeed();
+   }
+
+   private static void nexusFurnaceArrayProviderSnapshots(GameTestHelper helper) {
+      IndustrialMultiblockTasks.register();
+      IndustrialMultiblockIntegrationProvider.register();
+      BuildNexusFurnaceArray built = buildNexusFurnaceArray(helper);
+      ValidationResult result = built.controller().validateStructure(true);
+      helper.assertTrue(result.valid(), "Nexus Furnace Array should validate before provider snapshot test: " + validationDebug(result));
+      built.controller().onStructureFormed();
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      player.setPos(built.controller().getBlockPos().getX() + 0.5D, built.controller().getBlockPos().getY() + 1.0D,
+         built.controller().getBlockPos().getZ() + 0.5D);
+      IndustrialFactorySnapshotPacket packet = IndustrialFactorySnapshotPacket.current(player);
+      helper.assertTrue(packet.entries().stream().anyMatch(entry -> entry.definitionId().equals(id("nexus_furnace_array"))
+            && entry.recipeIds().contains(id("stabilize_hybrid_thermal_core"))
+            && entry.recipeIds().contains(id("forge_core_key_assembly"))),
+         "Factory Command snapshot should include the formed Nexus Furnace Array and both automation recipes.");
+      List<MultiblockMapMarkerSnapshot> markers = MultiblockIntegrationServices.mapMarkers(player);
+      helper.assertTrue(markers.stream().anyMatch(marker -> marker.definitionId().equals(id("nexus_furnace_array"))
+            && marker.summary().contains("integrity")),
+         "HoloMap marker summary should include the formed Nexus Furnace Array.");
+      LensMultiblockScan scan = MultiblockIntegrationServices.scan(player, helper.getLevel(), built.controller().getBlockPos()).orElseThrow();
+      helper.assertTrue(scan.targetId().equals(id("nexus_furnace_array"))
+            && scan.structureName().contains("Nexus Furnace Array"),
+         "Lens scan should identify the formed Nexus Furnace Array.");
       helper.succeed();
    }
 
@@ -532,7 +704,7 @@ public final class ModGameTests {
 
    private static void terminalMissionSnapshots(GameTestHelper helper) {
       List<TerminalMissionDefinition> missions = IndustrialMissionProvider.INSTANCE.missions(helper.makeMockPlayer(GameType.CREATIVE));
-      helper.assertTrue(missions.size() == 16, "Industrial Terminal chapter should expose all 16 missions");
+      helper.assertTrue(missions.size() == 17, "Industrial Terminal chapter should expose all 17 missions");
       TerminalMissionSnapshot snapshot = IndustrialMissionProvider.INSTANCE.snapshot(null, IndustrialTerminalIds.id("mission/reclaim_power"));
       helper.assertTrue(snapshot.status() == TerminalMissionStatus.UNLOCKED, "Industrial mission snapshots should be stable without player progress");
       helper.assertTrue(snapshot.actions().stream().anyMatch(action -> action.id().equals("poi_hint") && action.label().equals("POI HINT")),
@@ -618,7 +790,7 @@ public final class ModGameTests {
       List<EchoRouteRecord> records = EchoCoreServices.routeRecords(helper.makeMockPlayer(GameType.CREATIVE)).stream()
          .filter(record -> IndustrialCoreIntegration.CHAPTER_ID.equals(record.chapterId()))
          .toList();
-      helper.assertTrue(records.size() == 16, "Industrial core route records should expose all 16 missions");
+      helper.assertTrue(records.size() == 17, "Industrial core route records should expose all 17 missions");
       helper.succeed();
    }
 
@@ -859,10 +1031,41 @@ public final class ModGameTests {
       return new BuildAssemblyLine(controller, input, output, arm);
    }
 
+   private static BuildNexusFurnaceArray buildNexusFurnaceArray(GameTestHelper helper) {
+      clearNexusArrayEnvelope(helper);
+      set(helper, 1, 1, 1, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 2, 1, 1, ModBlocks.ROBOTIC_ARM_MOUNT.get());
+      set(helper, 3, 1, 1, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 1, 1, 2, ModBlocks.NEXUS_THERMAL_INJECTOR.get());
+      set(helper, 2, 1, 2, ModBlocks.NEXUS_FURNACE_ARRAY_CONTROLLER.get());
+      set(helper, 3, 1, 2, ModBlocks.INPUT_DEPOT_CRATE.get());
+      set(helper, 1, 1, 3, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 2, 1, 3, ModBlocks.OUTPUT_DEPOT_CRATE.get());
+      set(helper, 3, 1, 3, ModBlocks.REINFORCED_MACHINE_CASING.get());
+      set(helper, 2, 2, 1, ModBlocks.INDUSTRIAL_POWER_BUS.get());
+      set(helper, 2, 2, 2, ModBlocks.INDUSTRIAL_WORKCELL_FRAME.get());
+      set(helper, 2, 2, 3, ModBlocks.WARNING_LIGHT.get());
+      IndustrialMultiblockControllerBlockEntity controller = helper.getBlockEntity(new BlockPos(2, 1, 2), IndustrialMultiblockControllerBlockEntity.class);
+      IndustrialMultiblockCrateBlockEntity input = helper.getBlockEntity(new BlockPos(3, 1, 2), IndustrialMultiblockCrateBlockEntity.class);
+      IndustrialMultiblockCrateBlockEntity output = helper.getBlockEntity(new BlockPos(2, 1, 3), IndustrialMultiblockCrateBlockEntity.class);
+      IndustrialRoboticArmMountBlockEntity arm = helper.getBlockEntity(new BlockPos(2, 1, 1), IndustrialRoboticArmMountBlockEntity.class);
+      return new BuildNexusFurnaceArray(controller, input, output, arm);
+   }
+
    private static void clearAssemblyLineEnvelope(GameTestHelper helper) {
       for (int x = 0; x <= 8; x++) {
          for (int y = 1; y <= 3; y++) {
             for (int z = 0; z <= 6; z++) {
+               helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+            }
+         }
+      }
+   }
+
+   private static void clearNexusArrayEnvelope(GameTestHelper helper) {
+      for (int x = 0; x <= 5; x++) {
+         for (int y = 1; y <= 3; y++) {
+            for (int z = 0; z <= 5; z++) {
                helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
             }
          }
@@ -880,8 +1083,56 @@ public final class ModGameTests {
       }
    }
 
+   private static void tickNexusArrayUntilOutput(BuildNexusFurnaceArray built, Item item, int expectedOutput, int maxTicks) {
+      for (int i = 0; i < maxTicks && built.output().countItem(item) < expectedOutput; i++) {
+         IndustrialMultiblockControllerBlockEntity.tick(built.controller().getLevel(), built.controller().getBlockPos(), built.controller().getBlockState(), built.controller());
+         IndustrialRoboticArmMountBlockEntity.tick(built.arm().getLevel(), built.arm().getBlockPos(), built.arm().getBlockState(), built.arm());
+         if (i % 40 == 39) {
+            built.controller().resumeQueue(null);
+            built.controller().retryBlocked(null);
+         }
+      }
+   }
+
+   private static void addStabilizeInputs(IndustrialMultiblockCrateBlockEntity input) {
+      input.setItem(0, new ItemStack((ItemLike)ModItems.STABLE_NEXUS_CORE.get()));
+      input.setItem(1, new ItemStack((ItemLike)ModItems.RECIPE_MATRIX_SHARD.get()));
+      input.setItem(2, new ItemStack((ItemLike)ModItems.COOLANT_CELL.get(), 2));
+      input.setItem(3, new ItemStack((ItemLike)ModItems.FLUX_CRYSTAL.get(), 2));
+   }
+
+   private static void addForgeInputs(IndustrialMultiblockCrateBlockEntity input) {
+      input.setItem(0, new ItemStack((ItemLike)ModItems.HYBRID_THERMAL_CORE.get()));
+      input.setItem(1, new ItemStack((ItemLike)ModItems.RECIPE_MATRIX_SHARD.get()));
+      input.setItem(2, new ItemStack((ItemLike)ModItems.STABILIZED_ALLOY_PLATE.get(), 4));
+      input.setItem(3, new ItemStack((ItemLike)ModItems.FIELD_RELAY.get(), 2));
+   }
+
    private static void set(GameTestHelper helper, int x, int y, int z, Block block) {
       helper.setBlock(new BlockPos(x, y, z), block);
+   }
+
+   private static MultiblockPowerProvider testPowerProvider() {
+      return testPowerProvider(new AtomicLong(100_000L));
+   }
+
+   private static MultiblockPowerProvider testPowerProvider(AtomicLong availablePower) {
+      return new MultiblockPowerProvider() {
+         @Override
+         public Identifier providerId() {
+            return id("test_power_provider");
+         }
+
+         @Override
+         public long availablePower(net.minecraft.world.level.Level level, BlockPos controllerPos) {
+            return Math.max(0L, availablePower.get());
+         }
+
+         @Override
+         public long drawPower(net.minecraft.world.level.Level level, BlockPos controllerPos, long ep, boolean simulate) {
+            return Math.min(Math.max(0L, availablePower.get()), Math.max(0L, ep));
+         }
+      };
    }
 
    private static String validationDebug(ValidationResult result) {
@@ -916,6 +1167,14 @@ public final class ModGameTests {
    }
 
    private record BuildAssemblyLine(
+      IndustrialMultiblockControllerBlockEntity controller,
+      IndustrialMultiblockCrateBlockEntity input,
+      IndustrialMultiblockCrateBlockEntity output,
+      IndustrialRoboticArmMountBlockEntity arm
+   ) {
+   }
+
+   private record BuildNexusFurnaceArray(
       IndustrialMultiblockControllerBlockEntity controller,
       IndustrialMultiblockCrateBlockEntity input,
       IndustrialMultiblockCrateBlockEntity output,

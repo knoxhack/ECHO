@@ -44,6 +44,7 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
          "left_road_wheel_0", "right_road_wheel_0", "left_road_wheel_1", "right_road_wheel_1",
          "left_road_wheel_2", "right_road_wheel_2", "left_road_wheel_3", "right_road_wheel_3",
          "left_road_wheel_4", "right_road_wheel_4",
+         "left_idler_front", "right_idler_front", "left_idler_rear", "right_idler_rear",
          "left_wheel_0", "right_wheel_0", "left_wheel_1", "right_wheel_1", "left_wheel_2", "right_wheel_2"
       );
       this.scannerAssemblies = children(root, "scanner_pod", "relay_dish_back", "relay_scanner_bar", "route_scanner");
@@ -184,12 +185,16 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       part(root, "seat_back_block", 72, 40, -2.3F, -18.9F, 7.1F, 4.6F, 3.2F, 2.2F);
       part(root, "front_sensor_nose", 104, 32, -2.8F, -14.3F, -18.8F, 5.6F, 3.0F, 5.2F);
       part(root, "rear_power_block", 104, 40, -3.0F, -14.6F, 8.8F, 6.0F, 3.8F, 6.8F);
-      part(root, "left_outrigger", 120, 40, -5.8F, -12.4F, -8.5F, 2.2F, 2.2F, 16.4F);
-      part(root, "right_outrigger", 120, 40, 3.6F, -12.4F, -8.5F, 2.2F, 2.2F, 16.4F);
-      part(root, "front_thruster_left", 0, 56, -7.0F, -10.5F, -17.5F, 4.4F, 5.2F, 8.4F);
-      part(root, "front_thruster_right", 0, 56, 2.6F, -10.5F, -17.5F, 4.4F, 5.2F, 8.4F);
-      part(root, "rear_thruster_left", 0, 56, -7.1F, -10.4F, 5.2F, 4.4F, 5.2F, 8.8F);
-      part(root, "rear_thruster_right", 0, 56, 2.7F, -10.4F, 5.2F, 4.4F, 5.2F, 8.8F);
+      wheel(root, "front_tire", 0, 0, -1.45F, -12.4F, -20.6F, 2.9F, 9.2F, 8.8F);
+      wheel(root, "rear_tire", 0, 0, -1.45F, -12.2F, 7.0F, 2.9F, 9.0F, 9.2F);
+      part(root, "front_fender", 24, 56, -3.2F, -16.3F, -20.0F, 6.4F, 1.4F, 7.6F);
+      part(root, "rear_fender", 24, 56, -3.3F, -16.1F, 7.6F, 6.6F, 1.4F, 8.0F);
+      part(root, "left_outrigger", 120, 40, -4.3F, -12.4F, -8.5F, 1.3F, 1.8F, 15.8F);
+      part(root, "right_outrigger", 120, 40, 3.0F, -12.4F, -8.5F, 1.3F, 1.8F, 15.8F);
+      part(root, "front_thruster_left", 0, 56, -4.9F, -9.9F, -17.0F, 1.8F, 3.5F, 6.6F);
+      part(root, "front_thruster_right", 0, 56, 3.1F, -9.9F, -17.0F, 1.8F, 3.5F, 6.6F);
+      part(root, "rear_thruster_left", 0, 56, -5.0F, -9.8F, 5.9F, 1.8F, 3.5F, 7.0F);
+      part(root, "rear_thruster_right", 0, 56, 3.2F, -9.8F, 5.9F, 1.8F, 3.5F, 7.0F);
       part(root, "scrap_front_vent_left", 176, 120, -6.2F, -8.6F, -18.0F, 2.8F, 2.0F, 0.9F, 0.08F);
       part(root, "scrap_front_vent_right", 176, 120, 3.4F, -8.6F, -18.0F, 2.8F, 2.0F, 0.9F, 0.08F);
       part(root, "scrap_rear_vent_left", 176, 120, -6.2F, -8.5F, 13.5F, 2.8F, 2.0F, 0.9F, 0.08F);
@@ -261,16 +266,18 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       cube(scanner, "scanner_lens", 104, 100, -2.0F, -1.0F, -2.9F, 4.0F, 2.0F, 0.9F);
       cube(scanner, "scanner_side_cap_left", 112, 100, -3.5F, -1.3F, -1.4F, 0.8F, 2.8F, 2.8F);
       cube(scanner, "scanner_side_cap_right", 112, 100, 2.7F, -1.3F, -1.4F, 0.8F, 2.8F, 2.8F);
+      part(root, "scanner_support_left", 112, 100, -4.6F, -26.5F, -1.2F, 1.1F, 3.4F, 2.4F);
+      part(root, "scanner_support_right", 112, 100, 3.5F, -26.5F, -1.2F, 1.1F, 3.4F, 2.4F);
       PartDefinition whip = pivot(root, "scanner_whip", 8.2F, -27.5F, 7.2F);
       cube(whip, "scanner_whip_base", 120, 100, -0.6F, -3.2F, -0.6F, 1.2F, 3.2F, 1.2F);
       cube(whip, "scanner_whip_tip", 128, 100, -0.3F, -12.0F, -0.3F, 0.6F, 8.8F, 0.6F);
       antenna(root, "roof_antenna_primary", 136, 100, -7.5F, -30.8F, 5.4F, 12.5F);
       antenna(root, "roof_antenna_secondary", 136, 100, 7.2F, -30.2F, -5.8F, 8.4F);
       wheel(root, "spare_tire", 120, 100, -5.0F, -17.0F, 20.8F, 10.0F, 10.0F, 3.2F);
-      wheel(root, "left_front_wheel", 0, 124, -18.0F, -11.8F, -16.8F, 5.0F, 12.0F, 11.0F);
-      wheel(root, "right_front_wheel", 0, 124, 13.0F, -11.8F, -16.8F, 5.0F, 12.0F, 11.0F);
-      wheel(root, "left_rear_wheel", 0, 124, -18.0F, -11.8F, 8.5F, 5.0F, 12.0F, 11.0F);
-      wheel(root, "right_rear_wheel", 0, 124, 13.0F, -11.8F, 8.5F, 5.0F, 12.0F, 11.0F);
+      wheel(root, "left_front_wheel", 0, 124, -18.3F, -12.2F, -17.2F, 5.6F, 13.0F, 11.8F);
+      wheel(root, "right_front_wheel", 0, 124, 12.7F, -12.2F, -17.2F, 5.6F, 13.0F, 11.8F);
+      wheel(root, "left_rear_wheel", 0, 124, -18.3F, -12.2F, 8.0F, 5.6F, 13.0F, 11.8F);
+      wheel(root, "right_rear_wheel", 0, 124, 12.7F, -12.2F, 8.0F, 5.6F, 13.0F, 11.8F);
       part(root, "front_left_wheel_well", 48, 124, -18.5F, -15.2F, -18.2F, 6.2F, 3.0F, 14.0F);
       part(root, "front_right_wheel_well", 48, 124, 12.3F, -15.2F, -18.2F, 6.2F, 3.0F, 14.0F);
       part(root, "rear_left_wheel_well", 48, 124, -18.5F, -15.2F, 7.0F, 6.2F, 3.0F, 14.0F);
@@ -283,6 +290,10 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       part(root, "front_right_fender_thick", 48, 124, 12.4F, -16.3F, -18.5F, 7.2F, 4.0F, 14.5F);
       part(root, "rear_left_fender_thick", 48, 124, -19.6F, -16.2F, 7.0F, 7.2F, 3.8F, 14.5F);
       part(root, "rear_right_fender_thick", 48, 124, 12.4F, -16.2F, 7.0F, 7.2F, 3.8F, 14.5F);
+      part(root, "front_left_fender_lip", 112, 124, -20.4F, -13.4F, -18.0F, 2.0F, 2.0F, 13.2F);
+      part(root, "front_right_fender_lip", 112, 124, 18.4F, -13.4F, -18.0F, 2.0F, 2.0F, 13.2F);
+      part(root, "rear_left_fender_lip", 112, 124, -20.4F, -13.4F, 7.4F, 2.0F, 2.0F, 13.2F);
+      part(root, "rear_right_fender_lip", 112, 124, 18.4F, -13.4F, 7.4F, 2.0F, 2.0F, 13.2F);
       part(root, "left_toolbox", 88, 124, -16.0F, -12.0F, -2.0F, 4.0F, 5.0F, 8.0F);
       part(root, "right_toolbox", 88, 124, 12.0F, -12.0F, -2.0F, 4.0F, 5.0F, 8.0F);
       part(root, "side_cyan_panel_left", 176, 120, -16.3F, -16.4F, 3.5F, 1.0F, 3.0F, 4.8F, 0.08F);
@@ -307,25 +318,29 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
    private static LayerDefinition createCargoCrawlerLayer() {
       MeshDefinition mesh = new MeshDefinition();
       PartDefinition root = mesh.getRoot();
-      part(root, "left_track_outer_belt", 0, 0, -18.2F, -7.9F, -25.0F, 7.2F, 6.4F, 50.0F);
-      part(root, "right_track_outer_belt", 0, 0, 11.0F, -7.9F, -25.0F, 7.2F, 6.4F, 50.0F);
-      part(root, "left_track_inner_shadow", 40, 0, -15.9F, -6.7F, -22.5F, 2.6F, 3.4F, 45.0F);
-      part(root, "right_track_inner_shadow", 40, 0, 13.3F, -6.7F, -22.5F, 2.6F, 3.4F, 45.0F);
-      part(root, "left_track_top_rail", 72, 0, -18.4F, -9.6F, -23.8F, 7.6F, 1.6F, 47.6F);
-      part(root, "right_track_top_rail", 72, 0, 10.8F, -9.6F, -23.8F, 7.6F, 1.6F, 47.6F);
-      part(root, "left_track_bottom_rail", 72, 0, -18.4F, -2.0F, -23.8F, 7.6F, 1.7F, 47.6F);
-      part(root, "right_track_bottom_rail", 72, 0, 10.8F, -2.0F, -23.8F, 7.6F, 1.7F, 47.6F);
+      part(root, "left_track_outer_belt", 0, 0, -18.4F, -6.9F, -25.0F, 7.6F, 5.5F, 50.0F);
+      part(root, "right_track_outer_belt", 0, 0, 10.8F, -6.9F, -25.0F, 7.6F, 5.5F, 50.0F);
+      part(root, "left_track_inner_shadow", 40, 0, -15.9F, -5.9F, -22.5F, 2.6F, 2.9F, 45.0F);
+      part(root, "right_track_inner_shadow", 40, 0, 13.3F, -5.9F, -22.5F, 2.6F, 2.9F, 45.0F);
+      part(root, "left_track_top_rail", 72, 0, -18.6F, -8.4F, -23.8F, 8.0F, 1.4F, 47.6F);
+      part(root, "right_track_top_rail", 72, 0, 10.6F, -8.4F, -23.8F, 8.0F, 1.4F, 47.6F);
+      part(root, "left_track_bottom_rail", 72, 0, -18.6F, -1.7F, -23.8F, 8.0F, 1.5F, 47.6F);
+      part(root, "right_track_bottom_rail", 72, 0, 10.6F, -1.7F, -23.8F, 8.0F, 1.5F, 47.6F);
       for (int i = 0; i < 9; i++) {
          float z = -23.5F + i * 5.9F;
-         part(root, "left_track_pad_" + i, 120, 0, -18.7F, -9.5F, z, 8.0F, 1.6F, 3.0F);
-         part(root, "right_track_pad_" + i, 120, 0, 10.7F, -9.5F, z, 8.0F, 1.6F, 3.0F);
+         part(root, "left_track_pad_" + i, 120, 0, -18.9F, -8.3F, z, 8.4F, 1.4F, 3.0F);
+         part(root, "right_track_pad_" + i, 120, 0, 10.5F, -8.3F, z, 8.4F, 1.4F, 3.0F);
          part(root, "left_track_ground_pad_" + i, 120, 8, -18.7F, -1.9F, z, 8.0F, 1.7F, 3.0F);
          part(root, "right_track_ground_pad_" + i, 120, 8, 10.7F, -1.9F, z, 8.0F, 1.7F, 3.0F);
       }
+      wheel(root, "left_idler_front", 0, 62, -18.2F, -6.1F, -24.6F, 3.4F, 6.0F, 6.0F);
+      wheel(root, "right_idler_front", 0, 62, 14.8F, -6.1F, -24.6F, 3.4F, 6.0F, 6.0F);
+      wheel(root, "left_idler_rear", 0, 62, -18.2F, -6.1F, 18.6F, 3.4F, 6.0F, 6.0F);
+      wheel(root, "right_idler_rear", 0, 62, 14.8F, -6.1F, 18.6F, 3.4F, 6.0F, 6.0F);
       for (int i = 0; i < 5; i++) {
          float z = -18.0F + i * 9.0F;
-         wheel(root, "left_road_wheel_" + i, 0, 62, -18.0F, -6.9F, z, 3.0F, 5.6F, 5.6F);
-         wheel(root, "right_road_wheel_" + i, 0, 62, 15.0F, -6.9F, z, 3.0F, 5.6F, 5.6F);
+         wheel(root, "left_road_wheel_" + i, 0, 62, -18.3F, -6.2F, z, 3.4F, 6.2F, 6.2F);
+         wheel(root, "right_road_wheel_" + i, 0, 62, 14.9F, -6.2F, z, 3.4F, 6.2F, 6.2F);
       }
       part(root, "crawler_chassis", 32, 62, -14.0F, -12.3F, -23.0F, 28.0F, 5.2F, 46.0F);
       part(root, "crawler_side_sill_left", 88, 62, -15.6F, -13.0F, -20.0F, 2.6F, 2.4F, 40.0F);
@@ -358,9 +373,9 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       part(root, "crate_large", 0, 184, -6.8F, -20.7F, -3.5F, 10.4F, 5.8F, 8.5F);
       part(root, "crate_small_left", 56, 184, -12.6F, -19.4F, 7.5F, 6.4F, 4.7F, 6.5F);
       part(root, "crate_small_right", 56, 184, 6.2F, -19.4F, 8.8F, 6.4F, 4.7F, 6.5F);
-      part(root, "crate_high_front", 56, 184, -4.0F, -26.0F, 2.5F, 8.0F, 5.0F, 7.0F);
-      part(root, "tarp_high_rear", 96, 184, -10.5F, -24.8F, 12.5F, 21.0F, 3.8F, 8.5F);
-      part(root, "rolled_tarp", 96, 184, -8.6F, -21.7F, 15.0F, 17.2F, 3.0F, 6.2F);
+      part(root, "crate_high_front", 56, 184, -4.0F, -24.8F, 2.5F, 8.0F, 3.8F, 7.0F);
+      part(root, "tarp_high_rear", 96, 184, -10.5F, -23.8F, 12.5F, 21.0F, 2.8F, 8.5F);
+      part(root, "rolled_tarp", 96, 184, -8.6F, -21.0F, 15.0F, 17.2F, 2.4F, 6.2F);
       part(root, "tie_down_front", 144, 184, -14.0F, -20.7F, -7.0F, 28.0F, 1.0F, 1.3F);
       part(root, "tie_down_rear", 144, 184, -14.0F, -20.7F, 22.0F, 28.0F, 1.0F, 1.3F);
       wheel(root, "roof_spare", 0, 212, -4.5F, -27.0F, -17.0F, 9.0F, 3.6F, 9.0F);
@@ -388,10 +403,10 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       part(root, "lower_keel", 48, 0, -11.8F, -10.1F, -22.0F, 23.6F, 2.7F, 44.0F);
       for (int i = 0; i < 3; i++) {
          float z = -18.0F + i * 18.0F;
-         wheel(root, "left_wheel_" + i, 96, 0, -21.4F, -11.8F, z, 5.4F, 12.4F, 11.4F);
-         wheel(root, "right_wheel_" + i, 96, 0, 16.0F, -11.8F, z, 5.4F, 12.4F, 11.4F);
-         part(root, "left_wheel_armor_" + i, 132, 0, -22.0F, -14.6F, z - 1.0F, 6.8F, 3.6F, 12.8F);
-         part(root, "right_wheel_armor_" + i, 132, 0, 15.2F, -14.6F, z - 1.0F, 6.8F, 3.6F, 12.8F);
+         wheel(root, "left_wheel_" + i, 96, 0, -22.0F, -12.2F, z - 0.3F, 6.0F, 13.2F, 12.0F);
+         wheel(root, "right_wheel_" + i, 96, 0, 16.0F, -12.2F, z - 0.3F, 6.0F, 13.2F, 12.0F);
+         part(root, "left_wheel_armor_" + i, 132, 0, -22.8F, -15.0F, z - 1.4F, 7.6F, 3.8F, 13.6F);
+         part(root, "right_wheel_armor_" + i, 132, 0, 15.2F, -15.0F, z - 1.4F, 7.6F, 3.8F, 13.6F);
          part(root, "left_suspension_block_" + i, 148, 0, -17.2F, -13.0F, z + 1.0F, 3.0F, 3.4F, 7.0F);
          part(root, "right_suspension_block_" + i, 148, 0, 14.2F, -13.0F, z + 1.0F, 3.0F, 3.4F, 7.0F);
       }
@@ -408,6 +423,9 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       part(root, "front_bumper_left_layer", 208, 62, -18.2F, -11.4F, -31.8F, 8.0F, 5.4F, 4.0F);
       part(root, "front_bumper_right_layer", 208, 62, 10.2F, -11.4F, -31.8F, 8.0F, 5.4F, 4.0F);
       part(root, "front_bumper_center_layer", 208, 72, -7.2F, -10.4F, -32.6F, 14.4F, 4.4F, 3.4F);
+      part(root, "front_plow_lower", 208, 72, -14.0F, -8.4F, -34.4F, 28.0F, 3.4F, 3.8F);
+      part(root, "front_plow_left_cheek", 208, 62, -19.0F, -13.4F, -33.2F, 6.8F, 4.8F, 4.4F);
+      part(root, "front_plow_right_cheek", 208, 62, 12.2F, -13.4F, -33.2F, 6.8F, 4.8F, 4.4F);
       part(root, "front_grille_left", 224, 62, -10.0F, -14.4F, -29.8F, 6.5F, 4.6F, 1.0F);
       part(root, "front_grille_right", 224, 62, 3.5F, -14.4F, -29.8F, 6.5F, 4.6F, 1.0F);
       part(root, "relay_dashboard_panel", 176, 120, -5.6F, -18.2F, -26.2F, 11.2F, 1.8F, 0.8F, 0.08F);
@@ -429,6 +447,8 @@ public class ConvoyVehicleModel extends EntityModel<ConvoyVehicleRenderState> {
       PartDefinition dish = pivot(root, "relay_dish_back", 0.0F, -30.7F, 10.6F);
       cube(dish, "relay_dish_panel", 56, 138, -7.2F, -2.1F, -5.0F, 14.4F, 4.2F, 10.0F);
       cube(dish, "relay_dish_top_lip", 80, 138, -6.3F, -3.5F, -4.2F, 12.6F, 1.4F, 8.4F);
+      cube(dish, "relay_dish_left_lip", 80, 138, -8.0F, -2.3F, -4.8F, 1.4F, 4.8F, 9.6F);
+      cube(dish, "relay_dish_right_lip", 80, 138, 6.6F, -2.3F, -4.8F, 1.4F, 4.8F, 9.6F);
       cube(dish, "relay_lens", 96, 138, -4.5F, -2.1F, 5.0F, 9.0F, 3.5F, 1.8F);
       antenna(root, "antenna_left", 120, 138, -9.0F, -34.0F, -4.0F, 9.4F);
       antenna(root, "antenna_right", 120, 138, 9.0F, -34.0F, -4.0F, 9.4F);

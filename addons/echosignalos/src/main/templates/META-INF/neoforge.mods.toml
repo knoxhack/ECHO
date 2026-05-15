@@ -43,14 +43,15 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="echorendercore"
 type="optional"
-reason="Enables RenderCore V16 terminal, rack, and screen visual profiles."
-versionRange="[1.0.0,)"
+reason="Enables RenderCore V18 terminal, rack, and screen chrome visual profiles."
+versionRange="[1.2.0,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="kubejs"
 type="optional"
+reason="Enables optional KubeJS-facing SignalOS content hooks when KubeJS is installed."
 versionRange="[7.0.0,)"
 ordering="AFTER"
 side="BOTH"

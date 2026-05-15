@@ -190,7 +190,8 @@ public final class RenderCoreCreatorWorkbenchScreen extends Screen {
       String line = "profiles " + export.cards().size()
          + " / migration " + export.cards().stream().filter(CreatorProfileCard::migrationRequired).count()
          + " / screenshots " + export.cards().stream().filter(CreatorProfileCard::screenshotAvailable).count()
-         + " / qa blockers " + export.visualQa().remainingBlockers().size()
+         + " / qa blockers " + export.visualQa().totalBlockerCount()
+         + " / screen qa " + export.visualQa().screenChromeEvidenceCount() + "/" + export.visualQa().screenChromeEvidence().size()
          + " / schema " + export.manifest().schemaVersion()
          + " / addons " + export.addonIntegrations().size();
       graphics.text(font, trim(font, line, panelW / 2 - 22), panelX + panelW / 2 + 8, panelY + 39, MUTED, false);
@@ -261,7 +262,11 @@ public final class RenderCoreCreatorWorkbenchScreen extends Screen {
       lineY = detailLine(graphics, font, x + 12, lineY, w - 24, "Diagnostics",
          card.validationWarningCount() + " warning(s), " + card.validationErrorCount() + " error(s), perf " + card.performanceWarningCount());
       lineY = detailLine(graphics, font, x + 12, lineY, w - 24, "Certification",
-         export.certification().status().id() + " / visual QA blockers " + export.visualQa().remainingBlockers().size());
+         export.certification().status().id() + " / visual QA blockers " + export.visualQa().totalBlockerCount());
+      lineY = detailLine(graphics, font, x + 12, lineY, w - 24, "Screen QA",
+         export.visualQa().screenChromeEvidenceCount() + "/" + export.visualQa().screenChromeEvidence().size()
+            + " captured / blockers " + export.visualQa().screenChromeBlockers().size());
+      lineY = drawScreenChromeStyleChips(graphics, font, x + 12, lineY + 2, w - 24);
       lineY = detailLine(graphics, font, x + 12, lineY, w - 24, "Artifact", card.suggestedArtifactPath());
       lineY = drawDraftEditor(graphics, font, card, draft, x + 12, lineY + 6, w - 24);
 
@@ -315,6 +320,39 @@ public final class RenderCoreCreatorWorkbenchScreen extends Screen {
          value == null || value.isBlank() ? MUTED : TEXT, false);
       hitboxes.add(new Hitbox(fieldX, y, fieldW, 16, () -> activeField = field));
       return y + 18;
+   }
+
+   private int drawScreenChromeStyleChips(GuiGraphicsExtractor graphics, Font font, int x, int y, int w) {
+      List<String> styles = List.of("CYBERGLASS", "TERMINAL", "HOLOGRAM", "NEON", "MINIMAL");
+      int chipX = x;
+      int chipY = y;
+      for (String style : styles) {
+         long count = export.visualQa().screenChromeEvidence().stream()
+            .filter(evidence -> style.equals(evidence.chromeStyle()))
+            .count();
+         String label = style + " " + count;
+         int chipW = Math.min(w, Math.max(54, font.width(label) + 10));
+         if (chipX > x && chipX + chipW > x + w) {
+            chipX = x;
+            chipY += 16;
+         }
+         int color = screenChromeStyleColor(style);
+         graphics.fill(chipX, chipY, chipX + chipW, chipY + 13, 0xAA061321);
+         graphics.outline(chipX, chipY, chipW, 13, color);
+         graphics.centeredText(font, label, chipX + chipW / 2, chipY + 3, color);
+         chipX += chipW + 5;
+      }
+      return chipY + 17;
+   }
+
+   private static int screenChromeStyleColor(String style) {
+      return switch (style) {
+         case "TERMINAL" -> 0xFF66FFB8;
+         case "HOLOGRAM" -> 0xFF5A9DFF;
+         case "NEON" -> MAGENTA;
+         case "MINIMAL" -> MUTED;
+         default -> CYAN;
+      };
    }
 
    private void button(GuiGraphicsExtractor graphics, Font font, String label, int x, int y, int w, Runnable action) {

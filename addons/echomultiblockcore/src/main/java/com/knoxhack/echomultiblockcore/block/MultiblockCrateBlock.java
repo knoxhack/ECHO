@@ -74,7 +74,7 @@ public class MultiblockCrateBlock extends Block implements EntityBlock {
                     return InteractionResult.SUCCESS_SERVER;
                 }
             }
-            player.sendSystemMessage(Component.literal(crate.statusLine()));
+            player.openMenu(crate);
         }
         return InteractionResult.SUCCESS_SERVER;
     }

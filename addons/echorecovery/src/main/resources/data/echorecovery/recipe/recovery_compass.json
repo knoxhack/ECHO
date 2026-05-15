@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I ","ICI"," I "],"key":{"I":{"item":"minecraft:iron_nugget"},"C":{"item":"minecraft:compass"}},"result":{"id":"echorecovery:recovery_compass","count":1}}

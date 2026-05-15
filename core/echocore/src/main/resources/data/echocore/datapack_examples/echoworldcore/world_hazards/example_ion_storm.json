@@ -1,0 +1,7 @@
+{
+  "id": "echocore:example_ion_storm",
+  "displayName": "Ion Storm",
+  "summary": "Electromagnetic interference scrambles electronics and drains suit power.",
+  "defaultSeverity": 60,
+  "ticking": true
+}

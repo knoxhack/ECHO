@@ -14,12 +14,14 @@ import com.knoxhack.echoindex.service.IndexService;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -47,6 +49,9 @@ public final class IndexRecipeScreen extends Screen {
     private int selected;
     private int firstVisible;
     private Identifier categoryFilter;
+    private String searchQuery = "";
+    private boolean searchFocused = false;
+    private long searchCursorBlink;
     private final List<IndexRecipeUi.SlotHit> slotHits = new ArrayList<>();
 
     public IndexRecipeScreen(ItemStack focusStack, Mode mode) {
@@ -84,8 +89,10 @@ public final class IndexRecipeScreen extends Screen {
         drawModeButton(graphics, font, panelX + 14, panelY + 42, Mode.RECIPES, mouseX, mouseY);
         drawModeButton(graphics, font, panelX + 98, panelY + 42, Mode.USES, mouseX, mouseY);
         drawModeButton(graphics, font, panelX + 182, panelY + 42, Mode.SOURCES, mouseX, mouseY);
+        drawSearchBar(graphics, font, mouseX, mouseY);
         drawCategoryChips(graphics, font, mouseX, mouseY);
         drawCloseHint(graphics, font);
+        drawShortcutHints(graphics, font);
 
         if (recipes.isEmpty()) {
             drawEmpty(graphics, font);
@@ -104,6 +111,7 @@ public final class IndexRecipeScreen extends Screen {
             selected = 0;
             firstVisible = 0;
             categoryFilter = null;
+            searchQuery = "";
             return true;
         }
         if (inside(event.x(), event.y(), panelX + 98, panelY + 42, 76, 18)) {
@@ -111,6 +119,7 @@ public final class IndexRecipeScreen extends Screen {
             selected = 0;
             firstVisible = 0;
             categoryFilter = null;
+            searchQuery = "";
             return true;
         }
         if (inside(event.x(), event.y(), panelX + 182, panelY + 42, 76, 18)) {
@@ -118,8 +127,16 @@ public final class IndexRecipeScreen extends Screen {
             selected = 0;
             firstVisible = 0;
             categoryFilter = null;
+            searchQuery = "";
             return true;
         }
+        // Search bar focus
+        Rect searchRect = searchBarRect();
+        if (inside(event.x(), event.y(), searchRect.x(), searchRect.y(), searchRect.w(), searchRect.h())) {
+            searchFocused = true;
+            return true;
+        }
+        searchFocused = false;
         if (handleCategoryClick(event)) {
             return true;
         }
@@ -212,6 +229,21 @@ public final class IndexRecipeScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         List<IndexRecipeView> recipes = recipes(focusStack.getItem());
+        if (searchFocused) {
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_ENTER) {
+                searchFocused = false;
+                return true;
+            }
+            if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+                if (!searchQuery.isEmpty()) {
+                    searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+                    selected = 0;
+                    firstVisible = 0;
+                }
+                return true;
+            }
+            return super.keyPressed(event);
+        }
         if (EchoIndexClient.SHOW_RECIPE_KEY.matches(event)) {
             mode = Mode.RECIPES;
             selected = 0;
@@ -250,7 +282,23 @@ public final class IndexRecipeScreen extends Screen {
             firstVisible = Math.min(Math.max(0, recipes.size() - visibleRows()), firstVisible + visibleRows());
             return true;
         }
+        // Start search on any printable character when not focused
+        if (event.key() == GLFW.GLFW_KEY_SLASH || event.key() == GLFW.GLFW_KEY_F) {
+            searchFocused = true;
+            return true;
+        }
         return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (searchFocused && event != null && event.isAllowedChatCharacter()) {
+            searchQuery += event.codepointAsString();
+            selected = 0;
+            firstVisible = 0;
+            return true;
+        }
+        return super.charTyped(event);
     }
 
     private void layout() {
@@ -279,6 +327,44 @@ public final class IndexRecipeScreen extends Screen {
         graphics.fill(x, y, x + 76, y + 18, active ? 0xFF123241 : hover ? 0xCC102630 : PANEL);
         graphics.fill(x, y + 16, x + 76, y + 18, active ? CYAN : 0xFF2F5B68);
         graphics.centeredText(font, target.label(), x + 38, y + 5, active ? TEXT : MUTED);
+    }
+
+    private void drawSearchBar(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
+        Rect rect = searchBarRect();
+        int x = rect.x();
+        int y = rect.y();
+        int w = rect.w();
+        boolean hover = inside(mouseX, mouseY, x, y, w, 16);
+        graphics.fill(x, y, x + w, y + 16, searchFocused ? 0xFF123241 : hover ? 0xCC102630 : PANEL);
+        graphics.outline(x, y, w, 16, searchFocused ? CYAN : 0x4438DFF4);
+
+        String display = searchQuery.isEmpty() ? "Search... (/)" : searchQuery;
+        int textColor = searchQuery.isEmpty() ? 0xFF5A7A8A : TEXT;
+        int textX = x + 6;
+        int textY = y + 5;
+        String trimmed = trim(font, display, w - 14);
+        graphics.text(font, trimmed, textX, textY, textColor, false);
+
+        // Blinking cursor
+        if (searchFocused && (System.currentTimeMillis() / 500) % 2 == 0) {
+            int cursorX = textX + font.width(trimmed);
+            graphics.text(font, "_", cursorX, textY, CYAN, false);
+        }
+
+        // Clear button
+        if (!searchQuery.isEmpty()) {
+            int clearX = x + w - 14;
+            graphics.text(font, "x", clearX, textY, MUTED, false);
+            if (hover && inside(mouseX, mouseY, clearX - 2, y, 14, 16)) {
+                // Clicking the x area will be handled in mouseClicked by resetting search
+            }
+        }
+    }
+
+    private Rect searchBarRect() {
+        int modeEnd = panelX + 182 + 76 + 8;
+        int w = Math.max(80, panelX + panelW - 16 - modeEnd);
+        return new Rect(modeEnd, panelY + 43, w, 16);
     }
 
     private void drawCategoryChips(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
@@ -333,6 +419,14 @@ public final class IndexRecipeScreen extends Screen {
             }
             cx += w + 4;
         }
+        // Check clear search button
+        Rect searchRect = searchBarRect();
+        if (!searchQuery.isEmpty() && inside(event.x(), event.y(), searchRect.x() + searchRect.w() - 16, searchRect.y(), 14, 16)) {
+            searchQuery = "";
+            selected = 0;
+            firstVisible = 0;
+            return true;
+        }
         return false;
     }
 
@@ -347,14 +441,22 @@ public final class IndexRecipeScreen extends Screen {
         graphics.text(font, "ESC", panelX + panelW - 36, panelY + panelH - 18, MUTED, false);
     }
 
+    private void drawShortcutHints(GuiGraphicsExtractor graphics, Font font) {
+        String hints = "UP/DOWN: navigate  |  PAGE: scroll  |  /: search  |  RIGHT-CLICK: uses  |  MIDDLE-CLICK: bookmark";
+        graphics.text(font, hints, panelX + 14, panelY + panelH - 18, 0xFF3A5A6A, false);
+    }
+
     private void drawEmpty(GuiGraphicsExtractor graphics, Font font) {
         int x = panelX + 18;
         int y = contentY() + 14;
-        graphics.fill(x, y, panelX + panelW - 18, y + 58, 0xAA071014);
-        graphics.text(font, "No " + mode.label().toLowerCase() + " indexed for this item.", x + 12, y + 15, WARN, false);
+        graphics.fill(x, y, panelX + panelW - 18, y + 72, 0xAA071014);
+        graphics.text(font, "No " + mode.label().toLowerCase() + " indexed for this item.", x + 12, y + 12, WARN, false);
         String message = IndexRecipeUi.emptyMessage(Minecraft.getInstance().player, focusStack.getItem(), mode.viewMode());
         graphics.textWithWordWrap(font, Component.literal(message),
-                x + 12, y + 30, panelW - 60, MUTED);
+                x + 12, y + 26, panelW - 60, MUTED);
+        if (!searchQuery.isEmpty()) {
+            graphics.text(font, "Search active: '" + searchQuery + "' — try clearing filters.", x + 12, y + 56, 0xFF5BC0EB, false);
+        }
     }
 
     private void drawRecipeList(GuiGraphicsExtractor graphics, Font font, List<IndexRecipeView> recipes, int mouseX, int mouseY) {
@@ -387,6 +489,17 @@ public final class IndexRecipeScreen extends Screen {
             graphics.text(font, trim(font, recipe.title(), listWidth() - chipW - 54), x + 24, rowY + 6,
                     active ? TEXT : 0xFFD8F6FF, false);
         }
+        drawScrollbar(graphics, recipes.size(), visible, firstVisible, x + listWidth() + 2, y, 3, visible * rowH - 3);
+    }
+
+    private void drawScrollbar(GuiGraphicsExtractor graphics, int total, int visible, int first, int x, int y, int w, int h) {
+        if (total <= visible) {
+            return;
+        }
+        graphics.fill(x, y, x + w, y + h, 0x33102630);
+        int thumbH = Math.max(8, h * visible / total);
+        int thumbY = y + (h - thumbH) * first / Math.max(1, total - visible);
+        graphics.fill(x, thumbY, x + w, thumbY + thumbH, 0xFF2F5B68);
     }
 
     private void drawRecipeDetails(GuiGraphicsExtractor graphics, Font font, IndexRecipeView recipe, int mouseX, int mouseY) {
@@ -460,9 +573,18 @@ public final class IndexRecipeScreen extends Screen {
     }
 
     private List<IndexRecipeView> recipes(Item item) {
-        List<IndexRecipeView> recipes = allRecipes(item);
-        return categoryFilter == null ? recipes : recipes.stream()
+        List<IndexRecipeView> all = allRecipes(item);
+        List<IndexRecipeView> filtered = categoryFilter == null ? all : all.stream()
                 .filter(recipe -> recipe.categoryId().equals(categoryFilter))
+                .toList();
+        if (searchQuery.isEmpty()) {
+            return filtered;
+        }
+        String q = searchQuery.toLowerCase(Locale.ROOT);
+        return filtered.stream()
+                .filter(recipe -> recipe.title().toLowerCase(Locale.ROOT).contains(q)
+                        || recipe.categoryId().getPath().toLowerCase(Locale.ROOT).contains(q)
+                        || recipe.sourceModId().toLowerCase(Locale.ROOT).contains(q))
                 .toList();
     }
 

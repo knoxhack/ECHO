@@ -1,0 +1,10 @@
+{
+  "id": "echorecovery:tech_death_cache",
+  "display_name": "Death Cache",
+  "texture": "minecraft:block/iron_block",
+  "sounds": {
+    "created": "minecraft:block.metal.place",
+    "opened": "minecraft:block.iron_door.open",
+    "recovered": "minecraft:block.note_block.pling"
+  }
+}

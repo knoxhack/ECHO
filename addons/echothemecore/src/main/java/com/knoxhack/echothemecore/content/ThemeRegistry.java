@@ -40,7 +40,17 @@ public final class ThemeRegistry {
     private static BiConsumer<UUID, Identifier> playerThemeChangeListener;
 
     static {
-        THEMES.put(BUILTIN_CYBERGLASS.id(), BUILTIN_CYBERGLASS);
+        registerBuiltin(BUILTIN_CYBERGLASS);
+        for (EchoTheme theme : BuiltinThemes.all()) {
+            registerBuiltin(theme);
+        }
+        globalThemeId = BuiltinThemes.defaultDark().id();
+    }
+
+    private static void registerBuiltin(EchoTheme theme) {
+        if (theme != null && theme.id() != null) {
+            THEMES.put(theme.id(), theme);
+        }
     }
 
     private ThemeRegistry() {
@@ -48,14 +58,18 @@ public final class ThemeRegistry {
 
     public static synchronized void replaceLoaded(Map<Identifier, EchoTheme> loaded) {
         THEMES.clear();
-        THEMES.put(BUILTIN_CYBERGLASS.id(), BUILTIN_CYBERGLASS);
+        registerBuiltin(BUILTIN_CYBERGLASS);
+        for (EchoTheme theme : BuiltinThemes.all()) {
+            registerBuiltin(theme);
+        }
         if (loaded != null) {
             loaded.values().stream()
                 .filter(theme -> theme != null && theme.id() != null)
                 .forEach(theme -> THEMES.put(theme.id(), theme));
         }
-        Identifier configured = parseConfigured(ThemeCoreConfig.string(ThemeCoreConfig.DEFAULT_THEME), CYBERGLASS_ID);
-        globalThemeId = THEMES.containsKey(configured) ? configured : CYBERGLASS_ID;
+        Identifier defaultDarkId = BuiltinThemes.defaultDark().id();
+        Identifier configured = parseConfigured(ThemeCoreConfig.string(ThemeCoreConfig.DEFAULT_THEME), defaultDarkId);
+        globalThemeId = THEMES.containsKey(configured) ? configured : defaultDarkId;
     }
 
     public static synchronized EchoTheme get(Identifier id) {
@@ -75,9 +89,10 @@ public final class ThemeRegistry {
     }
 
     public static synchronized EchoTheme fallbackTheme() {
-        Identifier fallback = parseConfigured(ThemeCoreConfig.string(ThemeCoreConfig.FALLBACK_THEME), CYBERGLASS_ID);
+        Identifier defaultDarkId = BuiltinThemes.defaultDark().id();
+        Identifier fallback = parseConfigured(ThemeCoreConfig.string(ThemeCoreConfig.FALLBACK_THEME), defaultDarkId);
         EchoTheme theme = THEMES.get(fallback);
-        return theme == null ? BUILTIN_CYBERGLASS : theme;
+        return theme == null ? BuiltinThemes.defaultDark() : theme;
     }
 
     public static synchronized EchoTheme getCurrentTheme() {
@@ -185,6 +200,10 @@ public final class ThemeRegistry {
 
     private static Identifier soundcore(String path) {
         return Identifier.fromNamespaceAndPath("echosoundcore", path);
+    }
+
+    public static EchoTheme getCyberGlassBuiltin() {
+        return BUILTIN_CYBERGLASS;
     }
 
     private static EchoTheme createBuiltinCyberGlass() {

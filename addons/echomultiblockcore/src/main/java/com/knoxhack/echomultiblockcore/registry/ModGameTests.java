@@ -25,6 +25,7 @@ import com.knoxhack.echomultiblockcore.api.MultiblockProgressionDefinition;
 import com.knoxhack.echomultiblockcore.api.MultiblockProgressionParseResult;
 import com.knoxhack.echomultiblockcore.api.MultiblockProgressionRegistry;
 import com.knoxhack.echomultiblockcore.api.MultiblockProgressionSnapshot;
+import com.knoxhack.echomultiblockcore.api.MultiblockPowerProvider;
 import com.knoxhack.echomultiblockcore.api.MultiblockRole;
 import com.knoxhack.echomultiblockcore.api.MultiblockRuntimeSnapshot;
 import com.knoxhack.echomultiblockcore.api.MultiblockState;
@@ -125,6 +126,8 @@ public final class ModGameTests {
             TEST_FUNCTIONS.register("integration_provider_deduplicates", () -> ModGameTests::integrationProviderDeduplicates);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INTEGRATION_FAILURE =
             TEST_FUNCTIONS.register("integration_provider_failure_isolated", () -> ModGameTests::integrationProviderFailureIsolated);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> POWER_PROVIDER_DRAW =
+            TEST_FUNCTIONS.register("power_provider_draw_and_failure_isolation", () -> ModGameTests::powerProviderDrawAndFailureIsolation);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INTEGRATION_SAVED_SNAPSHOTS =
             TEST_FUNCTIONS.register("integration_saved_data_snapshots", () -> ModGameTests::integrationSavedDataSnapshots);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> INTEGRATION_SCAN_ROBOT =
@@ -191,6 +194,7 @@ public final class ModGameTests {
         register(event, "task_queue_state_snapshots", TASK_QUEUE_STATES.getId());
         register(event, "integration_provider_deduplicates", INTEGRATION_DEDUPE.getId());
         register(event, "integration_provider_failure_isolated", INTEGRATION_FAILURE.getId());
+        register(event, "power_provider_draw_and_failure_isolation", POWER_PROVIDER_DRAW.getId());
         register(event, "integration_saved_data_snapshots", INTEGRATION_SAVED_SNAPSHOTS.getId());
         register(event, "integration_scan_robotic_arm", INTEGRATION_SCAN_ROBOT.getId());
         register(event, "integration_map_marker_snapshots", INTEGRATION_MAP_MARKERS.getId());
@@ -562,6 +566,60 @@ public final class ModGameTests {
         helper.succeed();
     }
 
+    private static void powerProviderDrawAndFailureIsolation(GameTestHelper helper) {
+        long[] reserve = { 200L };
+        MultiblockPowerProvider working = new MultiblockPowerProvider() {
+            @Override
+            public Identifier providerId() {
+                return EchoMultiblockCore.id("working_power_provider");
+            }
+
+            @Override
+            public long availablePower(net.minecraft.world.level.Level level, BlockPos controllerPos) {
+                return reserve[0];
+            }
+
+            @Override
+            public long drawPower(net.minecraft.world.level.Level level, BlockPos controllerPos, long ep, boolean simulate) {
+                long drawn = Math.min(Math.max(0L, ep), reserve[0]);
+                if (!simulate) {
+                    reserve[0] -= drawn;
+                }
+                return drawn;
+            }
+        };
+        MultiblockPowerProvider failing = new MultiblockPowerProvider() {
+            @Override
+            public Identifier providerId() {
+                return EchoMultiblockCore.id("failing_power_provider");
+            }
+
+            @Override
+            public long availablePower(net.minecraft.world.level.Level level, BlockPos controllerPos) {
+                throw new IllegalStateException("availability failure");
+            }
+
+            @Override
+            public long drawPower(net.minecraft.world.level.Level level, BlockPos controllerPos, long ep, boolean simulate) {
+                throw new IllegalStateException("draw failure");
+            }
+        };
+        MultiblockIntegrationServices.withClearedForTests(() -> {
+            helper.assertTrue(MultiblockIntegrationServices.registerPowerProvider(failing), "Failing power provider should register.");
+            helper.assertTrue(MultiblockIntegrationServices.registerPowerProvider(working), "Working power provider should register.");
+            helper.assertTrue(MultiblockIntegrationServices.powerProviderCount() == 2, "Both power providers should be tracked.");
+            helper.assertTrue(MultiblockIntegrationServices.availablePower(helper.getLevel(), BlockPos.ZERO) == 200L,
+                    "Power availability should ignore failing providers and keep working output.");
+            helper.assertTrue(MultiblockIntegrationServices.drawPower(helper.getLevel(), BlockPos.ZERO, 120L, true) == 120L,
+                    "Simulated draw should report working provider output.");
+            helper.assertTrue(reserve[0] == 200L, "Simulated draw should not mutate provider reserve.");
+            helper.assertTrue(MultiblockIntegrationServices.drawPower(helper.getLevel(), BlockPos.ZERO, 80L, false) == 80L,
+                    "Committed draw should debit working provider output.");
+            helper.assertTrue(reserve[0] == 120L, "Committed draw should reduce provider reserve.");
+        });
+        helper.succeed();
+    }
+
     private static void integrationSavedDataSnapshots(GameTestHelper helper) {
         Identifier definitionId = EchoMultiblockCore.id("signal_tower_tier_1");
         BlockPos controllerPos = helper.absolutePos(new BlockPos(2, 1, 2));
@@ -596,7 +654,7 @@ public final class ModGameTests {
     }
 
     private static void integrationMapMarkerSnapshots(GameTestHelper helper) {
-        Identifier definitionId = EchoMultiblockCore.id("industrial_assembly_line_demo");
+        Identifier definitionId = EchoMultiblockCore.id("industrial_assembly_line");
         BlockPos controllerPos = helper.absolutePos(new BlockPos(3, 1, 3));
         MultiblockSavedData.get(helper.getLevel()).record(definitionId, controllerPos, 96.0F, "ACTIVE");
 
@@ -866,7 +924,7 @@ public final class ModGameTests {
     private static void progressionContentCoverage(GameTestHelper helper) {
         List<Identifier> facilities = List.of(
                 EchoMultiblockCore.id("signal_tower_tier_1"),
-                EchoMultiblockCore.id("industrial_assembly_line_demo"),
+                EchoMultiblockCore.id("industrial_assembly_line"),
                 EchoMultiblockCore.id("logistics_depot"),
                 EchoMultiblockCore.id("scanner_array"),
                 EchoMultiblockCore.id("vehicle_repair_gantry"),
@@ -1017,7 +1075,7 @@ public final class ModGameTests {
                 EchoMultiblockCore.id("assemble_reinforced_machine_frame"),
                 "Assemble Reinforced Machine Frame",
                 EchoMultiblockCore.id("assembly"),
-                List.of(EchoMultiblockCore.id("industrial_assembly_line_demo")),
+                List.of(EchoMultiblockCore.id("industrial_assembly_line")),
                 WorkcellType.ASSEMBLY,
                 List.of(RobotToolType.WELDER),
                 List.of(

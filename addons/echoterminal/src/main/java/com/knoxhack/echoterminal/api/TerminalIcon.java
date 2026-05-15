@@ -23,6 +23,10 @@ public enum TerminalIcon {
     VANILLA,
     SEARCH,
     SETTINGS,
+    CHECK,
+    LOCK,
+    TARGET,
+    CLOCK,
     DEFAULT;
 
     public static TerminalIcon fromGroup(String group) {
@@ -189,6 +193,26 @@ public enum TerminalIcon {
             case SETTINGS -> {
                 graphics.outline(x + 6, y + 6, size - 12, size - 12, c);
                 graphics.fill(mid - 2, cy - 2, mid + 3, cy + 3, c);
+            }
+            case CHECK -> {
+                graphics.fill(x + 4, cy, x + 7, cy + 3, c);
+                graphics.fill(x + 7, cy + 3, x + size - 6, cy - (size / 2) + 4, c);
+                graphics.fill(x + 7, cy + 2, x + size - 6, cy - (size / 2) + 5, c);
+            }
+            case LOCK -> {
+                graphics.fill(x + 5, cy - 1, x + size - 5, cy + 5, c);
+                graphics.outline(x + 5, cy - 1, size - 10, 6, c);
+                graphics.fill(mid - 2, cy + 2, mid + 3, cy + 5, dim);
+            }
+            case TARGET -> {
+                graphics.fill(mid - 1, y + 4, mid + 1, y + size - 4, c);
+                graphics.fill(x + 4, cy - 1, x + size - 4, cy + 1, c);
+                graphics.outline(mid - 3, cy - 3, 7, 7, c);
+            }
+            case CLOCK -> {
+                graphics.outline(x + 5, y + 5, size - 10, size - 10, c);
+                graphics.fill(mid - 1, cy - 4, mid + 1, cy + 1, c);
+                graphics.fill(mid - 1, cy, mid + 4, cy + 2, c);
             }
             default -> {
                 graphics.outline(x + 6, y + 6, size - 12, size - 12, c);

@@ -59,6 +59,10 @@ public class CrystallineSynthesizerBlockEntity extends BlockEntity implements Me
             Items.NETHERITE_SCRAP
     };
 
+    public static Item[] getPossibleOutputs() {
+        return POSSIBLE_OUTPUTS.clone();
+    }
+
     public final ContainerData data = new ContainerData() {
         @Override
         public int get(int i) {

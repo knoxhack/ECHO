@@ -174,11 +174,19 @@ public final class IndexRecipeUi {
             graphics.text(font, "+" + (recipe.slots().size() - renderedGroups) + " more rows", x + 10, noteY, MUTED, false);
             noteY += 12;
         }
+        if (recipe.processTicks() > 0 && noteY <= y + h - 30) {
+            String stats = recipe.processTicks() + " ticks";
+            if (!recipe.notes().isEmpty() && recipe.notes().get(0).toLowerCase().contains("power")) {
+                stats += "  |  " + recipe.notes().get(0);
+            }
+            drawBadge(graphics, font, x + 10, noteY, stats, 0xFF5BC0EB);
+            noteY += 18;
+        }
         int renderedNotes = 0;
-        int maxNotes = mode == CardMode.TALL ? 2 : 1;
+        int maxNotes = mode == CardMode.TALL ? 3 : mode == CardMode.STANDARD ? 2 : 1;
         for (String note : recipe.notes().stream().limit(maxNotes).toList()) {
             graphics.textWithWordWrap(font, Component.literal(note), x + 10, noteY, w - 20, MUTED);
-            noteY += 20;
+            noteY += 16;
             renderedNotes++;
             if (noteY > y + h - 18) {
                 break;
@@ -230,13 +238,14 @@ public final class IndexRecipeUi {
 
         int noteY = drawNeedSummary(graphics, font, plan, x + 10, summaryY + 6, w - 20, y + h - 30,
                 mode == CardMode.COMPACT ? 2 : mode == CardMode.STANDARD ? 4 : 6);
+        int maxNotesVanilla = mode == CardMode.TALL ? 3 : mode == CardMode.STANDARD ? 2 : 1;
         if (mode != CardMode.COMPACT) {
-            for (String note : recipe.notes().stream().limit(mode == CardMode.TALL ? 2 : 1).toList()) {
+            for (String note : recipe.notes().stream().limit(maxNotesVanilla).toList()) {
                 if (noteY > y + h - 22) {
                     break;
                 }
-                graphics.text(font, trim(font, note, w - 20), x + 10, noteY, MUTED, false);
-                noteY += 12;
+                graphics.textWithWordWrap(font, Component.literal(note), x + 10, noteY, w - 20, MUTED);
+                noteY += 16;
             }
         }
         if (Config.DEBUG_SHOW_RECIPE_IDS.get()) {

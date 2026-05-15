@@ -64,6 +64,7 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionRegistry;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionVisuals;
@@ -900,7 +901,7 @@ public final class AshfallTerminalIntegration {
                     turnInReady
                             ? TerminalMissionAction.enabled(TURN_IN.getPath(), "TURN IN")
                             : TerminalMissionAction.disabled(TURN_IN.getPath(), "TURN IN",
-                                    AshfallMissionActions.turnInReason(player, quest, mission, status, current, completeNow, preview)),
+                                    turnInReason(player, quest, mission, status, current, completeNow, preview)),
                     pendingRewards
                             ? TerminalMissionAction.enabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS")
                             : TerminalMissionAction.disabled(CLAIM_REWARDS.getPath(), "CLAIM REWARDS",
@@ -947,6 +948,23 @@ public final class AshfallTerminalIntegration {
                 return TerminalMissionRole.REFERENCE;
             }
             return TerminalMissionRole.fallback(definition, snapshot);
+        }
+
+        @Override
+        public Optional<TerminalMissionRoutePlacement> routePlacement(
+                Player player,
+                TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot,
+                TerminalMissionRole role) {
+            if (definition == null) {
+                return Optional.empty();
+            }
+            TerminalMissionRole safeRole = role == null ? TerminalMissionRole.fallback(definition, snapshot) : role;
+            return Optional.of(new TerminalMissionRoutePlacement(
+                    Math.max(0, Math.min(8, definition.phaseOrder())),
+                    definition.missionOrder(),
+                    safeRole,
+                    true));
         }
 
         @Override
@@ -1121,7 +1139,7 @@ public final class AshfallTerminalIntegration {
 
         private static String turnInReason(Player player, QuestData quest, Mission mission, QuestData.MissionStatus status,
                 boolean current, boolean completeNow, boolean preview) {
-            return AshfallMissionActions.turnInReason(player, quest, mission, status, current, completeNow, preview);
+            return MissionUxSummary.turnInReason(player, quest, mission, status, current, completeNow, preview);
         }
     }
 
@@ -1339,6 +1357,16 @@ public final class AshfallTerminalIntegration {
         @Override
         public TerminalMissionRole role(Player player, TerminalMissionDefinition definition, TerminalMissionSnapshot snapshot) {
             return TerminalMissionRole.OPTIONAL;
+        }
+
+        @Override
+        public Optional<TerminalMissionRoutePlacement> routePlacement(
+                Player player,
+                TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot,
+                TerminalMissionRole role) {
+            int order = definition == null ? 0 : definition.missionOrder();
+            return Optional.of(TerminalMissionRoutePlacement.optional(9, order));
         }
 
         private TerminalMissionDefinition definition(Player player, SideOp op) {

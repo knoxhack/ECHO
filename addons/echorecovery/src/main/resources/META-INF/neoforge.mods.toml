@@ -1,0 +1,70 @@
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/knoxhack/echo/issues"
+
+[[mods]]
+modId="echorecovery"
+version="1.0.0"
+displayName="ECHO: Recovery"
+displayURL="https://github.com/knoxhack/echo"
+authors="KnoxHack"
+credits="Standalone-first death recovery for the ECHO ecosystem."
+description='''
+ECHO Recovery provides graves, death caches, recovery compasses, and grave keys.
+Works standalone with ECHO Core + NetCore. Optionally integrates with Terminal,
+ThemeCore, HoloMap, MissionCore, TutorialCore, SoundCore, WorldCore, WeatherCore,
+Lens, Armory, Logistics, Convoy, PowerGrid, RelicTech, Nexus, Blackbox, and Ashfall.
+'''
+
+[[dependencies.echorecovery]]
+modId="neoforge"
+type="required"
+versionRange="[26.1.2.29-beta,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.echorecovery]]
+modId="minecraft"
+type="required"
+versionRange="[26.1.2,26.2)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.echorecovery]]
+modId="echocore"
+type="required"
+reason="Provides shared ECHO addon and service APIs."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echorecovery]]
+modId="echonetcore"
+type="required"
+reason="Provides shared packet registration and network contracts."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echorecovery]]
+modId="echoterminal"
+type="optional"
+reason="Registers Graves / Recovery / Field Recovery Terminal pages."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echorecovery]]
+modId="echothemecore"
+type="optional"
+reason="Enables grave theme tokens and UI theming."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.echorecovery]]
+modId="echoashfallprotocol"
+type="optional"
+reason="Activates Field Recovery Cache naming, visuals, and hazards."
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"

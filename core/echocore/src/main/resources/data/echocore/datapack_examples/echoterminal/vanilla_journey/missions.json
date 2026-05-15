@@ -1,0 +1,17 @@
+{
+  "missions": [
+    {
+      "advancement": "minecraft:story/mine_stone",
+      "title": "Stone Age",
+      "briefing": "Mine stone with your first pickaxe.",
+      "guide": "Craft wood tools, gather cobblestone, and start upgrading the basics.",
+      "phase_id": "story",
+      "phase": "Story",
+      "phase_order": 0,
+      "order": 1,
+      "icon": "minecraft:cobblestone",
+      "tier": "task",
+      "role": "main"
+    }
+  ]
+}

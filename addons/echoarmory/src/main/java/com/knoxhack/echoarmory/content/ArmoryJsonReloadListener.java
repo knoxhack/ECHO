@@ -6,12 +6,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.knoxhack.echoarmory.EchoArmory;
+import com.knoxhack.echoarmory.item.ArmoryData;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -154,6 +157,7 @@ public final class ArmoryJsonReloadListener extends SimplePreparableReloadListen
          stringList(json, "modules"),
          integer(json, "minTier", 1),
          integer(json, "minProtection", 0),
+         protectionRequirements(json, "requiredProtections", integer(json, "minProtection", 0)),
          string(json, "logisticsPreset", "")
       );
    }
@@ -199,6 +203,40 @@ public final class ArmoryJsonReloadListener extends SimplePreparableReloadListen
          }
       }
       return List.copyOf(values);
+   }
+
+   private static Map<ArmoryData.ProtectionType, Integer> protectionRequirements(JsonObject json, String key, int fallbackFracture) {
+      JsonElement element = json.get(key);
+      if (element == null || element.isJsonNull()) {
+         return fallbackFracture <= 0
+            ? Map.of()
+            : Map.of(ArmoryData.ProtectionType.FRACTURE, Math.max(0, fallbackFracture));
+      }
+      if (!element.isJsonObject()) {
+         throw new JsonParseException("Field '" + key + "' must be an object.");
+      }
+      EnumMap<ArmoryData.ProtectionType, Integer> values = new EnumMap<>(ArmoryData.ProtectionType.class);
+      JsonObject object = element.getAsJsonObject();
+      for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+         ArmoryData.ProtectionType type = protectionType(entry.getKey());
+         if (entry.getValue() == null || entry.getValue().isJsonNull()) {
+            continue;
+         }
+         int required = Math.max(0, entry.getValue().getAsInt());
+         if (required > 0) {
+            values.put(type, required);
+         }
+      }
+      return Map.copyOf(values);
+   }
+
+   private static ArmoryData.ProtectionType protectionType(String key) {
+      String normalized = key == null ? "" : key.trim().toUpperCase(Locale.ROOT);
+      try {
+         return ArmoryData.ProtectionType.valueOf(normalized);
+      } catch (IllegalArgumentException exception) {
+         throw new JsonParseException("Unknown Armory protection key '" + key + "'.", exception);
+      }
    }
 
    private static Identifier identifier(JsonObject json, String key, Identifier fallback) {

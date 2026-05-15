@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/terminal_mission.schema.json",
+  "title": "ECHO Terminal Vanilla Journey Mission",
+  "description": "Mission entry inside the Terminal vanilla_journey/missions.json array.",
+  "type": "object",
+  "required": ["advancement", "title", "briefing", "guide", "phase_id", "phase", "phase_order", "order", "icon", "tier", "role"],
+  "properties": {
+    "advancement": { "type": "string", "description": "Advancement identifier that unlocks this mission." },
+    "title": { "type": "string" },
+    "briefing": { "type": "string" },
+    "guide": { "type": "string", "description": "Detailed guide text." },
+    "phase_id": { "type": "string", "description": "Phase / chapter identifier." },
+    "phase": { "type": "string", "description": "Human-readable phase name." },
+    "phase_order": { "type": "integer" },
+    "order": { "type": "integer", "description": "Order within the phase." },
+    "icon": { "type": "string", "description": "Item identifier for the mission icon." },
+    "tier": { "type": "string", "description": "Reward tier identifier matching a key in reward_tiers.json." },
+    "role": { "type": "string", "description": "Mission role: reference, main, side, event." }
+  },
+  "additionalProperties": true
+}

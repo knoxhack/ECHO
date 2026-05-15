@@ -326,7 +326,7 @@ public final class NexusTerminalIntegration {
          int cy = TerminalUi.flatDataPanel(context, graphics, x, y, width, 84,
             "LOCAL FIELD MAP", "5x5 CHUNK TELEMETRY", ACCENT);
          TerminalUi.wrap(context, graphics,
-            "ECHO-7 // Center cell is your current chunk. Red cells indicate collapse risk; storm and tear markers mean the area is actively unsafe.",
+            "ECHO-7 // Center cell is your current chunk. The map now prioritizes a safe work chunk and a recovery target before you run dirty charge, reactors, or Core work.",
             x + 14, cy, width - 28, TerminalUi.MUTED);
 
          int gridY = y + 102;
@@ -367,16 +367,16 @@ public final class NexusTerminalIntegration {
          int legendY = gridY + gridW + 16;
          legendY = TerminalUi.sectionHeader(context, graphics, "RECOVERY READOUT", "map guidance", x, legendY, width, ACCENT);
          legendY = TerminalUi.objectiveRow(context, graphics, x, legendY, width,
-            "Safest adjacent", safestGuidance(analysis), false, TerminalUi.GREEN);
+            "Safest adjacent", analysis.safestAdjacentGuidance(), false, TerminalUi.GREEN);
          legendY = TerminalUi.objectiveRow(context, graphics, x, legendY, width,
-            "Priority recovery", priorityGuidance(analysis), false, recoveryColor(analysis));
+            "Priority recovery", analysis.priorityRecoveryGuidance(), false, recoveryColor(analysis));
          TerminalUi.objectiveRow(context, graphics, x, legendY, width,
-            "Hazard summary", hazardSummary(analysis), !analysis.hasHazards(), analysis.hasHazards() ? TerminalUi.RED : TerminalUi.GREEN);
+            "Hazard summary", analysis.hazardSummary(), !analysis.hasHazards(), analysis.hasHazards() ? TerminalUi.RED : TerminalUi.GREEN);
       }
 
       @Override
       public int contentHeight(TerminalRenderContext context) {
-         return 500;
+         return 540;
       }
 
       private static int cellFill(NexusWorldData.FieldState state) {
@@ -435,49 +435,9 @@ public final class NexusTerminalIntegration {
          return builder.toString();
       }
 
-      private static String safestGuidance(NexusFieldMapPlanner.Analysis analysis) {
-         NexusFieldMapPlanner.CellRisk cell = analysis.safestAdjacent();
-         if (cell == null) {
-            return "No adjacent field telemetry is available.";
-         }
-         return "Move " + cell.directionLabel() + " for the safest work chunk: field " + cell.field()
-            + "%, corruption " + cell.corruption() + "%, risk " + cell.risk() + ".";
-      }
-
-      private static String priorityGuidance(NexusFieldMapPlanner.Analysis analysis) {
-         NexusFieldMapPlanner.CellRisk cell = analysis.highestRisk();
-         if (cell == null) {
-            return "No recovery target is available.";
-         }
-         return "Stabilize " + offsetLabel(cell) + " first: " + cell.state().name().toLowerCase(java.util.Locale.ROOT)
-            + ", field " + cell.field() + "%, risk " + cell.risk() + ".";
-      }
-
-      private static String hazardSummary(NexusFieldMapPlanner.Analysis analysis) {
-         return analysis.collapsedCells() + " collapsed, " + analysis.stormCells() + " storming, "
-            + analysis.tearCells() + " tear-marked cells in local map.";
-      }
-
       private static int recoveryColor(NexusFieldMapPlanner.Analysis analysis) {
          NexusFieldMapPlanner.CellRisk cell = analysis.highestRisk();
          return cell != null && cell.risk() >= 100 ? TerminalUi.RED : TerminalUi.AMBER;
-      }
-
-      private static String offsetLabel(NexusFieldMapPlanner.CellRisk cell) {
-         if (cell.isCenter()) {
-            return "current chunk";
-         }
-         StringBuilder builder = new StringBuilder();
-         if (cell.dx() != 0) {
-            builder.append(Math.abs(cell.dx())).append(cell.dx() > 0 ? " east" : " west");
-         }
-         if (cell.dz() != 0) {
-            if (!builder.isEmpty()) {
-               builder.append(", ");
-            }
-            builder.append(Math.abs(cell.dz())).append(cell.dz() > 0 ? " south" : " north");
-         }
-         return builder.toString();
       }
    }
 }

@@ -1,0 +1,34 @@
+{
+  "id": "echocore:example_acid_rain",
+  "displayName": "Acid Rain",
+  "type": "ACID_RAIN",
+  "defaultSeverity": "MODERATE",
+  "scope": "REGIONAL",
+  "durationTicks": 18000,
+  "warningTicks": 3600,
+  "weight": 8,
+  "cooldownTicks": 36000,
+  "allowedDimensions": ["minecraft:overworld"],
+  "allowedBiomes": ["echoashfallprotocol:toxic_swamp", "echoashfallprotocol:crash_zone_wasteland"],
+  "disallowedBiomes": [],
+  "minimumProgression": 0,
+  "earliestGameDay": 3,
+  "effects": {
+    "toxicExposureMultiplier": 1.5,
+    "hydrationDrainMultiplier": 1.3,
+    "solarPowerMultiplier": 0.4,
+    "scannerReliabilityMultiplier": 0.85
+  },
+  "recommendedGear": ["echoarmory:hazmat_helmet", "echoarmory:hazmat_chestplate"],
+  "possibleResources": ["echoashfallprotocol:acidic_sludge"],
+  "terminalWarning": "Acid rain detected. Seek cover or equip chemical protection.",
+  "echoLines": [
+    "Atmospheric acidity spiking. Corrosion warning active.",
+    "Recommend sealed suit or indoor shelter."
+  ],
+  "holomapOverlayMetadata": "acid_rain_overlay",
+  "lensScanText": "Acidic precipitation. pH levels critical.",
+  "soundCoreAmbienceId": "echosoundcore:ambience/acid_rain",
+  "particleVisualProfileId": "echorendercore:weather/acid_rain_particles",
+  "enabled": true
+}

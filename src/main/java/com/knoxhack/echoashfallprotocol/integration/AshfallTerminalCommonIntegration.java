@@ -33,12 +33,14 @@ import com.knoxhack.echoterminal.api.mission.TerminalMissionProvider;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRequirement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionReward;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionRole;
+import com.knoxhack.echoterminal.api.mission.TerminalMissionRoutePlacement;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionSnapshot;
 import com.knoxhack.echoterminal.api.mission.TerminalMissionStatus;
 import com.knoxhack.echoterminal.api.recipe.TerminalRecipeRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -301,6 +303,23 @@ public final class AshfallTerminalCommonIntegration {
         }
 
         @Override
+        public Optional<TerminalMissionRoutePlacement> routePlacement(
+                Player player,
+                TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot,
+                TerminalMissionRole role) {
+            if (definition == null) {
+                return Optional.empty();
+            }
+            TerminalMissionRole safeRole = role == null ? TerminalMissionRole.fallback(definition, snapshot) : role;
+            return Optional.of(new TerminalMissionRoutePlacement(
+                    Math.max(0, Math.min(8, definition.phaseOrder())),
+                    definition.missionOrder(),
+                    safeRole,
+                    true));
+        }
+
+        @Override
         public boolean handleAction(ServerPlayer player, Identifier missionId, String actionId) {
             if (TURN_IN.getPath().equals(actionId)) {
                 turnInCurrentMission(player, missionId == null ? "" : missionId.getPath());
@@ -520,6 +539,22 @@ public final class AshfallTerminalCommonIntegration {
         public TerminalMissionSnapshot snapshot(Player player, Identifier missionId) {
             return new TerminalMissionSnapshot(missionId, TerminalMissionStatus.VIEW_ONLY, 0.0F,
                     "OPTIONAL", "", "Signal lead progress is rendered by the Ashfall client tab.", List.of());
+        }
+
+        @Override
+        public TerminalMissionRole role(Player player, TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot) {
+            return TerminalMissionRole.OPTIONAL;
+        }
+
+        @Override
+        public Optional<TerminalMissionRoutePlacement> routePlacement(
+                Player player,
+                TerminalMissionDefinition definition,
+                TerminalMissionSnapshot snapshot,
+                TerminalMissionRole role) {
+            int order = definition == null ? 0 : definition.missionOrder();
+            return Optional.of(TerminalMissionRoutePlacement.optional(9, order));
         }
 
         private static TerminalMissionDefinition sideOp(String path, String title, String phase,

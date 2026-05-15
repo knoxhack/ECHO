@@ -21,6 +21,11 @@
     ".": { "air": true }
   },
   "capabilities": ["echo:item_input","echo:item_output","echo:convoy_dispatch","echo:terminal_tab","echo:map_marker"],
+  "capability_requirements": [
+    { "capability": "echo:power_input", "amount": 100, "throughput": 32, "unit": "FE/t" },
+    { "capability": "echo:item_input", "amount": 32, "throughput": 8, "unit": "items" },
+    { "capability": "echo:item_output", "amount": 32, "throughput": 8, "unit": "items" }
+  ],
   "workcells": [{"id":"echomultiblockcore:logistics_depot/output","type":"OUTPUT","pos":[2,0,2],"size":[1,1,1]}],
   "preview": {"color":"8af6b6"}
 }

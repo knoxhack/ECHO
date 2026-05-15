@@ -20,7 +20,9 @@ public record CreatorVisualQaReport(
    List<String> testedFallbackModes,
    List<String> testedAddonNamespaces,
    List<String> remainingBlockers,
-   List<EvidenceSnapshot> snapshots
+   List<EvidenceSnapshot> snapshots,
+   List<ScreenChromeEvidence> screenChromeEvidence,
+   List<String> screenChromeBlockers
 ) {
    public static final CreatorVisualQaReport EMPTY = new CreatorVisualQaReport(
       "unverified",
@@ -34,6 +36,8 @@ public record CreatorVisualQaReport(
          "stable_fallback_evidence_missing",
          "screenshot_evidence_missing"
       ),
+      List.of(),
+      List.of(),
       List.of()
    );
 
@@ -63,6 +67,38 @@ public record CreatorVisualQaReport(
                .thenComparing(EvidenceSnapshot::statusLine)
                .thenComparing(EvidenceSnapshot::modeLine))
             .toList();
+      screenChromeEvidence = screenChromeEvidence == null
+         ? List.of()
+         : screenChromeEvidence.stream()
+            .filter(Objects::nonNull)
+            .sorted(Comparator
+               .comparing(ScreenChromeEvidence::addonId)
+               .thenComparing(ScreenChromeEvidence::surfaceId)
+               .thenComparing(ScreenChromeEvidence::reducedMotion))
+            .toList();
+      screenChromeBlockers = sortedStrings(screenChromeBlockers);
+   }
+
+   public CreatorVisualQaReport(
+      String advancedFxMode,
+      String advancedFxStatus,
+      int screenshotEvidenceCount,
+      List<String> testedFallbackModes,
+      List<String> testedAddonNamespaces,
+      List<String> remainingBlockers,
+      List<EvidenceSnapshot> snapshots
+   ) {
+      this(
+         advancedFxMode,
+         advancedFxStatus,
+         screenshotEvidenceCount,
+         testedFallbackModes,
+         testedAddonNamespaces,
+         remainingBlockers,
+         snapshots,
+         List.of(),
+         List.of()
+      );
    }
 
    public static CreatorVisualQaReport fromAddonIntegrations(List<CreatorAddonIntegration> addonIntegrations) {
@@ -73,7 +109,17 @@ public record CreatorVisualQaReport(
       List<EvidenceSnapshot> snapshots,
       List<CreatorAddonIntegration> addonIntegrations
    ) {
+      return fromSnapshots(snapshots, addonIntegrations, List.of());
+   }
+
+   public static CreatorVisualQaReport fromSnapshots(
+      List<EvidenceSnapshot> snapshots,
+      List<CreatorAddonIntegration> addonIntegrations,
+      List<ScreenChromeEvidence> screenChromeEvidence
+   ) {
       List<EvidenceSnapshot> safeSnapshots = snapshots == null ? List.of() : snapshots;
+      List<ScreenChromeEvidence> resolvedScreenChrome =
+         RenderCoreScreenChromeQaCatalog.withRequiredSurfaces(screenChromeEvidence);
       Set<String> modes = new TreeSet<>();
       int screenshotCount = 0;
       String latestMode = "unverified";
@@ -117,7 +163,9 @@ public record CreatorVisualQaReport(
          List.copyOf(modes),
          List.copyOf(namespaces),
          List.copyOf(blockers),
-         safeSnapshots
+         safeSnapshots,
+         resolvedScreenChrome,
+         RenderCoreScreenChromeQaCatalog.blockers(resolvedScreenChrome)
       );
    }
 
@@ -136,6 +184,8 @@ public record CreatorVisualQaReport(
             }
          }
       }
+      List<ScreenChromeEvidence> filteredScreenChrome =
+         RenderCoreScreenChromeQaCatalog.withRequiredSurfacesForNamespace(normalized, screenChromeEvidence);
       return new CreatorVisualQaReport(
          advancedFxMode,
          advancedFxStatus,
@@ -143,7 +193,9 @@ public record CreatorVisualQaReport(
          testedFallbackModes,
          List.copyOf(namespaces),
          remainingBlockers,
-         snapshots
+         snapshots,
+         filteredScreenChrome,
+         RenderCoreScreenChromeQaCatalog.blockers(filteredScreenChrome)
       );
    }
 
@@ -160,6 +212,14 @@ public record CreatorVisualQaReport(
          snapshotArray.add(snapshot.toJson());
       }
       root.add("snapshots", snapshotArray);
+      root.addProperty("screen_chrome_surface_count", screenChromeEvidence.size());
+      root.addProperty("screen_chrome_evidence_count", screenChromeEvidenceCount());
+      root.add("screen_chrome_blockers", stringArray(screenChromeBlockers));
+      JsonArray screenChromeArray = new JsonArray();
+      for (ScreenChromeEvidence evidence : screenChromeEvidence) {
+         screenChromeArray.add(evidence.toJson());
+      }
+      root.add("screen_chrome_evidence", screenChromeArray);
       return root;
    }
 
@@ -171,7 +231,19 @@ public record CreatorVisualQaReport(
          + " modes="
          + testedFallbackModes.size()
          + " blockers="
-         + remainingBlockers.size();
+         + remainingBlockers.size()
+         + " screen_surfaces="
+         + screenChromeEvidence.size()
+         + " screen_blockers="
+         + screenChromeBlockers.size();
+   }
+
+   public int screenChromeEvidenceCount() {
+      return (int)screenChromeEvidence.stream().filter(ScreenChromeEvidence::passed).count();
+   }
+
+   public int totalBlockerCount() {
+      return remainingBlockers.size() + screenChromeBlockers.size();
    }
 
    private static List<String> sortedStrings(List<String> values) {
@@ -282,6 +354,65 @@ public record CreatorVisualQaReport(
       }
    }
 
+   public record ScreenChromeEvidence(
+      String addonId,
+      String surfaceId,
+      String displayName,
+      String chromeStyle,
+      String labelPolicy,
+      String profileId,
+      boolean reducedMotion,
+      String qaStatus,
+      String notes,
+      String screenshotPath
+   ) {
+      public ScreenChromeEvidence {
+         addonId = normalizeText(addonId, "unknown");
+         surfaceId = normalizeText(surfaceId, "manual");
+         displayName = cleanText(displayName, surfaceId);
+         chromeStyle = normalizeText(chromeStyle, "cyberglass").toUpperCase(Locale.ROOT);
+         labelPolicy = normalizeText(labelPolicy, "unlabeled");
+         profileId = normalizeText(profileId, "");
+         qaStatus = normalizeText(qaStatus, "pending");
+         notes = cleanText(notes, "");
+         screenshotPath = sanitizePath(screenshotPath);
+      }
+
+      public boolean passed() {
+         return "pass".equals(qaStatus) && !screenshotPath.isBlank();
+      }
+
+      public ScreenChromeEvidence withQa(String status, String path, String qaNotes) {
+         return new ScreenChromeEvidence(
+            addonId,
+            surfaceId,
+            displayName,
+            chromeStyle,
+            labelPolicy,
+            profileId,
+            reducedMotion,
+            status,
+            qaNotes,
+            path
+         );
+      }
+
+      public JsonObject toJson() {
+         JsonObject root = new JsonObject();
+         root.addProperty("addon_id", addonId);
+         root.addProperty("surface_id", surfaceId);
+         root.addProperty("display_name", displayName);
+         root.addProperty("chrome_style", chromeStyle);
+         root.addProperty("label_policy", labelPolicy);
+         root.addProperty("profile_id", profileId);
+         root.addProperty("reduced_motion", reducedMotion);
+         root.addProperty("qa_status", qaStatus);
+         root.addProperty("notes", notes);
+         root.addProperty("screenshot_path", screenshotPath);
+         return root;
+      }
+   }
+
    private static String sanitizePath(String value) {
       if (value == null || value.isBlank()) {
          return "";
@@ -291,5 +422,12 @@ public record CreatorVisualQaReport(
          return "";
       }
       return normalized;
+   }
+
+   private static String cleanText(String value, String fallback) {
+      if (value == null || value.isBlank()) {
+         return fallback == null ? "" : fallback;
+      }
+      return value.trim();
    }
 }

@@ -14,6 +14,7 @@ import com.knoxhack.echoarmory.content.ArmoryContent;
 import com.knoxhack.echoarmory.content.ArmoryLoadoutDefinition;
 import com.knoxhack.echoarmory.item.ArmoryData;
 import com.knoxhack.echoarmory.registry.ModItems;
+import com.knoxhack.echoarmory.service.ArmoryReadinessService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,10 +64,9 @@ public final class ArmoryCoreIntegration {
                if (player == null) {
                   return "ARMORY: telemetry offline until player context is available.";
                }
-               int tier = equippedTier(player);
-               int fracture = ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE);
-               int modules = equippedModules(player);
-               return "ARMORY: tier " + tier + ", modules " + modules + ", fracture protection " + fracture + "%.";
+               return ArmoryReadinessService.bestReport(player)
+                  .map(report -> "ARMORY: " + report.loadout().title() + " " + report.summaryLine() + ".")
+                  .orElseGet(() -> "ARMORY: tier " + equippedTier(player) + ", modules " + equippedModules(player) + ".");
             }
          });
       }
@@ -78,21 +78,17 @@ public final class ArmoryCoreIntegration {
 
    private static List<EchoRouteRecord> routeRecords(Player player) {
       List<EchoRouteRecord> records = new ArrayList<>();
-      int tier = equippedTier(player);
-      int fracture = player == null ? 0 : ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE);
       for (ArmoryLoadoutDefinition loadout : ArmoryContent.loadouts()) {
-         boolean ready = tier >= loadout.minTier() && fracture >= loadout.minProtection();
+         ArmoryReadinessService.Report report = ArmoryReadinessService.report(player, loadout);
          records.add(new EchoRouteRecord(
             ArmoryTerminalIds.id("route/" + loadout.id().getPath()),
             CHAPTER_ID,
             loadout.title(),
             "Armory",
             "Mission kit",
-            ready ? "READY" : "NEEDS GEAR",
-            ready
-               ? "Loadout meets tier and protection recommendations."
-               : "Requires tier " + loadout.minTier() + " and protection " + loadout.minProtection() + "; current tier " + tier + ", fracture " + fracture + ".",
-            ready
+            report.state().name(),
+            report.summaryLine(),
+            report.ready()
          ));
       }
       return List.copyOf(records);
@@ -145,6 +141,18 @@ public final class ArmoryCoreIntegration {
             ));
          }
       });
+      ArmoryReadinessService.bestReport(player).ifPresent(report -> {
+         if (!report.ready()) {
+            blockers.add(new EchoDiagnosticBlocker(
+               ArmoryTerminalIds.id("diagnostic/route_kit_" + report.loadout().id().getPath()),
+               CHAPTER_ID,
+               readinessSeverity(report),
+               "Route kit " + report.state().name().toLowerCase(java.util.Locale.ROOT),
+               report.loadout().title() + ": " + report.firstBlocker(),
+               readinessNextAction(report)
+            ));
+         }
+      });
       if (equippedTier(player) < 2) {
          blockers.add(new EchoDiagnosticBlocker(
             ArmoryTerminalIds.id("diagnostic/low_tier"),
@@ -153,16 +161,6 @@ public final class ArmoryCoreIntegration {
             "Armory tier low",
             "The current kit is below mid-tech Armory readiness.",
             "Craft or tune Tier 2 weapons and armor at Armory stations."
-         ));
-      }
-      if (ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE) < 30) {
-         blockers.add(new EchoDiagnosticBlocker(
-            ArmoryTerminalIds.id("diagnostic/fracture_protection"),
-            CHAPTER_ID,
-            EchoDiagnosticBlocker.Severity.WARNING,
-            "Fracture protection low",
-            "Equipped modules do not provide enough Veil/Fracture mitigation for guardian routes.",
-            "Install Veil Shield or Void Core modules before entering fracture zones."
          ));
       }
       if (equippedModules(player) <= 0) {
@@ -188,6 +186,9 @@ public final class ArmoryCoreIntegration {
       int heat = ArmoryData.protection(player, ArmoryData.ProtectionType.HEAT);
       int fracture = ArmoryData.protection(player, ArmoryData.ProtectionType.FRACTURE);
       int exposureRisk = Math.max(0, 100 - fracture);
+      String readiness = ArmoryReadinessService.bestReport(player)
+         .map(report -> " Best kit " + report.loadout().title() + " is " + report.state().name() + ".")
+         .orElse("");
       return new EchoHazardTelemetry(
          100,
          0,
@@ -197,8 +198,25 @@ public final class ArmoryCoreIntegration {
          0,
          0,
          exposureRisk,
-         "Armory protection T/R/C/H/F " + toxic + "/" + radiation + "/" + cold + "/" + heat + "/" + fracture + "."
+         "Armory protection T/R/C/H/F " + toxic + "/" + radiation + "/" + cold + "/" + heat + "/" + fracture + "." + readiness
       );
+   }
+
+   private static EchoDiagnosticBlocker.Severity readinessSeverity(ArmoryReadinessService.Report report) {
+      return switch (report.state()) {
+         case LOCKED -> EchoDiagnosticBlocker.Severity.BLOCKED;
+         case MISSING -> EchoDiagnosticBlocker.Severity.WARNING;
+         case STAGED, READY -> EchoDiagnosticBlocker.Severity.INFO;
+      };
+   }
+
+   private static String readinessNextAction(ArmoryReadinessService.Report report) {
+      return switch (report.state()) {
+         case LOCKED -> "Earn the required faction reputation or select a lower-risk Armory kit.";
+         case MISSING -> "Craft, recover, or request the missing gear and modules.";
+         case STAGED -> "Equip staged gear, install staged modules, and recharge empty energy cores.";
+         case READY -> "Deploy with the selected Armory kit.";
+      };
    }
 
    private static int equippedTier(Player player) {

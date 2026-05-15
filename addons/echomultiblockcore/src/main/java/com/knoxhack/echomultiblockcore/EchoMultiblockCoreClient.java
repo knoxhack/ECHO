@@ -1,6 +1,7 @@
 package com.knoxhack.echomultiblockcore;
 
 import com.knoxhack.echomultiblockcore.client.MultiblockControllerScreen;
+import com.knoxhack.echomultiblockcore.client.MultiblockCrateScreen;
 import com.knoxhack.echomultiblockcore.client.MultiblockPreviewRenderer;
 import com.knoxhack.echomultiblockcore.client.RobotAnimationClientState;
 import com.knoxhack.echomultiblockcore.registry.ModMenus;
@@ -99,6 +100,7 @@ public final class EchoMultiblockCoreClient {
         @SubscribeEvent
         static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
             event.register(ModMenus.CONTROLLER.get(), MultiblockControllerScreen::new);
+            event.register(ModMenus.CRATE.get(), MultiblockCrateScreen::new);
         }
 
         @SubscribeEvent

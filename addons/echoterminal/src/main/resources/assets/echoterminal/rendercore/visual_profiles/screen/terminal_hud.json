@@ -5,10 +5,10 @@
   "effect": {
     "preset": "terminal_hud",
     "glow_intensity": 0.8,
-    "pulse_speed": 0.55,
+    "pulse_speed": 0.48,
     "pulse_min_alpha": 0.74,
     "pulse_max_alpha": 1.0,
-    "scanline_strength": 0.0,
+    "bloom_tint": "#FF66E8FF",
     "target_scope": "profile"
   },
   "anchors": {

@@ -65,7 +65,9 @@ public final class HoloMapGlyphRenderer {
         if (!waypoint.visible()) {
             color = HoloMapVisualStyle.MUTED;
         }
-        if (waypoint.scope() == Scope.SHARED) {
+        if (waypoint.isDeathpoint()) {
+            drawDeathpoint(graphics, x, y, color, size);
+        } else if (waypoint.scope() == Scope.SHARED) {
             graphics.outline(x - size, y - size, size * 2, size * 2, color);
             graphics.fill(x - 2, y - 2, x + 3, y + 3, color);
             graphics.fill(x - size, y, x + size + 1, y + 1, color);
@@ -187,6 +189,14 @@ public final class HoloMapGlyphRenderer {
     private static void drawGeneric(GuiGraphicsExtractor graphics, int x, int y, int color, int size) {
         graphics.fill(x - size / 2, y - size / 2, x + size / 2 + 1, y + size / 2 + 1, color);
         graphics.outline(x - size, y - size, size * 2, size * 2, color);
+    }
+
+    private static void drawDeathpoint(GuiGraphicsExtractor graphics, int x, int y, int color, int size) {
+        graphics.outline(x - size - 1, y - size - 1, (size + 1) * 2, (size + 1) * 2,
+                HoloMapVisualStyle.withAlpha(color, 0xBB));
+        drawLine(graphics, x - size - 1, y - size - 1, x + size + 1, y + size + 1, color);
+        drawLine(graphics, x + size + 1, y - size - 1, x - size - 1, y + size + 1, color);
+        graphics.fill(x - 1, y - 1, x + 2, y + 2, HoloMapVisualStyle.TEXT);
     }
 
     private static void drawLocked(GuiGraphicsExtractor graphics, int x, int y, int color, int size) {

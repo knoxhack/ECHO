@@ -98,17 +98,27 @@ public final class EchoTerminalCoreServices {
             return null;
         }
         BlockPos center = player.blockPosition();
+        EchoTerminalBlockEntity unowned = null;
         for (int dy = -TERMINAL_VERTICAL_SEARCH_RADIUS; dy <= TERMINAL_VERTICAL_SEARCH_RADIUS; dy++) {
             for (int dx = -TERMINAL_SEARCH_RADIUS; dx <= TERMINAL_SEARCH_RADIUS; dx++) {
                 for (int dz = -TERMINAL_SEARCH_RADIUS; dz <= TERMINAL_SEARCH_RADIUS; dz++) {
                     BlockPos pos = center.offset(dx, dy, dz);
-                    if (player.level().getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal
-                            && terminal.isExplicitOwner(player)) {
-                        rememberTerminal(player, pos);
-                        return terminal;
+                    if (player.level().getBlockEntity(pos) instanceof EchoTerminalBlockEntity terminal) {
+                        if (terminal.isExplicitOwner(player)) {
+                            rememberTerminal(player, pos);
+                            return terminal;
+                        }
+                        if (unowned == null && terminal.isOwner(player)) {
+                            unowned = terminal;
+                        }
                     }
                 }
             }
+        }
+        if (unowned != null) {
+            unowned.setOwnerIfMissing(player);
+            rememberTerminal(player, unowned.getBlockPos());
+            return unowned;
         }
         return null;
     }

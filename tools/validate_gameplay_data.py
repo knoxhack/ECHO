@@ -230,7 +230,22 @@ def collect_registered_block_ids() -> set[str]:
 def json_files(path: Path) -> Iterable[Path]:
     if not path.exists():
         return ()
-    return path.rglob("*.json")
+    return (
+        candidate
+        for candidate in path.rglob("*.json")
+        if not is_local_run_download(candidate)
+    )
+
+
+def is_local_run_download(path: Path) -> bool:
+    try:
+        parts = path.relative_to(ROOT).parts
+    except ValueError:
+        parts = path.parts
+    return any(
+        parts[index] == "run" and index + 1 < len(parts) and parts[index + 1] == "downloads"
+        for index in range(len(parts))
+    )
 
 
 def walk_strings(value: Any) -> Iterable[str]:
@@ -1857,7 +1872,7 @@ def check_terminal_mission_browser_source_guards(errors: list[str]) -> None:
         + ui,
         (
             "navigationStyle = NavigationStyle.APP_HUB",
-            "missionView = MissionView.VISUAL_QUEST_HUB",
+            "missionView = MissionView.GUIDED",
             "visualLevel = VisualLevel.BALANCED",
             "reducedMotion = false",
             "TerminalRenderCache.beginFrame",

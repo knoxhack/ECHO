@@ -35,8 +35,7 @@ public enum ServerBlockEntityProvider implements ServerLensProvider {
 
     @Override
     public boolean supports(LensContext context) {
-        return context != null && context.hasBlock()
-                && context.level().getBlockEntity(context.blockPos()) != null;
+        return context != null && context.hasBlock();
     }
 
     @Override
@@ -56,5 +55,13 @@ public enum ServerBlockEntityProvider implements ServerLensProvider {
                 "I", blockEntity instanceof MenuProvider ? LensTone.GOOD : LensTone.MUTED, LensVisibility.DEEP));
         return List.of(LensInfoSection.of(EchoLens.id("section/server_block_entity"), LensDataCategory.MACHINE,
                 "Server Block Entity", "S", LensTone.INFO, LensVisibility.DEEP, rows));
+    }
+
+    @Override
+    public List<LensInfoRow> deepScanSignals(LensContext context) {
+        BlockEntity blockEntity = context.level().getBlockEntity(context.blockPos());
+        return List.of(LensInfoRow.of("Block Entity",
+                blockEntity == null ? "None detected" : "Verified",
+                "S", blockEntity == null ? LensTone.MUTED : LensTone.GOOD, LensVisibility.DEEP));
     }
 }

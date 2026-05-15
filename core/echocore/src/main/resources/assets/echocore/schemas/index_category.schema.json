@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://echo/echocore/index_category.schema.json",
+  "title": "ECHO Index Category",
+  "description": "Index codex category definition for EchoIndex.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "description": "Category identifier. Inferred from file path if omitted." },
+    "title": { "type": "string", "description": "Display title or translation key." },
+    "description": { "type": "string" },
+    "icon": { "type": "string", "description": "Item identifier for the category icon." },
+    "sort_order": { "type": "integer", "default": 100, "description": "Display order." },
+    "sortOrder": { "type": "integer", "description": "Legacy alias for sort_order." },
+    "source_mod": { "type": "string", "description": "Owning mod namespace." },
+    "sourceMod": { "type": "string", "description": "Legacy alias for source_mod." }
+  },
+  "additionalProperties": true
+}
