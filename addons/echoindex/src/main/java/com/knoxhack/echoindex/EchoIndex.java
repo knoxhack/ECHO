@@ -70,7 +70,9 @@ public class EchoIndex {
             EchoCoreServices.registerIndexProvider(BuiltinIndexProvider.INSTANCE);
             EchoCoreServices.registerIndexRecipeProvider(VanillaIndexRecipeProvider.INSTANCE);
             EchoCoreServices.registerIndexRecipeProvider(IndexSourceRecipeProvider.INSTANCE);
-            IndexMissionCoreIntegration.register();
+            if (ModList.get().isLoaded("echomissioncore")) {
+                IndexMissionCoreIntegration.register();
+            }
             if (ModList.get().isLoaded("echoterminal")) {
                 registerTerminalIntegration();
             }

@@ -41,8 +41,25 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="echorendercore"
+type="optional"
+reason="Enables RenderCore V18 screen chrome, visual profiles, preview overlays, and index entry previews when present."
+versionRange="[1.2.0,)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
 modId="echoterminal"
 type="optional"
+reason="Adds Index catalog and recipe lookup surfaces inside Terminal when present."
 versionRange="[1.1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="echomissioncore"
+type="optional"
+reason="Registers Index-related side-op missions when MissionCore is present."
+versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"

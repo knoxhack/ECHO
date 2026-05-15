@@ -23,6 +23,7 @@ For pack authors, ECHO: Index is a clean place to publish explainers for special
 
 - Standalone visual catalog screen with searchable item grid, category filters, bookmarks, and live recipe/usage/source cards.
 - Inventory overlay with the same search and detail behaviour for quick lookup while managing items.
+- 1.1.3 inventory overlay polish: `R` and `U` lookup from any hovered container slot, normal item hover tooltips, draggable scrollbars, a cleaner footer, and a full-width responsive grid at every density.
 - Recipes, uses, tracking, source records, and archive-style notes.
 - Provider-backed data so each addon can publish its own process context.
 - Optional Terminal and RenderCore integrations.

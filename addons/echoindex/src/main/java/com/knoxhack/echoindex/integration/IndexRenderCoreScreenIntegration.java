@@ -10,7 +10,13 @@ import net.minecraft.resources.Identifier;
 public final class IndexRenderCoreScreenIntegration {
    private static final Identifier OVERLAY_PROFILE = Identifier.fromNamespaceAndPath(EchoIndex.MODID, "screen/index_overlay");
    private static final RenderCoreScreenFrameOptions OVERLAY_FRAME_OPTIONS =
-      new RenderCoreScreenFrameOptions("", false, false, true, true, true);
+      RenderCoreScreenFrameOptions.cyberglass("")
+         .drawLabel(false)
+         .backdrop(false)
+         .scanlines(false)
+         .glassGlints(false)
+         .quietFallback(true)
+         .build();
 
    private IndexRenderCoreScreenIntegration() {
    }

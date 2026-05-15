@@ -17,9 +17,9 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent;
+import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 
@@ -50,7 +50,7 @@ public class EchoIndexClient {
 
     public EchoIndexClient(ModContainer container) {
         NeoForge.EVENT_BUS.addListener(EchoIndexClient::onKeyInput);
-        NeoForge.EVENT_BUS.addListener(IndexOverlay::onRender);
+        NeoForge.EVENT_BUS.addListener((ContainerScreenEvent.Render.Foreground event) -> IndexOverlay.onRender(event));
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseClicked);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseDragged);
         NeoForge.EVENT_BUS.addListener(IndexOverlay::onMouseReleased);

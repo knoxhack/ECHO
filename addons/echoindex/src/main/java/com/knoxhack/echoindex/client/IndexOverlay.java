@@ -22,13 +22,19 @@ import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,6 +49,7 @@ public final class IndexOverlay {
     private static final int HEADER_HEIGHT = 28;
     private static final int FOOTER_HEIGHT = 24;
     private static final int INNER_PAD = 10;
+    private static final int GRID_SCROLLBAR_GUTTER = 8;
     private static final int SPLIT_DETAIL_MIN_WIDTH = 460;
     private static final int SPLIT_DETAIL_MIN_HEIGHT = 220;
     private static final List<Hitbox> HITBOXES = new ArrayList<>();
@@ -83,6 +90,11 @@ public final class IndexOverlay {
     private static int dragPanelY;
     private static int dragPanelW;
     private static int dragPanelH;
+    private static int dragThumbOffset;
+    private static int lastMouseX;
+    private static int lastMouseY;
+    private static ScrollbarMetrics verticalScrollbar;
+    private static ScrollbarMetrics horizontalScrollbar;
     private static long lastSyncRequestMillis;
     private static GridCacheKey gridCacheKey;
     private static List<ItemStack> gridCacheItems = List.of();
@@ -95,16 +107,25 @@ public final class IndexOverlay {
     private IndexOverlay() {
     }
 
-    public static void onRender(ScreenEvent.Render.Post event) {
-        if (!active(event.getScreen())) {
+    public static void onRender(ContainerScreenEvent.Render.Foreground event) {
+        AbstractContainerScreen<?> screen = event.getContainerScreen();
+        if (!active(screen)) {
             saveScreenState();
             HITBOXES.clear();
             SLOT_HITS.clear();
             hoveredStack = ItemStack.EMPTY;
+            verticalScrollbar = null;
+            horizontalScrollbar = null;
             return;
         }
-        syncScreenState(event.getScreen());
-        render(event.getScreen(), event.getGuiGraphics(), event.getMouseX(), event.getMouseY());
+        syncScreenState(screen);
+        event.getGuiGraphics().pose().pushMatrix();
+        try {
+            event.getGuiGraphics().pose().translate(-screen.getLeftPos(), -screen.getTopPos());
+            render(screen, event.getGuiGraphics(), event.getMouseX(), event.getMouseY());
+        } finally {
+            event.getGuiGraphics().pose().popMatrix();
+        }
     }
 
     public static void onMouseClicked(ScreenEvent.MouseButtonPressed.Pre event) {
@@ -112,6 +133,9 @@ public final class IndexOverlay {
             return;
         }
         event.setCanceled(true);
+        if (event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT && beginScrollbarDrag(event.getMouseX(), event.getMouseY())) {
+            return;
+        }
         for (Hitbox hitbox : List.copyOf(HITBOXES)) {
             if (inside(event.getMouseX(), event.getMouseY(), hitbox.x(), hitbox.y(), hitbox.w(), hitbox.h())) {
                 hitbox.action().click(event.getButton(), event.getMouseButtonEvent().modifiers());
@@ -137,19 +161,25 @@ public final class IndexOverlay {
         if (dragMode == DragMode.MOVE) {
             panelX = clamp(dragPanelX + dx, 4, Math.max(4, event.getScreen().width - panelW - 4));
             panelY = clamp(dragPanelY + dy, 4, Math.max(4, event.getScreen().height - panelH - 4));
+            storePanelBounds();
         } else if (dragMode == DragMode.RESIZE) {
             panelW = clamp(dragPanelW + dx, 160, Math.max(160, event.getScreen().width - panelX - 4));
             panelH = clamp(dragPanelH + dy, 180, Math.max(180, event.getScreen().height - panelY - 4));
+            storePanelBounds();
+        } else if (dragMode == DragMode.VERTICAL_SCROLL || dragMode == DragMode.HORIZONTAL_SCROLL) {
+            updateScrollbarDrag(event.getMouseX(), event.getMouseY());
         }
-        storePanelBounds();
     }
 
     public static void onMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
         if (dragMode == DragMode.NONE) {
             return;
         }
+        boolean panelDrag = dragMode == DragMode.MOVE || dragMode == DragMode.RESIZE;
         dragMode = DragMode.NONE;
-        storePanelBounds();
+        if (panelDrag) {
+            storePanelBounds();
+        }
         saveScreenState();
         event.setCanceled(true);
     }
@@ -208,6 +238,25 @@ public final class IndexOverlay {
             event.setCanceled(true);
             saveScreenState();
             return;
+        }
+        if (screenHasFocusedInput(event.getScreen())) {
+            return;
+        }
+        if (EchoIndexClient.SHOW_RECIPE_KEY.matches(keyEvent)) {
+            ItemStack hoveredInventoryStack = hoveredInventoryStack(event.getScreen());
+            if (!hoveredInventoryStack.isEmpty()) {
+                Minecraft.getInstance().setScreen(new IndexRecipeScreen(hoveredInventoryStack, IndexRecipeScreen.Mode.RECIPES));
+                event.setCanceled(true);
+                return;
+            }
+        }
+        if (EchoIndexClient.SHOW_USAGE_KEY.matches(keyEvent)) {
+            ItemStack hoveredInventoryStack = hoveredInventoryStack(event.getScreen());
+            if (!hoveredInventoryStack.isEmpty()) {
+                Minecraft.getInstance().setScreen(new IndexRecipeScreen(hoveredInventoryStack, IndexRecipeScreen.Mode.USES));
+                event.setCanceled(true);
+                return;
+            }
         }
         if (EchoIndexClient.BOOKMARK_KEY.matches(keyEvent) && !hoveredStack.isEmpty()) {
             toggleBookmark(IndexService.itemId(hoveredStack.getItem()));
@@ -299,29 +348,45 @@ public final class IndexOverlay {
         HITBOXES.clear();
         SLOT_HITS.clear();
         hoveredStack = ItemStack.EMPTY;
+        verticalScrollbar = null;
+        horizontalScrollbar = null;
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
         layout(screen);
         Font font = Minecraft.getInstance().font;
         if (collapsed) {
             graphics.fill(panelX, panelY, panelX + 22, panelY + 86, BG);
             graphics.outline(panelX, panelY, 22, 86, CYAN);
-            graphics.text(font, "IDX", panelX + 3, panelY + 8, CYAN, false);
+            graphics.text(font, text("screen.echoindex.overlay.collapsed"), panelX + 3, panelY + 8, CYAN, false);
+            tooltipIfHovered(graphics, font, mouseX, mouseY, panelX, panelY, 22, 86,
+                    tr("screen.echoindex.overlay.tooltip.expand"));
             HITBOXES.add(new Hitbox(panelX, panelY, 22, 86, (button, modifiers) -> collapsed = false));
             return;
         }
 
         drawPanelChrome(graphics);
         graphics.fill(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + HEADER_HEIGHT, 0x33163843);
-        graphics.text(font, "ECHO: INDEX", panelX + 10, panelY + 9, CYAN, false);
-        button(graphics, font, panelX + panelW - 68, panelY + 5, 18, 16, densityLabel(), true);
-        HITBOXES.add(new Hitbox(panelX + panelW - 68, panelY + 5, 18, 16, (button, modifiers) -> cycleGridDensity()));
-        button(graphics, font, panelX + panelW - 46, panelY + 5, 18, 16, "R", true);
-        HITBOXES.add(new Hitbox(panelX + panelW - 46, panelY + 5, 18, 16,
+        graphics.text(font, text("screen.echoindex.overlay.title"), panelX + 10, panelY + 9, CYAN, false);
+        int densityX = panelX + panelW - 68;
+        button(graphics, font, densityX, panelY + 5, 18, 16, densityLabel(), true);
+        tooltipIfHovered(graphics, font, mouseX, mouseY, densityX, panelY + 5, 18, 16,
+                tr("screen.echoindex.overlay.tooltip.density"),
+                tr("screen.echoindex.overlay.tooltip.density.current", densityName()));
+        HITBOXES.add(new Hitbox(densityX, panelY + 5, 18, 16, (button, modifiers) -> cycleGridDensity()));
+        int refreshX = panelX + panelW - 46;
+        button(graphics, font, refreshX, panelY + 5, 18, 16, text("screen.echoindex.overlay.button.refresh"), true);
+        tooltipIfHovered(graphics, font, mouseX, mouseY, refreshX, panelY + 5, 18, 16,
+                tr("screen.echoindex.overlay.tooltip.refresh"));
+        HITBOXES.add(new Hitbox(refreshX, panelY + 5, 18, 16,
                 (button, modifiers) -> {
                     IndexService.INSTANCE.rebuildRecipes(Minecraft.getInstance().player, "overlay refresh button");
                     requestServerSync(true);
                 }));
-        button(graphics, font, panelX + panelW - 24, panelY + 5, 16, 16, "-", true);
-        HITBOXES.add(new Hitbox(panelX + panelW - 24, panelY + 5, 16, 16, (button, modifiers) -> collapsed = true));
+        int collapseX = panelX + panelW - 24;
+        button(graphics, font, collapseX, panelY + 5, 16, 16, text("screen.echoindex.overlay.button.collapse"), true);
+        tooltipIfHovered(graphics, font, mouseX, mouseY, collapseX, panelY + 5, 16, 16,
+                tr("screen.echoindex.overlay.tooltip.collapse"));
+        HITBOXES.add(new Hitbox(collapseX, panelY + 5, 16, 16, (button, modifiers) -> collapsed = true));
 
         int searchX = panelX + INNER_PAD;
         int searchY = panelY + HEADER_HEIGHT + 6;
@@ -342,6 +407,8 @@ public final class IndexOverlay {
         drawFooter(graphics, font, searchX, mouseX, mouseY);
         graphics.outline(panelX + panelW - 12, panelY + panelH - 12, 8, 8,
                 dragMode == DragMode.RESIZE ? CYAN : 0x6638DFF4);
+        tooltipIfHovered(graphics, font, mouseX, mouseY, panelX + panelW - 14, panelY + panelH - 14, 14, 14,
+                tr("screen.echoindex.overlay.tooltip.resize"));
     }
 
     private static void drawPanelChrome(GuiGraphicsExtractor graphics) {
@@ -358,7 +425,7 @@ public final class IndexOverlay {
     private static void drawSearch(GuiGraphicsExtractor graphics, Font font, int x, int y, int w) {
         graphics.fill(x, y, x + w, y + 19, 0xDD05090E);
         graphics.outline(x, y, w, 19, searchFocused ? CYAN : 0x6638DFF4);
-        String label = search.isBlank() && !searchFocused ? "Search ECHO: Index..." : search + (searchFocused ? "_" : "");
+        String label = search.isBlank() && !searchFocused ? text("screen.echoindex.search") : search + (searchFocused ? "_" : "");
         graphics.text(font, trim(font, label, w - 18), x + 6, y + 6, search.isBlank() ? MUTED : TEXT, false);
         HITBOXES.add(new Hitbox(x, y, w, 19, (button, modifiers) -> searchFocused = true));
     }
@@ -428,34 +495,31 @@ public final class IndexOverlay {
         lastGridW = gridW;
         lastGridH = gridH;
         List<ItemStack> items = gridItems();
-        int step = gridStep();
-        int slot = slotSize();
-        int columns = Math.max(1, Math.max(Config.OVERLAY_MAX_COLUMNS.get(), gridW / step));
+        GridLayout grid = gridLayout(gridW, gridH, items.size());
+        int step = grid.step();
+        int slot = grid.slot();
+        int columns = grid.columns();
         int rows = (items.size() + columns - 1) / columns;
-        int contentW = columns * step;
         int contentH = rows * step;
         int maxVerticalScroll = Math.max(0, contentH - gridH);
-        int maxHorizontalScroll = Math.max(0, contentW - gridW);
         scroll = clamp(scroll, 0, maxVerticalScroll);
-        horizontalScroll = clamp(horizontalScroll, 0, maxHorizontalScroll);
+        horizontalScroll = 0;
         graphics.enableScissor(gridX, gridY, gridX + gridW, gridY + gridH);
         int startY = gridY - scroll;
         int firstRow = Math.max(0, scroll / step);
         int lastRow = Math.min(Math.max(0, rows - 1), (scroll + gridH) / step + 1);
-        int firstColumn = Math.max(0, horizontalScroll / step);
-        int lastColumn = Math.min(columns - 1, (horizontalScroll + gridW) / step + 1);
         for (int row = firstRow; row <= lastRow; row++) {
             int y = startY + row * step;
             if (y < gridY - step || y > gridY + gridH) {
                 continue;
             }
-            for (int column = firstColumn; column <= lastColumn; column++) {
+            for (int column = 0; column < columns; column++) {
                 int i = row * columns + column;
                 if (i >= items.size()) {
                     break;
                 }
                 ItemStack stack = items.get(i);
-                int x = gridX - horizontalScroll + column * step;
+                int x = gridX + grid.columnOffset(column);
                 itemSlot(graphics, font, stack, x, y, slot, mouseX, mouseY);
                 Identifier itemId = IndexService.itemId(stack.getItem());
                 if (ClientIndexState.isBookmarked(itemId)) {
@@ -471,9 +535,9 @@ public final class IndexOverlay {
             }
         }
         graphics.disableScissor();
-        drawGridScrollbars(graphics, gridX, gridY, gridW, gridH, contentW, contentH);
+        drawGridScrollbars(graphics, font, gridX, gridY, gridW, gridH, gridW, contentH);
         if (items.isEmpty()) {
-            graphics.text(font, "No indexed items match.", gridX, gridY + 8, MUTED, false);
+            graphics.text(font, text("screen.echoindex.no_results"), gridX, gridY + 8, MUTED, false);
         }
     }
 
@@ -655,7 +719,7 @@ public final class IndexOverlay {
     private static void modeChip(GuiGraphicsExtractor graphics, Font font, int x, int y, int w,
             IndexRecipeUi.ViewMode mode, int mouseX, int mouseY) {
         int count = modeCount(mode);
-        chip(graphics, font, x, y, w, mode.label() + " " + count, detailMode == mode, mouseX, mouseY);
+        chip(graphics, font, x, y, w, modeLabel(mode) + " " + count, detailMode == mode, mouseX, mouseY);
         HITBOXES.add(new Hitbox(x, y, w, 17, (button, modifiers) -> setDetailMode(mode)));
     }
 
@@ -717,25 +781,31 @@ public final class IndexOverlay {
         IndexRecipeSnapshot snapshot = IndexService.INSTANCE.recipeSnapshot(Minecraft.getInstance().player);
         int footerY = panelY + panelH - 20;
         graphics.fill(panelX + 1, footerY - 3, panelX + panelW - 1, panelY + panelH - 1, 0xAA071017);
-        int indexed = detailStack.isEmpty() ? gridItems().size() : detailViews().size();
-        int total = IndexService.INSTANCE.catalogCount(Minecraft.getInstance().player);
-        String left = detailStack.isEmpty() ? "Showing " + indexed + " / " + total : detailMode.label() + ": " + indexed;
+        String left = detailStack.isEmpty() ? text("screen.echoindex.overlay.footer.index") : modeLabel(detailMode);
         graphics.text(font, left, x, footerY, CYAN, false);
-        String footer = "#" + snapshot.generation() + " " + snapshot.ageSeconds() + "s";
-        int footerMetaX = x + Math.min(102, Math.max(72, panelW / 3));
-        graphics.text(font, trim(font, footer, 70), footerMetaX, footerY, MUTED, false);
+        int footerMetaX = x + Math.min(86, Math.max(56, panelW / 4));
         int drawerEnd = panelW >= 330
-                ? drawPinnedDrawer(graphics, font, x + 150, footerY - 4, panelX + panelW - 60, mouseX, mouseY)
-                : footerMetaX + 72;
+                ? drawPinnedDrawer(graphics, font, footerMetaX, footerY - 4, panelX + panelW - 60, mouseX, mouseY)
+                : footerMetaX;
         int warnings = snapshot.warnings().size();
         if (warnings > 0 || snapshot.recipesStillLoading() || Config.DEBUG_SHOW_RECIPE_IDS.get()) {
             int bx = panelX + panelW - 54;
-            String label = warnings > 0 ? warnings + " !" : snapshot.recipesStillLoading() ? "LOAD" : "0 !";
+            String label = snapshot.recipesStillLoading()
+                    ? text("screen.echoindex.overlay.diagnostics.loading_short")
+                    : text("screen.echoindex.overlay.diagnostics.warning_short");
             button(graphics, font, bx, footerY - 4, 44, 16, label, warnings == 0);
+            if (inside(mouseX, mouseY, bx, footerY - 4, 44, 16)) {
+                graphics.setComponentTooltipForNextFrame(font, List.of(
+                        tr("screen.echoindex.overlay.tooltip.diagnostics"),
+                        tr(snapshot.recipesStillLoading()
+                                ? "screen.echoindex.overlay.tooltip.diagnostics.loading"
+                                : "screen.echoindex.overlay.tooltip.diagnostics.open")),
+                        mouseX, mouseY);
+            }
             HITBOXES.add(new Hitbox(bx, footerY - 4, 44, 16,
                     (button, modifiers) -> Minecraft.getInstance().setScreen(new IndexDiagnosticsScreen())));
         } else if (panelX + panelW - drawerEnd > 72) {
-            graphics.text(font, trim(font, "R recipe U uses B bookmark P pin", panelX + panelW - drawerEnd - 12),
+            graphics.text(font, trim(font, text("screen.echoindex.overlay.footer.hints"), panelX + panelW - drawerEnd - 12),
                     drawerEnd, footerY, MUTED, false);
         }
     }
@@ -746,7 +816,7 @@ public final class IndexOverlay {
         if (pinned.isEmpty() || x + 20 > maxX) {
             return x;
         }
-        graphics.text(font, "Pins", x, y + 5, WARN, false);
+        graphics.text(font, text("screen.echoindex.overlay.footer.pins"), x, y + 5, WARN, false);
         int cx = x + 28;
         IndexRecipeSnapshot snapshot = IndexService.INSTANCE.recipeSnapshot(Minecraft.getInstance().player);
         List<Identifier> orderedPins = pinned.stream()
@@ -764,14 +834,14 @@ public final class IndexOverlay {
             graphics.outline(cx, y, 20, 20, IndexRecipeUi.statusColor(plan, true));
             graphics.item(icon, cx + 2, y + 2);
             if (plan.missingCount() > 0) {
-                graphics.text(font, String.valueOf(Math.min(9, plan.missingCount())), cx + 14, y + 10, WARN, false);
+                graphics.text(font, "!", cx + 14, y + 10, WARN, false);
             } else if (plan.sourceCard()) {
                 graphics.text(font, "S", cx + 14, y + 10, MUTED, false);
             }
             if (inside(mouseX, mouseY, cx, y, 20, 20)) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(icon.getHoverName(),
-                        net.minecraft.network.chat.Component.literal(IndexRecipeUi.statusLabel(plan, true)),
-                        net.minecraft.network.chat.Component.literal(pinTooltip(plan))),
+                        Component.literal(IndexRecipeUi.statusLabel(plan, true)),
+                        pinTooltip(plan)),
                         cx + 10, y + 10);
             }
             HITBOXES.add(new Hitbox(cx, y, 20, 20, (button, modifiers) -> openRecipe(recipe.id())));
@@ -797,20 +867,22 @@ public final class IndexOverlay {
         return 2;
     }
 
-    private static String pinTooltip(IndexRecipePlan plan) {
+    private static Component pinTooltip(IndexRecipePlan plan) {
         if (plan == null) {
-            return "Plan unavailable";
+            return tr("screen.echoindex.overlay.tooltip.pin.unavailable");
         }
         if (plan.canTransfer()) {
-            return "Ready to transfer";
+            return tr("screen.echoindex.overlay.tooltip.pin.ready");
         }
         if (plan.missingCount() > 0) {
-            return "Missing " + plan.missingCount();
+            return tr("screen.echoindex.overlay.tooltip.pin.missing", plan.missingCount());
         }
         if (plan.sourceCard()) {
-            return "Source card";
+            return tr("screen.echoindex.overlay.tooltip.pin.source");
         }
-        return plan.transferBlocker().isBlank() ? "Plan only" : plan.transferBlocker();
+        return plan.transferBlocker().isBlank()
+                ? tr("screen.echoindex.overlay.tooltip.pin.plan_only")
+                : Component.literal(plan.transferBlocker());
     }
 
     private static boolean active(Screen screen) {
@@ -822,6 +894,28 @@ public final class IndexOverlay {
                 && !IndexService.INSTANCE.excludedScreen(name)
                 && !name.contains("IndexDiagnosticsScreen")
                 && container.getImageWidth() > 0;
+    }
+
+    private static boolean screenHasFocusedInput(Screen screen) {
+        GuiEventListener focused = screen.getFocused();
+        return focused != null && focused.isFocused();
+    }
+
+    private static ItemStack hoveredInventoryStack(Screen screen) {
+        if (!(screen instanceof AbstractContainerScreen<?> container)) {
+            return ItemStack.EMPTY;
+        }
+        int left = container.getLeftPos();
+        int top = container.getTopPos();
+        for (Slot slot : container.getMenu().slots) {
+            if (slot == null || !slot.isActive() || !slot.hasItem()) {
+                continue;
+            }
+            if (inside(lastMouseX, lastMouseY, left + slot.x, top + slot.y, 16, 16)) {
+                return slot.getItem().copy();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     private static void layout(Screen screen) {
@@ -924,7 +1018,7 @@ public final class IndexOverlay {
         graphics.itemDecorations(font, stack, x + inset, y + inset);
         if (hover) {
             hoveredStack = stack;
-            graphics.setTooltipForNextFrame(font, stack, x + size / 2, y + size / 2);
+            graphics.setTooltipForNextFrame(font, itemTooltip(stack), stack.getTooltipImage(), mouseX, mouseY);
         }
     }
 
@@ -944,6 +1038,26 @@ public final class IndexOverlay {
         };
     }
 
+    private static GridLayout gridLayout(int gridW, int gridH, int itemCount) {
+        GridLayout full = gridLayout(gridW, false);
+        int rows = (itemCount + full.columns() - 1) / full.columns();
+        if (rows * full.step() <= gridH) {
+            return full;
+        }
+        return gridLayout(gridW, true);
+    }
+
+    private static GridLayout gridLayout(int gridW, boolean reserveScrollbar) {
+        int slot = slotSize();
+        int step = gridStep();
+        int gap = Math.max(1, step - slot);
+        int usableW = Math.max(slot, gridW - (reserveScrollbar ? GRID_SCROLLBAR_GUTTER : 0));
+        int maxColumns = Math.max(1, Config.OVERLAY_MAX_COLUMNS.get());
+        int fitColumns = Math.max(1, (usableW + gap) / step);
+        int columns = Math.max(1, Math.min(maxColumns, fitColumns));
+        return new GridLayout(slot, step, columns, usableW);
+    }
+
     private static Config.GridDensity currentGridDensity() {
         if (gridDensityOverridden) {
             return gridDensity;
@@ -961,6 +1075,14 @@ public final class IndexOverlay {
             case COMPACT -> "C";
             case NORMAL -> "N";
             case LARGE -> "L";
+        };
+    }
+
+    private static String densityName() {
+        return switch (currentGridDensity()) {
+            case COMPACT -> text("screen.echoindex.overlay.density.compact");
+            case NORMAL -> text("screen.echoindex.overlay.density.normal");
+            case LARGE -> text("screen.echoindex.overlay.density.large");
         };
     }
 
@@ -1265,22 +1387,81 @@ public final class IndexOverlay {
         horizontalScroll = 0;
     }
 
-    private static void drawGridScrollbars(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int contentW, int contentH) {
+    private static void drawGridScrollbars(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, int h, int contentW, int contentH) {
+        verticalScrollbar = null;
+        horizontalScrollbar = null;
         int maxVerticalScroll = Math.max(0, contentH - h);
         int maxHorizontalScroll = Math.max(0, contentW - w);
         if (maxVerticalScroll > 0) {
-            int trackX = x + w - 5;
+            int trackX = x + w - 7;
+            int trackW = 6;
             int thumbH = Math.max(14, h * h / Math.max(h, contentH));
             int thumbY = y + (h - thumbH) * scroll / maxVerticalScroll;
-            graphics.fill(trackX, y, trackX + 4, y + h, 0xAA071017);
-            graphics.fill(trackX, thumbY, trackX + 4, thumbY + thumbH, 0xCC66E8FF);
+            graphics.fill(trackX, y, trackX + trackW, y + h, 0xAA071017);
+            graphics.fill(trackX, thumbY, trackX + trackW, thumbY + thumbH, 0xCC66E8FF);
+            verticalScrollbar = new ScrollbarMetrics(trackX, y, trackW, h, trackX, thumbY, trackW, thumbH,
+                    maxVerticalScroll, true);
+            tooltipIfHovered(graphics, font, lastMouseX, lastMouseY, trackX, y, trackW, h,
+                    tr("screen.echoindex.overlay.tooltip.scroll_vertical"));
         }
         if (maxHorizontalScroll > 0) {
-            int trackY = y + h - 5;
+            int trackY = y + h - 7;
+            int trackH = 6;
             int thumbW = Math.max(14, w * w / Math.max(w, contentW));
             int thumbX = x + (w - thumbW) * horizontalScroll / maxHorizontalScroll;
-            graphics.fill(x, trackY, x + w, trackY + 4, 0xAA071017);
-            graphics.fill(thumbX, trackY, thumbX + thumbW, trackY + 4, 0xCC66E8FF);
+            graphics.fill(x, trackY, x + w, trackY + trackH, 0xAA071017);
+            graphics.fill(thumbX, trackY, thumbX + thumbW, trackY + trackH, 0xCC66E8FF);
+            horizontalScrollbar = new ScrollbarMetrics(x, trackY, w, trackH, thumbX, trackY, thumbW, trackH,
+                    maxHorizontalScroll, false);
+            tooltipIfHovered(graphics, font, lastMouseX, lastMouseY, x, trackY, w, trackH,
+                    tr("screen.echoindex.overlay.tooltip.scroll_horizontal"));
+        }
+    }
+
+    private static List<Component> itemTooltip(ItemStack stack) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Item.TooltipContext context = minecraft.level == null ? Item.TooltipContext.EMPTY : Item.TooltipContext.of(minecraft.level);
+        List<Component> tooltip = new ArrayList<>(stack.getTooltipLines(context, minecraft.player, TooltipFlag.NORMAL));
+        tooltip.add(tr("screen.echoindex.overlay.tooltip.item_actions"));
+        return tooltip;
+    }
+
+    private static boolean beginScrollbarDrag(double mouseX, double mouseY) {
+        if (verticalScrollbar != null && verticalScrollbar.insideTrack(mouseX, mouseY)) {
+            dragMode = DragMode.VERTICAL_SCROLL;
+            dragThumbOffset = verticalScrollbar.insideThumb(mouseX, mouseY)
+                    ? (int) Math.round(mouseY) - verticalScrollbar.thumbY()
+                    : verticalScrollbar.thumbH() / 2;
+            updateScrollbarDrag(mouseX, mouseY);
+            return true;
+        }
+        if (horizontalScrollbar != null && horizontalScrollbar.insideTrack(mouseX, mouseY)) {
+            dragMode = DragMode.HORIZONTAL_SCROLL;
+            dragThumbOffset = horizontalScrollbar.insideThumb(mouseX, mouseY)
+                    ? (int) Math.round(mouseX) - horizontalScrollbar.thumbX()
+                    : horizontalScrollbar.thumbW() / 2;
+            updateScrollbarDrag(mouseX, mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    private static void updateScrollbarDrag(double mouseX, double mouseY) {
+        ScrollbarMetrics metrics = dragMode == DragMode.VERTICAL_SCROLL ? verticalScrollbar : horizontalScrollbar;
+        if (metrics == null) {
+            return;
+        }
+        int trackStart = metrics.vertical() ? metrics.trackY() : metrics.trackX();
+        int trackSize = metrics.vertical() ? metrics.trackH() : metrics.trackW();
+        int thumbSize = metrics.vertical() ? metrics.thumbH() : metrics.thumbW();
+        int trackRange = Math.max(1, trackSize - thumbSize);
+        int mouse = (int) Math.round(metrics.vertical() ? mouseY : mouseX);
+        int thumbStart = clamp(mouse - dragThumbOffset, trackStart, trackStart + trackRange);
+        int nextScroll = (int) Math.round((thumbStart - trackStart) * (double) metrics.maxScroll() / trackRange);
+        if (metrics.vertical()) {
+            scroll = clamp(nextScroll, 0, metrics.maxScroll());
+        } else {
+            horizontalScroll = clamp(nextScroll, 0, metrics.maxScroll());
         }
     }
 
@@ -1332,6 +1513,29 @@ public final class IndexOverlay {
         return IndexRecipeUi.trim(font, text, width);
     }
 
+    private static Component tr(String key, Object... args) {
+        return Component.translatable(key, args);
+    }
+
+    private static String text(String key, Object... args) {
+        return tr(key, args).getString();
+    }
+
+    private static String modeLabel(IndexRecipeUi.ViewMode mode) {
+        return switch (mode) {
+            case USES -> text("screen.echoindex.uses");
+            case SOURCES -> text("screen.echoindex.sources");
+            case RECIPES -> text("screen.echoindex.recipes");
+        };
+    }
+
+    private static void tooltipIfHovered(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY,
+            int x, int y, int w, int h, Component... lines) {
+        if (lines.length > 0 && inside(mouseX, mouseY, x, y, w, h)) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(lines), mouseX, mouseY);
+        }
+    }
+
     private record GridCacheKey(String screenKey, String query, long clientRevision) {
     }
 
@@ -1355,6 +1559,27 @@ public final class IndexOverlay {
     private record PanelBounds(int x, int y, int w, int h) {
     }
 
+    private record GridLayout(int slot, int step, int columns, int usableW) {
+        int columnOffset(int column) {
+            if (columns <= 1) {
+                return 0;
+            }
+            int span = Math.max(0, usableW - slot);
+            return (int) Math.round(column * (double) span / (columns - 1));
+        }
+    }
+
+    private record ScrollbarMetrics(int trackX, int trackY, int trackW, int trackH,
+            int thumbX, int thumbY, int thumbW, int thumbH, int maxScroll, boolean vertical) {
+        boolean insideTrack(double mouseX, double mouseY) {
+            return inside(mouseX, mouseY, trackX, trackY, trackW, trackH);
+        }
+
+        boolean insideThumb(double mouseX, double mouseY) {
+            return inside(mouseX, mouseY, thumbX, thumbY, thumbW, thumbH);
+        }
+    }
+
     private record OverlayScreenState(boolean collapsed, Identifier itemId, IndexRecipeUi.ViewMode mode,
             Identifier category, int selected, Config.GridDensity gridDensity) {
     }
@@ -1370,6 +1595,8 @@ public final class IndexOverlay {
     private enum DragMode {
         NONE,
         MOVE,
-        RESIZE
+        RESIZE,
+        VERTICAL_SCROLL,
+        HORIZONTAL_SCROLL
     }
 }

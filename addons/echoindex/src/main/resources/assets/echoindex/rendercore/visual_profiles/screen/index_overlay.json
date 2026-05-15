@@ -4,9 +4,9 @@
   "default_state": "ACTIVE",
   "effect": {
     "preset": "terminal_hud",
-    "glow_intensity": 0.38,
-    "pulse_speed": 0.16,
-    "scanline_strength": 0.0,
+    "glow_intensity": 0.34,
+    "pulse_speed": 0.12,
+    "bloom_tint": "#FFFFD166",
     "target_scope": "profile"
   },
   "anchors": { "screen": { "offset": [0.0, 0.0, 0.0] } }
